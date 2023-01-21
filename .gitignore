@@ -1,0 +1,10 @@
+
+
+/build
+/external/vcpkg
+/external/nmsplib
+
+LocalTemp/
+
+*.bak
+*.lnk
