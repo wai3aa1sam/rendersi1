@@ -20,6 +20,10 @@ project(${project_name})
 # --- git_submodule ---
 my_add_git_submodule(external/nmsplib)
 
+# --- base ---
+add_subdirectory(src/base)
+add_subdirectory(src/base/test)
+
 # --- core ---
 add_subdirectory(src/core)
 add_subdirectory(src/core/test)

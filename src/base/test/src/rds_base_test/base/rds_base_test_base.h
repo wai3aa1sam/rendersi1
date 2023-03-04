@@ -2,4 +2,4 @@
 
 #include <rds_base.h>
 
-#include "rds_core-config.h"
+#include <rds_base_test-config.h>

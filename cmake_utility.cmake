@@ -3,8 +3,9 @@
 # https://github.com/SimpleTalkCpp/SimpleGameEngine
 # https://www.scivision.dev/cmake-git-submodule/
 
-function(my_print_var variable)
-message(STATUS "${variable}")
+# my_print_var(variable_name)
+function(my_print_var var)
+  message("${var}= ${${var}}")
 endfunction()
 
 function(my_source_group src_path src_files)

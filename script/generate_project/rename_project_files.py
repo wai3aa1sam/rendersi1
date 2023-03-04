@@ -5,6 +5,10 @@ import os
 def getListOfFiles(dirName):
     # create a list of file and sub directories 
     # names in the given directory 
+    if not (os.path.exists(dirName)):
+        print("path: {} is not exist".format(dirName))
+        return None
+
     listOfFile = os.listdir(dirName)
     allFiles = list()
     # Iterate over all the entries
@@ -60,10 +64,12 @@ def changeProjectDirnames(target_name, src_dirs, form_name):
         new_name = parent_dir + '\\' + new_basename
         os.rename(dir, new_name)
 
-def isProjectName(name, target_name):
-    return name.find(target_name) >= 0
+def isProjectMarker(name, target_name):
+    return name == target_name
+    #return name.find(target_name) >= 0
 
 def getPossibleProjectRoot(dirname):
+    # just like /.. twice
     root = FilePath.getDirname(dirname)
     root = FilePath.getDirname(root)
     return root
@@ -74,39 +80,108 @@ def findProjectRoot(dirname, target_name):
     for entry in listOfFile:
         fullPath = os.path.join(dirname, entry)
         if os.path.isdir(fullPath):
-            if(isProjectName(entry, target_name)):
+            if(isProjectMarker(entry, target_name)):
                 return fullPath
 
-    return None
-        
-def rename_project_files():
-    current_dir = os.path.dirname(os.path.realpath(__file__))
+    return ""
 
-    print("current_dir: " + current_dir)
-    
-    target_name = input("Enter project namespace: ")
-    from_name = "projNamespace"
-    src_name = "src"
-
-    root = findProjectRoot(current_dir, src_name)
-    if(root == None):
-        root = getPossibleProjectRoot(current_dir)
+def findAndCheckProjectRoot(dirname, src_name):
+    root = dirname
+    if(root):
+        root = getPossibleProjectRoot(dirname)
         root = findProjectRoot(root, src_name)
 
-    if(root == None):
+    if (root == ""):
         print("Error: cannot find project src root!")
-        print("==========End============")
         return
-
+    
     print("project src root: ", root)
+    return root
 
-    isRename = input("sure to rename the project files? [y/n]")
-    if (isRename == 'y'):
-        print("Renaming")
-        src_files = getListOfFiles(root)
-        src_dirs = fast_scandir(root)
-        changeProjectFileNames(target_name, src_files, from_name)
-        changeProjectDirnames(target_name, src_dirs, from_name)
+def getInputName(msg, default = ""):
+    defaultMsg = ""
+    if (default):
+        defaultMsg = ", no input for default: {} :".format(default)
+    name = input(msg + defaultMsg)
+    if (name == ""):
+        return default
+    return name
+
+class ProjectRename:
+    def __init__(self):
+        current_dir = ""
+        src_name    = "src"
+
+    def rename_project_files_to_new_namespace(self):
+        print("function 1: rename_project_files_to_new_namespace")
+        print(self.current_dir)
+
+        root = findAndCheckProjectRoot(self.current_dir, self.src_name)
+        if(root == ""):
+            return
+
+        from_name   = getInputName("Enter name to change from:", "projNamespace")
+        to_name     = getInputName("Enter name to change: ")
+
+        print("From {} to {}".format(from_name, to_name))
+        isRename = input("sure to rename the project files? [y/n]")
+        if (isRename == 'y'):
+            print("processing...")
+            src_files = getListOfFiles(root)
+            if (src_files == None):
+                return
+            src_dirs = fast_scandir(root)
+            changeProjectFileNames(to_name, src_files, from_name)
+            changeProjectDirnames(to_name, src_dirs, from_name)
+
+    def rename_project_sub_module_files(self):
+        print("function 2: rename_project_sub_module_files")
+        
+        root = findAndCheckProjectRoot(self.current_dir, self.src_name)
+        if(root == ""):
+            return
+
+        projNamespace           = getInputName("Enter project namespace: ", "projNamespace")
+        sub_module_dir          = getInputName("Enter sub-module dir: (relative to {})".format(root))
+        from_sub_module_name    = getInputName("Enter sub-module name to change from: ")
+        to_sub_module_name      = getInputName("Enter sub-module name to change: ")
+
+        from_name       = projNamespace + "_" + from_sub_module_name
+        to_name         = projNamespace + "_" + to_sub_module_name
+        sub_module_root = "{}/{}".format(root, sub_module_dir)
+
+        print("sub-module path: {}".format(sub_module_root))
+        print("From {} to {}".format(from_name, to_name))
+        isRename = input("sure to rename the project files? [y/n]")
+        if (isRename == 'y'):
+            print("processing...")
+            src_files = getListOfFiles(sub_module_root)
+            if (src_files == None):
+                return
+            src_dirs = fast_scandir(sub_module_root)
+            changeProjectFileNames(to_name, src_files, from_name)
+            changeProjectDirnames(to_name, src_dirs, from_name)
+
+def my_main():
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    projRename = ProjectRename()
+
+    projRename.current_dir  = current_dir
+    projRename.src_name     = "src"
+    print("current_dir: " + current_dir)
+
+    print("function 0: exit")
+    print("function 1: rename_project_files_to_new_namespace")
+    print("function 2: rename_project_sub_module_files")
+    
+    function = input("Please enter function [n]: ")
+    function = int(function)
+
+    match function:
+        case 0: return
+        case 1: projRename.rename_project_files_to_new_namespace()
+        case 2: projRename.rename_project_sub_module_files()
+
     print("==========End============")
 
-rename_project_files()
+my_main()

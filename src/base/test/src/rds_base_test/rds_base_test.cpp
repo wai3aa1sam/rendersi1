@@ -1,5 +1,4 @@
-#include <rds_core_test-pch.h>
-
+#include <rds_base_test-pch.h>
 
 #if RDS_OS_WINDOWS
 
@@ -47,6 +46,6 @@ int main(int argc, char* argv[])
 		_CrtMemDumpStatistics(&diff);
 	}
 	#endif // RDS_OS_WINDOWS
-
+	
 	return exitCode;
 }
