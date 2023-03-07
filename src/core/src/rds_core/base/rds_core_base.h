@@ -1,5 +1,0 @@
-#pragma once
-
-#include <rds_base.h>
-
-#include "rds_core-config.h"

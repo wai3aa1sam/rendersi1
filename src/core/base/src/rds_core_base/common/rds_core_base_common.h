@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_base-config.h"
+#include "rds_core_base-config.h"
 
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
@@ -54,3 +54,10 @@
 #include <unordered_set>
 
 #include <nmsp_core.h>
+
+
+namespace rds {
+
+using namespace nmsp;
+
+}

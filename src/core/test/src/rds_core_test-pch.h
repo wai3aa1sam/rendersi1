@@ -2,5 +2,4 @@
 
 #include <rds_core.h>
 
-#include <rds_core_test-config.h>
-#include <rds_core_test/base/rds_core_test_base.h>
+#include <rds_core_test/common/rds_core_test_common.h>

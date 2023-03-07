@@ -35,7 +35,18 @@ int main(int argc, char* argv[])
 	int exitCode = 0;
 	{
 		std::cout << "Hello World!\n";
-		nmsp::log("Hello World!\n");
+		
+		{
+			nmsp::log("Hello World123!");
+			nmsp::Vector_T	 vector;
+			nmsp::math::Math math;
+		}
+
+		{
+			rds::log("Hello World123!");
+			rds::Vector_T	vector;
+			rds::math::Math	math;
+		}
 	}
 
 	#if RDS_OS_WINDOWS
