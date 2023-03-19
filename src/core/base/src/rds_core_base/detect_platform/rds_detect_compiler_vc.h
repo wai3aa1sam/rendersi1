@@ -72,6 +72,13 @@ https://github.com/SimpleTalkCpp/SimpleGameEngine
 	#define	nullptr	NULL
 #endif
 
+// sanitizer support
+#if __SANITIZE_ADDRESS__ && _MSC_VER >= 1928
+	#define NMSP_IS_ASAN_ENABLE 1
+#else
+	#define NMSP_IS_ASAN_ENABLE 0
+#endif // __SANITIZE_ADDRESS__
+
 //cpu
 #if _M_X64
 	#define RDS_CPU_X86_64	1

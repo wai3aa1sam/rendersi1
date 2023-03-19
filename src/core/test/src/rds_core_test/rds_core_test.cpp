@@ -1,4 +1,4 @@
-#include <rds_core_test-pch.h>
+#include "rds_core_test-pch.h"
 
 
 #if RDS_OS_WINDOWS
@@ -35,18 +35,7 @@ int main(int argc, char* argv[])
 	int exitCode = 0;
 	{
 		std::cout << "Hello World!\n";
-		
-		{
-			nmsp::log("Hello World123!");
-			nmsp::Vector_T	 vector;
-			nmsp::math::Math math;
-		}
-
-		{
-			rds::log("Hello World123!");
-			rds::Vector_T	vector;
-			rds::math::Math	math;
-		}
+		rds::_log("Hello World123!");
 	}
 
 	#if RDS_OS_WINDOWS

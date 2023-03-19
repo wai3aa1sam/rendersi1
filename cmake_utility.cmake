@@ -26,8 +26,9 @@ function(my_set_target_warning_level target_name)
     target_compile_options(${target_name} PRIVATE /wd4100) #warning C4100: unreferenced formal parameter in function
     target_compile_options(${target_name} PRIVATE /wd4201) #warning C4201: nonstandard extension used: nameless struct/union
     target_compile_options(${target_name} PRIVATE /wd4127) #warning C4127: conditional expression is constant
+    target_compile_options(${target_name} PRIVATE /wd5072) #warning C5072: ASAN enabled without debug information emission.
   else()
-    target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow)
   endif()
 endfunction()
 
@@ -63,6 +64,11 @@ function(my_add_executable target_name src_path)
   target_include_directories(${target_name} PUBLIC src)
   my_set_target_warning_level(${target_name})	
   my_set_target_unity_build_mode(${target_name})
+
+  if(ENABLE_SANITIZER)
+    my_enable_sanitizer(${target_name})
+  endif()
+  
 endfunction()
 
 function(my_add_git_submodule dir)
@@ -89,11 +95,29 @@ endfunction(my_add_git_submodule)
 
 function(my_link_sub_module target_name sub_module_project_name sub_module_namespace sub_module_section proj_root)
 
-set(sub_module_section_dir external/${sub_module_project_name}/src/${sub_module_section})
-set(sub_module_section_path ${proj_root}/${sub_module_section_dir})
+  set(sub_module_section_dir external/${sub_module_project_name}/src/${sub_module_section})
+  set(sub_module_section_path ${proj_root}/${sub_module_section_dir})
 
-target_include_directories(${target_name} PUBLIC ${sub_module_section_path}/src)
-target_link_directories(${target_name} PUBLIC ${sub_module_section_path}/src)
-target_link_libraries(${target_name} PUBLIC ${sub_module_namespace}_${sub_module_section})
+  target_include_directories(${target_name} PUBLIC ${sub_module_section_path}/src)
+  target_link_directories(${target_name}    PUBLIC ${sub_module_section_path}/src)
+  target_link_libraries(${target_name}      PUBLIC ${sub_module_namespace}_${sub_module_section})
 
+endfunction()
+
+function(my_enable_sanitizer target_name)
+  if(MSVC)
+    #set_property(TARGET ${target_name}     PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    target_compile_options(${target_name}  
+      PRIVATE "$<$<CONFIG:DEBUG>:/MTd>"
+              "$<$<CONFIG:DEBUG>:/fsanitize=address>"
+              "$<$<CONFIG:DEBUG>:/fsanitize=fuzzer>"
+              "$<$<CONFIG:DEBUG>:/Zi>")
+    target_link_options(${target_name}     
+      PRIVATE "$<$<CONFIG:DEBUG>:/MTd>"
+              "$<$<CONFIG:DEBUG>:/fsanitize=address>"
+              "$<$<CONFIG:DEBUG>:/fsanitize=fuzzer>"
+              "$<$<CONFIG:DEBUG>:/Zi>")
+
+    #target_compile_options(${target_name}  PRIVATE "$<$<CONFIG:RELEASE>:/MD>")
+  endif()
 endfunction()
