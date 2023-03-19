@@ -1,0 +1,15 @@
+
+#core.autocrlf = false
+core.safecrlf = true
+* -text
+
+*.bat       eol=crlf
+*.sln       eol=crlf
+*.vcproj	eol=crlf
+*.csproj    eol=crlf
+
+*.sh        eol=lf
+
+
+*.docx   diff=astextplain
+*.DOCX   diff=astextplain
