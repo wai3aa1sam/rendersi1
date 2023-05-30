@@ -8,6 +8,8 @@ my_add_library(${sub_project_name} ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties (${sub_project_name} PROPERTIES FOLDER ${project_namespace}/test)
 target_link_libraries(${sub_project_name} 
     PUBLIC  ${project_namespace}_core_base
+            benchmark::benchmark
+            nmsp_core
     )
 
 #function(my_link_sub_module target_name sub_module_project_name sub_module_namespace sub_module_section proj_root)

@@ -1,8 +1,8 @@
 #pragma once
 
 /*
-reference:
-https://github.com/SimpleTalkCpp/SimpleGameEngine
+references:
+- sge_detect_compiler_gcc.h in https://github.com/SimpleTalkCpp/SimpleGameEngine
 */
 
 #if ! (RDS_COMPILER_CLANG | RDS_COMPILER_GCC)
@@ -84,12 +84,12 @@ https://github.com/SimpleTalkCpp/SimpleGameEngine
 // sanitizer support
 #if defined(__has_feature)
 	#if __has_feature(address_sanitizer)
-		#define NMSP_IS_ASAN_ENABLE 1
+		#define RDS_IS_ASAN_ENABLE 1
 	#else
-		#define NMSP_IS_ASAN_ENABLE 0
+		#define RDS_IS_ASAN_ENABLE 0
 	#endif
 #else
-	#define NMSP_IS_ASAN_ENABLE 0
+	#define RDS_IS_ASAN_ENABLE 0
 #endif
 
 #if defined(__x86_64__) || defined(__x86_64) || defined(__amd64) || defined(__amd64__)
@@ -190,3 +190,6 @@ https://github.com/SimpleTalkCpp/SimpleGameEngine
 	#define RDS_OS_MINGW			1
 #endif
 
+// function
+#include <signal.h>
+#define RDS_DEBUG_BREAK(...)		raise(SIGTRAP)

@@ -1,8 +1,8 @@
 #pragma once
 
 /*
-reference:
-https://github.com/SimpleTalkCpp/SimpleGameEngine
+references:
+- sge_detect_platform.h in https://github.com/SimpleTalkCpp/SimpleGameEngine
 */
 
 /*

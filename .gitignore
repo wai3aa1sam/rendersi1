@@ -8,3 +8,4 @@ LocalTemp/
 
 *.bak
 *.lnk
+/external/log/log.txt

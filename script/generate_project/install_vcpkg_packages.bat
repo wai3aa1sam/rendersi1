@@ -18,7 +18,16 @@ git pull
 
 call bootstrap-vcpkg.bat
 
-vcpkg install fmt:x64-windows --recurse
+vcpkg install fmt:x64-windows               --recurse
+vcpkg install benchmark:x64-windows         --recurse
+vcpkg install tracy:x64-windows             --recurse
+vcpkg install eastl:x64-windows             --recurse
+vcpkg install concurrentqueue:x64-windows   --recurse 
+vcpkg install spdlog:x64-windows            --recurse
+vcpkg install glm:x64-windows               --recurse
+vcpkg install libpng:x64-windows 			--recurse
+vcpkg install stb:x64-windows 				--recurse
+vcpkg install nlohmann-json:x64-windows 	--recurse
 
 POPD
 

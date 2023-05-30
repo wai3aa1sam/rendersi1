@@ -1,6 +1,6 @@
 
-#core.autocrlf = false
-core.safecrlf = true
+#core.autocrlf=false
+core.safecrlf=true
 * -text
 
 *.bat       eol=crlf

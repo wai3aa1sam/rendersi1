@@ -1,8 +1,8 @@
 #pragma once
 
 /*
-reference:
-https://github.com/SimpleTalkCpp/SimpleGameEngine
+references:
+- sge_detect_compiler_vc.h in https://github.com/SimpleTalkCpp/SimpleGameEngine
 */
 
 
@@ -74,9 +74,9 @@ https://github.com/SimpleTalkCpp/SimpleGameEngine
 
 // sanitizer support
 #if __SANITIZE_ADDRESS__ && _MSC_VER >= 1928
-	#define NMSP_IS_ASAN_ENABLE 1
+	#define RDS_IS_ASAN_ENABLE 1
 #else
-	#define NMSP_IS_ASAN_ENABLE 0
+	#define RDS_IS_ASAN_ENABLE 0
 #endif // __SANITIZE_ADDRESS__
 
 //cpu
@@ -104,3 +104,6 @@ https://github.com/SimpleTalkCpp/SimpleGameEngine
 	#define RDS_OS_WinCE     1
 	#define RDS_OS_WINDOWS	1
 #endif
+
+// function
+#define RDS_DEBUG_BREAK(...)		__debugbreak()
