@@ -1,5 +1,7 @@
 #include "rds_core_test-pch.h"
 
+
+
 #if !RDS_ENABLE_FUZZ_TESTING
 
 int main(int argc, char* argv[])
@@ -12,6 +14,7 @@ int main(int argc, char* argv[])
 	{
 		_log("Hello World123!");
 		std::cout << "Hello World!\n";
+		DefaultAllocator a;
 	}
 
 	return exitCode;

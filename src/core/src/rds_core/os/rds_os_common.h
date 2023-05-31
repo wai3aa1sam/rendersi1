@@ -15,3 +15,15 @@ namespace rds
 #endif
 
 
+
+#if 0
+#pragma mark --- rds_os-Impl ---
+#endif // 0
+#if 1
+namespace rds
+{
+
+using MemMapFile = ::nmsp::MemMapFile_T;
+
+}
+#endif
