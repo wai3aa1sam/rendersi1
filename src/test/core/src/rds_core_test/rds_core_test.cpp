@@ -8,13 +8,14 @@ int main(int argc, char* argv[])
 {
 	using namespace rds;
 
-	MemoryLeakReportScope reportScope;
+	::nmsp::MemoryLeakReportScope reportScope;
 
 	int exitCode = 0;
 	{
-		_log("Hello World123!");
+		//_log("Hello World123!");
 		std::cout << "Hello World!\n";
 		DefaultAllocator a;
+		auto up = makeUPtr<int>(10);
 	}
 
 	return exitCode;

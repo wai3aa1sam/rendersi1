@@ -23,9 +23,6 @@
 
 namespace rds {
 
-//namespace rds = nmsp;
-using namespace nmsp;
 
-//using MemoryLeakReportScope = nmsp::MemoryLeakReportScope;
 
 }

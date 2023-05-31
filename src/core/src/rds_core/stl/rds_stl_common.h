@@ -2,6 +2,14 @@
 
 #include "rds_core/common/rds_core_common.h"
 
+#include <nmsp_stl/allocator/nmspFixedPoolAllocator.h>
+#include <nmsp_stl/allocator/nmspPoolAllocator.h>
+#include <nmsp_stl/allocator/nmspMemoryArena.h>
+#include <nmsp_stl/allocator/nmspMemoryArenaPolicy.h>
+
+#include <nmsp_stl/string/nmspLexer.h>
+#include <nmsp_stl/string/nmspStrUtil.h>
+
 #if 0
 #pragma mark --- XXXX-Decl/Impl ---
 #endif // 0
@@ -21,13 +29,38 @@ namespace rds
 namespace rds
 {
 
+using ::nmsp::StlTraits;
+
 #if 0
-#pragma mark --- Container-Impl ---
+#pragma mark --- rds_stl_allocator-Impl ---
+#endif // 0
+#if 1
+
+template<class ALLOC> using Allocator_Base	= ::nmsp::Allocator_Base<ALLOC>;
+
+using ::nmsp::NoFallbackAllocator_Policy;
+template<class PRIMARY_ALLOC, class FALLBACK_ALLOC = NoFallbackAllocator_Policy> using FallbackAllocator = ::nmsp::FallbackAllocator_T<PRIMARY_ALLOC, FALLBACK_ALLOC>;
+
+using PoolAllocator			= ::nmsp::PoolAllocator_T;
+using FixedPoolAllocator	= ::nmsp::FixedPoolAllocator_T;
+using LinearAllocator		= ::nmsp::LinearAllocator_T;
+using Mallocator			= ::nmsp::Mallocator_T;
+
+template<class ALLOC, class BOUND_POLICY> using MemoryArena = ::nmsp::MemoryArena_T<ALLOC, BOUND_POLICY>;
+
+template<size_t LOCAL_SIZE, size_t ALIGN = StlTraits::s_kDefaultAlign> using LocalBuffer = ::nmsp::LocalBuffer_T<LOCAL_SIZE, ALIGN>;
+template<size_t LOCAL_SIZE = 0, size_t ALIGN = CoreBaseTraits::s_kDefaultAlign, class FALLBACK_ALLOC = DefaultAllocator> 
+using LocalAllocator = ::nmsp::LocalAllocator_T<LOCAL_SIZE, ALIGN, FALLBACK_ALLOC>;
+
+#endif
+
+#if 0
+#pragma mark --- rds_stl_container-Impl ---
 #endif // 0
 #if 1
 
 #if 0
-#pragma mark --- Vector-Impl ---
+#pragma mark --- rds_stl_vector-Impl ---
 #endif // 0
 #if 1
 template<class T>												using IVector	= ::nmsp::IVector_T<T>;
@@ -35,7 +68,7 @@ template<class T, size_t N = 0, class ALLOC = DefaultAllocator>	using Vector	= :
 #endif
 
 #if 0
-#pragma mark --- String-Impl ---
+#pragma mark --- rds_stl_string-Impl ---
 #endif // 0
 #if 1
 template<class T>												using IString_T = ::nmsp::IString_T<T>;
@@ -53,10 +86,10 @@ using TempStringW	= TempStringW_T<DefaultAllocator>;
 #endif
 
 #if 0
-#pragma mark --- Set_and_Map-Impl ---
+#pragma mark --- rds_stl_set_and_map-Impl ---
 #endif // 0
 #if 1
-template<class KEY, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>	using Set = Set_T<KEY, PRED, ALLOC>;
+template<class KEY, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>	using Set = ::nmsp::Set_T<KEY, PRED, ALLOC>;
 
 template<class KEY, class VALUE, class PRED = Less<KEY>, class ALLOC = DefaultAllocator> using Map			= ::nmsp::Map_T<KEY, VALUE, PRED, ALLOC>;
 template<class KEY, class VALUE, class PRED = Less<KEY>, class ALLOC = DefaultAllocator> using UnorderedMap = ::nmsp::UnorderedMap_T<KEY, VALUE, PRED, ALLOC>;
@@ -66,6 +99,127 @@ template<class VALUE, class PRED = StrLess<const char*>, class ALLOC = DefaultAl
 #endif
 
 #endif
+
+#if 0
+#pragma mark --- rds_stl_view-Impl ---
+#endif // 0
+#if 1
+
+template<class T> using Span_T = ::nmsp::Span_T<T>;
+using ByteSpan = ::nmsp::ByteSpan_T;
+using ::nmsp::spanCast;
+
+template<class T> using StrView = ::nmsp::StrView_T<T>;
+using StrViewA = ::nmsp::StrViewA_T;
+using StrViewW = ::nmsp::StrViewW_T;
+using ::nmsp::toStrView;
+
+using ::nmsp::makeStrView;
+using ::nmsp::makeByteSpan;
+
+#endif
+
+
+#if 0
+#pragma mark --- rds_stl_extra-Impl ---
+#endif // 0
+#if 1
+
+template<class T1, class T2> using CompressedPair	= ::nmsp::CompressedPair_T<T1, T2>;
+template<class T1, class T2> using Pair				= ::nmsp::Pair_T<T1, T2>;
+using ::nmsp::makePair;
+
+template<class T, size_t LOCAL_SIZE = 32, size_t ALIGN = StlTraits::s_kDefaultAlign, class FALLBACK_ALLOCATOR = DefaultAllocator> 
+using Function_T = ::nmsp::Function_T<T, LOCAL_SIZE, ALIGN, FALLBACK_ALLOCATOR>;
+
+template<class T, T... VALS>	using IntSeq = ::nmsp::IntSeq_T<T, VALS...>;
+template<size_t N>				using IdxSeq = ::nmsp::IdxSeq_T<N>;
+
+template<class T> using Opt = ::nmsp::Opt_T<T>;
+
+template<class T, size_t ALIGN> using PaddedData = ::nmsp::PaddedData_T<T, ALIGN>;
+
+template<class T> using StackSingleton = ::nmsp::StackSingleton_T<T>;
+
+template<class... ARGS> using Tuple = ::nmsp::Tuple_T<ARGS...>;
+
+template<class T> using TypeBitMixture_Impl = ::nmsp::TypeBitMixture_Impl<T>;
+template<class T> using TypeBitMixture		= ::nmsp::TypeBitMixture_T<T, TypeBitMixture_Impl<T> >;
+template<class T> using TBM					= ::nmsp::TBM<T>;
+
+#endif
+
+
+#if 0
+#pragma mark --- rds_stl_pointer-Impl ---
+#endif // 0
+#if 1
+
+using ::nmsp::UPtr_DefaultDeleter;
+template<class T, class DELETER = UPtr_DefaultDeleter<T>> using UPtr = ::nmsp::UPtr_T<T, DELETER>;
+using ::nmsp::makeUPtr;
+
+template<class T> using SPtr = ::nmsp::SPtr_T<T>;
+using ::nmsp::makeSPtr;
+
+template<class T> using SharedPtr = ::nmsp::SharedPtr_T<T>;
+using ::nmsp::makeShared;
+
+#endif
+
+#if 0
+#pragma mark --- rds_stl_string-Impl ---
+#endif
+#if 1
+
+using Lexer_TokenType	= ::nmsp::Lexer_TokenType_T;
+using Lexer_Token		= ::nmsp::Lexer_Token_T;
+using Lexer				= ::nmsp::Lexer_T;
+
+using StrUtil = ::nmsp::StrUtil;
+using UtfUtil = ::nmsp::UtfUtil;
+
+
+#endif // 0
+
+
+#if 0
+#pragma mark --- rds_stl_utility-Impl ---
+#endif
+#if 1
+
+#if 0
+#pragma mark --- rds_stl_functional-Impl ---
+#endif
+#if 1
+
+using ::nmsp::Less		;
+using ::nmsp::EqualTo	;
+using ::nmsp::StrLess	;
+
+using ::nmsp::Plus;
+
+using ::nmsp::Hash;
+
+using ::nmsp::invoke;
+
+#endif
+
+#if 0
+#pragma mark --- rds_stl_memory-Impl ---
+#endif
+#if 1
+
+using ::nmsp::memory_copy;
+using ::nmsp::memory_move;
+using ::nmsp::memory_set;
+
+#endif
+
+#endif
+
+
+
 
 }
 #endif

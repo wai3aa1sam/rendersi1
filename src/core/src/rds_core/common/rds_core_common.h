@@ -14,6 +14,7 @@
 namespace rds
 {
 
+using ::nmsp::CoreBaseTraits;
 using DefaultAllocator = ::nmsp::DefaultAllocator;
 
 }
