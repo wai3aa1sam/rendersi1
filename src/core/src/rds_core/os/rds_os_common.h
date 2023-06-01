@@ -80,11 +80,11 @@ using ::nmsp::FileMode;
 using ::nmsp::FileAccess;
 using ::nmsp::FileShareMode;
 
-using ::nmsp::FileStream_CreateDesc;
-using FileStream = ::nmsp::FileStream_T;
+using FileStream_CreateDesc = ::nmsp::FileStream_CreateDesc;
+using FileStream            = ::nmsp::FileStream_T;
 
-using ::nmsp::MemMapFile_CreateDesc;
-using MemMapFile = ::nmsp::MemMapFile_T;
+using MemMapFile_CreateDesc = ::nmsp::MemMapFile_CreateDesc;
+using MemMapFile            = ::nmsp::MemMapFile_T;
 
 using ::nmsp::Path;
 using ::nmsp::Directory;
@@ -96,14 +96,14 @@ using ::nmsp::Directory;
 #endif // 0
 #if 1
 
-using ::nmsp::UIEventModifier;
-using ::nmsp::UIKeyboardEventType;
-using ::nmsp::UIKeyboardEvent;
-using ::nmsp::UIKeyboardEventButton;
+using UIEventModifier       = ::nmsp::UIEventModifier;
+using UIKeyboardEventType   = ::nmsp::UIKeyboardEventType;
+using UIKeyboardEvent       = ::nmsp::UIKeyboardEvent;
+using UIKeyboardEventButton = ::nmsp::UIKeyboardEventButton;
 
-using ::nmsp::UIMouseEventType;
-using ::nmsp::UIMouseEventButton;
-using ::nmsp::UIMouseEvent;
+using UIMouseEventType      = ::nmsp::UIMouseEventType;
+using UIMouseEventButton    = ::nmsp::UIMouseEventButton;
+using UIMouseEvent          = ::nmsp::UIMouseEvent;
 
 #endif
 
@@ -112,11 +112,11 @@ using ::nmsp::UIMouseEvent;
 #endif // 0
 #if 1
 
-using NativeUIWindow = ::nmsp::NativeUIWindow_T;
-using ::nmsp::NativeUIWindow_CreateDesc;
+using NativeUIWindow_CreateDesc = ::nmsp::NativeUIWindow_CreateDesc;
+using NativeUIWindow            = ::nmsp::NativeUIWindow_T;
 
-using NativeUIApp_T = ::nmsp::NativeUIApp_T;
-using ::nmsp::NativeUIApp_CreateDesc;
+using NativeUIApp_CreateDesc    = ::nmsp::NativeUIApp_CreateDesc;
+using NativeUIApp_T             = ::nmsp::NativeUIApp_T;
 
 #endif
 
@@ -126,11 +126,11 @@ using ::nmsp::NativeUIApp_CreateDesc;
 #endif // 0
 #if 1
 
-using ::nmsp::CmdLine_CreateDesc;
-using CmdLine = ::nmsp::CmdLine_T;
+using CmdLine_CreateDesc    = ::nmsp::CmdLine_CreateDesc;
+using CmdLine               = ::nmsp::CmdLine_T;
 
-using ::nmsp::Process_CreateDesc;
-using Process = ::nmsp::Process_T;
+using Process_CreateDesc    = ::nmsp::Process_CreateDesc;
+using Process               = ::nmsp::Process_T;
 
 #endif
 
