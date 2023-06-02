@@ -9,11 +9,6 @@
 namespace rds
 {
 
-#if 0
-#pragma mark --- rds_math-Impl ---
-#endif // 0
-#if 1
-
 namespace math 
 {
 using namespace ::nmsp::math;
@@ -90,8 +85,6 @@ using Quat4u = Quat4<u32>;
 #endif
 
 using Random = ::nmsp::Random_T;
-
-#endif
 
 }
 #endif

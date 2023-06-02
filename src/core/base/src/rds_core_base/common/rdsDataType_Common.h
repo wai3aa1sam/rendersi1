@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nmsp_core_base.h>
+#include "rdsNmsplib_Common.h"
 
 #if 0
 #pragma mark --- rdsDataType-Impl ---
