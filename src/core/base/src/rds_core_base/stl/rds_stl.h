@@ -1,7 +1,8 @@
 #pragma once
 
-#include "rds_core/common/rds_core_common.h"
-#include "rds_os_common.h"
+#include "rds_core_base/common/rds_core_base_common.h"
+#include "rds_stl_common.h"
+
 
 #if 0
 #pragma mark --- XXXX-Decl/Impl ---
@@ -14,5 +15,3 @@ namespace rds
 
 }
 #endif
-
-

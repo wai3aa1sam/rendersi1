@@ -1,10 +1,10 @@
 #pragma once
 
-#include "rds_core/common/rds_core_common.h"
-#include "rds_file_io_common.h"
+#include "rds_core_base/common/rds_core_base_common.h"
+
 
 #if 0
-#pragma mark --- eds_file_io-Impl ---
+#pragma mark --- rds_file_io-Impl ---
 #endif // 0
 #if 1
 namespace rds
@@ -59,10 +59,12 @@ using Color4b = ColorRGBAb;
 using Color4s = ColorRGBAs;
 using Color4f = ColorRGBAf;
 
+template<class T> using ColorL = ::nmsp::ColorL_T<T>;
 using ColorLb = ColorL<u8>;
 using ColorLs = ColorL<u16>;
 using ColorLf = ColorL<float>;
 
+template<class T> using ColorLA = ::nmsp::ColorLA_T<T>;
 using ColorLAb = ColorLA<u8>;
 using ColorLAs = ColorLA<u16>;
 using ColorLAf = ColorLA<float>;
@@ -77,8 +79,7 @@ using ColorLAf = ColorLA<float>;
 
 using ImageInfo         = ::nmsp::ImageInfo;
 using Image_CreateDesc  = ::nmsp::Image_CreateDesc;
-using Image             = ::nmsp::Image;
-
+using Image             = ::nmsp::Image_T;
 
 #endif
 
@@ -88,14 +89,16 @@ using Image             = ::nmsp::Image;
 #endif // 0
 #if 1
 
-using Json              = ::nmsp::Json;
-using JsonSerializer    = ::nmsp::JsonSerializer;
-using JsonDeserializer  = ::nmsp::JsonDeserializer;
+using Json              = ::nmsp::Json_T;
+using JsonSerializer    = ::nmsp::JsonSerializer_T;
+using JsonDeserializer  = ::nmsp::JsonDeserializer_T;
 
 
 #endif
 
 }
 #endif
+
+
 
 

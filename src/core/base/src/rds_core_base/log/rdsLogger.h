@@ -39,11 +39,11 @@ struct Logger_CreateDesc : public Logger_Base_CreateDesc
 class Logger : public Logger_Base
 {
 public:
-    using CreateDesc = Logger_CreateDesc;
+	using CreateDesc = Logger_CreateDesc;
 
 public:
-    Logger(const CreateDesc& cd);
-}
+	Logger(const CreateDesc& cd);
+};
 
 }
 #endif

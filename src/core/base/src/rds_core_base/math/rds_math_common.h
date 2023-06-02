@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_core/common/rds_core_common.h"
+#include "rds_core_base/common/rds_core_base_common.h"
 
 #if 0
 #pragma mark --- rds_math-Impl ---
@@ -60,11 +60,11 @@ using Vec4d = Vec4<f64>;
 using Vec4i = Vec4<int>;
 using Vec4u = Vec4<u32>;
 
-template<class T> using Mat3 = ::nmsp::Mat3_T<T>;
-using Mat3f = Mat3<f32>;
-using Mat3d = Mat3<f64>;
-using Mat3i = Mat3<int>;
-using Mat3u = Mat3<u32>;
+//template<class T> using Mat3 = ::nmsp::Mat3_T<T>;
+//using Mat3f = Mat3<f32>;
+//using Mat3d = Mat3<f64>;
+//using Mat3i = Mat3<int>;
+//using Mat3u = Mat3<u32>;
 
 template<class T> using Mat4 = ::nmsp::Mat4_T<T>;
 using Mat4f = Mat4<f32>;
