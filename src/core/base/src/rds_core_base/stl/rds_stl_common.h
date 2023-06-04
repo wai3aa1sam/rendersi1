@@ -2,57 +2,55 @@
 
 #include "rds_core_base/common/rds_core_base_common.h"
 
-#include <nmsp_stl/allocator/nmspFixedPoolAllocator.h>
-#include <nmsp_stl/allocator/nmspPoolAllocator.h>
-#include <nmsp_stl/allocator/nmspMemoryArena.h>
-#include <nmsp_stl/allocator/nmspMemoryArenaPolicy.h>
 
 #include <nmsp_stl/string/nmspLexer.h>
 #include <nmsp_stl/string/nmspStrUtil.h>
 
-#if 0
-#pragma mark --- XXXX-Decl/Impl ---
-#endif // 0
-#if 1
+
 namespace rds
 {
-
-
-
-}
-#endif
-
 #if 0
 #pragma mark --- rds_stl-Impl ---
 #endif // 0
 #if 1
-namespace rds
-{
 
-using ::nmsp::StlTraits;
+
 
 #if 0
-#pragma mark --- rds_stl_allocator-Impl ---
-#endif // 0
+#pragma mark --- rds_stl_utility-Impl ---
+#endif
 #if 1
 
-template<class ALLOC> using Allocator_Base	= ::nmsp::Allocator_Base<ALLOC>;
+#if 0
+#pragma mark --- rds_stl_functional-Impl ---
+#endif
+#if 1
 
-using ::nmsp::NoFallbackAllocator_Policy;
-template<class PRIMARY_ALLOC, class FALLBACK_ALLOC = NoFallbackAllocator_Policy> using FallbackAllocator = ::nmsp::FallbackAllocator_T<PRIMARY_ALLOC, FALLBACK_ALLOC>;
+using ::nmsp::Less		;
+using ::nmsp::EqualTo	;
+using ::nmsp::StrLess	;
 
-using PoolAllocator			= ::nmsp::PoolAllocator_T;
-using FixedPoolAllocator	= ::nmsp::FixedPoolAllocator_T;
-using LinearAllocator		= ::nmsp::LinearAllocator_T;
-using Mallocator			= ::nmsp::Mallocator_T;
+using ::nmsp::Plus;
 
-template<class ALLOC, class BOUND_POLICY> using MemoryArena = ::nmsp::MemoryArena_T<ALLOC, BOUND_POLICY>;
+using ::nmsp::Hash;
 
-template<size_t LOCAL_SIZE, size_t ALIGN = StlTraits::s_kDefaultAlign> using LocalBuffer = ::nmsp::LocalBuffer_T<LOCAL_SIZE, ALIGN>;
-template<size_t LOCAL_SIZE = 0, size_t ALIGN = CoreBaseTraits::s_kDefaultAlign, class FALLBACK_ALLOC = DefaultAllocator> 
-using LocalAllocator = ::nmsp::LocalAllocator_T<LOCAL_SIZE, ALIGN, FALLBACK_ALLOC>;
+using ::nmsp::invoke;
 
 #endif
+
+#if 0
+#pragma mark --- rds_stl_memory-Impl ---
+#endif
+#if 1
+
+using ::nmsp::memory_copy;
+using ::nmsp::memory_move;
+using ::nmsp::memory_set;
+
+#endif
+
+#endif
+
 
 #if 0
 #pragma mark --- rds_stl_container-Impl ---
@@ -129,7 +127,7 @@ template<class T1, class T2> using CompressedPair	= ::nmsp::CompressedPair_T<T1,
 template<class T1, class T2> using Pair				= ::nmsp::Pair_T<T1, T2>;
 using ::nmsp::makePair;
 
-template<class T, size_t LOCAL_SIZE = 32, size_t ALIGN = StlTraits::s_kDefaultAlign, class FALLBACK_ALLOCATOR = DefaultAllocator> 
+template<class T, size_t LOCAL_SIZE = 32, size_t ALIGN = CoreBaseTraits::s_kDefaultAlign, class FALLBACK_ALLOCATOR = DefaultAllocator> 
 using Function_T = ::nmsp::Function_T<T, LOCAL_SIZE, ALIGN, FALLBACK_ALLOCATOR>;
 
 template<class T, T... VALS>	using IntSeq = ::nmsp::IntSeq_T<T, VALS...>;
@@ -138,8 +136,6 @@ template<size_t N>				using IdxSeq = ::nmsp::IdxSeq_T<N>;
 template<class T> using Opt = ::nmsp::Opt_T<T>;
 
 template<class T, size_t ALIGN> using PaddedData = ::nmsp::PaddedData_T<T, ALIGN>;
-
-template<class T> using StackSingleton = ::nmsp::StackSingleton_T<T>;
 
 template<class... ARGS> using Tuple = ::nmsp::Tuple_T<ARGS...>;
 
@@ -183,45 +179,9 @@ using UtfUtil = ::nmsp::UtfUtil;
 #endif // 0
 
 
-#if 0
-#pragma mark --- rds_stl_utility-Impl ---
-#endif
-#if 1
 
-#if 0
-#pragma mark --- rds_stl_functional-Impl ---
-#endif
-#if 1
-
-using ::nmsp::Less		;
-using ::nmsp::EqualTo	;
-using ::nmsp::StrLess	;
-
-using ::nmsp::Plus;
-
-using ::nmsp::Hash;
-
-using ::nmsp::invoke;
 
 #endif
-
-#if 0
-#pragma mark --- rds_stl_memory-Impl ---
-#endif
-#if 1
-
-using ::nmsp::memory_copy;
-using ::nmsp::memory_move;
-using ::nmsp::memory_set;
-
-#endif
-
-#endif
-
-
-
-
 }
-#endif
 
 

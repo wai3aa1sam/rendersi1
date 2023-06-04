@@ -1,7 +1,5 @@
 #include "rds_core_test-pch.h"
 
-
-
 #if !RDS_ENABLE_FUZZ_TESTING
 
 int main(int argc, char* argv[])
@@ -14,8 +12,19 @@ int main(int argc, char* argv[])
 	{
 		//_log("Hello World123!");
 		std::cout << "Hello World!\n";
-		DefaultAllocator a;
-		auto up = makeUPtr<int>(10);
+		
+		{
+			MemoryContext mc;
+			mc.create();
+
+			JobSystem jsys;
+			jsys.create(sCast<int>(OsTraits::logicalThreadCount()));
+
+			Logger logger;
+			logger.create(Logger::makeCDesc());
+			//RDS_LOG("{}, {}", "Hello World", 10);
+		}
+
 	}
 
 	return exitCode;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "rds_core_base/common/rdsNmsplib_Common.h"
+
 #include "rds_core_base-config.h"
 
 #ifndef _CRT_SECURE_NO_WARNINGS
@@ -21,10 +23,11 @@ namespace rds {
 #endif // 0
 #if 1
 
-
-struct CoreBaseDefaultTraits_T : public ::nmsp::CoreBaseTraits
+struct CoreBaseDefaultTraits_T : public NmspCoreBaseTraits
 {
-	
+public:
+	static constexpr SizeType s_kLogicalThreadCount	= NMSP_JOB_SYSTEM_LOGICAL_THREAD_COUNT;
+
 };
 
 #if !RDS_CORE_BASE_CUSTOM_TRAITS

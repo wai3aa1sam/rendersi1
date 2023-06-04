@@ -14,22 +14,22 @@ namespace rds
 #endif // 0
 #if 1
 
-using ::nmsplib::sCast;
-using ::nmsplib::reinCast;
-using ::nmsplib::constCast;
+using ::nmsp::sCast;
+using ::nmsp::reinCast;
+using ::nmsp::constCast;
 
 #endif
 
-using ::nmsplib::swap;
-using ::nmsplib::_alignTo;
+using ::nmsp::swap;
+using ::nmsp::_alignTo;
 
 #if 0
 #pragma mark --- rds_os_alloc-Impl ---
 #endif // 0
 #if 1
 
-using ::nmsplib::os_aligned_alloc;
-using ::nmsplib::os_aligned_free;
+using ::nmsp::os_aligned_alloc;
+using ::nmsp::os_aligned_free;
 
 #endif // 0
 

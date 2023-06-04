@@ -3,6 +3,7 @@
 #include "rdsNmsplib_Common.h"
 
 #include "rds_core_base-config.h"
+#include "rds_core_base_traits.h"
 
 #include "../detect_platform/rds_detect_platform.h"
 
@@ -16,15 +17,22 @@
 #include "rdsClass_Common.h"
 #include "rdsFmt_Common.h"
 
+#include "rds_core_base/memory/rds_memory.h"
+
+
+namespace rds
+{
 #if 0
-#pragma mark --- XXXX-Decl
+#pragma mark --- XXXX-Decl/Impl ---
 #endif // 0
 #if 1
 
+
 #endif
+}
 
-namespace rds {
-
+namespace rds 
+{
 #if 0
 #pragma mark --- BitUtil-Impl ---
 #endif // 0
@@ -32,6 +40,5 @@ namespace rds {
 using ::nmsp::BitUtil;
 #endif
 
-using DefaultAllocator = ::nmsp::DefaultAllocator;
-
 }
+

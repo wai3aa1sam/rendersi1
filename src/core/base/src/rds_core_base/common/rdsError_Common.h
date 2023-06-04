@@ -14,8 +14,7 @@ namespace rds
 {
 
 using Error_Base = ::nmsp::Error_Base;
-using Error      = ::nmsp::Error;
-
+using Error      = ::nmsp::Error_T;
 
 }
 #endif

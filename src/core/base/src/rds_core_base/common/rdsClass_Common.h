@@ -9,7 +9,7 @@
 namespace rds
 {
     
-using NonCopayble   = ::nmsp::NonCopyable;
+using NonCopyable   = ::nmsp::NonCopyable;
 using SrcLoc        = ::nmsp::SrcLoc;
 using RefCount_Base = ::nmsp::RefCount_Base;
 
