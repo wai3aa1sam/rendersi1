@@ -24,12 +24,31 @@ find_package(benchmark                  CONFIG REQUIRED)
 # --- git_submodule ---
 my_add_git_submodule(external/nmsplib)
 
+message("--- rendersi1 ---")
 # --- core ---
 add_subdirectory(src/core/base)
 add_subdirectory(src/core)
 
+#-- render --
+add_subdirectory(src/render)
+add_subdirectory(src/render/api_layer)
+#add_subdirectory(src/render/shader_compiler)
+
+#-- engine
+add_subdirectory(src/engine)
+
+#-- editor
+add_subdirectory(src/editor)
+add_subdirectory(src/editor/app)
+
+message("--- rendersi1_test ---")
+#test
 add_subdirectory(src/test/base)
 add_subdirectory(src/test/core)
+add_subdirectory(src/test/render)
+add_subdirectory(src/test/engine)
+add_subdirectory(src/test/editor)
+
 
 message("--- end for add_subdirectory ---")
 

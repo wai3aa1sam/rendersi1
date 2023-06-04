@@ -1,4 +1,4 @@
-#include "rds_core_test-pch.h"
+#include "rds_render_test-pch.h"
 
 #if !RDS_ENABLE_FUZZ_TESTING
 
@@ -13,23 +13,6 @@ int main(int argc, char* argv[])
 		//_log("Hello World123!");
 		std::cout << "Hello World!\n";
 		
-		{
-			MemoryContext mc;
-			mc.create();
-
-			JobSystem jsys;
-			jsys.create(sCast<int>(OsTraits::logicalThreadCount()));
-
-			Logger logger;
-			logger.create(Logger::makeCDesc());
-			//RDS_LOG("{}, {}", "Hello World", 10);
-
-			{
-				auto p = makeUPtr<int>();
-				_NMSP_DUMP_VAR(*p);
-			}
-		}
-
 	}
 
 	return exitCode;
