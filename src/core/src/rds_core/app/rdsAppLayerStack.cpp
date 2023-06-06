@@ -1,6 +1,7 @@
 #include "rds_core-pch.h"
 
 #include "rdsAppLayerStack.h"
+#include "rdsAppLayer.h"
 
 
 namespace rds

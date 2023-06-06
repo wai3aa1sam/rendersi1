@@ -45,7 +45,7 @@ using LocalAllocator = ::nmsp::LocalAllocator_T<LOCAL_SIZE, ALIGN, FALLBACK_ALLO
 
 template<class T> inline 
 void
-rds_delete(T* p)	NMSP_NOEXCEPT 
+rds_delete(T* p)	RDS_NOEXCEPT 
 { 
 	p->~T();
 	RDS_FREE_ALIGNED(p); 

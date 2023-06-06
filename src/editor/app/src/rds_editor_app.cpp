@@ -6,13 +6,13 @@ int main(int argc, char* argv[])
 {
 	using namespace rds;
 
-	::nmsp::MemoryLeakReportScope reportScope;
+	::rds::MemoryLeakReportScope reportScope;
 
 	int exitCode = 0;
 	{
-		//_log("Hello World123!");
-		std::cout << "Hello World!\n";
-
+		auto cdesc = EditorApp::makeCDesc();
+		EditorApp app;
+		app.run(cdesc);
 	}
 
 	return exitCode;

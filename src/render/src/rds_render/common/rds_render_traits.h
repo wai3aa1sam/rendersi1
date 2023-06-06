@@ -20,7 +20,7 @@ public:
 };
 
 
-#if !NMSP_RENDER_CUSTOM_TRAITS
+#if !RDS_RENDER_CUSTOM_TRAITS
 
 using RenderTraits = RenderDefaultTraits_T;
 

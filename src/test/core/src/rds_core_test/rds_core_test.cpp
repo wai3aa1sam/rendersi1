@@ -6,7 +6,7 @@ int main(int argc, char* argv[])
 {
 	using namespace rds;
 
-	::nmsp::MemoryLeakReportScope reportScope;
+	::rds::MemoryLeakReportScope reportScope;
 
 	int exitCode = 0;
 	{

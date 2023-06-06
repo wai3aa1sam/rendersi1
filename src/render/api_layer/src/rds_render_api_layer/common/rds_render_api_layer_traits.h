@@ -1,7 +1,7 @@
 #pragma once
 
-#include <rds_render_api_layer/common/rds_core_traits.h>
-#include "rds_render-config.h"
+#include <rds_core/common/rds_core_traits.h>
+#include "rds_render_api_layer-config.h"
 
 namespace rds 
 {
@@ -20,7 +20,7 @@ public:
 };
 
 
-#if !NMSP_RENDER_CUSTOM_TRAITS
+#if !RDS_RENDER_CUSTOM_TRAITS
 
 using RenderApiLayerTraits = RenderApiLayerDefaultTraits_T;
 

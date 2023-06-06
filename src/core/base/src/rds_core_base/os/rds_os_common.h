@@ -116,7 +116,7 @@ using NativeUIWindow_CreateDesc = ::nmsp::NativeUIWindow_CreateDesc;
 using NativeUIWindow            = ::nmsp::NativeUIWindow_T;
 
 using NativeUIApp_CreateDesc    = ::nmsp::NativeUIApp_CreateDesc;
-using NativeUIApp_T             = ::nmsp::NativeUIApp_T;
+using NativeUIApp				= ::nmsp::NativeUIApp_T;
 
 #endif
 

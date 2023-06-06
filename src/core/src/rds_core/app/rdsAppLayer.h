@@ -12,26 +12,26 @@ namespace rds
 class AppLayer_Base : public NonCopyable
 {
 public:
-    virtual ~AppLayer_Base = default;
+    virtual ~AppLayer_Base() = default;
 
     void create();
     void destroy();
     void update();
     void render();
 
-    void setName();
+    void setName(StrView name);
 
     const String& name() const;
 
 protected:
-    virtual void onCreate();
-    virtual void onDestroy();
-    virtual void onUpdate();
-    virtual void onRender();
+    virtual void onCreate()     = 0;
+    virtual void onDestroy()    = 0;
+    virtual void onUpdate()     = 0;
+    virtual void onRender()     = 0;
 
 protected:
     String _name;
-}
+};
 
 class AppLayer : public AppLayer_Base
 {
@@ -40,11 +40,10 @@ public:
 
 private:
 
-}
+};
 
 
 #endif
-}
 
 #if 0
 #pragma mark --- rdsAppLayer-Impl ---
@@ -75,4 +74,18 @@ AppLayer_Base::render()
     onRender();
 }
 
+inline void 
+AppLayer_Base::setName(StrView name)
+{
+    _name = name;
+}
+
+inline const String& 
+AppLayer_Base::name() const
+{
+    return _name;
+}
+
 #endif
+
+}

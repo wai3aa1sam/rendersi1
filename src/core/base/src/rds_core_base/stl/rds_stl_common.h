@@ -107,8 +107,8 @@ template<class T> using Span_T = ::nmsp::Span_T<T>;
 using ByteSpan = ::nmsp::ByteSpan_T;
 using ::nmsp::spanCast;
 
-template<class T> using StrView = ::nmsp::StrView_T<T>;
-using StrViewA = ::nmsp::StrViewA_T;
+template<class T> using StrView_T = ::nmsp::StrView_T<T>;
+using StrView  = ::nmsp::StrViewA_T;
 using StrViewW = ::nmsp::StrViewW_T;
 using ::nmsp::toStrView;
 

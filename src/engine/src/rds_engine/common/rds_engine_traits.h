@@ -20,7 +20,7 @@ public:
 };
 
 
-#if !NMSP_ENGINE_CUSTOM_TRAITS
+#if !RDS_ENGINE_CUSTOM_TRAITS
 
 using EngineTraits = EngineDefaultTraits_T;
 

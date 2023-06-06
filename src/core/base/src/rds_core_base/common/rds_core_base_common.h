@@ -40,5 +40,7 @@ namespace rds
 using ::nmsp::BitUtil;
 #endif
 
+using MemoryLeakReportScope = ::nmsp::MemoryLeakReportScope;
+
 }
 

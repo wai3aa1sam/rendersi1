@@ -22,7 +22,7 @@ public:
 };
 
 
-#if !NMSP_EDITOR_APP_CUSTOM_TRAITS
+#if !RDS_EDITOR_APP_CUSTOM_TRAITS
 
 using EditorAppTraits = EditorAppDefaultTraits_T;
 
