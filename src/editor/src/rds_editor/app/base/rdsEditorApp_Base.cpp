@@ -13,13 +13,13 @@ namespace rds
 EditorApp_Base* EditorApp_Base::s_instance = nullptr;
 
 EditorApp_Base::EditorApp_Base()
+	: Base()
 {
-
 }
 
 EditorApp_Base::~EditorApp_Base()
 {
-
+	
 }
 
 void 
@@ -35,9 +35,26 @@ EditorApp_Base::popLayer()
 }
 
 void 
-EditorApp_Base::onCreate	(const CreateDesc& cd)
+EditorApp_Base::onCreate	(const CreateDesc_Base& cd)
 {
-	Base::onCreate(cd);
+	auto thisCDesc = sCast<const CreateDesc&>(cd);
+	{
+		String file = getExecutableFilename();
+		String path = Path::dirname(file);
+
+		auto* proj = ProjectSetting::instance();
+
+		path.append("/../../../../../..");
+		proj->setProjectRoot(path);
+
+		path.append("/example/Test000");
+		proj->setProjectRoot(path);
+
+		//Directory::create(proj->importedPath());
+	}
+
+	Base::onCreate(thisCDesc);
+
 }
 
 void 
@@ -50,12 +67,15 @@ EditorApp_Base::onRun		()
 void 
 EditorApp_Base::onQuit		()
 {
+	_shouldQuit = true;
 	Base::onQuit();
 }
 
 void 
 EditorApp_Base::willQuit	()
 {
+	_projSetting.destroy();
+
 	Base::willQuit();
 }
 

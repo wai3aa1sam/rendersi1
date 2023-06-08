@@ -10,9 +10,14 @@ int main(int argc, char* argv[])
 
 	int exitCode = 0;
 	{
-		auto cdesc = EditorApp::makeCDesc();
-		EditorApp app;
-		app.run(cdesc);
+		MemoryContext mc;
+		mc.create();
+		{
+			auto cdesc = EditorApp::makeCDesc();
+			EditorApp app;
+			exitCode = app.run(cdesc);
+		}
+		mc.destroy();
 	}
 
 	return exitCode;

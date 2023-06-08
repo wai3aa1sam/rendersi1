@@ -17,11 +17,13 @@ struct EditorApp_Base_CreateDesc : public NativeUIApp_CreateDesc
 
 class AppLayer;
 
-class EditorApp_Base : public NativeUIApp, public Singleton<EditorApp_Base>
+class EditorApp_Base : public NativeUIApp, public StackSingleton<EditorApp_Base>
 {
 public:
-	using Base = NativeUIApp;
-	using CreateDesc = EditorApp_Base_CreateDesc;
+	using Base	= NativeUIApp;
+	using Base2 = StackSingleton<EditorApp_Base>;
+	using CreateDesc_Base	= Base::CreateDesc_Base;
+	using CreateDesc		= EditorApp_Base_CreateDesc;
 
 public:
 	static EditorApp_Base* instance();
@@ -34,14 +36,18 @@ public:
 	void popLayer();
 
 protected:
-	virtual void onCreate	(const CreateDesc& cd);
-	virtual void onRun		();
-	virtual void onQuit		();
-	virtual void willQuit	();
+	virtual void onCreate	(const CreateDesc_Base& cd) override;
+	virtual void onRun		() override;
+	virtual void onQuit		() override;
+	virtual void willQuit	() override;
 
 protected:
 	String _name;
 	AppLayerStack _appLayerStack;
+
+	ProjectSetting _projSetting;
+
+	bool _shouldQuit = false;
 };
 
 

@@ -9,7 +9,7 @@ namespace rds
 #endif // 0
 #if 1
 
-class EditorWindow : public NonCopyable
+class EditorWindow : public NativeUIWindow
 {
 
 };

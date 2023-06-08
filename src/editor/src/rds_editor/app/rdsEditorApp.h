@@ -2,6 +2,9 @@
 
 #include "rds_editor/common/rds_editor_common.h"
 #include "base/rdsEditorApp_Base.h"
+#include "rdsEditorMainWindow.h"
+
+#include <rds_core_base/job_system/rds_job_system.h>
 
 namespace rds
 {
@@ -19,7 +22,9 @@ class EditorApp : public EditorApp_Base
 {
 public:
 	using Base = EditorApp_Base;
-	using CreateDesc = EditorApp_CreateDesc;
+
+	using CreateDesc_Base	= Base::CreateDesc_Base;
+	using CreateDesc		= EditorApp_CreateDesc;
 
 public:
 	static EditorApp* instance();
@@ -31,16 +36,27 @@ public:
 	virtual ~EditorApp();
 
 protected:
-	virtual void onCreate	(const CreateDesc& cd);
-	virtual void onRun		();
-	virtual void onQuit		();
-	virtual void willQuit	();
+	virtual void onCreate	(const CreateDesc_Base& cd) override;
+	virtual void onRun		() override;
+	virtual void onQuit		() override;
+	virtual void willQuit	() override;
 
 private:
-
+	EditorMainWindow _mainWin;
+	JobSystem _jsys;
 };
 
 
 
 #endif
+
+#if 0
+#pragma mark --- rdsEditorApp-Decl ---
+#endif // 0
+#if 1
+
+inline EditorApp* EditorApp::instance() { return sCast<EditorApp*>(s_instance); }
+
+#endif
+
 }

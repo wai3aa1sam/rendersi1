@@ -30,7 +30,7 @@ using NmspLogTraits             = ::nmsp::LogTraits;
 using NmspMathTraits            = ::nmsp::MathTraits;
 using NmspProfilerTraits        = ::nmsp::ProfilerTraits;
 
-struct OsTraits : public NmspOsTraits
+struct OsTraits : public NmspJobSystemTraits
 {
 
 };

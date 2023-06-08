@@ -1,5 +1,7 @@
 #include "rds_core_test-pch.h"
 
+#include <rds_core_base/job_system/rds_job_system.h>
+
 #if !RDS_ENABLE_FUZZ_TESTING
 
 int main(int argc, char* argv[])

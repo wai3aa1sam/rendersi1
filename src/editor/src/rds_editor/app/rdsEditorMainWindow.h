@@ -17,7 +17,11 @@ public:
 	using Base = EditorWindow;
 
 public:
+	virtual void onCreate(const CreateDesc& desc) override;
+	virtual void onCloseButton() override;
+	virtual void onUIMouseEvent(UIMouseEvent& ev) override;
 
+	virtual void onActive(bool isActive) override;
 
 protected:
 

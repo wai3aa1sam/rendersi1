@@ -32,7 +32,7 @@ void
 MemoryContext::create()
 {
 	destroy();
-	OsTraits::setThreadLocalId(OsTraits::s_kMainThreadLocalId);
+	OsTraits::setMainThread();
 
 	auto* p = sCast<MemoryContext*>(Mallocator::alloc(sizeof(MemoryContext), RDS_ALIGN_OF(MemoryContext)));
 	new (p) MemoryContext();
