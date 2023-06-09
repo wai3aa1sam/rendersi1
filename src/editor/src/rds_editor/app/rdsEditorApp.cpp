@@ -34,10 +34,17 @@ EditorApp::onCreate	(const CreateDesc_Base& cd)
 	auto thisCDesc = sCast<const CreateDesc&>(cd);
 	Base::onCreate(thisCDesc);
 
+	Logger::create(Logger::makeCDesc());
+
 	{
 		auto cDesc = _jsys.makeCDesc();
 		cDesc.workerCount = OsTraits::logicalThreadCount();
 		_jsys.create(cDesc);
+	}
+
+	{
+		auto cDesc = Renderer::makeCDesc();
+		Renderer::create(cDesc);
 	}
 
 	{
@@ -81,7 +88,9 @@ EditorApp::onQuit		()
 void 
 EditorApp::willQuit	()
 {
+	Renderer::destroy();
 	_jsys.destroy();
+	Logger::destroy();
 
 	Base::willQuit();
 }

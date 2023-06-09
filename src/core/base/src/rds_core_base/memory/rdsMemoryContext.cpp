@@ -25,28 +25,19 @@ MemoryContext::MemoryContext()
 
 MemoryContext::~MemoryContext()
 {
-	destroy();
 }
 
 void 
 MemoryContext::create()
 {
-	destroy();
 	OsTraits::setMainThread();
-
-	auto* p = sCast<MemoryContext*>(Mallocator::alloc(sizeof(MemoryContext), RDS_ALIGN_OF(MemoryContext)));
-	new (p) MemoryContext();
-	Base::create(p);
-
-	
+	RDS_MALLOC_NEW(MemoryContext)();
 }
 
 void 
 MemoryContext::destroy()
 {
-	Mallocator::free(s_instance);
-	Base::destroy();
-
+	RDS_MALLOC_DELETE(s_instance);
 	RDS_CORE_ASSERT(OsTraits::isMainThread(), "");
 	OsTraits::resetThreadLocalId();
 }

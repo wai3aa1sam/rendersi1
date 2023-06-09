@@ -39,15 +39,25 @@ struct Logger_CreateDesc : public Logger_Base_CreateDesc
 
 };
 
-class Logger: public StackSingleton<Logger>, public Logger_Base
+class Logger: public Singleton<Logger>, public Logger_Base
 {
 public:
-	using Base = Logger_Base;
-	using CreateDesc = Logger_CreateDesc;
+	using Base			= Logger_Base;
+	using CreateDesc	= Logger_CreateDesc;
 
 public:
-	Logger()	= default;
+	static void create(const CreateDesc& cDesc);
+	static void destroy();
+
+	static CreateDesc makeCDesc();
+
+public:
 	~Logger()	= default;
+
+protected:
+	Logger()	= default;
+
+	static Base* base();
 
 };
 

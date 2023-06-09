@@ -51,7 +51,7 @@ using ::nmsp::enumIntRef;
 #define RDS_ENUM_TRY_PARSE__CASE(V, ...) if (str == #V) { outValue = RDS_T::V; return true; }
 
 #define RDS_ENUM_TRY_PARSE(T) \
-	inline bool enumTryParse(T& outValue, StrViewA_T str) { \
+	inline bool enumTryParse(T& outValue, StrView str) { \
 		using RDS_T = T; \
 		T##_ENUM_LIST(RDS_ENUM_TRY_PARSE__CASE) \
 		return false; \

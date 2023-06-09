@@ -30,11 +30,11 @@ public:
 	using AllThreadsDefaultAlloc	= Vector	<ThreadAllocator , s_kThreadCount>;
 
 public:
-	MemoryContext();
-	~MemoryContext();
+	static void create();
+	static void destroy();
 
-	void create();
-	void destroy();
+public:
+	~MemoryContext();
 
 	void*	alloc	(SizeType n, SizeType align = MemoryTraits::s_kDefaultAlign, SizeType offset = 0);
 	void	free	(void* p, SizeType n = 0);
@@ -50,6 +50,9 @@ public:
 
 			/*ThreadAllocator&  defaultAllocator();
 	const	ThreadAllocator&  defaultAllocator() const;*/
+
+protected:
+	MemoryContext();
 
 private:
 			ThreadAllocStack& threadAllocStack();

@@ -18,6 +18,12 @@
 #define RDS_NEW(T)				new(RDS_ALLOC_ALIGNED(sizeof(T), RDS_ALIGN_OF(T))) T
 #define RDS_DELETE(PTR)			::rds::rds_delete(PTR)
 
+#define RDS_MALLOC(N, ...)		::rds::Mallocator::alloc(N, __VA_ARGS__)
+#define RDS_MALLOC_FREE(PTR)	::rds::Mallocator::free(PTR)
+
+#define RDS_MALLOC_NEW(T)		new(RDS_MALLOC(sizeof(T), RDS_ALIGN_OF(T))) T
+#define RDS_MALLOC_DELETE(PTR)	::rds::rds_malloc_delete(PTR)
+
 #endif
 
 namespace rds
@@ -49,6 +55,14 @@ rds_delete(T* p)	RDS_NOEXCEPT
 { 
 	p->~T();
 	RDS_FREE_ALIGNED(p); 
+}
+
+template<class T> inline 
+void
+rds_malloc_delete(T* p)	RDS_NOEXCEPT 
+{ 
+	p->~T();
+	RDS_MALLOC_FREE(p); 
 }
 
 }

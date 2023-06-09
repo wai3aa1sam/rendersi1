@@ -74,8 +74,6 @@ EditorApp_Base::onQuit		()
 void 
 EditorApp_Base::willQuit	()
 {
-	_projSetting.destroy();
-
 	Base::willQuit();
 }
 

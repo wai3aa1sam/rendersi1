@@ -7,7 +7,7 @@ namespace rds
     
 
 #if 0
-#pragma mark --- Singleton-Decl ---
+#pragma mark --- rdsSingleton-Decl ---
 #endif // 0
 #if 1
 template<class T>
@@ -17,10 +17,13 @@ public:
 	static T* instance();
 
 public:
-	void create(T* p);
-	void destroy();
+	/*static void create();
+	static void destroy();*/
 
 protected:
+	Singleton();
+	~Singleton();
+
 	static T* s_instance;
 };
 #endif // 1
@@ -48,7 +51,7 @@ protected:
 #endif
 
 #if 0
-#pragma mark --- Singleton-Impl ---
+#pragma mark --- rdsSingleton-Impl ---
 #endif // 0
 #if 1
 
@@ -56,29 +59,39 @@ template<class T> inline
 T* 
 Singleton<T>::instance()
 {
-	NMSP_ASSERT(s_instance);
+	RDS_CORE_ASSERT(s_instance);
 	return s_instance;
 }
 
 template<class T> inline
-void
-Singleton<T>::create(T* p)
+Singleton<T>::Singleton()
 {
-	NMSP_ASSERT(!s_instance);
-	s_instance = p;
+	RDS_CORE_ASSERT(!s_instance);
+	s_instance = sCast<T*>(this);
 }
 
 template<class T> inline
-void
-Singleton<T>::destroy()
+Singleton<T>::~Singleton()
 {
-	//NMSP_ASSERT(s_instance);
-	if (!s_instance)
-	{
-		return;
-	}
+	RDS_CORE_ASSERT(s_instance == this);
 	s_instance = nullptr;
 }
+
+//template<class T> inline
+//void
+//Singleton<T>::create()
+//{
+//	RDS_CORE_ASSERT(!s_instance);
+//	//s_instance = p;
+//}
+//
+//template<class T> inline
+//void
+//Singleton<T>::destroy()
+//{
+//	RDS_CORE_ASSERT(!s_instance || s_instance == this);
+//	s_instance = nullptr;
+//}
 
 #endif // 1
 
@@ -96,14 +109,14 @@ T* StackSingleton<T>::instance()
 template<class T> inline
 StackSingleton<T>::StackSingleton()
 {
-	NMSP_ASSERT(!s_instance);
+	RDS_CORE_ASSERT(!s_instance);
 	s_instance = sCast<T*>(this);
 }
 
 template<class T> inline
 StackSingleton<T>::~StackSingleton()
 {
-	NMSP_ASSERT(s_instance);
+	RDS_CORE_ASSERT(s_instance == this);
 	s_instance = nullptr;
 }
 #endif
