@@ -65,5 +65,20 @@ rds_malloc_delete(T* p)	RDS_NOEXCEPT
 	RDS_MALLOC_FREE(p); 
 }
 
+
+template<class T> inline
+void
+Singleton<T>::init()
+{
+	RDS_NEW(T)();
+}
+
+template<class T> inline
+void
+Singleton<T>::terminate()
+{
+	RDS_DELETE(instance());
+}
+
 }
 

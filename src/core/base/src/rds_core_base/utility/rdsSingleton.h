@@ -1,11 +1,10 @@
 #pragma once
 
-#include "rds_core_base/common/rds_core_base_common.h"
+#include "rdsClass_Common.h"
 
 namespace rds
 {
     
-
 #if 0
 #pragma mark --- rdsSingleton-Decl ---
 #endif // 0
@@ -17,8 +16,8 @@ public:
 	static T* instance();
 
 public:
-	/*static void create();
-	static void destroy();*/
+	static void init();
+	static void terminate();
 
 protected:
 	Singleton();
@@ -76,22 +75,6 @@ Singleton<T>::~Singleton()
 	RDS_CORE_ASSERT(s_instance == this);
 	s_instance = nullptr;
 }
-
-//template<class T> inline
-//void
-//Singleton<T>::create()
-//{
-//	RDS_CORE_ASSERT(!s_instance);
-//	//s_instance = p;
-//}
-//
-//template<class T> inline
-//void
-//Singleton<T>::destroy()
-//{
-//	RDS_CORE_ASSERT(!s_instance || s_instance == this);
-//	s_instance = nullptr;
-//}
 
 #endif // 1
 

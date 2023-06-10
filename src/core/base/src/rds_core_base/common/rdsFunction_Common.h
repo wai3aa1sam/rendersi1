@@ -33,6 +33,7 @@ using ::nmsp::os_aligned_free;
 
 #endif // 0
 
+using ::nmsp::throwIf;
     
 
 }

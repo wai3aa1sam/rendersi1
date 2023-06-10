@@ -43,7 +43,6 @@ protected:
 
 private:
 	EditorMainWindow _mainWin;
-	JobSystem _jsys;
 };
 
 

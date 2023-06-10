@@ -12,8 +12,20 @@ namespace rds
 
 MemoryContext* MemoryContext::s_instance = nullptr;
 
-MemoryContext::MemoryContext()
+void MemoryContext::init()
 {
+	RDS_MALLOC_NEW(MemoryContext)();
+}
+
+void MemoryContext::terminate()
+{
+	RDS_MALLOC_DELETE(instance());
+}
+
+MemoryContext::MemoryContext()
+	: Base()
+{
+	OsTraits::setMainThread();
 	_allocStacks.resize(s_kThreadCount);
 	_defaultAllocators.resize(s_kThreadCount);
 
@@ -25,19 +37,6 @@ MemoryContext::MemoryContext()
 
 MemoryContext::~MemoryContext()
 {
-}
-
-void 
-MemoryContext::create()
-{
-	OsTraits::setMainThread();
-	RDS_MALLOC_NEW(MemoryContext)();
-}
-
-void 
-MemoryContext::destroy()
-{
-	RDS_MALLOC_DELETE(s_instance);
 	RDS_CORE_ASSERT(OsTraits::isMainThread(), "");
 	OsTraits::resetThreadLocalId();
 }

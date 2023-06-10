@@ -20,12 +20,10 @@ EditorApp::makeCDesc()
 EditorApp::EditorApp()
 	: Base()
 {
-
 }
 
 EditorApp::~EditorApp()
 {
-
 }
 
 void 
@@ -34,18 +32,21 @@ EditorApp::onCreate	(const CreateDesc_Base& cd)
 	auto thisCDesc = sCast<const CreateDesc&>(cd);
 	Base::onCreate(thisCDesc);
 
-	Logger::create(Logger::makeCDesc());
+	Logger::init();
+	JobSystem::init();
+	Renderer::init();
 
+	Logger::instance()->create(Logger::makeCDesc());
 	{
-		auto cDesc = _jsys.makeCDesc();
+		auto cDesc = JobSystem::makeCDesc();
 		cDesc.workerCount = OsTraits::logicalThreadCount();
-		_jsys.create(cDesc);
+		JobSystem::instance()->create(cDesc);
 	}
-
 	{
 		auto cDesc = Renderer::makeCDesc();
-		Renderer::create(cDesc);
+		Renderer::instance()->create(cDesc);
 	}
+
 
 	{
 		auto cDesc = _mainWin.makeCDesc();
@@ -74,7 +75,7 @@ EditorApp::onRun		()
 			layer->render();
 		}
 
-		_jsys._internal_nextFrame();
+		JobSystem::instance()->_internal_nextFrame();
 	}
 	willQuit();
 }
@@ -88,9 +89,9 @@ EditorApp::onQuit		()
 void 
 EditorApp::willQuit	()
 {
-	Renderer::destroy();
-	_jsys.destroy();
-	Logger::destroy();
+	Renderer::terminate();
+	JobSystem::terminate();
+	Logger::terminate();
 
 	Base::willQuit();
 }

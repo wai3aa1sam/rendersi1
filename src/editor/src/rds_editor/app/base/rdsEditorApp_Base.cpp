@@ -19,7 +19,6 @@ EditorApp_Base::EditorApp_Base()
 
 EditorApp_Base::~EditorApp_Base()
 {
-	
 }
 
 void 

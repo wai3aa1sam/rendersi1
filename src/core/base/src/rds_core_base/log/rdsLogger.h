@@ -15,7 +15,7 @@
 	#define RDS_LOG_WARN(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Warning,  __VA_ARGS__); } while(false)
 	#define RDS_LOG_ERROR(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Error,	__VA_ARGS__); } while(false)
 #else
-	#define RDS_CORE_LOG(...)			
+	/*#define RDS_CORE_LOG(...)			
 	#define RDS_CORE_LOG_DEBUG(...)	
 	#define RDS_CORE_LOG_WARN(...)		
 	#define RDS_CORE_LOG_ERROR(...)	
@@ -23,7 +23,11 @@
 	#define RDS_LOG(...)				
 	#define RDS_LOG_DEBUG(...)			
 	#define RDS_LOG_WARN(...)			
-	#define RDS_LOG_ERROR(...)			
+	#define RDS_LOG_ERROR(...)		*/
+
+	#define RDS_CORE_LOG_DEBUG(...)	
+	#define RDS_LOG_DEBUG(...)			
+
 #endif // RDS_DEBUG
 
 
@@ -46,18 +50,16 @@ public:
 	using CreateDesc	= Logger_CreateDesc;
 
 public:
-	static void create(const CreateDesc& cDesc);
-	static void destroy();
-
 	static CreateDesc makeCDesc();
 
 public:
-	~Logger()	= default;
+	Logger();
+	~Logger();
 
 protected:
-	Logger()	= default;
-
 	static Base* base();
+
+protected:
 
 };
 
