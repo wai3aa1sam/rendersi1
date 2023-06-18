@@ -10,7 +10,29 @@ namespace rds
 #if 1
 
 
+void 
+EditorLayer::onCreate()
+{
 
+}
+
+void 
+EditorLayer::onDestroy()
+{
+
+}
+
+void 
+EditorLayer::onUpdate()
+{
+
+}
+
+void 
+EditorLayer::onRender()
+{
+
+}
 
 #endif
 

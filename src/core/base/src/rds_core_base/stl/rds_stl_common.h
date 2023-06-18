@@ -70,7 +70,7 @@ template<class T, size_t N = 0, class ALLOC = DefaultAllocator>	using Vector	= :
 #endif // 0
 #if 1
 template<class T>												using IString_T = ::nmsp::IString_T<T>;
-template<class T, size_t N = 0, class ALLOC = DefaultAllocator>	using String_T = ::nmsp::String_T<T, N, ALLOC>;
+template<class T, size_t N = 0, class ALLOC = DefaultAllocator>	using String_T	= ::nmsp::String_T<T, N, ALLOC>;
 
 template<size_t N = 0, class ALLOC = DefaultAllocator>	using StringA_T		= String_T<char, N, ALLOC>;
 template<class ALLOC = DefaultAllocator>				using TempStringA_T = ::nmsp::TempStringA_T<ALLOC>;
@@ -151,11 +151,11 @@ template<class T> using TBM					= ::nmsp::TBM<T>;
 #endif // 0
 #if 1
 
-using ::nmsp::UPtr_DefaultDeleter;
-template<class T, class DELETER = UPtr_DefaultDeleter<T>> using UPtr = ::nmsp::UPtr_T<T, DELETER>;
+using ::nmsp::DefaultDeleter;
+template<class T, class DELETER = DefaultDeleter<T> > using UPtr = ::nmsp::UPtr_T<T, DELETER>;
 using ::nmsp::makeUPtr;
 
-template<class T> using SPtr = ::nmsp::SPtr_T<T>;
+template<class T, class DELETER = DefaultDeleter<T>> using SPtr = ::nmsp::SPtr_T<T, DELETER>;
 using ::nmsp::makeSPtr;
 
 template<class T> using SharedPtr = ::nmsp::SharedPtr_T<T>;

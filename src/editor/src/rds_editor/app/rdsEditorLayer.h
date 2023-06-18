@@ -17,10 +17,11 @@ public:
 
 public:
 
-
-
 protected:
-
+    virtual void onCreate();
+    virtual void onDestroy();
+    virtual void onUpdate();
+    virtual void onRender();
 
 private:
 

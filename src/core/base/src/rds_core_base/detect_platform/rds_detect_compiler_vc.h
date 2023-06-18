@@ -107,3 +107,12 @@ references:
 
 // function
 #define RDS_DEBUG_BREAK(...)		__debugbreak()
+
+#define RDS_DISABLE_ALL_WARNINGS() \
+	__pragma(warning(push, 0)) \
+	__pragma(warning(disable: 4172)) \
+// ---
+
+#define RDS_RESTORE_ALL_WARNINGS() \
+	__pragma(warning(pop)) \
+// ---

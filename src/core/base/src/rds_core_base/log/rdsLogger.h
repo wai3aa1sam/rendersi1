@@ -4,16 +4,19 @@
 
 #include "rds_core_base/utility/rdsSingleton.h"
 
-#if RDS_DEBUG
-	#define RDS_CORE_LOG(...)			do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Info,		__VA_ARGS__); } while(false)
-	#define RDS_CORE_LOG_DEBUG(...)	    do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Debug,	    __VA_ARGS__); } while(false)
-	#define RDS_CORE_LOG_WARN(...)		do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Warning,	__VA_ARGS__); } while(false)
-	#define RDS_CORE_LOG_ERROR(...)	    do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Error,	    __VA_ARGS__); } while(false)
 
-	#define RDS_LOG(...)				do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Info,	    __VA_ARGS__); } while(false)
+#define RDS_CORE_LOG(...)			do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Info,		__VA_ARGS__); } while(false)
+#define RDS_CORE_LOG_WARN(...)		do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Warning,	__VA_ARGS__); } while(false)
+#define RDS_CORE_LOG_ERROR(...)	    do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Error,	    __VA_ARGS__); } while(false)
+
+#define RDS_LOG(...)				do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Info,	    __VA_ARGS__); } while(false)
+#define RDS_LOG_WARN(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Warning,  __VA_ARGS__); } while(false)
+#define RDS_LOG_ERROR(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Error,	__VA_ARGS__); } while(false)
+
+#if RDS_DEBUG
+	#define RDS_CORE_LOG_DEBUG(...)	    do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Debug,	    __VA_ARGS__); } while(false)
+
 	#define RDS_LOG_DEBUG(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Debug,	__VA_ARGS__); } while(false)
-	#define RDS_LOG_WARN(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Warning,  __VA_ARGS__); } while(false)
-	#define RDS_LOG_ERROR(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Error,	__VA_ARGS__); } while(false)
 #else
 	/*#define RDS_CORE_LOG(...)			
 	#define RDS_CORE_LOG_DEBUG(...)	

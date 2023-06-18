@@ -8,7 +8,7 @@
 #include <crtdbg.h>
 
 #ifdef _DEBUG
-#define DBG_NEW new ( _CLIENT_BLOCK , __FILE__ , __LINE__ )
+#define DBG_NEW new ( _CLIENT_BLOCK , RDS_FILE , RDS_LINE )
 // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
 // allocations to be of _CLIENT_BLOCK type
 #else

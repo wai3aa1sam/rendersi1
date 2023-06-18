@@ -25,6 +25,16 @@ protected:
 
 	static T* s_instance;
 };
+
+template<class T>
+class VirtualSingleton : public Singleton<T>
+{
+public:
+	static T* instance() { return s_instance; };
+
+public:
+	static void init() { /* override Singleton<T>::init() */ }
+};
 #endif // 1
 
 

@@ -47,7 +47,6 @@ EditorApp::onCreate	(const CreateDesc_Base& cd)
 		Renderer::instance()->create(cDesc);
 	}
 
-
 	{
 		auto cDesc = _mainWin.makeCDesc();
 		cDesc.isMainWindow = true;

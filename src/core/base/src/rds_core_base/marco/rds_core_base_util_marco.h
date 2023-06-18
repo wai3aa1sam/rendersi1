@@ -7,6 +7,9 @@
 #endif // 0
 #if 1
 
+#define RDS_FILE __FILE__
+#define RDS_LINE __LINE__
+
 #define RDS_COMMA ,
 #define RDS_EMPTY
 #define RDS_ARGS(...) __VA_ARGS__
@@ -30,9 +33,12 @@
 #define RDS_NOEXCEPT				noexcept
 #define RDS_NOEXCEPT_IF(...)		noexcept(__VA_ARGS__)
 
+#define RDS_ALIGN_OF(X) alignof(X)
+#define RDS_ALIGN_AS(X) alignas(X)
+
 #define RDS_S_ASSERT(COND, ...) static_assert(COND, RDS_FUNC_NAME_SZ ## "() " "--- " #COND ## " --- " ## __VA_ARGS__)
 
-#if RDS_ENABLE_ASSERT
+#if RDS_DEBUG || RDS_ENABLE_ASSERT
 	#define RDS_CORE_ASSERT(X, ...)	do{ if(!(X)) { ::nmsp::_log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
 	#define RDS_ASSERT(X, ...)		do{ if(!(X)) { ::nmsp::_log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
 #else
@@ -40,13 +46,15 @@
 	#define RDS_ASSERT(X, ...)	
 #endif // RDS_ENABLE_ASSERT
 
-#define RDS_ALIGN_OF(X) alignof(X)
-#define RDS_ALIGN_AS(X) alignas(X)
-
 #if RDS_DEBUG
-	#define RDS_SRCLOC	SrcLoc(__FILE__, __LINE__, RDS_FUNC_NAME_SZ)
+	#define RDS_SRCLOC	SrcLoc(RDS_FILE, RDS_LINE, RDS_FUNC_NAME_SZ)
+
+	#define RDS_DEBUG_CALL(FUNC) FUNC
+
 #else
 	#define RDS_SRCLOC	SrcLoc()
+
+	#define RDS_DEBUG_CALL(FUNC)
 #endif
 
 #define RDS_REP_0(X)
