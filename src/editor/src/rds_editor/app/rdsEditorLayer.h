@@ -16,6 +16,8 @@ public:
 	using Base = EditorLayer_Base;
 
 public:
+    EditorLayer()           = default;
+    virtual ~EditorLayer()  = default;
 
 protected:
     virtual void onCreate();

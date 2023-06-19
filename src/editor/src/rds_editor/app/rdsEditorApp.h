@@ -41,7 +41,7 @@ protected:
 	virtual void onQuit		() override;
 	virtual void willQuit	() override;
 
-private:
+protected:
 	EditorMainWindow _mainWin;
 };
 

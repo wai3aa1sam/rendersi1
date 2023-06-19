@@ -13,7 +13,8 @@ namespace rds
 class EditorLayer_Base : public AppLayer
 {
 public:
-
+	EditorLayer_Base()			= default;
+	virtual ~EditorLayer_Base() = default;
 
 private:
 

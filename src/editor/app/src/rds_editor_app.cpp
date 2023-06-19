@@ -8,15 +8,9 @@ int main(int argc, char* argv[])
 
 	::rds::MemoryLeakReportScope reportScope;
 
-	int exitCode = 0;
+	int exitCode;
 	{
-		MemoryContext::init();
-		{
-			auto cdesc = EditorApp::makeCDesc();
-			EditorApp app;
-			exitCode = app.run(cdesc);
-		}
-		MemoryContext::terminate();
+		exitCode = runApp();
 	}
 
 	return exitCode;

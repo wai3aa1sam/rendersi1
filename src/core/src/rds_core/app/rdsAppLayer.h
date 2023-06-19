@@ -12,7 +12,8 @@ namespace rds
 class AppLayer_Base : public NonCopyable
 {
 public:
-    virtual ~AppLayer_Base() = default;
+    AppLayer_Base()             = default;
+    virtual ~AppLayer_Base()    = default;
 
     void create();
     void destroy();
@@ -36,7 +37,8 @@ protected:
 class AppLayer : public AppLayer_Base
 {
 public:
-
+    AppLayer()          = default;
+    virtual ~AppLayer() = default;
 
 private:
 

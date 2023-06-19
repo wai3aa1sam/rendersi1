@@ -44,7 +44,6 @@ protected:
 protected:
 	String			_name;
 	AppLayerStack	_appLayerStack;
-	ProjectSetting	_projSetting;
 	bool			_shouldQuit = false;
 };
 

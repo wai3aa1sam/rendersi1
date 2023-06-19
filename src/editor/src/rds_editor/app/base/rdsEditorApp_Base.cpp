@@ -37,6 +37,7 @@ void
 EditorApp_Base::onCreate	(const CreateDesc_Base& cd)
 {
 	auto thisCDesc = sCast<const CreateDesc&>(cd);
+	ProjectSetting::init();
 	{
 		String file = getExecutableFilename();
 		String path = Path::dirname(file);
