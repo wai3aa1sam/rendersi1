@@ -14,6 +14,10 @@ struct RenderApiLayerDefaultTraits_T : public CoreTraits
 public:
 	using Base = CoreTraits;
 
+public:
+	static constexpr const char* s_appName		= "Rendersi1";
+	static constexpr const char* s_engineName	= "Rendersi1";
+
 
 public:
 
