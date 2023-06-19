@@ -16,20 +16,21 @@ int main(int argc, char* argv[])
 		std::cout << "Hello World!\n";
 		
 		{
-			MemoryContext mc;
-			mc.create();
+			MemoryContext::init();
 
-			JobSystem jsys;
-			jsys.create(sCast<int>(OsTraits::logicalThreadCount()));
+			JobSystem::init();
+			JobSystem::instance()->create(sCast<int>(OsTraits::logicalThreadCount()));
 
-			Logger logger;
-			logger.create(Logger::makeCDesc());
+			
+			Logger::init();
+			Logger::instance()->create(Logger::makeCDesc());
 			//RDS_LOG("{}, {}", "Hello World", 10);
 
 			{
 				auto p = makeUPtr<int>();
 				_NMSP_DUMP_VAR(*p);
 			}
+			Logger::terminate();
 		}
 
 	}

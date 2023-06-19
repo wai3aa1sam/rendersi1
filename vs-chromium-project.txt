@@ -2,5 +2,10 @@
 
 [SearchableFiles.include]
 /src/
+#/external/vcpkg/buildtrees/nlohmann-json
+/external/vcpkg/buildtrees/imgui
+#/external/vcpkg/buildtrees/eabase
+#/external/vcpkg/buildtrees/eastl
 
 [SourceExplorer.ignore]
+/external/vcpkg/buildtrees/tracy

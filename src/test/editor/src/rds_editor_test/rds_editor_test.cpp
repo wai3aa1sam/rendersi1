@@ -1,27 +1,42 @@
 #include "rds_editor_test-pch.h"
 
-#if !RDS_ENABLE_FUZZ_TESTING
+
+void run_temp_test()
+{
+	RDS_RUN_TEST(test_VulkanEditorApp);
+}
+
+// TODO: add a test manager class, then no need add to here
+void run_all_test()
+{
+
+}
+
+#if !NMSP_ENABLE_FUZZ_TESTING
 
 int main(int argc, char* argv[])
 {
 	using namespace rds;
 
-	::rds::MemoryLeakReportScope reportScope;
-
 	int exitCode = 0;
 	{
-		//_log("Hello World123!");
-		std::cout << "Hello World!\n";
+		#if 1
+		TestScope testScope {run_temp_test, RDS_ENABLE_BENCHMARK, argc, argv };
+		#else
+		TestScope testScope {run_all_test, RDS_ENABLE_BENCHMARK, argc, argv };
+		#endif // 0
 	}
-
+	
 	return exitCode;
 }
 
 #else
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t * Data, size_t Size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t * Data, size_t Size) 
 {
 	return 0;
 }
 
-#endif // !PROJNAMESPACE_ENABLE_FUZZ_TESTING
+#endif // !NMSP_ENABLE_FUZZ_TESTING
+
+
