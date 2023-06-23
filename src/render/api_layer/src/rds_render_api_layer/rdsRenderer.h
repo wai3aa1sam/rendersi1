@@ -29,8 +29,8 @@ public:
 public:
 	RenderApiType apiType;
 
-	bool isDebug		: 1;
-	bool enablePresent	: 1;
+	bool isDebug	: 1;
+	bool isPresent	: 1;
 };
 
 

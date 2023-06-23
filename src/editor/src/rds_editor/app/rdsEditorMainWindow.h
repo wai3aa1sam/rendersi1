@@ -23,10 +23,13 @@ public:
 
 	virtual void onActive(bool isActive) override;
 
-protected:
+	RenderContext& renderContext();
 
+protected:
+	SPtr<RenderContext>	_renderContext;
 };
 
+inline RenderContext& EditorMainWindow::renderContext() { return *_renderContext; }
 
 
 #endif

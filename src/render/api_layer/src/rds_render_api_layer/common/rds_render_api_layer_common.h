@@ -19,14 +19,25 @@ struct RenderAdapterInfo
 	String	adapterName;
 	i64		memorySize = 0;
 
-	bool	isDebug				: 1;
-	bool	isDiscreteGPU		: 1;
-	bool	hasGeometryShader	: 1;
+	bool	isDebug	: 1;
 
-	bool	multithread			= false;
-	bool	hasComputeShader	= false;
-	bool	shaderHasFloat64	= false;
-	int		minThreadGroupSize	= 1;
+	struct Feature
+	{
+		void clear()
+		{
+
+		}
+
+		bool	isDiscreteGPU		: 1;
+		bool	hasGeometryShader	: 1;
+
+		bool	multithread			: 1;
+		bool	hasComputeShader	: 1;
+		bool	shaderHasFloat64	: 1;
+
+		int		minThreadGroupSize	= 1;
+	};
+	Feature feature;
 };
 
 

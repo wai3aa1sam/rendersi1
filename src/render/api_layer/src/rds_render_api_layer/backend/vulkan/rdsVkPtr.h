@@ -19,12 +19,12 @@ class VkPtr : public RenderApiPrimitive_Vk<T>
 	VkPtr() = default;
 
 	VkPtr(T* p)					RDS_NOEXCEPT	{ reset(p); }
-	VkPtr(VkPtr && r)			RDS_NOEXCEPT	{ _p = r._p; r._p = VK_NULL_HANDLE; }
 	VkPtr(const VkPtr& r)		RDS_NOEXCEPT	{ reset(r._p); }
+	VkPtr(VkPtr&& r)			RDS_NOEXCEPT	{ _p = r._p; r._p = VK_NULL_HANDLE; }
 
-	void operator=(T* p)		RDS_NOEXCEPT	{ reset(p); }
-	void operator=(VkPtr &  r)	RDS_NOEXCEPT	{ reset(r.ptr()); }
-	void operator=(VkPtr && r)	RDS_NOEXCEPT	{ reset(VK_NULL_HANDLE); _p = r._p; r._p = VK_NULL_HANDLE; }
+	void operator=(T* p)			RDS_NOEXCEPT { reset(p); }
+	void operator=(const VkPtr&  r)	RDS_NOEXCEPT { reset(r.ptr()); }
+	void operator=(VkPtr&& r)		RDS_NOEXCEPT { reset(VK_NULL_HANDLE); _p = r._p; r._p = VK_NULL_HANDLE; }
 
 	~VkPtr() RDS_NOEXCEPT { reset(VK_NULL_HANDLE); }
 
@@ -59,7 +59,7 @@ class VkPtr : public RenderApiPrimitive_Vk<T>
 
 	T* release() RDS_NOEXCEPT { T* o = _p; _p = VK_NULL_HANDLE; return o; }
 
-	T** ptrForInit() RDS_NOEXCEPT { reset(VK_NULL_HANDLE); return sCast<T**>(&_p); }
+	T** ptrForInit() RDS_NOEXCEPT { reset(VK_NULL_HANDLE); ++_refCount; return sCast<T**>(&_p); }
 };
 
 #endif

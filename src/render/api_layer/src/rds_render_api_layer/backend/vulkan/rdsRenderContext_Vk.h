@@ -24,15 +24,32 @@ public:
 	RenderContext_Vk();
 	virtual ~RenderContext_Vk();
 
+	Renderer_Vk* renderer();
+
+
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onPostCreate(const CreateDesc& cDesc);
 	virtual void onDestroy();
 
+	void createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvailableInfo_Vk& info, const Rect2f& windowRect2f);
 
-private:
+
+protected:
+	Renderer_Vk* _renderer = nullptr;
+
+	SwapchainInfo_Vk	_swapchainInfo;
+
+	VkPtr<Vk_Surface>	_vkSurface;
+	VkPtr<Vk_Swapchain>	_vkSwapchain;
+
+	VkPtr<Vk_Queue>		_vkGraphicsQueue;
+	VkPtr<Vk_Queue>		_vkPresentQueue;
 
 };
+
+Renderer_Vk* RenderContext_Vk::renderer() { return _renderer; }
+
 
 #endif
 }

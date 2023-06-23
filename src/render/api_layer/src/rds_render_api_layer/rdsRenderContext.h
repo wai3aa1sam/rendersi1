@@ -13,7 +13,7 @@ namespace rds
 
 struct RenderContext_CreateDesc
 {
-
+	NativeUIWindow* window = nullptr;
 };
 
 class RenderContext : public RefCount_Base
@@ -25,11 +25,12 @@ public:
 	using Util = RenderApiUtil;
 
 public:
+	static CreateDesc makeCDesc();
 	static SPtr<RenderContext> make(const CreateDesc& cDesc);
 
 public:
 	RenderContext();
-	~RenderContext();
+	virtual ~RenderContext();
 
 	void create(const CreateDesc& cDesc);
 	void destroy();

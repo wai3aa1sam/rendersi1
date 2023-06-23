@@ -17,27 +17,60 @@ protected:
 
 };
 
+class VulkanEditorMainWindow : public EditorMainWindow
+{
+public:
+	~VulkanEditorMainWindow()
+	{
+
+	}
+
+	void destroy()
+	{
+	}
+protected:
+	virtual void onCreate(const CreateDesc_Base& cDesc) override
+	{
+		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
+		Base::onCreate(thisCDesc);
+
+		auto* renderer = Renderer::instance();
+		auto renderContextCDesc = RenderContext::makeCDesc();
+		renderContextCDesc.window = this;
+		_renderContext = renderer->createContext(renderContextCDesc);
+	}
+
+private:
+
+};
+
 class VulkanEditorApp : public EditorApp
 {
-protected:
-	virtual void VulkanEditorApp::onCreate	(const CreateDesc_Base& cd) override
+public:
+	~VulkanEditorApp()
 	{
-		auto thisCDesc = sCast<const CreateDesc&>(cd);
+	}
+
+protected:
+
+	virtual void VulkanEditorApp::onCreate	(const CreateDesc_Base& cDesc) override
+	{
+		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 		//Base::onCreate(thisCDesc);
 
 		JobSystem::init();
 		Renderer::init();
 		
 		{
-			auto cDesc = Renderer::makeCDesc();
-			Renderer::instance()->create(cDesc);
+			auto rendererCDesc = Renderer::makeCDesc();
+			Renderer::instance()->create(rendererCDesc);
 		}
 
 		{
-			auto cDesc = _mainWin.makeCDesc();
-			cDesc.isMainWindow = true;
-			_mainWin.create(cDesc);
-			_mainWin.setWindowTitle("rds Test Vulkan Editor");
+			auto windowCDesc = _vulkanMainWin.makeCDesc();
+			windowCDesc.isMainWindow = true;
+			_vulkanMainWin.create(windowCDesc);
+			_vulkanMainWin.setWindowTitle("rds Test Vulkan Editor");
 		}
 
 		pushLayer(makeUPtr<VulkanLayer>());
@@ -45,12 +78,13 @@ protected:
 
 	virtual void willQuit() override
 	{
+		_vulkanMainWin.~VulkanEditorMainWindow();
 		Renderer::terminate();
 		JobSystem::terminate();
 	}
 
 protected:
-
+	VulkanEditorMainWindow _vulkanMainWin;
 };
 
 class Test_VulkanEditorApp : public UnitTest

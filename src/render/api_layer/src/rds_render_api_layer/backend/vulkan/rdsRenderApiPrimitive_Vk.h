@@ -36,6 +36,8 @@ using Vk_Sampler				= VkSampler_T;
 using Vk_ImageView				= VkImageView_T;
 using Vk_DeviceMemory			= VkDeviceMemory_T;
 
+using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
+
 #if 0
 #pragma mark --- rdsRenderApiPrmivitive_Vk-Decl ---
 #endif // 0
@@ -51,10 +53,65 @@ public:
 	void destroy();
 
 protected:
-	T* _p = nullptr;
+	T* _p = VK_NULL_HANDLE;
 };
 
 template<class T> class RenderApiPrimitive_Vk;
+
+#endif
+
+
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk-Impl ---
+#endif // 0
+#if 1
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Surface>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Surface> : public RenderApiPrimitive_Base_Vk<Vk_Surface>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Queue>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Queue> : public RenderApiPrimitive_Base_Vk<Vk_Queue>
+{
+public:
+	void destroy()
+	{
+
+	}
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Swapchain>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Swapchain> : public RenderApiPrimitive_Base_Vk<Vk_Swapchain>
+{
+public:
+	void destroy();
+};
+
+#endif
+
 
 #endif
 

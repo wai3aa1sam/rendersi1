@@ -10,6 +10,47 @@
 namespace rds
 {
 
+#if 1	// TODO: remove / modify
+struct QueueFamilyIndices 
+{
+public:
+	using SizeType = RenderApiLayerTraits::SizeType;
+
+public:
+	static constexpr SizeType s_kQueueTypeCount = 4;
+
+public:
+	Opt<u32> graphics;
+	Opt<u32> present;
+};
+#endif // 1
+
+#if 1	// TODO: remove / modify
+
+struct SwapchainAvailableInfo_Vk 
+{
+public:
+	using SizeType = RenderApiLayerTraits::SizeType;
+
+public:
+	static constexpr SizeType s_kLocalSize = 4;
+
+public:
+	VkSurfaceCapabilitiesKHR					capabilities;
+	Vector<VkSurfaceFormatKHR,	s_kLocalSize>	formats;
+	Vector<VkPresentModeKHR,	s_kLocalSize>	presentModes;
+};
+
+struct SwapchainInfo_Vk
+{
+	//VkSurfaceCapabilitiesKHR	capabilities;
+	VkSurfaceFormatKHR			format;
+	VkPresentModeKHR			presentMode;
+	VkExtent2D					extent;
+};
+
+#endif
+
 #if 0
 #pragma mark --- rdsRenderApiUtil_Vk-Decl ---
 #endif // 0
@@ -37,6 +78,25 @@ public:
 	static String getStrFromVkResult(Result ret);
 
 public:
+	static VkExtent2D getVkExtent2D(const Rect2f& rect2f);
+
+
+	// for create vk objects
+public:
+	static void createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out);
+	static void createSurface(Vk_Surface** out, Vk_Instance* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
+	static void createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
+								const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
+
+public:
+	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*, N>& out,		Vk_Instance* vkInstance);
+	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out,	Vk_PhysicalDevice* vkPhyDevice);
+
+	static void getPhyDevicePropertiesTo(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
+	static void getPhyDeviceFeaturesTo	(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
+	static void getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info);
+
+	static bool getSwapchianAvailableInfo(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface* vkSurface);
 
 private:
 	static bool _checkError(Result ret);
@@ -50,10 +110,16 @@ private:
 };
 
 
+
+#endif
+
+
 #if 0
 #pragma mark --- rdsExtensionInfo_Vk-Decl ---
 #endif // 0
 #if 1
+struct Renderer_CreateDesc;
+
 struct ExtensionInfo_Vk
 {
 public:
@@ -65,21 +131,27 @@ public:
 
 public:
 	static u32 getAvailableValidationLayersTo	(Vector<VkLayerProperties,		s_kLocalSize>& out);
-	static u32 getAvailableExtensionsTo			(Vector<VkExtensionProperties,	s_kLocalSize>& out);
+	static u32 getAvailableExtensionsTo			(Vector<VkExtensionProperties,	s_kLocalSize>& out, bool logExtension = false);
+	static u32 getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties,	s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice);
 
 public:
-	void createExtensions		(const RenderAdapterInfo& adapterInfo);
-	void createValidationLayers	(const RenderAdapterInfo& adapterInfo);
+	void createExtensions			(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension = false);
+	void createValidationLayers		(const RenderAdapterInfo& adapterInfo);
+	void createPhyDeviceExtensions	(const RenderAdapterInfo& adapterInfo, const Renderer_CreateDesc& cDesc, Vk_PhysicalDevice* phyDevice);
 
-	bool isSupportValidationLayer(const char* validationLayerName);
+	PFN_vkVoidFunction getExtFunction(const char* funcName) const;
+
+	bool isSupportValidationLayer(const char* validationLayerName) const;
 
 public:
-	const Vector<const char*,			s_kLocalSize>&	exts()					const;
-	const Vector<const char*,			s_kLocalSize>&	validationLayers()		const;
+	const Vector<const char*,			s_kLocalSize>&	exts()				const;
+	const Vector<const char*,			s_kLocalSize>&	validationLayers()	const;
+	const Vector<const char*,			s_kLocalSize>&	phyDeviceExts()		const;
+	const StringMap<PFN_vkVoidFunction>&				extFuncTable()		const;
 
-	const Vector<VkLayerProperties,		s_kLocalSize>&	availableLayers()		const;
-	const Vector<VkExtensionProperties,	s_kLocalSize>&	availableExts()			const;
-	const Vector<VkExtensionProperties,	s_kLocalSize>&	availableDeviceExts()	const;
+	const Vector<VkLayerProperties,		s_kLocalSize>&	availableLayers()			const;
+	const Vector<VkExtensionProperties,	s_kLocalSize>&	availableExts()				const;
+	const Vector<VkExtensionProperties,	s_kLocalSize>&	availablePhyDeviceExts()	const;
 
 private:
 	void checkValidationLayersExist();
@@ -87,24 +159,65 @@ private:
 private:
 	Vector<const char*,				s_kLocalSize>	_exts;
 	Vector<const char*,				s_kLocalSize>	_validationLayers;
-	Vector<const char*,				s_kLocalSize>	_deviceExts;
+	Vector<const char*,				s_kLocalSize>	_phyDeviceExts;
 	StringMap<PFN_vkVoidFunction>					_extFuncTable;
 
 	Vector<VkLayerProperties,		s_kLocalSize>	_availableLayers;
 	Vector<VkExtensionProperties,	s_kLocalSize>	_availableExts;
-	Vector<VkExtensionProperties,	s_kLocalSize>	_availableDeviceExts;
+	Vector<VkExtensionProperties,	s_kLocalSize>	_availablePhyDeviceExts;
 };
 
-inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::exts()				const { return _exts; }
-inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::validationLayers()	const { return _validationLayers; }
-inline const Vector<VkLayerProperties,		ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableLayers()	const { return _availableLayers; };
-inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableExts()		const { return _availableExts; };
-inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableDeviceExts()const { return _availableDeviceExts; };
+inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::exts()				const		{ return _exts; }
+inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::validationLayers()	const		{ return _validationLayers; }
+inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::phyDeviceExts()		const		{ return _phyDeviceExts; }
+inline const StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::extFuncTable()		const		{ return _extFuncTable; }
+
+inline const Vector<VkLayerProperties,		ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableLayers()	const		{ return _availableLayers; };
+inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableExts()		const		{ return _availableExts; };
+inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availablePhyDeviceExts()const	{ return _availablePhyDeviceExts; };
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderApiUtil_Vk-Decl ---
+#endif // 0
+#if 1
 
-#endif
+template<size_t N> inline
+u32
+RenderApiUtil_Vk::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice*, N>& out, Vk_Instance* vkInstance)
+{
+	u32 deviceCount = 0;
+	vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
+
+	throwIf(deviceCount == 0, "failed to find GPUs with Vulkan support!");
+	
+	auto& o = out;
+	o.clear();
+	o.resize(deviceCount);
+	auto ret = vkEnumeratePhysicalDevices(vkInstance, &deviceCount, o.data());
+	throwIfError(ret);
+
+	return deviceCount;
+}
+
+template<size_t N> inline
+u32 
+RenderApiUtil_Vk::getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out,	Vk_PhysicalDevice* vkPhyDevice)
+{
+	u32 queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(vkPhyDevice, &queueFamilyCount, nullptr);
+
+	auto& queueFamilies = out;
+	queueFamilies.clear();
+	queueFamilies.resize(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(vkPhyDevice, &queueFamilyCount, queueFamilies.data());
+
+	return queueFamilyCount;
+}
+
+
+#endif // 1
 
 
 #if 0

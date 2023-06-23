@@ -21,10 +21,10 @@ public:
 public:
 	MemoryContext_Vk();
 
-	const VkAllocationCallbacks* allocationCallbacks();
+	const VkAllocationCallbacks* allocCallbacks();
 
 private:
-	VkAllocationCallbacks _allocationCallbacks;
+	VkAllocationCallbacks _allocCallbacks;
 };
 
 
@@ -36,7 +36,7 @@ private:
 #endif // 0
 #if 1
 
-const VkAllocationCallbacks* MemoryContext_Vk::allocationCallbacks() { return /*&_allocationCallbacks*/ nullptr; }
+const VkAllocationCallbacks* MemoryContext_Vk::allocCallbacks() { return /*&_allocationCallbacks*/ nullptr; }
 
 #endif
 
