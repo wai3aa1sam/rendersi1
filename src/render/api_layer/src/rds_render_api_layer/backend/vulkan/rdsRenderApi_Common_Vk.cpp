@@ -128,8 +128,8 @@ RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_
 	createInfo.sType			= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface			= vkSurface;
 	createInfo.minImageCount	= imageCount;
-	createInfo.imageFormat		= info.format.format;
-	createInfo.imageColorSpace	= info.format.colorSpace;
+	createInfo.imageFormat		= info.surfaceFormat.format;
+	createInfo.imageColorSpace	= info.surfaceFormat.colorSpace;
 	createInfo.imageExtent		= info.extent;
 	createInfo.imageArrayLayers = 1;		// For non-stereoscopic-3D applications, this value is 1.
 	createInfo.imageUsage		= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -158,6 +158,30 @@ RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_
 	createInfo.oldSwapchain		= VK_NULL_HANDLE;	// useful when it is invalid
 
 	auto ret = vkCreateSwapchainKHR(vkDevice, &createInfo, Renderer_Vk::instance()->allocCallbacks(), out);
+	throwIfError(ret);
+}
+
+void 
+RenderApiUtil_Vk::createImageView(Vk_ImageView** out, Vk_Image* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
+{
+	VkImageViewCreateInfo viewInfo = {};
+	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image								= vkImage;
+	viewInfo.viewType							= VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format								= format;
+
+	viewInfo.components.r						= VK_COMPONENT_SWIZZLE_IDENTITY;
+	viewInfo.components.g						= VK_COMPONENT_SWIZZLE_IDENTITY;
+	viewInfo.components.b						= VK_COMPONENT_SWIZZLE_IDENTITY;
+	viewInfo.components.a						= VK_COMPONENT_SWIZZLE_IDENTITY;
+
+	viewInfo.subresourceRange.aspectMask		= aspectFlags;
+	viewInfo.subresourceRange.baseMipLevel		= 0;
+	viewInfo.subresourceRange.levelCount		= mipLevels;
+	viewInfo.subresourceRange.baseArrayLayer	= 0;
+	viewInfo.subresourceRange.layerCount		= 1;
+
+	VkResult ret = vkCreateImageView(vkDevice, &viewInfo, Renderer_Vk::instance()->allocCallbacks(), out);
 	throwIfError(ret);
 }
 
@@ -198,7 +222,7 @@ void RenderApiUtil_Vk::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, c
 }
 
 bool
-RenderApiUtil_Vk::getSwapchianAvailableInfo(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface* vkSurface)
+RenderApiUtil_Vk::getSwapchainAvailableInfoTo(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface* vkSurface)
 {
 	auto& swInfo = out;
 

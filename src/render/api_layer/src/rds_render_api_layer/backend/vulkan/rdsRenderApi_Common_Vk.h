@@ -10,6 +10,16 @@
 namespace rds
 {
 
+#if 1
+
+template<size_t N>	using SwapChainImages_Vk_N		= Vector<Vk_Image*, N>;
+					using SwapChainImages_Vk		= Vector<Vk_Image*,				RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainImageViews_Vk_N	= Vector<VkPtr<Vk_ImageView>, N>;
+					using SwapChainImageViews_Vk	= Vector<VkPtr<Vk_ImageView>,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+
+#endif // 1
+
+
 #if 1	// TODO: remove / modify
 struct QueueFamilyIndices 
 {
@@ -44,7 +54,7 @@ public:
 struct SwapchainInfo_Vk
 {
 	//VkSurfaceCapabilitiesKHR	capabilities;
-	VkSurfaceFormatKHR			format;
+	VkSurfaceFormatKHR			surfaceFormat;
 	VkPresentModeKHR			presentMode;
 	VkExtent2D					extent;
 };
@@ -80,6 +90,9 @@ public:
 public:
 	static VkExtent2D getVkExtent2D(const Rect2f& rect2f);
 
+	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
+	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
+
 
 	// for create vk objects
 public:
@@ -87,16 +100,28 @@ public:
 	static void createSurface(Vk_Surface** out, Vk_Instance* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
 	static void createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
 								const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
+	static void createImageView(Vk_ImageView** out, Vk_Image* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
+
+
+
+	template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 
+													VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
+
+	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out, Vk_Swapchain* vkSwapchain, Vk_Device* vkDevice);
+	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, Vk_Device* vkDevice, 
+															 VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 public:
-	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*, N>& out,		Vk_Instance* vkInstance);
-	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out,	Vk_PhysicalDevice* vkPhyDevice);
+	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance* vkInstance);
+	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out, Vk_PhysicalDevice* vkPhyDevice);
+	template<size_t N> static u32 getSwapchainImagesTo		(Vector<Vk_Image,				 N>& out, Vk_Swapchain* vkSwapchain, Vk_Device* vkDevice);
+	
 
-	static void getPhyDevicePropertiesTo(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
-	static void getPhyDeviceFeaturesTo	(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
-	static void getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info);
+	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
+	static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
+	static void getVkPhyDeviceFeaturesTo	(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info);
+	static bool getSwapchainAvailableInfoTo	(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface* vkSurface);
 
-	static bool getSwapchianAvailableInfo(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface* vkSurface);
 
 private:
 	static bool _checkError(Result ret);
@@ -109,10 +134,7 @@ private:
 		void*										pUserData);
 };
 
-
-
 #endif
-
 
 #if 0
 #pragma mark --- rdsExtensionInfo_Vk-Decl ---
@@ -182,6 +204,67 @@ inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& Exte
 #pragma mark --- rdsRenderApiUtil_Vk-Decl ---
 #endif // 0
 #if 1
+
+template<class T, size_t N> inline
+void
+RenderApiUtil_Vk::convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n)
+{
+	out.clear();
+	out.resize(n);
+	for (size_t i = 0; i < n; i++)
+	{
+		out[i].reset(vkData[i]);
+	}
+}
+
+template<class T, size_t N> inline
+void 
+RenderApiUtil_Vk::convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src)
+{
+	convertToVkPtrs(dst, (T**)src.data(), sCast<u32>(src.size()));
+}
+
+template<size_t N> inline
+void 
+RenderApiUtil_Vk::createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice,
+								   VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
+{
+	out.clear();
+	out.resize(vkImages.size());
+	for (size_t i = 0; i < vkImages.size(); ++i)
+	{
+		Vk_ImageView* p = nullptr;
+		createImageView(&p, (Vk_Image*)vkImages[i].ptr(), vkDevice, format, aspectFlags, mipLevels);
+		out[i].reset(p);
+	}
+}
+
+template<size_t N> inline
+u32 
+RenderApiUtil_Vk::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapchain* vkSwapchain, Vk_Device* vkDevice)
+{
+	u32 imageCount = 0;
+	vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
+	out.resize(imageCount);
+	auto ret = vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, out.data());
+	throwIfError(ret);
+	return imageCount;
+}
+
+template<size_t N> inline 
+void 
+RenderApiUtil_Vk::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, Vk_Device* vkDevice, 
+											VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
+{
+	out.clear();
+	out.resize(vkImages.size());
+	for (size_t i = 0; i < vkImages.size(); ++i)
+	{
+		Vk_ImageView* p = nullptr;
+		createImageView(&p, (Vk_Image*)vkImages[i], vkDevice, format, aspectFlags, mipLevels);
+		out[i].reset(p);
+	}
+}
 
 template<size_t N> inline
 u32

@@ -39,12 +39,16 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	_renderer = Renderer_Vk::instance();
 	Util::createSurface(_vkSurface.ptrForInit(), _renderer->vkInstance(), _renderer->allocCallbacks(), cDesc.window);
 
+	auto vkDevice = _renderer->vkDevice();
+
 	u32		graphicsQueueIdx = 0;
-	vkGetDeviceQueue(_renderer->vkDevice(), _renderer->queueFamilyIndices().graphics.value(), graphicsQueueIdx, _vkGraphicsQueue.ptrForInit());
-	vkGetDeviceQueue(_renderer->vkDevice(), _renderer->queueFamilyIndices().present.value(), graphicsQueueIdx, _vkPresentQueue.ptrForInit());
+	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().graphics.value(), graphicsQueueIdx, _vkGraphicsQueue.ptrForInit());
+	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().present.value(), graphicsQueueIdx, _vkPresentQueue.ptrForInit());
 
 	createSwapchainInfo(_swapchainInfo, _renderer->swapchainAvailableInfo(), cDesc.window->clientRect());
-	Util::createSwapchain(_vkSwapchain.ptrForInit(), _vkSurface, _renderer->vkDevice(), _swapchainInfo, _renderer->swapchainAvailableInfo(), _renderer->queueFamilyIndices());
+	Util::createSwapchain(_vkSwapchain.ptrForInit(), _vkSurface, vkDevice, _swapchainInfo, _renderer->swapchainAvailableInfo(), _renderer->queueFamilyIndices());
+	Util::createSwapchainImages(_vkSwapchainImages, _vkSwapchain, vkDevice);
+	Util::createSwapchainImageViews(_vkSwapchainImageViews, _vkSwapchainImages, vkDevice, _swapchainInfo.surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 }
 
 void
@@ -68,7 +72,7 @@ RenderContext_Vk::createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvai
 		{
 			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) 
 			{
-				out.format = availableFormat;
+				out.surfaceFormat = availableFormat;
 			}
 		}
 	}

@@ -112,6 +112,33 @@ public:
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Image>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Image> : public RenderApiPrimitive_Base_Vk<Vk_Image>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_ImageView>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_ImageView> : public RenderApiPrimitive_Base_Vk<Vk_ImageView>
+{
+public:
+	void destroy();
+};
+
+#endif
 
 #endif
 

@@ -20,6 +20,10 @@ public:
 
 	using Util = RenderApiUtil_Vk;
 
+
+public:
+	static constexpr SizeType s_kSwapchainImageLocalSize = 4;
+
 public:
 	RenderContext_Vk();
 	virtual ~RenderContext_Vk();
@@ -40,8 +44,11 @@ protected:
 
 	SwapchainInfo_Vk	_swapchainInfo;
 
-	VkPtr<Vk_Surface>	_vkSurface;
-	VkPtr<Vk_Swapchain>	_vkSwapchain;
+	VkPtr<Vk_Surface>		_vkSurface;
+	VkPtr<Vk_Swapchain>		_vkSwapchain;
+	SwapChainImages_Vk		_vkSwapchainImages;
+	SwapChainImageViews_Vk	_vkSwapchainImageViews;
+
 
 	VkPtr<Vk_Queue>		_vkGraphicsQueue;
 	VkPtr<Vk_Queue>		_vkPresentQueue;

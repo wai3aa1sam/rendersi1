@@ -24,6 +24,8 @@ public:
 
 	using Util = RenderApiUtil;
 
+	using SizeType = RenderApiLayerTraits::SizeType;
+
 public:
 	static CreateDesc makeCDesc();
 	static SPtr<RenderContext> make(const CreateDesc& cDesc);

@@ -182,7 +182,7 @@ i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDes
 	_extInfo.createPhyDeviceExtensions(out, cDesc, e);
 	Util::getPhyDeviceFeaturesTo(out, e);
 	Util::getQueueFaimlyPropertiesTo(_queueFamilyProperties, vkPhyDevice);
-	Util::getSwapchianAvailableInfo(_swapchainAvaliableInfo, e, vkSurface);
+	Util::getSwapchainAvailableInfoTo(_swapchainAvaliableInfo, e, vkSurface);
 
 	for (u32 i = 0; i < _queueFamilyProperties.size(); ++i) 
 	{
@@ -247,7 +247,8 @@ RenderApiPrimitive_Vk<Vk_DebugUtilsMessenger>::destroy()
 void
 RenderApiPrimitive_Vk<Vk_Surface>::destroy()
 {
-	vkDestroySurfaceKHR(Renderer_Vk::instance()->vkInstance(), _p, Renderer_Vk::instance()->allocCallbacks());
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroySurfaceKHR(renderer->vkInstance(), _p, renderer->allocCallbacks());
 }
 
 #endif
@@ -261,10 +262,40 @@ RenderApiPrimitive_Vk<Vk_Surface>::destroy()
 void
 RenderApiPrimitive_Vk<Vk_Swapchain>::destroy()
 {
-	vkDestroySwapchainKHR(Renderer_Vk::instance()->vkDevice(), _p, Renderer_Vk::instance()->allocCallbacks());
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroySwapchainKHR(renderer->vkDevice(), _p, renderer->allocCallbacks());
 }
 
 #endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Image>-Impl ---
+#endif // 0
+#if 1
+
+void
+RenderApiPrimitive_Vk<Vk_Image>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyImage(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_ImageView>-Impl ---
+#endif // 0
+#if 1
+
+void
+RenderApiPrimitive_Vk<Vk_ImageView>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyImageView(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
 
 #endif
 

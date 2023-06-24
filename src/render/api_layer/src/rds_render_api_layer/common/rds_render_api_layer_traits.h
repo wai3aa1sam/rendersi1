@@ -18,6 +18,8 @@ public:
 	static constexpr const char* s_appName		= "Rendersi1";
 	static constexpr const char* s_engineName	= "Rendersi1";
 
+	static constexpr SizeType s_kSwapchainImageLocalSize = 4;
+
 
 public:
 
