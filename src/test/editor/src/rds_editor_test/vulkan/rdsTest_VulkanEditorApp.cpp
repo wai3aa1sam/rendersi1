@@ -13,6 +13,10 @@ public:
 	VulkanLayer() = default;
 	virtual ~VulkanLayer() = default;
 
+	virtual void onCreate() override
+	{
+	}
+
 protected:
 
 };
@@ -65,6 +69,8 @@ protected:
 			auto rendererCDesc = Renderer::makeCDesc();
 			Renderer::instance()->create(rendererCDesc);
 		}
+
+		{ Process sh = { "asset/shader/vulkan/compile_shader.bat" }; }
 
 		{
 			auto windowCDesc = _vulkanMainWin.makeCDesc();

@@ -19,6 +19,7 @@ using Vk_Framebuffer			= VkFramebuffer_T;
 using Vk_RenderPass				= VkRenderPass_T;
 using Vk_Pipeline				= VkPipeline_T;
 using Vk_PipelineLayout			= VkPipelineLayout_T;
+using Vk_PipelineCache			= VkPipelineCache_T;
 using Vk_DescriptorSet			= VkDescriptorSet_T;
 using Vk_DescriptorSetLayout	= VkDescriptorSetLayout_T;
 using Vk_ShaderModule			= VkShaderModule_T;
@@ -60,12 +61,67 @@ template<class T> class RenderApiPrimitive_Vk;
 
 #endif
 
-
-
 #if 0
 #pragma mark --- rdsRenderApiPrimitive_Vk-Impl ---
 #endif // 0
 #if 1
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Instance>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Instance> : public RenderApiPrimitive_Base_Vk<Vk_Instance>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_DebugUtilsMessenger>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_DebugUtilsMessenger> : public RenderApiPrimitive_Base_Vk<Vk_DebugUtilsMessenger>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_PhysicalDevice>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_PhysicalDevice> : public RenderApiPrimitive_Base_Vk<Vk_PhysicalDevice>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Device>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Device> : public RenderApiPrimitive_Base_Vk<Vk_Device>
+{
+public:
+	void destroy();
+};
+
+#endif
+
 
 #if 0
 #pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Surface>-Impl ---
@@ -90,10 +146,7 @@ template<>
 class RenderApiPrimitive_Vk<Vk_Queue> : public RenderApiPrimitive_Base_Vk<Vk_Queue>
 {
 public:
-	void destroy()
-	{
-
-	}
+	void destroy();
 };
 
 #endif
@@ -140,10 +193,63 @@ public:
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_ShaderModule>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_ShaderModule> : public RenderApiPrimitive_Base_Vk<Vk_ShaderModule>
+{
+public:
+	void destroy();
+};
+
 #endif
 
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_RenderPass>-Impl ---
+#endif // 0
+#if 1
 
+template<>
+class RenderApiPrimitive_Vk<Vk_RenderPass> : public RenderApiPrimitive_Base_Vk<Vk_RenderPass>
+{
+public:
+	void destroy();
+};
 
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_PipelineLayout>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_PipelineLayout> : public RenderApiPrimitive_Base_Vk<Vk_PipelineLayout>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Pipeline>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Pipeline> : public RenderApiPrimitive_Base_Vk<Vk_Pipeline>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#endif
 
 }
 

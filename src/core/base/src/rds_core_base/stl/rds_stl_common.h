@@ -103,7 +103,7 @@ template<class VALUE, class PRED = StrLess<const char*>, class ALLOC = DefaultAl
 #endif // 0
 #if 1
 
-template<class T> using Span_T = ::nmsp::Span_T<T>;
+template<class T> using Span = ::nmsp::Span_T<T>;
 using ByteSpan = ::nmsp::ByteSpan_T;
 using ::nmsp::spanCast;
 

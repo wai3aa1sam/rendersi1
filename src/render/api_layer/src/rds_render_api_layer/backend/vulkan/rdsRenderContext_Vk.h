@@ -38,6 +38,8 @@ protected:
 
 	void createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvailableInfo_Vk& info, const Rect2f& windowRect2f);
 
+	void createTestRenderPass();
+	void createTestGraphicsPipeline();
 
 protected:
 	Renderer_Vk* _renderer = nullptr;
@@ -48,11 +50,13 @@ protected:
 	VkPtr<Vk_Swapchain>		_vkSwapchain;
 	SwapChainImages_Vk		_vkSwapchainImages;
 	SwapChainImageViews_Vk	_vkSwapchainImageViews;
-
+	
+	VkPtr<Vk_Pipeline>		_testVkPipeline;
+	VkPtr<Vk_RenderPass>	_testVkRenderPass;
+	VkPtr<Vk_PipelineLayout>_testVkPipelineLayout;
 
 	VkPtr<Vk_Queue>		_vkGraphicsQueue;
 	VkPtr<Vk_Queue>		_vkPresentQueue;
-
 };
 
 Renderer_Vk* RenderContext_Vk::renderer() { return _renderer; }

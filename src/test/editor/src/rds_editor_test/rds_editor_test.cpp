@@ -21,9 +21,9 @@ int main(int argc, char* argv[])
 	int exitCode = 0;
 	{
 		#if 1
-		TestScope testScope {run_temp_test, RDS_ENABLE_BENCHMARK, argc, argv };
+		TestScope testScope { run_temp_test, RDS_ENABLE_BENCHMARK, argc, argv };
 		#else
-		TestScope testScope {run_all_test, RDS_ENABLE_BENCHMARK, argc, argv };
+		TestScope testScope { run_all_test, RDS_ENABLE_BENCHMARK, argc, argv };
 		#endif // 0
 	}
 	

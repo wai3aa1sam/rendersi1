@@ -102,6 +102,8 @@ public:
 								const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
 	static void createImageView(Vk_ImageView** out, Vk_Image* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
+	static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
+
 
 
 	template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 
@@ -114,8 +116,6 @@ public:
 public:
 	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance* vkInstance);
 	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out, Vk_PhysicalDevice* vkPhyDevice);
-	template<size_t N> static u32 getSwapchainImagesTo		(Vector<Vk_Image,				 N>& out, Vk_Swapchain* vkSwapchain, Vk_Device* vkDevice);
-	
 
 	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
 	static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);

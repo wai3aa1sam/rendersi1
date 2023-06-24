@@ -21,6 +21,7 @@ AppLayerStack::~AppLayerStack()
 
 void AppLayerStack::pushLayer(UPtr<AppLayer> p)
 {
+	p->create();
     _stack.emplace_back(rds::move(p));
 }
 

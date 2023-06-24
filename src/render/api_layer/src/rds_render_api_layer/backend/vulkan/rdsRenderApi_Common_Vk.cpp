@@ -185,6 +185,21 @@ RenderApiUtil_Vk::createImageView(Vk_ImageView** out, Vk_Image* vkImage, Vk_Devi
 	throwIfError(ret);
 }
 
+void 
+RenderApiUtil_Vk::createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice)
+{
+	Vector<u8> bin;
+	File::readFile(filename, bin);
+
+	VkShaderModuleCreateInfo createInfo = {};
+	createInfo.sType	= VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize	= bin.size();
+	createInfo.pCode	= reinterpret_cast<const u32*>(bin.data());
+
+	auto ret = vkCreateShaderModule(vkDevice, &createInfo, Renderer_Vk::instance()->allocCallbacks(), out);
+	throwIfError(ret);
+}
+
 void
 RenderApiUtil_Vk::getPhyDevicePropertiesTo(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice)
 {

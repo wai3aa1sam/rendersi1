@@ -5,6 +5,7 @@
 /external/nmsplib
 
 LocalTemp/
+local_temp/
 
 *.bak
 *.lnk

@@ -8,81 +8,15 @@
 namespace rds
 {
 
-#if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk-Impl ---
-#endif // 0
-#if 1
-
-#if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Instance>-Impl ---
-#endif // 0
-#if 1
-
-template<>
-class RenderApiPrimitive_Vk<Vk_Instance> : public RenderApiPrimitive_Base_Vk<Vk_Instance>
-{
-public:
-	void destroy()
-	{
-		vkDestroyInstance(_p, MemoryContext_Vk::instance()->allocCallbacks());
-	}
-};
-
-
-#endif
-
-#if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_DebugUtilsMessenger>-Impl ---
-#endif // 0
-#if 1
-
-template<>
-class RenderApiPrimitive_Vk<Vk_DebugUtilsMessenger> : public RenderApiPrimitive_Base_Vk<Vk_DebugUtilsMessenger>
-{
-public:
-	void destroy();
-};
-
-#endif
-
-#if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_PhysicalDevice>-Impl ---
-#endif // 0
-#if 1
-
-template<>
-class RenderApiPrimitive_Vk<Vk_PhysicalDevice> : public RenderApiPrimitive_Base_Vk<Vk_PhysicalDevice>
-{
-public:
-	void destroy()
-	{
-
-	}
-};
-
-#endif
-
-#if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Device>-Impl ---
-#endif // 0
-#if 1
-
-template<>
-class RenderApiPrimitive_Vk<Vk_Device> : public RenderApiPrimitive_Base_Vk<Vk_Device>
-{
-public:
-	void destroy()
-	{
-		vkDestroyDevice(_p, MemoryContext_Vk::instance()->allocCallbacks());
-	}
-};
-
-#endif
-
-template<> class RenderApiPrimitive_Vk<Vk_Surface>;
-template<> class RenderApiPrimitive_Vk<Vk_Queue>;
-
-#endif
+//#if 0
+//#pragma mark --- rdsRenderApiPrimitive_Vk-Impl ---
+//#endif // 0
+//#if 1
+//
+//template<> class RenderApiPrimitive_Vk<Vk_Surface>;
+//template<> class RenderApiPrimitive_Vk<Vk_Queue>;
+//
+//#endif
 
 #if 0
 #pragma mark --- rdsRenderer_Vk-Decl ---
