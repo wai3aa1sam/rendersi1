@@ -36,6 +36,8 @@ class VkPtr : public RenderApiPrimitive_Vk<T>
 
 			T* ptr()       RDS_NOEXCEPT			{ return _p; }
 	const	T* ptr() const RDS_NOEXCEPT			{ return _p; }
+	
+	const	T** address() const RDS_NOEXCEPT	{ return sCast<const T**>(&_p); }
 
 	void reset(T* p) RDS_NOEXCEPT 
 	{

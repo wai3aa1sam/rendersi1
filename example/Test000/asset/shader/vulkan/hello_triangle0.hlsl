@@ -7,6 +7,7 @@ struct VertexIn
 
 struct PixelIn 
 {
+    float4 position   : SV_POSITION;    // gl_Position
 	//float2 positionOS : POSITION;
     float3 color      : COLOR;
 };
@@ -28,12 +29,16 @@ PixelIn vs_main(VertexIn i)
     };
     //o.positionOS    = positions[i.vertexId];
     o.color         = colors[i.vertexId];
+    o.position      = float4(positions[i.vertexId], 0.0, 1.0);
 
     return o;
 }
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
+    //float2 pos2f = i.positionOS;
+    float4 pos4f = i.position;
+
     float4 color = float4(i.color, 1.0);
     return color;
 }

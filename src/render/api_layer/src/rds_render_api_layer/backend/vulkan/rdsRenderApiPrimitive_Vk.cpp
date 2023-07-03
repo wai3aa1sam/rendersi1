@@ -135,6 +135,19 @@ RenderApiPrimitive_Vk<Vk_ImageView>::destroy()
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Framebuffer>-Impl ---
+#endif // 0
+#if 1
+
+void
+RenderApiPrimitive_Vk<Vk_Framebuffer>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyFramebuffer(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
 
 #if 0
 #pragma mark --- rdsRenderApiPrimitive_Vk<Vk_ShaderModule>-Impl ---
@@ -192,6 +205,61 @@ RenderApiPrimitive_Vk<Vk_Pipeline>::destroy()
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandPool>-Impl ---
+#endif // 0
+#if 1
+
+void 
+RenderApiPrimitive_Vk<Vk_CommandPool>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyCommandPool(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandBuffer>-Impl ---
+#endif // 0
+#if 1
+
+void 
+RenderApiPrimitive_Vk<Vk_CommandBuffer>::destroy()
+{
+	//auto* renderer = Renderer_Vk::instance();
+	//vkDestroyPipeline(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Semaphore>-Impl ---
+#endif // 0
+#if 1
+
+void 
+RenderApiPrimitive_Vk<Vk_Semaphore>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroySemaphore(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Fence>-Impl ---
+#endif // 0
+#if 1
+
+void 
+RenderApiPrimitive_Vk<Vk_Fence>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyFence(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
 
 #endif
 

@@ -52,6 +52,12 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	createTestRenderPass();
 	createTestGraphicsPipeline();
+
+	createFramebuffers();
+
+	createCommandPool();
+	createCommandBuffer();
+	createSyncObjects();
 }
 
 void
@@ -64,6 +70,152 @@ void
 RenderContext_Vk::onDestroy()
 {
 	Base::onDestroy();
+}
+
+void 
+RenderContext_Vk::onBeginRender()
+{
+	auto* vkDevice = renderer()->vkDevice();
+
+	//const auto* inFlightVkFence = reinCast<const VkFence*>(_inFlightVkFence.address());
+	Vk_Fence* vkFences[]	= { _inFlightVkFence };
+	u32 vkFenceCount		= ArraySize<decltype(vkFences)>;
+	vkWaitForFences(vkDevice, vkFenceCount, vkFences, VK_TRUE, NumLimit<u64>::max());
+	vkResetFences(vkDevice, vkFenceCount, vkFences);
+
+	u32 imageIdx;
+	vkAcquireNextImageKHR(vkDevice, _vkSwapchain, NumLimit<u64>::max(), _imageAvailableVkSmp, VK_NULL_HANDLE, &imageIdx);
+	_currentImageIdx = imageIdx;
+
+	beginRecord(_vkCommandBuffer, _currentImageIdx);
+
+	testDrawCall(_vkCommandBuffer, _currentImageIdx);
+}
+
+void 
+RenderContext_Vk::onEndRender()	
+{
+	endRecord(_vkCommandBuffer);
+}
+
+void 
+RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
+{
+	VkResult ret;
+
+	{
+		VkCommandBufferResetFlags cmdBufRestFlags = 0;
+		vkResetCommandBuffer(vkCmdBuf, cmdBufRestFlags);
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags				= 0;		// Optional
+		beginInfo.pInheritanceInfo	= nullptr;	// Optional
+		ret = vkBeginCommandBuffer(vkCmdBuf, &beginInfo);
+		Util::throwIfError(ret);
+	}
+
+	{
+		VkClearValue clearValues[]	= { VkClearValue(), VkClearValue() };
+		clearValues[0].color		= {{ 0.8f, 0.6f, 0.4f, 1.0f }};
+		//clearValues[0].color		= {{ 0.0f, 0.0f, 0.0f, 1.0f }};
+		clearValues[1].depthStencil = {1.0f, 0};
+
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass			= _testVkRenderPass;
+		renderPassInfo.framebuffer			= _vkSwapchainFramebuffers[imageIdx];
+		renderPassInfo.renderArea.offset	= {0, 0};
+		renderPassInfo.renderArea.extent	= _swapchainInfo.extent;
+		renderPassInfo.clearValueCount		= ArraySize<decltype(clearValues)>;
+		renderPassInfo.pClearValues			= clearValues;	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
+
+		vkCmdBeginRenderPass(vkCmdBuf, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	}
+}
+
+void 
+RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
+{
+	VkResult ret;
+
+	{
+		vkCmdEndRenderPass(vkCmdBuf);
+		ret = vkEndCommandBuffer(vkCmdBuf);
+		Util::throwIfError(ret);
+	}
+
+	{
+		VkSubmitInfo submitInfo = {};
+
+		VkSemaphore				waitVkSmps[]	= { _imageAvailableVkSmp };
+		VkSemaphore signalVkSmps[]				= { _renderFinishedVkSmp };
+		VkPipelineStageFlags	waitStages[]	= { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		VkCommandBuffer			vkCmdBufs[]		= { vkCmdBuf };
+
+		submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.waitSemaphoreCount	= ArraySize<decltype(waitVkSmps)>;
+		submitInfo.signalSemaphoreCount	= ArraySize<decltype(signalVkSmps)>;
+		submitInfo.commandBufferCount	= ArraySize<decltype(vkCmdBufs)>;
+		submitInfo.pWaitSemaphores		= waitVkSmps;
+		submitInfo.pWaitDstStageMask	= waitStages;
+		submitInfo.pSignalSemaphores	= signalVkSmps;
+		submitInfo.pCommandBuffers		= vkCmdBufs;
+
+		ret = vkQueueSubmit(_vkGraphicsQueue, 1, &submitInfo, _inFlightVkFence);
+		Util::throwIfError(ret);
+	}
+
+	{
+		VkPresentInfoKHR presentInfo = {};
+
+		Vk_Semaphore*	waitVkSmps[]	= { _renderFinishedVkSmp };
+		Vk_Swapchain*	vkSwapChains[]	= { _vkSwapchain };
+		u32				imageIndices[]	= { _currentImageIdx };
+
+		presentInfo.sType				= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.waitSemaphoreCount	= ArraySize<decltype(waitVkSmps)>;
+		presentInfo.swapchainCount		= ArraySize<decltype(vkSwapChains)>;
+		presentInfo.pWaitSemaphores		= waitVkSmps;
+		presentInfo.pSwapchains			= vkSwapChains;
+		presentInfo.pImageIndices		= imageIndices;
+		presentInfo.pResults			= nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
+
+		ret = vkQueuePresentKHR(_vkPresentQueue, &presentInfo);
+		Util::throwIfError(ret);
+	}
+
+	vkDeviceWaitIdle(renderer()->vkDevice());
+}
+
+void 
+RenderContext_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeline)
+{
+	vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
+
+	// since we set viewport and scissor state is dynamic
+	VkViewport			viewport{};
+	viewport.x			= 0.0f;
+	viewport.y			= 0.0f;
+	viewport.width		= sCast<float>(_swapchainInfo.extent.width);
+	viewport.height		= sCast<float>(_swapchainInfo.extent.height);
+	viewport.minDepth	= 0.0f;
+	viewport.maxDepth	= 1.0f;
+	vkCmdSetViewport(vkCmdBuf, 0, 1, &viewport);
+
+	VkRect2D		scissor{};
+	scissor.offset	= {0, 0};
+	scissor.extent	= _swapchainInfo.extent;
+	vkCmdSetScissor(vkCmdBuf, 0, 1, &scissor);
+}
+
+void 
+RenderContext_Vk::testDrawCall(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
+{
+	bindPipeline(vkCmdBuf, _testVkPipeline);
+
+	u32 vtxCount = 3;
+	vkCmdDraw(vkCmdBuf, vtxCount, 1, 0, 0);
 }
 
 void
@@ -103,6 +255,77 @@ RenderContext_Vk::createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvai
 			extent.height	= math::clamp(extent.height,	caps.minImageExtent.height, caps.maxImageExtent.height);
 		}
 	}
+}
+
+void 
+RenderContext_Vk::createFramebuffers()
+{
+	auto* vkDevice			= _renderer->vkDevice();
+	auto* vkAlloCallbacks	= _renderer->allocCallbacks();
+	
+	auto count = _vkSwapchainImageViews.size();
+
+	_vkSwapchainFramebuffers.resize(count);
+	for (size_t i = 0; i < count; i++) 
+	{
+		VkImageView attachments[] = 
+		{
+			_vkSwapchainImageViews[i],
+		};
+
+		VkFramebufferCreateInfo framebufferInfo = {};
+		framebufferInfo.sType			= VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass		= _testVkRenderPass;
+		framebufferInfo.attachmentCount = ArraySize<decltype(attachments)>;
+		framebufferInfo.pAttachments	= attachments;
+		framebufferInfo.width			= _swapchainInfo.extent.width;
+		framebufferInfo.height			= _swapchainInfo.extent.height;
+		framebufferInfo.layers			= 1;
+
+		auto ret = vkCreateFramebuffer(vkDevice, &framebufferInfo, vkAlloCallbacks, _vkSwapchainFramebuffers[i].ptrForInit());
+		Util::throwIfError(ret);
+	}
+}
+
+void 
+RenderContext_Vk::createCommandPool()
+{
+	auto& queueFamilyIndices	= renderer()->queueFamilyIndices();
+	auto* vkDevice				= renderer()->vkDevice();
+	auto* allocCallbacks		= renderer()->allocCallbacks();
+
+	VkCommandPoolCreateInfo cInfo = {};
+	cInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	cInfo.flags				= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	cInfo.queueFamilyIndex	= queueFamilyIndices.graphics.value();
+
+	auto ret = vkCreateCommandPool(vkDevice, &cInfo, allocCallbacks, _vkCommandPool.ptrForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+RenderContext_Vk::createCommandBuffer()
+{
+	auto* vkDevice = renderer()->vkDevice();
+
+	VkCommandBufferAllocateInfo cInfo = {};
+	cInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cInfo.commandPool			= _vkCommandPool;
+	cInfo.level					= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	cInfo.commandBufferCount	= 1;
+
+	auto ret = vkAllocateCommandBuffers(vkDevice, &cInfo, _vkCommandBuffer.ptrForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+RenderContext_Vk::createSyncObjects()
+{
+	auto* vkDevice = renderer()->vkDevice();
+
+	Util::createSemaphore(_imageAvailableVkSmp.ptrForInit(), vkDevice);
+	Util::createSemaphore(_renderFinishedVkSmp.ptrForInit(), vkDevice);
+	Util::createFence(_inFlightVkFence.ptrForInit(), vkDevice);
 }
 
 void 
@@ -149,13 +372,13 @@ RenderContext_Vk::createTestRenderPass()
 	//attachments.emplace_back(depthAttachment);
 
 	// for image layout transition
-	VkSubpassDependency	dependency = {};
-	dependency.srcSubpass		= VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass		= 0;
-	dependency.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask	= 0;
-	dependency.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT /*| VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT*/;
+	VkSubpassDependency	subpassDep = {};
+	subpassDep.srcSubpass		= VK_SUBPASS_EXTERNAL;
+	subpassDep.dstSubpass		= 0;
+	subpassDep.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDep.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDep.srcAccessMask	= 0;
+	subpassDep.dstAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT /*| VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT*/;
 
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType			= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -164,7 +387,7 @@ RenderContext_Vk::createTestRenderPass()
 	renderPassInfo.subpassCount		= 1;
 	renderPassInfo.dependencyCount	= 1;
 	renderPassInfo.pSubpasses		= &subpass;
-	renderPassInfo.pDependencies	= &dependency;
+	renderPassInfo.pDependencies	= &subpassDep;
 
 	auto ret = vkCreateRenderPass(vkDevice, &renderPassInfo, vkAllocCallbacks, _testVkRenderPass.ptrForInit());
 	Util::throwIfError(ret);

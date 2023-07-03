@@ -46,17 +46,30 @@ RenderContext::destroy()
 	onDestroy();
 }
 
-void RenderContext::onCreate(const CreateDesc& cDesc)
+void RenderContext::beginRender()
+{
+	onBeginRender();
+}
+
+void RenderContext::endRender()
+{
+	onEndRender();
+}
+
+void 
+RenderContext::onCreate(const CreateDesc& cDesc)
 {
 
 }
 
-void RenderContext::onPostCreate(const CreateDesc& cDesc)
+void 
+RenderContext::onPostCreate(const CreateDesc& cDesc)
 {
 
 }
 
-void RenderContext::onDestroy()
+void 
+RenderContext::onDestroy()
 {
 
 }

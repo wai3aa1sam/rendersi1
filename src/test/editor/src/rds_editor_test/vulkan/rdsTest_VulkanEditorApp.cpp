@@ -7,20 +7,7 @@ namespace rds
 {
 
 
-class VulkanLayer : public EditorLayer
-{
-public:
-	VulkanLayer() = default;
-	virtual ~VulkanLayer() = default;
-
-	virtual void onCreate() override
-	{
-	}
-
-protected:
-
-};
-
+class VulkanLayer;
 class VulkanEditorMainWindow : public EditorMainWindow
 {
 public:
@@ -32,6 +19,7 @@ public:
 	void destroy()
 	{
 	}
+
 protected:
 	virtual void onCreate(const CreateDesc_Base& cDesc) override
 	{
@@ -51,9 +39,14 @@ private:
 class VulkanEditorApp : public EditorApp
 {
 public:
+	static VulkanEditorApp* instance() { return sCast<VulkanEditorApp*>(s_instance); }
+
+public:
 	~VulkanEditorApp()
 	{
 	}
+
+	VulkanEditorMainWindow* mainWin() { return &_vulkanMainWin; }
 
 protected:
 
@@ -82,6 +75,8 @@ protected:
 		pushLayer(makeUPtr<VulkanLayer>());
 	}
 
+	
+
 	virtual void willQuit() override
 	{
 		_vulkanMainWin.~VulkanEditorMainWindow();
@@ -91,6 +86,30 @@ protected:
 
 protected:
 	VulkanEditorMainWindow _vulkanMainWin;
+};
+
+
+class VulkanLayer : public EditorLayer
+{
+public:
+	VulkanLayer() = default;
+	virtual ~VulkanLayer() = default;
+
+	virtual void onCreate() override
+	{
+	}
+
+	virtual void onRender() override
+	{
+		auto& rdCtx = VulkanEditorApp::instance()->mainWin()->renderContext();
+		rdCtx.beginRender();
+
+
+		rdCtx.endRender();
+	}
+
+protected:
+
 };
 
 class Test_VulkanEditorApp : public UnitTest

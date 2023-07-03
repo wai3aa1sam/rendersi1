@@ -12,10 +12,12 @@ namespace rds
 
 #if 1
 
-template<size_t N>	using SwapChainImages_Vk_N		= Vector<Vk_Image*, N>;
-					using SwapChainImages_Vk		= Vector<Vk_Image*,				RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
-template<size_t N>	using SwapChainImageViews_Vk_N	= Vector<VkPtr<Vk_ImageView>, N>;
-					using SwapChainImageViews_Vk	= Vector<VkPtr<Vk_ImageView>,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainImages_Vk_N			= Vector<Vk_Image*, N>;
+					using SwapChainImages_Vk			= Vector<Vk_Image*,				RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainImageViews_Vk_N		= Vector<VkPtr<Vk_ImageView>, N>;
+					using SwapChainImageViews_Vk		= Vector<VkPtr<Vk_ImageView>,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<VkPtr<Vk_Framebuffer>, N>;
+					using SwapChainFramebuffers_Vk		= Vector<VkPtr<Vk_Framebuffer>,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
 
 #endif // 1
 
@@ -104,6 +106,8 @@ public:
 
 	static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
 
+	static void createSemaphore(Vk_Semaphore** out, Vk_Device* vkDevice);
+	static void createFence(Vk_Fence** out, Vk_Device* vkDevice);
 
 
 	template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 

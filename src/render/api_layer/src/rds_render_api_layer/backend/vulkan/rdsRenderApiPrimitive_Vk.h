@@ -193,6 +193,21 @@ public:
 
 #endif
 
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Framebuffer>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Framebuffer> : public RenderApiPrimitive_Base_Vk<Vk_Framebuffer>
+{
+public:
+	void destroy();
+};
+
+#endif
+
 #if 0
 #pragma mark --- rdsRenderApiPrimitive_Vk<Vk_ShaderModule>-Impl ---
 #endif // 0
@@ -249,8 +264,65 @@ public:
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandPool>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_CommandPool> : public RenderApiPrimitive_Base_Vk<Vk_CommandPool>
+{
+public:
+	void destroy();
+};
+
 #endif
 
-}
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandBuffer>-Impl ---
+#endif // 0
+#if 1
 
+template<>
+class RenderApiPrimitive_Vk<Vk_CommandBuffer> : public RenderApiPrimitive_Base_Vk<Vk_CommandBuffer>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Semaphore>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Semaphore> : public RenderApiPrimitive_Base_Vk<Vk_Semaphore>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Fence>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Fence> : public RenderApiPrimitive_Base_Vk<Vk_Fence>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+
+#endif
+
+
+}
 #endif

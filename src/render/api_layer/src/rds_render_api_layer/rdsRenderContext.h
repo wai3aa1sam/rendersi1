@@ -37,10 +37,16 @@ public:
 	void create(const CreateDesc& cDesc);
 	void destroy();
 
+	void beginRender();
+	void endRender();
+
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onPostCreate(const CreateDesc& cDesc);
 	virtual void onDestroy();
+
+	virtual void onBeginRender()	{};
+	virtual void onEndRender()		{};
 
 protected:
 	//RenderContext(const CreateDesc&)

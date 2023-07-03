@@ -71,7 +71,7 @@ RenderApiUtil_Vk::debugCallback(
 	if (messageSeverity < VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		return VK_FALSE;
 
-	RDS_LOG("Vulkan validation layer: {}", pCallbackData->pMessage);
+	RDS_CORE_LOG_ERROR("Vulkan validation layer: {}\n", pCallbackData->pMessage);
 	return VK_FALSE;
 }
 
@@ -146,9 +146,9 @@ RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_
 	}
 	else
 	{
-		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		createInfo.queueFamilyIndexCount = 0;		// Optional
-		createInfo.pQueueFamilyIndices = nullptr;	// Optional
+		createInfo.imageSharingMode			= VK_SHARING_MODE_EXCLUSIVE;
+		createInfo.queueFamilyIndexCount	= 0;		// Optional
+		createInfo.pQueueFamilyIndices		= nullptr;	// Optional
 	}
 
 	createInfo.preTransform		= avaInfo.capabilities.currentTransform;
@@ -197,6 +197,31 @@ RenderApiUtil_Vk::createShaderModule(Vk_ShaderModule** out, StrView filename, Vk
 	createInfo.pCode	= reinterpret_cast<const u32*>(bin.data());
 
 	auto ret = vkCreateShaderModule(vkDevice, &createInfo, Renderer_Vk::instance()->allocCallbacks(), out);
+	throwIfError(ret);
+}
+
+void 
+RenderApiUtil_Vk::createSemaphore(Vk_Semaphore** out, Vk_Device* vkDevice)
+{
+	auto* vkAllocCallbacks = Renderer_Vk::instance()->allocCallbacks();
+
+	VkSemaphoreCreateInfo cInfo = {};
+	cInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	auto ret = vkCreateSemaphore(vkDevice, &cInfo, vkAllocCallbacks, out);	
+	throwIfError(ret);
+}
+
+void 
+RenderApiUtil_Vk::createFence(Vk_Fence** out, Vk_Device* vkDevice)
+{
+	auto* vkAllocCallbacks = Renderer_Vk::instance()->allocCallbacks();
+
+	VkFenceCreateInfo cInfo = {};
+	cInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	cInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;			// create with signaled state
+
+	auto ret = vkCreateFence(vkDevice, &cInfo, vkAllocCallbacks, out);			
 	throwIfError(ret);
 }
 
