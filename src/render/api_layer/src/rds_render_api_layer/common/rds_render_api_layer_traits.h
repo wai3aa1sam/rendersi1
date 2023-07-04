@@ -20,6 +20,8 @@ public:
 
 	static constexpr SizeType s_kSwapchainImageLocalSize = 4;
 
+	static constexpr SizeType s_kFrameInFlightCount = 4;
+	static_assert(math::isPowOf2(s_kFrameInFlightCount));
 
 public:
 

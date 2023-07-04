@@ -46,14 +46,30 @@ RenderContext::destroy()
 	onDestroy();
 }
 
-void RenderContext::beginRender()
+void 
+RenderContext::beginRender()
 {
+	RDS_PROFILE_SCOPED();
 	onBeginRender();
 }
 
-void RenderContext::endRender()
+void
+RenderContext::endRender()
 {
+	RDS_PROFILE_SCOPED();
 	onEndRender();
+}
+
+void		 
+RenderContext::setFramebufferSize(const Vec2f& newSize)
+{
+	if (_framebufferSize == newSize)
+		return;
+
+	RDS_PROFILE_SCOPED();
+
+	_framebufferSize = newSize;
+	onSetFramebufferSize(newSize);
 }
 
 void 

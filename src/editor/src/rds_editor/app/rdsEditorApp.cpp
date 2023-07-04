@@ -62,6 +62,8 @@ EditorApp::onRun		()
 
 	while (!_shouldQuit)
 	{
+		RDS_PROFILE_FRAME();
+
 		pollMsg();
 
 		for (auto& layer : _appLayerStack)

@@ -74,6 +74,8 @@ struct RenderApiUtil_Vk : public RenderApiUtil
 public:
 	friend class Renderer_Vk;
 
+	using Rect2f = math::Rect2f;
+
 public:
 	using Base					= RenderApiUtil;
 	using Result				= VkResult;
@@ -90,7 +92,8 @@ public:
 	static String getStrFromVkResult(Result ret);
 
 public:
-	static VkExtent2D getVkExtent2D(const Rect2f& rect2f);
+	static VkExtent2D toVkExtent2D(const Rect2f& rect2);
+	static VkExtent2D toVkExtent2D(const Vec2f&  vec2);
 
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);

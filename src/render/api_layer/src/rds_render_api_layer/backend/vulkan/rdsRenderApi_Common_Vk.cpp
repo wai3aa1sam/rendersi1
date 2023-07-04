@@ -39,7 +39,7 @@ RenderApiUtil_Vk::reportError(Result ret)
 {
 	RDS_ASSERT(_checkError(ret), "reportError(): not an error");
 	auto str = getStrFromVkResult(ret);
-	RDS_LOG("VkResult(0x{:0X}) {}", sCast<u32>(ret), str);
+	RDS_CORE_LOG_ERROR("VkResult(0x{:0X}) {}", sCast<u32>(ret), str);
 }
 
 String
@@ -53,7 +53,7 @@ RenderApiUtil_Vk::getStrFromVkResult(Result ret)
 bool
 RenderApiUtil_Vk::_checkError(Result ret)
 {
-	return ret != VK_SUCCESS;
+	return ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -76,12 +76,23 @@ RenderApiUtil_Vk::debugCallback(
 }
 
 VkExtent2D 
-RenderApiUtil_Vk::getVkExtent2D(const Rect2f& rect2f)
+RenderApiUtil_Vk::toVkExtent2D(const Rect2f& rect2)
 {
 	VkExtent2D vkExtent = 
 	{
-		static_cast<u32>(rect2f.w),
-		static_cast<u32>(rect2f.h)
+		sCast<u32>(rect2.w),
+		sCast<u32>(rect2.h)
+	};
+	return vkExtent;
+}
+
+VkExtent2D 
+RenderApiUtil_Vk::toVkExtent2D(const Vec2f& vec2)
+{
+	VkExtent2D vkExtent = 
+	{
+		sCast<u32>(vec2.x),
+		sCast<u32>(vec2.y)
 	};
 	return vkExtent;
 }
@@ -121,7 +132,8 @@ void
 RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
 								  const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices)
 {
-	u32 imageCount	= avaInfo.capabilities.minImageCount + 1;
+	//u32 imageCount	= avaInfo.capabilities.minImageCount + 1;
+	u32 imageCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
 	imageCount		= math::clamp(imageCount, imageCount, avaInfo.capabilities.maxImageCount);
 
 	VkSwapchainCreateInfoKHR createInfo = {};

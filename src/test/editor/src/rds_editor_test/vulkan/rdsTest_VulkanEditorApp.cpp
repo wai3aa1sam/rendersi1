@@ -101,9 +101,13 @@ public:
 
 	virtual void onRender() override
 	{
-		auto& rdCtx = VulkanEditorApp::instance()->mainWin()->renderContext();
-		rdCtx.beginRender();
+		RDS_PROFILE_SCOPED();
 
+		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
+		auto& rdCtx		= mainWin->renderContext();
+
+		rdCtx.setFramebufferSize(mainWin->clientRect().size);
+		rdCtx.beginRender();
 
 		rdCtx.endRender();
 	}
