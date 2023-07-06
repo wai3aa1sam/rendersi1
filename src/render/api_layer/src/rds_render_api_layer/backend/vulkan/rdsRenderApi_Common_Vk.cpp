@@ -307,7 +307,7 @@ RenderApiUtil_Vk::getSwapchainAvailableInfoTo(SwapchainAvailableInfo_Vk& out, Vk
 #if 1
 
 u32
-ExtensionInfo_Vk::getAvailableValidationLayersTo(Vector<VkLayerProperties, s_kLocalSize>& out)
+ExtensionInfo_Vk::getAvailableValidationLayersTo(Vector<VkLayerProperties, s_kLocalSize>& out, bool logAvaliable)
 {
 	out.clear();
 
@@ -320,11 +320,20 @@ ExtensionInfo_Vk::getAvailableValidationLayersTo(Vector<VkLayerProperties, s_kLo
 	auto ret = vkEnumerateInstanceLayerProperties(&layerCount, out.data());
 	Util::throwIfError(ret);
 
+	if (logAvaliable)
+	{
+		RDS_LOG("vulkan available InstanceLayer extensions:");
+		for (const auto& e : out) 
+		{
+			RDS_LOG("\t ver: {}, {}", e.specVersion, e.layerName);
+		}
+	}
+
 	return layerCount;
 }
 
 u32
-ExtensionInfo_Vk::getAvailableExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, bool logExtension)
+ExtensionInfo_Vk::getAvailableExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, bool logAvaliable)
 {
 	out.clear();
 
@@ -336,9 +345,9 @@ ExtensionInfo_Vk::getAvailableExtensionsTo(Vector<VkExtensionProperties, s_kLoca
 	out.resize(extensionCount);
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, out.data());
 
-	if (logExtension)
+	if (logAvaliable)
 	{
-		RDS_LOG("vulkan available extensions:");
+		RDS_LOG("vulkan available Instance extensions:");
 		for (const auto& e : out) 
 		{
 			RDS_LOG("\t {}", e.extensionName);
@@ -348,7 +357,7 @@ ExtensionInfo_Vk::getAvailableExtensionsTo(Vector<VkExtensionProperties, s_kLoca
 }
 
 u32
-ExtensionInfo_Vk::getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice)
+ExtensionInfo_Vk::getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice, bool logAvaliable)
 {
 	auto& availableExtensions = out;
 	availableExtensions.clear();
@@ -362,6 +371,14 @@ ExtensionInfo_Vk::getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties
 	availableExtensions.resize(extensionCount);
 	vkEnumerateDeviceExtensionProperties(phyDevice, nullptr, &extensionCount, availableExtensions.data());
 
+	if (logAvaliable)
+	{
+		RDS_LOG("vulkan available Device extensions:");
+		for (const auto& e : availableExtensions) 
+		{
+			RDS_LOG("\t {}", e.extensionName);
+		}
+	}
 	return extensionCount;
 }
 
@@ -373,6 +390,7 @@ ExtensionInfo_Vk::createExtensions(const RenderAdapterInfo& adapterInfo, bool lo
 	out.clear();
 
 	out.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
+
 	if (adapterInfo.isDebug) {
 		out.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
@@ -395,7 +413,8 @@ ExtensionInfo_Vk::createValidationLayers(const RenderAdapterInfo& adapterInfo)
 	auto& out = _validationLayers;
 	out.clear();
 	out.emplace_back("VK_LAYER_KHRONOS_validation");
-
+	out.emplace_back("VK_LAYER_KHRONOS_synchronization2");
+	
 	RDS_DEBUG_CALL(checkValidationLayersExist());
 }
 
@@ -408,6 +427,7 @@ ExtensionInfo_Vk::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	o.clear();
 
 	// TODO: check extension exist
+	o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 	if (cDesc.isPresent)
 		o.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 }
@@ -415,11 +435,16 @@ ExtensionInfo_Vk::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 PFN_vkVoidFunction 
 ExtensionInfo_Vk::getExtFunction(const char* funcName) const
 {
-	PFN_vkVoidFunction func = vkGetInstanceProcAddr(Renderer_Vk::instance()->vkInstance(), funcName);
-	if (!func)
-		return nullptr;
-	constCast<ExtensionInfo_Vk&>(*this)._extFuncTable[funcName] = func;
-	return func;
+	auto it = _extFuncTable.find(funcName);
+	if (it == _extFuncTable.end())
+	{
+		PFN_vkVoidFunction func = vkGetInstanceProcAddr(Renderer_Vk::instance()->vkInstance(), funcName);
+		if (!func)
+			return nullptr;
+		constCast<ExtensionInfo_Vk&>(*this)._extFuncTable[funcName] = func;
+		return func;
+	}
+	return it->second;
 }
 
 bool 

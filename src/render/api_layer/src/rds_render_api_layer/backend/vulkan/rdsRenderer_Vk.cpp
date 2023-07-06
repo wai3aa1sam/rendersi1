@@ -158,6 +158,10 @@ Renderer_Vk::createVkDevice()
 	VkPhysicalDeviceFeatures phyDeviceFeatures = {};
 	Util::getVkPhyDeviceFeaturesTo(phyDeviceFeatures, _adapterInfo);
 
+	VkPhysicalDeviceVulkan13Features phyDeviceFeature13 = {};
+	phyDeviceFeature13.sType			= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	phyDeviceFeature13.synchronization2 = true;
+
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.queueCreateInfoCount		= sCast<u32>(queueCreateInfos.size());
@@ -167,7 +171,7 @@ Renderer_Vk::createVkDevice()
 	createInfo.ppEnabledExtensionNames	= _extInfo.phyDeviceExts().data();
 	createInfo.enabledLayerCount		= _adapterInfo.isDebug ? sCast<u32>(_extInfo.validationLayers().size()) : 0;	// ignored in new vk impl
 	createInfo.ppEnabledLayerNames		= _extInfo.validationLayers().data();											// ignored in new vk impl
-	createInfo.pNext					= nullptr;
+	createInfo.pNext					= &phyDeviceFeature13;
 
 	auto ret = vkCreateDevice(_vkPhysicalDevice, &createInfo, allocCallbacks(), _vkDevice.ptrForInit());
 	Util::throwIfError(ret);

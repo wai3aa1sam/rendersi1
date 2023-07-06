@@ -43,6 +43,13 @@ protected:
 	virtual void onSetFramebufferSize(const Vec2f& newSize) override;
 
 protected:
+	void beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx);
+	void endRecord(Vk_CommandBuffer* vkCmdBuf);
+	void bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeline);
+
+	void testDrawCall(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx);
+
+protected:
 	void createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvailableInfo_Vk& info, const math::Rect2f& rect2);
 
 	void createSwapchain();
@@ -57,11 +64,6 @@ protected:
 	void createTestRenderPass();
 	void createTestGraphicsPipeline();
 
-	void beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx);
-	void endRecord(Vk_CommandBuffer* vkCmdBuf);
-	void bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeline);
-
-	void testDrawCall(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx);
 
 	static constexpr size_t k() { return 4; }
 
@@ -87,7 +89,7 @@ protected:
 
 	Vector<VkPtr<Vk_CommandBuffer>, s_kFrameInFlightCount>	_vkCommandBuffers;
 	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_imageAvailableVkSmps;
-	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_renderFinishedVkSmps;
+	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_renderCompletedVkSmps;
 	Vector<VkPtr<Vk_Fence>,			s_kFrameInFlightCount>	_inFlightVkFences;
 
 	u32 _curImageIdx = 0;

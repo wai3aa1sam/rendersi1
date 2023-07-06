@@ -74,6 +74,8 @@ RenderContext_Vk::onDestroy()
 void
 RenderContext_Vk::onBeginRender()
 {
+	RDS_PROFILE_SCOPED();
+
 	auto* vkDevice = renderer()->vkDevice();
 	VkResult ret;
 
@@ -111,6 +113,8 @@ RenderContext_Vk::onBeginRender()
 void
 RenderContext_Vk::onEndRender()
 {
+	RDS_PROFILE_SCOPED();
+
 	//auto* vkDevice = renderer()->vkDevice();
 
 	auto* vkCmdBuf = _vkCommandBuffers[_curFrameIdx].ptr();
@@ -132,6 +136,8 @@ RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
 void
 RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 {
+	RDS_PROFILE_SCOPED();
+
 	VkResult ret;
 
 	{
@@ -168,6 +174,8 @@ RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 void
 RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
 {
+	RDS_PROFILE_SCOPED();
+
 	VkResult ret;
 	auto* vkDevice = renderer()->vkDevice();
 	{
@@ -183,30 +191,40 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
 	}
 
 	{
-		VkSubmitInfo submitInfo = {};
+		VkSubmitInfo2KHR submitInfo = {};
 
-		VkSemaphore				waitVkSmps[]	= { _imageAvailableVkSmps[_curFrameIdx] };
-		VkSemaphore				signalVkSmps[]	= { _renderFinishedVkSmps[_curFrameIdx] };
-		VkPipelineStageFlags	waitStages[]	= { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-		VkCommandBuffer			vkCmdBufs[]		= { vkCmdBuf };
+		VkSemaphoreSubmitInfoKHR imageAvailableSmpInfo = {};
+		imageAvailableSmpInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO ;
+		imageAvailableSmpInfo.semaphore = _imageAvailableVkSmps[_curFrameIdx];
+		imageAvailableSmpInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-		submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.waitSemaphoreCount	= ArraySize<decltype(waitVkSmps)>;
-		submitInfo.signalSemaphoreCount = ArraySize<decltype(signalVkSmps)>;
-		submitInfo.commandBufferCount	= ArraySize<decltype(vkCmdBufs)>;
-		submitInfo.pWaitSemaphores		= waitVkSmps;
-		submitInfo.pWaitDstStageMask	= waitStages;
-		submitInfo.pSignalSemaphores	= signalVkSmps;
-		submitInfo.pCommandBuffers		= vkCmdBufs;
+		VkSemaphoreSubmitInfoKHR renderCompletedSmpInfo = {};
+		renderCompletedSmpInfo.sType	 = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+		renderCompletedSmpInfo.semaphore = _renderCompletedVkSmps[_curFrameIdx];
+		renderCompletedSmpInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+		
+		VkCommandBufferSubmitInfoKHR cmdBufSubmitInfo = {};
+		cmdBufSubmitInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		cmdBufSubmitInfo.commandBuffer	= vkCmdBuf;
 
-		ret = vkQueueSubmit(_vkGraphicsQueue, 1, &submitInfo, _inFlightVkFences[_curFrameIdx]);
+		submitInfo.sType					= VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		submitInfo.waitSemaphoreInfoCount	= 1;
+		submitInfo.signalSemaphoreInfoCount = 1;
+		submitInfo.commandBufferInfoCount	= 1;
+		submitInfo.pWaitSemaphoreInfos		= &imageAvailableSmpInfo;
+		submitInfo.pSignalSemaphoreInfos	= &renderCompletedSmpInfo;
+		submitInfo.pCommandBufferInfos		= & cmdBufSubmitInfo;
+
+		//auto vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)vkGetDeviceProcAddr(Renderer_Vk::instance()->vkDevice(), "vkQueueSubmit2KHR");
+		//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getExtFunction("vkQueueSubmit2KHR");
+		ret = vkQueueSubmit2(_vkGraphicsQueue, 1, &submitInfo, _inFlightVkFences[_curFrameIdx]);
 		Util::throwIfError(ret);
 	}
 
 	{
 		VkPresentInfoKHR presentInfo = {};
 
-		Vk_Semaphore*	waitVkSmps[]	= { _renderFinishedVkSmps[_curFrameIdx] };
+		Vk_Semaphore*	waitVkSmps[]	= { _renderCompletedVkSmps[_curFrameIdx] };
 		Vk_Swapchain*	vkSwapChains[]	= { _vkSwapchain };
 		u32				imageIndices[]	= { _curImageIdx };
 
@@ -299,6 +317,8 @@ RenderContext_Vk::createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvai
 void
 RenderContext_Vk::createSwapchain()
 {
+	RDS_PROFILE_SCOPED();		// TODO: add this line fixed release mode crash "amdvlk64.pdb not loaded"
+
 	destroySwapchain();
 
 	auto vkDevice = renderer()->vkDevice();
@@ -400,8 +420,8 @@ RenderContext_Vk::createSyncObjects()
 {
 	auto* vkDevice = renderer()->vkDevice();
 
-	_imageAvailableVkSmps.resize(s_kFrameInFlightCount);
-	_renderFinishedVkSmps.resize(s_kFrameInFlightCount);
+	 _imageAvailableVkSmps.resize(s_kFrameInFlightCount);
+	_renderCompletedVkSmps.resize(s_kFrameInFlightCount);
 	_inFlightVkFences.resize(s_kFrameInFlightCount);
 
 	Vector<Vk_Semaphore*, s_kFrameInFlightCount> tmpVkSmps0;	tmpVkSmps0.resize(s_kFrameInFlightCount);
@@ -416,7 +436,7 @@ RenderContext_Vk::createSyncObjects()
 	}
 
 	Util::convertToVkPtrs(_imageAvailableVkSmps,	tmpVkSmps0);
-	Util::convertToVkPtrs(_renderFinishedVkSmps,	tmpVkSmps1);
+	Util::convertToVkPtrs(_renderCompletedVkSmps,	tmpVkSmps1);
 	Util::convertToVkPtrs(_inFlightVkFences,		tmpVkFences);
 }
 
@@ -454,7 +474,7 @@ RenderContext_Vk::createTestRenderPass()
 
 	VkSubpassDescription subpass = {};
 	subpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount	= 1;	
+	subpass.colorAttachmentCount	= 1;
 	subpass.pColorAttachments		= &colorAttachmentRef;
 	//subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
@@ -464,22 +484,36 @@ RenderContext_Vk::createTestRenderPass()
 	//attachments.emplace_back(depthAttachment);
 
 	// for image layout transition
-	VkSubpassDependency	subpassDep = {};
-	subpassDep.srcSubpass		= VK_SUBPASS_EXTERNAL;
-	subpassDep.dstSubpass		= 0;
-	subpassDep.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	subpassDep.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	subpassDep.srcAccessMask	= 0;
-	subpassDep.dstAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT /*| VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT*/;
+	Vector<VkSubpassDependency, 12> subpassDeps;
+	{
+		VkSubpassDependency	subpassDep = {};
+		subpassDep.srcSubpass		= VK_SUBPASS_EXTERNAL;
+		subpassDep.dstSubpass		= 0;
+		subpassDep.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDep.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDep.srcAccessMask	= 0;
+		subpassDep.dstAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT /*| VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT*/;
+		subpassDeps.emplace_back(subpassDep);
+	}
+	{
+		VkSubpassDependency	subpassDep = {};
+		subpassDep.srcSubpass		= 0;
+		subpassDep.dstSubpass		= VK_SUBPASS_EXTERNAL;
+		subpassDep.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDep.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDep.srcAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT ;
+		subpassDep.dstAccessMask	= 0 /*| VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT*/;
+		subpassDeps.emplace_back(subpassDep);
+	}
 
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType			= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount	= sCast<u32>(attachments.size());
 	renderPassInfo.pAttachments		= attachments.data();
 	renderPassInfo.subpassCount		= 1;
-	renderPassInfo.dependencyCount	= 1;
+	renderPassInfo.dependencyCount	= sCast<u32>(subpassDeps.size());
 	renderPassInfo.pSubpasses		= &subpass;
-	renderPassInfo.pDependencies	= &subpassDep;
+	renderPassInfo.pDependencies	= subpassDeps.data();
 
 	auto ret = vkCreateRenderPass(vkDevice, &renderPassInfo, vkAllocCallbacks, _testVkRenderPass.ptrForInit());
 	Util::throwIfError(ret);
@@ -488,6 +522,8 @@ RenderContext_Vk::createTestRenderPass()
 void 
 RenderContext_Vk::createTestGraphicsPipeline()
 {
+	RDS_PROFILE_SCOPED();
+
 	auto*		vkDevice			= _renderer->vkDevice();
 	const auto* vkAllocCallbacks	= _renderer->allocCallbacks();
 

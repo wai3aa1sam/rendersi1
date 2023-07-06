@@ -62,8 +62,6 @@ EditorApp::onRun		()
 
 	while (!_shouldQuit)
 	{
-		RDS_PROFILE_FRAME();
-
 		pollMsg();
 
 		for (auto& layer : _appLayerStack)
@@ -77,6 +75,8 @@ EditorApp::onRun		()
 		}
 
 		JobSystem::instance()->_internal_nextFrame();
+
+		RDS_PROFILE_FRAME();
 	}
 	willQuit();
 }

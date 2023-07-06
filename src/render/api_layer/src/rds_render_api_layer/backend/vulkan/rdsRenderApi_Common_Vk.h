@@ -159,9 +159,9 @@ public:
 	static constexpr SizeType s_kLocalSize = 12;
 
 public:
-	static u32 getAvailableValidationLayersTo	(Vector<VkLayerProperties,		s_kLocalSize>& out);
-	static u32 getAvailableExtensionsTo			(Vector<VkExtensionProperties,	s_kLocalSize>& out, bool logExtension = false);
-	static u32 getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties,	s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice);
+	static u32 getAvailableValidationLayersTo	(Vector<VkLayerProperties,		s_kLocalSize>& out, bool logAvaliable = false);
+	static u32 getAvailableExtensionsTo			(Vector<VkExtensionProperties,	s_kLocalSize>& out, bool logAvaliable = false);
+	static u32 getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties,	s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice, bool logAvaliable = false);
 
 public:
 	void createExtensions			(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension = false);
@@ -177,6 +177,7 @@ public:
 	const Vector<const char*,			s_kLocalSize>&	validationLayers()	const;
 	const Vector<const char*,			s_kLocalSize>&	phyDeviceExts()		const;
 	const StringMap<PFN_vkVoidFunction>&				extFuncTable()		const;
+		  StringMap<PFN_vkVoidFunction>&				extFuncTable()		;
 
 	const Vector<VkLayerProperties,		s_kLocalSize>&	availableLayers()			const;
 	const Vector<VkExtensionProperties,	s_kLocalSize>&	availableExts()				const;
@@ -200,6 +201,7 @@ inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInf
 inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::validationLayers()	const		{ return _validationLayers; }
 inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::phyDeviceExts()		const		{ return _phyDeviceExts; }
 inline const StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::extFuncTable()		const		{ return _extFuncTable; }
+inline		 StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::extFuncTable()					{ return _extFuncTable; }
 
 inline const Vector<VkLayerProperties,		ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableLayers()	const		{ return _availableLayers; };
 inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableExts()		const		{ return _availableExts; };

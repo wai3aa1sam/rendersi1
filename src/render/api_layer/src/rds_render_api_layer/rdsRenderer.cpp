@@ -21,7 +21,7 @@ Renderer_CreateDesc::Renderer_CreateDesc()
 	#if RDS_DEBUG
 	isDebug = true;
 	#else
-	isDebug = false;
+	isDebug = true;
 	#endif // RDS_DEBUG
 
 }
