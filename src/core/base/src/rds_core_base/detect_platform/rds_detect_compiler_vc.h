@@ -110,7 +110,7 @@ references:
 
 #define RDS_DISABLE_ALL_WARNINGS() \
 	__pragma(warning(push, 0)) \
-	__pragma(warning(disable: 4172)) \
+	__pragma(warning(disable: 4172 4275)) \
 // ---
 
 #define RDS_RESTORE_ALL_WARNINGS() \

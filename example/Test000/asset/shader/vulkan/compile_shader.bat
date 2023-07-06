@@ -2,6 +2,8 @@
 @%~d0
 @cd %~dp0
 
+mkdir "local_temp\bin"
+
 glslc -x glsl -fshader-stage=vertex -fentry-point=main -c "hello_triangle0.vert" -o "local_temp/bin/hello_triangle0.vert.spv"
 glslc -x glsl -fshader-stage=fragment -fentry-point=main -c "hello_triangle0.frag" -o "local_temp/bin/hello_triangle0.frag.spv"
 

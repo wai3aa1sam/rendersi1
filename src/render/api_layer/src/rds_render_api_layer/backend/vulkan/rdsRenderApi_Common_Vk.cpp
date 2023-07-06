@@ -123,7 +123,7 @@ RenderApiUtil_Vk::createSurface(Vk_Surface** out, Vk_Instance* vkInstance, const
 
 	#else
 	#error("createSurface() not support int this platform")
-	#endif // SGE_OS_WINDOWS
+	#endif // RDS_OS_WINDOWS
 
 	throwIfError(ret);
 }
@@ -146,9 +146,9 @@ RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_
 	createInfo.imageArrayLayers = 1;		// For non-stereoscopic-3D applications, this value is 1.
 	createInfo.imageUsage		= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
+	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> idxData;
 	if (queueFamilyIndices.graphics != queueFamilyIndices.present)
 	{
-		Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> idxData;
 		idxData.emplace_back(queueFamilyIndices.graphics.value());
 		idxData.emplace_back(queueFamilyIndices.present.value());
 
@@ -238,23 +238,32 @@ RenderApiUtil_Vk::createFence(Vk_Fence** out, Vk_Device* vkDevice)
 }
 
 void
-RenderApiUtil_Vk::getPhyDevicePropertiesTo(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice)
+RenderApiUtil_Vk::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice)
 {
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(phyDevice, &deviceProperties);
 
-	info.adapterName = deviceProperties.deviceName;
-
-	info.feature.isDiscreteGPU = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+	outInfo.adapterName				= deviceProperties.deviceName;
+	outInfo.feature.isDiscreteGPU	= deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 
 	VkPhysicalDeviceMemoryProperties deviceMemProperties;
 	vkGetPhysicalDeviceMemoryProperties(phyDevice, &deviceMemProperties);
 
-	info.memorySize = deviceMemProperties.memoryHeaps[0].size;
+	outInfo.memorySize = deviceMemProperties.memoryHeaps[0].size;
+
+	RDS_LOG("Vulkan:");
+	RDS_LOG("\t apiVersion: {}",		deviceProperties.apiVersion);
+	RDS_LOG("\t adapterName: {}",		outInfo.adapterName);
+
+	RDS_LOG("\t memoryHeapCount: {}",	deviceMemProperties.memoryHeapCount);
+	for (size_t i = 0; i < deviceMemProperties.memoryHeapCount; i++)
+	{
+		RDS_LOG("\t memorySize: {}",		 deviceMemProperties.memoryHeaps[i].size);
+	}
 }
 
 void
-RenderApiUtil_Vk::getPhyDeviceFeaturesTo(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice)
+RenderApiUtil_Vk::getPhyDeviceFeaturesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice)
 {
 	VkPhysicalDeviceFeatures deviceFeatures;
 	vkGetPhysicalDeviceFeatures(phyDevice, &deviceFeatures);
@@ -263,37 +272,37 @@ RenderApiUtil_Vk::getPhyDeviceFeaturesTo(RenderAdapterInfo& info, Vk_PhysicalDev
 	tmp.shaderHasFloat64	= deviceFeatures.shaderFloat64;
 	tmp.hasGeometryShader	= deviceFeatures.geometryShader;
 
-	info.feature = tmp;
+	outInfo.feature = tmp;
 }
 
 void RenderApiUtil_Vk::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info)
 {
 	out = {};
-	RDS_LOG("TODO: getVkPhyDeviceFeaturesTo()");
+	RDS_CORE_LOG_WARN("TODO: getVkPhyDeviceFeaturesTo()");
 	//info.feature.
 }
 
 bool
-RenderApiUtil_Vk::getSwapchainAvailableInfoTo(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface* vkSurface)
+RenderApiUtil_Vk::getSwapchainAvailableInfoTo(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhyDevice, Vk_Surface* vkSurface)
 {
 	auto& swInfo = out;
 
-	auto ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhydevice, vkSurface, &swInfo.capabilities); (void)ret;
+	auto ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhyDevice, vkSurface, &swInfo.capabilities); (void)ret;
 	throwIfError(ret);
 
 	u32 formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhydevice, vkSurface, &formatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhyDevice, vkSurface, &formatCount, nullptr);
 	if (formatCount == 0)
 		return false;
 	swInfo.formats.resize(formatCount);
-	vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhydevice, vkSurface, &formatCount, swInfo.formats.data());
+	vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhyDevice, vkSurface, &formatCount, swInfo.formats.data());
 
 	u32 presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhydevice, vkSurface, &presentModeCount, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhyDevice, vkSurface, &presentModeCount, nullptr);
 	if (presentModeCount == 0)
 		return false;
 	swInfo.presentModes.resize(presentModeCount);
-	vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhydevice, vkSurface, &presentModeCount, swInfo.presentModes.data());
+	vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhyDevice, vkSurface, &presentModeCount, swInfo.presentModes.data());
 
 	return true;
 }
@@ -333,7 +342,7 @@ ExtensionInfo_Vk::getAvailableValidationLayersTo(Vector<VkLayerProperties, s_kLo
 }
 
 u32
-ExtensionInfo_Vk::getAvailableExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, bool logAvaliable)
+ExtensionInfo_Vk::getAvailableInstanceExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, bool logAvaliable)
 {
 	out.clear();
 
@@ -383,22 +392,23 @@ ExtensionInfo_Vk::getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties
 }
 
 void
-ExtensionInfo_Vk::createExtensions(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension)
+ExtensionInfo_Vk::createInstanceExtensions(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension)
 {
-	getAvailableExtensionsTo(_availableExts, logAvaliableExtension);
-	auto& out = _exts;
+	getAvailableInstanceExtensionsTo(_availableExts, logAvaliableExtension);
+	auto& out = _instanceExts;
 	out.clear();
 
 	out.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
 	if (adapterInfo.isDebug) {
 		out.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		out.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 	}
 	#if RDS_OS_WINDOWS
 	out.emplace_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 	#else
 	#error("getRequiredExtensions() not support int this platform")
-	#endif // SGE_OS_WINDOWS
+	#endif // RDS_OS_WINDOWS
 }
 
 void
@@ -429,19 +439,38 @@ ExtensionInfo_Vk::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	// TODO: check extension exist
 	o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 	if (cDesc.isPresent)
+	{
 		o.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	}
 }
 
 PFN_vkVoidFunction 
-ExtensionInfo_Vk::getExtFunction(const char* funcName) const
+ExtensionInfo_Vk::getInstanceExtFunction(const char* funcName) const
 {
-	auto it = _extFuncTable.find(funcName);
-	if (it == _extFuncTable.end())
+	auto& table = _deviceExtFuncTable;
+	auto it = table.find(funcName);
+	if (it == table.end())
 	{
 		PFN_vkVoidFunction func = vkGetInstanceProcAddr(Renderer_Vk::instance()->vkInstance(), funcName);
 		if (!func)
 			return nullptr;
-		constCast<ExtensionInfo_Vk&>(*this)._extFuncTable[funcName] = func;
+		constCast<StringMap<PFN_vkVoidFunction>&>(table)[funcName] = func;
+		return func;
+	}
+	return it->second;
+}
+
+PFN_vkVoidFunction 
+ExtensionInfo_Vk::getDeviceExtFunction(const char* funcName) const
+{
+	auto& table = _deviceExtFuncTable;
+	auto it = table.find(funcName);
+	if (it == table.end())
+	{
+		PFN_vkVoidFunction func = vkGetDeviceProcAddr(Renderer_Vk::instance()->vkDevice(), funcName);
+		if (!func)
+			return nullptr;
+		constCast<StringMap<PFN_vkVoidFunction>&>(table)[funcName] = func;
 		return func;
 	}
 	return it->second;

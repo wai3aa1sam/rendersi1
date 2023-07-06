@@ -52,7 +52,7 @@ protected:
 protected:
 	void createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvailableInfo_Vk& info, const math::Rect2f& rect2);
 
-	void createSwapchain();
+	void createSwapchain(const SwapchainInfo_Vk& swapchainInfo);
 	void destroySwapchain();
 
 	void createSwapchainFramebuffers();

@@ -43,7 +43,7 @@ public:
 	const VkAllocationCallbacks*	allocCallbacks();
 
 	Vk_Instance*			vkInstance();
-	Vk_PhysicalDevice*		vkphysicalDevice();
+	Vk_PhysicalDevice*		vkPhysicalDevice();
 	Vk_Device*				vkDevice();
 
 	const ExtensionInfo_Vk&				extInfo()					const;
@@ -98,7 +98,7 @@ inline MemoryContext_Vk*			Renderer_Vk::memoryContext()	{ return &_memoryContext
 inline const VkAllocationCallbacks*	Renderer_Vk::allocCallbacks()	{ return _memoryContext.allocCallbacks(); }
 
 inline Vk_Instance*			Renderer_Vk::vkInstance()			{ return _vkInstance; }
-inline Vk_PhysicalDevice*	Renderer_Vk::vkphysicalDevice()		{ return _vkPhysicalDevice; }
+inline Vk_PhysicalDevice*	Renderer_Vk::vkPhysicalDevice()		{ return _vkPhysicalDevice; }
 inline Vk_Device*			Renderer_Vk::vkDevice()				{ return _vkDevice; }
 
 inline const ExtensionInfo_Vk&			Renderer_Vk::extInfo()					const { return _extInfo; }

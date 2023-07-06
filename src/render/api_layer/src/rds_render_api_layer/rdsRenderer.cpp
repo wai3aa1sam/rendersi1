@@ -14,14 +14,13 @@ Renderer* Renderer::s_instance = nullptr;
 
 Renderer_CreateDesc::Renderer_CreateDesc()
 {
-	apiType = RenderApiType::Vulkan;
-
-	isPresent = true;
+	apiType		= RenderApiType::Vulkan;
+	isPresent	= true;
 
 	#if RDS_DEBUG
 	isDebug = true;
 	#else
-	isDebug = true;
+	isDebug = false;
 	#endif // RDS_DEBUG
 
 }

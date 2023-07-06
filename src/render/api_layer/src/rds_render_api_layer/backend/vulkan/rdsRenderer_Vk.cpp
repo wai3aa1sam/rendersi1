@@ -42,7 +42,7 @@ void
 Renderer_Vk::createVkInstance()
 {
 	_extInfo.createValidationLayers(_adapterInfo);
-	_extInfo.createExtensions(_adapterInfo);
+	_extInfo.createInstanceExtensions(_adapterInfo);
 
 	VkApplicationInfo appInfo = {};
 	appInfo.sType				= VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -57,8 +57,8 @@ Renderer_Vk::createVkInstance()
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType					= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo			= &appInfo;
-	createInfo.enabledExtensionCount	= sCast<u32>(_extInfo.exts().size());
-	createInfo.ppEnabledExtensionNames	= _extInfo.exts().data();
+	createInfo.enabledExtensionCount	= sCast<u32>(_extInfo.instanceExts().size());
+	createInfo.ppEnabledExtensionNames	= _extInfo.instanceExts().data();
 	createInfo.enabledLayerCount		= sCast<u32>(_extInfo.validationLayers().size());
 	createInfo.ppEnabledLayerNames		= _extInfo.validationLayers().data();
 
@@ -96,7 +96,7 @@ Renderer_Vk::createVkDebugMessenger()
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 	Util::createDebugMessengerInfo(createInfo);
 
-	auto func	= reinCast<PFN_vkCreateDebugUtilsMessengerEXT>(_extInfo.getExtFunction("vkCreateDebugUtilsMessengerEXT"));
+	auto func	= reinCast<PFN_vkCreateDebugUtilsMessengerEXT>(_extInfo.getInstanceExtFunction("vkCreateDebugUtilsMessengerEXT"));
 	auto ret	= func(_vkInstance, &createInfo, allocCallbacks(), _vkDebugMessenger.ptrForInit());
 	Util::throwIfError(ret);
 }
@@ -129,6 +129,7 @@ Renderer_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 
 	_vkPhysicalDevice.reset(phyDevices[largestScoreIndex]);
 	_rateAndInitVkPhyDevice(_adapterInfo, cDesc, _vkPhysicalDevice.ptr(), tmpSurface);
+	Util::getPhyDevicePropertiesTo(_adapterInfo, _vkPhysicalDevice);
 }
 
 void 

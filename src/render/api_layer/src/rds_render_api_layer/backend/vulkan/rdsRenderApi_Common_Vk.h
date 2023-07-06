@@ -53,6 +53,7 @@ public:
 	Vector<VkPresentModeKHR,	s_kLocalSize>	presentModes;
 };
 
+// TODO: change to our Swapchain_CreateDesc
 struct SwapchainInfo_Vk
 {
 	//VkSurfaceCapabilitiesKHR	capabilities;
@@ -124,8 +125,8 @@ public:
 	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance* vkInstance);
 	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out, Vk_PhysicalDevice* vkPhyDevice);
 
-	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
-	static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& info, Vk_PhysicalDevice* phyDevice);
+	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice);
+	static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice);
 	static void getVkPhyDeviceFeaturesTo	(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info);
 	static bool getSwapchainAvailableInfoTo	(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface* vkSurface);
 
@@ -160,24 +161,28 @@ public:
 
 public:
 	static u32 getAvailableValidationLayersTo	(Vector<VkLayerProperties,		s_kLocalSize>& out, bool logAvaliable = false);
-	static u32 getAvailableExtensionsTo			(Vector<VkExtensionProperties,	s_kLocalSize>& out, bool logAvaliable = false);
+	static u32 getAvailableInstanceExtensionsTo	(Vector<VkExtensionProperties,	s_kLocalSize>& out, bool logAvaliable = false);
 	static u32 getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties,	s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice, bool logAvaliable = false);
 
 public:
-	void createExtensions			(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension = false);
+	void createInstanceExtensions	(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension = false);
 	void createValidationLayers		(const RenderAdapterInfo& adapterInfo);
 	void createPhyDeviceExtensions	(const RenderAdapterInfo& adapterInfo, const Renderer_CreateDesc& cDesc, Vk_PhysicalDevice* phyDevice);
 
-	PFN_vkVoidFunction getExtFunction(const char* funcName) const;
+	PFN_vkVoidFunction getInstanceExtFunction(const char* funcName) const;
+	PFN_vkVoidFunction getDeviceExtFunction(const char* funcName) const;
 
 	bool isSupportValidationLayer(const char* validationLayerName) const;
 
 public:
-	const Vector<const char*,			s_kLocalSize>&	exts()				const;
+	const Vector<const char*,			s_kLocalSize>&	instanceExts()		const;
 	const Vector<const char*,			s_kLocalSize>&	validationLayers()	const;
 	const Vector<const char*,			s_kLocalSize>&	phyDeviceExts()		const;
-	const StringMap<PFN_vkVoidFunction>&				extFuncTable()		const;
-		  StringMap<PFN_vkVoidFunction>&				extFuncTable()		;
+
+	const StringMap<PFN_vkVoidFunction>&				instanceExtFuncTable()		const;
+		  StringMap<PFN_vkVoidFunction>&				instanceExtFuncTable()		;
+	const StringMap<PFN_vkVoidFunction>&				deviceExtFuncTable()		const;
+		  StringMap<PFN_vkVoidFunction>&				deviceExtFuncTable()		;
 
 	const Vector<VkLayerProperties,		s_kLocalSize>&	availableLayers()			const;
 	const Vector<VkExtensionProperties,	s_kLocalSize>&	availableExts()				const;
@@ -187,21 +192,25 @@ private:
 	void checkValidationLayersExist();
 
 private:
-	Vector<const char*,				s_kLocalSize>	_exts;
+	Vector<const char*,				s_kLocalSize>	_instanceExts;
 	Vector<const char*,				s_kLocalSize>	_validationLayers;
 	Vector<const char*,				s_kLocalSize>	_phyDeviceExts;
-	StringMap<PFN_vkVoidFunction>					_extFuncTable;
+	StringMap<PFN_vkVoidFunction>					_instanceExtFuncTable;
+	StringMap<PFN_vkVoidFunction>					_deviceExtFuncTable;
 
 	Vector<VkLayerProperties,		s_kLocalSize>	_availableLayers;
 	Vector<VkExtensionProperties,	s_kLocalSize>	_availableExts;
 	Vector<VkExtensionProperties,	s_kLocalSize>	_availablePhyDeviceExts;
 };
 
-inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::exts()				const		{ return _exts; }
+inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::instanceExts()		const		{ return _instanceExts; }
 inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::validationLayers()	const		{ return _validationLayers; }
 inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::phyDeviceExts()		const		{ return _phyDeviceExts; }
-inline const StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::extFuncTable()		const		{ return _extFuncTable; }
-inline		 StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::extFuncTable()					{ return _extFuncTable; }
+
+inline const StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::instanceExtFuncTable()	const		{ return _instanceExtFuncTable; }
+inline		 StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::instanceExtFuncTable()				{ return _instanceExtFuncTable; }
+inline const StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::deviceExtFuncTable()		const		{ return _deviceExtFuncTable; }
+inline		 StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::deviceExtFuncTable()					{ return _deviceExtFuncTable; }
 
 inline const Vector<VkLayerProperties,		ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableLayers()	const		{ return _availableLayers; };
 inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableExts()		const		{ return _availableExts; };

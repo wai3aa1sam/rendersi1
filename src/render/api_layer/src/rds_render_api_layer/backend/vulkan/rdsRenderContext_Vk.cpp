@@ -50,7 +50,7 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	createTestRenderPass();
 	createTestGraphicsPipeline();
 
-	createSwapchain();
+	createSwapchain(_swapchainInfo);
 
 	createCommandPool();
 	createCommandBuffer();
@@ -89,21 +89,28 @@ RenderContext_Vk::onBeginRender()
 	ret = vkAcquireNextImageKHR(vkDevice, _vkSwapchain, NumLimit<u64>::max(), _imageAvailableVkSmps[_curFrameIdx], VK_NULL_HANDLE, &imageIdx);
 	_curImageIdx = imageIdx;
 
+	#if 1
+
 	if (ret == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		return;
 	}
+
+	#else
+
 	// VK_ERROR_OUT_OF_DATE_KHR		means window size is changed
 	// VK_SUBOPTIMAL_KHR			means sucessfully presented but the surface properties are not matched
-	//if (ret == VK_ERROR_OUT_OF_DATE_KHR)	
-	//{
-	//	createSwapchain();
-	//	return; // should not record if size is changed
-	//}
-	//else
-	//{
-	//	throwIf(ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR, "");	// VK_SUBOPTIMAL_KHR 
-	//}
+	if (ret == VK_ERROR_OUT_OF_DATE_KHR)	
+	{
+		createSwapchain();
+		return; // should not record if size is changed
+	}
+	else
+	{
+		throwIf(ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR, "");	// VK_SUBOPTIMAL_KHR 
+	}
+
+	#endif // 1
 
 	auto* vkCmdBuf = _vkCommandBuffers[_curFrameIdx].ptr();
 	beginRecord(vkCmdBuf, _curImageIdx);
@@ -130,7 +137,12 @@ RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
 	if (newSize.x == 0 || newSize.y == 0)
 		return;
 
-	createSwapchain();
+	// fix validation layer false positive error: vkCreateSwapchainKHR imageExtent surface capabilities
+	// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1340
+	auto ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(renderer()->vkPhysicalDevice(), _vkSurface, &renderer()->_swapchainAvaliableInfo.capabilities); (void)ret;
+
+	_swapchainInfo.extent = Util::toVkExtent2D(newSize);
+	createSwapchain(_swapchainInfo);
 }
 
 void
@@ -154,18 +166,18 @@ RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 
 	{
 		VkClearValue clearValues[] = { VkClearValue(), VkClearValue() };
-		clearValues[0].color = { { 0.8f, 0.6f, 0.4f, 1.0f } };
+		clearValues[0].color		= { { 0.8f, 0.6f, 0.4f, 1.0f } };
 		//clearValues[0].color		= {{ 0.0f, 0.0f, 0.0f, 1.0f }};
 		clearValues[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = _testVkRenderPass;
-		renderPassInfo.framebuffer = _vkSwapchainFramebuffers[imageIdx];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = _swapchainInfo.extent;
-		renderPassInfo.clearValueCount = ArraySize<decltype(clearValues)>;
-		renderPassInfo.pClearValues = clearValues;	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
+		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass			= _testVkRenderPass;
+		renderPassInfo.framebuffer			= _vkSwapchainFramebuffers[imageIdx];
+		renderPassInfo.renderArea.offset	= { 0, 0 };
+		renderPassInfo.renderArea.extent	= _swapchainInfo.extent;
+		renderPassInfo.clearValueCount		= ArraySize<decltype(clearValues)>;
+		renderPassInfo.pClearValues			= clearValues;	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
 
 		vkCmdBeginRenderPass(vkCmdBuf, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
@@ -240,21 +252,23 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
 		/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR) 
 		{
 			createSwapchain();
-		} 
-		Util::throwIfError(ret);*/
+		} */
+		Util::throwIfError(ret);
 	}
 }
 
 void
 RenderContext_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeline)
 {
+	RDS_PROFILE_SCOPED();
+
 	vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
 
 	// since we set viewport and scissor state is dynamic
 	VkViewport			viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = sCast<float>(_swapchainInfo.extent.width);
+	viewport.width	= sCast<float>(_swapchainInfo.extent.width);
 	viewport.height = sCast<float>(_swapchainInfo.extent.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
@@ -269,6 +283,8 @@ RenderContext_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeli
 void
 RenderContext_Vk::testDrawCall(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 {
+	RDS_PROFILE_SCOPED();
+
 	bindPipeline(vkCmdBuf, _testVkPipeline);
 
 	u32 vtxCount = 3;
@@ -305,19 +321,19 @@ RenderContext_Vk::createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvai
 		}
 		else
 		{
-			const auto& caps = info.capabilities;
-			auto& extent = out.extent;
-			extent = Util::toVkExtent2D(rect2);
-			extent.width = math::clamp(extent.width, caps.minImageExtent.width, caps.maxImageExtent.width);
-			extent.height = math::clamp(extent.height, caps.minImageExtent.height, caps.maxImageExtent.height);
+			const auto& caps	= info.capabilities;
+			auto& extent		= out.extent;
+			extent			= Util::toVkExtent2D(rect2);
+			extent.width	= math::clamp(extent.width,  caps.minImageExtent.width,  caps.maxImageExtent.width);
+			extent.height	= math::clamp(extent.height, caps.minImageExtent.height, caps.maxImageExtent.height);
 		}
 	}
 }
 
 void
-RenderContext_Vk::createSwapchain()
+RenderContext_Vk::createSwapchain(const SwapchainInfo_Vk& swapchainInfo)
 {
-	RDS_PROFILE_SCOPED();		// TODO: add this line fixed release mode crash "amdvlk64.pdb not loaded"
+	RDS_PROFILE_SCOPED();
 
 	destroySwapchain();
 
@@ -328,9 +344,9 @@ RenderContext_Vk::createSwapchain()
 		_swapchainInfo.extent = Util::toVkExtent2D(_framebufferSize);
 	}
 
-	Util::createSwapchain(_vkSwapchain.ptrForInit(), _vkSurface, vkDevice, _swapchainInfo, _renderer->swapchainAvailableInfo(), _renderer->queueFamilyIndices());
+	Util::createSwapchain(_vkSwapchain.ptrForInit(), _vkSurface, vkDevice, swapchainInfo, _renderer->swapchainAvailableInfo(), _renderer->queueFamilyIndices());
 	Util::createSwapchainImages(_vkSwapchainImages, _vkSwapchain, vkDevice);
-	Util::createSwapchainImageViews(_vkSwapchainImageViews, _vkSwapchainImages, vkDevice, _swapchainInfo.surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+	Util::createSwapchainImageViews(_vkSwapchainImageViews, _vkSwapchainImages, vkDevice, swapchainInfo.surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	createSwapchainFramebuffers();
 }
 
@@ -572,8 +588,8 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	}
 
 	VkPipelineDynamicStateCreateInfo dynamicState = {};
+	Vector<VkDynamicState, 2> dynamicStates;
 	{
-		Vector<VkDynamicState, 2> dynamicStates;
 		dynamicStates.emplace_back(VK_DYNAMIC_STATE_VIEWPORT);
 		dynamicStates.emplace_back(VK_DYNAMIC_STATE_SCISSOR);
 
@@ -640,7 +656,7 @@ RenderContext_Vk::createTestGraphicsPipeline()
 
 	// color blending
 	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};	// for per attached framebuffer
-	VkPipelineColorBlendStateCreateInfo colorBlending = {};			// is global color blending setting (for all framebuffer)
+	VkPipelineColorBlendStateCreateInfo colorBlending		 = {};			// is global color blending setting (for all framebuffer)
 	{
 		colorBlendAttachment.colorWriteMask		 = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachment.blendEnable		 = VK_TRUE;
