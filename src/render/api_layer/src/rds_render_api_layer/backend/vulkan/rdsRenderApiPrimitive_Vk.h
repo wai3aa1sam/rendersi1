@@ -320,6 +320,47 @@ public:
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_DeviceMemory>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_DeviceMemory> : public RenderApiPrimitive_Base_Vk<Vk_DeviceMemory>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Buffer>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_Buffer> : public RenderApiPrimitive_Base_Vk<Vk_Buffer>
+{
+public:
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_BufferView>-Impl ---
+#endif // 0
+#if 1
+
+template<>
+class RenderApiPrimitive_Vk<Vk_BufferView> : public RenderApiPrimitive_Base_Vk<Vk_BufferView>
+{
+public:
+	void destroy();
+};
+
+#endif
 
 #endif
 

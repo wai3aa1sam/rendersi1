@@ -100,6 +100,9 @@ public:
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
 
 
+public:
+	static u32 getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties);
+
 	// for create vk objects
 public:
 	static void createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out);

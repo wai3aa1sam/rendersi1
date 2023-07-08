@@ -24,6 +24,12 @@ MemoryContext_Vk::MemoryContext_Vk()
 	//_allocationCallbacks.pfnAllocation
 }
 
+void 
+MemoryContext_Vk::create(Vk_PhysicalDevice* vkPhyDev)
+{
+	vkGetPhysicalDeviceMemoryProperties(vkPhyDev, &_vkMemProperties);
+}
+
 
 
 #endif

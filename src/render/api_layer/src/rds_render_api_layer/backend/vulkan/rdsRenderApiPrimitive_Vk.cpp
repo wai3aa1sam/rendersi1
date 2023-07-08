@@ -260,6 +260,47 @@ RenderApiPrimitive_Vk<Vk_Fence>::destroy()
 }
 
 #endif
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_DeviceMemory>-Impl ---
+#endif // 0
+#if 1
+
+void 
+RenderApiPrimitive_Vk<Vk_DeviceMemory>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkFreeMemory(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Buffer>-Impl ---
+#endif // 0
+#if 1
+
+void 
+RenderApiPrimitive_Vk<Vk_Buffer>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyBuffer(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_BufferView>-Impl ---
+#endif // 0
+#if 1
+
+void 
+RenderApiPrimitive_Vk<Vk_BufferView>::destroy()
+{
+	//auto* renderer = Renderer_Vk::instance();
+	//vkDestroyFence(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
 
 #endif
 

@@ -50,6 +50,7 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	
 	createTestRenderPass();
 	createTestGraphicsPipeline();
+	createTestVertexBuffer();
 
 	createSwapchain(_swapchainInfo);
 
@@ -294,7 +295,13 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 
 	bindPipeline(vkCmdBuf, _testVkPipeline);
 
-	u32 vtxCount = 3;
+	{
+		VkBuffer		vertexBuffers[] = { _testVkVtxBuffer };
+		VkDeviceSize	offsets[]		= { 0 };
+		vkCmdBindVertexBuffers(vkCmdBuf, 0, 1, vertexBuffers, offsets);
+	}
+
+	u32 vtxCount = TestVertex::s_kVtxCount;
 	vkCmdDraw(vkCmdBuf, vtxCount, 1, 0, 0);
 
 	{
@@ -562,8 +569,8 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	VkPtr<Vk_ShaderModule> psModule;
 
 	{
-		Util::createShaderModule(vsModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle0.hlsl.vert.spv", vkDevice);
-		Util::createShaderModule(psModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle0.hlsl.frag.spv", vkDevice);
+		Util::createShaderModule(vsModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle1.hlsl.vert.spv", vkDevice);
+		Util::createShaderModule(psModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle1.hlsl.frag.spv", vkDevice);
 
 		vsStageInfo.sType				= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vsStageInfo.stage				= VK_SHADER_STAGE_VERTEX_BIT;
@@ -582,12 +589,14 @@ RenderContext_Vk::createTestGraphicsPipeline()
 
 	// vertex input
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+	auto vtxBindingDescription	= TestVertex::getBindingDescription();
+	auto vtxAttrDescriptions	= TestVertex::getAttributeDescriptions();
 	{
 		vertexInputInfo.sType							= VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.vertexBindingDescriptionCount	= 0;
-		vertexInputInfo.pVertexBindingDescriptions		= nullptr; // Optional
-		vertexInputInfo.vertexAttributeDescriptionCount = 0;
-		vertexInputInfo.pVertexAttributeDescriptions	= nullptr; // Optional
+		vertexInputInfo.vertexBindingDescriptionCount	= 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = sCast<u32>(vtxAttrDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions		= &vtxBindingDescription;		// Optional
+		vertexInputInfo.pVertexAttributeDescriptions	= vtxAttrDescriptions.data();	// Optional
 	}
 
 	// input assembly
@@ -721,6 +730,43 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	Vk_PipelineCache* vkPipelineCache = VK_NULL_HANDLE;
 	auto ret = vkCreateGraphicsPipelines(vkDevice, vkPipelineCache, 1, &pipelineInfo, vkAllocCallbacks, _testVkPipeline.ptrForInit());
 	Util::throwIfError(ret);
+}
+
+void 
+RenderContext_Vk::createTestVertexBuffer()
+{
+	auto* vkAllocCallbacks	= renderer()->allocCallbacks();
+	auto* vkDev				= renderer()->vkDevice();
+
+	auto vertices = TestVertex::make();
+
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType		= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size			= sizeof(vertices[0]) * vertices.size();
+	bufferInfo.usage		= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode	= VK_SHARING_MODE_EXCLUSIVE;		// owned by a specific queue family
+
+	auto ret = vkCreateBuffer(vkDev, &bufferInfo, vkAllocCallbacks, _testVkVtxBuffer.ptrForInit());
+	Util::throwIfError(ret);
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(vkDev, _testVkVtxBuffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType				= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize	= memRequirements.size;
+	allocInfo.memoryTypeIndex	= Util::getMemoryTypeIdx(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	ret = vkAllocateMemory(vkDev, &allocInfo, vkAllocCallbacks, _testVkVtxBufferMemory.ptrForInit());
+	Util::throwIfError(ret);
+
+	u64 offset = 0;
+	vkBindBufferMemory(vkDev, _testVkVtxBuffer, _testVkVtxBufferMemory, offset);
+
+	void* mappedData = nullptr;
+	VkMemoryMapFlags vkMemMapflag = {};
+	vkMapMemory(vkDev, _testVkVtxBufferMemory, offset, bufferInfo.size, vkMemMapflag, &mappedData);	// TODO: make a ScopedMemMap_Vk
+	memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vertices.data()), bufferInfo.size);
+	vkUnmapMemory(vkDev, _testVkVtxBufferMemory);
 }
 
 

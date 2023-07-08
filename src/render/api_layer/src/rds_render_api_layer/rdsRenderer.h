@@ -34,8 +34,11 @@ public:
 };
 
 
-class RenderContext;
-struct RenderContext_CreateDesc;
+class	RenderContext;
+struct	RenderContext_CreateDesc;
+
+class	RenderGpuBuffer;
+struct	RenderGpuBuffer_CreateDesc;
 
 class Renderer : public VirtualSingleton<Renderer>
 {
@@ -54,7 +57,8 @@ public:
 	void create(const CreateDesc& cDesc);
 	void destroy();
 
-	SPtr<RenderContext> createContext(const RenderContext_CreateDesc& cDesc);
+	SPtr<RenderContext>		createContext			(const RenderContext_CreateDesc&	cDesc);
+	SPtr<RenderGpuBuffer>	createRenderGpuBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc);
 
 protected:
 	Renderer* _init(const CreateDesc& cDesc);
@@ -62,7 +66,8 @@ protected:
 	virtual void onDestroy();
 
 protected:
-	virtual SPtr<RenderContext> onCreateContext(const RenderContext_CreateDesc& cDesc) = 0;
+	virtual SPtr<RenderContext>		onCreateContext			(const RenderContext_CreateDesc&	cDesc) = 0;
+	virtual SPtr<RenderGpuBuffer>	onCreateRenderGpuBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc) = 0;
 
 protected:
 	RenderAdapterInfo	_adapterInfo;

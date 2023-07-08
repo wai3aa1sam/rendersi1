@@ -97,6 +97,27 @@ RenderApiUtil_Vk::toVkExtent2D(const Vec2f& vec2)
 	return vkExtent;
 }
 
+u32
+RenderApiUtil_Vk::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties)
+{
+	auto& vkMemProps = MemoryContext_Vk::instance()->vkMemoryProperties();
+	const u32 memoryCount = vkMemProps.memoryTypeCount;
+	for (u32 memoryIndex = 0; memoryIndex < memoryCount; ++memoryIndex) 
+	{
+		const bool isRequiredMemoryType = BitUtil::hasBit(memoryTypeBitsRequirement, memoryIndex);
+
+		const VkMemoryPropertyFlags properties	= vkMemProps.memoryTypes[memoryIndex].propertyFlags;
+		const bool hasRequiredProperties		=  BitUtil::has(properties, requiredProperties);
+
+		if (isRequiredMemoryType && hasRequiredProperties)
+			return memoryIndex;
+	}
+	// failed to find memory type
+	RDS_CORE_ASSERT(false, "getMemoryTypeIdx() failed");
+	return (u32)(-1);
+}
+
+
 void 
 RenderApiUtil_Vk::createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out)
 {

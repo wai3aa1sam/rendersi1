@@ -14,6 +14,8 @@
 
 #include <nmsp_core.h>
 
+#include "nmsp_core_base/common/nmspBitUtil.h"
+
 #if 0
 #pragma mark --- XXXX-Decl/Impl ---
 #endif // 0

@@ -30,6 +30,8 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 	createVkInstance();
 	createVkPhyDevice(cDesc);
 	createVkDevice();
+
+	_memoryContextVk.create(vkPhysicalDevice());
 }
 
 void

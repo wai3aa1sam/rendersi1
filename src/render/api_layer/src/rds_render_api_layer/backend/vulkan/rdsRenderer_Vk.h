@@ -8,16 +8,6 @@
 namespace rds
 {
 
-//#if 0
-//#pragma mark --- rdsRenderApiPrimitive_Vk-Impl ---
-//#endif // 0
-//#if 1
-//
-//template<> class RenderApiPrimitive_Vk<Vk_Surface>;
-//template<> class RenderApiPrimitive_Vk<Vk_Queue>;
-//
-//#endif
-
 #if 0
 #pragma mark --- rdsRenderer_Vk-Decl ---
 #endif // 0
@@ -53,7 +43,8 @@ public:
 public:
 
 protected:
-	virtual SPtr<RenderContext> onCreateContext(const RenderContext_CreateDesc& cDesc);
+	virtual SPtr<RenderContext>		onCreateContext			(const RenderContext_CreateDesc&	cDesc) override;
+	virtual SPtr<RenderGpuBuffer>	onCreateRenderGpuBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc) override;
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -69,7 +60,7 @@ private:
 	i64	 _rateVkPhyDevice		(const RenderAdapterInfo& info);
 
 private:
-	MemoryContext_Vk			_memoryContext;
+	MemoryContext_Vk			_memoryContextVk;
 
 	ExtensionInfo_Vk			_extInfo;
 	SwapchainAvailableInfo_Vk	_swapchainAvaliableInfo;
@@ -94,8 +85,8 @@ private:
 
 inline Renderer_Vk* Renderer_Vk::instance() { return sCast<Renderer_Vk*>(s_instance); }
 
-inline MemoryContext_Vk*			Renderer_Vk::memoryContext()	{ return &_memoryContext; }
-inline const VkAllocationCallbacks*	Renderer_Vk::allocCallbacks()	{ return _memoryContext.allocCallbacks(); }
+inline MemoryContext_Vk*			Renderer_Vk::memoryContext()	{ return &_memoryContextVk; }
+inline const VkAllocationCallbacks*	Renderer_Vk::allocCallbacks()	{ return _memoryContextVk.allocCallbacks(); }
 
 inline Vk_Instance*			Renderer_Vk::vkInstance()			{ return _vkInstance; }
 inline Vk_PhysicalDevice*	Renderer_Vk::vkPhysicalDevice()		{ return _vkPhysicalDevice; }

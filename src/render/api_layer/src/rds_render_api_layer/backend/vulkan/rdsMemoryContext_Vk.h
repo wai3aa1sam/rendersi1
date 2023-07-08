@@ -21,10 +21,16 @@ public:
 public:
 	MemoryContext_Vk();
 
-	const VkAllocationCallbacks* allocCallbacks();
+	void create(Vk_PhysicalDevice* vkPhyDev);
+
+	const VkAllocationCallbacks*			allocCallbacks();
+	const VkPhysicalDeviceMemoryProperties& vkMemoryProperties();
+
 
 private:
-	VkAllocationCallbacks _allocCallbacks;
+	VkAllocationCallbacks				_allocCallbacks	 = {};
+	VkPhysicalDeviceMemoryProperties	_vkMemProperties = {};
+
 };
 
 
@@ -36,7 +42,10 @@ private:
 #endif // 0
 #if 1
 
-const VkAllocationCallbacks* MemoryContext_Vk::allocCallbacks() { return /*&_allocationCallbacks*/ nullptr; }
+inline const VkAllocationCallbacks* MemoryContext_Vk::allocCallbacks() { return /*&_allocationCallbacks*/ nullptr; }
+
+inline const VkPhysicalDeviceMemoryProperties& MemoryContext_Vk::vkMemoryProperties() { return _vkMemProperties; }
+
 
 #endif
 
