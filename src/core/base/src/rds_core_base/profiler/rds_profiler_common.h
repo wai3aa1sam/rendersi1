@@ -9,8 +9,6 @@
 namespace rds
 {
 
-
-
 }
 #endif
 
@@ -32,6 +30,13 @@ namespace rds
 	#define RDS_PROFILE_FREE(PTR, SIZE)				NMSP_PROFILE_FREE(PTR, SIZE)
 
 	#define RDS_PROFILE_SET_THREAD_NAME(NAME)		NMSP_PROFILE_SET_THREAD_NAME(NAME)
+
+namespace rds
+{
+
+using PColor = ::nmsp::PColor;
+
+}
 
 #else
 

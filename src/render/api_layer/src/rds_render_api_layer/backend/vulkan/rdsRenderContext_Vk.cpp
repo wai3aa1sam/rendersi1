@@ -23,7 +23,7 @@ SPtr<RenderContext> Renderer_Vk::onCreateContext(const RenderContext_CreateDesc&
 RenderContext_Vk::RenderContext_Vk()
 	: Base()
 {
-
+	
 }
 
 RenderContext_Vk::~RenderContext_Vk()
@@ -41,9 +41,10 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	Util::createSurface(_vkSurface.ptrForInit(), _renderer->vkInstance(), _renderer->allocCallbacks(), cDesc.window);
 
-	u32	graphicsQueueIdx = 0;
-	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().graphics.value(), graphicsQueueIdx, _vkGraphicsQueue.ptrForInit());
-	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().present.value(), graphicsQueueIdx, _vkPresentQueue.ptrForInit());
+	u32	graphicsQueueIdx	= 0;
+	u32	presentQueueIdx		= 0;
+	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().graphics.value(),	graphicsQueueIdx,	_vkGraphicsQueue.ptrForInit());
+	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().present.value(),		presentQueueIdx,	 _vkPresentQueue.ptrForInit());
 
 	createSwapchainInfo(_swapchainInfo, _renderer->swapchainAvailableInfo(), cDesc.window->clientRect());
 	
@@ -55,6 +56,8 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	createCommandPool();
 	createCommandBuffer();
 	createSyncObjects();
+
+	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
 }
 
 void
@@ -67,7 +70,6 @@ void
 RenderContext_Vk::onDestroy()
 {
 	Base::onDestroy();
-
 	vkDeviceWaitIdle(renderer()->vkDevice());
 }
 
@@ -112,8 +114,13 @@ RenderContext_Vk::onBeginRender()
 
 	#endif // 1
 
-	auto* vkCmdBuf = _vkCommandBuffers[_curFrameIdx].ptr();
+	auto* vkCmdBuf = vkCommandBuffer();
+
 	beginRecord(vkCmdBuf, _curImageIdx);
+
+	//RDS_PROFILE_GPU_ZONE_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
+	RDS_PROFILE_GPU_ZONET_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
+
 	testDrawCall(vkCmdBuf, _curImageIdx);
 }
 
@@ -122,9 +129,7 @@ RenderContext_Vk::onEndRender()
 {
 	RDS_PROFILE_SCOPED();
 
-	//auto* vkDevice = renderer()->vkDevice();
-
-	auto* vkCmdBuf = _vkCommandBuffers[_curFrameIdx].ptr();
+	auto* vkCmdBuf = vkCommandBuffer();
 	endRecord(vkCmdBuf);
 
 	// next frame idx
@@ -151,7 +156,6 @@ RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 	RDS_PROFILE_SCOPED();
 
 	VkResult ret;
-
 	{
 		VkCommandBufferResetFlags cmdBufRestFlags = 0;
 		vkResetCommandBuffer(vkCmdBuf, cmdBufRestFlags);
@@ -163,24 +167,6 @@ RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 		ret = vkBeginCommandBuffer(vkCmdBuf, &beginInfo);
 		Util::throwIfError(ret);
 	}
-
-	{
-		VkClearValue clearValues[] = { VkClearValue(), VkClearValue() };
-		clearValues[0].color		= { { 0.8f, 0.6f, 0.4f, 1.0f } };
-		//clearValues[0].color		= {{ 0.0f, 0.0f, 0.0f, 1.0f }};
-		clearValues[1].depthStencil = { 1.0f, 0 };
-
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass			= _testVkRenderPass;
-		renderPassInfo.framebuffer			= _vkSwapchainFramebuffers[imageIdx];
-		renderPassInfo.renderArea.offset	= { 0, 0 };
-		renderPassInfo.renderArea.extent	= _swapchainInfo.extent;
-		renderPassInfo.clearValueCount		= ArraySize<decltype(clearValues)>;
-		renderPassInfo.pClearValues			= clearValues;	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
-
-		vkCmdBeginRenderPass(vkCmdBuf, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	}
 }
 
 void
@@ -190,15 +176,18 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
 
 	VkResult ret;
 	auto* vkDevice = renderer()->vkDevice();
+
+	RDS_PROFILE_GPU_COLLECT_VK(_gpuProfilerCtx, vkCmdBuf);
+
 	{
-		Vk_Fence* vkFences[] = { _inFlightVkFences[_curFrameIdx] };
-		u32 vkFenceCount	 = ArraySize<decltype(vkFences)>;
-		vkResetFences(vkDevice, vkFenceCount, vkFences);
+		ret = vkEndCommandBuffer(vkCmdBuf);
+		Util::throwIfError(ret);
 	}
 
 	{
-		vkCmdEndRenderPass(vkCmdBuf);
-		ret = vkEndCommandBuffer(vkCmdBuf);
+		Vk_Fence* vkFences[] = { _inFlightVkFences[_curFrameIdx] };
+		u32 vkFenceCount	 = ArraySize<decltype(vkFences)>;
+		ret = vkResetFences(vkDevice, vkFenceCount, vkFences);		// should handle it to signaled if the function throw?
 		Util::throwIfError(ret);
 	}
 
@@ -227,8 +216,7 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
 		submitInfo.pSignalSemaphoreInfos	= &renderCompletedSmpInfo;
 		submitInfo.pCommandBufferInfos		= & cmdBufSubmitInfo;
 
-		//auto vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)vkGetDeviceProcAddr(Renderer_Vk::instance()->vkDevice(), "vkQueueSubmit2KHR");
-		//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getExtFunction("vkQueueSubmit2KHR");
+		//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
 		ret = vkQueueSubmit2(_vkGraphicsQueue, 1, &submitInfo, _inFlightVkFences[_curFrameIdx]);
 		Util::throwIfError(ret);
 	}
@@ -278,6 +266,7 @@ RenderContext_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeli
 	scissor.offset = { 0, 0 };
 	scissor.extent = _swapchainInfo.extent;
 	vkCmdSetScissor(vkCmdBuf, 0, 1, &scissor);
+
 }
 
 void
@@ -285,10 +274,32 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
 
+	{
+		VkClearValue clearValues[] = { VkClearValue(), VkClearValue() };
+		clearValues[0].color		= { { 0.8f, 0.6f, 0.4f, 1.0f } };
+		//clearValues[0].color		= {{ 0.0f, 0.0f, 0.0f, 1.0f }};
+		clearValues[1].depthStencil = { 1.0f, 0 };
+
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass			= _testVkRenderPass;
+		renderPassInfo.framebuffer			= _vkSwapchainFramebuffers[imageIdx];
+		renderPassInfo.renderArea.offset	= { 0, 0 };
+		renderPassInfo.renderArea.extent	= _swapchainInfo.extent;
+		renderPassInfo.clearValueCount		= ArraySize<decltype(clearValues)>;
+		renderPassInfo.pClearValues			= clearValues;	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
+
+		vkCmdBeginRenderPass(vkCmdBuf, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	}
+
 	bindPipeline(vkCmdBuf, _testVkPipeline);
 
 	u32 vtxCount = 3;
 	vkCmdDraw(vkCmdBuf, vtxCount, 1, 0, 0);
+
+	{
+		vkCmdEndRenderPass(vkCmdBuf);
+	}
 }
 
 void

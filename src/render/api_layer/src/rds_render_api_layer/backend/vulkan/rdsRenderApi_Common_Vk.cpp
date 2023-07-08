@@ -399,6 +399,7 @@ ExtensionInfo_Vk::createInstanceExtensions(const RenderAdapterInfo& adapterInfo,
 	out.clear();
 
 	out.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
+	out.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
 	if (adapterInfo.isDebug) {
 		out.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -438,43 +439,13 @@ ExtensionInfo_Vk::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 
 	// TODO: check extension exist
 	o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+	o.emplace_back(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
 	if (cDesc.isPresent)
 	{
 		o.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}
 }
 
-PFN_vkVoidFunction 
-ExtensionInfo_Vk::getInstanceExtFunction(const char* funcName) const
-{
-	auto& table = _deviceExtFuncTable;
-	auto it = table.find(funcName);
-	if (it == table.end())
-	{
-		PFN_vkVoidFunction func = vkGetInstanceProcAddr(Renderer_Vk::instance()->vkInstance(), funcName);
-		if (!func)
-			return nullptr;
-		constCast<StringMap<PFN_vkVoidFunction>&>(table)[funcName] = func;
-		return func;
-	}
-	return it->second;
-}
-
-PFN_vkVoidFunction 
-ExtensionInfo_Vk::getDeviceExtFunction(const char* funcName) const
-{
-	auto& table = _deviceExtFuncTable;
-	auto it = table.find(funcName);
-	if (it == table.end())
-	{
-		PFN_vkVoidFunction func = vkGetDeviceProcAddr(Renderer_Vk::instance()->vkDevice(), funcName);
-		if (!func)
-			return nullptr;
-		constCast<StringMap<PFN_vkVoidFunction>&>(table)[funcName] = func;
-		return func;
-	}
-	return it->second;
-}
 
 bool 
 ExtensionInfo_Vk::isSupportValidationLayer(const char* validationLayerName) const

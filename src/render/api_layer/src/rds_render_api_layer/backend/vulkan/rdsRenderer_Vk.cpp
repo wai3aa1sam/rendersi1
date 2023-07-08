@@ -96,7 +96,7 @@ Renderer_Vk::createVkDebugMessenger()
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 	Util::createDebugMessengerInfo(createInfo);
 
-	auto func	= reinCast<PFN_vkCreateDebugUtilsMessengerEXT>(_extInfo.getInstanceExtFunction("vkCreateDebugUtilsMessengerEXT"));
+	auto func	= _extInfo.getInstanceExtFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
 	auto ret	= func(_vkInstance, &createInfo, allocCallbacks(), _vkDebugMessenger.ptrForInit());
 	Util::throwIfError(ret);
 }

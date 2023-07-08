@@ -169,8 +169,8 @@ public:
 	void createValidationLayers		(const RenderAdapterInfo& adapterInfo);
 	void createPhyDeviceExtensions	(const RenderAdapterInfo& adapterInfo, const Renderer_CreateDesc& cDesc, Vk_PhysicalDevice* phyDevice);
 
-	PFN_vkVoidFunction getInstanceExtFunction(const char* funcName) const;
-	PFN_vkVoidFunction getDeviceExtFunction(const char* funcName) const;
+	template<class T> T getInstanceExtFunction(const char* funcName) const;
+	template<class T> T getDeviceExtFunction(const char* funcName) const;
 
 	bool isSupportValidationLayer(const char* validationLayerName) const;
 
@@ -202,6 +202,41 @@ private:
 	Vector<VkExtensionProperties,	s_kLocalSize>	_availableExts;
 	Vector<VkExtensionProperties,	s_kLocalSize>	_availablePhyDeviceExts;
 };
+
+
+template<class T> inline 
+T 
+ExtensionInfo_Vk::getInstanceExtFunction(const char* funcName) const
+{
+	auto& table = _deviceExtFuncTable;
+	auto it = table.find(funcName);
+	if (it == table.end())
+	{
+		PFN_vkVoidFunction func = vkGetInstanceProcAddr(Renderer_Vk::instance()->vkInstance(), funcName);
+		if (!func)
+			return nullptr;
+		constCast<StringMap<PFN_vkVoidFunction>&>(table)[funcName] = func;
+		return reinCast<T>(func);
+	}
+	return reinCast<T>(it->second);
+}
+
+template<class T> inline 
+T
+ExtensionInfo_Vk::getDeviceExtFunction(const char* funcName) const
+{
+	auto& table = _deviceExtFuncTable;
+	auto it = table.find(funcName);
+	if (it == table.end())
+	{
+		PFN_vkVoidFunction func = vkGetDeviceProcAddr(Renderer_Vk::instance()->vkDevice(), funcName);
+		if (!func)
+			return nullptr;
+		constCast<StringMap<PFN_vkVoidFunction>&>(table)[funcName] = func;
+		return reinCast<T>(func);
+	}
+	return reinCast<T>(it->second);
+}
 
 inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::instanceExts()		const		{ return _instanceExts; }
 inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::validationLayers()	const		{ return _validationLayers; }

@@ -34,7 +34,7 @@ void
 RenderApiPrimitive_Vk<Vk_DebugUtilsMessenger>::destroy()
 {
 	auto* renderer = Renderer_Vk::instance();
-	auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(renderer->extInfo().getInstanceExtFunction("vkDestroyDebugUtilsMessengerEXT"));
+	auto func = renderer->extInfo().getInstanceExtFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
 	func(renderer->vkInstance(), _p, renderer->allocCallbacks());
 }
 

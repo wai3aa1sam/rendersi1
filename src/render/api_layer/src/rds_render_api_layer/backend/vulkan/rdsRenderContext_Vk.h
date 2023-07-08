@@ -3,6 +3,8 @@
 #include "rdsRenderApi_Common_Vk.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
 
+#include "rdsGpuProfilerContext_Vk.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -31,6 +33,10 @@ public:
 
 	Renderer_Vk* renderer();
 
+	Vk_Queue* vkGraphicsQueue();
+	Vk_Queue* vkPresentQueue();
+
+	Vk_CommandBuffer* vkCommandBuffer();
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -70,6 +76,8 @@ protected:
 protected:
 	Renderer_Vk* _renderer = nullptr;
 
+	RDS_PROFILE_GPU_CTX_VK(_gpuProfilerCtx);
+
 	SwapchainInfo_Vk	_swapchainInfo;
 
 	VkPtr<Vk_Surface>			_vkSurface;
@@ -96,8 +104,13 @@ protected:
 	u32 _curFrameIdx = 0;
 };
 
-Renderer_Vk* RenderContext_Vk::renderer() { return _renderer; }
+inline Renderer_Vk* RenderContext_Vk::renderer() { return _renderer; }
 
+inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return _vkGraphicsQueue; }
+inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return _vkPresentQueue; }
+
+
+inline Vk_CommandBuffer* RenderContext_Vk::vkCommandBuffer() { return _vkCommandBuffers[_curFrameIdx]; }
 
 #endif
 }
