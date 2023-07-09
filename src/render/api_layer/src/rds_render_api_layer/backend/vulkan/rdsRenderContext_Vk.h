@@ -137,8 +137,8 @@ protected:
 
 	void createSwapchainFramebuffers();
 
-	void createCommandPool();
-	void createCommandBuffer();
+	void createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx);
+	void createCommandBuffer(Vk_CommandPool* vkCmdPool);
 	void createSyncObjects();
 
 	void createTestRenderPass();
@@ -166,13 +166,14 @@ protected:
 	VkPtr<Vk_PipelineLayout>	_testVkPipelineLayout;
 
 	VkPtr<Vk_Buffer>			_testVkVtxBuffer;
-	VkPtr<Vk_BufferView>		_testVkVtxBufferView;
 	VkPtr<Vk_DeviceMemory>		_testVkVtxBufferMemory;
 
 	VkPtr<Vk_Queue>		_vkGraphicsQueue;
 	VkPtr<Vk_Queue>		_vkPresentQueue;
+	VkPtr<Vk_Queue>		_vkTransferQueue;
 
-	VkPtr<Vk_CommandPool> _vkCommandPool;
+	VkPtr<Vk_CommandPool> _vkGraphicsCommandPool;
+	VkPtr<Vk_CommandPool> _vkTransferCommandPool;
 
 	Vector<VkPtr<Vk_CommandBuffer>, s_kFrameInFlightCount>	_vkCommandBuffers;
 	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_imageAvailableVkSmps;

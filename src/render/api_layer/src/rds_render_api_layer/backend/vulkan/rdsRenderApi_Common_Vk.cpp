@@ -258,6 +258,104 @@ RenderApiUtil_Vk::createFence(Vk_Fence** out, Vk_Device* vkDevice)
 	throwIfError(ret);
 }
 
+void 
+RenderApiUtil_Vk::createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
+								, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkQueueTypeFlag vkQueueTypeFlag)
+{
+	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
+	auto* vkAllocCallbacks	= Renderer_Vk::instance()->allocCallbacks();
+	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
+
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType					= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size						= size;
+	bufferInfo.usage					= usage;
+	bufferInfo.sharingMode				= VK_SHARING_MODE_EXCLUSIVE;
+
+	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
+	auto queueCount = vkQueueIndices.get(queueIdices, vkQueueTypeFlag);
+	if (queueCount > 1)
+	{
+		bufferInfo.sharingMode				= VK_SHARING_MODE_CONCURRENT;
+		bufferInfo.queueFamilyIndexCount	= queueCount;
+		bufferInfo.pQueueFamilyIndices		= queueIdices.data();
+	}
+
+	auto ret = vkCreateBuffer(vkDev, &bufferInfo, vkAllocCallbacks, outBuf);
+	throwIfError(ret);
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(vkDev, *outBuf, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType				= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize	= memRequirements.size;
+	allocInfo.memoryTypeIndex	= getMemoryTypeIdx(memRequirements.memoryTypeBits, properties);
+
+	ret = vkAllocateMemory(vkDev, &allocInfo, vkAllocCallbacks, outBufMem);
+
+	VkDeviceSize offset = 0;
+	RDS_CORE_ASSERT(offset % memRequirements.alignment == 0, "not aligned");
+	vkBindBufferMemory(vkDev, *outBuf, *outBufMem, offset);
+}
+
+void 
+RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool* vkCmdPool, Vk_Queue* vkTransferQueue)
+{
+	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
+	//auto* vkAllocCallbacks	= Renderer_Vk::instance()->allocCallbacks();
+
+	VkResult ret;
+
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level					= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool			= vkCmdPool;
+	allocInfo.commandBufferCount	= 1;
+
+	VkPtr<Vk_CommandBuffer> vkCmdBuf;
+	ret = vkAllocateCommandBuffers(vkDev, &allocInfo, vkCmdBuf.ptrForInit());
+	throwIfError(ret);
+	auto cmdBufLsa = makeLeaveScopeAction(
+		[&vkCmdBuf, vkCmdPool, &vkDev]()
+		{
+			Vk_CommandBuffer* vkCmdBufs[] = { vkCmdBuf };
+			vkFreeCommandBuffers(vkDev, vkCmdPool, ArraySize<decltype(vkCmdBufs)>, vkCmdBufs);
+		}
+	);
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(vkCmdBuf, &beginInfo);
+
+	VkBufferCopy copyRegion = {};
+	copyRegion.srcOffset	= 0; // Optional
+	copyRegion.dstOffset	= 0; // Optional
+	copyRegion.size			= size;
+	vkCmdCopyBuffer(vkCmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
+
+	vkEndCommandBuffer(vkCmdBuf);
+
+	{
+		VkSubmitInfo2KHR submitInfo = {};
+
+		VkCommandBufferSubmitInfoKHR cmdBufSubmitInfo = {};
+		cmdBufSubmitInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		cmdBufSubmitInfo.commandBuffer	= vkCmdBuf;
+
+		submitInfo.sType					= VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		submitInfo.commandBufferInfoCount	= 1;
+		submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
+
+		RDS_LOG_WARN("TODO: add smp for transfer and graphics queue");
+		ret = vkQueueSubmit2(vkTransferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		throwIfError(ret);
+		vkQueueWaitIdle(vkTransferQueue);
+	}
+}
+
 void
 RenderApiUtil_Vk::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice)
 {

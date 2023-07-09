@@ -43,20 +43,23 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	u32	graphicsQueueIdx	= 0;
 	u32	presentQueueIdx		= 0;
+	u32	transferQueueIdx	= 0;
 	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().graphics.value(),	graphicsQueueIdx,	_vkGraphicsQueue.ptrForInit());
 	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().present.value(),		presentQueueIdx,	 _vkPresentQueue.ptrForInit());
+	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().transfer.value(),	transferQueueIdx,	_vkTransferQueue.ptrForInit());
 
 	createSwapchainInfo(_swapchainInfo, _renderer->swapchainAvailableInfo(), cDesc.window->clientRect());
-	
+
+	createCommandPool(_vkGraphicsCommandPool.ptrForInit(), _renderer->queueFamilyIndices().graphics.value());
+	createCommandPool(_vkTransferCommandPool.ptrForInit(), _renderer->queueFamilyIndices().transfer.value());
+	createCommandBuffer(_vkGraphicsCommandPool);
+	createSyncObjects();
+
 	createTestRenderPass();
 	createTestGraphicsPipeline();
 	createTestVertexBuffer();
 
 	createSwapchain(_swapchainInfo);
-
-	createCommandPool();
-	createCommandBuffer();
-	createSyncObjects();
 
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
 }
@@ -85,12 +88,18 @@ RenderContext_Vk::onBeginRender()
 	//const auto* inFlightVkFence = reinCast<const VkFence*>(_inFlightVkFence.address());
 	Vk_Fence* vkFences[] = { _inFlightVkFences[_curFrameIdx] };
 	u32 vkFenceCount = ArraySize<decltype(vkFences)>;
-	vkWaitForFences(vkDevice, vkFenceCount, vkFences, VK_TRUE, NumLimit<u64>::max());
+	{
+		RDS_PROFILE_SECTION("vkWaitForFences()");
+		vkWaitForFences(vkDevice, vkFenceCount, vkFences, VK_TRUE, NumLimit<u64>::max());
+	}
 	//vkResetFences(vkDevice, vkFenceCount, vkFences);		// reset too early will cause deadlock, since the invalidate wii cause no work submitted (returned) and then no one will signal it
 
-	u32 imageIdx;
-	ret = vkAcquireNextImageKHR(vkDevice, _vkSwapchain, NumLimit<u64>::max(), _imageAvailableVkSmps[_curFrameIdx], VK_NULL_HANDLE, &imageIdx);
-	_curImageIdx = imageIdx;
+	{
+		RDS_PROFILE_SECTION("vkAcquireNextImageKHR()");
+		u32 imageIdx;
+		ret = vkAcquireNextImageKHR(vkDevice, _vkSwapchain, NumLimit<u64>::max(), _imageAvailableVkSmps[_curFrameIdx], VK_NULL_HANDLE, &imageIdx);
+		_curImageIdx = imageIdx;
+	}
 
 	#if 1
 
@@ -413,23 +422,22 @@ RenderContext_Vk::createSwapchainFramebuffers()
 }
 
 void 
-RenderContext_Vk::createCommandPool()
+RenderContext_Vk::createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx)
 {
-	auto& queueFamilyIndices	= renderer()->queueFamilyIndices();
 	auto* vkDevice				= renderer()->vkDevice();
 	auto* allocCallbacks		= renderer()->allocCallbacks();
 
 	VkCommandPoolCreateInfo cInfo = {};
 	cInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cInfo.flags				= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	cInfo.queueFamilyIndex	= queueFamilyIndices.graphics.value();
+	cInfo.queueFamilyIndex	= queueIdx;
 
-	auto ret = vkCreateCommandPool(vkDevice, &cInfo, allocCallbacks, _vkCommandPool.ptrForInit());
+	auto ret = vkCreateCommandPool(vkDevice, &cInfo, allocCallbacks, outVkCmdPool);
 	Util::throwIfError(ret);
 }
 
 void 
-RenderContext_Vk::createCommandBuffer()
+RenderContext_Vk::createCommandBuffer(Vk_CommandPool* vkCmdPool)
 {
 	auto* vkDevice = renderer()->vkDevice();
 
@@ -439,7 +447,7 @@ RenderContext_Vk::createCommandBuffer()
 
 	VkCommandBufferAllocateInfo cInfo = {};
 	cInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cInfo.commandPool			= _vkCommandPool;
+	cInfo.commandPool			= vkCmdPool;
 	cInfo.level					= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	cInfo.commandBufferCount	= s_kFrameInFlightCount;
 
@@ -735,42 +743,35 @@ RenderContext_Vk::createTestGraphicsPipeline()
 void 
 RenderContext_Vk::createTestVertexBuffer()
 {
-	auto* vkAllocCallbacks	= renderer()->allocCallbacks();
+	//auto* vkAllocCallbacks	= renderer()->allocCallbacks();
 	auto* vkDev				= renderer()->vkDevice();
 
 	auto vertices = TestVertex::make();
+	auto bufSize = sizeof(vertices[0]) * vertices.size();
 
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType		= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size			= sizeof(vertices[0]) * vertices.size();
-	bufferInfo.usage		= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	bufferInfo.sharingMode	= VK_SHARING_MODE_EXCLUSIVE;		// owned by a specific queue family
+	VkPtr<Vk_Buffer>			_vkStagingBuf;
+	VkPtr<Vk_DeviceMemory>		_vkStagingBufMem;
 
-	auto ret = vkCreateBuffer(vkDev, &bufferInfo, vkAllocCallbacks, _testVkVtxBuffer.ptrForInit());
-	Util::throwIfError(ret);
-
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(vkDev, _testVkVtxBuffer, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType				= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize	= memRequirements.size;
-	allocInfo.memoryTypeIndex	= Util::getMemoryTypeIdx(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	ret = vkAllocateMemory(vkDev, &allocInfo, vkAllocCallbacks, _testVkVtxBufferMemory.ptrForInit());
-	Util::throwIfError(ret);
-
-	u64 offset = 0;
-	vkBindBufferMemory(vkDev, _testVkVtxBuffer, _testVkVtxBufferMemory, offset);
+	Util::createBuffer(_vkStagingBuf.ptrForInit(), _vkStagingBufMem.ptrForInit(), bufSize
+						, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+						, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+						, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
 
 	void* mappedData = nullptr;
 	VkMemoryMapFlags vkMemMapflag = {};
-	vkMapMemory(vkDev, _testVkVtxBufferMemory, offset, bufferInfo.size, vkMemMapflag, &mappedData);	// TODO: make a ScopedMemMap_Vk
-	memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vertices.data()), bufferInfo.size);
-	vkUnmapMemory(vkDev, _testVkVtxBufferMemory);
+
+	VkDeviceSize offset = 0;
+	vkMapMemory(vkDev, _vkStagingBufMem, offset, bufSize, vkMemMapflag, &mappedData);	// TODO: make a ScopedMemMap_Vk
+	memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vertices.data()), bufSize);
+	vkUnmapMemory(vkDev, _vkStagingBufMem);
+
+	Util::createBuffer(_testVkVtxBuffer.ptrForInit(), _testVkVtxBufferMemory.ptrForInit(), bufSize
+						, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+						, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+						, VkQueueTypeFlag::Graphics);
+
+	Util::copyBuffer(_testVkVtxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
 }
-
-
-//constexpr size_t RenderContext_Vk::k() { return 4; }
 
 #endif
 }

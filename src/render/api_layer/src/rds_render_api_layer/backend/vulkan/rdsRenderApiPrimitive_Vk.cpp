@@ -228,7 +228,7 @@ void
 RenderApiPrimitive_Vk<Vk_CommandBuffer>::destroy()
 {
 	//auto* renderer = Renderer_Vk::instance();
-	//vkDestroyPipeline(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	//vkFreeCommandBuffers(renderer->vkDevice(), _p, renderer->allocCallbacks()); 
 }
 
 #endif

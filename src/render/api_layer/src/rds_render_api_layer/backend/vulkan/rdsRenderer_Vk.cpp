@@ -144,7 +144,7 @@ Renderer_Vk::createVkDevice()
 
 	//for (auto queueFamily : queueFamilyIndices) 
 	{
-		VkDeviceQueueCreateInfo				queueCreateInfo{};
+		VkDeviceQueueCreateInfo	queueCreateInfo = {};
 		queueCreateInfo.sType				= VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfo.queueFamilyIndex	= _queueFamilyIndices.graphics.value();
 		queueCreateInfo.queueCount			= queueCount;
@@ -153,6 +153,12 @@ Renderer_Vk::createVkDevice()
 
 		queueCreateInfo.sType				= VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfo.queueFamilyIndex	= _queueFamilyIndices.present.value();
+		queueCreateInfo.queueCount			= queueCount;
+		queueCreateInfo.pQueuePriorities	= &queuePriority;
+		queueCreateInfos.push_back(queueCreateInfo);
+
+		queueCreateInfo.sType				= VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex	= _queueFamilyIndices.transfer.value();
 		queueCreateInfo.queueCount			= queueCount;
 		queueCreateInfo.pQueuePriorities	= &queuePriority;
 		queueCreateInfos.push_back(queueCreateInfo);
@@ -186,29 +192,41 @@ Renderer_Vk::createVkDevice()
 i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDesc& cDesc, Vk_PhysicalDevice* vkPhyDevice, Vk_Surface* vkSurface)
 {
 	auto* e = vkPhyDevice;
+	_queueFamilyIndices.clear();
 	_extInfo.createPhyDeviceExtensions(out, cDesc, e);
 	Util::getPhyDeviceFeaturesTo(out, e);
 	Util::getQueueFaimlyPropertiesTo(_queueFamilyProperties, vkPhyDevice);
 	Util::getSwapchainAvailableInfoTo(_swapchainAvaliableInfo, e, vkSurface);
 
-	for (u32 i = 0; i < _queueFamilyProperties.size(); ++i) 
+	u32 maxTry		= 10;
+	u32 curTryIdx	= 0;
+	while (curTryIdx < maxTry && !_queueFamilyIndices.isAllUnique())
 	{
-		auto prop = _queueFamilyProperties[i];
-
-		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(vkPhyDevice, i, vkSurface, &presentSupport);
-
-		if (prop.queueFlags & VK_QUEUE_GRAPHICS_BIT) 
+		for (u32 i = 0; i < _queueFamilyProperties.size(); ++i) 
 		{
-			_queueFamilyIndices.graphics = i;
-		}
+			auto& prop = _queueFamilyProperties[i];
 
-		if (presentSupport)
-		{
-			_queueFamilyIndices.present = i;
-		}
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(vkPhyDevice, i, vkSurface, &presentSupport);
 
-		i++;
+			//bool isFoundGraphics	= _queueFamilyIndices.graphics.has_value();
+			//bool isFoundPresent		= _queueFamilyIndices.present.has_value();
+
+			if (BitUtil::has(prop.queueFlags, sCast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT)) && !_queueFamilyIndices.isUniqueGraphics()) 
+			{
+				_queueFamilyIndices.graphics = i;
+			}
+
+			if (BitUtil::hasButNot(prop.queueFlags, sCast<VkQueueFlags>(VK_QUEUE_TRANSFER_BIT), sCast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT)) && !_queueFamilyIndices.isUniqueTransfer()) 
+			{
+				_queueFamilyIndices.transfer = i;
+			}
+
+			if (presentSupport && !_queueFamilyIndices.isUniquePresent())
+			{
+				_queueFamilyIndices.present = i;
+			}
+		}
 	}
 
 	return _rateVkPhyDevice(out);
@@ -217,7 +235,8 @@ i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDes
 i64 Renderer_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
 {
 	throwIf(!_queueFamilyIndices.graphics.has_value(),	"no graphics queue family");
-	throwIf(!_queueFamilyIndices.present.has_value(),	"no graphics queue family");
+	throwIf(!_queueFamilyIndices.present.has_value() ,	"no present  queue family");
+	throwIf(!_queueFamilyIndices.transfer.has_value() ,	"no transfer queue family");
 	return 0;
 }
 

@@ -23,6 +23,17 @@ template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<VkPtr<Vk_Framebuffe
 
 
 #if 1	// TODO: remove / modify
+
+#define VkQueueTypeFlag_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(Graphics, = BitUtil::bit(1)) \
+	E(Present,	= BitUtil::bit(2)) \
+	E(Transfer,	= BitUtil::bit(3)) \
+	E(_kCount,) \
+//---
+RDS_ENUM_CLASS(VkQueueTypeFlag, u8);
+RDS_ENUM_ALL_OPERATOR(VkQueueTypeFlag);
+
 struct QueueFamilyIndices 
 {
 public:
@@ -31,9 +42,35 @@ public:
 public:
 	static constexpr SizeType s_kQueueTypeCount = 4;
 
+	void clear() 
+	{ 
+		graphics.reset();
+		present.reset();
+		transfer.reset();
+	}
+
+	bool isFoundAll()		const { return graphics.has_value() && present.has_value() && transfer.has_value(); }
+	bool isUniqueGraphics() const { return isFoundAll() && (graphics.value() != present.value()  && graphics.value() != transfer.value()); }
+	bool isUniquePresent () const { return isFoundAll() && (present.value()  != graphics.value() && present.value()  != transfer.value()); }
+	bool isUniqueTransfer() const { return isFoundAll() && (transfer.value() != graphics.value() && transfer.value() != present.value()); }
+	bool isAllUnique()		const { return isUniqueGraphics() && isUniquePresent() && isUniqueTransfer(); }
+
+	template<size_t N>
+	u32 get(Vector<u32, N>& out, VkQueueTypeFlag flag)
+	{
+		auto count = BitUtil::count1(sCast<u32>(flag));
+		out.clear();
+		out.reserve(count);
+		if (BitUtil::has(flag, VkQueueTypeFlag::Graphics))	{ out.emplace_back(graphics.value()); }
+		if (BitUtil::has(flag, VkQueueTypeFlag::Present))	{  out.emplace_back(present.value()); }
+		if (BitUtil::has(flag, VkQueueTypeFlag::Transfer))	{ out.emplace_back(transfer.value()); }
+		return sCast<u32>(count);
+	}
+
 public:
 	Opt<u32> graphics;
 	Opt<u32> present;
+	Opt<u32> transfer;
 };
 #endif // 1
 
@@ -123,6 +160,10 @@ public:
 	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out, Vk_Swapchain* vkSwapchain, Vk_Device* vkDevice);
 	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, Vk_Device* vkDevice, 
 															 VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
+
+	static void createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
+							, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkQueueTypeFlag vkQueueTypeFlag);
+	static void copyBuffer	(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool* vkCmdPool, Vk_Queue* vkTransferQueue);
 
 public:
 	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance* vkInstance);
