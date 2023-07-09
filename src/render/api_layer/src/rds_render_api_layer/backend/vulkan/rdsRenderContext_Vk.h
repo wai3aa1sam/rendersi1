@@ -15,8 +15,9 @@ struct TestVertex
 {
 public:
 	using SizeType = RenderApiLayerTraits::SizeType;
-	static constexpr u32 s_kVtxCount = 3;
-	static constexpr u32 s_kElementCount = 3;
+	static constexpr u32 s_kVtxCount		= 4;
+	static constexpr u32 s_kIdxCount		= 6;
+	static constexpr u32 s_kElementCount	= 3;
 
 public:
 	Vec3f	pos;
@@ -27,17 +28,17 @@ public:
 	static Vector<TestVertex, s_kVtxCount> make()
 	{
 		Vector<TestVertex, s_kVtxCount> vertices;
-		#if 0
+		#if 1
 
 		vertices.emplace_back(TestVertex{ { -0.5f, -0.5f, 0.0f }, { 255,	0,		0,		255 }, { 1.0f, 0.0f } });
 		vertices.emplace_back(TestVertex{ {  0.5f, -0.5f, 0.0f }, { 0,		255,	0,		255 }, { 0.0f, 0.0f } });
 		vertices.emplace_back(TestVertex{ {  0.5f,  0.5f, 0.0f }, { 0,		0,		255,	255 }, { 0.0f, 1.0f } });
 		vertices.emplace_back(TestVertex{ { -0.5f,  0.5f, 0.0f }, { 255,	255,	255,	255 }, { 1.0f, 1.0f } });
 
-		vertices.emplace_back(TestVertex{ { -0.5f, -0.5f, -0.5f }, { 255,	0,		0,		255 }, { 1.0f, 0.0f } });
+		/*vertices.emplace_back(TestVertex{ { -0.5f, -0.5f, -0.5f }, { 255,	0,		0,		255 }, { 1.0f, 0.0f } });
 		vertices.emplace_back(TestVertex{ {  0.5f, -0.5f, -0.5f }, { 0,		255,	0,		255 }, { 0.0f, 0.0f } });
 		vertices.emplace_back(TestVertex{ {  0.5f,  0.5f, -0.5f }, { 0,		0,		255,	255 }, { 0.0f, 1.0f } });
-		vertices.emplace_back(TestVertex{ { -0.5f,  0.5f, -0.5f }, { 255,	255,	255,	255 }, { 1.0f, 1.0f } });
+		vertices.emplace_back(TestVertex{ { -0.5f,  0.5f, -0.5f }, { 255,	255,	255,	255 }, { 1.0f, 1.0f } });*/
 
 		#else
 		
@@ -49,6 +50,12 @@ public:
 
 
 		return vertices;
+	}
+
+	static Vector<u16, s_kIdxCount> makeIndices()
+	{
+		Vector<u16, s_kIdxCount> indices = { 0, 1, 2, 2, 3, 0 };
+		return indices;
 	}
 
 	static VkVertexInputBindingDescription getBindingDescription() 
@@ -144,7 +151,7 @@ protected:
 	void createTestRenderPass();
 	void createTestGraphicsPipeline();
 	void createTestVertexBuffer();
-
+	void createTestIndexBuffer();
 
 	static constexpr size_t k() { return 4; }
 
@@ -164,9 +171,10 @@ protected:
 	VkPtr<Vk_Pipeline>			_testVkPipeline;
 	VkPtr<Vk_RenderPass>		_testVkRenderPass;
 	VkPtr<Vk_PipelineLayout>	_testVkPipelineLayout;
-
 	VkPtr<Vk_Buffer>			_testVkVtxBuffer;
 	VkPtr<Vk_DeviceMemory>		_testVkVtxBufferMemory;
+	VkPtr<Vk_Buffer>			_testVkIdxBuffer;
+	VkPtr<Vk_DeviceMemory>		_testVkIdxBufferMemory;
 
 	VkPtr<Vk_Queue>		_vkGraphicsQueue;
 	VkPtr<Vk_Queue>		_vkPresentQueue;
