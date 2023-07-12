@@ -5,11 +5,11 @@
 
 #include "rdsGpuProfilerContext_Vk.h"
 
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
 {
-
 
 struct TestVertex
 {
@@ -20,9 +20,13 @@ public:
 	static constexpr u32 s_kElementCount	= 3;
 
 public:
-	Vec3f	pos;
+	using Type = Vertex_PosColorUv<1>;
+	using Util = RenderApiUtil_Vk;
+
+public:
+	Tuple3f pos;
 	Color4b color;
-	Vec2f	uv;
+	Tuple2f	uv;
 
 public:
 	static Vector<TestVertex, s_kVtxCount> make()
@@ -70,22 +74,18 @@ public:
 	static Vector<VkVertexInputAttributeDescription, s_kElementCount> getAttributeDescriptions() 
 	{
 		Vector<VkVertexInputAttributeDescription, s_kElementCount> attributeDescriptions;
-		attributeDescriptions.resize(s_kElementCount);
+		
+		const auto* v = VertexLayoutManager::instance()->get(Type::s_kVertexType);
+		for (u32 i = 0; i < v->elements().size(); ++i)
+		{
+			auto& e = v->elements(i);
+			auto& attr = attributeDescriptions.emplace_back();
 
-		attributeDescriptions[0].binding	= 0;
-		attributeDescriptions[0].location	= 0;
-		attributeDescriptions[0].format		= VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[0].offset		= sCast<u32>(memberOffset(&TestVertex::pos));
-
-		attributeDescriptions[1].binding	= 0;
-		attributeDescriptions[1].location	= 1;
-		attributeDescriptions[1].format		= VK_FORMAT_R8G8B8A8_UNORM;
-		attributeDescriptions[1].offset		= sCast<u32>(memberOffset(&TestVertex::color));
-
-		attributeDescriptions[2].binding	= 0;
-		attributeDescriptions[2].location	= 2;
-		attributeDescriptions[2].format		= VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[2].offset		= sCast<u32>(memberOffset(&TestVertex::uv));
+			attr.binding	= 0;
+			attr.location	= i;
+			attr.format		= Util::toVkFormat(e.dataType);
+			attr.offset		= e.offset;
+		}
 
 		return attributeDescriptions;
 	}

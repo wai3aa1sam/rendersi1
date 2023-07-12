@@ -139,9 +139,9 @@ template<class T, size_t ALIGN> using PaddedData = ::nmsp::PaddedData_T<T, ALIGN
 
 template<class... ARGS> using Tuple = ::nmsp::Tuple_T<ARGS...>;
 
-template<class T> using TypeBitMixture_Impl = ::nmsp::TypeBitMixture_Impl<T>;
-template<class T> using TypeBitMixture		= ::nmsp::TypeBitMixture_T<T, TypeBitMixture_Impl<T> >;
-template<class T> using TBM					= ::nmsp::TBM<T>;
+//template<class T> using TypeBitMixture_Impl = ::nmsp::TypeBitMixture_Impl<T>;
+//template<class T> using TypeBitMixture		= ::nmsp::TypeBitMixture_T<T, TypeBitMixture_Impl<T> >;
+//template<class T> using TBM					= ::nmsp::TBM<T>;
 
 #endif
 

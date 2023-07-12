@@ -1,7 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rds_render_api_layer/common/rdsRenderApi_Common.h"
+#include "rds_render_api_layer/common/rds_render_api_layer_traits.h"
 
 namespace rds
 {

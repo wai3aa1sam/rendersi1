@@ -3,6 +3,9 @@
 #include "rds_render_api_layer.h"
 #include "rds_editor.h"
 
+#include <rds_render_api_layer/vertex/rdsVertex.h>
+#include <rds_render_api_layer/vertex/rdsVertexLayoutManager.h>
+
 namespace rds 
 {
 
@@ -97,6 +100,29 @@ public:
 
 	virtual void onCreate() override
 	{
+		{
+			#if 1
+			auto t = VertexTypeUtil::make(RenderDataType::Float32x3
+				, RenderDataType::UNorm8x4, 1
+				, RenderDataType::Float32x2, 1
+				, RenderDataType::Float32x3, 1, 0, 0
+			);
+			;
+			RDS_DUMP_VAR("{}", (u64)t);
+			RDS_DUMP_VAR("{}", (u64)Vertex_PosColorUvNormal<1>::s_kVertexType);
+
+			VertexLayoutManager::instance()->get(t);
+			VertexSemantic::NORMAL0;
+			VertexSemantic::TEXCOORD0;
+			VertexSemantic::TEXCOORD1;
+			#endif // 0
+
+
+			for (size_t i = 0; i < 8; i++)
+			{
+				RDS_DUMP_VAR(TBM<VertexType>::offsets(i));
+			}
+		}
 	}
 
 	virtual void onRender() override
@@ -110,6 +136,7 @@ public:
 		rdCtx.beginRender();
 
 		rdCtx.endRender();
+
 	}
 
 protected:

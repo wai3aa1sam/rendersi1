@@ -7,6 +7,8 @@
 
 #include "rdsRenderApi_Common.h"
 
+#include "rdsRenderDataType.h"
+
 namespace rds
 {
 #if 0

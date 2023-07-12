@@ -20,10 +20,10 @@ using namespace ::nmsp::math;
 #if 1
 
 template<class T> using Tuple2 = ::nmsp::Tuple2_T<T>;
-using Tuple2f = Tuple2<f32>;
-using Tuple2d = Tuple2<f64>;
-using Tuple2i = Tuple2<int>;
-using Tuple2u = Tuple2<u32>;
+using Tuple2f = ::nmsp::Tuple2f_T;
+using Tuple2d = ::nmsp::Tuple2d_T;
+using Tuple2i = ::nmsp::Tuple2i_T;
+//using Tuple2u = ::nmsp::Tuple2u_T;
 
 template<class T> using Tuple3 = ::nmsp::Tuple3_T<T>;
 using Tuple3f = Tuple3<f32>;

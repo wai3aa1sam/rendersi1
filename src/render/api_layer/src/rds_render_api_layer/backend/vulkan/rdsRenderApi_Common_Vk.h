@@ -133,6 +133,9 @@ public:
 	static VkExtent2D toVkExtent2D(const Rect2f& rect2);
 	static VkExtent2D toVkExtent2D(const Vec2f&  vec2);
 
+	static VkFormat	toVkFormat(RenderDataType v);
+
+
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
 

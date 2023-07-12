@@ -44,6 +44,8 @@ template<class T> using RemoveRef   = typename RemoveRefT<T>::type;
 template<class T> using RemovePtrT  = ::nmsp::RemovePtrT<T>;
 template<class T> using RemovePtr   = typename RemovePtrT<T>::type;
 
+template<class T> using RemoveArrT  = ::nmsp::RemoveArrT<T>;
+template<class T> using RemoveArr   = typename RemoveArrT<T>::type;
 
 #endif
 
@@ -72,6 +74,9 @@ template<class T> inline constexpr bool	IsFunction      = IsFunctionT<T>::value;
 
 template<class T> using					IsMemPtrT       = ::nmsp::IsMemPtrT<T>;
 template<class T> inline constexpr bool	IsMemPtr        = IsMemPtrT<T>::value;
+
+template<class T> using					IsArrayT       = ::nmsp::IsArrayT<T>;
+template<class T> inline constexpr bool	IsArray        = IsArrayT<T>::value;
 
 template<class T> using                 IsEnumT         = ::nmsp::IsEnumT<T>;
 template<class T> inline constexpr bool IsEnum          = IsEnumT<T>::value;
