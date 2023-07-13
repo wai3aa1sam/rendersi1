@@ -752,8 +752,8 @@ RenderContext_Vk::createTestVertexBuffer()
 	//auto* vkAllocCallbacks	= renderer()->allocCallbacks();
 	auto* vkDev = renderer()->vkDevice();
 
-	auto vertices = TestVertex::make();
-	auto bufSize = sizeof(vertices[0]) * vertices.size();
+	auto vtxData = TestVertex::make2();
+	auto bufSize = vtxData.size();
 
 	VkPtr<Vk_Buffer>			_vkStagingBuf;
 	VkPtr<Vk_DeviceMemory>		_vkStagingBufMem;
@@ -768,7 +768,7 @@ RenderContext_Vk::createTestVertexBuffer()
 
 	VkDeviceSize offset = 0;
 	vkMapMemory(vkDev, _vkStagingBufMem, offset, bufSize, vkMemMapflag, &mappedData);	// TODO: make a ScopedMemMap_Vk
-	memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vertices.data()), bufSize);
+	memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vtxData.data()), bufSize);
 	vkUnmapMemory(vkDev, _vkStagingBufMem);
 
 	Util::createBuffer(_testVkVtxBuffer.ptrForInit(), _testVkVtxBufferMemory.ptrForInit(), bufSize

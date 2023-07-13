@@ -6,6 +6,8 @@
 #include "rdsGpuProfilerContext_Vk.h"
 
 
+#include "rds_render_api_layer/mesh/rdsEditMesh.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -29,6 +31,39 @@ public:
 	Tuple2f	uv;
 
 public:
+	static Vector<u8, 1024> make2()
+	{
+		EditMesh editMesh;
+		{
+			auto& e = editMesh.pos;
+			e.reserve(s_kVtxCount);
+			e.emplace_back(-0.5f, -0.5f, 0.0f);
+			e.emplace_back( 0.5f, -0.5f, 0.0f);
+			e.emplace_back( 0.5f,  0.5f, 0.0f);
+			e.emplace_back(-0.5f,  0.5f, 0.0f);
+		}
+		{
+			auto& e = editMesh.color;
+			e.reserve(s_kVtxCount);
+			e.emplace_back(255,	  0,	  0,	255);
+			e.emplace_back(0,	255,	  0,	255);
+			e.emplace_back(0,	  0,	255,	255);
+			e.emplace_back(255,	255,	255,	255);
+		}
+		{
+			auto& e = editMesh.uvs[0];
+			e.reserve(s_kVtxCount);
+			e.emplace_back(1.0f, 0.0f);
+			e.emplace_back(0.0f, 0.0f);
+			e.emplace_back(0.0f, 1.0f);
+			e.emplace_back(1.0f, 1.0f);
+		}
+
+		Vector<u8, 1024> o;
+		editMesh.createPackedVtxData(o);
+		return o;
+	}
+
 	static Vector<TestVertex, s_kVtxCount> make()
 	{
 		Vector<TestVertex, s_kVtxCount> vertices;

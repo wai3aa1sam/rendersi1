@@ -151,6 +151,9 @@ public:
 	{
 		return sCast<IntType>(t) << TBM<VertexSemantic>::offsets(1) | sCast<IntType>(idx);
 	}
+
+	static constexpr SemanticT	getSemantic		(VertexSemantic x) { return TBM<VertexSemantic>::getElementValue<1>(x); }
+	static constexpr u8			getSemanticIdx	(VertexSemantic x) { return TBM<VertexSemantic>::getElementValue<0>(x); }
 };
 
 #define VertexSemantic_ENUM_LIST(E) \
@@ -199,8 +202,8 @@ public:
 	E(BINORMAL1,	= VertexSemanticUtil::makeInt(VertexSemanticType::BINORMAL, 1)) \
 	E(BINORMAL2,	= VertexSemanticUtil::makeInt(VertexSemanticType::BINORMAL, VertexTypeUtil::s_kBinormalCount - 1)) \
 	\
-	E(SV_Position,) \
-	E(SV_VertexID,) \
+	E(SV_Position,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Position, 0)) \
+	E(SV_VertexID,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_VertexID, 0)) \
 	\
 	E(_kCount,) \
 //---
