@@ -263,13 +263,15 @@ protected:
 	}
 
 	template<class VERTEX, class ELEMENT>
-	void _addElement(VertexSemantic semantic, ELEMENT VERTEX::* e, size_t i)
+	void _addElement(VertexSemantic vtxSmt, ELEMENT VERTEX::* e, size_t i)
 	{
 		using ElementType = RemoveArr<ELEMENT>;
 
+		RDS_CORE_ASSERT(!(VertexSemanticUtil::getSemantic(vtxSmt) == VertexSemanticType::SV_Position && i > 0), "not support POS_COUNT > 1, if posCount > 1, the VertexSemantic should be POSITION0/1/2...");
+
 		auto& element = _elements.emplace_back();
 		element.dataType	= RenderDataTypeUtil::get<ElementType>();
-		element.semantic	= semantic;
+		element.semantic	= vtxSmt;
 		element.offset		= sCast<decltype(element.offset)>(memberOffset(e) + sizeof(ElementType) * i);
 		
 		//RDS_DUMP_VAR(element.dataType, semantic, element.offset);
@@ -311,6 +313,7 @@ public:
 	static constexpr VertexType		s_kVertexType = VertexType::None;
 	
 public:
+
 	static void _internal_onRegister(VertexLayout* out) {}
 
 private:
@@ -335,6 +338,12 @@ public:
 	PosType position;
 
 public:
+	static const VertexLayout* vertexLayout()
+	{
+		static const VertexLayout* p = VertexLayoutManager::instance()->get(s_kVertexType);
+		return p;
+	}
+
 	static void _internal_onRegister(VertexLayout* out)
 	{
 		Base::_internal_onRegister(out);
@@ -364,10 +373,10 @@ public:
 	ColorType colors[s_kColorCount];
 
 public:
-	static VertexLayout* vertexLayout()
+	static const VertexLayout* vertexLayout()
 	{
-		// VertexLayoutManager::instance()->get();
-		return nullptr;
+		static const VertexLayout* p = VertexLayoutManager::instance()->get(s_kVertexType);
+		return p;
 	}
 
 	static void _internal_onRegister(VertexLayout* out)
@@ -400,10 +409,10 @@ public:
 	UvType uvs[s_kUvCount];
 
 public:
-	static VertexLayout* vertexLayout()
+	static const VertexLayout* vertexLayout()
 	{
-		// VertexLayoutManager::instance()->get();
-		return nullptr;
+		static const VertexLayout* p = VertexLayoutManager::instance()->get(s_kVertexType);
+		return p;
 	}
 
 	static void _internal_onRegister(VertexLayout* out)
@@ -436,10 +445,10 @@ public:
 	NormalType normals[s_kNormalCount];
 
 public:
-	static VertexLayout* vertexLayout()
+	static const VertexLayout* vertexLayout()
 	{
-		// VertexLayoutManager::instance()->get();
-		return nullptr;
+		static const VertexLayout* p = VertexLayoutManager::instance()->get(s_kVertexType);
+		return p;
 	}
 
 	static void _internal_onRegister(VertexLayout* out)
@@ -473,10 +482,10 @@ public:
 	TangentType tangents[s_kTangentCount];
 
 public:
-	static VertexLayout* vertexLayout()
+	static const VertexLayout* vertexLayout()
 	{
-		// VertexLayoutManager::instance()->get();
-		return nullptr;
+		static const VertexLayout* p = VertexLayoutManager::instance()->get(s_kVertexType);
+		return p;
 	}
 
 	static void _internal_onRegister(VertexLayout* out)
@@ -511,10 +520,10 @@ public:
 	BinormalType binormals[s_kBinormalCount];
 
 public:
-	static VertexLayout* vertexLayout()
+	static const VertexLayout* vertexLayout()
 	{
-		// VertexLayoutManager::instance()->get();
-		return nullptr;
+		static const VertexLayout* p = VertexLayoutManager::instance()->get(s_kVertexType);
+		return p;
 	}
 
 	static void _internal_onRegister(VertexLayout* out)

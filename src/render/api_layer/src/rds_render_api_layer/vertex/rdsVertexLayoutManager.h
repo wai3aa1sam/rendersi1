@@ -22,9 +22,9 @@ public:
 	
 	const VertexLayout* get(const VertexType& t);
 
+	template<class VERTEX> const VertexLayout* registerLayout();
 
 protected:
-	template<class VERTEX> const VertexLayout* registerLayout();
 	const VertexLayout* find(const VertexType& t) const;
 
 protected:

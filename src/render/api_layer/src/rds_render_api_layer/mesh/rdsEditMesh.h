@@ -75,7 +75,7 @@ template< class POS_TYPE,		u8 POS_COUNT
 		, class NORMAL_TYPE,	u8 NORMAL_COUNT
 		, class TANGNET_TYPE,	u8 TANGENT_COUNT
 		, class BINORMAL_TYPE,	u8 BINORMAL_COUNT>
-class EditMeshT : public NonCopyable
+class EditMeshTC : public NonCopyable
 {
 public:
 	using PosType		= POS_TYPE;
@@ -109,6 +109,15 @@ public:
 
 };
 
+template<u8 POS_COUNT, u8 COLOR_COUNT, u8 UV_COUNT, u8 NORMAL_COUNT, u8 TANGENT_COUNT, u8 BINORMAL_COUNT> 
+using EditMeshC = EditMeshTC<Tuple3f, POS_COUNT
+							, Color4b, COLOR_COUNT
+							, Tuple2f, UV_COUNT
+							, Tuple3f, NORMAL_COUNT
+							, Tuple3f, TANGENT_COUNT
+							, Tuple3f, BINORMAL_COUNT
+							>;
+
 template< class PT,	u8 PC
 		, class CT,	u8 CC
 		, class UT, u8 UC
@@ -117,7 +126,7 @@ template< class PT,	u8 PC
 		, class BT,	u8 BC>
 template<size_t N> inline
 void
-EditMeshT<PT, PC, CT, CC, UT, UC, NT, NC, TT, TC, BT, BC>::createPackedVtxData(Vector<u8, N>& out)
+EditMeshTC<PT, PC, CT, CC, UT, UC, NT, NC, TT, TC, BT, BC>::createPackedVtxData(Vector<u8, N>& out)
 {
 	PackedVtxDataHelper::createPackedVtxData(out
 												, positions,	s_kPosCount
@@ -136,7 +145,7 @@ template< class PT,	u8 PC
 	, class TT,	u8 TC
 	, class BT,	u8 BC> inline
 Vector<u8> 
-EditMeshT<PT, PC, CT, CC, UT, UC, NT, NC, TT, TC, BT, BC>::makePackedVtxData()
+EditMeshTC<PT, PC, CT, CC, UT, UC, NT, NC, TT, TC, BT, BC>::makePackedVtxData()
 {
 	Vector<u8> o; createPackedVtxData(o); return o;
 }
