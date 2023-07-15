@@ -23,14 +23,24 @@ MemoryContext_Vk::MemoryContext_Vk()
 {
 	//_allocationCallbacks.pfnAllocation
 }
-
-void 
-MemoryContext_Vk::create(Vk_PhysicalDevice* vkPhyDev)
+MemoryContext_Vk::~MemoryContext_Vk()
 {
-	vkGetPhysicalDeviceMemoryProperties(vkPhyDev, &_vkMemProperties);
+	destroy();
 }
 
+void 
+MemoryContext_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance* vkInst)
+{
+	vkGetPhysicalDeviceMemoryProperties(vkPhyDev, &_vkMemProperties);
 
+	_allocVk.create(vkDev, vkPhyDev, vkInst, allocCallbacks());
+}
+
+void 
+MemoryContext_Vk::destroy()
+{
+	_allocVk.destroy();
+}
 
 #endif
 

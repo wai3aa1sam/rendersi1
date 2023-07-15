@@ -2,7 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rdsRenderApi_Include_Vk.h"
-
+#include "rdsAllocator_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -20,18 +20,23 @@ public:
 
 public:
 	MemoryContext_Vk();
+	~MemoryContext_Vk();
 
-	void create(Vk_PhysicalDevice* vkPhyDev);
+	void create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance* vkInst);
+	void destroy();
 
 	const VkAllocationCallbacks*			allocCallbacks();
 	const VkPhysicalDeviceMemoryProperties& vkMemoryProperties();
 
+	Allocator_Vk*							allocVk();
 
 private:
-	VkAllocationCallbacks				_allocCallbacks	 = {};
+	VkAllocationCallbacks				_vkAllocCallbacks = {};
 	VkPhysicalDeviceMemoryProperties	_vkMemProperties = {};
-
+	Allocator_Vk						_allocVk;
 };
+
+Allocator_Vk* MemoryContext_Vk::allocVk() { return &_allocVk; }
 
 
 #endif

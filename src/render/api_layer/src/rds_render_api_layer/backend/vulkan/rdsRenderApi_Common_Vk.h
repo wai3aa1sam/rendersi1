@@ -135,6 +135,7 @@ public:
 
 	static VkFormat	toVkFormat(RenderDataType v);
 
+	static VkMemoryPropertyFlags toVkMemoryPropFlags(RenderMemoryUsage memUsage);
 
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
@@ -167,6 +168,8 @@ public:
 	static void createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
 							, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkQueueTypeFlag vkQueueTypeFlag);
 	static void copyBuffer	(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool* vkCmdPool, Vk_Queue* vkTransferQueue);
+
+	static void createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, AllocInfo_Vk* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, VkQueueTypeFlag vkQueueTypeFlag);
 
 public:
 	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance* vkInstance);

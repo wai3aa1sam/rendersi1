@@ -31,13 +31,13 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 	createVkPhyDevice(cDesc);
 	createVkDevice();
 
-	_memoryContextVk.create(vkPhysicalDevice());
+	_memoryContextVk.create(vkDevice(), vkPhysicalDevice(), vkInstance());
 }
 
 void
 Renderer_Vk::onDestroy()
 {
-
+	_memoryContextVk.destroy();
 }
 
 void

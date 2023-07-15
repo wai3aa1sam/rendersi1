@@ -750,12 +750,15 @@ void
 RenderContext_Vk::createTestVertexBuffer()
 {
 	//auto* vkAllocCallbacks	= renderer()->allocCallbacks();
-	auto* vkDev = renderer()->vkDevice();
+	//auto* vkDev		= renderer()->vkDevice();
+	auto* allocVk	= renderer()->memoryContext()->allocVk();
 
 	auto vtxData = TestVertex::make2();
 	auto bufSize = vtxData.size();
-
+	
 	VkPtr<Vk_Buffer>			_vkStagingBuf;
+
+	#if 0
 	VkPtr<Vk_DeviceMemory>		_vkStagingBufMem;
 
 	Util::createBuffer(_vkStagingBuf.ptrForInit(), _vkStagingBufMem.ptrForInit(), bufSize
@@ -777,37 +780,70 @@ RenderContext_Vk::createTestVertexBuffer()
 		, VkQueueTypeFlag::Graphics);
 
 	Util::copyBuffer(_testVkVtxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
+
+	#else
+
+	{
+		AllocInfo_Vk allocInfo;
+		allocInfo.usage  = RenderMemoryUsage::CpuOnly;
+		allocInfo.flags |= RenderAllocFlags::HostWrite;
+		Util::createBuffer(_vkStagingBuf, allocVk, &allocInfo, bufSize
+			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+			, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
+
+		void* mappedData = nullptr;
+		ScopedMemMap_Vk mm = { &mappedData, &_vkStagingBuf };
+		memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vtxData.data()), bufSize);
+	}
+
+	{
+		AllocInfo_Vk allocInfo;
+		allocInfo.usage  = RenderMemoryUsage::GpuOnly;
+		Util::createBuffer(_testVkVtxBuffer, allocVk, &allocInfo, bufSize
+			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+			, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
+
+		Util::copyBuffer(_testVkVtxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
+	}
+
+	#endif // 0
+
 }
 
 void
 RenderContext_Vk::createTestIndexBuffer()
 {
 	//auto* vkAllocCallbacks	= renderer()->allocCallbacks();
-	auto* vkDev = renderer()->vkDevice();
+	//auto* vkDev = renderer()->vkDevice();
+	auto* allocVk	= renderer()->memoryContext()->allocVk();
 
 	auto indices = TestVertex::makeIndices();
 	auto bufSize = sizeof(indices[0]) * indices.size();
 
 	VkPtr<Vk_Buffer>			_vkStagingBuf;
-	VkPtr<Vk_DeviceMemory>		_vkStagingBufMem;
 
-	Util::createBuffer(_vkStagingBuf.ptrForInit(), _vkStagingBufMem.ptrForInit(), bufSize
-		, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-		, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-		, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
+	{
+		AllocInfo_Vk allocInfo;
+		allocInfo.usage  = RenderMemoryUsage::CpuOnly;
+		allocInfo.flags |= RenderAllocFlags::HostWrite;
+		Util::createBuffer(_vkStagingBuf, allocVk, &allocInfo, bufSize
+			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+			, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
 
-	void* mappedData = nullptr;
-	VkMemoryMapFlags vkMemMapflag = {};
+		void* mappedData = nullptr;
+		ScopedMemMap_Vk mm = { &mappedData, &_vkStagingBuf };
+		memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(indices.data()), bufSize);
+	}
 
-	VkDeviceSize offset = 0;
-	vkMapMemory(vkDev, _vkStagingBufMem, offset, bufSize, vkMemMapflag, &mappedData);	// TODO: make a ScopedMemMap_Vk
-	memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(indices.data()), bufSize);
-	vkUnmapMemory(vkDev, _vkStagingBufMem);
+	{
+		AllocInfo_Vk allocInfo;
+		allocInfo.usage  = RenderMemoryUsage::GpuOnly;
+		Util::createBuffer(_testVkIdxBuffer, allocVk, &allocInfo, bufSize
+			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+			, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
 
-	Util::createBuffer(_testVkIdxBuffer.ptrForInit(), _testVkIdxBufferMemory.ptrForInit(), bufSize
-		, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-		, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-		, VkQueueTypeFlag::Graphics);
+		Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
+	}
 
 	Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
 }

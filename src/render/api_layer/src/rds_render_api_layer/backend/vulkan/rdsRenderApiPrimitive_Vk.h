@@ -39,6 +39,7 @@ using Vk_DeviceMemory			= VkDeviceMemory_T;
 
 using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
 
+
 #if 0
 #pragma mark --- rdsRenderApiPrmivitive_Vk-Decl ---
 #endif // 0
@@ -60,6 +61,36 @@ protected:
 template<class T> class RenderApiPrimitive_Vk;
 
 #endif
+
+#if 0
+
+#endif // 0
+#if 1
+
+class  Allocator_Vk;
+struct AllocInfo_Vk;
+template<class T>
+class AllocablePrimitive_Vk : public RenderApiPrimitive_Base_Vk<T>
+{
+public:
+	VmaAllocation*	_internal_allocHnd();
+
+	void			_internal_setAlloc(Allocator_Vk* alloc);
+	Allocator_Vk*	_internal_alloc();
+
+protected:
+	Allocator_Vk*	_alloc		= nullptr;	// TODO: AllocablePrimitive_Vk<T>::Allocator_Vk* should be strong ref?
+	AllocHnd_Vk		_allocHnd	= {};
+};
+
+template<class T> inline AllocHnd_Vk*	AllocablePrimitive_Vk<T>::_internal_allocHnd()						{ return &_allocHnd; }
+
+template<class T> inline void			AllocablePrimitive_Vk<T>::_internal_setAlloc(Allocator_Vk* alloc)	{ _alloc = alloc; }
+template<class T> inline Allocator_Vk*	AllocablePrimitive_Vk<T>::_internal_alloc()							{ return _alloc; }
+
+
+#endif // 1
+
 
 #if 0
 #pragma mark --- rdsRenderApiPrimitive_Vk-Impl ---
@@ -340,7 +371,7 @@ public:
 #if 1
 
 template<>
-class RenderApiPrimitive_Vk<Vk_Buffer> : public RenderApiPrimitive_Base_Vk<Vk_Buffer>
+class RenderApiPrimitive_Vk<Vk_Buffer> : public AllocablePrimitive_Vk<Vk_Buffer>
 {
 public:
 	void destroy();

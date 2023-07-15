@@ -2,6 +2,7 @@
 #include "rdsRenderApi_Common_Vk.h"
 
 #include "rdsRenderer_Vk.h"
+#include "rdsAllocator_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -100,82 +101,92 @@ RenderApiUtil_Vk::toVkExtent2D(const Vec2f& vec2)
 VkFormat
 RenderApiUtil_Vk::toVkFormat(RenderDataType v)
 {
-	using EM = RenderDataType;
+	using SRC = RenderDataType;
 	switch (v) 
 	{
-		case EM::Int8:			{ return VK_FORMAT_R8_SINT;				} break;
-		case EM::Int8x2:		{ return VK_FORMAT_R8G8_SINT;			} break;
-		case EM::Int8x3:		{ return VK_FORMAT_R8G8B8_SINT;			} break; 
-		case EM::Int8x4:		{ return VK_FORMAT_R8G8B8A8_SINT;		} break;
+		case SRC::Int8:			{ return VK_FORMAT_R8_SINT;				} break;
+		case SRC::Int8x2:		{ return VK_FORMAT_R8G8_SINT;			} break;
+		case SRC::Int8x3:		{ return VK_FORMAT_R8G8B8_SINT;			} break; 
+		case SRC::Int8x4:		{ return VK_FORMAT_R8G8B8A8_SINT;		} break;
 
-		case EM::UInt8:			{ return VK_FORMAT_R8_UINT;				} break;
-		case EM::UInt8x2:		{ return VK_FORMAT_R8G8_UINT;			} break;
-		case EM::UInt8x3:		{ return VK_FORMAT_R8G8B8_UINT;			} break; 
-		case EM::UInt8x4:		{ return VK_FORMAT_R8G8B8A8_UINT;		} break;
+		case SRC::UInt8:			{ return VK_FORMAT_R8_UINT;				} break;
+		case SRC::UInt8x2:		{ return VK_FORMAT_R8G8_UINT;			} break;
+		case SRC::UInt8x3:		{ return VK_FORMAT_R8G8B8_UINT;			} break; 
+		case SRC::UInt8x4:		{ return VK_FORMAT_R8G8B8A8_UINT;		} break;
 
-		case EM::Norm8:			{ return VK_FORMAT_R8_SNORM;			} break;
-		case EM::Norm8x2:		{ return VK_FORMAT_R8G8_SNORM;			} break;
-		case EM::Norm8x3:		{ return VK_FORMAT_R8G8B8_SNORM;		} break; 
-		case EM::Norm8x4:		{ return VK_FORMAT_R8G8B8A8_SNORM;		} break;
+		case SRC::Norm8:			{ return VK_FORMAT_R8_SNORM;			} break;
+		case SRC::Norm8x2:		{ return VK_FORMAT_R8G8_SNORM;			} break;
+		case SRC::Norm8x3:		{ return VK_FORMAT_R8G8B8_SNORM;		} break; 
+		case SRC::Norm8x4:		{ return VK_FORMAT_R8G8B8A8_SNORM;		} break;
 
-		case EM::UNorm8:		{ return VK_FORMAT_R8_UNORM;			} break;
-		case EM::UNorm8x2:		{ return VK_FORMAT_R8G8_UNORM;			} break;
-		case EM::UNorm8x3:		{ return VK_FORMAT_R8G8B8_UNORM;		} break; 
-		case EM::UNorm8x4:		{ return VK_FORMAT_R8G8B8A8_UNORM;		} break;
+		case SRC::UNorm8:		{ return VK_FORMAT_R8_UNORM;			} break;
+		case SRC::UNorm8x2:		{ return VK_FORMAT_R8G8_UNORM;			} break;
+		case SRC::UNorm8x3:		{ return VK_FORMAT_R8G8B8_UNORM;		} break; 
+		case SRC::UNorm8x4:		{ return VK_FORMAT_R8G8B8A8_UNORM;		} break;
 
-		case EM::Int16:			{ return VK_FORMAT_R16_SINT;			} break;
-		case EM::Int16x2:		{ return VK_FORMAT_R16G16_SINT;			} break;
-		case EM::Int16x3:		{ return VK_FORMAT_R16G16B16_SINT;		} break; 
-		case EM::Int16x4:		{ return VK_FORMAT_R16G16B16A16_SINT;	} break;
+		case SRC::Int16:			{ return VK_FORMAT_R16_SINT;			} break;
+		case SRC::Int16x2:		{ return VK_FORMAT_R16G16_SINT;			} break;
+		case SRC::Int16x3:		{ return VK_FORMAT_R16G16B16_SINT;		} break; 
+		case SRC::Int16x4:		{ return VK_FORMAT_R16G16B16A16_SINT;	} break;
 
-		case EM::UInt16:		{ return VK_FORMAT_R16_UINT;			} break;
-		case EM::UInt16x2:		{ return VK_FORMAT_R16G16_UINT;			} break;
-		case EM::UInt16x3:		{ return VK_FORMAT_R16G16B16_UINT;		} break; 
-		case EM::UInt16x4:		{ return VK_FORMAT_R16G16B16A16_UINT;	} break;
+		case SRC::UInt16:		{ return VK_FORMAT_R16_UINT;			} break;
+		case SRC::UInt16x2:		{ return VK_FORMAT_R16G16_UINT;			} break;
+		case SRC::UInt16x3:		{ return VK_FORMAT_R16G16B16_UINT;		} break; 
+		case SRC::UInt16x4:		{ return VK_FORMAT_R16G16B16A16_UINT;	} break;
 
-		case EM::Norm16:		{ return VK_FORMAT_R16_SNORM;			} break;
-		case EM::Norm16x2:		{ return VK_FORMAT_R16G16_SNORM;		} break;
-		case EM::Norm16x3:		{ return VK_FORMAT_R16G16B16_SNORM;		} break; 
-		case EM::Norm16x4:		{ return VK_FORMAT_R16G16B16A16_SNORM;	} break;
+		case SRC::Norm16:		{ return VK_FORMAT_R16_SNORM;			} break;
+		case SRC::Norm16x2:		{ return VK_FORMAT_R16G16_SNORM;		} break;
+		case SRC::Norm16x3:		{ return VK_FORMAT_R16G16B16_SNORM;		} break; 
+		case SRC::Norm16x4:		{ return VK_FORMAT_R16G16B16A16_SNORM;	} break;
 
-		case EM::UNorm16:		{ return VK_FORMAT_R16_UNORM;			} break;
-		case EM::UNorm16x2:		{ return VK_FORMAT_R16G16_UNORM;		} break;
-		case EM::UNorm16x3:		{ return VK_FORMAT_R16G16B16_UNORM;		} break; 
-		case EM::UNorm16x4:		{ return VK_FORMAT_R16G16B16A16_UNORM;	} break;
+		case SRC::UNorm16:		{ return VK_FORMAT_R16_UNORM;			} break;
+		case SRC::UNorm16x2:	{ return VK_FORMAT_R16G16_UNORM;		} break;
+		case SRC::UNorm16x3:	{ return VK_FORMAT_R16G16B16_UNORM;		} break; 
+		case SRC::UNorm16x4:	{ return VK_FORMAT_R16G16B16A16_UNORM;	} break;
 
-		case EM::Int32:			{ return VK_FORMAT_R32_SINT;			} break;
-		case EM::Int32x2:		{ return VK_FORMAT_R32G32_SINT;			} break;
-		case EM::Int32x3:		{ return VK_FORMAT_R32G32B32_SINT;		} break; 
-		case EM::Int32x4:		{ return VK_FORMAT_R32G32B32A32_SINT;	} break;
+		case SRC::Int32:		{ return VK_FORMAT_R32_SINT;			} break;
+		case SRC::Int32x2:		{ return VK_FORMAT_R32G32_SINT;			} break;
+		case SRC::Int32x3:		{ return VK_FORMAT_R32G32B32_SINT;		} break; 
+		case SRC::Int32x4:		{ return VK_FORMAT_R32G32B32A32_SINT;	} break;
 
-		case EM::UInt32:		{ return VK_FORMAT_R32_UINT;			} break;
-		case EM::UInt32x2:		{ return VK_FORMAT_R32G32_UINT;			} break;
-		case EM::UInt32x3:		{ return VK_FORMAT_R32G32B32_UINT;		} break; 
-		case EM::UInt32x4:		{ return VK_FORMAT_R32G32B32A32_UINT;	} break;
+		case SRC::UInt32:		{ return VK_FORMAT_R32_UINT;			} break;
+		case SRC::UInt32x2:		{ return VK_FORMAT_R32G32_UINT;			} break;
+		case SRC::UInt32x3:		{ return VK_FORMAT_R32G32B32_UINT;		} break; 
+		case SRC::UInt32x4:		{ return VK_FORMAT_R32G32B32A32_UINT;	} break;
 
-			//		case EM::Norm32:	{ return VK_FORMAT_R32_SNORM;			} break;
-			//		case EM::Norm32x2:	{ return VK_FORMAT_R32G32_SNORM;		} break;
-			//		case EM::Norm32x3:	{ return VK_FORMAT_R32G32B32_SNORM;		} break; 
-			//		case EM::Norm32x4:	{ return VK_FORMAT_R32G32B32A32_SNORM;	} break;
+			//		case SRC::Norm32:	{ return VK_FORMAT_R32_SNORM;			} break;
+			//		case SRC::Norm32x2:	{ return VK_FORMAT_R32G32_SNORM;		} break;
+			//		case SRC::Norm32x3:	{ return VK_FORMAT_R32G32B32_SNORM;		} break; 
+			//		case SRC::Norm32x4:	{ return VK_FORMAT_R32G32B32A32_SNORM;	} break;
 
-			//case EM::UNorm32:		{ return VK_FORMAT_R32_UNORM;			} break;
-			//case EM::UNorm32x2:	{ return VK_FORMAT_R32G32_UNORM;		} break;
-			//case EM::UNorm32x3:	{ return VK_FORMAT_R32G32B32_UNORM;		} break; 
-			//case EM::UNorm32x4:	{ return VK_FORMAT_R32G32B32A32_UNORM;	} break;
+			//case SRC::UNorm32:	{ return VK_FORMAT_R32_UNORM;			} break;
+			//case SRC::UNorm32x2:	{ return VK_FORMAT_R32G32_UNORM;		} break;
+			//case SRC::UNorm32x3:	{ return VK_FORMAT_R32G32B32_UNORM;		} break; 
+			//case SRC::UNorm32x4:	{ return VK_FORMAT_R32G32B32A32_UNORM;	} break;
 			// 
 			//--
-		case EM::Float16:		{ return VK_FORMAT_R16_SFLOAT;			} break;
-		case EM::Float16x2:		{ return VK_FORMAT_R16G16_SFLOAT;		} break;
-		case EM::Float16x3:		{ return VK_FORMAT_R16G16B16_SFLOAT;	} break; 
-		case EM::Float16x4:		{ return VK_FORMAT_R16G16B16A16_SFLOAT;	} break;
+		case SRC::Float16:		{ return VK_FORMAT_R16_SFLOAT;			} break;
+		case SRC::Float16x2:	{ return VK_FORMAT_R16G16_SFLOAT;		} break;
+		case SRC::Float16x3:	{ return VK_FORMAT_R16G16B16_SFLOAT;	} break; 
+		case SRC::Float16x4:	{ return VK_FORMAT_R16G16B16A16_SFLOAT;	} break;
 			//---
-		case EM::Float32:		{ return VK_FORMAT_R32_SFLOAT;			} break;
-		case EM::Float32x2:		{ return VK_FORMAT_R32G32_SFLOAT;		} break;
-		case EM::Float32x3:		{ return VK_FORMAT_R32G32B32_SFLOAT;	} break;
-		case EM::Float32x4:		{ return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
+		case SRC::Float32:		{ return VK_FORMAT_R32_SFLOAT;			} break;
+		case SRC::Float32x2:	{ return VK_FORMAT_R32G32_SFLOAT;		} break;
+		case SRC::Float32x3:	{ return VK_FORMAT_R32G32B32_SFLOAT;	} break;
+		case SRC::Float32x4:	{ return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
 			//---
 		default: { throw RDS_ERROR("unsupported RenderDataType"); } break;
 	}
+}
+
+VkMemoryPropertyFlags 
+RenderApiUtil_Vk::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
+{
+	VkMemoryPropertyFlags flags = {};
+	//if (BitUtil::has(requiredProperties, sCast<VkFlags>(VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))) { return RenderMemoryUsage::CpuToGpu;	}
+	//if (BitUtil::has(requiredProperties, sCast<VkFlags>(VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))) { return RenderMemoryUsage::GpuOnly;	}
+	_notYetSupported();
+	return flags;
 }
 
 u32
@@ -435,6 +446,29 @@ RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 		throwIfError(ret);
 		vkQueueWaitIdle(vkTransferQueue);
 	}
+}
+
+void 
+RenderApiUtil_Vk::createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, AllocInfo_Vk* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, VkQueueTypeFlag vkQueueTypeFlag)
+{
+	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
+
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType					= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size						= size;
+	bufferInfo.usage					= usage;
+	bufferInfo.sharingMode				= VK_SHARING_MODE_EXCLUSIVE;
+
+	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
+	auto queueCount = vkQueueIndices.get(queueIdices, vkQueueTypeFlag);
+	if (queueCount > 1)
+	{
+		bufferInfo.sharingMode				= VK_SHARING_MODE_CONCURRENT;
+		bufferInfo.queueFamilyIndexCount	= queueCount;
+		bufferInfo.pQueueFamilyIndices		= queueIdices.data();
+	}
+
+	allocVk->allocBuf(outBuf, &bufferInfo, allocInfo);
 }
 
 void

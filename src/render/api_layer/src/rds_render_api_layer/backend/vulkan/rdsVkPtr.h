@@ -15,7 +15,7 @@ namespace rds
 template<class T>
 class VkPtr : public RenderApiPrimitive_Vk<T>
 {
-	public:
+public:
 	VkPtr() = default;
 
 	VkPtr(T* p)					RDS_NOEXCEPT	{ reset(p); }
@@ -59,7 +59,7 @@ class VkPtr : public RenderApiPrimitive_Vk<T>
 		}
 	}
 
-	T* release() RDS_NOEXCEPT { T* o = _p; _p = VK_NULL_HANDLE; return o; }
+	//T* release() RDS_NOEXCEPT { T* o = _p; _p = VK_NULL_HANDLE; return o; }
 
 	T** ptrForInit() RDS_NOEXCEPT { reset(VK_NULL_HANDLE); ++_refCount; return sCast<T**>(&_p); }
 };

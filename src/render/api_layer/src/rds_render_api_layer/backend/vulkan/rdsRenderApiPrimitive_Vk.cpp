@@ -1,6 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderApiPrimitive_Vk.h"
 #include "rdsRenderer_Vk.h"
+#include "rdsAllocator_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -282,8 +283,9 @@ RenderApiPrimitive_Vk<Vk_DeviceMemory>::destroy()
 void 
 RenderApiPrimitive_Vk<Vk_Buffer>::destroy()
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyBuffer(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	//auto* renderer = Renderer_Vk::instance();
+	//vkDestroyBuffer(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	_alloc->freeBuf(_p, _internal_allocHnd());
 }
 
 #endif
