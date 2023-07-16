@@ -4,6 +4,7 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
+
 #if 0
 #pragma mark --- rdsVulkan_Include-Decl ---
 #endif // 0
@@ -29,13 +30,13 @@
 
 
 RDS_DISABLE_ALL_WARNINGS();
-
-#define VMA_IMPLEMENTATION
-#define VMA_VULKAN_VERSION 1003000 // Vulkan 1.3
 #include <vk_mem_alloc.h>
-
 RDS_RESTORE_ALL_WARNINGS();
+
+namespace rds
+{
 using AllocHnd_Vk = VmaAllocation;
+}
 
 
 #endif

@@ -789,7 +789,7 @@ RenderContext_Vk::createTestVertexBuffer()
 		allocInfo.flags |= RenderAllocFlags::HostWrite;
 		Util::createBuffer(_vkStagingBuf, allocVk, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-			, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
+			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
 		void* mappedData = nullptr;
 		ScopedMemMap_Vk mm = { &mappedData, &_vkStagingBuf };
@@ -801,7 +801,7 @@ RenderContext_Vk::createTestVertexBuffer()
 		allocInfo.usage  = RenderMemoryUsage::GpuOnly;
 		Util::createBuffer(_testVkVtxBuffer, allocVk, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-			, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
+			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
 		Util::copyBuffer(_testVkVtxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
 	}
@@ -828,7 +828,7 @@ RenderContext_Vk::createTestIndexBuffer()
 		allocInfo.flags |= RenderAllocFlags::HostWrite;
 		Util::createBuffer(_vkStagingBuf, allocVk, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-			, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
+			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
 		void* mappedData = nullptr;
 		ScopedMemMap_Vk mm = { &mappedData, &_vkStagingBuf };
@@ -840,7 +840,7 @@ RenderContext_Vk::createTestIndexBuffer()
 		allocInfo.usage  = RenderMemoryUsage::GpuOnly;
 		Util::createBuffer(_testVkIdxBuffer, allocVk, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-			, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
+			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
 		Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
 	}

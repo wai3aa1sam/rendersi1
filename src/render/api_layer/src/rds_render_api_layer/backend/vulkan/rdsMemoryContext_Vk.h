@@ -1,7 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rdsRenderApi_Include_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
 #include "rdsAllocator_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -36,8 +35,11 @@ private:
 	Allocator_Vk						_allocVk;
 };
 
-Allocator_Vk* MemoryContext_Vk::allocVk() { return &_allocVk; }
+inline Allocator_Vk* MemoryContext_Vk::allocVk() { return &_allocVk; }
 
+inline const VkAllocationCallbacks* MemoryContext_Vk::allocCallbacks() { return /*&_allocationCallbacks*/ nullptr; }
+
+inline const VkPhysicalDeviceMemoryProperties& MemoryContext_Vk::vkMemoryProperties() { return _vkMemProperties; }
 
 #endif
 
@@ -46,11 +48,6 @@ Allocator_Vk* MemoryContext_Vk::allocVk() { return &_allocVk; }
 #pragma mark --- rdsMemoryContext_Vk-Impl ---
 #endif // 0
 #if 1
-
-inline const VkAllocationCallbacks* MemoryContext_Vk::allocCallbacks() { return /*&_allocationCallbacks*/ nullptr; }
-
-inline const VkPhysicalDeviceMemoryProperties& MemoryContext_Vk::vkMemoryProperties() { return _vkMemProperties; }
-
 
 #endif
 

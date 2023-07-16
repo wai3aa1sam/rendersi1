@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rdsRenderApi_Common_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rdsMemoryContext_Vk.h"
 

@@ -1,6 +1,5 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderer_Vk.h"
-#include "rdsRenderContext_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 

@@ -18,6 +18,7 @@ struct RenderContext_CreateDesc
 
 class RenderContext : public RefCount_Base
 {
+	friend class Renderer;
 public:
 	using Base = RefCount_Base;
 	using CreateDesc = RenderContext_CreateDesc;

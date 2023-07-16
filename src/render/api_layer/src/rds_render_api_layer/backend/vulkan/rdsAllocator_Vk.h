@@ -1,9 +1,8 @@
 #pragma once
 
-#include "rdsRenderApi_Include_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
-
 
 namespace rds
 {
@@ -15,8 +14,9 @@ namespace rds
 
 struct AllocInfo_Vk
 {
-	RenderMemoryUsage usage = RenderMemoryUsage::None;
-	RenderAllocFlags flags	= RenderAllocFlags::None;
+	RenderMemoryUsage		usage			= RenderMemoryUsage::None;
+	RenderAllocFlags		flags			= RenderAllocFlags::None;
+	VkMemoryPropertyFlags	vkMemPropFlags	= {};
 };
 
 class Allocator_Vk : public NonCopyable
@@ -55,6 +55,8 @@ public:
 
 	void map(void* outData);
 	void unmap();
+
+	// if no VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vkFlushMappedMemoryRanges, vkInvalidateMappedMemoryRanges
 
 protected:
 	VkPtr<Vk_Buffer>& vkp;

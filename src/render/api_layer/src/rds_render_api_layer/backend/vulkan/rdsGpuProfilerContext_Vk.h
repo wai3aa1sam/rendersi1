@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/common/rds_render_api_layer_common.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN && RDS_ENABLE_PROFILER
 
@@ -109,12 +109,13 @@ private:
 	RenderContext* _rdCtx	= nullptr;
 };
 
+inline
 GpuProfilerContext_Vk::~GpuProfilerContext_Vk()
 {
 	destroy();
 }
 
-GpuProfilerContext_Vk::ProfilerCtx& GpuProfilerContext_Vk::ctx() { return _ctx; }
+inline GpuProfilerContext_Vk::ProfilerCtx& GpuProfilerContext_Vk::ctx() { return _ctx; }
 
 }
 

@@ -179,6 +179,21 @@ RenderApiUtil_Vk::toVkFormat(RenderDataType v)
 	}
 }
 
+VkBufferUsageFlagBits 
+RenderApiUtil_Vk::toVkBufferUsage(RenderGpuBufferType type)
+{
+	using SRC = RenderGpuBufferType;
+	switch (type)
+	{
+		case SRC::Vertex:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; } break;
+		case SRC::Index:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_INDEX_BUFFER_BIT; } break;
+		case SRC::Const:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; } break;
+	}
+
+	RDS_CORE_ASSERT(false, "unsporrted buffer usage");
+	return VkBufferUsageFlagBits::VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+}
+
 VkMemoryPropertyFlags 
 RenderApiUtil_Vk::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
 {
@@ -352,7 +367,7 @@ RenderApiUtil_Vk::createFence(Vk_Fence** out, Vk_Device* vkDevice)
 
 void 
 RenderApiUtil_Vk::createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
-								, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkQueueTypeFlag vkQueueTypeFlag)
+								, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags)
 {
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
 	auto* vkAllocCallbacks	= Renderer_Vk::instance()->allocCallbacks();
@@ -365,7 +380,7 @@ RenderApiUtil_Vk::createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, 
 	bufferInfo.sharingMode				= VK_SHARING_MODE_EXCLUSIVE;
 
 	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
-	auto queueCount = vkQueueIndices.get(queueIdices, vkQueueTypeFlag);
+	auto queueCount = vkQueueIndices.get(queueIdices, queueTypeFlags);
 	if (queueCount > 1)
 	{
 		bufferInfo.sharingMode				= VK_SHARING_MODE_CONCURRENT;
@@ -449,7 +464,7 @@ RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 }
 
 void 
-RenderApiUtil_Vk::createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, AllocInfo_Vk* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, VkQueueTypeFlag vkQueueTypeFlag)
+RenderApiUtil_Vk::createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, AllocInfo_Vk* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
 {
 	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
 
@@ -458,9 +473,9 @@ RenderApiUtil_Vk::createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, 
 	bufferInfo.size						= size;
 	bufferInfo.usage					= usage;
 	bufferInfo.sharingMode				= VK_SHARING_MODE_EXCLUSIVE;
-
+	
 	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
-	auto queueCount = vkQueueIndices.get(queueIdices, vkQueueTypeFlag);
+	auto queueCount = vkQueueIndices.get(queueIdices, queueTypeFlags);
 	if (queueCount > 1)
 	{
 		bufferInfo.sharingMode				= VK_SHARING_MODE_CONCURRENT;

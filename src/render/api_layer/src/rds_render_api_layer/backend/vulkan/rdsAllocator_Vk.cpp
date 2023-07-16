@@ -1,10 +1,22 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsAllocator_Vk.h"
 
-#include "rdsRenderApi_Common_Vk.h"
 #include "rdsRenderer_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
+
+RDS_DISABLE_ALL_WARNINGS();
+
+#define VMA_IMPLEMENTATION
+#define VMA_VULKAN_VERSION 1003000 // Vulkan 1.3
+#include <vk_mem_alloc.h>
+
+RDS_RESTORE_ALL_WARNINGS();
+
+#endif
+
+#if RDS_RENDER_HAS_VULKAN
+
 
 namespace rds
 {
@@ -49,7 +61,7 @@ Allocator_Vk::allocBuf(VkPtr<Vk_Buffer>& outBuf, const VkBufferCreateInfo* buffe
 	vmaAllocCInfo.usage = toMemoryUsage(allocInfo->usage);
 	vmaAllocCInfo.flags = toAllocFlags(allocInfo->flags);
 	//vmaAllocCInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
+	
 	outBuf.reset(nullptr);
 	outBuf._internal_setAlloc(this);
 	auto ret = vmaCreateBuffer(_allocator, bufferInfo, &vmaAllocCInfo, outBuf.ptrForInit(), outBuf._internal_allocHnd(), nullptr);

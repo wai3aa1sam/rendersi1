@@ -5,6 +5,8 @@
 #include "rdsRenderApi_Include_Vk.h"
 #include "rdsVkPtr.h"
 
+#include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -23,16 +25,6 @@ template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<VkPtr<Vk_Framebuffe
 
 
 #if 1	// TODO: remove / modify
-
-#define VkQueueTypeFlag_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(Graphics, = BitUtil::bit(1)) \
-	E(Present,	= BitUtil::bit(2)) \
-	E(Transfer,	= BitUtil::bit(3)) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(VkQueueTypeFlag, u8);
-RDS_ENUM_ALL_OPERATOR(VkQueueTypeFlag);
 
 struct QueueFamilyIndices 
 {
@@ -56,14 +48,14 @@ public:
 	bool isAllUnique()		const { return isUniqueGraphics() && isUniquePresent() && isUniqueTransfer(); }
 
 	template<size_t N>
-	u32 get(Vector<u32, N>& out, VkQueueTypeFlag flag)
+	u32 get(Vector<u32, N>& out, QueueTypeFlags flag)
 	{
 		auto count = BitUtil::count1(sCast<u32>(flag));
 		out.clear();
 		out.reserve(count);
-		if (BitUtil::has(flag, VkQueueTypeFlag::Graphics))	{ out.emplace_back(graphics.value()); }
-		if (BitUtil::has(flag, VkQueueTypeFlag::Present))	{  out.emplace_back(present.value()); }
-		if (BitUtil::has(flag, VkQueueTypeFlag::Transfer))	{ out.emplace_back(transfer.value()); }
+		if (BitUtil::has(flag, QueueTypeFlags::Graphics))	{ out.emplace_back(graphics.value()); }
+		if (BitUtil::has(flag, QueueTypeFlags::Present))	{ out.emplace_back(present.value()); }
+		if (BitUtil::has(flag, QueueTypeFlags::Transfer))	{ out.emplace_back(transfer.value()); }
 		return sCast<u32>(count);
 	}
 
@@ -135,6 +127,8 @@ public:
 
 	static VkFormat	toVkFormat(RenderDataType v);
 
+	static VkBufferUsageFlagBits toVkBufferUsage(RenderGpuBufferType type);
+
 	static VkMemoryPropertyFlags toVkMemoryPropFlags(RenderMemoryUsage memUsage);
 
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
@@ -166,10 +160,10 @@ public:
 															 VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 	static void createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
-							, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkQueueTypeFlag vkQueueTypeFlag);
+							, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags);
 	static void copyBuffer	(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool* vkCmdPool, Vk_Queue* vkTransferQueue);
 
-	static void createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, AllocInfo_Vk* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, VkQueueTypeFlag vkQueueTypeFlag);
+	static void createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, AllocInfo_Vk* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
 
 public:
 	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance* vkInstance);

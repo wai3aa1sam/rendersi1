@@ -21,6 +21,17 @@ private:
 
 #endif
 
+#define QueueTypeFlags_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(Graphics, = BitUtil::bit(1)) \
+	E(Present,	= BitUtil::bit(2)) \
+	E(Transfer,	= BitUtil::bit(3)) \
+	E(Compute,	= BitUtil::bit(4)) \
+	E(_kCount,) \
+//---
+RDS_ENUM_CLASS(QueueTypeFlags, u8);
+RDS_ENUM_ALL_OPERATOR(QueueTypeFlags);
+
 #define RenderMemoryUsage_ENUM_LIST(E) \
 	E(None, = 0) \
 	\

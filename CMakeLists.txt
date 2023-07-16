@@ -20,7 +20,8 @@ my_set_opt(${project_namespace_marco}_ENABLE_SANITIZER          0)
 
 find_package(fmt                                CONFIG REQUIRED)
 find_package(benchmark                          CONFIG REQUIRED)
-find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED                        CONFIG REQUIRED)
+find_package(Vulkan)
+find_package(VulkanMemoryAllocator              CONFIG REQUIRED)
 
 # --- git_submodule ---
 my_add_git_submodule(external/nmsplib)
