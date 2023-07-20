@@ -18,9 +18,10 @@ public:
 	static constexpr const char* s_appName		= "Rendersi1";
 	static constexpr const char* s_engineName	= "Rendersi1";
 
-	static constexpr SizeType s_kSwapchainImageLocalSize = 4;
+	static constexpr SizeType s_kFrameInFlightCount			= 4;
+	static constexpr SizeType s_kSwapchainImageLocalSize	= s_kFrameInFlightCount;
+	static constexpr SizeType s_kThreadCount				= OsTraits::s_kJobSystemLogicalThreadCount;
 
-	static constexpr SizeType s_kFrameInFlightCount = 4;
 	static_assert(math::isPowOf2(s_kFrameInFlightCount));
 
 public:

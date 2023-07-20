@@ -24,10 +24,14 @@ public:
 	virtual ~RenderGpuBuffer_Vk();
 
 protected:
-	virtual void onCreate(const CreateDesc& cDesc);
-	virtual void onPostCreate(const CreateDesc& cDesc);
-	virtual void onDestroy();
+	virtual void onCreate(const CreateDesc& cDesc) override;
+	virtual void onPostCreate(const CreateDesc& cDesc) override;
+	virtual void onDestroy() override;
 
+	virtual void onUploadToGpu(ByteSpan data, SizeType offset) override;
+
+protected:
+	VkPtr<Vk_Buffer> _vkBuf;
 };
 
 

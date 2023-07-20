@@ -109,12 +109,12 @@ RenderApiUtil_Vk::toVkFormat(RenderDataType v)
 		case SRC::Int8x3:		{ return VK_FORMAT_R8G8B8_SINT;			} break; 
 		case SRC::Int8x4:		{ return VK_FORMAT_R8G8B8A8_SINT;		} break;
 
-		case SRC::UInt8:			{ return VK_FORMAT_R8_UINT;				} break;
+		case SRC::UInt8:		{ return VK_FORMAT_R8_UINT;				} break;
 		case SRC::UInt8x2:		{ return VK_FORMAT_R8G8_UINT;			} break;
 		case SRC::UInt8x3:		{ return VK_FORMAT_R8G8B8_UINT;			} break; 
 		case SRC::UInt8x4:		{ return VK_FORMAT_R8G8B8A8_UINT;		} break;
 
-		case SRC::Norm8:			{ return VK_FORMAT_R8_SNORM;			} break;
+		case SRC::Norm8:		{ return VK_FORMAT_R8_SNORM;			} break;
 		case SRC::Norm8x2:		{ return VK_FORMAT_R8G8_SNORM;			} break;
 		case SRC::Norm8x3:		{ return VK_FORMAT_R8G8B8_SNORM;		} break; 
 		case SRC::Norm8x4:		{ return VK_FORMAT_R8G8B8A8_SNORM;		} break;
@@ -124,7 +124,7 @@ RenderApiUtil_Vk::toVkFormat(RenderDataType v)
 		case SRC::UNorm8x3:		{ return VK_FORMAT_R8G8B8_UNORM;		} break; 
 		case SRC::UNorm8x4:		{ return VK_FORMAT_R8G8B8A8_UNORM;		} break;
 
-		case SRC::Int16:			{ return VK_FORMAT_R16_SINT;			} break;
+		case SRC::Int16:		{ return VK_FORMAT_R16_SINT;			} break;
 		case SRC::Int16x2:		{ return VK_FORMAT_R16G16_SINT;			} break;
 		case SRC::Int16x3:		{ return VK_FORMAT_R16G16B16_SINT;		} break; 
 		case SRC::Int16x4:		{ return VK_FORMAT_R16G16B16A16_SINT;	} break;
@@ -180,14 +180,16 @@ RenderApiUtil_Vk::toVkFormat(RenderDataType v)
 }
 
 VkBufferUsageFlagBits 
-RenderApiUtil_Vk::toVkBufferUsage(RenderGpuBufferType type)
+RenderApiUtil_Vk::toVkBufferUsage(RenderGpuBufferTypeFlags typeFlags)
 {
-	using SRC = RenderGpuBufferType;
-	switch (type)
+	using SRC = RenderGpuBufferTypeFlags;
+	switch (typeFlags)
 	{
-		case SRC::Vertex:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; } break;
-		case SRC::Index:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_INDEX_BUFFER_BIT; } break;
-		case SRC::Const:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; } break;
+		case SRC::Vertex:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; }	break;
+		case SRC::Index:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_INDEX_BUFFER_BIT; }		break;
+		case SRC::Const:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; }	break;
+		case SRC::TransferSrc:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_SRC_BIT; }		break;
+		case SRC::TransferDst:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_DST_BIT; }		break;
 	}
 
 	RDS_CORE_ASSERT(false, "unsporrted buffer usage");
@@ -366,6 +368,47 @@ RenderApiUtil_Vk::createFence(Vk_Fence** out, Vk_Device* vkDevice)
 }
 
 void 
+RenderApiUtil_Vk::createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags)
+{
+	auto* renderer = Renderer_Vk::instance();
+	auto* vkDevice = renderer->vkDevice();
+	auto* allocCallbacks = renderer->allocCallbacks();
+
+	VkCommandPoolCreateInfo cInfo = {};
+	cInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	cInfo.flags				= createFlags;
+	cInfo.queueFamilyIndex	= queueIdx;
+
+	auto ret = vkCreateCommandPool(vkDevice, &cInfo, allocCallbacks, outVkCmdPool);
+	throwIfError(ret);
+}
+
+void 
+RenderApiUtil_Vk::createCommandBuffer(Vk_CommandBuffer** outVkCmdBuf, Vk_CommandPool* vkCmdPool, VkCommandBufferLevel vkBufLevel)
+{
+	auto* renderer = Renderer_Vk::instance();
+	auto* vkDevice = renderer->vkDevice();
+	//auto* allocCallbacks = renderer->allocCallbacks();
+
+	//static constexpr auto s_kFrameInFlightCount = RenderApiLayerTraits::s_kFrameInFlightCount;
+	static constexpr size_t count = 1;
+	Vector<Vk_CommandBuffer*, count> tmp;
+	tmp.resize(count);
+	//_vkCommandBuffers.resize(s_kFrameInFlightCount);
+
+	VkCommandBufferAllocateInfo cInfo = {};
+	cInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cInfo.commandPool			= vkCmdPool;
+	cInfo.level					= vkBufLevel;
+	cInfo.commandBufferCount	= count;
+
+	auto ret = vkAllocateCommandBuffers(vkDevice, &cInfo, tmp.data());
+	throwIfError(ret);
+	//Util::convertToVkPtrs(_vkCommandBuffers, tmp);
+	outVkCmdBuf = tmp.data();
+}
+
+void 
 RenderApiUtil_Vk::createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
 								, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags)
 {
@@ -434,7 +477,6 @@ RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
 	vkBeginCommandBuffer(vkCmdBuf, &beginInfo);
 
 	VkBufferCopy copyRegion = {};

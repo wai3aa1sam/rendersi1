@@ -47,7 +47,7 @@ RenderContext::destroy()
 	onDestroy();
 }
 
-void 
+void
 RenderContext::beginRender()
 {
 	RDS_PROFILE_SCOPED();
@@ -61,7 +61,13 @@ RenderContext::endRender()
 	onEndRender();
 }
 
-void		 
+void 
+RenderContext::commit(TransferCommandBuffer& transferBuf)
+{
+	onCommit(transferBuf);
+}
+
+void
 RenderContext::setFramebufferSize(const Vec2f& newSize)
 {
 	if (_framebufferSize == newSize)
@@ -73,20 +79,39 @@ RenderContext::setFramebufferSize(const Vec2f& newSize)
 	onSetFramebufferSize(newSize);
 }
 
-void 
+void
 RenderContext::onCreate(const CreateDesc& cDesc)
 {
 
 }
 
-void 
+void
 RenderContext::onPostCreate(const CreateDesc& cDesc)
 {
 
 }
 
-void 
+void
 RenderContext::onDestroy()
+{
+
+}
+
+
+void
+RenderContext::onCommit(TransferCommandBuffer& transferBuf)
+{
+
+}
+
+void 
+RenderContext::uploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf)
+{
+	onUploadBuffer(inlineUploadBuf);
+}
+
+void 
+RenderContext::onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf)
 {
 
 }

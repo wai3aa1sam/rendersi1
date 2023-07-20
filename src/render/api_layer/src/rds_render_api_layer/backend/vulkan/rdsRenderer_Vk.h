@@ -3,6 +3,7 @@
 #include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rdsMemoryContext_Vk.h"
+#include "rdsRenderFrame_Vk.h" 
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -40,6 +41,8 @@ public:
 	const SwapchainAvailableInfo_Vk&	swapchainAvailableInfo()	const;
 	QueueFamilyIndices&					queueFamilyIndices();
 
+	RenderFrame_Vk* renderFrame();
+
 public:
 
 protected:
@@ -74,6 +77,8 @@ private:
 	//VkPtr<Vk_Queue>				_vkGraphicsQueue;
 	//VkPtr<Vk_Queue>				_vkPresentQueue;
 
+	Vector<UPtr<RenderFrame_Vk>, s_kFrameInFlightCount> _renderFrames;
+
 };
 
 #endif
@@ -96,6 +101,8 @@ inline const ExtensionInfo_Vk&			Renderer_Vk::extInfo()					const { return _extI
 inline const SwapchainAvailableInfo_Vk& Renderer_Vk::swapchainAvailableInfo()	const { return _swapchainAvaliableInfo; }
 
 inline QueueFamilyIndices&		Renderer_Vk::queueFamilyIndices()	{ return _queueFamilyIndices; }
+
+inline RenderFrame_Vk* Renderer_Vk::renderFrame() { return _renderFrames[0]; }
 
 
 #endif

@@ -31,6 +31,12 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 	createVkDevice();
 
 	_memoryContextVk.create(vkDevice(), vkPhysicalDevice(), vkInstance());
+
+	_renderFrames.resize(s_kFrameInFlightCount);
+	for (auto& e : _renderFrames)
+	{
+		e.reset(RDS_NEW(RenderFrame_Vk)());
+	}
 }
 
 void

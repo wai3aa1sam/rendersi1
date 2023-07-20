@@ -48,6 +48,11 @@ public:
 
 	using CreateDesc = Renderer_CreateDesc;
 
+	using SizeType = RenderApiLayerTraits::SizeType;
+
+public:
+	static constexpr SizeType s_kFrameInFlightCount = RenderApiLayerTraits::s_kFrameInFlightCount;
+
 public:
 	static CreateDesc makeCDesc();
 

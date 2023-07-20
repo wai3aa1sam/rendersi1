@@ -3,6 +3,8 @@
 
 #include "rdsRenderer_Vk.h"
 
+#include "rds_render_api_layer/command/rdsTransferRequest.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -160,6 +162,48 @@ RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
 	_swapchainInfo.extent = Util::toVkExtent2D(newSize);
 	createSwapchain(_swapchainInfo);
 }
+
+void 
+RenderContext_Vk::onCommit(TransferCommandBuffer& transferBuf)
+{
+	transferBuf;
+}
+
+void 
+RenderContext_Vk::onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf)
+{
+	auto* allocVk	= Renderer_Vk::instance()->memoryContext()->allocVk();
+
+	auto chunks = inlineUploadBuf.bufData.chunks();
+	Vector<VkPtr<Vk_Buffer>, 16> vkStagingBufs;
+	vkStagingBufs.resize(chunks.size());
+
+	u32 i = 0;
+	for (auto& e : chunks)
+	{
+		auto& vkStageBuf = vkStagingBufs[i];
+
+		AllocInfo_Vk allocInfo = {};
+		allocInfo.usage  = RenderMemoryUsage::CpuOnly;
+		allocInfo.flags |= RenderAllocFlags::HostWrite;
+		Util::createBuffer(vkStageBuf, allocVk, &allocInfo, e->size()
+			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+
+		void* mappedData = nullptr;
+		ScopedMemMap_Vk mm = { &mappedData, &vkStageBuf };
+		memory_copy(reinCast<u8*>(mappedData), e->data(), e->size());
+		i++;
+	};
+
+	for (auto* cmd : inlineUploadBuf.uploadBufCmds)
+	{
+		//Util::copyBuffer()
+		RDS_ASSERT(BitUtil::has(cmd->queueTypeflags, QueueTypeFlags::Compute), "not yet support");
+
+	}
+}
+
 
 void
 RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
@@ -430,16 +474,7 @@ RenderContext_Vk::createSwapchainFramebuffers()
 void
 RenderContext_Vk::createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx)
 {
-	auto* vkDevice = renderer()->vkDevice();
-	auto* allocCallbacks = renderer()->allocCallbacks();
-
-	VkCommandPoolCreateInfo cInfo = {};
-	cInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	cInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	cInfo.queueFamilyIndex = queueIdx;
-
-	auto ret = vkCreateCommandPool(vkDevice, &cInfo, allocCallbacks, outVkCmdPool);
-	Util::throwIfError(ret);
+	Util::createCommandPool(outVkCmdPool, queueIdx, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 }
 
 void

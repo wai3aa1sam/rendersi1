@@ -36,7 +36,15 @@ RenderGpuBuffer_Vk::onCreate(const CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
 
+	auto* allocVk	= Renderer_Vk::instance()->memoryContext()->allocVk();
 
+	auto targetSize = math::alignTo(bufSize(), s_kAlign);
+
+	AllocInfo_Vk allocInfo = {};
+	allocInfo.usage  = RenderMemoryUsage::GpuOnly;
+	Util::createBuffer(_vkBuf, allocVk, &allocInfo, targetSize
+		, VK_BUFFER_USAGE_TRANSFER_DST_BIT | Util::toVkBufferUsage(cDesc.typeFlags)
+		, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 }
 
 void
@@ -49,6 +57,30 @@ void
 RenderGpuBuffer_Vk::onDestroy()
 {
 	Base::onDestroy();
+}
+
+void 
+RenderGpuBuffer_Vk::onUploadToGpu(ByteSpan data, SizeType offset)
+{
+	//auto* allocVk	= Renderer_Vk::instance()->memoryContext()->allocVk();
+
+	//// TODO: request to upload context, then copy to a bug stage buffer
+	//VkPtr<Vk_Buffer>			vkStagingBuf;
+
+	//{
+	//	AllocInfo_Vk allocInfo;
+	//	allocInfo.usage  = RenderMemoryUsage::CpuOnly;
+	//	allocInfo.flags |= RenderAllocFlags::HostWrite;
+	//	Util::createBuffer(vkStagingBuf, allocVk, &allocInfo, bufSize()
+	//		, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+	//		, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+
+	//	void* mappedData = nullptr;
+	//	ScopedMemMap_Vk mm = { &mappedData, &vkStagingBuf };
+	//	memory_copy(reinCast<u8*>(mappedData) + offset, data.data(), data.size());
+	//}
+
+	//Util::copyBuffer(_vkBuf, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
 }
 
 

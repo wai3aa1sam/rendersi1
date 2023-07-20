@@ -39,6 +39,15 @@ using Vk_DeviceMemory			= VkDeviceMemory_T;
 
 using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
 
+template<class T>
+class RenderApiResource_Vk : public NonCopyable
+{
+public:
+
+protected:
+	T* _hnd = VK_NULL_HANDLE;
+};
+
 
 #if 0
 #pragma mark --- rdsRenderApiPrmivitive_Vk-Decl ---

@@ -179,6 +179,15 @@ using UtfUtil = ::nmsp::UtfUtil;
 #endif // 0
 
 
+#if 0
+#pragma mark --- rds_stl_allocator-Impl ---
+#endif
+#if 1
+
+using LinearAllocator = ::nmsp::LinearAllocator_T;
+
+
+#endif
 
 
 #endif

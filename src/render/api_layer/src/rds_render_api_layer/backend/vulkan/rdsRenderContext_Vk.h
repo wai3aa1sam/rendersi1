@@ -139,7 +139,7 @@ public:
 
 
 public:
-	static constexpr SizeType s_kSwapchainImageLocalSize	= 4;
+	static constexpr SizeType s_kSwapchainImageLocalSize	= RenderApiLayerTraits::s_kSwapchainImageLocalSize;
 	static constexpr SizeType s_kFrameInFlightCount			= RenderApiLayerTraits::s_kFrameInFlightCount;
 
 public:
@@ -162,6 +162,10 @@ protected:
 	virtual void onEndRender()	 override;
 
 	virtual void onSetFramebufferSize(const Vec2f& newSize) override;
+
+	virtual void onCommit(TransferCommandBuffer& transferBuf) override;
+
+	virtual void onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf) override;
 
 protected:
 	void beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx);
@@ -191,6 +195,8 @@ protected:
 
 protected:
 	Renderer_Vk* _renderer = nullptr;
+
+	Vector<RenderFrame_Vk, s_kFrameInFlightCount> _renderFrames;
 
 	RDS_PROFILE_GPU_CTX_VK(_gpuProfilerCtx);
 

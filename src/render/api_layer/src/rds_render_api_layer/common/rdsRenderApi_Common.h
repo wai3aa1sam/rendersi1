@@ -23,10 +23,10 @@ private:
 
 #define QueueTypeFlags_ENUM_LIST(E) \
 	E(None, = 0) \
-	E(Graphics, = BitUtil::bit(1)) \
-	E(Present,	= BitUtil::bit(2)) \
-	E(Transfer,	= BitUtil::bit(3)) \
-	E(Compute,	= BitUtil::bit(4)) \
+	E(Graphics, = BitUtil::bit(0)) \
+	E(Compute,	= BitUtil::bit(1)) \
+	E(Transfer,	= BitUtil::bit(2)) \
+	E(Present,	= BitUtil::bit(3)) \
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(QueueTypeFlags, u8);

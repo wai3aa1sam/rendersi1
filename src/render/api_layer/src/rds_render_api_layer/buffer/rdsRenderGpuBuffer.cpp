@@ -3,7 +3,7 @@
 #include "rdsRenderGpuBuffer.h"
 
 #include "../rdsRenderer.h"
-
+#include "../command/rdsTransferRequest.h"
 
 namespace rds
 {
@@ -11,6 +11,7 @@ namespace rds
 SPtr<RenderGpuBuffer> Renderer::createRenderGpuBuffer(const RenderGpuBuffer_CreateDesc& cDesc)
 {
 	auto p = onCreateRenderGpuBuffer(cDesc);
+	p->onPostCreate(cDesc);
 	return p;
 }
 
@@ -22,7 +23,6 @@ SPtr<RenderGpuBuffer> Renderer::createRenderGpuBuffer(const RenderGpuBuffer_Crea
 RenderGpuBuffer::CreateDesc RenderGpuBuffer::makeCDesc() { return CreateDesc{}; }
 
 SPtr<RenderGpuBuffer> RenderGpuBuffer::make(const CreateDesc& cDesc) { return Renderer::instance()->createRenderGpuBuffer(cDesc); }
-
 
 RenderGpuBuffer::RenderGpuBuffer()
 {
@@ -44,7 +44,7 @@ void RenderGpuBuffer::destroy()
 
 void RenderGpuBuffer::onCreate(const CreateDesc& cDesc)
 {
-
+	_cDesc = cDesc;
 }
 
 void RenderGpuBuffer::onPostCreate(const CreateDesc& cDesc)
@@ -56,6 +56,22 @@ void RenderGpuBuffer::onDestroy()
 {
 
 }
+
+void 
+RenderGpuBuffer::uploadToGpu(ByteSpan data, SizeType offset)
+{
+	throwIf(data.size() + offset > bufSize(), "RenderGpuBuffer oversize");
+	onUploadToGpu(data, offset);
+}
+
+void 
+RenderGpuBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
+{
+	ByteSpan bs = ByteSpan{data.data() + offset, data.size() - offset};
+	QueueTypeFlags typeFlags = QueueTypeFlags::Graphics | QueueTypeFlags::Transfer;
+	TransferRequest::instance()->uploadBuffer(this, bs, typeFlags);
+}
+
 
 #endif
 

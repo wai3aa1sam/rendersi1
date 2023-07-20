@@ -41,6 +41,19 @@ public:
 		transfer.reset();
 	}
 
+	u32 getQueueIdx(QueueTypeFlags flags) const 
+	{
+		using SRC = QueueTypeFlags;
+		switch (flags)
+		{
+			case rds::QueueTypeFlags::Graphics:		{ return graphics.value(); } break;
+			case rds::QueueTypeFlags::Compute:		{ return graphics.value(); } break;
+			case rds::QueueTypeFlags::Transfer:		{ return transfer.value(); } break;
+			case rds::QueueTypeFlags::Present:		{ return present.value();  } break;
+		}
+		return ~u32(0);
+	}
+
 	bool isFoundAll()		const { return graphics.has_value() && present.has_value() && transfer.has_value(); }
 	bool isUniqueGraphics() const { return isFoundAll() && (graphics.value() != present.value()  && graphics.value() != transfer.value()); }
 	bool isUniquePresent () const { return isFoundAll() && (present.value()  != graphics.value() && present.value()  != transfer.value()); }
@@ -127,7 +140,7 @@ public:
 
 	static VkFormat	toVkFormat(RenderDataType v);
 
-	static VkBufferUsageFlagBits toVkBufferUsage(RenderGpuBufferType type);
+	static VkBufferUsageFlagBits toVkBufferUsage(RenderGpuBufferTypeFlags type);
 
 	static VkMemoryPropertyFlags toVkMemoryPropFlags(RenderMemoryUsage memUsage);
 
@@ -151,6 +164,8 @@ public:
 	static void createSemaphore(Vk_Semaphore** out, Vk_Device* vkDevice);
 	static void createFence(Vk_Fence** out, Vk_Device* vkDevice);
 
+	static void createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	static void createCommandBuffer(Vk_CommandBuffer** outVkCmdBuf, Vk_CommandPool* vkCmdPool, VkCommandBufferLevel vkBufLevel);
 
 	template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 
 													VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);

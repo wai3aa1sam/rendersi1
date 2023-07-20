@@ -11,6 +11,12 @@ namespace rds
 #endif // 0
 #if 1
 
+class RenderCommandBuffer;
+class RenderRequest;
+class TransferCommandBuffer;
+class TransferRequest;
+struct Transfer_InlineUploadBuffer;
+
 struct RenderContext_CreateDesc
 {
 	NativeUIWindow* window = nullptr;
@@ -41,6 +47,9 @@ public:
 	void beginRender();
 	void endRender();
 
+	void commit(TransferCommandBuffer& transferBuf);
+
+
 	void		 setFramebufferSize(const Vec2f& newSize);
 	const Vec2f& framebufferSize() const;
 
@@ -53,6 +62,12 @@ protected:
 	virtual void onEndRender()		{};
 
 	virtual void onSetFramebufferSize(const Vec2f& newSize) {};
+
+	virtual void onCommit(TransferCommandBuffer& transferBuf);
+
+	void			uploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf);
+	virtual void	onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf);
+
 
 protected:
 	//RenderContext(const CreateDesc&)

@@ -239,6 +239,70 @@ private:
 };
 RDS_REGISTER_UNIT_TEST_CLASS(Test_VulkanEditorApp);
 
+#if 0
+
+class Test_SLock : public UnitTest
+{
+public:
+	void test()
+	{
+
+	}
+
+	virtual void onSetup() override
+	{
+	}
+
+	virtual void onTest() override
+	{
+
+	}
+
+	virtual void onBenchmark() override
+	{
+		auto a = _data.scopedSLock();
+		a->v++;
+	}
+
+private:
+	struct Data
+	{
+		u64 v;
+	};
+	SMutexProtected<Data> _data;
+};
+
+class Test_AtmInt : public UnitTest
+{
+public:
+	void test()
+	{
+
+	}
+
+	virtual void onSetup() override
+	{
+	}
+
+	virtual void onTest() override
+	{
+
+	}
+
+	virtual void onBenchmark() override
+	{
+		_v++;
+	}
+
+private:
+	Atm<u64> _v;
+};
+
+RDS_REGISTER_UNIT_TEST_CLASS(Test_SLock);
+RDS_REGISTER_UNIT_TEST_CLASS(Test_AtmInt);
+
+#endif // 0
+
 }
 
 void test_VulkanEditorApp()
@@ -247,6 +311,7 @@ void test_VulkanEditorApp()
 
 	using namespace rds;
 	RDS_TEST_CASE(Test_VulkanEditorApp, test());
+
 }
 
 
