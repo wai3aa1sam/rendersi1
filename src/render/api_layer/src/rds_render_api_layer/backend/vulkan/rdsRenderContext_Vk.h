@@ -7,6 +7,9 @@
 
 #include "rds_render_api_layer/mesh/rdsEditMesh.h"
 
+#include "command/rdsVk_CommandPool.h"
+#include "rdsRenderFrame_Vk.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -151,7 +154,8 @@ public:
 	Vk_Queue* vkGraphicsQueue();
 	Vk_Queue* vkPresentQueue();
 
-	Vk_CommandBuffer* vkCommandBuffer();
+	Vk_CommandBuffer_T* vkCommandBuffer();
+	RenderFrame_Vk& renderFrame();
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -168,11 +172,11 @@ protected:
 	virtual void onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf) override;
 
 protected:
-	void beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx);
-	void endRecord(Vk_CommandBuffer* vkCmdBuf);
-	void bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeline);
+	void beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
+	void endRecord(Vk_CommandBuffer_T* vkCmdBuf);
+	void bindPipeline(Vk_CommandBuffer_T* vkCmdBuf, Vk_Pipeline* vkPipeline);
 
-	void testDrawCall(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx);
+	void testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
 
 protected:
 	void createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvailableInfo_Vk& info, const math::Rect2f& rect2);
@@ -182,7 +186,7 @@ protected:
 
 	void createSwapchainFramebuffers();
 
-	void createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx);
+	void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx);
 	void createCommandBuffer(Vk_CommandPool* vkCmdPool);
 	void createSyncObjects();
 
@@ -196,7 +200,6 @@ protected:
 protected:
 	Renderer_Vk* _renderer = nullptr;
 
-	Vector<RenderFrame_Vk, s_kFrameInFlightCount> _renderFrames;
 
 	RDS_PROFILE_GPU_CTX_VK(_gpuProfilerCtx);
 
@@ -220,10 +223,13 @@ protected:
 	VkPtr<Vk_Queue>		_vkPresentQueue;
 	VkPtr<Vk_Queue>		_vkTransferQueue;
 
-	VkPtr<Vk_CommandPool> _vkGraphicsCommandPool;
-	VkPtr<Vk_CommandPool> _vkTransferCommandPool;
+	//Vk_CommandPool _vkGraphicsCommandPool;
+	//Vk_CommandPool _vkTransferCommandPool;
+	//Vector<Vk_CommandBuffer,		s_kFrameInFlightCount>	_vkCommandBuffers;
 
-	Vector<VkPtr<Vk_CommandBuffer>, s_kFrameInFlightCount>	_vkCommandBuffers;
+	Vector<RenderFrame_Vk, s_kFrameInFlightCount> _renderFrames;
+	Vk_CommandBuffer* _curGraphicsCmdBuf = nullptr;
+
 	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_imageAvailableVkSmps;
 	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_renderCompletedVkSmps;
 	Vector<VkPtr<Vk_Fence>,			s_kFrameInFlightCount>	_inFlightVkFences;
@@ -238,7 +244,10 @@ inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return _vkGraphicsQueue; 
 inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return _vkPresentQueue; }
 
 
-inline Vk_CommandBuffer* RenderContext_Vk::vkCommandBuffer() { return _vkCommandBuffers[_curFrameIdx]; }
+inline Vk_CommandBuffer_T* RenderContext_Vk::vkCommandBuffer() { return _curGraphicsCmdBuf->hnd(); }
+
+inline RenderFrame_Vk& RenderContext_Vk::renderFrame() { return _renderFrames[_curFrameIdx]; }
+
 
 #endif
 }

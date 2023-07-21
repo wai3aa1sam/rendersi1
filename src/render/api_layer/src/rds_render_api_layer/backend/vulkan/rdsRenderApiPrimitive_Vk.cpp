@@ -14,13 +14,39 @@ namespace rds
 #if 1
 
 #if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Instance>-Impl ---
+#pragma mark --- Vk_Instance-Impl ---
 #endif // 0
 #if 1
 
-void RenderApiPrimitive_Vk<Vk_Instance>::destroy()
+//void RenderApiPrimitive_Vk<Vk_Instance_T>::destroy()
+//{
+//	vkDestroyInstance(_p, MemoryContext_Vk::instance()->allocCallbacks());
+//}
+
+void Vk_Instance::create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator)
 {
-	vkDestroyInstance(_p, MemoryContext_Vk::instance()->allocCallbacks());
+	VkResult ret = vkCreateInstance(pCreateInfo, pAllocator, &_hnd);
+
+	/*
+	Success
+	VK_SUCCESS
+	Failure
+	VK_ERROR_OUT_OF_HOST_MEMORY
+	VK_ERROR_OUT_OF_DEVICE_MEMORY
+	VK_ERROR_INITIALIZATION_FAILED
+	VK_ERROR_LAYER_NOT_PRESENT
+	VK_ERROR_EXTENSION_NOT_PRESENT
+	VK_ERROR_INCOMPATIBLE_DRIVER
+	*/
+	Util::throwIfError(ret);
+}
+
+void Vk_Instance::destroy()
+{
+	if (!_hnd)
+		return;
+
+
 }
 
 #endif
@@ -207,12 +233,12 @@ RenderApiPrimitive_Vk<Vk_Pipeline>::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandPool>-Impl ---
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandPool_T>-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 void 
-RenderApiPrimitive_Vk<Vk_CommandPool>::destroy()
+RenderApiPrimitive_Vk<Vk_CommandPool_T>::destroy()
 {
 	auto* renderer = Renderer_Vk::instance();
 	vkDestroyCommandPool(renderer->vkDevice(), _p, renderer->allocCallbacks());
@@ -221,12 +247,12 @@ RenderApiPrimitive_Vk<Vk_CommandPool>::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandBuffer>-Impl ---
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandBuffer_T>-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 void 
-RenderApiPrimitive_Vk<Vk_CommandBuffer>::destroy()
+RenderApiPrimitive_Vk<Vk_CommandBuffer_T>::destroy()
 {
 	//auto* renderer = Renderer_Vk::instance();
 	//vkFreeCommandBuffers(renderer->vkDevice(), _p, renderer->allocCallbacks()); 

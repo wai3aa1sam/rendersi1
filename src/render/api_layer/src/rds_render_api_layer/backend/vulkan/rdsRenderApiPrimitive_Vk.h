@@ -8,7 +8,7 @@
 namespace rds
 {
 
-using Vk_Instance				= VkInstance_T;
+using Vk_Instance_T				= VkInstance_T;
 using Vk_PhysicalDevice			= VkPhysicalDevice_T;
 using Vk_Device					= VkDevice_T;
 using Vk_Queue					= VkQueue_T;
@@ -24,8 +24,8 @@ using Vk_DescriptorSet			= VkDescriptorSet_T;
 using Vk_DescriptorSetLayout	= VkDescriptorSetLayout_T;
 using Vk_ShaderModule			= VkShaderModule_T;
 
-using Vk_CommandPool			= VkCommandPool_T;
-using Vk_CommandBuffer			= VkCommandBuffer_T;
+using Vk_CommandPool_T			= VkCommandPool_T;
+using Vk_CommandBuffer_T		= VkCommandBuffer_T;
 
 using Vk_Semaphore				= VkSemaphore_T;
 using Vk_Fence					= VkFence_T;
@@ -39,10 +39,22 @@ using Vk_DeviceMemory			= VkDeviceMemory_T;
 
 using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
 
+struct RenderApiUtil_Vk;
+
 template<class T>
 class RenderApiResource_Vk : public NonCopyable
 {
 public:
+	using Util = RenderApiUtil_Vk;
+
+public:
+	RenderApiResource_Vk()	= default;
+	~RenderApiResource_Vk() = default;
+
+	void destroy();
+
+	T* hnd() { return _hnd; }
+	T** hndForInit() { return &_hnd; }
 
 protected:
 	T* _hnd = VK_NULL_HANDLE;
@@ -67,7 +79,23 @@ protected:
 	T* _p = VK_NULL_HANDLE;
 };
 
-template<class T> class RenderApiPrimitive_Vk;
+template<class T> class RenderApiPrimitive_Vk
+{
+public:
+	using Util = RenderApiUtil_Vk;
+
+public:
+	RenderApiPrimitive_Vk()		= default;
+	~RenderApiPrimitive_Vk()	= default;
+
+	void destroy();
+
+	T* hnd() { return _hnd; }
+	T** hndForInit() { return &_hnd; }
+
+protected:
+	T* _hnd = VK_NULL_HANDLE;
+};
 
 #endif
 
@@ -107,14 +135,20 @@ template<class T> inline Allocator_Vk*	AllocablePrimitive_Vk<T>::_internal_alloc
 #if 1
 
 #if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_Instance>-Impl ---
+#pragma mark --- Vk_Instance-Impl ---
 #endif // 0
 #if 1
 
-template<>
-class RenderApiPrimitive_Vk<Vk_Instance> : public RenderApiPrimitive_Base_Vk<Vk_Instance>
+class Vk_Instance : public RenderApiPrimitive_Vk<Vk_Instance_T>
 {
 public:
+	using Base = RenderApiPrimitive_Vk<Vk_Instance_T>;
+
+public:
+	Vk_Instance() = default;
+	~Vk_Instance() { destroy(); }
+
+	void create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator);
 	void destroy();
 };
 
@@ -305,12 +339,12 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandPool>-Impl ---
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandPool_T>-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 template<>
-class RenderApiPrimitive_Vk<Vk_CommandPool> : public RenderApiPrimitive_Base_Vk<Vk_CommandPool>
+class RenderApiPrimitive_Vk<Vk_CommandPool_T> : public RenderApiPrimitive_Base_Vk<Vk_CommandPool_T>
 {
 public:
 	void destroy();
@@ -319,12 +353,12 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandBuffer>-Impl ---
+#pragma mark --- rdsRenderApiPrimitive_Vk<Vk_CommandBuffer_T>-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 template<>
-class RenderApiPrimitive_Vk<Vk_CommandBuffer> : public RenderApiPrimitive_Base_Vk<Vk_CommandBuffer>
+class RenderApiPrimitive_Vk<Vk_CommandBuffer_T> : public RenderApiPrimitive_Base_Vk<Vk_CommandBuffer_T>
 {
 public:
 	void destroy();

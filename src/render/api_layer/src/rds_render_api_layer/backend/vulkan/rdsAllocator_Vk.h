@@ -28,7 +28,7 @@ public:
 	Allocator_Vk();
 	~Allocator_Vk();
 
-	void create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance* vkInst, const VkAllocationCallbacks* vkAllocCallbacks);
+	void create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks);
 	void destroy();
 
 	VkResult allocBuf(VkPtr<Vk_Buffer>& outBuf, const VkBufferCreateInfo* bufferInfo, const AllocInfo_Vk* allocInfo);

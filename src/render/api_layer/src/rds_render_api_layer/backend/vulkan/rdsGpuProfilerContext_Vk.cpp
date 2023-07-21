@@ -25,7 +25,7 @@ GpuProfilerContext_Vk::onCreate(const CreateDesc& cDesc)
 	auto* vkPhyDev			= rdr->vkPhysicalDevice();
 	auto* vkDev				= rdr->vkDevice();
 	auto* vkGraphicsQueue	= rdCtxVk->vkGraphicsQueue();
-	auto* vkCmdBuf = rdCtxVk->vkCommandBuffer();
+	auto* vkCmdBuf			= rdCtxVk->vkCommandBuffer();
 
 	RDS_ASSERT(vkFuncExtCtd && vkFuncExtCt || !vkFuncExtCtd && !vkFuncExtCt, "must be both exist or both not exist");
 	if (!vkFuncExtCtd && !vkFuncExtCt)
@@ -51,13 +51,13 @@ GpuProfilerContext_Vk::onDestroy()
 }
 
 void 
-GpuProfilerContext_Vk::zone(Vk_CommandBuffer* vkCmdBuf, const char* name)
+GpuProfilerContext_Vk::zone(Vk_CommandBuffer_T* vkCmdBuf, const char* name)
 {
 	RDS_PROFILE_GPU_ZONET_VK_IMPL(_ctx, vkCmdBuf, name);
 }
 
 void 
-GpuProfilerContext_Vk::collect(Vk_CommandBuffer* vkCmdBuf)
+GpuProfilerContext_Vk::collect(Vk_CommandBuffer_T* vkCmdBuf)
 {
 	RDS_PROFILE_GPU_COLLECT_VK_IMPL(_ctx, vkCmdBuf);
 }

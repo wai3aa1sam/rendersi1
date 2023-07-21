@@ -33,7 +33,7 @@ public:
 	MemoryContext_Vk*				memoryContext();
 	const VkAllocationCallbacks*	allocCallbacks();
 
-	Vk_Instance*			vkInstance();
+	Vk_Instance_T*			vkInstance();
 	Vk_PhysicalDevice*		vkPhysicalDevice();
 	Vk_Device*				vkDevice();
 
@@ -70,7 +70,8 @@ private:
 	Vector<VkQueueFamilyProperties, QueueFamilyIndices::s_kQueueTypeCount> _queueFamilyProperties;
 	QueueFamilyIndices _queueFamilyIndices;
 
-	VkPtr<Vk_Instance>				_vkInstance;
+	Vk_Instance						_vkInstance;
+	//VkPtr<Vk_Instance_T>			_vkInstance;
 	VkPtr<Vk_DebugUtilsMessenger>	_vkDebugMessenger;
 	VkPtr<Vk_PhysicalDevice>		_vkPhysicalDevice;
 	VkPtr<Vk_Device>				_vkDevice;
@@ -93,9 +94,9 @@ inline Renderer_Vk* Renderer_Vk::instance() { return sCast<Renderer_Vk*>(s_insta
 inline MemoryContext_Vk*			Renderer_Vk::memoryContext()	{ return &_memoryContextVk; }
 inline const VkAllocationCallbacks*	Renderer_Vk::allocCallbacks()	{ return _memoryContextVk.allocCallbacks(); }
 
-inline Vk_Instance*			Renderer_Vk::vkInstance()			{ return _vkInstance; }
-inline Vk_PhysicalDevice*	Renderer_Vk::vkPhysicalDevice()		{ return _vkPhysicalDevice; }
-inline Vk_Device*			Renderer_Vk::vkDevice()				{ return _vkDevice; }
+inline Vk_Instance_T*		Renderer_Vk::vkInstance()				{ return _vkInstance.hnd(); }
+inline Vk_PhysicalDevice*	Renderer_Vk::vkPhysicalDevice()			{ return _vkPhysicalDevice; }
+inline Vk_Device*			Renderer_Vk::vkDevice()					{ return _vkDevice; }
 
 inline const ExtensionInfo_Vk&			Renderer_Vk::extInfo()					const { return _extInfo; }
 inline const SwapchainAvailableInfo_Vk& Renderer_Vk::swapchainAvailableInfo()	const { return _swapchainAvaliableInfo; }

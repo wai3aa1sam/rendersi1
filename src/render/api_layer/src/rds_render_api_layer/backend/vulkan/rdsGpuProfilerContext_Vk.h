@@ -35,7 +35,7 @@
 	static constexpr const char* RDS_CONCAT(s_name, RDS_LINE) = NAME; \
 	struct RDS_CONCAT(GpuProfilerContextZoneNamed, RDS_LINE) \
 	{ \
-		void set(rds::GpuProfilerContext_Vk* gpCtx, rds::Vk_CommandBuffer* vkCmdBuf) \
+		void set(rds::GpuProfilerContext_Vk* gpCtx, rds::Vk_CommandBuffer_T* vkCmdBuf) \
 		{ \
 			TracyVkZoneC(gpCtx->ctx(), vkCmdBuf, RDS_CONCAT(s_name, RDS_LINE), COLOR); \
 		} \
@@ -87,7 +87,7 @@ public:
 
 public:
 	GpuProfilerContext_Vk() = default;
-	/*GpuProfilerContext_Vk(Vk_PhysicalDevice* vkPhyDev, Vk_Device* vkDev, Vk_Queue* vkQueue, Vk_CommandBuffer* vkCmdBuf
+	/*GpuProfilerContext_Vk(Vk_PhysicalDevice* vkPhyDev, Vk_Device* vkDev, Vk_Queue* vkQueue, Vk_CommandBuffer_T* vkCmdBuf
 		, PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT vkFuncExtCtd = nullptr, PFN_vkGetCalibratedTimestampsEXT vkFuncExtCt = nullptr);*/
 	virtual ~GpuProfilerContext_Vk();
 
@@ -97,8 +97,8 @@ public:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onDestroy();
 
-	virtual void zone(Vk_CommandBuffer* vkCmdBuf, const char* name);
-	virtual void collect(Vk_CommandBuffer* vkCmdBuf);
+	virtual void zone(Vk_CommandBuffer_T* vkCmdBuf, const char* name);
+	virtual void collect(Vk_CommandBuffer_T* vkCmdBuf);
 
 	virtual void setName(const char* name);
 

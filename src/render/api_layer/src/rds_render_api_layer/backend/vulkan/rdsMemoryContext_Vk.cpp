@@ -29,7 +29,7 @@ MemoryContext_Vk::~MemoryContext_Vk()
 }
 
 void 
-MemoryContext_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance* vkInst)
+MemoryContext_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst)
 {
 	vkGetPhysicalDeviceMemoryProperties(vkPhyDev, &_vkMemProperties);
 

@@ -37,7 +37,7 @@ Allocator_Vk::~Allocator_Vk()
 }
 
 void 
-Allocator_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance* vkInst, const VkAllocationCallbacks* vkAllocCallbacks)
+Allocator_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.instance				= vkInst;

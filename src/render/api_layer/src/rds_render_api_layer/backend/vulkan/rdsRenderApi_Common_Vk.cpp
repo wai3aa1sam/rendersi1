@@ -240,7 +240,7 @@ RenderApiUtil_Vk::createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& o
 }
 
 void 
-RenderApiUtil_Vk::createSurface(Vk_Surface** out, Vk_Instance* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window)
+RenderApiUtil_Vk::createSurface(Vk_Surface** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window)
 {
 	#if RDS_OS_WINDOWS
 
@@ -368,7 +368,7 @@ RenderApiUtil_Vk::createFence(Vk_Fence** out, Vk_Device* vkDevice)
 }
 
 void 
-RenderApiUtil_Vk::createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags)
+RenderApiUtil_Vk::createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags)
 {
 	auto* renderer = Renderer_Vk::instance();
 	auto* vkDevice = renderer->vkDevice();
@@ -384,7 +384,7 @@ RenderApiUtil_Vk::createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx,
 }
 
 void 
-RenderApiUtil_Vk::createCommandBuffer(Vk_CommandBuffer** outVkCmdBuf, Vk_CommandPool* vkCmdPool, VkCommandBufferLevel vkBufLevel)
+RenderApiUtil_Vk::createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel)
 {
 	auto* renderer = Renderer_Vk::instance();
 	auto* vkDevice = renderer->vkDevice();
@@ -392,7 +392,7 @@ RenderApiUtil_Vk::createCommandBuffer(Vk_CommandBuffer** outVkCmdBuf, Vk_Command
 
 	//static constexpr auto s_kFrameInFlightCount = RenderApiLayerTraits::s_kFrameInFlightCount;
 	static constexpr size_t count = 1;
-	Vector<Vk_CommandBuffer*, count> tmp;
+	Vector<Vk_CommandBuffer_T*, count> tmp;
 	tmp.resize(count);
 	//_vkCommandBuffers.resize(s_kFrameInFlightCount);
 
@@ -450,7 +450,7 @@ RenderApiUtil_Vk::createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, 
 }
 
 void 
-RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool* vkCmdPool, Vk_Queue* vkTransferQueue)
+RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue)
 {
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
 	//auto* vkAllocCallbacks	= Renderer_Vk::instance()->allocCallbacks();
@@ -463,13 +463,13 @@ RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 	allocInfo.commandPool			= vkCmdPool;
 	allocInfo.commandBufferCount	= 1;
 
-	VkPtr<Vk_CommandBuffer> vkCmdBuf;
-	ret = vkAllocateCommandBuffers(vkDev, &allocInfo, vkCmdBuf.ptrForInit());
+	Vk_CommandBuffer_T* vkCmdBuf;
+	ret = vkAllocateCommandBuffers(vkDev, &allocInfo, &vkCmdBuf);
 	throwIfError(ret);
 	auto cmdBufLsa = makeLeaveScopeAction(
 		[&vkCmdBuf, vkCmdPool, &vkDev]()
 		{
-			Vk_CommandBuffer* vkCmdBufs[] = { vkCmdBuf };
+			Vk_CommandBuffer_T* vkCmdBufs[] = { vkCmdBuf };
 			vkFreeCommandBuffers(vkDev, vkCmdPool, ArraySize<decltype(vkCmdBufs)>, vkCmdBufs);
 		}
 	);

@@ -21,7 +21,7 @@ public:
 	MemoryContext_Vk();
 	~MemoryContext_Vk();
 
-	void create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance* vkInst);
+	void create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst);
 	void destroy();
 
 	const VkAllocationCallbacks*			allocCallbacks();

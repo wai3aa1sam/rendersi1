@@ -76,20 +76,7 @@ Renderer_Vk::createVkInstance()
 		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 	}
 
-	VkResult ret = vkCreateInstance(&createInfo, allocCallbacks(), _vkInstance.ptrForInit());
-
-	/*
-	Success
-	VK_SUCCESS
-	Failure
-	VK_ERROR_OUT_OF_HOST_MEMORY
-	VK_ERROR_OUT_OF_DEVICE_MEMORY
-	VK_ERROR_INITIALIZATION_FAILED
-	VK_ERROR_LAYER_NOT_PRESENT
-	VK_ERROR_EXTENSION_NOT_PRESENT
-	VK_ERROR_INCOMPATIBLE_DRIVER
-	*/
-	Util::throwIfError(ret);
+	_vkInstance.create(&createInfo, allocCallbacks());
 
 	if (_adapterInfo.isDebug)
 	{
@@ -104,7 +91,7 @@ Renderer_Vk::createVkDebugMessenger()
 	Util::createDebugMessengerInfo(createInfo);
 
 	auto func	= _extInfo.getInstanceExtFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
-	auto ret	= func(_vkInstance, &createInfo, allocCallbacks(), _vkDebugMessenger.ptrForInit());
+	auto ret	= func(vkInstance(), &createInfo, allocCallbacks(), _vkDebugMessenger.ptrForInit());
 	Util::throwIfError(ret);
 }
 
@@ -113,13 +100,13 @@ Renderer_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 {
 	static constexpr SizeType s_kLocalSize = 8;
 	Vector<Vk_PhysicalDevice*, s_kLocalSize> phyDevices;
-	Util::getAvailableGPUDevicesTo(phyDevices, _vkInstance);
+	Util::getAvailableGPUDevicesTo(phyDevices, vkInstance());
 	throwIf(phyDevices.is_empty(), "cannot find any available gpu");
 
 	NativeUIWindow tmpWindow;
 	Util::createTempWindow(tmpWindow);
 	VkPtr<Vk_Surface> tmpSurface;
-	Util::createSurface(tmpSurface.ptrForInit(), _vkInstance, allocCallbacks(), &tmpWindow);
+	Util::createSurface(tmpSurface.ptrForInit(), vkInstance(), allocCallbacks(), &tmpWindow);
 
 	i64 largestScore		= NumLimit<i64>::min();
 	i64 largestScoreIndex	= NumLimit<i64>::min();

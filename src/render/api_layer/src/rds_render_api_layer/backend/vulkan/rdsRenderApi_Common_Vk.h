@@ -154,7 +154,7 @@ public:
 	// for create vk objects
 public:
 	static void createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out);
-	static void createSurface(Vk_Surface** out, Vk_Instance* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
+	static void createSurface(Vk_Surface** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
 	static void createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
 								const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
 	static void createImageView(Vk_ImageView** out, Vk_Image* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
@@ -164,8 +164,8 @@ public:
 	static void createSemaphore(Vk_Semaphore** out, Vk_Device* vkDevice);
 	static void createFence(Vk_Fence** out, Vk_Device* vkDevice);
 
-	static void createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	static void createCommandBuffer(Vk_CommandBuffer** outVkCmdBuf, Vk_CommandPool* vkCmdPool, VkCommandBufferLevel vkBufLevel);
+	static void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	static void createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel);
 
 	template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 
 													VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
@@ -176,12 +176,12 @@ public:
 
 	static void createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
 							, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags);
-	static void copyBuffer	(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool* vkCmdPool, Vk_Queue* vkTransferQueue);
+	static void copyBuffer	(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue);
 
 	static void createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, AllocInfo_Vk* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
 
 public:
-	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance* vkInstance);
+	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance_T* vkInstance);
 	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out, Vk_PhysicalDevice* vkPhyDevice);
 
 	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice);
@@ -380,7 +380,7 @@ RenderApiUtil_Vk::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, co
 
 template<size_t N> inline
 u32
-RenderApiUtil_Vk::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice*, N>& out, Vk_Instance* vkInstance)
+RenderApiUtil_Vk::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice*, N>& out, Vk_Instance_T* vkInstance)
 {
 	u32 deviceCount = 0;
 	vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);

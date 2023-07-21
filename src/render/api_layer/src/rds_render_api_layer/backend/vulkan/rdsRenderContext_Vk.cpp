@@ -43,6 +43,12 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	Util::createSurface(_vkSurface.ptrForInit(), _renderer->vkInstance(), _renderer->allocCallbacks(), cDesc.window);
 
+	_renderFrames.resize(s_kFrameInFlightCount);
+	for (size_t i = 0; i < s_kFrameInFlightCount; i++)
+	{
+		_renderFrames[i].create();
+	}
+
 	u32	graphicsQueueIdx = 0;
 	u32	presentQueueIdx = 0;
 	u32	transferQueueIdx = 0;
@@ -52,9 +58,10 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	createSwapchainInfo(_swapchainInfo, _renderer->swapchainAvailableInfo(), cDesc.window->clientRect());
 
-	createCommandPool(_vkGraphicsCommandPool.ptrForInit(), _renderer->queueFamilyIndices().graphics.value());
-	createCommandPool(_vkTransferCommandPool.ptrForInit(), _renderer->queueFamilyIndices().transfer.value());
-	createCommandBuffer(_vkGraphicsCommandPool);
+	//auto& queueFamily = _renderer->queueFamilyIndices();
+	//_vkGraphicsCommandPool.create(queueFamily.graphics.value());
+	//_vkTransferCommandPool.create(queueFamily.transfer.value());
+	//createCommandBuffer(&_vkGraphicsCommandPool);
 	createSyncObjects();
 
 	createTestRenderPass();
@@ -64,6 +71,7 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	createSwapchain(_swapchainInfo);
 
+	_curGraphicsCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
 }
 
@@ -127,14 +135,15 @@ RenderContext_Vk::onBeginRender()
 
 	#endif // 1
 
-	auto* vkCmdBuf = vkCommandBuffer();
+	{
+		_curGraphicsCmdBuf	= renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		auto* vkCmdBuf		= _curGraphicsCmdBuf->hnd();
+		beginRecord(vkCmdBuf, _curImageIdx);
 
-	beginRecord(vkCmdBuf, _curImageIdx);
-
-	//RDS_PROFILE_GPU_ZONE_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
-	RDS_PROFILE_GPU_ZONET_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
-
-	testDrawCall(vkCmdBuf, _curImageIdx);
+		//RDS_PROFILE_GPU_ZONE_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
+		RDS_PROFILE_GPU_ZONET_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
+		testDrawCall(vkCmdBuf, _curImageIdx);
+	}
 }
 
 void
@@ -142,8 +151,7 @@ RenderContext_Vk::onEndRender()
 {
 	RDS_PROFILE_SCOPED();
 
-	auto* vkCmdBuf = vkCommandBuffer();
-	endRecord(vkCmdBuf);
+	endRecord(_curGraphicsCmdBuf->hnd());
 
 	// next frame idx
 	_curFrameIdx = math::modPow2Val(_curFrameIdx + 1, s_kFrameInFlightCount);
@@ -200,20 +208,20 @@ RenderContext_Vk::onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf)
 	{
 		//Util::copyBuffer()
 		RDS_ASSERT(BitUtil::has(cmd->queueTypeflags, QueueTypeFlags::Compute), "not yet support");
-
 	}
 }
 
 
 void
-RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
+RenderContext_Vk::beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
 
 	VkResult ret;
 	{
-		VkCommandBufferResetFlags cmdBufRestFlags = 0;
-		vkResetCommandBuffer(vkCmdBuf, cmdBufRestFlags);
+		//VkCommandBufferResetFlags cmdBufRestFlags = 0;
+		//vkResetCommandBuffer(vkCmdBuf, cmdBufRestFlags);
+		renderFrame().reset();
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -225,7 +233,7 @@ RenderContext_Vk::beginRecord(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
 }
 
 void
-RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
+RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf)
 {
 	RDS_PROFILE_SCOPED();
 
@@ -279,8 +287,8 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
 	{
 		VkPresentInfoKHR presentInfo = {};
 
-		Vk_Semaphore* waitVkSmps[] = { _renderCompletedVkSmps[_curFrameIdx] };
-		Vk_Swapchain* vkSwapChains[] = { _vkSwapchain };
+		Vk_Semaphore*	waitVkSmps[]   = { _renderCompletedVkSmps[_curFrameIdx] };
+		Vk_Swapchain*	vkSwapChains[] = { _vkSwapchain };
 		u32				imageIndices[] = { _curImageIdx };
 
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -301,7 +309,7 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer* vkCmdBuf)
 }
 
 void
-RenderContext_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeline)
+RenderContext_Vk::bindPipeline(Vk_CommandBuffer_T* vkCmdBuf, Vk_Pipeline* vkPipeline)
 {
 	RDS_PROFILE_SCOPED();
 
@@ -325,7 +333,7 @@ RenderContext_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_Pipeline* vkPipeli
 }
 
 void
-RenderContext_Vk::testDrawCall(Vk_CommandBuffer* vkCmdBuf, u32 imageIdx)
+RenderContext_Vk::testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
 
@@ -472,31 +480,20 @@ RenderContext_Vk::createSwapchainFramebuffers()
 }
 
 void
-RenderContext_Vk::createCommandPool(Vk_CommandPool** outVkCmdPool, u32 queueIdx)
+RenderContext_Vk::createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx)
 {
 	Util::createCommandPool(outVkCmdPool, queueIdx, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 }
 
-void
-RenderContext_Vk::createCommandBuffer(Vk_CommandPool* vkCmdPool)
-{
-	auto* vkDevice = renderer()->vkDevice();
-
-	Vector<Vk_CommandBuffer*, s_kFrameInFlightCount> tmp;
-	tmp.resize(s_kFrameInFlightCount);
-	_vkCommandBuffers.resize(s_kFrameInFlightCount);
-
-	VkCommandBufferAllocateInfo cInfo = {};
-	cInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cInfo.commandPool = vkCmdPool;
-	cInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	cInfo.commandBufferCount = s_kFrameInFlightCount;
-
-	auto ret = vkAllocateCommandBuffers(vkDevice, &cInfo, tmp.data());
-	Util::throwIfError(ret);
-
-	Util::convertToVkPtrs(_vkCommandBuffers, tmp);
-}
+//void
+//RenderContext_Vk::createCommandBuffer(Vk_CommandPool* vkCmdPool)
+//{
+//	_vkCommandBuffers.resize(s_kFrameInFlightCount);
+//	for (auto& e : _vkCommandBuffers)
+//	{
+//		e.create(vkCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+//	}
+//}
 
 void
 RenderContext_Vk::createSyncObjects()
@@ -838,7 +835,7 @@ RenderContext_Vk::createTestVertexBuffer()
 			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		Util::copyBuffer(_testVkVtxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
+		Util::copyBuffer(_testVkVtxBuffer, _vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
 	}
 
 	#endif // 0
@@ -877,10 +874,10 @@ RenderContext_Vk::createTestIndexBuffer()
 			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
+		Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
 	}
 
-	Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
+	Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
 }
 
 
