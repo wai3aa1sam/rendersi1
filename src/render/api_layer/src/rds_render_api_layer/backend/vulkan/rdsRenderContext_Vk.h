@@ -168,8 +168,10 @@ protected:
 	virtual void onSetFramebufferSize(const Vec2f& newSize) override;
 
 	virtual void onCommit(TransferCommandBuffer& transferBuf) override;
-
-	virtual void onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf) override;
+	virtual void onUploadBuffer					(RenderFrameUploadBuffer& rdfUploadBuf) override;
+	void		_onUploadBuffer_MemCopyMutex	(RenderFrameUploadBuffer& rdfUploadBuf);
+	void		_onUploadBuffer_MemCopyPerThread(RenderFrameUploadBuffer& rdfUploadBuf);
+	void		_onUploadBuffer_StagePerThread	(RenderFrameUploadBuffer& rdfUploadBuf);
 
 protected:
 	void beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);

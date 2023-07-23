@@ -34,6 +34,8 @@ RenderGpuBuffer_Vk::~RenderGpuBuffer_Vk()
 void
 RenderGpuBuffer_Vk::onCreate(const CreateDesc& cDesc)
 {
+	destroy();
+
 	Base::onCreate(cDesc);
 
 	auto* allocVk	= Renderer_Vk::instance()->memoryContext()->allocVk();
@@ -62,6 +64,8 @@ RenderGpuBuffer_Vk::onDestroy()
 void 
 RenderGpuBuffer_Vk::onUploadToGpu(ByteSpan data, SizeType offset)
 {
+	Base::onUploadToGpu(data, offset);
+
 	//auto* allocVk	= Renderer_Vk::instance()->memoryContext()->allocVk();
 
 	//// TODO: request to upload context, then copy to a bug stage buffer

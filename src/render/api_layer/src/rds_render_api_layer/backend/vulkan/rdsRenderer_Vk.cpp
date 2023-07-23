@@ -42,6 +42,8 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 void
 Renderer_Vk::onDestroy()
 {
+	vkDeviceWaitIdle(vkDevice());
+	_renderFrameCtx.clear();
 	_memoryContextVk.destroy();
 }
 

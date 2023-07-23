@@ -117,10 +117,10 @@ Allocator_Vk::toAllocFlags(RenderAllocFlags v)
 	return flags;
 }
 
-ScopedMemMap_Vk::ScopedMemMap_Vk(void** outData, VkPtr<Vk_Buffer>* vkp)
+ScopedMemMap_Vk::ScopedMemMap_Vk(u8** outData, VkPtr<Vk_Buffer>* vkp)
 {
 	_p = vkp;
-	vkp->_internal_alloc()->mapMem(outData, _p->_internal_allocHnd());
+	vkp->_internal_alloc()->mapMem(reinCast<void**>(outData), _p->_internal_allocHnd());
 }
 
 ScopedMemMap_Vk::~ScopedMemMap_Vk()

@@ -46,8 +46,8 @@ public:
 public:
 
 protected:
-	virtual SPtr<RenderContext>		onCreateContext			(const RenderContext_CreateDesc&	cDesc) override;
-	virtual SPtr<RenderGpuBuffer>	onCreateRenderGpuBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc) override;
+	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc) override;
+	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc) override;
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);

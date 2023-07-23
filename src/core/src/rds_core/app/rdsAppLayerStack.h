@@ -27,6 +27,8 @@ public:
     void pushLayer(UPtr<AppLayer> p);
     void popLayer();
 
+    void clear();
+
     Stack::iterator         begin();
     Stack::iterator         end();
     Stack::const_iterator   begin() const;

@@ -16,6 +16,7 @@ class RenderRequest;
 class TransferCommandBuffer;
 class TransferRequest;
 struct Transfer_InlineUploadBuffer;
+class RenderFrameUploadBuffer;
 
 struct RenderContext_CreateDesc
 {
@@ -48,6 +49,7 @@ public:
 	void endRender();
 
 	void commit(TransferCommandBuffer& transferBuf);
+	void uploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf);
 
 
 	void		 setFramebufferSize(const Vec2f& newSize);
@@ -65,8 +67,7 @@ protected:
 
 	virtual void onCommit(TransferCommandBuffer& transferBuf);
 
-	void			uploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf);
-	virtual void	onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf);
+	virtual void	onUploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf);
 
 
 protected:

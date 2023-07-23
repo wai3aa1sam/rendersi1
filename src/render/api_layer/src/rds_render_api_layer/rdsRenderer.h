@@ -1,7 +1,8 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rds_render_api_layer/vertex/rdsVertexLayoutManager.h"
+#include "vertex/rdsVertexLayoutManager.h"
+#include "rdsRenderFrame.h"
 
 namespace rds
 {
@@ -40,6 +41,7 @@ struct	RenderContext_CreateDesc;
 
 class	RenderGpuBuffer;
 struct	RenderGpuBuffer_CreateDesc;
+class	RenderGpuMultiBuffer;
 
 class Renderer : public VirtualSingleton<Renderer>
 {
@@ -63,8 +65,9 @@ public:
 	void create(const CreateDesc& cDesc);
 	void destroy();
 
-	SPtr<RenderContext>		createContext			(const RenderContext_CreateDesc&	cDesc);
-	SPtr<RenderGpuBuffer>	createRenderGpuBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc);
+	SPtr<RenderContext>			createContext				(const RenderContext_CreateDesc&	cDesc);
+	SPtr<RenderGpuBuffer>		createRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc);
+	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc);
 
 protected:
 	Renderer* _init(const CreateDesc& cDesc);
@@ -72,12 +75,13 @@ protected:
 	virtual void onDestroy();
 
 protected:
-	virtual SPtr<RenderContext>		onCreateContext			(const RenderContext_CreateDesc&	cDesc) = 0;
-	virtual SPtr<RenderGpuBuffer>	onCreateRenderGpuBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc) = 0;
+	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc) = 0;
+	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc) = 0;
 
 protected:
 	RenderAdapterInfo	_adapterInfo;
 	VertexLayoutManager _vertexLayoutManager;
+	RenderFrameContext  _renderFrameCtx;
 };
 
 

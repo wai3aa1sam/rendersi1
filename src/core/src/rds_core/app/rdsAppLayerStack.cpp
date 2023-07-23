@@ -13,22 +13,31 @@ namespace rds
 
 AppLayerStack::~AppLayerStack()
 {
-    for (auto& e : _stack)
-    {
-        e->destroy();
-    }
+	clear();
 }
 
-void AppLayerStack::pushLayer(UPtr<AppLayer> p)
+void 
+AppLayerStack::pushLayer(UPtr<AppLayer> p)
 {
 	p->create();
     _stack.emplace_back(rds::move(p));
 }
 
-void AppLayerStack::popLayer()
+void 
+AppLayerStack::popLayer()
 {
     _stack.back()->destroy();
     _stack.pop_back();
+}
+
+void 
+AppLayerStack::clear()
+{
+	for (auto& e : _stack)
+	{
+		e->destroy();
+	}
+	_stack.clear();
 }
 
 #endif

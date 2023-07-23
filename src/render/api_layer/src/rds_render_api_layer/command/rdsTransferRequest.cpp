@@ -6,7 +6,7 @@ namespace rds
 
 TransferRequest::TransferRequest()
 {
-
+	_transferCommandBuffers.resize(s_kThreadCount);
 }
 
 TransferRequest::~TransferRequest()
@@ -15,14 +15,14 @@ TransferRequest::~TransferRequest()
 }
 
 void 
-TransferRequest::uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags)
+TransferRequest::clear()
 {
-	auto& transferCmdBuf = transferCommandBuffer();
-	auto* cmd = transferCmdBuf._inlineUploadBuffer.addData(data);
-	cmd->dst			= dst;
-	cmd->queueTypeflags = queueTypeflags;
-	RDS_ASSERT(BitUtil::has(queueTypeflags, QueueTypeFlags::Transfer), "");
+	for (auto& e : _transferCommandBuffers)
+	{
+		e.clear();
+	}
 }
+
 
 
 }

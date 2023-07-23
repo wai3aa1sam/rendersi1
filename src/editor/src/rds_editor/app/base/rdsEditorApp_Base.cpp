@@ -69,6 +69,8 @@ EditorApp_Base::onQuit		()
 {
 	_shouldQuit = true;
 	Base::onQuit();
+
+	_appLayerStack.clear();
 }
 
 void 

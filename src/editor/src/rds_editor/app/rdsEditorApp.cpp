@@ -78,6 +78,7 @@ EditorApp::onRun		()
 
 		RDS_PROFILE_FRAME();
 	}
+
 	willQuit();
 }
 
@@ -90,11 +91,10 @@ EditorApp::onQuit		()
 void 
 EditorApp::willQuit	()
 {
+	Base::willQuit();
+
 	Renderer::terminate();
 	JobSystem::terminate();
-	Logger::terminate();
-
-	Base::willQuit();
 }
 
 #endif

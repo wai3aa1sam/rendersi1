@@ -65,7 +65,7 @@ protected:
 class ScopedMemMap_Vk
 {
 public:
-	ScopedMemMap_Vk(void** outData, VkPtr<Vk_Buffer>* vkp);
+	ScopedMemMap_Vk(u8** outData, VkPtr<Vk_Buffer>* vkp);
 	~ScopedMemMap_Vk();
 
 	void unmap();

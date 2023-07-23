@@ -36,7 +36,7 @@ public:
 			if (enableBenchmark)
 			{
 				UnitTestManager::instance()->benchmark(&argc, argv);
-				RDS_CORE_LOG_DEBUG("UnitTestManager will leak up to 1784 bytes");
+				_log("UnitTestManager will leak up to 1784 bytes");
 			}
 		}
 		destroy();

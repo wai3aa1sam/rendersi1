@@ -4,6 +4,7 @@
 
 #include "../rdsRenderer.h"
 #include "../command/rdsTransferRequest.h"
+#include "../rdsRenderFrame.h"
 
 namespace rds
 {
@@ -69,7 +70,7 @@ RenderGpuBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
 {
 	ByteSpan bs = ByteSpan{data.data() + offset, data.size() - offset};
 	QueueTypeFlags typeFlags = QueueTypeFlags::Graphics | QueueTypeFlags::Transfer;
-	TransferRequest::instance()->uploadBuffer(this, bs, typeFlags);
+	RenderFrameContext::instance()->renderFrame().uploadBuffer(this, bs, typeFlags);
 }
 
 

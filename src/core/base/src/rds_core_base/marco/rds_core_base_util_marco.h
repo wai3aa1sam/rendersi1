@@ -20,7 +20,7 @@
 
 #define RDS_CONCAT_IMPL(A, B) A ## B
 #define RDS_CONCAT(A, B) RDS_CONCAT_IMPL(A, B)
-#define RDS_UNIQUE_VAR_NAME(CLASS) RDS_CONCAT(RDS_CONCAT(_, CLASS), __LINE__))
+#define RDS_UNIQUE_VAR_NAME(CLASS) RDS_CONCAT(RDS_CONCAT(_, CLASS), RDS_LINE)
 #define RDS_UNIQUE_VAR(CLASS)		CLASS RDS_UNIQUE_VAR_NAME(CLASS)
 
 #define RDS_CALL_ARGS(X, ...)	RDS_IDENTITY( X(__VA_ARGS__) )
@@ -42,8 +42,8 @@
 #define RDS_S_ASSERT(COND, ...) static_assert(COND, RDS_FUNC_NAME_SZ ## "() " "--- " #COND ## " --- " ## __VA_ARGS__)
 
 #if RDS_DEBUG || RDS_ENABLE_ASSERT
-	#define RDS_CORE_ASSERT(X, ...)	do{ if(!(X)) { ::nmsp::_log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
-	#define RDS_ASSERT(X, ...)		do{ if(!(X)) { ::nmsp::_log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
+	#define RDS_CORE_ASSERT(X, ...)	do{ if(!(X)) { _log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
+	#define RDS_ASSERT(X, ...)		do{ if(!(X)) { _log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
 #else
 	#define RDS_CORE_ASSERT(X, ...)
 	#define RDS_ASSERT(X, ...)	

@@ -67,6 +67,13 @@ public:
 	QueueTypeFlags			queueTypeflags;
 };
 
+#endif
+
+
+#if 0
+#pragma mark --- rdsTransfer_InlineUploadBuffer-Decl ---
+#endif // 0
+#if 0
 
 struct Transfer_InlineUploadBuffer : public NonCopyable
 {
@@ -77,20 +84,30 @@ public:
 	static constexpr SizeType s_kLocalSize = 64;
 
 public:
+	Transfer_InlineUploadBuffer();
 	void clear();
 
 	RDS_NODISCARD TransferCommand_UploadBuffer* addData(ByteSpan data);
 	void addParent(RenderGpuMultiBuffer* parent);
 
 public:
+	Mutex _mtx;	// TODO: better thread-safe approach (eg. SMtx if assumed only 1 LinearAllocator::Chunk, or per thread LinearAlloc)
+
 	LinearAllocator	allocator;
 	Vector<TransferCommand_UploadBuffer*, s_kLocalSize> uploadBufCmds;
 	LinearAllocator										bufData;
 	Vector<u32, s_kLocalSize>							bufOffsets;
 	Vector<u32, s_kLocalSize>							bufSizes;
 	Vector<SPtr<RenderGpuMultiBuffer>, s_kLocalSize>	parents;
-
+	Atm<u32> totalSizes;
 };
+
+#endif
+
+#if 0
+#pragma mark --- rdsTransferCommandBuffer-Decl ---
+#endif // 0
+#if 1
 
 class TransferRequest;
 class TransferCommandBuffer : public NonCopyable
@@ -99,9 +116,14 @@ class TransferCommandBuffer : public NonCopyable
 public:
 	using SizeType = RenderApiLayerTraits::SizeType;
 
-	using InlineUploadBuffer = Transfer_InlineUploadBuffer;
-
 public:
+	TransferCommandBuffer();
+	~TransferCommandBuffer();
+
+	TransferCommandBuffer(TransferCommandBuffer&&)	{ throwIf(true, ""); };
+	void operator=(TransferCommandBuffer&&)			{ throwIf(true, ""); };
+
+	void clear();
 
 private:
 
@@ -111,7 +133,6 @@ private:
 	LinearAllocator			_allocator;
 	Vector<TransferCommand> _commands;
 
-	InlineUploadBuffer		_inlineUploadBuffer;
 };
 
 template<class CMD> inline
@@ -123,8 +144,8 @@ CMD* TransferCommandBuffer::newCommand()
 	return cmd;
 }
 
+#endif
+
 //inline RDS_NODISCARD TransferCommand_UploadBuffer* TransferCommandBuffer::addUploadBuffer()	{ return newCommand<TransferCommand_UploadBuffer>(); }
 
-
-#endif
 }

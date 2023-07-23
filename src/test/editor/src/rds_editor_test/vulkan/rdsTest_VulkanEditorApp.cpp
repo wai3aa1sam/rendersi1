@@ -3,10 +3,6 @@
 #include "rds_render_api_layer.h"
 #include "rds_editor.h"
 
-#include <rds_render_api_layer/vertex/rdsVertex.h>
-#include <rds_render_api_layer/vertex/rdsVertexLayoutManager.h>
-#include <rds_render_api_layer/mesh/rdsEditMesh.h>
-
 namespace rds 
 {
 
@@ -78,6 +74,43 @@ void testEditMesh()
 	}
 }
 
+Vector<u8, 1024> makeRndColorTriangle()
+{
+	static size_t s_kVtxCount = 4;
+	EditMesh editMesh;
+	auto rnd = Random{};
+	{
+		auto& e = editMesh.pos;
+		e.reserve(s_kVtxCount);
+		e.emplace_back(-0.5f, -0.5f, 0.0f);
+		e.emplace_back( 0.5f, -0.5f, 0.0f);
+		e.emplace_back( 0.5f,  0.5f, 0.0f);
+		e.emplace_back(-0.5f,  0.5f, 0.0f);
+	}
+	{
+		auto& e = editMesh.color;
+		e.reserve(s_kVtxCount);
+		auto r0 = sCast<u8>(rnd.range(0, 255));
+		auto r1 = sCast<u8>(rnd.range(0, 255));
+		e.emplace_back(r0,	  0,	 0,	255);
+		e.emplace_back( 0,	 r0,	 0,	255);
+		e.emplace_back( 0,	  0,	r0,	255);
+		e.emplace_back(r1,	 r1,	r1,	255);
+	}
+	{
+		auto& e = editMesh.uvs[0];
+		e.reserve(s_kVtxCount);
+		e.emplace_back(1.0f, 0.0f);
+		e.emplace_back(0.0f, 0.0f);
+		e.emplace_back(0.0f, 1.0f);
+		e.emplace_back(1.0f, 1.0f);
+	}
+
+	Vector<u8, 1024> o;
+	editMesh.createPackedVtxData(o);
+	return o;
+}
+
 class VulkanLayer;
 class VulkanEditorMainWindow : public EditorMainWindow
 {
@@ -101,14 +134,18 @@ protected:
 		auto renderContextCDesc = RenderContext::makeCDesc();
 		renderContextCDesc.window = this;
 		_renderContext = renderer->createContext(renderContextCDesc);
+
+
 	}
 
 private:
-
 };
 
 class VulkanEditorApp : public EditorApp
 {
+public:
+	using Base = EditorApp;
+
 public:
 	static VulkanEditorApp* instance() { return sCast<VulkanEditorApp*>(s_instance); }
 
@@ -146,13 +183,11 @@ protected:
 		pushLayer(makeUPtr<VulkanLayer>());
 	}
 
-	
-
 	virtual void willQuit() override
 	{
 		_vulkanMainWin.~VulkanEditorMainWindow();
-		Renderer::terminate();
-		JobSystem::terminate();
+
+		Base::willQuit();
 	}
 
 protected:
@@ -191,6 +226,8 @@ public:
 				RDS_DUMP_VAR(TBM<VertexType>::offsets(i));
 			}
 		}
+
+		uploadTestMultiBuf();
 	}
 
 	virtual void onRender() override
@@ -199,16 +236,40 @@ public:
 
 		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWin->renderContext();
+		auto& rdFrame	= RenderFrameContext::instance()->renderFrame(); RDS_UNUSED(rdFrame);
 
 		rdCtx.setFramebufferSize(mainWin->clientRect().size);
 		rdCtx.beginRender();
 
 		rdCtx.endRender();
 
+		uploadTestMultiBuf();
+
+		rdCtx.commit(rdFrame.transferRequest().transferCommandBuffer());
+		rdCtx.uploadBuffer(rdFrame.renderFrameUploadBuffer());
+
+		RenderFrameContext::instance()->rotate();
+	}
+
+	void uploadTestMultiBuf()
+	{
+		if (!_testMultiBuffer)
+		{
+			auto data			= makeRndColorTriangle();
+
+			auto bufCDesc		= RenderGpuMultiBuffer::makeCDesc();
+			bufCDesc.bufSize	= data.size();
+			bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
+
+			_testMultiBuffer = RenderGpuMultiBuffer::make(bufCDesc);
+		}
+
+		auto data = makeRndColorTriangle();
+		_testMultiBuffer->uploadToGpu(makeByteSpan(data.span()));
 	}
 
 protected:
-
+	SPtr<RenderGpuMultiBuffer> _testMultiBuffer;
 };
 
 class Test_VulkanEditorApp : public UnitTest

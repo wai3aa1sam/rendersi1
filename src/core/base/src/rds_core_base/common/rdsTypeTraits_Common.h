@@ -38,14 +38,23 @@ template<bool COND, class IF_TRUE_T, class IF_FASLE_T> using Conditional    = ty
 template<class T> using DecayT = ::nmsp::DecayT<T>;
 template<class T> using Decay  = typename DecayT<T>::type;
 
-template<class T> using RemoveRefT  = ::nmsp::RemoveRefT<T>;
-template<class T> using RemoveRef   = typename RemoveRefT<T>::type;
+template<class T> using RemoveRefT		= ::nmsp::RemoveRefT<T>;
+template<class T> using RemoveRef		= typename RemoveRefT<T>::type;
 
-template<class T> using RemovePtrT  = ::nmsp::RemovePtrT<T>;
-template<class T> using RemovePtr   = typename RemovePtrT<T>::type;
+template<class T> using RemoveConstT    = ::nmsp::RemoveConstT<T>;
+template<class T> using RemoveConst     = typename RemoveConstT<T>::type;
 
-template<class T> using RemoveArrT  = ::nmsp::RemoveArrT<T>;
-template<class T> using RemoveArr   = typename RemoveArrT<T>::type;
+template<class T> using RemoveVolatileT = ::nmsp::RemoveVolatileT<T>;
+template<class T> using RemoveVolatile  = typename RemoveVolatileT<T>::type;
+
+template<class T> using RemoveCvT       = ::nmsp::RemoveCvT<T>;
+template<class T> using RemoveCv        = typename RemoveCvT<T>::type;
+
+template<class T> using RemovePtrT		= ::nmsp::RemovePtrT<T>;
+template<class T> using RemovePtr		= typename RemovePtrT<T>::type;
+
+template<class T> using RemoveArrT		= ::nmsp::RemoveArrT<T>;
+template<class T> using RemoveArr		= typename RemoveArrT<T>::type;
 
 #endif
 

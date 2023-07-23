@@ -14,17 +14,23 @@ namespace rds
 class TransferRequest : public NonCopyable
 {
 public:
-	static TransferRequest* instance() { static TransferRequest s;  return &s; }
+	using Traits	= RenderApiLayerTraits;
+	using SizeType	= Traits::SizeType;
 
+public:
+	static constexpr SizeType s_kThreadCount		= RenderApiLayerTraits::s_kThreadCount;
+	static constexpr SizeType s_kFrameInFlightCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
+
+public:
 	TransferRequest();
 	~TransferRequest();
 
+	void clear();
+
 	TransferCommandBuffer& transferCommandBuffer();
 
-	void uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags);
-
 private:
-	Vector<TransferCommandBuffer, OsTraits::s_kEstLogicalThreadCount>	_transferCommandBuffers;
+	Vector<TransferCommandBuffer, s_kThreadCount>	_transferCommandBuffers;
 };
 
 inline

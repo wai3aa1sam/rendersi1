@@ -13,14 +13,15 @@ namespace rds
 #endif // 0
 #if 1
 
-class RenderFrame_Vk : public NonCopyable
+class RenderFrame_Vk : public NonCopyable	// not a derived class of RenderFrame
 {
 public:
 	using Util = RenderApiUtil_Vk;
 	using SizeType = RenderApiLayerTraits::SizeType;
 
 public:
-	static constexpr SizeType s_kThreadCount = RenderApiLayerTraits::s_kThreadCount;
+	static constexpr SizeType s_kThreadCount		= RenderApiLayerTraits::s_kThreadCount;
+	static constexpr SizeType s_kFrameInFlightCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
 
 public:
 	RenderFrame_Vk();

@@ -79,7 +79,7 @@ protected:
 	T* _p = VK_NULL_HANDLE;
 };
 
-template<class T> class RenderApiPrimitive_Vk
+template<class T> class RenderApiPrimitive_Vk : public NonCopyable
 {
 public:
 	using Util = RenderApiUtil_Vk;

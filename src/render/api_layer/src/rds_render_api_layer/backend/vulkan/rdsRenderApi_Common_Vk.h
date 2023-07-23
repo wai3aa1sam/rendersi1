@@ -135,6 +135,8 @@ public:
 	static String getStrFromVkResult(Result ret);
 
 public:
+	template<class T> static VkDeviceSize toVkDeviceSize(T v);
+
 	static VkExtent2D toVkExtent2D(const Rect2f& rect2);
 	static VkExtent2D toVkExtent2D(const Vec2f&  vec2);
 
@@ -200,6 +202,8 @@ private:
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void*										pUserData);
 };
+
+template<class T> inline VkDeviceSize toVkDeviceSize(T v) { RDS_S_ASSERT(IsIntegral<T>); return sCast<VkDeviceSize>(v); }
 
 #endif
 

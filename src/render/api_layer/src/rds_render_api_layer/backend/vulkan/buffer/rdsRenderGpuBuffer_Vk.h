@@ -23,6 +23,8 @@ public:
 	RenderGpuBuffer_Vk();
 	virtual ~RenderGpuBuffer_Vk();
 
+	Vk_Buffer* vkBuf();
+
 protected:
 	virtual void onCreate(const CreateDesc& cDesc) override;
 	virtual void onPostCreate(const CreateDesc& cDesc) override;
@@ -34,7 +36,7 @@ protected:
 	VkPtr<Vk_Buffer> _vkBuf;
 };
 
-
+inline Vk_Buffer* RenderGpuBuffer_Vk::vkBuf() { return _vkBuf; }
 
 #endif
 }

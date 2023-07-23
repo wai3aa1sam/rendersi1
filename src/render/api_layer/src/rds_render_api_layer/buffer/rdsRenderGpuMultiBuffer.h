@@ -13,16 +13,18 @@ namespace rds
 
 class RenderGpuMultiBuffer : public RefCount_Base
 {
+	friend class Renderer;
+
 public:
 	using Base = RefCount_Base;
-	using CreateDesc = RenderGpuBuffer_CreateDesc;
+	using CreateDesc = RenderGpuBuffer::CreateDesc;
 
 	using Util = RenderApiUtil;
 
 	using SizeType = RenderApiLayerTraits::SizeType;
 
 public:
-	static constexpr SizeType s_kFrameInFlightCount			= RenderApiLayerTraits::s_kFrameInFlightCount;
+	static constexpr SizeType s_kFrameInFlightCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
 
 public:
 	static CreateDesc					makeCDesc();
@@ -34,6 +36,10 @@ public:
 
 	void create(const CreateDesc& cDesc);
 	void destroy();
+
+	void uploadToGpu(ByteSpan data, SizeType offset = 0);
+
+	void rotate();
 
 	const CreateDesc& cDesc() const;
 
@@ -51,11 +57,10 @@ protected:
 
 	virtual void onUploadToGpu(ByteSpan data, SizeType offset);
 
-	void rotate();
 	SPtr<RenderGpuBuffer>& nextBuffer();
 
 protected:
-	u32 iFrame = 0;	// TODO: add a global check lock to ensure only one thread call rotate()
+	Atm<u32> iFrame = 0;
 	Vector<SPtr<RenderGpuBuffer>, s_kFrameInFlightCount> _renderGpuBuffers;
 };
 

@@ -3,7 +3,7 @@
 #include "rdsRenderContext.h"
 
 #include "rdsRenderer.h"
-
+#include "rdsRenderFrame.h"
 
 namespace rds
 {
@@ -105,13 +105,13 @@ RenderContext::onCommit(TransferCommandBuffer& transferBuf)
 }
 
 void 
-RenderContext::uploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf)
+RenderContext::uploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf)
 {
-	onUploadBuffer(inlineUploadBuf);
+	onUploadBuffer(rdfUploadBuf);
 }
 
 void 
-RenderContext::onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf)
+RenderContext::onUploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf)
 {
 
 }

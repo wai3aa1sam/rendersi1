@@ -4,6 +4,8 @@
 #include "rdsRenderer_Vk.h"
 
 #include "rds_render_api_layer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/rdsRenderFrame.h"
+#include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -58,10 +60,6 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	createSwapchainInfo(_swapchainInfo, _renderer->swapchainAvailableInfo(), cDesc.window->clientRect());
 
-	//auto& queueFamily = _renderer->queueFamilyIndices();
-	//_vkGraphicsCommandPool.create(queueFamily.graphics.value());
-	//_vkTransferCommandPool.create(queueFamily.transfer.value());
-	//createCommandBuffer(&_vkGraphicsCommandPool);
 	createSyncObjects();
 
 	createTestRenderPass();
@@ -70,7 +68,7 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	createTestIndexBuffer();
 
 	createSwapchain(_swapchainInfo);
-
+	
 	_curGraphicsCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
 }
@@ -153,6 +151,29 @@ RenderContext_Vk::onEndRender()
 
 	endRecord(_curGraphicsCmdBuf->hnd());
 
+	{
+		VkPresentInfoKHR presentInfo = {};
+
+		Vk_Semaphore*	waitVkSmps[]   = { _renderCompletedVkSmps[_curFrameIdx] };
+		Vk_Swapchain*	vkSwapChains[] = { _vkSwapchain };
+		u32				imageIndices[] = { _curImageIdx };
+
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.waitSemaphoreCount = ArraySize<decltype(waitVkSmps)>;
+		presentInfo.swapchainCount = ArraySize<decltype(vkSwapChains)>;
+		presentInfo.pWaitSemaphores = waitVkSmps;
+		presentInfo.pSwapchains = vkSwapChains;
+		presentInfo.pImageIndices = imageIndices;
+		presentInfo.pResults = nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
+
+		auto ret = vkQueuePresentKHR(_vkPresentQueue, &presentInfo);
+		/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
+		{
+		createSwapchain();
+		} */
+		Util::throwIfError(ret);
+	}
+
 	// next frame idx
 	_curFrameIdx = math::modPow2Val(_curFrameIdx + 1, s_kFrameInFlightCount);
 }
@@ -174,62 +195,96 @@ RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
 void 
 RenderContext_Vk::onCommit(TransferCommandBuffer& transferBuf)
 {
-	transferBuf;
+	Base::onCommit(transferBuf);
+
 }
 
 void 
-RenderContext_Vk::onUploadBuffer(Transfer_InlineUploadBuffer& inlineUploadBuf)
+RenderContext_Vk::onUploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf)
+{
+	Base::onUploadBuffer(rdfUploadBuf);
+	_onUploadBuffer_MemCopyMutex(rdfUploadBuf);
+}
+
+void 
+RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploadBuf)
 {
 	auto* allocVk	= Renderer_Vk::instance()->memoryContext()->allocVk();
 
-	auto chunks = inlineUploadBuf.bufData.chunks();
-	Vector<VkPtr<Vk_Buffer>, 16> vkStagingBufs;
-	vkStagingBufs.resize(chunks.size());
+	auto totalSize					= rdfUploadBuf.totalDataSize();
+	const auto* inlineUploadBuffer	= rdfUploadBuf.getInlineUploadBuffer();
 
-	u32 i = 0;
-	for (auto& e : chunks)
+	if (totalSize == 0)
 	{
-		auto& vkStageBuf = vkStagingBufs[i];
+		return;
+	}
 
-		AllocInfo_Vk allocInfo = {};
-		allocInfo.usage  = RenderMemoryUsage::CpuOnly;
-		allocInfo.flags |= RenderAllocFlags::HostWrite;
-		Util::createBuffer(vkStageBuf, allocVk, &allocInfo, e->size()
-			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+	VkPtr<Vk_Buffer> vkStageBuf;
 
-		void* mappedData = nullptr;
+	AllocInfo_Vk allocInfo = {};
+	allocInfo.usage  = RenderMemoryUsage::CpuOnly;
+	allocInfo.flags |= RenderAllocFlags::HostWrite;
+	Util::createBuffer(vkStageBuf, allocVk, &allocInfo, totalSize
+		, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+		, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+
+	{
+		const auto& chunks	= inlineUploadBuffer->bufData.chunks();
+		auto chunkCount		= chunks.size();
+
+		u8* mappedData = nullptr;
 		ScopedMemMap_Vk mm = { &mappedData, &vkStageBuf };
-		memory_copy(reinCast<u8*>(mappedData), e->data(), e->size());
-		i++;
-	};
 
-	for (auto* cmd : inlineUploadBuf.uploadBufCmds)
+		RDS_CORE_ASSERT(chunkCount == 1, "not yet handle > 1");
+		for (size_t i = 0; i < chunkCount; i++)
+		{
+			auto& e = chunks[i];
+			memory_copy(mappedData, e->data(), e->size());
+			mappedData += e->size();
+		}
+	}
+
+	auto* transferCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	transferCmdBuf->beginRecord(_vkTransferQueue, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	
+	auto CmdCount = inlineUploadBuffer->uploadBufCmds.size();
+	for (size_t iCmd = 0; iCmd < CmdCount; iCmd++)
 	{
-		//Util::copyBuffer()
-		RDS_ASSERT(BitUtil::has(cmd->queueTypeflags, QueueTypeFlags::Compute), "not yet support");
+		auto& cmd = inlineUploadBuffer->uploadBufCmds[iCmd];
+		auto* dstBuf = sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
+		transferCmdBuf->cmd_CopyBuffer(dstBuf->vkBuf(), vkStageBuf, cmd->data.size(), 0, inlineUploadBuffer->bufOffsets[iCmd]);		// dst offset already handled in RenderGpuBuffer::onUpload()
+		RDS_ASSERT(!BitUtil::has(cmd->queueTypeflags, QueueTypeFlags::Compute), "not yet support");
+	}
+	
+	{
+		static bool v = false;
+		if (!v)
+		{
+			RDS_LOG_WARN("TODO: add smp for transfer and graphics queue");
+			v = true;
+		}
+	}
+
+	transferCmdBuf->endRecord();
+	transferCmdBuf->submit();
+
+	transferCmdBuf->waitIdle(); // TODO: remove
+
+	// TODO: delay rotate
+	auto& rotates = constCast<std::remove_const_t<decltype(inlineUploadBuffer->parents)>&>(inlineUploadBuffer->parents);
+	for (auto& e : rotates)
+	{
+		e->rotate();
 	}
 }
-
 
 void
 RenderContext_Vk::beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
 
-	VkResult ret;
-	{
-		//VkCommandBufferResetFlags cmdBufRestFlags = 0;
-		//vkResetCommandBuffer(vkCmdBuf, cmdBufRestFlags);
-		renderFrame().reset();
-
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = 0;		// Optional
-		beginInfo.pInheritanceInfo = nullptr;	// Optional
-		ret = vkBeginCommandBuffer(vkCmdBuf, &beginInfo);
-		Util::throwIfError(ret);
-	}
+	renderFrame().reset();
+	_curGraphicsCmdBuf->beginRecord(vkGraphicsQueue(), VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 }
 
 void
@@ -242,10 +297,7 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf)
 
 	RDS_PROFILE_GPU_COLLECT_VK(_gpuProfilerCtx, vkCmdBuf);
 
-	{
-		ret = vkEndCommandBuffer(vkCmdBuf);
-		Util::throwIfError(ret);
-	}
+	_curGraphicsCmdBuf->endRecord();
 
 	{
 		Vk_Fence* vkFences[] = { _inFlightVkFences[_curFrameIdx] };
@@ -254,58 +306,9 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf)
 		Util::throwIfError(ret);
 	}
 
-	{
-		VkSubmitInfo2KHR submitInfo = {};
-
-		VkSemaphoreSubmitInfoKHR imageAvailableSmpInfo = {};
-		imageAvailableSmpInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-		imageAvailableSmpInfo.semaphore = _imageAvailableVkSmps[_curFrameIdx];
-		imageAvailableSmpInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-		VkSemaphoreSubmitInfoKHR renderCompletedSmpInfo = {};
-		renderCompletedSmpInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-		renderCompletedSmpInfo.semaphore = _renderCompletedVkSmps[_curFrameIdx];
-		renderCompletedSmpInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-		VkCommandBufferSubmitInfoKHR cmdBufSubmitInfo = {};
-		cmdBufSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-		cmdBufSubmitInfo.commandBuffer = vkCmdBuf;
-
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-		submitInfo.waitSemaphoreInfoCount = 1;
-		submitInfo.signalSemaphoreInfoCount = 1;
-		submitInfo.commandBufferInfoCount = 1;
-		submitInfo.pWaitSemaphoreInfos = &imageAvailableSmpInfo;
-		submitInfo.pSignalSemaphoreInfos = &renderCompletedSmpInfo;
-		submitInfo.pCommandBufferInfos = &cmdBufSubmitInfo;
-
-		//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-		ret = vkQueueSubmit2(_vkGraphicsQueue, 1, &submitInfo, _inFlightVkFences[_curFrameIdx]);
-		Util::throwIfError(ret);
-	}
-
-	{
-		VkPresentInfoKHR presentInfo = {};
-
-		Vk_Semaphore*	waitVkSmps[]   = { _renderCompletedVkSmps[_curFrameIdx] };
-		Vk_Swapchain*	vkSwapChains[] = { _vkSwapchain };
-		u32				imageIndices[] = { _curImageIdx };
-
-		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		presentInfo.waitSemaphoreCount = ArraySize<decltype(waitVkSmps)>;
-		presentInfo.swapchainCount = ArraySize<decltype(vkSwapChains)>;
-		presentInfo.pWaitSemaphores = waitVkSmps;
-		presentInfo.pSwapchains = vkSwapChains;
-		presentInfo.pImageIndices = imageIndices;
-		presentInfo.pResults = nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
-
-		ret = vkQueuePresentKHR(_vkPresentQueue, &presentInfo);
-		/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
-		{
-			createSwapchain();
-		} */
-		Util::throwIfError(ret);
-	}
+	_curGraphicsCmdBuf->submit(_inFlightVkFences[_curFrameIdx]
+								, _imageAvailableVkSmps[_curFrameIdx],	VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+								, _renderCompletedVkSmps[_curFrameIdx], VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 }
 
 void
@@ -823,7 +826,7 @@ RenderContext_Vk::createTestVertexBuffer()
 			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		void* mappedData = nullptr;
+		u8* mappedData = nullptr;
 		ScopedMemMap_Vk mm = { &mappedData, &_vkStagingBuf };
 		memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vtxData.data()), bufSize);
 	}
@@ -862,7 +865,7 @@ RenderContext_Vk::createTestIndexBuffer()
 			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		void* mappedData = nullptr;
+		u8* mappedData = nullptr;
 		ScopedMemMap_Vk mm = { &mappedData, &_vkStagingBuf };
 		memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(indices.data()), bufSize);
 	}
