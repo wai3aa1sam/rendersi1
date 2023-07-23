@@ -7,6 +7,8 @@
 #include "rds_render_api_layer/rdsRenderFrame.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 
+#include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -271,7 +273,7 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 	transferCmdBuf->waitIdle(); // TODO: remove
 
 	// TODO: delay rotate
-	auto& rotates = constCast<std::remove_const_t<decltype(inlineUploadBuffer->parents)>&>(inlineUploadBuffer->parents);
+	auto& rotates = constCast(inlineUploadBuffer->parents);
 	for (auto& e : rotates)
 	{
 		e->rotate();

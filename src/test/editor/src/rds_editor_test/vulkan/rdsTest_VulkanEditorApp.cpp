@@ -82,20 +82,20 @@ Vector<u8, 1024> makeRndColorTriangle()
 	{
 		auto& e = editMesh.pos;
 		e.reserve(s_kVtxCount);
-		e.emplace_back(-0.5f, -0.5f, 0.0f);
+		e.emplace_back(-0.5f, -rnd.range(0.0, 1.0), 0.0f);
 		e.emplace_back( 0.5f, -0.5f, 0.0f);
 		e.emplace_back( 0.5f,  0.5f, 0.0f);
-		e.emplace_back(-0.5f,  0.5f, 0.0f);
+		e.emplace_back(-0.5f,  rnd.range(0.0, 1.0), 0.0f);
 	}
 	{
 		auto& e = editMesh.color;
 		e.reserve(s_kVtxCount);
 		auto r0 = sCast<u8>(rnd.range(0, 255));
-		auto r1 = sCast<u8>(rnd.range(0, 255));
+		//auto r1 = sCast<u8>(rnd.range(0, 255));
 		e.emplace_back(r0,	  0,	 0,	255);
 		e.emplace_back( 0,	 r0,	 0,	255);
 		e.emplace_back( 0,	  0,	r0,	255);
-		e.emplace_back(r1,	 r1,	r1,	255);
+		e.emplace_back(255,	 255,	255,	255);
 	}
 	{
 		auto& e = editMesh.uvs[0];
@@ -270,6 +270,7 @@ public:
 
 protected:
 	SPtr<RenderGpuMultiBuffer> _testMultiBuffer;
+
 };
 
 class Test_VulkanEditorApp : public UnitTest
