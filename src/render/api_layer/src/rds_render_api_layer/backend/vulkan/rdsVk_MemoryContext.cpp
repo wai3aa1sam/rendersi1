@@ -1,5 +1,5 @@
 #include "rds_render_api_layer-pch.h"
-#include "rdsMemoryContext_Vk.h"
+#include "rdsVk_MemoryContext.h"
 
 #include "rdsRenderer_Vk.h"
 
@@ -9,27 +9,27 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsMemoryContext_Vk-Impl ---
+#pragma mark --- rdsVk_MemoryContext-Impl ---
 #endif // 0
 #if 1
 
-MemoryContext_Vk* 
-MemoryContext_Vk::instance()
+Vk_MemoryContext* 
+Vk_MemoryContext::instance()
 {
 	return Renderer_Vk::instance()->memoryContext();
 }
 
-MemoryContext_Vk::MemoryContext_Vk()
+Vk_MemoryContext::Vk_MemoryContext()
 {
 	//_allocationCallbacks.pfnAllocation
 }
-MemoryContext_Vk::~MemoryContext_Vk()
+Vk_MemoryContext::~Vk_MemoryContext()
 {
 	destroy();
 }
 
 void 
-MemoryContext_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst)
+Vk_MemoryContext::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst)
 {
 	vkGetPhysicalDeviceMemoryProperties(vkPhyDev, &_vkMemProperties);
 
@@ -37,7 +37,7 @@ MemoryContext_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Insta
 }
 
 void 
-MemoryContext_Vk::destroy()
+Vk_MemoryContext::destroy()
 {
 	_allocVk.destroy();
 }

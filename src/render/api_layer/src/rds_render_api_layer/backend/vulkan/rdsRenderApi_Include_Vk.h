@@ -35,7 +35,9 @@ RDS_RESTORE_ALL_WARNINGS();
 
 namespace rds
 {
-using AllocHnd_Vk = VmaAllocation;
+using Vk_AllocHnd = VmaAllocation;
+using Vk_Allocation = VmaAllocation;
+
 }
 
 

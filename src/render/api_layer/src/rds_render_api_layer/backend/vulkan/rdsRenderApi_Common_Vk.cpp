@@ -2,7 +2,7 @@
 #include "rdsRenderApi_Common_Vk.h"
 
 #include "rdsRenderer_Vk.h"
-#include "rdsAllocator_Vk.h"
+#include "rdsVk_Allocator.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -209,7 +209,7 @@ RenderApiUtil_Vk::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
 u32
 RenderApiUtil_Vk::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties)
 {
-	auto& vkMemProps = MemoryContext_Vk::instance()->vkMemoryProperties();
+	auto& vkMemProps = Vk_MemoryContext::instance()->vkMemoryProperties();
 	const u32 memoryCount = vkMemProps.memoryTypeCount;
 	for (u32 memoryIndex = 0; memoryIndex < memoryCount; ++memoryIndex) 
 	{
@@ -409,7 +409,7 @@ RenderApiUtil_Vk::createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_Comma
 }
 
 void 
-RenderApiUtil_Vk::createBuffer(Vk_Buffer** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
+RenderApiUtil_Vk::createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
 								, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags)
 {
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
@@ -483,7 +483,7 @@ RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 	copyRegion.srcOffset	= 0; // Optional
 	copyRegion.dstOffset	= 0; // Optional
 	copyRegion.size			= size;
-	vkCmdCopyBuffer(vkCmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
+	vkCmdCopyBuffer(vkCmdBuf, srcBuffer->hnd(), dstBuffer->hnd(), 1, &copyRegion);
 
 	vkEndCommandBuffer(vkCmdBuf);
 
@@ -506,7 +506,13 @@ RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 }
 
 void 
-RenderApiUtil_Vk::createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, AllocInfo_Vk* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
+RenderApiUtil_Vk::createBuffer(Vk_Buffer& outBuf, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
+{
+	outBuf.create(vkAlloc, allocInfo, size, usage, queueTypeFlags);
+}
+
+void 
+RenderApiUtil_Vk::createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
 {
 	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
 
@@ -525,7 +531,8 @@ RenderApiUtil_Vk::createBuffer(VkPtr<Vk_Buffer>& outBuf, Allocator_Vk* allocVk, 
 		bufferInfo.pQueueFamilyIndices		= queueIdices.data();
 	}
 
-	allocVk->allocBuf(outBuf, &bufferInfo, allocInfo);
+	auto ret = vkAlloc->allocBuf(outBuf, allocHnd, &bufferInfo, allocInfo);
+	throwIfError(ret);
 }
 
 void
@@ -717,7 +724,7 @@ ExtensionInfo_Vk::createValidationLayers(const RenderAdapterInfo& adapterInfo)
 	out.emplace_back("VK_LAYER_KHRONOS_validation");
 	out.emplace_back("VK_LAYER_KHRONOS_synchronization2");
 	
-	RDS_DEBUG_CALL(checkValidationLayersExist());
+	//RDS_DEBUG_CALL(checkValidationLayersExist());
 }
 
 void

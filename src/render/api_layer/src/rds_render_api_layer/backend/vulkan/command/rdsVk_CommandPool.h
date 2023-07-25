@@ -12,7 +12,7 @@ namespace rds
 #endif // 0
 #if 1
 
-class Vk_CommandPool : public RenderApiPrimitive_Vk<Vk_CommandPool_T>
+class Vk_CommandPool : public Vk_RenderApiPrimitive<Vk_CommandPool_T>
 {
 public:
 

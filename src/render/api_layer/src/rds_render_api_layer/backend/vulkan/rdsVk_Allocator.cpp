@@ -1,5 +1,5 @@
 #include "rds_render_api_layer-pch.h"
-#include "rdsAllocator_Vk.h"
+#include "rdsVk_Allocator.h"
 
 #include "rdsRenderer_Vk.h"
 
@@ -22,22 +22,22 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsAllocator_Vk-Impl ---
+#pragma mark --- rdsVk_Allocator-Impl ---
 #endif // 0
 #if 1
 
-Allocator_Vk::Allocator_Vk()
+Vk_Allocator::Vk_Allocator()
 {
 
 }
 
-Allocator_Vk::~Allocator_Vk()
+Vk_Allocator::~Vk_Allocator()
 {
 	destroy();
 }
 
 void 
-Allocator_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks)
+Vk_Allocator::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.instance				= vkInst;
@@ -48,48 +48,52 @@ Allocator_Vk::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_
 }
 
 void 
-Allocator_Vk::destroy()
+Vk_Allocator::destroy()
 {
 	vmaDestroyAllocator(_allocator);
 	_allocator = nullptr;
 }
 
 VkResult
-Allocator_Vk::allocBuf(VkPtr<Vk_Buffer>& outBuf, const VkBufferCreateInfo* bufferInfo, const AllocInfo_Vk* allocInfo)
+Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	VmaAllocationCreateInfo vmaAllocCInfo = {};
-	vmaAllocCInfo.usage = toMemoryUsage(allocInfo->usage);
-	vmaAllocCInfo.flags = toAllocFlags(allocInfo->flags);
-	//vmaAllocCInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	vmaAllocCInfo.usage			= toMemoryUsage(allocInfo->usage);
+	vmaAllocCInfo.flags			= toAllocFlags(allocInfo->flags);
+	vmaAllocCInfo.requiredFlags = vkMemPropFlags;
 	
-	outBuf.reset(nullptr);
-	outBuf._internal_setAlloc(this);
-	auto ret = vmaCreateBuffer(_allocator, bufferInfo, &vmaAllocCInfo, outBuf.ptrForInit(), outBuf._internal_allocHnd(), nullptr);
+	auto ret = vmaCreateBuffer(_allocator, bufferInfo, &vmaAllocCInfo, outBuf, allocHnd, nullptr);
 	Util::throwIfError(ret);
 
 	return ret;
 }
 
 void 
-Allocator_Vk::freeBuf(Vk_Buffer* vkBuf, AllocHnd_Vk* allocHnd)
+Vk_Allocator::freeBuf(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd)
 {
 	vmaDestroyBuffer(_allocator, vkBuf, *allocHnd);
 }
 
 void 
-Allocator_Vk::mapMem(void** outData, AllocHnd_Vk* allocHnd)
+Vk_Allocator::mapMem(void** outData, Vk_AllocHnd* allocHnd)
 {
 	vmaMapMemory(_allocator, *allocHnd, outData);
 }
 
 void 
-Allocator_Vk::unmapMem(AllocHnd_Vk* allocHnd)
+Vk_Allocator::mapMem(u8** outData, Vk_AllocHnd* allocHnd)
+{
+	mapMem(reinCast<void**>(outData), allocHnd);
+}
+
+void 
+Vk_Allocator::unmapMem(Vk_AllocHnd* allocHnd)
 {
 	vmaUnmapMemory(_allocator, *allocHnd);
 }
 
 VmaMemoryUsage 
-Allocator_Vk::toMemoryUsage(RenderMemoryUsage v)
+Vk_Allocator::toMemoryUsage(RenderMemoryUsage v)
 {
 	using SRC = RenderMemoryUsage;
 	switch (v)
@@ -105,7 +109,7 @@ Allocator_Vk::toMemoryUsage(RenderMemoryUsage v)
 }
 
 VmaAllocationCreateFlags
-Allocator_Vk::toAllocFlags(RenderAllocFlags v)
+Vk_Allocator::toAllocFlags(RenderAllocFlags v)
 {
 	using SRC = RenderAllocFlags;
 	using DST = VmaAllocationCreateFlagBits;
@@ -117,13 +121,13 @@ Allocator_Vk::toAllocFlags(RenderAllocFlags v)
 	return flags;
 }
 
-ScopedMemMap_Vk::ScopedMemMap_Vk(u8** outData, VkPtr<Vk_Buffer>* vkp)
+Vk_ScopedMemMap::Vk_ScopedMemMap(u8** outData, Vk_Buffer* vkBuf)
 {
-	_p = vkp;
-	vkp->_internal_alloc()->mapMem(reinCast<void**>(outData), _p->_internal_allocHnd());
+	_p = vkBuf;
+	_p->_internal_alloc()->mapMem(reinCast<void**>(outData), _p->_internal_allocHnd());
 }
 
-ScopedMemMap_Vk::~ScopedMemMap_Vk()
+Vk_ScopedMemMap::~Vk_ScopedMemMap()
 {
 	if (_p)
 	{
@@ -131,7 +135,7 @@ ScopedMemMap_Vk::~ScopedMemMap_Vk()
 	}
 }
 
-void ScopedMemMap_Vk::unmap()
+void Vk_ScopedMemMap::unmap()
 {
 	_p->_internal_alloc()->unmapMem(_p->_internal_allocHnd());
 	_p = nullptr;

@@ -33,10 +33,10 @@ protected:
 	virtual void onUploadToGpu(ByteSpan data, SizeType offset) override;
 
 protected:
-	VkPtr<Vk_Buffer> _vkBuf;
+	Vk_Buffer _vkBuf;
 };
 
-inline Vk_Buffer* RenderGpuBuffer_Vk::vkBuf() { return _vkBuf; }
+inline Vk_Buffer* RenderGpuBuffer_Vk::vkBuf() { return &_vkBuf; }
 
 #endif
 }

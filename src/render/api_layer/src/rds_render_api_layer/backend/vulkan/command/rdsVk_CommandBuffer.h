@@ -12,7 +12,7 @@ namespace rds
 #if 1
 
 class Vk_CommandPool;
-class Vk_CommandBuffer : public RenderApiPrimitive_Vk<Vk_CommandBuffer_T>
+class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T>
 {
 public:
 	Vk_CommandBuffer();

@@ -1,0 +1,447 @@
+#include "rds_render_api_layer-pch.h"
+#include "rdsVk_RenderApiPrimitive.h"
+#include "rdsRenderer_Vk.h"
+#include "rdsVk_Allocator.h"
+
+#if RDS_RENDER_HAS_VULKAN
+
+namespace rds
+{
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive-Impl ---
+#endif // 0
+#if 1
+
+#if 0
+#pragma mark --- Vk_Instance-Impl ---
+#endif // 0
+#if 1
+
+//void Vk_RenderApiPrimitive<Vk_Instance_T>::destroy()
+//{
+//	vkDestroyInstance(_p, Vk_MemoryContext::instance()->allocCallbacks());
+//}
+
+void Vk_Instance::create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator)
+{
+	VkResult ret = vkCreateInstance(pCreateInfo, pAllocator, &_hnd);
+
+	/*
+	Success
+	VK_SUCCESS
+	Failure
+	VK_ERROR_OUT_OF_HOST_MEMORY
+	VK_ERROR_OUT_OF_DEVICE_MEMORY
+	VK_ERROR_INITIALIZATION_FAILED
+	VK_ERROR_LAYER_NOT_PRESENT
+	VK_ERROR_EXTENSION_NOT_PRESENT
+	VK_ERROR_INCOMPATIBLE_DRIVER
+	*/
+	Util::throwIfError(ret);
+}
+
+void Vk_Instance::destroy()
+{
+	if (!_hnd)
+		return;
+
+
+}
+
+#endif
+
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_DebugUtilsMessenger>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	auto func = renderer->extInfo().getInstanceExtFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
+	func(renderer->vkInstance(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_PhysicalDevice>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_PhysicalDevice>::destroy()
+{
+
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Device>-Impl ---
+#endif // 0
+#if 1
+
+void Vk_RenderApiPrimitive<Vk_Device>::destroy()
+{
+	vkDestroyDevice(_p, Vk_MemoryContext::instance()->allocCallbacks());
+}
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Surface>-Impl ---
+#endif // 0
+#if 1
+
+void
+Vk_RenderApiPrimitive<Vk_Surface>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroySurfaceKHR(renderer->vkInstance(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Queue>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_Queue>::destroy()
+{
+
+}
+
+#endif
+
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Swapchain>-Impl ---
+#endif // 0
+#if 1
+
+void
+Vk_RenderApiPrimitive<Vk_Swapchain>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroySwapchainKHR(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Image>-Impl ---
+#endif // 0
+#if 1
+
+void
+Vk_RenderApiPrimitive<Vk_Image>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyImage(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_ImageView>-Impl ---
+#endif // 0
+#if 1
+
+void
+Vk_RenderApiPrimitive<Vk_ImageView>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyImageView(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Framebuffer>-Impl ---
+#endif // 0
+#if 1
+
+void
+Vk_RenderApiPrimitive<Vk_Framebuffer>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyFramebuffer(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_ShaderModule>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_ShaderModule>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyShaderModule(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_RenderPass>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_RenderPass>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyRenderPass(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_PipelineLayout>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_PipelineLayout>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyPipelineLayout(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Pipeline>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_Pipeline>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyPipeline(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_CommandPool_T>-Impl ---
+#endif // 0
+#if 0
+
+void 
+Vk_RenderApiPrimitive<Vk_CommandPool_T>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyCommandPool(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_CommandBuffer_T>-Impl ---
+#endif // 0
+#if 0
+
+void 
+Vk_RenderApiPrimitive<Vk_CommandBuffer_T>::destroy()
+{
+	//auto* renderer = Renderer_Vk::instance();
+	//vkFreeCommandBuffers(renderer->vkDevice(), _p, renderer->allocCallbacks()); 
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Semaphore>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_Semaphore>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroySemaphore(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Fence>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_Fence>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroyFence(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_DeviceMemory>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_DeviceMemory>::destroy()
+{
+	auto* renderer = Renderer_Vk::instance();
+	vkFreeMemory(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_Buffer-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_Buffer::create(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
+{
+	_internal_setAlloc(alloc);
+	auto ret = alloc->allocBuf(&_hnd, &_allocHnd, bufferInfo, allocInfo, vkMemPropFlags);
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_Buffer::create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags)
+{
+	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
+
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType					= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size						= size;
+	bufferInfo.usage					= usage;
+	bufferInfo.sharingMode				= VK_SHARING_MODE_EXCLUSIVE;
+
+	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
+	auto queueCount = vkQueueIndices.get(queueIdices, queueTypeFlags);
+	if (queueCount > 1)
+	{
+		bufferInfo.sharingMode				= VK_SHARING_MODE_CONCURRENT;
+		bufferInfo.queueFamilyIndexCount	= queueCount;
+		bufferInfo.pQueueFamilyIndices		= queueIdices.data();
+	}
+	create(vkAlloc, &bufferInfo, allocInfo, vkMemPropFlags);
+}
+
+void 
+Vk_Buffer::destroy()
+{
+	_alloc->freeBuf(_hnd, _internal_allocHnd());
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_RenderApiPrimitive<Vk_BufferView>-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_RenderApiPrimitive<Vk_BufferView>::destroy()
+{
+	//auto* renderer = Renderer_Vk::instance();
+	//vkDestroyFence(renderer->vkDevice(), _p, renderer->allocCallbacks());
+}
+
+#endif
+
+#if 0
+#pragma mark --- Vk_DescriptorSetLayout-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_DescriptorSetLayout::create(const VkDescriptorSetLayoutCreateInfo* pCreateInfo)
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	auto ret = vkCreateDescriptorSetLayout(vkDev, pCreateInfo, vkAllocCallbacks, &_hnd);
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_DescriptorSetLayout::destroy()
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	vkDestroyDescriptorSetLayout(vkDev, _hnd, vkAllocCallbacks);
+}
+
+#endif
+
+#if 0
+#pragma mark --- Vk_DescriptorPool-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_DescriptorPool::create(const VkDescriptorPoolCreateInfo* pCreateInfo)
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	auto ret = vkCreateDescriptorPool(vkDev, pCreateInfo, vkAllocCallbacks, &_hnd);
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_DescriptorPool::destroy()
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	vkDestroyDescriptorPool(vkDev, _hnd, vkAllocCallbacks);
+}
+
+#endif
+
+#if 0
+#pragma mark --- Vk_DescriptorPool-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_DescriptorSet::create(const VkDescriptorSetAllocateInfo* pAllocateInfo)
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	//auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	auto ret = vkAllocateDescriptorSets(vkDev, pAllocateInfo, &_hnd);
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_DescriptorSet::destroy()
+{
+	
+}
+
+#endif
+
+
+
+#endif
+
+}
+
+#endif

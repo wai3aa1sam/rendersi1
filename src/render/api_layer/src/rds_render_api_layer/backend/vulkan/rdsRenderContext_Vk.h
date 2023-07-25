@@ -8,7 +8,7 @@
 #include "rds_render_api_layer/mesh/rdsEditMesh.h"
 
 #include "command/rdsVk_CommandPool.h"
-#include "rdsRenderFrame_Vk.h"
+#include "rdsVk_RenderFrame.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -95,7 +95,7 @@ public:
 
 	static Vector<u16, s_kIdxCount> makeIndices()
 	{
-		Vector<u16, s_kIdxCount> indices = { 0, 1, 2, 2, 3, 0 };
+		Vector<u16, s_kIdxCount> indices = { 0, 2, 1, 2, 0, 3 };
 		return indices;
 	}
 
@@ -128,6 +128,11 @@ public:
 	}
 };
 
+struct TestUBO
+{
+	Mat4f model, view, proj, mvp;
+};
+
 #if 0
 #pragma mark --- rdsRenderContext_Vk-Decl ---
 #endif // 0
@@ -155,7 +160,7 @@ public:
 	Vk_Queue* vkPresentQueue();
 
 	Vk_CommandBuffer_T* vkCommandBuffer();
-	RenderFrame_Vk& renderFrame();
+	Vk_RenderFrame& renderFrame();
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -197,7 +202,11 @@ protected:
 	void createTestVertexBuffer();
 	void createTestIndexBuffer();
 
-	static constexpr size_t k() { return 4; }
+	void createTestDescriptorSetLayout();
+	void createTestUniformBuffer();
+	void createTestDescriptorPool();
+	void createTestDescriptorSets();
+	void updateTestUBO(u32 curImageIdx);
 
 protected:
 	Renderer_Vk* _renderer = nullptr;
@@ -213,13 +222,19 @@ protected:
 	SwapChainImageViews_Vk		_vkSwapchainImageViews;
 	SwapChainFramebuffers_Vk	_vkSwapchainFramebuffers;
 	
-	VkPtr<Vk_Pipeline>			_testVkPipeline;
-	VkPtr<Vk_RenderPass>		_testVkRenderPass;
-	VkPtr<Vk_PipelineLayout>	_testVkPipelineLayout;
-	VkPtr<Vk_Buffer>			_testVkVtxBuffer;
-	VkPtr<Vk_DeviceMemory>		_testVkVtxBufferMemory;
-	VkPtr<Vk_Buffer>			_testVkIdxBuffer;
-	VkPtr<Vk_DeviceMemory>		_testVkIdxBufferMemory;
+	VkPtr<Vk_Pipeline>				_testVkPipeline;
+	VkPtr<Vk_RenderPass>			_testVkRenderPass;
+	VkPtr<Vk_PipelineLayout>		_testVkPipelineLayout;
+	Vk_Buffer						_testVkVtxBuffer;
+	VkPtr<Vk_DeviceMemory>			_testVkVtxBufferMemory;
+	Vk_Buffer						_testVkIdxBuffer;
+	VkPtr<Vk_DeviceMemory>			_testVkIdxBufferMemory;
+	
+	Vk_DescriptorSetLayout							_testVkDescriptorSetLayout;
+	Vector<Vk_Buffer,	s_kFrameInFlightCount>		_testVkUniformBuffers;
+	Vector<u8*,			s_kFrameInFlightCount>		_memMapUniformBufs;
+	Vk_DescriptorPool								_testVkDescriptorPool;
+	Vector<Vk_DescriptorSet, s_kFrameInFlightCount> _testVkDescriptorSets;
 
 	VkPtr<Vk_Queue>		_vkGraphicsQueue;
 	VkPtr<Vk_Queue>		_vkPresentQueue;
@@ -229,7 +244,7 @@ protected:
 	//Vk_CommandPool _vkTransferCommandPool;
 	//Vector<Vk_CommandBuffer,		s_kFrameInFlightCount>	_vkCommandBuffers;
 
-	Vector<RenderFrame_Vk, s_kFrameInFlightCount> _renderFrames;
+	Vector<Vk_RenderFrame, s_kFrameInFlightCount> _renderFrames;
 	Vk_CommandBuffer* _curGraphicsCmdBuf = nullptr;
 
 	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_imageAvailableVkSmps;
@@ -248,7 +263,7 @@ inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return _vkPresentQueue; }
 
 inline Vk_CommandBuffer_T* RenderContext_Vk::vkCommandBuffer() { return _curGraphicsCmdBuf->hnd(); }
 
-inline RenderFrame_Vk& RenderContext_Vk::renderFrame() { return _renderFrames[_curFrameIdx]; }
+inline Vk_RenderFrame& RenderContext_Vk::renderFrame() { return _renderFrames[_curFrameIdx]; }
 
 
 #endif

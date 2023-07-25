@@ -35,7 +35,7 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 	_renderFrames.resize(s_kFrameInFlightCount);
 	for (auto& e : _renderFrames)
 	{
-		e.reset(RDS_NEW(RenderFrame_Vk)());
+		e.reset(RDS_NEW(Vk_RenderFrame)());
 	}
 }
 

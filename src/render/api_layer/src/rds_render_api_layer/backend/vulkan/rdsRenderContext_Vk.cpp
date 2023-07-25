@@ -64,13 +64,19 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	createSyncObjects();
 
+	createTestDescriptorSetLayout();
+	createTestUniformBuffer();
+	createTestDescriptorPool();
+	createTestDescriptorSets();
+	updateTestUBO(_curImageIdx);
+
 	createTestRenderPass();
 	createTestGraphicsPipeline();
 	createTestVertexBuffer();
 	createTestIndexBuffer();
 
 	createSwapchain(_swapchainInfo);
-	
+
 	_curGraphicsCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
 }
@@ -221,9 +227,9 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 		return;
 	}
 
-	VkPtr<Vk_Buffer> vkStageBuf;
+	Vk_Buffer vkStageBuf;
 
-	AllocInfo_Vk allocInfo = {};
+	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage  = RenderMemoryUsage::CpuOnly;
 	allocInfo.flags |= RenderAllocFlags::HostWrite;
 	Util::createBuffer(vkStageBuf, allocVk, &allocInfo, totalSize
@@ -235,7 +241,7 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 		auto chunkCount		= chunks.size();
 
 		u8* mappedData = nullptr;
-		ScopedMemMap_Vk mm = { &mappedData, &vkStageBuf };
+		Vk_ScopedMemMap mm = { &mappedData, &vkStageBuf };
 
 		RDS_CORE_ASSERT(chunkCount == 1, "not yet handle > 1");
 		for (size_t i = 0; i < chunkCount; i++)
@@ -254,7 +260,7 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 	{
 		auto& cmd = inlineUploadBuffer->uploadBufCmds[iCmd];
 		auto* dstBuf = sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
-		transferCmdBuf->cmd_CopyBuffer(dstBuf->vkBuf(), vkStageBuf, cmd->data.size(), 0, inlineUploadBuffer->bufOffsets[iCmd]);		// dst offset already handled in RenderGpuBuffer::onUpload()
+		transferCmdBuf->cmd_CopyBuffer(dstBuf->vkBuf(), &vkStageBuf, cmd->data.size(), 0, inlineUploadBuffer->bufOffsets[iCmd]);		// dst offset already handled in RenderGpuBuffer::onUpload()
 		RDS_ASSERT(!BitUtil::has(cmd->queueTypeflags, QueueTypeFlags::Compute), "not yet support");
 	}
 	
@@ -286,6 +292,8 @@ RenderContext_Vk::beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 	RDS_PROFILE_SCOPED();
 
 	renderFrame().reset();
+
+	updateTestUBO(imageIdx);
 	_curGraphicsCmdBuf->beginRecord(vkGraphicsQueue(), VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 }
 
@@ -363,15 +371,20 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 	bindPipeline(vkCmdBuf, _testVkPipeline);
 
 	{
-		VkBuffer		vertexBuffers[] = { _testVkVtxBuffer };
-		VkDeviceSize	offsets[]		= { 0 };
+		Vk_Buffer_T* vertexBuffers[]	= { _testVkVtxBuffer.hnd() };
+		VkDeviceSize offsets[]			= { 0 };
 		vkCmdBindVertexBuffers(vkCmdBuf, 0, 1, vertexBuffers, offsets);
 	}
 
 	{
-		vkCmdBindIndexBuffer(vkCmdBuf, _testVkIdxBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(vkCmdBuf, _testVkIdxBuffer.hnd(), 0, VK_INDEX_TYPE_UINT16);
 	}
 
+	{
+		Vk_DescriptorSet_T* descSets[] = { _testVkDescriptorSets[imageIdx].hnd() };
+		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout, 0, 1, descSets, 0, nullptr);
+	}
+	
 	//u32 vtxCount = TestVertex::s_kVtxCount;
 	u32 idxCount = TestVertex::s_kIdxCount;
 	vkCmdDrawIndexed(vkCmdBuf, idxCount, 1, 0, 0, 0);
@@ -620,8 +633,8 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	VkPtr<Vk_ShaderModule> psModule;
 
 	{
-		Util::createShaderModule(vsModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle1.hlsl.vert.spv", vkDevice);
-		Util::createShaderModule(psModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle1.hlsl.frag.spv", vkDevice);
+		Util::createShaderModule(vsModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle2.hlsl.vert.spv", vkDevice);
+		Util::createShaderModule(psModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle2.hlsl.frag.spv", vkDevice);
 
 		vsStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vsStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -694,17 +707,17 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	// rasterizer
 	VkPipelineRasterizationStateCreateInfo rasterizer = {};
 	{
-		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rasterizer.depthClampEnable = VK_FALSE; // true when no want to discard out bound pixel, useful for shawdow map
-		rasterizer.rasterizerDiscardEnable = VK_FALSE;	// true then no gemotry pass through the rasterizer stage
-		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-		rasterizer.lineWidth = 1.0f;		// check gpu features
-		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		rasterizer.depthBiasEnable = VK_FALSE;
-		rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-		rasterizer.depthBiasClamp = 0.0f; // Optional
-		rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+		rasterizer.sType					= VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizer.depthClampEnable			= VK_FALSE; // true when no want to discard out bound pixel, useful for shawdow map
+		rasterizer.rasterizerDiscardEnable	= VK_FALSE;	// true then no gemotry pass through the rasterizer stage
+		rasterizer.polygonMode				= VK_POLYGON_MODE_FILL;
+		rasterizer.lineWidth				= 1.0f;		// check gpu features
+		rasterizer.cullMode					= VK_CULL_MODE_BACK_BIT;
+		rasterizer.frontFace				= VK_FRONT_FACE_CLOCKWISE;	// VK_FRONT_FACE_CLOCKWISE VK_FRONT_FACE_COUNTER_CLOCKWISE
+		rasterizer.depthBiasEnable			= VK_FALSE;
+		rasterizer.depthBiasConstantFactor	= 0.0f; // Optional
+		rasterizer.depthBiasClamp			= 0.0f; // Optional
+		rasterizer.depthBiasSlopeFactor		= 0.0f; // Optional
 	}
 
 	// Multisampling
@@ -751,11 +764,13 @@ RenderContext_Vk::createTestGraphicsPipeline()
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	{
-		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 0;		// Optional
-		pipelineLayoutInfo.pSetLayouts = nullptr;	// Optional
-		pipelineLayoutInfo.pushConstantRangeCount = 0;		// Optional
-		pipelineLayoutInfo.pPushConstantRanges = nullptr;	// Optional
+		Vk_DescriptorSetLayout_T* setLayouts[] = { _testVkDescriptorSetLayout.hnd()};
+
+		pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.setLayoutCount			= ArraySize<decltype(setLayouts)>;	// Optional
+		pipelineLayoutInfo.pSetLayouts				= setLayouts;						// Optional
+		pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
+		pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
 		auto ret = vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, vkAllocCallbacks, _testVkPipelineLayout.ptrForInit());
 		Util::throwIfError(ret);
 	}
@@ -793,35 +808,10 @@ RenderContext_Vk::createTestVertexBuffer()
 	auto vtxData = TestVertex::make2();
 	auto bufSize = vtxData.size();
 	
-	VkPtr<Vk_Buffer>			_vkStagingBuf;
-
-	#if 0
-	VkPtr<Vk_DeviceMemory>		_vkStagingBufMem;
-
-	Util::createBuffer(_vkStagingBuf.ptrForInit(), _vkStagingBufMem.ptrForInit(), bufSize
-		, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-		, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-		, VkQueueTypeFlag::Graphics | VkQueueTypeFlag::Transfer);
-
-	void* mappedData = nullptr;
-	VkMemoryMapFlags vkMemMapflag = {};
-
-	VkDeviceSize offset = 0;
-	vkMapMemory(vkDev, _vkStagingBufMem, offset, bufSize, vkMemMapflag, &mappedData);	// TODO: make a ScopedMemMap_Vk
-	memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vtxData.data()), bufSize);
-	vkUnmapMemory(vkDev, _vkStagingBufMem);
-
-	Util::createBuffer(_testVkVtxBuffer.ptrForInit(), _testVkVtxBufferMemory.ptrForInit(), bufSize
-		, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-		, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-		, VkQueueTypeFlag::Graphics);
-
-	Util::copyBuffer(_testVkVtxBuffer, _vkStagingBuf, bufSize, _vkTransferCommandPool, _vkTransferQueue);
-
-	#else
+	Vk_Buffer			_vkStagingBuf;
 
 	{
-		AllocInfo_Vk allocInfo;
+		Vk_AllocInfo allocInfo;
 		allocInfo.usage  = RenderMemoryUsage::CpuOnly;
 		allocInfo.flags |= RenderAllocFlags::HostWrite;
 		Util::createBuffer(_vkStagingBuf, allocVk, &allocInfo, bufSize
@@ -829,21 +819,19 @@ RenderContext_Vk::createTestVertexBuffer()
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
 		u8* mappedData = nullptr;
-		ScopedMemMap_Vk mm = { &mappedData, &_vkStagingBuf };
+		Vk_ScopedMemMap mm = { &mappedData, &_vkStagingBuf };
 		memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vtxData.data()), bufSize);
 	}
 
 	{
-		AllocInfo_Vk allocInfo;
+		Vk_AllocInfo allocInfo;
 		allocInfo.usage  = RenderMemoryUsage::GpuOnly;
 		Util::createBuffer(_testVkVtxBuffer, allocVk, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		Util::copyBuffer(_testVkVtxBuffer, _vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
+		Util::copyBuffer(&_testVkVtxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
 	}
-
-	#endif // 0
 
 }
 
@@ -857,10 +845,10 @@ RenderContext_Vk::createTestIndexBuffer()
 	auto indices = TestVertex::makeIndices();
 	auto bufSize = sizeof(indices[0]) * indices.size();
 
-	VkPtr<Vk_Buffer>			_vkStagingBuf;
+	Vk_Buffer			_vkStagingBuf;
 
 	{
-		AllocInfo_Vk allocInfo;
+		Vk_AllocInfo allocInfo;
 		allocInfo.usage  = RenderMemoryUsage::CpuOnly;
 		allocInfo.flags |= RenderAllocFlags::HostWrite;
 		Util::createBuffer(_vkStagingBuf, allocVk, &allocInfo, bufSize
@@ -868,21 +856,142 @@ RenderContext_Vk::createTestIndexBuffer()
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
 		u8* mappedData = nullptr;
-		ScopedMemMap_Vk mm = { &mappedData, &_vkStagingBuf };
+		Vk_ScopedMemMap mm = { &mappedData, &_vkStagingBuf };
 		memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(indices.data()), bufSize);
 	}
 
 	{
-		AllocInfo_Vk allocInfo;
+		Vk_AllocInfo allocInfo;
 		allocInfo.usage  = RenderMemoryUsage::GpuOnly;
 		Util::createBuffer(_testVkIdxBuffer, allocVk, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
+		Util::copyBuffer(&_testVkIdxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
 	}
 
-	Util::copyBuffer(_testVkIdxBuffer, _vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
+	Util::copyBuffer(&_testVkIdxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
+}
+
+void 
+RenderContext_Vk::createTestDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+	uboLayoutBinding.binding			= 0;
+	uboLayoutBinding.descriptorType		= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayoutBinding.descriptorCount	= 1;
+	uboLayoutBinding.stageFlags			= VK_SHADER_STAGE_VERTEX_BIT;
+	uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings	= &uboLayoutBinding;
+
+	_testVkDescriptorSetLayout.create(&layoutInfo);
+}
+
+void 
+RenderContext_Vk::createTestUniformBuffer()
+{
+	auto* allocVk			= renderer()->memoryContext()->allocVk();
+	VkDeviceSize bufferSize = sizeof(TestUBO);
+
+	Vk_AllocInfo allocInfo;
+	allocInfo.usage  = RenderMemoryUsage::CpuToGpu;
+
+	_testVkUniformBuffers.resize(s_kFrameInFlightCount);
+	_memMapUniformBufs.resize(s_kFrameInFlightCount);
+	for (size_t i = 0; i < s_kFrameInFlightCount; ++i)
+	{
+		auto& uniBuf = _testVkUniformBuffers[i];
+		auto& memMap = _memMapUniformBufs[i];
+
+		uniBuf.create(allocVk, &allocInfo, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, QueueTypeFlags::Graphics);
+		allocVk->mapMem(&memMap, uniBuf._internal_allocHnd());
+	}
+}
+
+void 
+RenderContext_Vk::createTestDescriptorPool()
+{
+	VkDescriptorPoolSize poolSize = {};
+	poolSize.type				= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount	= sCast<u32>(s_kFrameInFlightCount);
+
+	VkDescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount	= 1;
+	poolInfo.pPoolSizes		= &poolSize;
+	poolInfo.maxSets		= sCast<u32>(s_kFrameInFlightCount);
+	//poolInfo.flags			= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+	_testVkDescriptorPool.create(&poolInfo);
+}
+
+void 
+RenderContext_Vk::createTestDescriptorSets()
+{
+	auto* vkDev = renderer()->vkDevice();
+
+	/*Vector<Vk_DescriptorSetLayout_T*, s_kFrameInFlightCount> layouts;
+	layouts.resize(s_kFrameInFlightCount);
+	for (auto& e : layouts)
+	{
+		e = _testVkDescriptorSetLayout.hnd();
+	}*/
+
+	Vk_DescriptorSetLayout_T* layouts[] = { _testVkDescriptorSetLayout.hnd() };
+	VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType					= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool		= _testVkDescriptorPool.hnd();
+	allocInfo.descriptorSetCount	= 1;
+	allocInfo.pSetLayouts			= layouts;
+	
+	_testVkDescriptorSets.resize(s_kFrameInFlightCount);
+	for (auto& e : _testVkDescriptorSets)
+	{
+		e.create(&allocInfo);
+	}
+
+	for (size_t i = 0; i < s_kFrameInFlightCount; i++) 
+	{
+		VkDescriptorBufferInfo bufferInfo = {};
+		bufferInfo.buffer	= _testVkUniformBuffers[i].hnd();
+		bufferInfo.offset	= 0;
+		bufferInfo.range	= sizeof(TestUBO);
+
+		VkWriteDescriptorSet descriptorWrite = {};
+		descriptorWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet				= _testVkDescriptorSets[i].hnd();
+		descriptorWrite.dstBinding			= 0;
+		descriptorWrite.dstArrayElement		= 0;
+		descriptorWrite.descriptorType		= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount		= 1;
+		descriptorWrite.pBufferInfo			= &bufferInfo;
+		descriptorWrite.pImageInfo			= nullptr; // Optional
+		descriptorWrite.pTexelBufferView	= nullptr; // Optional
+
+		vkUpdateDescriptorSets(vkDev, 1, &descriptorWrite, 0, nullptr);
+	}
+}
+
+void 
+RenderContext_Vk::updateTestUBO(u32 curImageIdx)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	TestUBO ubo = {};
+	ubo.model		= Mat4f::s_rotateZ(math::radians(90.0f) * time);
+	ubo.view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
+	ubo.proj		= Mat4f::s_perspective(math::radians(45.0f), _framebufferSize.x / _framebufferSize.y, 0.1f, 10.0f);
+	ubo.proj[1][1] *= -1;
+	ubo.mvp			= ubo.proj * ubo.view * ubo.model;
+
+	memory_copy(_memMapUniformBufs[curImageIdx], reinCast<u8*>(&ubo), sizeof(ubo));
 }
 
 

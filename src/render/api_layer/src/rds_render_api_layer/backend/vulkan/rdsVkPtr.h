@@ -2,7 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rdsRenderApi_Include_Vk.h"
-#include "rdsRenderApiPrimitive_Vk.h"
+#include "rdsVk_RenderApiPrimitive.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -13,7 +13,7 @@ namespace rds
 #if 1
 
 template<class T>
-class VkPtr : public RenderApiPrimitive_Vk<T>
+class VkPtr : public Vk_RenderApiPrimitive<T>
 {
 public:
 	VkPtr() = default;

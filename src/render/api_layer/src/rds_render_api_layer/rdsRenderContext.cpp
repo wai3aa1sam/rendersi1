@@ -82,7 +82,8 @@ RenderContext::setFramebufferSize(const Vec2f& newSize)
 void
 RenderContext::onCreate(const CreateDesc& cDesc)
 {
-
+	_framebufferSize.x = cDesc.window->clientRect().w;
+	_framebufferSize.y = cDesc.window->clientRect().h;
 }
 
 void

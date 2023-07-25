@@ -50,7 +50,7 @@
 #if RDS_RENDER_HAS_VULKAN
 
 #include "rdsRenderApi_Include_Vk.h"
-#include "rdsRenderApiPrimitive_Vk.h"
+#include "rdsVk_RenderApiPrimitive.h"
 
 #if 0
 #pragma mark --- rdsGpuProfilerContext_Vk-Impl ---

@@ -2,8 +2,8 @@
 
 #include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
 #include "rds_render_api_layer/rdsRenderer.h"
-#include "rdsMemoryContext_Vk.h"
-#include "rdsRenderFrame_Vk.h" 
+#include "rdsVk_MemoryContext.h"
+#include "rdsVk_RenderFrame.h" 
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -30,7 +30,7 @@ public:
 	Renderer_Vk();
 	virtual ~Renderer_Vk();
 
-	MemoryContext_Vk*				memoryContext();
+	Vk_MemoryContext*				memoryContext();
 	const VkAllocationCallbacks*	allocCallbacks();
 
 	Vk_Instance_T*			vkInstance();
@@ -41,7 +41,7 @@ public:
 	const SwapchainAvailableInfo_Vk&	swapchainAvailableInfo()	const;
 	QueueFamilyIndices&					queueFamilyIndices();
 
-	RenderFrame_Vk* renderFrame();
+	Vk_RenderFrame* renderFrame();
 
 public:
 
@@ -63,7 +63,7 @@ private:
 	i64	 _rateVkPhyDevice		(const RenderAdapterInfo& info);
 
 private:
-	MemoryContext_Vk			_memoryContextVk;
+	Vk_MemoryContext			_memoryContextVk;
 
 	ExtensionInfo_Vk			_extInfo;
 	SwapchainAvailableInfo_Vk	_swapchainAvaliableInfo;
@@ -78,7 +78,7 @@ private:
 	//VkPtr<Vk_Queue>				_vkGraphicsQueue;
 	//VkPtr<Vk_Queue>				_vkPresentQueue;
 
-	Vector<UPtr<RenderFrame_Vk>, s_kFrameInFlightCount> _renderFrames;
+	Vector<UPtr<Vk_RenderFrame>, s_kFrameInFlightCount> _renderFrames;
 
 };
 
@@ -91,7 +91,7 @@ private:
 
 inline Renderer_Vk* Renderer_Vk::instance() { return sCast<Renderer_Vk*>(s_instance); }
 
-inline MemoryContext_Vk*			Renderer_Vk::memoryContext()	{ return &_memoryContextVk; }
+inline Vk_MemoryContext*			Renderer_Vk::memoryContext()	{ return &_memoryContextVk; }
 inline const VkAllocationCallbacks*	Renderer_Vk::allocCallbacks()	{ return _memoryContextVk.allocCallbacks(); }
 
 inline Vk_Instance_T*		Renderer_Vk::vkInstance()				{ return _vkInstance.hnd(); }
@@ -103,7 +103,7 @@ inline const SwapchainAvailableInfo_Vk& Renderer_Vk::swapchainAvailableInfo()	co
 
 inline QueueFamilyIndices&		Renderer_Vk::queueFamilyIndices()	{ return _queueFamilyIndices; }
 
-inline RenderFrame_Vk* Renderer_Vk::renderFrame() { return _renderFrames[0]; }
+inline Vk_RenderFrame* Renderer_Vk::renderFrame() { return _renderFrames[0]; }
 
 
 #endif

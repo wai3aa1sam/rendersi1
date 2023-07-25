@@ -137,7 +137,7 @@ Vk_CommandBuffer::cmd_CopyBuffer(Vk_Buffer* dst, Vk_Buffer* src, VkDeviceSize si
 	copyRegion.srcOffset	= srcOffset; // Optional
 	copyRegion.dstOffset	= dstOffset; // Optional
 	copyRegion.size			= size;
-	vkCmdCopyBuffer(hnd(), src, dst, 1, &copyRegion);
+	vkCmdCopyBuffer(hnd(), src->hnd(), dst->hnd(), 1, &copyRegion);
 }
 
 

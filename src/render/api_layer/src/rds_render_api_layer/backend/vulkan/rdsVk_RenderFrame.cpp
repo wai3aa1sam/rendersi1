@@ -1,5 +1,5 @@
 #include "rds_render_api_layer-pch.h"
-#include "rdsRenderFrame_Vk.h"
+#include "rdsVk_RenderFrame.h"
 
 #include "rdsRenderer_Vk.h"
 
@@ -8,28 +8,28 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsRenderFrame_Vk-Impl ---
+#pragma mark --- rdsVk_RenderFrame-Impl ---
 #endif // 0
 #if 1
 
-//RenderFrame_Vk* RenderFrame_Vk::instance() { return /*rdsRenderer_Vk::instance()->RenderFrame();*/ nullptr; }
+//Vk_RenderFrame* Vk_RenderFrame::instance() { return /*rdsRenderer_Vk::instance()->RenderFrame();*/ nullptr; }
 
-RenderFrame_Vk::RenderFrame_Vk()
+Vk_RenderFrame::Vk_RenderFrame()
 {
 	
 }
 
-RenderFrame_Vk::~RenderFrame_Vk()
+Vk_RenderFrame::~Vk_RenderFrame()
 {
 	destroy();
 }
 
-RenderFrame_Vk::RenderFrame_Vk(RenderFrame_Vk&& rhs)
+Vk_RenderFrame::Vk_RenderFrame(Vk_RenderFrame&& rhs)
 {
 	operator=(nmsp::move(rhs));
 }
 
-void RenderFrame_Vk::operator=(RenderFrame_Vk&& rhs)
+void Vk_RenderFrame::operator=(Vk_RenderFrame&& rhs)
 {
 	if (this == &rhs)
 		return;
@@ -40,7 +40,7 @@ void RenderFrame_Vk::operator=(RenderFrame_Vk&& rhs)
 }
 
 void 
-RenderFrame_Vk::create()
+Vk_RenderFrame::create()
 {
 	destroy();
 
@@ -53,7 +53,7 @@ RenderFrame_Vk::create()
 }
 
 void 
-RenderFrame_Vk::destroy()
+Vk_RenderFrame::destroy()
 {
 	destroyCommandPool(_graphicsCommandPools);
 	destroyCommandPool(_computeCommandPools);
@@ -61,13 +61,13 @@ RenderFrame_Vk::destroy()
 }
 
 void 
-RenderFrame_Vk::reset()
+Vk_RenderFrame::reset()
 {
 	resetCommandPools();
 }
 
 void 
-RenderFrame_Vk::resetCommandPools()
+Vk_RenderFrame::resetCommandPools()
 {
 	resetCommandPool(QueueTypeFlags::Graphics);
 	resetCommandPool(QueueTypeFlags::Compute);
@@ -75,7 +75,7 @@ RenderFrame_Vk::resetCommandPools()
 }
 
 void 
-RenderFrame_Vk::resetCommandPool(QueueTypeFlags queueType)
+Vk_RenderFrame::resetCommandPool(QueueTypeFlags queueType)
 {
 	using SRC = QueueTypeFlags;
 
@@ -89,7 +89,7 @@ RenderFrame_Vk::resetCommandPool(QueueTypeFlags queueType)
 }
 
 Vk_CommandBuffer*
-RenderFrame_Vk::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel)
+Vk_RenderFrame::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel)
 {
 	using SRC = QueueTypeFlags;
 
@@ -107,7 +107,7 @@ RenderFrame_Vk::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLe
 }
 
 void 
-RenderFrame_Vk::createCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 queueIdx)
+Vk_RenderFrame::createCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 queueIdx)
 {
 	cmdPool.reserve(s_kThreadCount);
 	for (size_t i = 0; i < s_kThreadCount; i++)
@@ -118,7 +118,7 @@ RenderFrame_Vk::createCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPoo
 }
 
 void 
-RenderFrame_Vk::destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool)
+Vk_RenderFrame::destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool)
 {
 	cmdPool.clear();
 }

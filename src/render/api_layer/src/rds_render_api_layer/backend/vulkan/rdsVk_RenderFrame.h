@@ -9,11 +9,11 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsRenderFrame_Vk-Decl ---
+#pragma mark --- rdsVk_RenderFrame-Decl ---
 #endif // 0
 #if 1
 
-class RenderFrame_Vk : public NonCopyable	// not a derived class of RenderFrame
+class Vk_RenderFrame : public NonCopyable	// not a derived class of RenderFrame
 {
 public:
 	using Util = RenderApiUtil_Vk;
@@ -24,11 +24,11 @@ public:
 	static constexpr SizeType s_kFrameInFlightCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
 
 public:
-	RenderFrame_Vk();
-	~RenderFrame_Vk();
+	Vk_RenderFrame();
+	~Vk_RenderFrame();
 
-	RenderFrame_Vk(RenderFrame_Vk&& rhs);
-	void operator=(RenderFrame_Vk&& rhs);
+	Vk_RenderFrame(Vk_RenderFrame&& rhs);
+	void operator=(Vk_RenderFrame&& rhs);
 
 	void create();
 	void destroy();
@@ -50,11 +50,13 @@ protected:
 	Vector<Vk_CommandPool, s_kThreadCount> _graphicsCommandPools;
 	Vector<Vk_CommandPool, s_kThreadCount> _computeCommandPools;
 	Vector<Vk_CommandPool, s_kThreadCount> _transferCommandPools;
+
+	//Vector<Vk_DescriptorPool, s_kThreadCount> // use VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, only reset the pool
 };
 
 inline
 Vk_CommandPool& 
-RenderFrame_Vk::commandPool(QueueTypeFlags queueType)
+Vk_RenderFrame::commandPool(QueueTypeFlags queueType)
 {
 	using SRC = QueueTypeFlags;
 
