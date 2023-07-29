@@ -111,10 +111,24 @@ Vk_RenderApiPrimitive<Vk_Surface>::destroy()
 #endif // 0
 #if 1
 
-void 
-Vk_RenderApiPrimitive<Vk_Queue>::destroy()
-{
+//void 
+//Vk_RenderApiPrimitive<Vk_Queue>::destroy()
+//{
+//
+//}
 
+void 
+Vk_Queue::create(u32 familyIdx, Vk_Device* vkDevice)
+{
+	vkGetDeviceQueue(vkDevice, familyIdx, _queueIdx, &_hnd);
+	_familyIdx = familyIdx;
+}
+
+void 
+Vk_Queue::destroy()
+{
+	_familyIdx	= ~u32(0);
+	_queueIdx	= 0;
 }
 
 #endif
@@ -135,15 +149,65 @@ Vk_RenderApiPrimitive<Vk_Swapchain>::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Image>-Impl ---
+#pragma mark --- rdsVk_Image-Impl ---
 #endif // 0
 #if 1
 
-void
-Vk_RenderApiPrimitive<Vk_Image>::destroy()
+//void
+//Vk_RenderApiPrimitive<Vk_Image>::destroy()
+//{
+//	auto* renderer = Renderer_Vk::instance();
+//	vkDestroyImage(renderer->vkDevice(), _p, renderer->allocCallbacks());
+//}
+
+void 
+Vk_Image::create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyImage(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	_internal_setAlloc(vkAlloc);
+	auto ret = vkAlloc->allocImage(&_hnd, &_allocHnd, imageInfo, allocInfo, vkMemPropFlags);
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_Image::create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags)
+{
+	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
+
+	VkImageCreateInfo imageInfo = {};
+	imageInfo.sType			= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType		= VK_IMAGE_TYPE_2D;
+	imageInfo.extent.width	= width;
+	imageInfo.extent.height	= height;
+	imageInfo.extent.depth	= 1;
+	imageInfo.mipLevels		= 1;
+	imageInfo.arrayLayers	= 1;
+	imageInfo.format		= vkFormat;
+	imageInfo.tiling		= vkTiling;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.usage			= usage;
+	imageInfo.sharingMode	= VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.samples		= VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.flags			= 0; // Optional
+
+	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
+	auto queueCount = vkQueueIndices.get(queueIdices, queueTypeFlags);
+	if (queueCount > 1)
+	{
+		imageInfo.sharingMode			= VK_SHARING_MODE_CONCURRENT;
+		imageInfo.queueFamilyIndexCount	= queueCount;
+		imageInfo.pQueueFamilyIndices	= queueIdices.data();
+	}
+
+	create(vkAlloc, &imageInfo, allocInfo, vkMemPropFlags);
+}
+
+void 
+Vk_Image::destroy()
+{
+	if (!_hnd)
+		return;
+	_alloc->freeImage(_hnd, &_allocHnd);
+	_hnd = nullptr;
 }
 
 #endif
@@ -438,10 +502,8 @@ Vk_DescriptorSet::destroy()
 
 #endif
 
-
+}
 
 #endif
-
-}
 
 #endif

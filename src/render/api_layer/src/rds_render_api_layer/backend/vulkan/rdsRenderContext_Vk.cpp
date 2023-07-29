@@ -53,13 +53,10 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 		_renderFrames[i].create();
 	}
 
-	u32	graphicsQueueIdx = 0;
-	u32	presentQueueIdx = 0;
-	u32	transferQueueIdx = 0;
-	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().graphics.value(), graphicsQueueIdx, _vkGraphicsQueue.ptrForInit());
-	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().present.value(), presentQueueIdx, _vkPresentQueue.ptrForInit());
-	vkGetDeviceQueue(vkDevice, _renderer->queueFamilyIndices().transfer.value(), transferQueueIdx, _vkTransferQueue.ptrForInit());
-
+	_vkGraphicsQueue.create(_renderer->queueFamilyIndices().graphics.value(), vkDevice);
+	 _vkPresentQueue.create(_renderer->queueFamilyIndices().present.value(),  vkDevice);
+	_vkTransferQueue.create(_renderer->queueFamilyIndices().transfer.value(), vkDevice);
+	
 	createSwapchainInfo(_swapchainInfo, _renderer->swapchainAvailableInfo(), cDesc.window->clientRect());
 
 	createSyncObjects();
@@ -76,6 +73,8 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	createTestIndexBuffer();
 
 	createSwapchain(_swapchainInfo);
+
+	createTestTextureImage();
 
 	_curGraphicsCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
@@ -174,7 +173,7 @@ RenderContext_Vk::onEndRender()
 		presentInfo.pImageIndices = imageIndices;
 		presentInfo.pResults = nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
 
-		auto ret = vkQueuePresentKHR(_vkPresentQueue, &presentInfo);
+		auto ret = vkQueuePresentKHR(_vkPresentQueue.hnd(), &presentInfo);
 		/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
 		{
 		createSwapchain();
@@ -217,7 +216,7 @@ RenderContext_Vk::onUploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf)
 void 
 RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploadBuf)
 {
-	auto* allocVk	= Renderer_Vk::instance()->memoryContext()->allocVk();
+	auto* vkAlloc	= Renderer_Vk::instance()->memoryContext()->vkAlloc();
 
 	auto totalSize					= rdfUploadBuf.totalDataSize();
 	const auto* inlineUploadBuffer	= rdfUploadBuf.getInlineUploadBuffer();
@@ -232,7 +231,7 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage  = RenderMemoryUsage::CpuOnly;
 	allocInfo.flags |= RenderAllocFlags::HostWrite;
-	Util::createBuffer(vkStageBuf, allocVk, &allocInfo, totalSize
+	Util::createBuffer(vkStageBuf, vkAlloc, &allocInfo, totalSize
 		, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 		, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
@@ -240,8 +239,8 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 		const auto& chunks	= inlineUploadBuffer->bufData.chunks();
 		auto chunkCount		= chunks.size();
 
-		u8* mappedData = nullptr;
-		Vk_ScopedMemMap mm = { &mappedData, &vkStageBuf };
+		Vk_ScopedMemMapBuf mm = { &vkStageBuf };
+		u8* mappedData = mm.data<u8*>();
 
 		RDS_CORE_ASSERT(chunkCount == 1, "not yet handle > 1");
 		for (size_t i = 0; i < chunkCount; i++)
@@ -253,8 +252,8 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 	}
 
 	auto* transferCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	transferCmdBuf->beginRecord(_vkTransferQueue, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	
+	transferCmdBuf->beginRecord(&_vkTransferQueue, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
 	auto CmdCount = inlineUploadBuffer->uploadBufCmds.size();
 	for (size_t iCmd = 0; iCmd < CmdCount; iCmd++)
 	{
@@ -263,7 +262,7 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 		transferCmdBuf->cmd_CopyBuffer(dstBuf->vkBuf(), &vkStageBuf, cmd->data.size(), 0, inlineUploadBuffer->bufOffsets[iCmd]);		// dst offset already handled in RenderGpuBuffer::onUpload()
 		RDS_ASSERT(!BitUtil::has(cmd->queueTypeflags, QueueTypeFlags::Compute), "not yet support");
 	}
-	
+
 	{
 		static bool v = false;
 		if (!v)
@@ -317,8 +316,8 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf)
 	}
 
 	_curGraphicsCmdBuf->submit(_inFlightVkFences[_curFrameIdx]
-								, _imageAvailableVkSmps[_curFrameIdx],	VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-								, _renderCompletedVkSmps[_curFrameIdx], VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+		, _imageAvailableVkSmps[_curFrameIdx],	VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+		, _renderCompletedVkSmps[_curFrameIdx], VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 }
 
 void
@@ -384,7 +383,7 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 		Vk_DescriptorSet_T* descSets[] = { _testVkDescriptorSets[imageIdx].hnd() };
 		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout, 0, 1, descSets, 0, nullptr);
 	}
-	
+
 	//u32 vtxCount = TestVertex::s_kVtxCount;
 	u32 idxCount = TestVertex::s_kIdxCount;
 	vkCmdDrawIndexed(vkCmdBuf, idxCount, 1, 0, 0, 0);
@@ -803,34 +802,33 @@ RenderContext_Vk::createTestVertexBuffer()
 {
 	//auto* vkAllocCallbacks	= renderer()->allocCallbacks();
 	//auto* vkDev		= renderer()->vkDevice();
-	auto* allocVk	= renderer()->memoryContext()->allocVk();
+	auto* vkAlloc	= renderer()->memoryContext()->vkAlloc();
 
 	auto vtxData = TestVertex::make2();
 	auto bufSize = vtxData.size();
-	
+
 	Vk_Buffer			_vkStagingBuf;
 
 	{
 		Vk_AllocInfo allocInfo;
 		allocInfo.usage  = RenderMemoryUsage::CpuOnly;
 		allocInfo.flags |= RenderAllocFlags::HostWrite;
-		Util::createBuffer(_vkStagingBuf, allocVk, &allocInfo, bufSize
+		Util::createBuffer(_vkStagingBuf, vkAlloc, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		u8* mappedData = nullptr;
-		Vk_ScopedMemMap mm = { &mappedData, &_vkStagingBuf };
-		memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(vtxData.data()), bufSize);
+		Vk_ScopedMemMapBuf mm = { &_vkStagingBuf };
+		memory_copy(mm.data<u8*>(), reinCast<u8*>(vtxData.data()), bufSize);
 	}
 
 	{
 		Vk_AllocInfo allocInfo;
 		allocInfo.usage  = RenderMemoryUsage::GpuOnly;
-		Util::createBuffer(_testVkVtxBuffer, allocVk, &allocInfo, bufSize
+		Util::createBuffer(_testVkVtxBuffer, vkAlloc, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		Util::copyBuffer(&_testVkVtxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
+		Util::copyBuffer(&_testVkVtxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), &_vkTransferQueue);
 	}
 
 }
@@ -840,7 +838,7 @@ RenderContext_Vk::createTestIndexBuffer()
 {
 	//auto* vkAllocCallbacks	= renderer()->allocCallbacks();
 	//auto* vkDev = renderer()->vkDevice();
-	auto* allocVk	= renderer()->memoryContext()->allocVk();
+	auto* vkAlloc	= renderer()->memoryContext()->vkAlloc();
 
 	auto indices = TestVertex::makeIndices();
 	auto bufSize = sizeof(indices[0]) * indices.size();
@@ -851,26 +849,25 @@ RenderContext_Vk::createTestIndexBuffer()
 		Vk_AllocInfo allocInfo;
 		allocInfo.usage  = RenderMemoryUsage::CpuOnly;
 		allocInfo.flags |= RenderAllocFlags::HostWrite;
-		Util::createBuffer(_vkStagingBuf, allocVk, &allocInfo, bufSize
+		Util::createBuffer(_vkStagingBuf, vkAlloc, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		u8* mappedData = nullptr;
-		Vk_ScopedMemMap mm = { &mappedData, &_vkStagingBuf };
-		memory_copy(reinCast<u8*>(mappedData), reinCast<u8*>(indices.data()), bufSize);
+		Vk_ScopedMemMapBuf mm = { &_vkStagingBuf };
+		memory_copy(mm.data<u8*>(), reinCast<u8*>(indices.data()), bufSize);
 	}
 
 	{
 		Vk_AllocInfo allocInfo;
 		allocInfo.usage  = RenderMemoryUsage::GpuOnly;
-		Util::createBuffer(_testVkIdxBuffer, allocVk, &allocInfo, bufSize
+		Util::createBuffer(_testVkIdxBuffer, vkAlloc, &allocInfo, bufSize
 			, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 
-		Util::copyBuffer(&_testVkIdxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
+		Util::copyBuffer(&_testVkIdxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), &_vkTransferQueue);
 	}
 
-	Util::copyBuffer(&_testVkIdxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), _vkTransferQueue);
+	Util::copyBuffer(&_testVkIdxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), &_vkTransferQueue);
 }
 
 void 
@@ -894,21 +891,20 @@ RenderContext_Vk::createTestDescriptorSetLayout()
 void 
 RenderContext_Vk::createTestUniformBuffer()
 {
-	auto* allocVk			= renderer()->memoryContext()->allocVk();
+	auto* vkAlloc			= renderer()->memoryContext()->vkAlloc();
 	VkDeviceSize bufferSize = sizeof(TestUBO);
 
 	Vk_AllocInfo allocInfo;
 	allocInfo.usage  = RenderMemoryUsage::CpuToGpu;
 
 	_testVkUniformBuffers.resize(s_kFrameInFlightCount);
-	_memMapUniformBufs.resize(s_kFrameInFlightCount);
+	_memMapUniformBufs.reserve(s_kFrameInFlightCount);
 	for (size_t i = 0; i < s_kFrameInFlightCount; ++i)
 	{
 		auto& uniBuf = _testVkUniformBuffers[i];
-		auto& memMap = _memMapUniformBufs[i];
 
-		uniBuf.create(allocVk, &allocInfo, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, QueueTypeFlags::Graphics);
-		allocVk->mapMem(&memMap, uniBuf._internal_allocHnd());
+		uniBuf.create(vkAlloc, &allocInfo, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, QueueTypeFlags::Graphics);
+		_memMapUniformBufs.emplace_back(&uniBuf);
 	}
 }
 
@@ -991,7 +987,55 @@ RenderContext_Vk::updateTestUBO(u32 curImageIdx)
 	ubo.proj[1][1] *= -1;
 	ubo.mvp			= ubo.proj * ubo.view * ubo.model;
 
-	memory_copy(_memMapUniformBufs[curImageIdx], reinCast<u8*>(&ubo), sizeof(ubo));
+	memory_copy(_memMapUniformBufs[curImageIdx].data<u8*>(), reinCast<u8*>(&ubo), sizeof(ubo));
+}
+
+void 
+RenderContext_Vk::createTestTextureImage()
+{
+	auto* vkAlloc			= renderer()->memoryContext()->vkAlloc();
+
+	Image image;
+	image.load("asset/texture/uvChecker.png");
+	
+	Vk_Buffer stagingBuffer;
+
+	{
+		Vk_AllocInfo allocInfo = {};
+		allocInfo.usage = RenderMemoryUsage::CpuToGpu;
+
+		stagingBuffer.create(vkAlloc, &allocInfo, image.totalByteSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+
+		Vk_ScopedMemMapBuf memmap { &stagingBuffer };
+		memory_copy(memmap.data<u8*>(), image.data().data(), image.totalByteSize());
+	}
+
+	u32 imageWidth	= sCast<u32>(image.width());
+	u32 imageHeight = sCast<u32>(image.height());
+
+	VkFormat vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
+	{
+		Vk_AllocInfo allocInfo = {};
+		allocInfo.usage = RenderMemoryUsage::GpuOnly;
+
+		_testVkTextureImage.create(vkAlloc, &allocInfo
+									, imageWidth, imageHeight
+									, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+									, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+	}
+
+	{
+		auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		Util::transitionImageLayout(&_testVkTextureImage, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, nullptr, &_vkGraphicsQueue, cmdBuf);
+	}
+	{
+		auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		Util::copyBufferToImage(&_testVkTextureImage, &stagingBuffer, imageWidth, imageHeight, &_vkTransferQueue, cmdBuf);
+	}
+	{
+		auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		Util::transitionImageLayout(&_testVkTextureImage, vkFormat, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, nullptr, &_vkGraphicsQueue, cmdBuf);
+	}
 }
 
 

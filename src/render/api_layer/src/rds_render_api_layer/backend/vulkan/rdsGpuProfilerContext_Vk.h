@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
 
 #if RDS_RENDER_HAS_VULKAN && RDS_ENABLE_PROFILER
 

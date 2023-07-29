@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
 #include "rdsVk_Allocator.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -27,15 +27,15 @@ public:
 	const VkAllocationCallbacks*			allocCallbacks();
 	const VkPhysicalDeviceMemoryProperties& vkMemoryProperties();
 
-	Vk_Allocator*							allocVk();
+	Vk_Allocator*							vkAlloc();
 
 private:
 	VkAllocationCallbacks				_vkAllocCallbacks = {};
 	VkPhysicalDeviceMemoryProperties	_vkMemProperties = {};
-	Vk_Allocator						_allocVk;
+	Vk_Allocator						_vkAlloc;
 };
 
-inline Vk_Allocator* Vk_MemoryContext::allocVk() { return &_allocVk; }
+inline Vk_Allocator* Vk_MemoryContext::vkAlloc() { return &_vkAlloc; }
 
 inline const VkAllocationCallbacks* Vk_MemoryContext::allocCallbacks() { return /*&_allocationCallbacks*/ nullptr; }
 

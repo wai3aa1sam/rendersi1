@@ -64,7 +64,7 @@ Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBuff
 	
 	auto ret = vmaCreateBuffer(_allocator, bufferInfo, &vmaAllocCInfo, outBuf, allocHnd, nullptr);
 	Util::throwIfError(ret);
-
+	
 	return ret;
 }
 
@@ -72,6 +72,27 @@ void
 Vk_Allocator::freeBuf(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd)
 {
 	vmaDestroyBuffer(_allocator, vkBuf, *allocHnd);
+}
+
+VkResult	
+Vk_Allocator::allocImage(Vk_Image_T** outImg, Vk_AllocHnd* allocHnd, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
+{
+	VmaAllocationCreateInfo vmaAllocCInfo = {};
+	vmaAllocCInfo.usage			= toMemoryUsage(allocInfo->usage);
+	vmaAllocCInfo.flags			= toAllocFlags(allocInfo->flags);
+	vmaAllocCInfo.requiredFlags = vkMemPropFlags;
+
+	auto ret = vmaCreateImage(_allocator, imageInfo, &vmaAllocCInfo, outImg, allocHnd, nullptr);
+	Util::throwIfError(ret);
+
+	return ret;
+}
+
+void		
+Vk_Allocator::freeImage	(Vk_Image_T* vkImg, Vk_AllocHnd* allocHnd)
+{
+	RDS_CORE_ASSERT(vkImg, "");
+	vmaDestroyImage(_allocator, vkImg, *allocHnd);
 }
 
 void 
@@ -121,13 +142,13 @@ Vk_Allocator::toAllocFlags(RenderAllocFlags v)
 	return flags;
 }
 
-Vk_ScopedMemMap::Vk_ScopedMemMap(u8** outData, Vk_Buffer* vkBuf)
+Vk_ScopedMemMapBuf::Vk_ScopedMemMapBuf(Vk_Buffer* vkBuf)
 {
 	_p = vkBuf;
-	_p->_internal_alloc()->mapMem(reinCast<void**>(outData), _p->_internal_allocHnd());
+	_p->_internal_alloc()->mapMem(&_data, _p->_internal_allocHnd());
 }
 
-Vk_ScopedMemMap::~Vk_ScopedMemMap()
+Vk_ScopedMemMapBuf::~Vk_ScopedMemMapBuf()
 {
 	if (_p)
 	{
@@ -135,7 +156,7 @@ Vk_ScopedMemMap::~Vk_ScopedMemMap()
 	}
 }
 
-void Vk_ScopedMemMap::unmap()
+void Vk_ScopedMemMapBuf::unmap()
 {
 	_p->_internal_alloc()->unmapMem(_p->_internal_allocHnd());
 	_p = nullptr;

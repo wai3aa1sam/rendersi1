@@ -33,13 +33,13 @@ Vk_MemoryContext::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Insta
 {
 	vkGetPhysicalDeviceMemoryProperties(vkPhyDev, &_vkMemProperties);
 
-	_allocVk.create(vkDev, vkPhyDev, vkInst, allocCallbacks());
+	_vkAlloc.create(vkDev, vkPhyDev, vkInst, allocCallbacks());
 }
 
 void 
 Vk_MemoryContext::destroy()
 {
-	_allocVk.destroy();
+	_vkAlloc.destroy();
 }
 
 #endif

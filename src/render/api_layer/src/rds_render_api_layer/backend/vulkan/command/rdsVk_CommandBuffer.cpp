@@ -102,7 +102,7 @@ Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, VkPipel
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-	auto ret = vkQueueSubmit2(_vkQueue, 1, &submitInfo, signalFence);
+	auto ret = vkQueueSubmit2(_vkQueue->hnd(), 1, &submitInfo, signalFence);
 	Util::throwIfError(ret);
 }
 
@@ -119,15 +119,17 @@ Vk_CommandBuffer::submit()
 	submitInfo.commandBufferInfoCount	= 1;
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
-	auto ret = vkQueueSubmit2(_vkQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	auto ret = vkQueueSubmit2(_vkQueue->hnd(), 1, &submitInfo, VK_NULL_HANDLE);
 	Util::throwIfError(ret);
+
+	//Renderer_Vk::instance()->extInfo().getDeviceExtFunction<PFN_vkQueueSubmit2KHR>("vkQueueSubmit2KHR");
 }
 
 void 
 Vk_CommandBuffer::waitIdle()
 {
 	RDS_CORE_ASSERT(_vkQueue, "{}", RDS_SRCLOC);
-	vkQueueWaitIdle(_vkQueue);
+	vkQueueWaitIdle(_vkQueue->hnd());
 }
 
 void 

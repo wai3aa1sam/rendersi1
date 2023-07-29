@@ -7,15 +7,19 @@
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
 
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
 {
 
+class Vk_CommandBuffer;
+class Vk_CommandPool;
+
 #if 1
 
-template<size_t N>	using SwapChainImages_Vk_N			= Vector<Vk_Image*, N>;
-					using SwapChainImages_Vk			= Vector<Vk_Image*,				RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainImages_Vk_N			= Vector<Vk_Image_T*, N>;
+					using SwapChainImages_Vk			= Vector<Vk_Image_T*,				RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
 template<size_t N>	using SwapChainImageViews_Vk_N		= Vector<VkPtr<Vk_ImageView>, N>;
 					using SwapChainImageViews_Vk		= Vector<VkPtr<Vk_ImageView>,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
 template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<VkPtr<Vk_Framebuffer>, N>;
@@ -159,7 +163,7 @@ public:
 	static void createSurface(Vk_Surface** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
 	static void createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
 								const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
-	static void createImageView(Vk_ImageView** out, Vk_Image* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
+	static void createImageView(Vk_ImageView** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 	static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
 
@@ -178,10 +182,14 @@ public:
 
 	static void createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
 							, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags);
-	static void copyBuffer	(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue);
 
 	static void createBuffer(Vk_Buffer& outBuf, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
 	static void createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
+
+public:
+	static void copyBuffer				(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue);
+	static void transitionImageLayout	(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf);
+	static void copyBufferToImage		(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 width, u32 height, Vk_Queue* vkQueue, Vk_CommandBuffer* vkCmdBuf);
 
 public:
 	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance_T* vkInstance);
@@ -378,7 +386,7 @@ RenderApiUtil_Vk::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, co
 	for (size_t i = 0; i < vkImages.size(); ++i)
 	{
 		Vk_ImageView* p = nullptr;
-		createImageView(&p, (Vk_Image*)vkImages[i], vkDevice, format, aspectFlags, mipLevels);
+		createImageView(&p, (Vk_Image_T*)vkImages[i], vkDevice, format, aspectFlags, mipLevels);
 		out[i].reset(p);
 	}
 }

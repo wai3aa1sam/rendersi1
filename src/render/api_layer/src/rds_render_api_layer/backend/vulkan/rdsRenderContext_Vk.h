@@ -1,10 +1,11 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
 
 #include "rdsGpuProfilerContext_Vk.h"
 
+#include "rdsVk_Allocator.h"
 #include "rds_render_api_layer/mesh/rdsEditMesh.h"
 
 #include "command/rdsVk_CommandPool.h"
@@ -208,6 +209,9 @@ protected:
 	void createTestDescriptorSets();
 	void updateTestUBO(u32 curImageIdx);
 
+	void createTestTextureImage();
+	//void createTestTextureImageView();
+
 protected:
 	Renderer_Vk* _renderer = nullptr;
 
@@ -230,15 +234,18 @@ protected:
 	Vk_Buffer						_testVkIdxBuffer;
 	VkPtr<Vk_DeviceMemory>			_testVkIdxBufferMemory;
 	
-	Vk_DescriptorSetLayout							_testVkDescriptorSetLayout;
-	Vector<Vk_Buffer,	s_kFrameInFlightCount>		_testVkUniformBuffers;
-	Vector<u8*,			s_kFrameInFlightCount>		_memMapUniformBufs;
-	Vk_DescriptorPool								_testVkDescriptorPool;
-	Vector<Vk_DescriptorSet, s_kFrameInFlightCount> _testVkDescriptorSets;
+	Vk_DescriptorSetLayout									_testVkDescriptorSetLayout;
+	Vector<Vk_Buffer,			s_kFrameInFlightCount>		_testVkUniformBuffers;
+	Vector<Vk_ScopedMemMapBuf,	s_kFrameInFlightCount>		_memMapUniformBufs;
+	Vk_DescriptorPool										_testVkDescriptorPool;
+	Vector<Vk_DescriptorSet, s_kFrameInFlightCount>			_testVkDescriptorSets;
 
-	VkPtr<Vk_Queue>		_vkGraphicsQueue;
-	VkPtr<Vk_Queue>		_vkPresentQueue;
-	VkPtr<Vk_Queue>		_vkTransferQueue;
+	Vk_Image _testVkTextureImage;
+	//Vk_ImageView _textVkTextureImageView;
+
+	Vk_Queue _vkGraphicsQueue;
+	Vk_Queue _vkPresentQueue;
+	Vk_Queue _vkTransferQueue;
 
 	//Vk_CommandPool _vkGraphicsCommandPool;
 	//Vk_CommandPool _vkTransferCommandPool;
@@ -257,8 +264,8 @@ protected:
 
 inline Renderer_Vk* RenderContext_Vk::renderer() { return _renderer; }
 
-inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return _vkGraphicsQueue; }
-inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return _vkPresentQueue; }
+inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return &_vkGraphicsQueue; }
+inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; }
 
 
 inline Vk_CommandBuffer_T* RenderContext_Vk::vkCommandBuffer() { return _curGraphicsCmdBuf->hnd(); }

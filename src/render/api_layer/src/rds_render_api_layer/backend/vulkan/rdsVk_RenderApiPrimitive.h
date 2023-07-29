@@ -11,7 +11,7 @@ namespace rds
 using Vk_Instance_T				= VkInstance_T;
 using Vk_PhysicalDevice			= VkPhysicalDevice_T;
 using Vk_Device					= VkDevice_T;
-using Vk_Queue					= VkQueue_T;
+using Vk_Queue_T				= VkQueue_T;
 using Vk_Surface				= VkSurfaceKHR_T;
 using Vk_Swapchain				= VkSwapchainKHR_T;
 using Vk_Framebuffer			= VkFramebuffer_T;
@@ -33,7 +33,7 @@ using Vk_Fence					= VkFence_T;
 
 using Vk_Buffer_T				= VkBuffer_T;
 using Vk_BufferView_T			= VkBufferView_T;
-using Vk_Image					= VkImage_T;
+using Vk_Image_T				= VkImage_T;
 using Vk_Sampler				= VkSampler_T;
 using Vk_ImageView				= VkImageView_T;
 using Vk_DeviceMemory			= VkDeviceMemory_T;
@@ -218,12 +218,39 @@ public:
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_Queue> : public RenderApiPrimitive_Base_Vk<Vk_Queue>
+//template<>
+//class Vk_RenderApiPrimitive<Vk_Queue> : public RenderApiPrimitive_Base_Vk<Vk_Queue>
+//{
+//public:
+//	void destroy();
+//};
+
+class Vk_Queue : public Vk_RenderApiPrimitive<Vk_Queue_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_Queue_T>;
+
+public:
+	Vk_Queue() = default;
+	~Vk_Queue() { destroy(); }
+
+	Vk_Queue(Vk_Queue&&)		{ throwIf(true, ""); }
+	void operator=(Vk_Queue&&)	{ throwIf(true, ""); }
+
+	void create(u32 familyIdx, Vk_Device* vkDevice);
 	void destroy();
+
+	u32 familyIdx() const;
+	u32 queueIdx()	const;
+
+protected:
+	u32 _familyIdx = ~u32(0);
+	u32 _queueIdx  = 0;
 };
+
+inline u32 Vk_Queue::familyIdx()	const { return _familyIdx; }
+inline u32 Vk_Queue::queueIdx()		const { return _queueIdx; }
+
 
 #endif
 
@@ -246,12 +273,31 @@ public:
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_Image> : public RenderApiPrimitive_Base_Vk<Vk_Image>
+
+class Vk_Image : public AllocableVk_RenderApiPrimitive<Vk_Image_T>
 {
 public:
+	using Base = AllocableVk_RenderApiPrimitive<Vk_Image_T>;
+
+public:
+	Vk_Image() = default;
+	~Vk_Image() { destroy(); }
+
+	Vk_Image(Vk_Image&&)		{ throwIf(true, ""); }
+	void operator=(Vk_Image&&)	{ throwIf(true, ""); }
+
+	void create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void destroy();
 };
+
+
+//template<>
+//class Vk_RenderApiPrimitive<Vk_Image> : public RenderApiPrimitive_Base_Vk<Vk_Image>
+//{
+//public:
+//	void destroy();
+//};
 
 #endif
 
@@ -551,9 +597,6 @@ protected:
 };
 
 #endif
-
-
-
 
 #endif
 

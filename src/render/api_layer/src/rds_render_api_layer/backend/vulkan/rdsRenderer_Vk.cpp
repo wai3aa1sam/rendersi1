@@ -164,7 +164,7 @@ Renderer_Vk::createVkDevice()
 	VkPhysicalDeviceVulkan13Features phyDeviceFeature13 = {};
 	phyDeviceFeature13.sType			= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	phyDeviceFeature13.synchronization2 = true;
-
+	
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.queueCreateInfoCount		= sCast<u32>(queueCreateInfos.size());

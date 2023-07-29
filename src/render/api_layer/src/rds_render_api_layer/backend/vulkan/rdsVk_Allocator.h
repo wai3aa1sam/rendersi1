@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsRenderApi_Common_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -31,8 +31,12 @@ public:
 	void create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks);
 	void destroy();
 
-	VkResult allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	void freeBuf(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd);
+	VkResult	allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void		freeBuf	(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd);
+
+	VkResult	allocImage	(Vk_Image_T** outImg, Vk_AllocHnd* allocHnd, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void		freeImage	(Vk_Image_T* vkImg, Vk_AllocHnd* allocHnd);
+
 
 	void mapMem(void** outData, Vk_AllocHnd* allocHnd);
 	void mapMem(u8** outData,	Vk_AllocHnd* allocHnd);
@@ -46,34 +50,22 @@ private:
 	VmaAllocator _allocator;
 };
 
-class Vk_MemMap	// for presistent mapping
+class Vk_ScopedMemMapBuf
 {
 public:
-	Vk_MemMap();
-	~Vk_MemMap();
+	Vk_ScopedMemMapBuf(Vk_Buffer* vkBuf);
+	~Vk_ScopedMemMapBuf();
 
-	void create(VkPtr<Vk_Buffer>& vkp);
-
-	void map(void* outData);
-	void unmap();
-
-	// if no VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vkFlushMappedMemoryRanges, vkInvalidateMappedMemoryRanges
-
-protected:
-	VkPtr<Vk_Buffer>& vkp;
-};
-
-class Vk_ScopedMemMap
-{
-public:
-	Vk_ScopedMemMap(u8** outData, Vk_Buffer* vkBuf);
-	~Vk_ScopedMemMap();
+	template<class T> T data();
 
 	void unmap();
 
 protected:
-	Vk_Buffer* _p = nullptr;
+	Vk_Buffer*	_p		= nullptr;
+	void*		_data	= nullptr;
 };
+
+template<class T> inline T Vk_ScopedMemMapBuf::data() { return reinCast<T>(_data); }
 
 #endif
 }

@@ -1,5 +1,5 @@
 #include "rds_render_api_layer-pch.h"
-#include "rdsRenderApi_Common_Vk.h"
+#include "rdsVk_RenderApi_Common.h"
 
 #include "rdsRenderer_Vk.h"
 #include "rdsVk_Allocator.h"
@@ -304,7 +304,7 @@ RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_
 }
 
 void 
-RenderApiUtil_Vk::createImageView(Vk_ImageView** out, Vk_Image* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
+RenderApiUtil_Vk::createImageView(Vk_ImageView** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
 {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -499,10 +499,146 @@ RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 		submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
 		RDS_LOG_WARN("TODO: add smp for transfer and graphics queue");
-		ret = vkQueueSubmit2(vkTransferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		ret = vkQueueSubmit2(vkTransferQueue->hnd(), 1, &submitInfo, VK_NULL_HANDLE);
 		throwIfError(ret);
-		vkQueueWaitIdle(vkTransferQueue);
+		vkQueueWaitIdle(vkTransferQueue->hnd());
 	}
+}
+
+void 
+RenderApiUtil_Vk::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
+{
+	vkCmdBuf->beginRecord(srcQueue);
+
+	VkPipelineStageFlags	srcStage		= {};
+	VkPipelineStageFlags	dstStage		= {};
+	VkAccessFlags			srcAccessMask	= {};
+	VkAccessFlags			dstAccessMask	= {};
+
+	if (dstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_UNDEFINED ) 
+	{
+		srcStage			= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;		// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		dstStage			= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcAccessMask		= 0;
+		dstAccessMask		= VK_ACCESS_TRANSFER_WRITE_BIT;
+	}
+	else if (dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
+	{
+		srcStage		= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage		= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		srcAccessMask	= VK_ACCESS_TRANSFER_WRITE_BIT;
+		dstAccessMask	= VK_ACCESS_SHADER_READ_BIT;
+	}
+	else if (dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_UNDEFINED ) 
+	{
+		srcStage		= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;			// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		dstStage		= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		srcAccessMask	= 0;
+		dstAccessMask	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	}
+	else 
+	{
+		throwIf(true, "");
+	}
+
+	VkImageAspectFlags aspectMask = dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	//if (hasStencilComponent(format)) 
+	//	aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+
+	#if 1
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType							= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout						= srcLayout;
+	barrier.newLayout						= dstLayout;
+	barrier.srcQueueFamilyIndex				= dstQueue ? srcQueue->familyIdx() : VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex				= dstQueue ? dstQueue->familyIdx() : VK_QUEUE_FAMILY_IGNORED;
+	barrier.image							= image->hnd();
+
+	barrier.subresourceRange.aspectMask		= aspectMask;
+	barrier.subresourceRange.baseMipLevel	= 0;
+	barrier.subresourceRange.baseArrayLayer	= 0;
+	barrier.subresourceRange.levelCount		= 1;
+	barrier.subresourceRange.layerCount		= 1;
+
+	barrier.srcAccessMask = srcAccessMask;
+	barrier.dstAccessMask = dstAccessMask;
+
+	vkCmdPipelineBarrier(
+		vkCmdBuf->hnd(),
+		srcStage , dstStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+
+	#else
+
+	VkImageMemoryBarrier2 barrier;
+	barrier.sType							= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	barrier.oldLayout						= srcLayout;
+	barrier.newLayout						= dstLayout;
+	barrier.srcQueueFamilyIndex				= dstQueue ? srcQueue->familyIdx() : VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex				= dstQueue ? dstQueue->familyIdx() : VK_QUEUE_FAMILY_IGNORED;
+	barrier.image							= image->hnd();
+
+	barrier.subresourceRange.aspectMask		= aspectMask;
+	barrier.subresourceRange.baseMipLevel	= 0;
+	barrier.subresourceRange.baseArrayLayer	= 0;
+	barrier.subresourceRange.levelCount		= 1;
+	barrier.subresourceRange.layerCount		= 1;
+
+	barrier.srcAccessMask = srcAccessMask;
+	barrier.dstAccessMask = dstAccessMask;
+	barrier.srcStageMask  = srcStage;
+	barrier.dstStageMask  = dstStage;
+
+	VkDependencyInfo depInfo = {};
+	depInfo.sType					= VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	depInfo.imageMemoryBarrierCount = 1;
+	depInfo.pImageMemoryBarriers	= &barrier;
+	
+	auto vkCmdPipelineBarrier23 = Renderer_Vk::instance()->extInfo().getDeviceExtFunction<PFN_vkCmdPipelineBarrier2>("vkCmdPipelineBarrier2");
+	vkCmdPipelineBarrier23(vkCmdBuf->hnd(), &depInfo);
+
+	#endif // 0
+
+	vkCmdBuf->endRecord();
+	vkCmdBuf->submit();
+	vkCmdBuf->waitIdle();
+}
+
+void 
+RenderApiUtil_Vk::copyBufferToImage(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 width, u32 height, Vk_Queue* vkQueue, Vk_CommandBuffer* vkCmdBuf)
+{
+	vkCmdBuf->beginRecord(vkQueue);
+
+	VkBufferImageCopy region = {};
+	region.bufferOffset			= 0;
+	region.bufferRowLength		= 0;
+	region.bufferImageHeight	= 0;
+
+	region.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel		= 0;
+	region.imageSubresource.baseArrayLayer	= 0;
+	region.imageSubresource.layerCount		= 1;
+
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = { width, height, 1 };
+
+	vkCmdCopyBufferToImage(
+		vkCmdBuf->hnd(),
+		srcBuf->hnd(),
+		dstImage->hnd(),
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&region
+	);
+
+	vkCmdBuf->endRecord();
+	vkCmdBuf->submit();
+	vkCmdBuf->waitIdle();
 }
 
 void 

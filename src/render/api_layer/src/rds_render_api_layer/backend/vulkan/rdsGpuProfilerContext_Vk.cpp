@@ -30,11 +30,11 @@ GpuProfilerContext_Vk::onCreate(const CreateDesc& cDesc)
 	RDS_ASSERT(vkFuncExtCtd && vkFuncExtCt || !vkFuncExtCtd && !vkFuncExtCt, "must be both exist or both not exist");
 	if (!vkFuncExtCtd && !vkFuncExtCt)
 	{
-		_ctx = RDS_PROFILE_GPU_CREATE_CTX_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue, vkCmdBuf);
+		_ctx = RDS_PROFILE_GPU_CREATE_CTX_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue->hnd(), vkCmdBuf);
 	}
 	else
 	{
-		_ctx = RDS_PROFILE_GPU_CREATE_CTX_CALIBRATED_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue, vkCmdBuf, vkFuncExtCtd, vkFuncExtCt);
+		_ctx = RDS_PROFILE_GPU_CREATE_CTX_CALIBRATED_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue->hnd(), vkCmdBuf, vkFuncExtCtd, vkFuncExtCt);
 	}
 
 	setName(cDesc.name);

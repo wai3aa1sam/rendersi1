@@ -38,7 +38,7 @@ RenderGpuBuffer_Vk::onCreate(const CreateDesc& cDesc)
 
 	Base::onCreate(cDesc);
 
-	auto* vkAlloc	= Renderer_Vk::instance()->memoryContext()->allocVk();
+	auto* vkAlloc	= Renderer_Vk::instance()->memoryContext()->vkAlloc();
 
 	auto targetSize = math::alignTo(bufSize(), s_kAlign);
 	
