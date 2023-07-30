@@ -71,7 +71,9 @@ RenderApiUtil_Vk::debugCallback(
 	// VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
 	if (messageSeverity < VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		return VK_FALSE;
-
+	
+	if (pCallbackData->messageIdNumber == 0x822806fa) return VK_FALSE; // "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging"
+	
 	RDS_CORE_LOG_ERROR("Vulkan validation layer: {}\n", pCallbackData->pMessage);
 	return VK_FALSE;
 }
@@ -304,7 +306,7 @@ RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_
 }
 
 void 
-RenderApiUtil_Vk::createImageView(Vk_ImageView** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
+RenderApiUtil_Vk::createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
 {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -694,6 +696,8 @@ RenderApiUtil_Vk::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_Physic
 	{
 		RDS_LOG("\t memorySize: {}",		 deviceMemProperties.memoryHeaps[i].size);
 	}
+
+	outInfo.limit.maxSamplerAnisotropy = deviceProperties.limits.maxSamplerAnisotropy;
 }
 
 void
@@ -702,16 +706,20 @@ RenderApiUtil_Vk::getPhyDeviceFeaturesTo(RenderAdapterInfo& outInfo, Vk_Physical
 	VkPhysicalDeviceFeatures deviceFeatures;
 	vkGetPhysicalDeviceFeatures(phyDevice, &deviceFeatures);
 
-	RenderAdapterInfo::Feature tmp;
-	tmp.shaderHasFloat64	= deviceFeatures.shaderFloat64;
-	tmp.hasGeometryShader	= deviceFeatures.geometryShader;
+	RenderAdapterInfo::Feature temp;
+	temp.shaderHasFloat64		= deviceFeatures.shaderFloat64;
+	temp.hasGeometryShader		= deviceFeatures.geometryShader;
+	temp.hasSamplerAnisotropy	= deviceFeatures.samplerAnisotropy;
 
-	outInfo.feature = tmp;
+	outInfo.feature = temp;
 }
 
 void RenderApiUtil_Vk::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info)
 {
 	out = {};
+
+	out.samplerAnisotropy = VK_TRUE;
+
 	RDS_CORE_LOG_WARN("TODO: getVkPhyDeviceFeaturesTo()");
 	//info.feature.
 }
@@ -833,11 +841,11 @@ ExtensionInfo_Vk::createInstanceExtensions(const RenderAdapterInfo& adapterInfo,
 	out.clear();
 
 	out.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
-	out.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+	//out.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME); // deprecated
 
 	if (adapterInfo.isDebug) {
 		out.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		out.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+		// out.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME); // deprecated
 	}
 	#if RDS_OS_WINDOWS
 	out.emplace_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
@@ -858,7 +866,7 @@ ExtensionInfo_Vk::createValidationLayers(const RenderAdapterInfo& adapterInfo)
 	auto& out = _validationLayers;
 	out.clear();
 	out.emplace_back("VK_LAYER_KHRONOS_validation");
-	out.emplace_back("VK_LAYER_KHRONOS_synchronization2");
+	//out.emplace_back("VK_LAYER_KHRONOS_synchronization2"); // deprecated
 	
 	//RDS_DEBUG_CALL(checkValidationLayersExist());
 }
@@ -872,7 +880,7 @@ ExtensionInfo_Vk::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	o.clear();
 
 	// TODO: check extension exist
-	o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+	//o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME); // deprecated
 	o.emplace_back(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
 	if (cDesc.isPresent)
 	{

@@ -23,6 +23,10 @@ struct RenderAdapterInfo
 
 	bool	isDebug	: 1;
 
+	RenderAdapterInfo()
+	{
+	}
+
 	struct Feature
 	{
 		void clear()
@@ -30,16 +34,25 @@ struct RenderAdapterInfo
 
 		}
 
-		bool	isDiscreteGPU		: 1;
-		bool	hasGeometryShader	: 1;
+		bool	isDiscreteGPU			: 1;
+		bool	hasGeometryShader		: 1;
 
-		bool	multithread			: 1;
-		bool	hasComputeShader	: 1;
-		bool	shaderHasFloat64	: 1;
+		bool	multithread				: 1;
+		bool	hasComputeShader		: 1;
+		bool	shaderHasFloat64		: 1;
+
+		bool	hasSamplerAnisotropy	: 1;
 
 		int		minThreadGroupSize	= 1;
 	};
+
+	struct Limit
+	{
+		float maxSamplerAnisotropy;
+	};
+
 	Feature feature;
+	Limit	limit;
 };
 
 

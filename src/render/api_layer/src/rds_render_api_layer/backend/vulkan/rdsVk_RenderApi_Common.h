@@ -20,8 +20,8 @@ class Vk_CommandPool;
 
 template<size_t N>	using SwapChainImages_Vk_N			= Vector<Vk_Image_T*, N>;
 					using SwapChainImages_Vk			= Vector<Vk_Image_T*,				RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
-template<size_t N>	using SwapChainImageViews_Vk_N		= Vector<VkPtr<Vk_ImageView>, N>;
-					using SwapChainImageViews_Vk		= Vector<VkPtr<Vk_ImageView>,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainImageViews_Vk_N		= Vector<Vk_ImageView, N>;
+					using SwapChainImageViews_Vk		= Vector<Vk_ImageView,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
 template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<VkPtr<Vk_Framebuffer>, N>;
 					using SwapChainFramebuffers_Vk		= Vector<VkPtr<Vk_Framebuffer>,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
 
@@ -163,7 +163,7 @@ public:
 	static void createSurface(Vk_Surface** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
 	static void createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
 								const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
-	static void createImageView(Vk_ImageView** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
+	static void createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 	static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
 
@@ -385,9 +385,7 @@ RenderApiUtil_Vk::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, co
 	out.resize(vkImages.size());
 	for (size_t i = 0; i < vkImages.size(); ++i)
 	{
-		Vk_ImageView* p = nullptr;
-		createImageView(&p, (Vk_Image_T*)vkImages[i], vkDevice, format, aspectFlags, mipLevels);
-		out[i].reset(p);
+		out[i].create(vkImages[i], format, aspectFlags, mipLevels);
 	}
 }
 

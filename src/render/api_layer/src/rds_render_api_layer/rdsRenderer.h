@@ -69,6 +69,8 @@ public:
 	SPtr<RenderGpuBuffer>		createRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc);
 	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc);
 
+	const RenderAdapterInfo& adapterInfo() const;
+
 protected:
 	Renderer* _init(const CreateDesc& cDesc);
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -83,6 +85,8 @@ protected:
 	VertexLayoutManager _vertexLayoutManager;
 	RenderFrameContext  _renderFrameCtx;
 };
+
+inline const RenderAdapterInfo& Renderer::adapterInfo() const { return _adapterInfo; }
 
 
 #endif

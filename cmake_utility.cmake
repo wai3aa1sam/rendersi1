@@ -37,7 +37,14 @@ function(my_set_target_unity_build_mode target_name)
                           UNITY_BUILD ON
                           UNITY_BUILD_MODE BATCH
                           UNITY_BUILD_BATCH_SIZE 16
-                          )	
+                          )
+endfunction()
+
+function(my_set_multi_core_compile target_name)
+  if(MSVC)
+    target_compile_options(${target_name} PRIVATE /MP)     
+  else()
+  endif()
 endfunction()
 
 function(my_add_library target_name src_path)
@@ -51,6 +58,7 @@ function(my_add_library target_name src_path)
   target_include_directories(${target_name} PUBLIC src)
   my_set_target_warning_level(${target_name})
   my_set_target_unity_build_mode(${target_name})
+  my_set_multi_core_compile(${target_name})
 endfunction()
 
 function(my_add_executable target_name src_path)
@@ -64,6 +72,7 @@ function(my_add_executable target_name src_path)
   target_include_directories(${target_name} PUBLIC src)
   my_set_target_warning_level(${target_name})	
   my_set_target_unity_build_mode(${target_name})
+  my_set_multi_core_compile(${target_name})
 
   if(${${project_namespace_marco}_ENABLE_SANITIZER})
     my_enable_sanitizer(${target_name})

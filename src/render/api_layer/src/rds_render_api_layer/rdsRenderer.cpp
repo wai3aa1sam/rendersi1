@@ -75,6 +75,9 @@ Renderer::_init(const CreateDesc& cDesc)
 		default: { throwIf(false, "unsupported render api"); } break;
 	}
 	s_instance = rdr;
+	
+	s_instance->_adapterInfo.isDebug = cDesc.isDebug;
+
 	return rdr;
 }
 

@@ -213,16 +213,117 @@ Vk_Image::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_ImageView>-Impl ---
+#pragma mark --- rdsVk_ImageView-Impl ---
 #endif // 0
 #if 1
 
-void
-Vk_RenderApiPrimitive<Vk_ImageView>::destroy()
+//void
+//Vk_RenderApiPrimitive<Vk_ImageView>::destroy()
+//{
+//	auto* renderer = Renderer_Vk::instance();
+//	vkDestroyImageView(renderer->vkDevice(), _p, renderer->allocCallbacks());
+//}
+
+void 
+Vk_ImageView::create(VkImageViewCreateInfo* viewInfo)
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyImageView(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
+	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
+
+	auto ret = vkCreateImageView(vkDev, viewInfo, vkAllocCallBacks, &_hnd);
+	Util::throwIfError(ret);
 }
+
+void 
+Vk_ImageView::create(Vk_Image* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount)
+{
+	create(vkImage->hnd(), vkFormat, aspectFlags, mipCount);
+}
+
+void 
+Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount)
+{
+	RDS_CORE_ASSERT(mipCount >= 1, "");
+
+	VkImageViewCreateInfo viewInfo = {};
+	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image								= vkImage;
+	viewInfo.viewType							= VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format								= vkFormat;
+
+	viewInfo.components.r						= VK_COMPONENT_SWIZZLE_IDENTITY;
+	viewInfo.components.g						= VK_COMPONENT_SWIZZLE_IDENTITY;
+	viewInfo.components.b						= VK_COMPONENT_SWIZZLE_IDENTITY;
+	viewInfo.components.a						= VK_COMPONENT_SWIZZLE_IDENTITY;
+
+	viewInfo.subresourceRange.aspectMask		= aspectFlags;
+	viewInfo.subresourceRange.baseMipLevel		= 0;
+	viewInfo.subresourceRange.baseArrayLayer	= 0;
+	viewInfo.subresourceRange.levelCount		= mipCount;
+	viewInfo.subresourceRange.layerCount		= 1;
+
+	create(&viewInfo);
+}
+
+void 
+Vk_ImageView::destroy()
+{
+	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
+	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
+	vkDestroyImageView(vkDev, _hnd, vkAllocCallBacks);
+}
+
+#endif
+
+
+#if 0
+#pragma mark --- rdsVk_Sampler-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_Sampler::create(VkSamplerCreateInfo* samplerInfo)
+{
+	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
+	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
+
+	auto ret = vkCreateSampler(vkDev, samplerInfo, vkAllocCallBacks, &_hnd);
+	Util::throwIfError(ret);
+}
+
+//void 
+//Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount)
+//{
+//	RDS_CORE_ASSERT(mipCount >= 1, "");
+//
+//	VkImageViewCreateInfo viewInfo = {};
+//	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+//	viewInfo.image								= vkImage;
+//	viewInfo.viewType							= VK_IMAGE_VIEW_TYPE_2D;
+//	viewInfo.format								= vkFormat;
+//
+//	viewInfo.components.r						= VK_COMPONENT_SWIZZLE_IDENTITY;
+//	viewInfo.components.g						= VK_COMPONENT_SWIZZLE_IDENTITY;
+//	viewInfo.components.b						= VK_COMPONENT_SWIZZLE_IDENTITY;
+//	viewInfo.components.a						= VK_COMPONENT_SWIZZLE_IDENTITY;
+//
+//	viewInfo.subresourceRange.aspectMask		= aspectFlags;
+//	viewInfo.subresourceRange.baseMipLevel		= 0;
+//	viewInfo.subresourceRange.baseArrayLayer	= 0;
+//	viewInfo.subresourceRange.levelCount		= mipCount;
+//	viewInfo.subresourceRange.layerCount		= 1;
+//
+//	create(&viewInfo);
+//}
+
+void 
+Vk_Sampler::destroy()
+{
+	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
+	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
+	vkDestroySampler(vkDev, _hnd, vkAllocCallBacks);
+}
+
 
 #endif
 

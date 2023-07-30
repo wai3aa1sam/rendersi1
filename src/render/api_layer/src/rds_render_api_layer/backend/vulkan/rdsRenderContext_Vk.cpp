@@ -9,6 +9,10 @@
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 
+#include <spirv_cross.hpp>
+#include <spirv_glsl.hpp>
+#include <spirv_hlsl.hpp>
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -61,11 +65,19 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	createSyncObjects();
 
-	createTestDescriptorSetLayout();
 	createTestUniformBuffer();
+	updateTestUBO(_curImageIdx);
+
+	createTestTextureImage();
+	createTestTextureImageView();
+	createTestTextureSampler();
+
+	reflectShader("asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.vert.spv");
+	reflectShader("asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.frag.spv");
+
+	createTestDescriptorSetLayout();
 	createTestDescriptorPool();
 	createTestDescriptorSets();
-	updateTestUBO(_curImageIdx);
 
 	createTestRenderPass();
 	createTestGraphicsPipeline();
@@ -73,8 +85,6 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	createTestIndexBuffer();
 
 	createSwapchain(_swapchainInfo);
-
-	createTestTextureImage();
 
 	_curGraphicsCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
@@ -350,10 +360,10 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 	RDS_PROFILE_SCOPED();
 
 	{
-		VkClearValue clearValues[] = { VkClearValue(), VkClearValue() };
+		VkClearValue clearValues[] = { VkClearValue() };
 		clearValues[0].color = { { 0.8f, 0.6f, 0.4f, 1.0f } };
 		//clearValues[0].color		= {{ 0.0f, 0.0f, 0.0f, 1.0f }};
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		//clearValues[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -479,17 +489,17 @@ RenderContext_Vk::createSwapchainFramebuffers()
 	{
 		VkImageView attachments[] =
 		{
-			_vkSwapchainImageViews[i],
+			_vkSwapchainImageViews[i].hnd(),
 		};
 
 		VkFramebufferCreateInfo framebufferInfo = {};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = _testVkRenderPass;
-		framebufferInfo.attachmentCount = ArraySize<decltype(attachments)>;
-		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = _swapchainInfo.extent.width;
-		framebufferInfo.height = _swapchainInfo.extent.height;
-		framebufferInfo.layers = 1;
+		framebufferInfo.sType			= VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass		= _testVkRenderPass;
+		framebufferInfo.attachmentCount	= ArraySize<decltype(attachments)>;
+		framebufferInfo.pAttachments	= attachments;
+		framebufferInfo.width			= _swapchainInfo.extent.width;
+		framebufferInfo.height			= _swapchainInfo.extent.height;
+		framebufferInfo.layers			= 1;
 
 		auto ret = vkCreateFramebuffer(vkDevice, &framebufferInfo, vkAlloCallbacks, _vkSwapchainFramebuffers[i].ptrForInit());
 		Util::throwIfError(ret);
@@ -632,8 +642,8 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	VkPtr<Vk_ShaderModule> psModule;
 
 	{
-		Util::createShaderModule(vsModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle2.hlsl.vert.spv", vkDevice);
-		Util::createShaderModule(psModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle2.hlsl.frag.spv", vkDevice);
+		Util::createShaderModule(vsModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.vert.spv", vkDevice);
+		Util::createShaderModule(psModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.frag.spv", vkDevice);
 
 		vsStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vsStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -869,25 +879,6 @@ RenderContext_Vk::createTestIndexBuffer()
 
 	Util::copyBuffer(&_testVkIdxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), &_vkTransferQueue);
 }
-
-void 
-RenderContext_Vk::createTestDescriptorSetLayout()
-{
-	VkDescriptorSetLayoutBinding uboLayoutBinding = {};
-	uboLayoutBinding.binding			= 0;
-	uboLayoutBinding.descriptorType		= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.descriptorCount	= 1;
-	uboLayoutBinding.stageFlags			= VK_SHADER_STAGE_VERTEX_BIT;
-	uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-	layoutInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = 1;
-	layoutInfo.pBindings	= &uboLayoutBinding;
-
-	_testVkDescriptorSetLayout.create(&layoutInfo);
-}
-
 void 
 RenderContext_Vk::createTestUniformBuffer()
 {
@@ -909,16 +900,55 @@ RenderContext_Vk::createTestUniformBuffer()
 }
 
 void 
+RenderContext_Vk::createTestDescriptorSetLayout()
+{
+	Vector<VkDescriptorSetLayoutBinding, 16> bindings;
+
+	{
+		auto& e = bindings.emplace_back();
+		e.binding				= 0;
+		e.descriptorType		= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		e.descriptorCount		= 1;
+		e.stageFlags			= VK_SHADER_STAGE_VERTEX_BIT;
+		e.pImmutableSamplers	= nullptr; // Optional
+	}
+	{
+		auto& e = bindings.emplace_back();
+		e.binding				= 1;
+		e.descriptorType		= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		e.descriptorCount		= 1;
+		e.stageFlags			= VK_SHADER_STAGE_FRAGMENT_BIT;
+		e.pImmutableSamplers	= nullptr;
+	}
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = sCast<u32>(bindings.size());
+	layoutInfo.pBindings	= bindings.data();
+
+	_testVkDescriptorSetLayout.create(&layoutInfo);
+}
+
+
+void 
 RenderContext_Vk::createTestDescriptorPool()
 {
-	VkDescriptorPoolSize poolSize = {};
-	poolSize.type				= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount	= sCast<u32>(s_kFrameInFlightCount);
+	Vector<VkDescriptorPoolSize, 16> poolSizes;
+	{
+		auto& e = poolSizes.emplace_back();
+		e.type				= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		e.descriptorCount	= sCast<u32>(s_kFrameInFlightCount);
+	}
+	{
+		auto& e = poolSizes.emplace_back();
+		e.type				= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		e.descriptorCount	= sCast<u32>(s_kFrameInFlightCount);
+	}
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount	= 1;
-	poolInfo.pPoolSizes		= &poolSize;
+	poolInfo.poolSizeCount	= sCast<u32>(poolSizes.size());
+	poolInfo.pPoolSizes		= poolSizes.data();
 	poolInfo.maxSets		= sCast<u32>(s_kFrameInFlightCount);
 	//poolInfo.flags			= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
@@ -929,13 +959,6 @@ void
 RenderContext_Vk::createTestDescriptorSets()
 {
 	auto* vkDev = renderer()->vkDevice();
-
-	/*Vector<Vk_DescriptorSetLayout_T*, s_kFrameInFlightCount> layouts;
-	layouts.resize(s_kFrameInFlightCount);
-	for (auto& e : layouts)
-	{
-		e = _testVkDescriptorSetLayout.hnd();
-	}*/
 
 	Vk_DescriptorSetLayout_T* layouts[] = { _testVkDescriptorSetLayout.hnd() };
 	VkDescriptorSetAllocateInfo allocInfo = {};
@@ -957,18 +980,40 @@ RenderContext_Vk::createTestDescriptorSets()
 		bufferInfo.offset	= 0;
 		bufferInfo.range	= sizeof(TestUBO);
 
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet				= _testVkDescriptorSets[i].hnd();
-		descriptorWrite.dstBinding			= 0;
-		descriptorWrite.dstArrayElement		= 0;
-		descriptorWrite.descriptorType		= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount		= 1;
-		descriptorWrite.pBufferInfo			= &bufferInfo;
-		descriptorWrite.pImageInfo			= nullptr; // Optional
-		descriptorWrite.pTexelBufferView	= nullptr; // Optional
+		VkDescriptorImageInfo imageInfo = {};
+		imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView		= _testVkTextureImageView.hnd();
+		imageInfo.sampler		= _testVkTextureSampler.hnd();
 
-		vkUpdateDescriptorSets(vkDev, 1, &descriptorWrite, 0, nullptr);
+		Vector<VkWriteDescriptorSet, 16> writeDescs;
+
+		{
+			auto& e = writeDescs.emplace_back();
+			e.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			e.dstSet			= _testVkDescriptorSets[i].hnd();
+			e.dstBinding		= 0;
+			e.dstArrayElement	= 0;
+			e.descriptorType	= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			e.descriptorCount	= 1;
+			e.pBufferInfo		= &bufferInfo;
+			e.pImageInfo		= nullptr; // Optional
+			e.pTexelBufferView	= nullptr; // Optional
+		}
+
+		{
+			auto& e = writeDescs.emplace_back();
+			e.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			e.dstSet			= _testVkDescriptorSets[i].hnd();
+			e.dstBinding		= 1;
+			e.dstArrayElement	= 0;
+			e.descriptorType	= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			e.descriptorCount	= 1;
+			e.pBufferInfo		= nullptr;
+			e.pImageInfo		= &imageInfo; // Optional
+			e.pTexelBufferView	= nullptr; // Optional
+		}
+
+		vkUpdateDescriptorSets(vkDev, sCast<u32>(writeDescs.size()), writeDescs.data(), 0, nullptr);
 	}
 }
 
@@ -1035,6 +1080,126 @@ RenderContext_Vk::createTestTextureImage()
 	{
 		auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		Util::transitionImageLayout(&_testVkTextureImage, vkFormat, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, nullptr, &_vkGraphicsQueue, cmdBuf);
+	}
+}
+
+void 
+RenderContext_Vk::createTestTextureImageView()
+{
+	_testVkTextureImageView.create(&_testVkTextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+}
+
+void 
+RenderContext_Vk::createTestTextureSampler()
+{
+	VkSamplerCreateInfo samplerInfo = {};
+	samplerInfo.sType					= VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter				= VK_FILTER_LINEAR;
+	samplerInfo.minFilter				= VK_FILTER_LINEAR;
+	samplerInfo.addressModeU			= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV			= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW			= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.anisotropyEnable		= Renderer_Vk::instance()->adapterInfo().feature.hasSamplerAnisotropy;
+	samplerInfo.maxAnisotropy			= Renderer_Vk::instance()->adapterInfo().limit.maxSamplerAnisotropy;
+	samplerInfo.borderColor				= VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable			= VK_FALSE;
+	samplerInfo.compareOp				= VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode				= VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias				= 0.0f;
+	samplerInfo.minLod					= 0.0f;
+	samplerInfo.maxLod					= 0.0f;
+
+	_testVkTextureSampler.create(&samplerInfo);
+}
+
+void 
+RenderContext_Vk::reflectShader(StrView spvFilename)
+{
+	RDS_LOG_WARN("TODO: remove {}", RDS_SRCLOC);
+
+	using namespace spirv_cross;
+
+	Vector<u8> bin;
+	File::readFile(spvFilename, bin);
+	Compiler compiler(reinCast<u32*>(bin.data()), bin.size() / (sizeof(u32) / sizeof(u8)));
+	
+	auto active = compiler.get_active_interface_variables();
+	ShaderResources res = compiler.get_shader_resources(active);
+	compiler.set_enabled_interface_variables(nmsp::move(active));
+
+	for (const Resource &resource : res.uniform_buffers)
+	{
+		auto &type = compiler.get_type(resource.base_type_id);
+		size_t size = compiler.get_declared_struct_size(type);
+
+		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
+		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
+
+		RDS_LOG("UBO size: {}, set: {}, binding: {}", size, set, binding);
+
+		size_t member_count = type.member_types.size();
+		for (unsigned i = 0; i < member_count; i++)
+		{
+			auto &member_type = compiler.get_type(type.member_types[i]);
+			size_t member_size = compiler.get_declared_struct_member_size(type, i);
+
+			// Get member offset within this struct.
+			size_t offset = compiler.type_struct_member_offset(type, i);
+
+			if (!member_type.array.empty())
+			{
+				// Get array stride, e.g. float4 foo[]; Will have array stride of 16 bytes.
+				size_t array_stride = compiler.type_struct_member_array_stride(type, i);
+				RDS_LOG("array_stride: {}", array_stride);
+			}
+
+			if (member_type.columns > 1)
+			{
+				// Get bytes stride between columns (if column major), for float4x4 -> 16 bytes.
+				size_t matrix_stride = compiler.type_struct_member_matrix_stride(type, i);
+				RDS_LOG("matrix_stride: {}", matrix_stride);
+
+			}
+			const auto& name = compiler.get_member_name(type.self, i);
+			RDS_LOG("name: {}, offset: {}, member_size: {}", name, offset, member_size);
+		}
+	}
+
+	for (const Resource &resource : res.sampled_images)
+	{
+		auto &type = compiler.get_type(resource.base_type_id);
+		size_t size = compiler.get_declared_struct_size(type);
+
+		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
+		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
+
+		RDS_LOG("SampledImage size: {}, set: {}, binding: {}", size, set, binding);
+	}
+
+	for (const Resource &resource : res.separate_samplers)
+	{
+		//auto &type = compiler.get_type(resource.base_type_id);
+
+		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
+		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
+
+		RDS_LOG("separate_samplers set: {}, binding: {}", set, binding);
+	}
+
+	for (const Resource &resource : res.separate_images)
+	{
+		//auto &type = compiler.get_type(resource.base_type_id);
+
+		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
+		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
+
+		RDS_LOG("separate_images set: {}, binding: {}", set, binding);
+	}
+
+	for (const Resource &resource : res.subpass_inputs)
+	{
+		u32 attachment_index = compiler.get_decoration(resource.id, spv::DecorationInputAttachmentIndex);	RDS_UNUSED(attachment_index);
 	}
 }
 

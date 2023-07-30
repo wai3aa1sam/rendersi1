@@ -210,7 +210,10 @@ protected:
 	void updateTestUBO(u32 curImageIdx);
 
 	void createTestTextureImage();
-	//void createTestTextureImageView();
+	void createTestTextureImageView();
+	void createTestTextureSampler();
+
+	void reflectShader(StrView spvFilename);
 
 protected:
 	Renderer_Vk* _renderer = nullptr;
@@ -240,8 +243,9 @@ protected:
 	Vk_DescriptorPool										_testVkDescriptorPool;
 	Vector<Vk_DescriptorSet, s_kFrameInFlightCount>			_testVkDescriptorSets;
 
-	Vk_Image _testVkTextureImage;
-	//Vk_ImageView _textVkTextureImageView;
+	Vk_Image		_testVkTextureImage;
+	Vk_ImageView	_testVkTextureImageView;
+	Vk_Sampler		_testVkTextureSampler;
 
 	Vk_Queue _vkGraphicsQueue;
 	Vk_Queue _vkPresentQueue;

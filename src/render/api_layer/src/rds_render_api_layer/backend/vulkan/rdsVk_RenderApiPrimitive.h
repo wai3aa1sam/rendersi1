@@ -34,8 +34,8 @@ using Vk_Fence					= VkFence_T;
 using Vk_Buffer_T				= VkBuffer_T;
 using Vk_BufferView_T			= VkBufferView_T;
 using Vk_Image_T				= VkImage_T;
-using Vk_Sampler				= VkSampler_T;
-using Vk_ImageView				= VkImageView_T;
+using Vk_Sampler_T				= VkSampler_T;
+using Vk_ImageView_T			= VkImageView_T;
 using Vk_DeviceMemory			= VkDeviceMemory_T;
 
 using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
@@ -109,7 +109,7 @@ protected:
 class  Vk_Allocator;
 struct Vk_AllocInfo;
 template<class T>
-class AllocableVk_RenderApiPrimitive : public Vk_RenderApiPrimitive<T>
+class Vk_AllocableRenderApiPrimitive : public Vk_RenderApiPrimitive<T>
 {
 public:
 	Vk_AllocHnd*	_internal_allocHnd();
@@ -122,10 +122,10 @@ protected:
 	Vk_AllocHnd		_allocHnd	= {};
 };
 
-template<class T> inline Vk_AllocHnd*	AllocableVk_RenderApiPrimitive<T>::_internal_allocHnd()						{ return &_allocHnd; }
+template<class T> inline Vk_AllocHnd*	Vk_AllocableRenderApiPrimitive<T>::_internal_allocHnd()						{ return &_allocHnd; }
 
-template<class T> inline void			AllocableVk_RenderApiPrimitive<T>::_internal_setAlloc(Vk_Allocator* alloc)	{ _alloc = alloc; }
-template<class T> inline Vk_Allocator*	AllocableVk_RenderApiPrimitive<T>::_internal_alloc()						{ return _alloc; }
+template<class T> inline void			Vk_AllocableRenderApiPrimitive<T>::_internal_setAlloc(Vk_Allocator* alloc)	{ _alloc = alloc; }
+template<class T> inline Vk_Allocator*	Vk_AllocableRenderApiPrimitive<T>::_internal_alloc()						{ return _alloc; }
 
 
 #endif // 1
@@ -269,15 +269,14 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Image>-Impl ---
+#pragma mark --- rdsVk_Image-Impl ---
 #endif // 0
 #if 1
 
-
-class Vk_Image : public AllocableVk_RenderApiPrimitive<Vk_Image_T>
+class Vk_Image : public Vk_AllocableRenderApiPrimitive<Vk_Image_T>
 {
 public:
-	using Base = AllocableVk_RenderApiPrimitive<Vk_Image_T>;
+	using Base = Vk_AllocableRenderApiPrimitive<Vk_Image_T>;
 
 public:
 	Vk_Image() = default;
@@ -302,19 +301,66 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_ImageView>-Impl ---
+#pragma mark --- rdsVk_ImageView-Impl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_ImageView> : public RenderApiPrimitive_Base_Vk<Vk_ImageView>
+//template<>
+//class Vk_RenderApiPrimitive<Vk_ImageView> : public RenderApiPrimitive_Base_Vk<Vk_ImageView>
+//{
+//public:
+//	void destroy();
+//};
+
+class Vk_ImageView : public Vk_RenderApiPrimitive<Vk_ImageView_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_ImageView_T>;
+
+public:
+	Vk_ImageView() = default;
+	~Vk_ImageView() { destroy(); }
+
+	Vk_ImageView(Vk_ImageView&&)		{ throwIf(true, ""); }
+	void operator=(Vk_ImageView&&)	{ throwIf(true, ""); }
+
+	void create(VkImageViewCreateInfo* viewInfo);
+	void create(Vk_Image*   vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount);
+	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount);
 	void destroy();
 };
 
 #endif
 
+#if 0
+#pragma mark --- rdsVk_ImageView-Impl ---
+#endif // 0
+#if 1
+
+//template<>
+//class Vk_RenderApiPrimitive<Vk_ImageView> : public RenderApiPrimitive_Base_Vk<Vk_ImageView>
+//{
+//public:
+//	void destroy();
+//};
+
+class Vk_Sampler : public Vk_RenderApiPrimitive<Vk_Sampler_T>
+{
+public:
+	using Base = Vk_RenderApiPrimitive<Vk_Sampler_T>;
+
+public:
+	Vk_Sampler() = default;
+	~Vk_Sampler() { destroy(); }
+
+	Vk_Sampler(Vk_Sampler&&)		{ throwIf(true, ""); }
+	void operator=(Vk_Sampler&&)	{ throwIf(true, ""); }
+
+	void create(VkSamplerCreateInfo* samplerInfo);
+	void destroy();
+};
+
+#endif
 
 #if 0
 #pragma mark --- rdsVk_RenderApiPrimitive<Vk_Framebuffer>-Impl ---
@@ -469,10 +515,10 @@ public:
 //};
 
 
-class Vk_Buffer : public AllocableVk_RenderApiPrimitive<Vk_Buffer_T>
+class Vk_Buffer : public Vk_AllocableRenderApiPrimitive<Vk_Buffer_T>
 {
 public:
-	using Base = AllocableVk_RenderApiPrimitive<Vk_Buffer_T>;
+	using Base = Vk_AllocableRenderApiPrimitive<Vk_Buffer_T>;
 
 public:
 	Vk_Buffer() = default;

@@ -16,4 +16,7 @@ glslc -x hlsl -fshader-stage=fragment   -fentry-point=ps_main -c "hello_triangle
 glslc -x hlsl -fshader-stage=vertex     -fentry-point=vs_main -c "hello_triangle2.hlsl" -o "local_temp/bin/hello_triangle2.hlsl.vert.spv"
 glslc -x hlsl -fshader-stage=fragment   -fentry-point=ps_main -c "hello_triangle2.hlsl" -o "local_temp/bin/hello_triangle2.hlsl.frag.spv"
 
+glslc -x hlsl -fshader-stage=vertex     -fentry-point=vs_main -c "hello_triangle3.hlsl" -o "local_temp/bin/hello_triangle3.hlsl.vert.spv"
+glslc -x hlsl -fshader-stage=fragment   -fentry-point=ps_main -c "hello_triangle3.hlsl" -o "local_temp/bin/hello_triangle3.hlsl.frag.spv"
+
 @rem pause

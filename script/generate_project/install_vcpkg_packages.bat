@@ -29,6 +29,7 @@ vcpkg install libpng:x64-windows 			        --recurse
 vcpkg install stb:x64-windows 				        --recurse
 vcpkg install nlohmann-json:x64-windows 	        --recurse
 vcpkg install vulkan-memory-allocator:x64-windows 	--recurse
+vcpkg install spirv-cross:x64-windows 	            --recurse
 
 POPD
 

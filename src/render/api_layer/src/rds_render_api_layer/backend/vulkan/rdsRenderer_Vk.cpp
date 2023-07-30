@@ -74,8 +74,15 @@ Renderer_Vk::createVkInstance()
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};	// don't destroy in scope before vkCreateInstance()
 	if (_adapterInfo.isDebug)
 	{
+		VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
+		VkValidationFeaturesEXT features = {};
+		features.sType							= VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+		features.enabledValidationFeatureCount	= 1;
+		features.pEnabledValidationFeatures		= enables;
+		
 		Util::createDebugMessengerInfo(debugCreateInfo);
 		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+		//createInfo.pNext = &features;
 	}
 
 	_vkInstance.create(&createInfo, allocCallbacks());
@@ -231,6 +238,12 @@ i64 Renderer_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
 	throwIf(!_queueFamilyIndices.graphics.has_value(),	"no graphics queue family");
 	throwIf(!_queueFamilyIndices.present.has_value() ,	"no present  queue family");
 	throwIf(!_queueFamilyIndices.transfer.has_value() ,	"no transfer queue family");
+
+	i64 score = 0;
+
+	if (info.feature.hasSamplerAnisotropy) score += 100;
+	
+
 	return 0;
 }
 
