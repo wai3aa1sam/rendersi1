@@ -34,16 +34,16 @@ public:
 	Tuple2f	uv;
 
 public:
-	static Vector<u8, 1024> make2()
+	static Vector<u8, 1024> make2(float z = 0.0f)
 	{
 		EditMesh editMesh;
 		{
 			auto& e = editMesh.pos;
 			e.reserve(s_kVtxCount);
-			e.emplace_back(-0.5f, -0.5f, 0.0f);
-			e.emplace_back( 0.5f, -0.5f, 0.0f);
-			e.emplace_back( 0.5f,  0.5f, 0.0f);
-			e.emplace_back(-0.5f,  0.5f, 0.0f);
+			e.emplace_back(-0.5f, -0.5f, z);
+			e.emplace_back( 0.5f, -0.5f, z);
+			e.emplace_back( 0.5f,  0.5f, z);
+			e.emplace_back(-0.5f,  0.5f, z);
 		}
 		{
 			auto& e = editMesh.color;
@@ -184,7 +184,9 @@ protected:
 	void endRecord(Vk_CommandBuffer_T* vkCmdBuf);
 	void bindPipeline(Vk_CommandBuffer_T* vkCmdBuf, Vk_Pipeline* vkPipeline);
 
-	void testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
+	void beginRenderPass(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
+	void endRenderPass	(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
+	void testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx, Vk_Buffer* vtxBuf);
 
 protected:
 	void createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvailableInfo_Vk& info, const math::Rect2f& rect2);
@@ -193,6 +195,8 @@ protected:
 	void destroySwapchain();
 
 	void createSwapchainFramebuffers();
+	void createDepthResources();
+	void destroyDepthResources();
 
 	void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx);
 	void createCommandBuffer(Vk_CommandPool* vkCmdPool);
@@ -200,7 +204,7 @@ protected:
 
 	void createTestRenderPass();
 	void createTestGraphicsPipeline();
-	void createTestVertexBuffer();
+	void createTestVertexBuffer(Vk_Buffer* vkBuf, float z = 0.0f);
 	void createTestIndexBuffer();
 
 	void createTestDescriptorSetLayout();
@@ -228,14 +232,17 @@ protected:
 	SwapChainImages_Vk			_vkSwapchainImages;
 	SwapChainImageViews_Vk		_vkSwapchainImageViews;
 	SwapChainFramebuffers_Vk	_vkSwapchainFramebuffers;
+
+	Vk_Image		_vkDepthImage;
+	Vk_ImageView	_vkDepthImageView;
+	VkFormat		_vkDepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 	
 	VkPtr<Vk_Pipeline>				_testVkPipeline;
 	VkPtr<Vk_RenderPass>			_testVkRenderPass;
 	VkPtr<Vk_PipelineLayout>		_testVkPipelineLayout;
 	Vk_Buffer						_testVkVtxBuffer;
-	VkPtr<Vk_DeviceMemory>			_testVkVtxBufferMemory;
+	Vk_Buffer						_testVkVtxBuffer2;
 	Vk_Buffer						_testVkIdxBuffer;
-	VkPtr<Vk_DeviceMemory>			_testVkIdxBufferMemory;
 	
 	Vk_DescriptorSetLayout									_testVkDescriptorSetLayout;
 	Vector<Vk_Buffer,			s_kFrameInFlightCount>		_testVkUniformBuffers;

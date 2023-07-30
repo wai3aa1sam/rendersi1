@@ -245,6 +245,11 @@ Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags 
 {
 	RDS_CORE_ASSERT(mipCount >= 1, "");
 
+	if (Util::hasStencilComponent(vkFormat))
+	{
+		aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
+	}
+
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image								= vkImage;
@@ -268,9 +273,12 @@ Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags 
 void 
 Vk_ImageView::destroy()
 {
+	if (!_hnd)
+		return;
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
 	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
 	vkDestroyImageView(vkDev, _hnd, vkAllocCallBacks);
+	_hnd = nullptr;
 }
 
 #endif

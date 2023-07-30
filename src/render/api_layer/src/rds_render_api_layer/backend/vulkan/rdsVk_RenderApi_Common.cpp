@@ -208,6 +208,26 @@ RenderApiUtil_Vk::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
 	return flags;
 }
 
+bool 
+RenderApiUtil_Vk::hasStencilComponent(VkFormat format)
+{
+	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+bool 
+RenderApiUtil_Vk::isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features)
+{
+	auto* vkPhyDev = Renderer_Vk::instance()->vkPhysicalDevice();
+
+	VkFormatProperties props;
+	vkGetPhysicalDeviceFormatProperties(vkPhyDev, format, &props);
+
+	bool isLinear	= tiling == VK_IMAGE_TILING_LINEAR	&& BitUtil::has(props.linearTilingFeatures,  features);
+	bool isOptimal	= tiling == VK_IMAGE_TILING_OPTIMAL	&& BitUtil::has(props.optimalTilingFeatures, features);
+
+	return isLinear || isOptimal;
+}
+
 u32
 RenderApiUtil_Vk::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties)
 {
@@ -531,7 +551,7 @@ RenderApiUtil_Vk::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkIm
 		srcAccessMask	= VK_ACCESS_TRANSFER_WRITE_BIT;
 		dstAccessMask	= VK_ACCESS_SHADER_READ_BIT;
 	}
-	else if (dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_UNDEFINED ) 
+	else if (dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_UNDEFINED) 
 	{
 		srcStage		= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;			// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
 		dstStage		= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -544,8 +564,8 @@ RenderApiUtil_Vk::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkIm
 	}
 
 	VkImageAspectFlags aspectMask = dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-	//if (hasStencilComponent(format)) 
-	//	aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+	if (hasStencilComponent(vkFormat)) 
+		aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
 
 	#if 1
 

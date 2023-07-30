@@ -325,8 +325,8 @@ public:
 	void operator=(Vk_ImageView&&)	{ throwIf(true, ""); }
 
 	void create(VkImageViewCreateInfo* viewInfo);
-	void create(Vk_Image*   vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount);
-	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount);
+	void create(Vk_Image*   vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount = 1);
+	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount = 1);
 	void destroy();
 };
 

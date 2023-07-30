@@ -150,6 +150,9 @@ public:
 
 	static VkMemoryPropertyFlags toVkMemoryPropFlags(RenderMemoryUsage memUsage);
 
+	static bool hasStencilComponent(VkFormat format);
+	static bool isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
+
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
 
