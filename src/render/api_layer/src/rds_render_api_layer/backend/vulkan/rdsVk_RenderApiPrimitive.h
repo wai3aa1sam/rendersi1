@@ -14,9 +14,9 @@ using Vk_Device					= VkDevice_T;
 using Vk_Queue_T				= VkQueue_T;
 using Vk_Surface				= VkSurfaceKHR_T;
 using Vk_Swapchain				= VkSwapchainKHR_T;
-using Vk_Framebuffer			= VkFramebuffer_T;
+using Vk_Framebuffer_T			= VkFramebuffer_T;
 
-using Vk_RenderPass				= VkRenderPass_T;
+using Vk_RenderPass_T			= VkRenderPass_T;
 using Vk_Pipeline				= VkPipeline_T;
 using Vk_PipelineLayout			= VkPipelineLayout_T;
 using Vk_PipelineCache			= VkPipelineCache_T;
@@ -92,7 +92,9 @@ public:
 
 	void destroy();
 
-	T* hnd() { return _hnd; }
+				T* hnd()		{ return _hnd; }
+	/*const*/	T* hnd() const	{ return _hnd; }
+
 	T** hndForInit() { return &_hnd; }
 
 protected:
@@ -287,6 +289,8 @@ public:
 
 	void create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create(Vk_Image_T* vkImage);
+
 	void destroy();
 };
 
@@ -363,14 +367,30 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Framebuffer>-Impl ---
+#pragma mark --- rdsVk_Framebuffer-Impl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_Framebuffer> : public RenderApiPrimitive_Base_Vk<Vk_Framebuffer>
+//template<>
+//class Vk_RenderApiPrimitive<Vk_Framebuffer> : public RenderApiPrimitive_Base_Vk<Vk_Framebuffer>
+//{
+//public:
+//	void destroy();
+//};
+
+class Vk_Framebuffer : public Vk_RenderApiPrimitive<Vk_Framebuffer_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_Framebuffer_T>;
+
+public:
+	Vk_Framebuffer() = default;
+	~Vk_Framebuffer() { destroy(); }
+
+	Vk_Framebuffer(Vk_Framebuffer&&)	{ throwIf(true, ""); }
+	void operator=(Vk_Framebuffer&&)	{ throwIf(true, ""); }
+
+	void create(const VkFramebufferCreateInfo* pCreateInfo);
 	void destroy();
 };
 
@@ -391,16 +411,33 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_RenderPass>-Impl ---
+#pragma mark --- rdsVk_RenderPass-Impl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_RenderPass> : public RenderApiPrimitive_Base_Vk<Vk_RenderPass>
+//template<>
+//class Vk_RenderApiPrimitive<Vk_RenderPass> : public RenderApiPrimitive_Base_Vk<Vk_RenderPass>
+//{
+//public:
+//	void destroy();
+//};
+
+class Vk_RenderPass : public Vk_RenderApiPrimitive<Vk_RenderPass_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_RenderPass_T>;
+
+public:
+	Vk_RenderPass() = default;
+	~Vk_RenderPass() { destroy(); }
+
+	Vk_RenderPass(Vk_RenderPass&&)	{ throwIf(true, ""); }
+	void operator=(Vk_RenderPass&&)	{ throwIf(true, ""); }
+
+	void create(const VkRenderPassCreateInfo* pCreateInfo);
 	void destroy();
 };
+
 
 #endif
 

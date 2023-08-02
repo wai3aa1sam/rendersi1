@@ -83,7 +83,6 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	createTestVertexBuffer(&_testVkVtxBuffer2, -0.5f);
 	createTestIndexBuffer();
 
-	createDepthResources();
 	createSwapchain(_swapchainInfo);
 
 	_curGraphicsCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -151,8 +150,11 @@ RenderContext_Vk::onBeginRender()
 	#endif // 1
 
 	{
+		renderFrame().reset();
+
 		_curGraphicsCmdBuf	= renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		auto* vkCmdBuf		= _curGraphicsCmdBuf->hnd();
+
 		beginRecord(vkCmdBuf, _curImageIdx);
 
 		//RDS_PROFILE_GPU_ZONE_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
@@ -209,7 +211,6 @@ RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
 	auto ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(renderer()->vkPhysicalDevice(), _vkSurface, &renderer()->_swapchainAvaliableInfo.capabilities); (void)ret;
 
 	_swapchainInfo.extent = Util::toVkExtent2D(newSize);
-	createDepthResources();
 	createSwapchain(_swapchainInfo);
 }
 
@@ -304,7 +305,6 @@ RenderContext_Vk::beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
 
-	renderFrame().reset();
 
 	updateTestUBO(imageIdx);
 	_curGraphicsCmdBuf->beginRecord(vkGraphicsQueue(), VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -371,8 +371,8 @@ RenderContext_Vk::beginRenderPass(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass			= _testVkRenderPass;
-		renderPassInfo.framebuffer			= _vkSwapchainFramebuffers[imageIdx];
+		renderPassInfo.renderPass			= _testVkRenderPass.hnd();
+		renderPassInfo.framebuffer			= _vkSwapchainFramebuffers[imageIdx].hnd();
 		renderPassInfo.renderArea.offset	= { 0, 0 };
 		renderPassInfo.renderArea.extent	= _swapchainInfo.extent;
 		renderPassInfo.clearValueCount		= sCast<u32>(clearValues.size());
@@ -470,6 +470,7 @@ RenderContext_Vk::createSwapchain(const SwapchainInfo_Vk& swapchainInfo)
 		_swapchainInfo.extent = Util::toVkExtent2D(_framebufferSize);
 	}
 
+	createDepthResources();
 	Util::createSwapchain(_vkSwapchain.ptrForInit(), _vkSurface, vkDevice, swapchainInfo, _renderer->swapchainAvailableInfo(), _renderer->queueFamilyIndices());
 	Util::createSwapchainImages(_vkSwapchainImages, _vkSwapchain, vkDevice);
 	Util::createSwapchainImageViews(_vkSwapchainImageViews, _vkSwapchainImages, vkDevice, swapchainInfo.surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -484,6 +485,9 @@ RenderContext_Vk::destroySwapchain()
 
 	vkDeviceWaitIdle(renderer()->vkDevice());
 
+	_vkDepthImageView.destroy();
+	_vkDepthImage.destroy();
+
 	_vkSwapchainFramebuffers.clear();
 	_vkSwapchainImageViews.clear();
 	_vkSwapchainImages.clear();
@@ -493,9 +497,6 @@ RenderContext_Vk::destroySwapchain()
 void
 RenderContext_Vk::createSwapchainFramebuffers()
 {
-	auto* vkDevice = _renderer->vkDevice();
-	auto* vkAlloCallbacks = _renderer->allocCallbacks();
-
 	auto count = _vkSwapchainImageViews.size();
 
 	_vkSwapchainFramebuffers.resize(count);
@@ -510,15 +511,14 @@ RenderContext_Vk::createSwapchainFramebuffers()
 
 		VkFramebufferCreateInfo framebufferInfo = {};
 		framebufferInfo.sType			= VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass		= _testVkRenderPass;
+		framebufferInfo.renderPass		= _testVkRenderPass.hnd();
 		framebufferInfo.attachmentCount	= ArraySize<decltype(attachments)>;
 		framebufferInfo.pAttachments	= attachments;
 		framebufferInfo.width			= _swapchainInfo.extent.width;
 		framebufferInfo.height			= _swapchainInfo.extent.height;
 		framebufferInfo.layers			= 1;
 
-		auto ret = vkCreateFramebuffer(vkDevice, &framebufferInfo, vkAlloCallbacks, _vkSwapchainFramebuffers[i].ptrForInit());
-		Util::throwIfError(ret);
+		_vkSwapchainFramebuffers[i].create(&framebufferInfo);
 	}
 }
 
@@ -595,8 +595,8 @@ RenderContext_Vk::createSyncObjects()
 void
 RenderContext_Vk::createTestRenderPass()
 {
-	auto* vkDevice = _renderer->vkDevice();
-	const auto* vkAllocCallbacks = _renderer->allocCallbacks();
+	//auto* vkDevice = _renderer->vkDevice();
+	//const auto* vkAllocCallbacks = _renderer->allocCallbacks();
 
 	VkAttachmentDescription	colorAttachment = {};
 	colorAttachment.format			= _swapchainInfo.surfaceFormat.format;
@@ -667,8 +667,7 @@ RenderContext_Vk::createTestRenderPass()
 	renderPassInfo.pSubpasses		= &subpass;
 	renderPassInfo.pDependencies	= subpassDeps.data();
 
-	auto ret = vkCreateRenderPass(vkDevice, &renderPassInfo, vkAllocCallbacks, _testVkRenderPass.ptrForInit());
-	Util::throwIfError(ret);
+	_testVkRenderPass.create(&renderPassInfo);
 }
 
 void
@@ -851,7 +850,7 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	pipelineInfo.pColorBlendState		= &colorBlending;
 	pipelineInfo.pDynamicState			= &dynamicState;
 	pipelineInfo.layout					= _testVkPipelineLayout;
-	pipelineInfo.renderPass				= _testVkRenderPass;
+	pipelineInfo.renderPass				= _testVkRenderPass.hnd();
 	pipelineInfo.subpass				= 0;
 	pipelineInfo.basePipelineHandle		= VK_NULL_HANDLE;	// Optional for creating a new graphics pipeline by deriving from an existing pipeline with VK_PIPELINE_CREATE_DERIVATIVE_BIT
 	pipelineInfo.basePipelineIndex		= -1;				// Optional

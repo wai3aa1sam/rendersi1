@@ -11,6 +11,8 @@
 #include "command/rdsVk_CommandPool.h"
 #include "rdsVk_RenderFrame.h"
 
+#include "rdsVk_RenderTarget.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -238,11 +240,13 @@ protected:
 	VkFormat		_vkDepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 	
 	VkPtr<Vk_Pipeline>				_testVkPipeline;
-	VkPtr<Vk_RenderPass>			_testVkRenderPass;
+	Vk_RenderPass					_testVkRenderPass;
 	VkPtr<Vk_PipelineLayout>		_testVkPipelineLayout;
 	Vk_Buffer						_testVkVtxBuffer;
 	Vk_Buffer						_testVkVtxBuffer2;
 	Vk_Buffer						_testVkIdxBuffer;
+
+	Vk_RenderTarget _testRenderTarget;
 	
 	Vk_DescriptorSetLayout									_testVkDescriptorSetLayout;
 	Vector<Vk_Buffer,			s_kFrameInFlightCount>		_testVkUniformBuffers;
@@ -257,10 +261,6 @@ protected:
 	Vk_Queue _vkGraphicsQueue;
 	Vk_Queue _vkPresentQueue;
 	Vk_Queue _vkTransferQueue;
-
-	//Vk_CommandPool _vkGraphicsCommandPool;
-	//Vk_CommandPool _vkTransferCommandPool;
-	//Vector<Vk_CommandBuffer,		s_kFrameInFlightCount>	_vkCommandBuffers;
 
 	Vector<Vk_RenderFrame, s_kFrameInFlightCount> _renderFrames;
 	Vk_CommandBuffer* _curGraphicsCmdBuf = nullptr;

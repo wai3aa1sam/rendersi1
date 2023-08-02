@@ -25,7 +25,7 @@ namespace rds
 
 void Vk_Instance::create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator)
 {
-	VkResult ret = vkCreateInstance(pCreateInfo, pAllocator, &_hnd);
+	VkResult ret = vkCreateInstance(pCreateInfo, pAllocator, hndForInit());
 
 	/*
 	Success
@@ -120,7 +120,7 @@ Vk_RenderApiPrimitive<Vk_Surface>::destroy()
 void 
 Vk_Queue::create(u32 familyIdx, Vk_Device* vkDevice)
 {
-	vkGetDeviceQueue(vkDevice, familyIdx, _queueIdx, &_hnd);
+	vkGetDeviceQueue(vkDevice, familyIdx, _queueIdx, hndForInit());
 	_familyIdx = familyIdx;
 }
 
@@ -164,7 +164,7 @@ void
 Vk_Image::create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	_internal_setAlloc(vkAlloc);
-	auto ret = vkAlloc->allocImage(&_hnd, &_allocHnd, imageInfo, allocInfo, vkMemPropFlags);
+	auto ret = vkAlloc->allocImage(hndForInit(), &_allocHnd, imageInfo, allocInfo, vkMemPropFlags);
 	Util::throwIfError(ret);
 }
 
@@ -202,9 +202,15 @@ Vk_Image::create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 
 }
 
 void 
+Vk_Image::create(Vk_Image_T* vkImage)
+{
+	_hnd = vkImage;
+}
+
+void 
 Vk_Image::destroy()
 {
-	if (!_hnd)
+	if (!_hnd || !_alloc)
 		return;
 	_alloc->freeImage(_hnd, &_allocHnd);
 	_hnd = nullptr;
@@ -230,7 +236,7 @@ Vk_ImageView::create(VkImageViewCreateInfo* viewInfo)
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
 	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
 
-	auto ret = vkCreateImageView(vkDev, viewInfo, vkAllocCallBacks, &_hnd);
+	auto ret = vkCreateImageView(vkDev, viewInfo, vkAllocCallBacks, hndForInit());
 	Util::throwIfError(ret);
 }
 
@@ -295,7 +301,7 @@ Vk_Sampler::create(VkSamplerCreateInfo* samplerInfo)
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
 	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
 
-	auto ret = vkCreateSampler(vkDev, samplerInfo, vkAllocCallBacks, &_hnd);
+	auto ret = vkCreateSampler(vkDev, samplerInfo, vkAllocCallBacks, hndForInit());
 	Util::throwIfError(ret);
 }
 
@@ -340,11 +346,29 @@ Vk_Sampler::destroy()
 #endif // 0
 #if 1
 
-void
-Vk_RenderApiPrimitive<Vk_Framebuffer>::destroy()
+//void
+//Vk_RenderApiPrimitive<Vk_Framebuffer>::destroy()
+//{
+//	auto* renderer = Renderer_Vk::instance();
+//	vkDestroyFramebuffer(renderer->vkDevice(), _p, renderer->allocCallbacks());
+//}
+
+void 
+Vk_Framebuffer::create(const VkFramebufferCreateInfo* pCreateInfo)
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	auto ret = vkCreateFramebuffer(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_Framebuffer::destroy()
 {
 	auto* renderer = Renderer_Vk::instance();
-	vkDestroyFramebuffer(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	vkDestroyFramebuffer(renderer->vkDevice(), _hnd, renderer->allocCallbacks());
 }
 
 #endif
@@ -364,15 +388,33 @@ Vk_RenderApiPrimitive<Vk_ShaderModule>::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_RenderPass>-Impl ---
+#pragma mark --- rdsVk_RenderPass-Impl ---
 #endif // 0
 #if 1
+//
+//void 
+//Vk_RenderApiPrimitive<Vk_RenderPass>::destroy()
+//{
+//	auto* renderer = Renderer_Vk::instance();
+//	vkDestroyRenderPass(renderer->vkDevice(), _p, renderer->allocCallbacks());
+//}
 
 void 
-Vk_RenderApiPrimitive<Vk_RenderPass>::destroy()
+Vk_RenderPass::create(const VkRenderPassCreateInfo* pCreateInfo)
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	auto ret = vkCreateRenderPass(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_RenderPass::destroy()
 {
 	auto* renderer = Renderer_Vk::instance();
-	vkDestroyRenderPass(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	vkDestroyRenderPass(renderer->vkDevice(), hnd(), renderer->allocCallbacks());
 }
 
 #endif
@@ -483,7 +525,7 @@ void
 Vk_Buffer::create(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	_internal_setAlloc(alloc);
-	auto ret = alloc->allocBuf(&_hnd, &_allocHnd, bufferInfo, allocInfo, vkMemPropFlags);
+	auto ret = alloc->allocBuf(hndForInit(), &_allocHnd, bufferInfo, allocInfo, vkMemPropFlags);
 	Util::throwIfError(ret);
 }
 
@@ -543,7 +585,7 @@ Vk_DescriptorSetLayout::create(const VkDescriptorSetLayoutCreateInfo* pCreateInf
 	auto* vkDev				= renderer->vkDevice();
 	auto* vkAllocCallbacks	= renderer->allocCallbacks();
 
-	auto ret = vkCreateDescriptorSetLayout(vkDev, pCreateInfo, vkAllocCallbacks, &_hnd);
+	auto ret = vkCreateDescriptorSetLayout(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());
 	Util::throwIfError(ret);
 }
 
@@ -571,7 +613,7 @@ Vk_DescriptorPool::create(const VkDescriptorPoolCreateInfo* pCreateInfo)
 	auto* vkDev				= renderer->vkDevice();
 	auto* vkAllocCallbacks	= renderer->allocCallbacks();
 
-	auto ret = vkCreateDescriptorPool(vkDev, pCreateInfo, vkAllocCallbacks, &_hnd);
+	auto ret = vkCreateDescriptorPool(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());
 	Util::throwIfError(ret);
 }
 
@@ -599,7 +641,7 @@ Vk_DescriptorSet::create(const VkDescriptorSetAllocateInfo* pAllocateInfo)
 	auto* vkDev				= renderer->vkDevice();
 	//auto* vkAllocCallbacks	= renderer->allocCallbacks();
 
-	auto ret = vkAllocateDescriptorSets(vkDev, pAllocateInfo, &_hnd);
+	auto ret = vkAllocateDescriptorSets(vkDev, pAllocateInfo, hndForInit());
 	Util::throwIfError(ret);
 }
 

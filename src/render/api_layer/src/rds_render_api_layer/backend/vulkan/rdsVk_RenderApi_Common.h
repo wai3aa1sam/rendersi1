@@ -18,12 +18,12 @@ class Vk_CommandPool;
 
 #if 1
 
-template<size_t N>	using SwapChainImages_Vk_N			= Vector<Vk_Image_T*, N>;
-					using SwapChainImages_Vk			= Vector<Vk_Image_T*,				RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainImages_Vk_N			= Vector<Vk_Image, N>;
+					using SwapChainImages_Vk			= Vector<Vk_Image,			RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
 template<size_t N>	using SwapChainImageViews_Vk_N		= Vector<Vk_ImageView, N>;
-					using SwapChainImageViews_Vk		= Vector<Vk_ImageView,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
-template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<VkPtr<Vk_Framebuffer>, N>;
-					using SwapChainFramebuffers_Vk		= Vector<VkPtr<Vk_Framebuffer>,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+					using SwapChainImageViews_Vk		= Vector<Vk_ImageView,		RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<Vk_Framebuffer, N>;
+					using SwapChainFramebuffers_Vk		= Vector<Vk_Framebuffer,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
 
 #endif // 1
 
@@ -373,9 +373,19 @@ RenderApiUtil_Vk::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapcha
 {
 	u32 imageCount = 0;
 	vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
-	out.resize(imageCount);
-	auto ret = vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, out.data());
+
+	Vector<Vk_Image_T*, 16> vkImages;
+	vkImages.resize(imageCount);
+	auto ret = vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, vkImages.data());
 	throwIfError(ret);
+
+	out.clear();
+	out.resize(imageCount);
+	for (size_t i = 0; i < imageCount; i++)
+	{
+		out[i].create(vkImages[i]);
+	}
+
 	return imageCount;
 }
 
@@ -388,7 +398,7 @@ RenderApiUtil_Vk::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, co
 	out.resize(vkImages.size());
 	for (size_t i = 0; i < vkImages.size(); ++i)
 	{
-		out[i].create(vkImages[i], format, aspectFlags, mipLevels);
+		out[i].create(vkImages[i].hnd(), format, aspectFlags, mipLevels);
 	}
 }
 
