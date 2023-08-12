@@ -11,6 +11,15 @@ namespace rds
 #endif // 0
 #if 1
 
+EditorMainWindow::EditorMainWindow()
+{
+
+}
+
+EditorMainWindow::~EditorMainWindow()
+{
+
+}
 
 void EditorMainWindow::onCreate(const CreateDesc& desc)
 {

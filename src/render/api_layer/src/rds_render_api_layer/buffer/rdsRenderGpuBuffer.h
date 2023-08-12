@@ -83,7 +83,7 @@ inline const RenderGpuBuffer::CreateDesc& RenderGpuBuffer::cDesc() const { retur
 
 inline RenderGpuBuffer::SizeType RenderGpuBuffer::stride()			const { return _cDesc.stride; }
 inline RenderGpuBuffer::SizeType RenderGpuBuffer::bufSize()			const { return _cDesc.bufSize; }
-inline RenderGpuBuffer::SizeType RenderGpuBuffer::elementCount()	const { return _cDesc.bufSize / (BitUtil::toByte(_cDesc.stride)); }
+inline RenderGpuBuffer::SizeType RenderGpuBuffer::elementCount()	const { return _cDesc.bufSize / _cDesc.stride; }
 
 #endif
 }

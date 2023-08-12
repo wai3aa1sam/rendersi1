@@ -62,6 +62,12 @@ RenderContext::endRender()
 }
 
 void 
+RenderContext::commit(RenderCommandBuffer& renderBuf)
+{
+	onCommit(renderBuf);
+}
+
+void 
 RenderContext::commit(TransferCommandBuffer& transferBuf)
 {
 	onCommit(transferBuf);
@@ -86,6 +92,12 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 	_framebufferSize.y = cDesc.window->clientRect().h;
 }
 
+void 
+RenderContext::waitIdle()
+{
+	RDS_CORE_ASSERT(false);
+}
+
 void
 RenderContext::onPostCreate(const CreateDesc& cDesc)
 {
@@ -98,6 +110,11 @@ RenderContext::onDestroy()
 
 }
 
+void 
+RenderContext::onCommit(RenderCommandBuffer& renderBuf)
+{
+
+}
 
 void
 RenderContext::onCommit(TransferCommandBuffer& transferBuf)

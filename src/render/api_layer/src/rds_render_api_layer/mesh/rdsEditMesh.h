@@ -37,6 +37,8 @@ public:
 	template<size_t N>	void		createPackedVtxData(Vector<u8, N>& out);
 						Vector<u8>	makePackedVtxData();
 
+	const VertexLayout* getVertexLayout() const;
+
 public:
 	Vector<Tuple3f>	pos;
 	Vector<Color4b>	color;
@@ -179,11 +181,25 @@ struct PackedVtxDataHelper
 									, const Vector<BINORMAL_TYPE>*	binormals,		u8 binormalCount
 		);
 
+	template< class POS_TYPE
+			, class COLOR_TYPE
+			, class UV_TYPE
+			, class NORMAL_TYPE
+			, class TANGNET_TYPE
+			, class BINORMAL_TYPE
+	>
+	static const VertexLayout* getVertexLayout(const Vector<POS_TYPE>*			positions,		u8 posCount
+											  , const Vector<COLOR_TYPE>*		colors,			u8 colorCount
+											  , const Vector<UV_TYPE>*			uvs,			u8 uvCount
+											  , const Vector<NORMAL_TYPE>*		normals,		u8 normalCount
+											  , const Vector<TANGNET_TYPE>*		tangents,		u8 tangentCount
+											  , const Vector<BINORMAL_TYPE>*	binormals,		u8 binormalCount);
+
 
 	template<class T>
 	static u8 validVtxAttrCount(SizeType vtxCount, const Vector<T>* pElements, size_t count)
 	{
-		u8 ret = 0;
+		u8 attrCount = 0;
 		for (size_t i = 0; i < count; i++)
 		{
 			auto& elements	= pElements[i];
@@ -191,10 +207,10 @@ struct PackedVtxDataHelper
 			throwIf(!isValid, "invalid vertex attr");
 			if (elements.size() > 0)
 			{
-				ret++;
+				attrCount++;
 			}
 		}
-		return ret;
+		return attrCount;
 	}
 
 	template<class T>
@@ -208,6 +224,52 @@ struct PackedVtxDataHelper
 		}
 	}
 };
+
+template< class POS_TYPE
+		, class COLOR_TYPE
+		, class UV_TYPE
+		, class NORMAL_TYPE
+		, class TANGNET_TYPE
+		, class BINORMAL_TYPE
+> inline
+const VertexLayout*
+PackedVtxDataHelper::getVertexLayout(const Vector<POS_TYPE>*		positions,		u8 posCount
+								   , const Vector<COLOR_TYPE>*		colors,			u8 colorCount
+								   , const Vector<UV_TYPE>*			uvs,			u8 uvCount
+								   , const Vector<NORMAL_TYPE>*		normals,		u8 normalCount
+								   , const Vector<TANGNET_TYPE>*	tangents,		u8 tangentCount
+								   , const Vector<BINORMAL_TYPE>*	binormals,		u8 binormalCount)
+{
+	using PosType		= POS_TYPE;
+	using ColorType_	= COLOR_TYPE;
+	using UvType		= UV_TYPE;
+	using NormalType	= NORMAL_TYPE;
+	using TangentType	= TANGNET_TYPE;
+	using BinormalType	= BINORMAL_TYPE;
+
+	using Helper	= PackedVtxDataHelper;
+	using SizeType	= Helper::SizeType;
+
+	RDS_CORE_ASSERT(posCount == 1, "only 1 pos count supported");
+	static_assert(IsSame<NormalType, TangentType> && IsSame<NormalType, BinormalType>, "");
+
+	SizeType vtxCount = positions[0].size();
+	auto validPosCount		= Helper::validVtxAttrCount(vtxCount, positions,	posCount); RDS_UNUSED(validPosCount);
+	auto validColorCount	= Helper::validVtxAttrCount(vtxCount, colors,		colorCount);
+	auto validUvCount		= Helper::validVtxAttrCount(vtxCount, uvs,			uvCount);
+	auto validNormalCount	= Helper::validVtxAttrCount(vtxCount, normals,		normalCount);
+	auto validTangentCount	= Helper::validVtxAttrCount(vtxCount, tangents,		tangentCount);
+	auto validBinormalCount	= Helper::validVtxAttrCount(vtxCount, binormals,	binormalCount);
+
+	VertexType vertexType = VertexTypeUtil::make( RenderDataTypeUtil::get<PosType>()
+		, RenderDataTypeUtil::get<ColorType_>(),	validColorCount
+		, RenderDataTypeUtil::get<UvType>(),		validUvCount
+		, RenderDataTypeUtil::get<NormalType>(),	validNormalCount, validTangentCount, validBinormalCount
+	);
+
+	const auto*	vtxLayout = VertexLayoutManager::instance()->get(vertexType);
+	return vtxLayout;
+}
 
 template<size_t N
 		, class POS_TYPE
@@ -241,22 +303,15 @@ PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out
 	RDS_CORE_ASSERT(posCount == 1, "only 1 pos count supported");
 	static_assert(IsSame<NormalType, TangentType> && IsSame<NormalType, BinormalType>, "");
 
-	SizeType vtxCount = positions[0].size();
-	auto validPosCount		= Helper::validVtxAttrCount(vtxCount, positions,	posCount); RDS_UNUSED(validPosCount);
-	auto validColorCount	= Helper::validVtxAttrCount(vtxCount, colors,		colorCount);
-	auto validUvCount		= Helper::validVtxAttrCount(vtxCount, uvs,			uvCount);
-	auto validNormalCount	= Helper::validVtxAttrCount(vtxCount, normals,		normalCount);
-	auto validTangentCount	= Helper::validVtxAttrCount(vtxCount, tangents,		tangentCount);
-	auto validBinormalCount	= Helper::validVtxAttrCount(vtxCount, binormals,	binormalCount);
-
-	VertexType vertexType = VertexTypeUtil::make( RenderDataTypeUtil::get<PosType>()
-												, RenderDataTypeUtil::get<ColorType_>(),	validColorCount
-												, RenderDataTypeUtil::get<UvType>(),		validUvCount
-												, RenderDataTypeUtil::get<NormalType>(),	validNormalCount, validTangentCount, validBinormalCount
-											);
-
-	const auto*	vtxLayout = VertexLayoutManager::instance()->get(vertexType);
+	const auto*	vtxLayout = Helper::getVertexLayout(positions,	posCount
+												, colors,		colorCount
+												, uvs,			uvCount
+												, normals,		normalCount
+												, tangents,		tangentCount
+												, binormals,	binormalCount);
 	auto stride = vtxLayout->stride();
+
+	SizeType vtxCount = positions[0].size();
 
 	out.clear();
 	out.resize(vtxCount * stride);
@@ -285,5 +340,21 @@ PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out
 }
 
 #endif // 1
+
+
+inline
+const VertexLayout* 
+EditMesh::getVertexLayout() const
+{
+	return PackedVtxDataHelper::getVertexLayout(
+		&pos,			s_kPosCount
+		, &color,		s_kColorCount
+		, uvs,			s_kUvCount
+		, &normal,		s_kNormalCount
+		, &tangent,		s_kTangentCount
+		, &binormal,	s_kBinormalCount
+	);
+}
+
 
 }

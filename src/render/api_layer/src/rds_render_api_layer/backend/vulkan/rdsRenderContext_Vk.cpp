@@ -13,12 +13,14 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
+#define RDS_TEST_DRAW_CALL 0
+
 namespace rds
 {
 
 SPtr<RenderContext> Renderer_Vk::onCreateContext(const RenderContext_CreateDesc& cDesc)
 {
-	auto p = SPtr<RenderContext>(RDS_NEW(RenderContext_Vk)());
+	auto p = SPtr<RenderContext>(makeSPtr<RenderContext_Vk>());
 	p->create(cDesc);
 	return p;
 }
@@ -37,6 +39,11 @@ RenderContext_Vk::RenderContext_Vk()
 RenderContext_Vk::~RenderContext_Vk()
 {
 	destroy();
+}
+
+void RenderContext_Vk::waitIdle()
+{
+	vkDeviceWaitIdle(renderer()->vkDevice());
 }
 
 void
@@ -99,7 +106,7 @@ void
 RenderContext_Vk::onDestroy()
 {
 	Base::onDestroy();
-	vkDeviceWaitIdle(renderer()->vkDevice());
+	waitIdle();
 }
 
 void
@@ -153,16 +160,16 @@ RenderContext_Vk::onBeginRender()
 		renderFrame().reset();
 
 		_curGraphicsCmdBuf	= renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+		#if RDS_TEST_DRAW_CALL
 		auto* vkCmdBuf		= _curGraphicsCmdBuf->hnd();
-
 		beginRecord(vkCmdBuf, _curImageIdx);
-
-		//RDS_PROFILE_GPU_ZONE_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
-		RDS_PROFILE_GPU_ZONET_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
+		RDS_PROFILE_GPU_ZONE_VK(_gpuProfilerCtx, vkCmdBuf, "Test Draw Call");
 		beginRenderPass(vkCmdBuf, _curImageIdx);
 		testDrawCall(vkCmdBuf, _curImageIdx, &_testVkVtxBuffer);
 		testDrawCall(vkCmdBuf, _curImageIdx, &_testVkVtxBuffer2);
 		endRenderPass(vkCmdBuf, _curImageIdx);
+		#endif // RDS_TEST_DRAW_CALL
 	}
 }
 
@@ -171,29 +178,17 @@ RenderContext_Vk::onEndRender()
 {
 	RDS_PROFILE_SCOPED();
 
-	endRecord(_curGraphicsCmdBuf->hnd());
+	#if RDS_TEST_DRAW_CALL
+	endRecord(_curGraphicsCmdBuf->hnd(), _curImageIdx);
+	_shdSwapBuffers = true;
+	#endif // RDS_TEST_DRAW_CALL
 
+
+	if (_shdSwapBuffers)
 	{
-		VkPresentInfoKHR presentInfo = {};
-
-		Vk_Semaphore*	waitVkSmps[]   = { _renderCompletedVkSmps[_curFrameIdx] };
-		Vk_Swapchain*	vkSwapChains[] = { _vkSwapchain };
-		u32				imageIndices[] = { _curImageIdx };
-
-		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		presentInfo.waitSemaphoreCount = ArraySize<decltype(waitVkSmps)>;
-		presentInfo.swapchainCount = ArraySize<decltype(vkSwapChains)>;
-		presentInfo.pWaitSemaphores = waitVkSmps;
-		presentInfo.pSwapchains = vkSwapChains;
-		presentInfo.pImageIndices = imageIndices;
-		presentInfo.pResults = nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
-
-		auto ret = vkQueuePresentKHR(_vkPresentQueue.hnd(), &presentInfo);
-		/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
-		{
-		createSwapchain();
-		} */
-		Util::throwIfError(ret);
+		RDS_WARN_ONCE("TODO: handle do not get next image idx if no swap buffers in the next frame");
+		_curGraphicsCmdBuf->swapBuffers(&_vkPresentQueue, _vkSwapchain, _curImageIdx, _renderCompletedVkSmps[_curFrameIdx]);
+		_shdSwapBuffers = false;
 	}
 
 	// next frame idx
@@ -212,6 +207,61 @@ RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
 
 	_swapchainInfo.extent = Util::toVkExtent2D(newSize);
 	createSwapchain(_swapchainInfo);
+}
+
+void 
+RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
+{
+	Base::onCommit(renderCmdBuf);
+
+	// wait job sysytem handle
+	#if !RDS_TEST_DRAW_CALL
+
+	beginRecord(_curGraphicsCmdBuf->hnd(), _curImageIdx);
+
+	// begin render pass
+	{
+		Vector<VkClearValue, 4> clearValues;
+		auto* p = renderCmdBuf.getClearFramebuffersCmd();
+		auto attachmentCount = 2; // TODO: revise
+
+		RDS_WARN_ONCE("TODO: RenderCommand_ClearFrambuffers, shd handele properly");
+		for (size_t i = 0; i < attachmentCount; i++)
+		{
+			auto& e = clearValues.emplace_back();
+			bool isColorAttachment = i == 0;	// TODO: revise
+
+			if (isColorAttachment && p->clearColor.has_value())
+			{
+				e = Util::toVkClearValue(p->clearColor.value());
+			}
+
+			if (!isColorAttachment && p->clearDepthStencil.has_value())
+			{
+				const auto& v = p->clearDepthStencil.value();
+				e = Util::toVkClearValue(v.first, v.second);
+			}
+		}
+
+		auto fbufRect2 = Util::toRect2f(_swapchainInfo.extent);
+
+		_curGraphicsCmdBuf->beginRenderPass(&_testVkRenderPass, &_vkSwapchainFramebuffers[_curImageIdx], fbufRect2, clearValues.span());
+	}
+
+	_curGraphicsCmdBuf->setViewport(Util::toRect2f(_swapchainInfo.extent));
+	 _curGraphicsCmdBuf->setScissor(Util::toRect2f(_swapchainInfo.extent));
+
+	for (auto* cmd : renderCmdBuf.commands())
+	{
+		_dispatchCommand(this, cmd);
+	}
+
+	// end render pass
+	_curGraphicsCmdBuf->endRenderPass();
+
+	endRecord(_curGraphicsCmdBuf->hnd(), _curImageIdx);
+
+	#endif // !RDS_TEST_DRAW_CALL
 }
 
 void 
@@ -305,13 +355,14 @@ RenderContext_Vk::beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
 
-
 	updateTestUBO(imageIdx);
 	_curGraphicsCmdBuf->beginRecord(vkGraphicsQueue(), VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	RDS_PROFILE_GPU_ZONET_VK(_gpuProfilerCtx, _curGraphicsCmdBuf->hnd(), "RenderContext_Vk::onCommit");
 }
 
 void
-RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf)
+RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
 
@@ -342,52 +393,28 @@ RenderContext_Vk::bindPipeline(Vk_CommandBuffer_T* vkCmdBuf, Vk_Pipeline* vkPipe
 	vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
 
 	// since we set viewport and scissor state is dynamic
-	VkViewport viewport = {};
-	viewport.x			= 0.0f;
-	viewport.y			= 0.0f;
-	viewport.width		= sCast<float>(_swapchainInfo.extent.width);
-	viewport.height		= sCast<float>(_swapchainInfo.extent.height);
-	viewport.minDepth	= 0.0f;
-	viewport.maxDepth	= 1.0f;
-	vkCmdSetViewport(vkCmdBuf, 0, 1, &viewport);
-
-	VkRect2D scissor = {};
-	scissor.offset = { 0, 0 };
-	scissor.extent = _swapchainInfo.extent;
-	vkCmdSetScissor(vkCmdBuf, 0, 1, &scissor);
+	_curGraphicsCmdBuf->setViewport(Util::toRect2f(_swapchainInfo.extent));
+	 _curGraphicsCmdBuf->setScissor(Util::toRect2f(_swapchainInfo.extent));
 }
-
 
 void 
 RenderContext_Vk::beginRenderPass(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
+	Vector<VkClearValue, 4> clearValues;
+	clearValues.reserve(4);
+	clearValues.emplace_back().color		= { 0.8f, 0.6f, 0.4f, 1.0f };
+	clearValues.emplace_back().depthStencil = { 1.0f, 0 };
 
-	{
-		Vector<VkClearValue, 4> clearValues;
-		clearValues.reserve(4);
-		clearValues.emplace_back().color		= { 0.8f, 0.6f, 0.4f, 1.0f };
-		clearValues.emplace_back().depthStencil = { 1.0f, 0 };
+	auto fbufRect2 = Util::toRect2f(_swapchainInfo.extent);
 
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass			= _testVkRenderPass.hnd();
-		renderPassInfo.framebuffer			= _vkSwapchainFramebuffers[imageIdx].hnd();
-		renderPassInfo.renderArea.offset	= { 0, 0 };
-		renderPassInfo.renderArea.extent	= _swapchainInfo.extent;
-		renderPassInfo.clearValueCount		= sCast<u32>(clearValues.size());
-		renderPassInfo.pClearValues			= clearValues.data();	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
-
-		vkCmdBeginRenderPass(vkCmdBuf, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	}
+	_curGraphicsCmdBuf->beginRenderPass(&_testVkRenderPass, &_vkSwapchainFramebuffers[imageIdx], fbufRect2, clearValues.span());
 }
 
 void 
 RenderContext_Vk::endRenderPass(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
-	{
-		vkCmdEndRenderPass(vkCmdBuf);
-	}
+	_curGraphicsCmdBuf->endRenderPass();
 }
 
 void
@@ -417,6 +444,11 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx, Vk_Bu
 	vkCmdDrawIndexed(vkCmdBuf, idxCount, 1, 0, 0, 0);
 }
 
+#if 0
+#pragma mark --- rdsRenderContext_Vk-createResource
+#endif // 0
+#if 1
+
 void
 RenderContext_Vk::createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvailableInfo_Vk& info, const math::Rect2f& rect2)
 {
@@ -424,12 +456,13 @@ RenderContext_Vk::createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvai
 	{
 		for (const auto& availableFormat : info.formats)
 		{
+			//if (availableFormat.format == VK_FORMAT_R16G16B16A16_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			{
 				out.surfaceFormat = availableFormat;
 			}
 		}
-	}
+}
 
 	{
 		for (const auto& availablePresentMode : info.presentModes) {
@@ -483,7 +516,7 @@ RenderContext_Vk::destroySwapchain()
 	if (!_vkSwapchain)
 		return;
 
-	vkDeviceWaitIdle(renderer()->vkDevice());
+	waitIdle();
 
 	_vkDepthImageView.destroy();
 	_vkDepthImage.destroy();
@@ -528,19 +561,22 @@ RenderContext_Vk::createDepthResources()
 	destroyDepthResources();
 
 	auto* vkAlloc = renderer()->memoryContext()->vkAlloc();
-	
+
 	_vkDepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 	RDS_CORE_ASSERT(Util::isVkFormatSupport(_vkDepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), "");
 
 	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage = RenderMemoryUsage::GpuOnly;
 	_vkDepthImage.create(vkAlloc, &allocInfo, _swapchainInfo.extent.width, _swapchainInfo.extent.height
-						, _vkDepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, QueueTypeFlags::Graphics);
+		, _vkDepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, QueueTypeFlags::Graphics);
 	_vkDepthImageView.create(_vkDepthImage.hnd(), _vkDepthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	{
 		auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		Util::transitionImageLayout(&_vkDepthImage, _vkDepthFormat, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, nullptr, &_vkGraphicsQueue, cmdBuf);
+
+		//auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		//Util::transitionImageLayout(&_vkDepthImage, _vkDepthFormat, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, &_vkGraphicsQueue, &_vkTransferQueue, cmdBuf);
 	}
 }
 
@@ -626,7 +662,9 @@ RenderContext_Vk::createTestRenderPass()
 
 	VkSubpassDescription subpass = {};
 	subpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.inputAttachmentCount	= 0;
 	subpass.colorAttachmentCount	= 1;
+	subpass.pInputAttachments		= nullptr;
 	subpass.pColorAttachments		= &colorAttachmentRef;
 	subpass.pDepthStencilAttachment	= &depthAttachmentRef;
 
@@ -931,6 +969,7 @@ RenderContext_Vk::createTestIndexBuffer()
 
 	Util::copyBuffer(&_testVkIdxBuffer, &_vkStagingBuf, bufSize, renderFrame().commandPool(QueueTypeFlags::Transfer).hnd(), &_vkTransferQueue);
 }
+
 void 
 RenderContext_Vk::createTestUniformBuffer()
 {
@@ -981,7 +1020,6 @@ RenderContext_Vk::createTestDescriptorSetLayout()
 	_testVkDescriptorSetLayout.create(&layoutInfo);
 }
 
-
 void 
 RenderContext_Vk::createTestDescriptorPool()
 {
@@ -1018,7 +1056,7 @@ RenderContext_Vk::createTestDescriptorSets()
 	allocInfo.descriptorPool		= _testVkDescriptorPool.hnd();
 	allocInfo.descriptorSetCount	= 1;
 	allocInfo.pSetLayouts			= layouts;
-	
+
 	_testVkDescriptorSets.resize(s_kFrameInFlightCount);
 	for (auto& e : _testVkDescriptorSets)
 	{
@@ -1094,7 +1132,7 @@ RenderContext_Vk::createTestTextureImage()
 
 	Image image;
 	image.load("asset/texture/uvChecker.png");
-	
+
 	Vk_Buffer stagingBuffer;
 
 	{
@@ -1116,14 +1154,14 @@ RenderContext_Vk::createTestTextureImage()
 		allocInfo.usage = RenderMemoryUsage::GpuOnly;
 
 		_testVkTextureImage.create(vkAlloc, &allocInfo
-									, imageWidth, imageHeight
-									, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-									, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+			, imageWidth, imageHeight
+			, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 	}
 
 	{
-		auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		Util::transitionImageLayout(&_testVkTextureImage, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, nullptr, &_vkGraphicsQueue, cmdBuf);
+		auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		Util::transitionImageLayout(&_testVkTextureImage, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, nullptr, &_vkTransferQueue, cmdBuf);
 	}
 	{
 		auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -1175,7 +1213,7 @@ RenderContext_Vk::reflectShader(StrView spvFilename)
 	Vector<u8> bin;
 	File::readFile(spvFilename, bin);
 	Compiler compiler(reinCast<u32*>(bin.data()), bin.size() / (sizeof(u32) / sizeof(u8)));
-	
+
 	auto active = compiler.get_active_interface_variables();
 	ShaderResources res = compiler.get_shader_resources(active);
 	compiler.set_enabled_interface_variables(nmsp::move(active));
@@ -1254,6 +1292,85 @@ RenderContext_Vk::reflectShader(StrView spvFilename)
 		u32 attachment_index = compiler.get_decoration(resource.id, spv::DecorationInputAttachmentIndex);	RDS_UNUSED(attachment_index);
 	}
 }
+
+#endif // 1
+
+#if 0
+#pragma mark --- rdsVkonRenderCommand-Impl ---
+#endif // 0
+#if 1
+
+
+void 
+RenderContext_Vk::onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd)
+{
+	// vkCmdClearAttachments
+	// vkCmdClearColorImage
+	// vkCmdClearDepthStencilImage
+
+}
+
+void 
+RenderContext_Vk::onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd)
+{
+	_shdSwapBuffers = true;
+	//_curGraphicsCmdBuf->swapBuffers(&_vkPresentQueue, _vkSwapchain, _curImageIdx, _renderCompletedVkSmps[_curFrameIdx]);
+}
+
+void
+RenderContext_Vk::onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd)
+{
+	RDS_PROFILE_SCOPED();
+
+	auto* vkCmdBuf = _curGraphicsCmdBuf->hnd();
+
+	bool isDefaultRenderState	= true;
+	bool isDefaultMaterial		= true;
+
+	if (isDefaultRenderState)
+	{
+		vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipeline);
+	}
+
+	if (isDefaultMaterial)
+	{
+		Vk_DescriptorSet_T* descSets[] = { _testVkDescriptorSets[_curImageIdx].hnd() };
+		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout, 0, 1, descSets, 0, nullptr);
+	}
+
+	auto* vtxBufVk = sCast<RenderGpuBuffer_Vk*>(cmd->vertexBuffer.ptr());
+	auto* idxBufVk = sCast<RenderGpuBuffer_Vk*>(cmd->indexBuffer.ptr());
+
+	Vk_Buffer_T*	vertexBuffers[]	= { vtxBufVk->vkBuf()->hnd() };
+	VkDeviceSize	offsets[]		= { Util::toVkDeviceSize(cmd->vertexOffset) };
+
+	vkCmdBindVertexBuffers(vkCmdBuf, 0, 1, vertexBuffers, offsets);
+
+	auto vtxCount = sCast<u32>(cmd->vertexCount);
+	auto idxCount = sCast<u32>(cmd->indexCount);
+
+	if (idxCount > 0)
+	{
+		u32				idxOffset = sCast<u32>(cmd->indexOffset);
+		VkIndexType		vkIdxType = Util::toVkIndexType(cmd->indexType);
+		vkCmdBindIndexBuffer(vkCmdBuf, idxBufVk->vkBuf()->hnd(), idxOffset, vkIdxType);
+
+		vkCmdDrawIndexed(vkCmdBuf, idxCount, 1, 0, 0, 0);
+	}
+	else
+	{
+		vkCmdDraw(vkCmdBuf, vtxCount, 1, 0, 0);
+	}
+}
+
+void 
+RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd)
+{
+}
+
+
+#endif // 1
+
 
 
 #endif

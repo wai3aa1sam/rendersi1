@@ -11,12 +11,13 @@ namespace rds
 #endif // 0
 #if 1
 
-class RenderCommandBuffer;
-class RenderRequest;
-class TransferCommandBuffer;
-class TransferRequest;
-struct Transfer_InlineUploadBuffer;
-class RenderFrameUploadBuffer;
+class	RenderCommand;
+class	RenderCommandBuffer;
+class	RenderRequest;
+class	TransferCommandBuffer;
+class	TransferRequest;
+struct	Transfer_InlineUploadBuffer;
+class	RenderFrameUploadBuffer;
 
 struct RenderContext_CreateDesc
 {
@@ -48,12 +49,15 @@ public:
 	void beginRender();
 	void endRender();
 
+	void commit(RenderCommandBuffer& renderCmdBuf);
+
 	void commit(TransferCommandBuffer& transferBuf);
 	void uploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf);
 
-
 	void		 setFramebufferSize(const Vec2f& newSize);
 	const Vec2f& framebufferSize() const;
+
+	virtual void waitIdle();
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -65,10 +69,13 @@ protected:
 
 	virtual void onSetFramebufferSize(const Vec2f& newSize) {};
 
+	virtual void onCommit(RenderCommandBuffer& renderBuf);
 	virtual void onCommit(TransferCommandBuffer& transferBuf);
 
 	virtual void	onUploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf);
 
+protected:
+	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd);
 
 protected:
 	//RenderContext(const CreateDesc&)
@@ -80,6 +87,26 @@ private:
 };
 
 inline const Vec2f& RenderContext::framebufferSize() const { return _framebufferSize; }
+
+template<class CTX> inline
+void 
+RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd)
+{
+	using SRC = RenderCommandType;
+
+	#define _DISPACH_CMD_CASE(TYPE) case SRC::TYPE: { auto* __p = sCast<RDS_CONCAT(RenderCommand_, TYPE)*>(cmd); RDS_CONCAT(ctx->onRenderCommand_, TYPE)(__p); } break
+
+	switch (cmd->type())
+	{
+		_DISPACH_CMD_CASE(ClearFramebuffers);
+		_DISPACH_CMD_CASE(SwapBuffers);
+		_DISPACH_CMD_CASE(DrawCall);
+		_DISPACH_CMD_CASE(DrawRenderables);
+		default: { throwError("undefined render command"); } break;
+	}
+
+	#undef _DISPACH_CMD
+}
 
 
 #endif

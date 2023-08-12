@@ -17,6 +17,9 @@ public:
 	using Base = EditorWindow;
 
 public:
+	EditorMainWindow();
+	virtual ~EditorMainWindow();
+
 	virtual void onCreate(const CreateDesc& desc) override;
 	virtual void onCloseButton() override;
 	virtual void onUIMouseEvent(UIMouseEvent& ev) override;

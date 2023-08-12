@@ -43,6 +43,8 @@ namespace rds
 	E(Texture1D,)		E(Texture2D,)		E(Texture3D,)		E(TextureCube,) \
 	E(Texture1DArray,)	E(Texture2DArray,)	E(Texture3DArray,)	E(TextureCubeArray,) \
 	\
+	E(Float24Norm8,)	E(Float32Norm8,) \
+	\
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(RenderDataType, u8);
@@ -60,6 +62,7 @@ public:
 public:
 	template<class T> static constexpr RenderDataType get();
 
+	static constexpr SizeType getBitSize(Type t);
 	static constexpr SizeType getByteSize(Type t);
 };
 
@@ -94,17 +97,30 @@ template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Col
 
 inline constexpr 
 RenderDataTypeUtil::SizeType 
-RenderDataTypeUtil::getByteSize(Type t)
+RenderDataTypeUtil::getBitSize(Type t)
 {
 	using EM = Type;
 	switch (t)
 	{
-		case EM::Int8: { return 8; }
+		case EM::Int8:		{ return 8; } break;
+
+
+		case EM::UInt16:	{ return 16; } break;
+		case EM::UInt32:	{ return 32; } break;
+
 	}
 
 	RDS_CORE_ASSERT("not defined type");
 	return 0;
 }
+inline constexpr 
+RenderDataTypeUtil::SizeType 
+RenderDataTypeUtil::getByteSize(Type t)
+{
+	return getBitSize(t) / 8;
+}
+
+
 
 #endif
 

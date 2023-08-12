@@ -21,6 +21,8 @@
 #define RDS_DUMP_VAR_SELECT(COUNT) RDS_DUMP_VAR_##COUNT
 #define RDS_DUMP_VAR(...) NMSP_IDENTITY(NMSP_CALL(RDS_DUMP_VAR_SELECT, NMSP_VA_ARGS_COUNT(__VA_ARGS__) (__VA_ARGS__)))
 
+#define RDS_WARN_ONCE(...) do { static RDS_UNIQUE_VAR(bool) = false; if (!RDS_UNIQUE_VAR_NAME(bool)) { RDS_CORE_LOG_WARN(__VA_ARGS__); RDS_UNIQUE_VAR_NAME(bool) = true; } } while(false)
+
 #if RDS_DEBUG
 	#define RDS_CORE_LOG_DEBUG(...)	    do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Debug,	    __VA_ARGS__); } while(false)
 

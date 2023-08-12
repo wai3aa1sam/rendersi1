@@ -36,7 +36,9 @@ using ::nmsp::os_aligned_free;
 #endif // 0
 
 using ::nmsp::throwIf;
+using ::nmsp::throwError;
 using ::nmsp::_notYetSupported;
 using ::nmsp::_log;
+
 }
 #endif

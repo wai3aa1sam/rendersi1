@@ -12,3 +12,4 @@
 
 #include "rds_render_api_layer/mesh/rdsRenderMesh.h"
 
+#include "rds_render_api_layer/command/rdsRenderRequest.h"

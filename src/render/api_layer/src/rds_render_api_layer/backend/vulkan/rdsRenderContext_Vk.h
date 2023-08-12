@@ -2,6 +2,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
+#include "rds_render_api_layer/command/rdsRenderRequest.h"
 
 #include "rdsGpuProfilerContext_Vk.h"
 
@@ -11,7 +12,6 @@
 #include "command/rdsVk_CommandPool.h"
 #include "rdsVk_RenderFrame.h"
 
-#include "rdsVk_RenderTarget.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -145,13 +145,12 @@ class RenderContext_Vk : public RenderContext
 {
 public:
 	using Base = RenderContext;
-
+	using Traits = RenderApiLayerTraits;
 	using Util = RenderApiUtil_Vk;
 
-
 public:
-	static constexpr SizeType s_kSwapchainImageLocalSize	= RenderApiLayerTraits::s_kSwapchainImageLocalSize;
-	static constexpr SizeType s_kFrameInFlightCount			= RenderApiLayerTraits::s_kFrameInFlightCount;
+	static constexpr SizeType s_kSwapchainImageLocalSize	= Traits::s_kSwapchainImageLocalSize;
+	static constexpr SizeType s_kFrameInFlightCount			= Traits::s_kFrameInFlightCount;
 
 public:
 	RenderContext_Vk();
@@ -165,6 +164,16 @@ public:
 	Vk_CommandBuffer_T* vkCommandBuffer();
 	Vk_RenderFrame& renderFrame();
 
+	virtual void waitIdle() override;
+
+public:
+	void onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd);
+	void onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd);
+
+	void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd);
+
+	void onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd);
+
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onPostCreate(const CreateDesc& cDesc);
@@ -175,6 +184,8 @@ protected:
 
 	virtual void onSetFramebufferSize(const Vec2f& newSize) override;
 
+	virtual void onCommit(RenderCommandBuffer& renderBuf) override;
+
 	virtual void onCommit(TransferCommandBuffer& transferBuf) override;
 	virtual void onUploadBuffer					(RenderFrameUploadBuffer& rdfUploadBuf) override;
 	void		_onUploadBuffer_MemCopyMutex	(RenderFrameUploadBuffer& rdfUploadBuf);
@@ -183,7 +194,7 @@ protected:
 
 protected:
 	void beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
-	void endRecord(Vk_CommandBuffer_T* vkCmdBuf);
+	void endRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
 	void bindPipeline(Vk_CommandBuffer_T* vkCmdBuf, Vk_Pipeline* vkPipeline);
 
 	void beginRenderPass(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
@@ -246,8 +257,6 @@ protected:
 	Vk_Buffer						_testVkVtxBuffer2;
 	Vk_Buffer						_testVkIdxBuffer;
 
-	Vk_RenderTarget _testRenderTarget;
-	
 	Vk_DescriptorSetLayout									_testVkDescriptorSetLayout;
 	Vector<Vk_Buffer,			s_kFrameInFlightCount>		_testVkUniformBuffers;
 	Vector<Vk_ScopedMemMapBuf,	s_kFrameInFlightCount>		_memMapUniformBufs;
@@ -271,6 +280,8 @@ protected:
 
 	u32 _curImageIdx = 0;
 	u32 _curFrameIdx = 0;
+
+	bool _shdSwapBuffers = false;
 };
 
 inline Renderer_Vk* RenderContext_Vk::renderer() { return _renderer; }

@@ -74,7 +74,9 @@ void testEditMesh()
 	}
 }
 
-Vector<u8, 1024> makeRndColorTriangle()
+const VertexLayout* getertexLayout_RndColorTriangle() { return Vertex_PosColorUv<1>::vertexLayout(); }
+
+Vector<u8, 1024> makeRndColorTriangle(float z = 0.0f)
 {
 	static size_t s_kVtxCount = 4;
 	EditMesh editMesh;
@@ -82,10 +84,13 @@ Vector<u8, 1024> makeRndColorTriangle()
 	{
 		auto& e = editMesh.pos;
 		e.reserve(s_kVtxCount);
-		e.emplace_back(-0.5f, -rnd.range(0.0, 1.0), 0.0f);
-		e.emplace_back( 0.5f, -0.5f, 0.0f);
-		e.emplace_back( 0.5f,  0.5f, 0.0f);
-		e.emplace_back(-0.5f,  rnd.range(0.0, 1.0), 0.0f);
+		auto v = rnd.range(0.0, 1.0);
+		//v = 0.5f;
+
+		e.emplace_back(-0.5f, -v,	 z);
+		e.emplace_back( 0.5f, -0.5f, z);
+		e.emplace_back( 0.5f,  0.5f, z);
+		e.emplace_back(-0.5f,  v,	 z);
 	}
 	{
 		auto& e = editMesh.color;
@@ -105,6 +110,8 @@ Vector<u8, 1024> makeRndColorTriangle()
 		e.emplace_back(0.0f, 1.0f);
 		e.emplace_back(1.0f, 1.0f);
 	}
+
+	RDS_ASSERT(editMesh.getVertexLayout() == getertexLayout_RndColorTriangle(), "");
 
 	Vector<u8, 1024> o;
 	editMesh.createPackedVtxData(o);
@@ -152,6 +159,7 @@ public:
 public:
 	~VulkanEditorApp()
 	{
+		
 	}
 
 	VulkanEditorMainWindow* mainWin() { return &_vulkanMainWin; }
@@ -199,7 +207,10 @@ class VulkanLayer : public EditorLayer
 {
 public:
 	VulkanLayer() = default;
-	virtual ~VulkanLayer() = default;
+	virtual ~VulkanLayer()
+	{
+		VulkanEditorApp::instance()->mainWin()->renderContext().waitIdle();
+	}
 
 	virtual void onCreate() override
 	{
@@ -241,6 +252,27 @@ public:
 		rdCtx.setFramebufferSize(mainWin->clientRect().size);
 		rdCtx.beginRender();
 
+
+		auto& rdCmdBuf = rdReq.renderCommandBuffer();
+		rdCmdBuf.clear();
+
+		rdReq.clearFramebuffers(Color4f{0.7f, 0.5f, 1.0f, 1.0f}, 1.0f);
+		
+		rdReq.swapBuffers();
+
+		auto addDrawCall = [](RenderRequest& rdReq, SPtr<RenderGpuMultiBuffer>& vtxBuf, SPtr<RenderGpuBuffer>& idxBuf)
+		{
+			auto* p = rdReq.addDrawCall();
+			p->vertexBuffer = vtxBuf->renderGpuBuffer();
+			p->vertexCount	= vtxBuf->elementCount();
+			p->indexBuffer	= idxBuf;
+			p->indexCount	= idxBuf->elementCount();
+		};
+		addDrawCall(rdReq, _testMultiBuffer, _testIdxBuf);
+		addDrawCall(rdReq, _testMultiBuffer2, _testIdxBuf);
+
+		rdCtx.commit(rdCmdBuf);
+		
 		rdCtx.endRender();
 
 		uploadTestMultiBuf();
@@ -255,21 +287,43 @@ public:
 	{
 		if (!_testMultiBuffer)
 		{
-			auto data			= makeRndColorTriangle();
+			auto makeBuf = [](SPtr<RenderGpuMultiBuffer>& buf, float z = 0.0f)
+			{
+				auto data			= makeRndColorTriangle(z);
+
+				auto bufCDesc		= RenderGpuMultiBuffer::makeCDesc();
+				bufCDesc.bufSize	= data.size();
+				bufCDesc.stride		= getertexLayout_RndColorTriangle()->stride();
+				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
+
+				buf = RenderGpuMultiBuffer::make(bufCDesc);
+			};
+			makeBuf(_testMultiBuffer);
+			makeBuf(_testMultiBuffer2, 0.5f);
 
 			auto bufCDesc		= RenderGpuMultiBuffer::makeCDesc();
-			bufCDesc.bufSize	= data.size();
-			bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
+			//Vector<u16, 6> indices = { 0, 1, 2, 2, 3, 0 };
+			Vector<u16, 6> indices = { 0, 2, 1, 2, 0, 3 };
 
-			_testMultiBuffer = RenderGpuMultiBuffer::make(bufCDesc);
+			bufCDesc.stride		= RenderDataTypeUtil::getByteSize(RenderDataTypeUtil::get<u16>());
+			bufCDesc.bufSize	= indices.size() * bufCDesc.stride;
+			bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Index;
+			_testIdxBuf			= RenderGpuBuffer::make(bufCDesc);
+			
+			_testIdxBuf->uploadToGpu(indices.byteSpan());
 		}
 
-		auto data = makeRndColorTriangle();
-		_testMultiBuffer->uploadToGpu(makeByteSpan(data.span()));
+		auto data  = makeRndColorTriangle();
+		auto data2 = makeRndColorTriangle(0.5f);
+		_testMultiBuffer->uploadToGpu(data.byteSpan());
+		_testMultiBuffer2->uploadToGpu(data2.byteSpan());
 	}
 
 protected:
-	SPtr<RenderGpuMultiBuffer> _testMultiBuffer;
+	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
+	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer2;
+	SPtr<RenderGpuBuffer>		_testIdxBuf;
+	RenderRequest rdReq;
 
 };
 

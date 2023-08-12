@@ -141,8 +141,10 @@ public:
 public:
 	template<class T> static VkDeviceSize toVkDeviceSize(T v);
 
+	static VkOffset2D toVkOffset2D(const Rect2f& rect2);
 	static VkExtent2D toVkExtent2D(const Rect2f& rect2);
 	static VkExtent2D toVkExtent2D(const Vec2f&  vec2);
+	static Rect2f	  toRect2f	  (const VkExtent2D&  ext2d);
 
 	static VkFormat	toVkFormat(RenderDataType v);
 
@@ -150,13 +152,24 @@ public:
 
 	static VkMemoryPropertyFlags toVkMemoryPropFlags(RenderMemoryUsage memUsage);
 
+	static VkIndexType toVkIndexType(RenderDataType idxType);
+
+	static bool isDepthFormat(VkFormat format);
+	static bool isDepthOnlyFormat(VkFormat format);
 	static bool hasStencilComponent(VkFormat format);
 	static bool isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
+
+	static VkAttachmentLoadOp	toVkAttachmentLoadOp (RenderAttachmentLoadOp	loadOp);
+	static VkAttachmentStoreOp	toVkAttachmentStoreOp(RenderAttachmentStoreOp	storeOp);
+
+	static VkClearValue toVkClearValue(const Color4f& color);
+	static VkClearValue toVkClearValue(float depth, u32 stencil);
 
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
 
-
+	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src);
+	
 public:
 	static u32 getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties);
 
@@ -215,7 +228,7 @@ private:
 		void*										pUserData);
 };
 
-template<class T> inline VkDeviceSize toVkDeviceSize(T v) { RDS_S_ASSERT(IsIntegral<T>); return sCast<VkDeviceSize>(v); }
+template<class T> inline VkDeviceSize RenderApiUtil_Vk::toVkDeviceSize(T v) { RDS_S_ASSERT(IsIntegral<T>); return sCast<VkDeviceSize>(v); }
 
 #endif
 
@@ -350,6 +363,19 @@ void
 RenderApiUtil_Vk::convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src)
 {
 	convertToVkPtrs(dst, (T**)src.data(), sCast<u32>(src.size()));
+}
+
+template<class T, size_t N> inline
+void 
+RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src)
+{
+	auto n = src.size();
+	dst.clear();
+	dst.resize(n);
+	for (size_t i = 0; i < n; i++)
+	{
+		dst.emplace_back(src[i].hnd());
+	}
 }
 
 template<size_t N> inline

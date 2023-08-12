@@ -3,6 +3,8 @@
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 
 #include "command/rdsTransferRequest.h"
+#include "command/rdsRenderCommand.h"
+#include "command/rdsRenderQueue.h"
 
 namespace rds
 {
@@ -77,6 +79,8 @@ public:
 	using Traits	= RenderApiLayerTraits;
 	using SizeType	= Traits::SizeType;
 
+	using RenderCommandPool = Vector<UPtr<RenderCommandBuffer>, 12>;
+
 public:
 	static constexpr SizeType s_kThreadCount		= Traits::s_kThreadCount;
 	static constexpr SizeType s_kFrameInFlightCount	= Traits::s_kFrameInFlightCount;
@@ -95,18 +99,27 @@ public:
 	void addUploadBufferParent(RenderGpuMultiBuffer* parent);
 	u32  totalUploadDataSize();
 
+	RenderCommandBuffer* requestCommandBuffer();
+
 	RenderFrameUploadBuffer&	renderFrameUploadBuffer();
 	TransferRequest&			transferRequest();
+
+	LinearAllocator& renderCommandAllocator();
 
 protected:
 	TransferRequest			_transferReq;
 	RenderFrameUploadBuffer _rdfUploadBuffer;
+
+	Vector<UPtr<LinearAllocator>,	Traits::s_kThreadCount>	_renderCommandAllocators;
+	Vector<RenderCommandPool,		Traits::s_kThreadCount>	_renderCommandPools;
 };
 
 inline RenderFrameUploadBuffer& RenderFrame::renderFrameUploadBuffer()	{ return _rdfUploadBuffer; }
 inline TransferRequest& RenderFrame::transferRequest()					{ return _transferReq; }
 
 inline u32 RenderFrame::totalUploadDataSize() { return _rdfUploadBuffer.totalDataSize(); }
+
+inline LinearAllocator& RenderFrame::renderCommandAllocator() { auto tlid = OsTraits::threadLocalId(); return *_renderCommandAllocators[tlid]; }
 
 
 #endif
@@ -136,16 +149,18 @@ public:
 	void rotate();
 
 	RenderFrame& renderFrame();
+	RenderQueue& renderQueue();
 
 protected:
 	Atm<u32> iFrame = 0;
 	Vector<RenderFrame,				s_kFrameInFlightCount> _renderFrames;
 	Vector<RenderFrameUploadBuffer, s_kFrameInFlightCount> _renderFrameUploadBufs;
 
+	Vector<RenderQueue, s_kFrameInFlightCount> _renderQueues;
 };
 
 inline RenderFrame& RenderFrameContext::renderFrame() { return _renderFrames[iFrame]; }
-
+inline RenderQueue& RenderFrameContext::renderQueue() { return _renderQueues[iFrame]; }
 
 #endif
 

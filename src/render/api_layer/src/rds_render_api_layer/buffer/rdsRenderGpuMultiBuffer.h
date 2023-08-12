@@ -57,18 +57,18 @@ protected:
 
 	virtual void onUploadToGpu(ByteSpan data, SizeType offset);
 
-	SPtr<RenderGpuBuffer>& nextBuffer();
+	SPtr<RenderGpuBuffer>& nextBuffer(SizeType bufSize);
 
 protected:
 	Atm<u32> iFrame = 0;
 	Vector<SPtr<RenderGpuBuffer>, s_kFrameInFlightCount> _renderGpuBuffers;
 };
 
-inline const RenderGpuMultiBuffer::CreateDesc& RenderGpuMultiBuffer::cDesc() const { return _renderGpuBuffers[0]->cDesc(); }
+inline const RenderGpuMultiBuffer::CreateDesc& RenderGpuMultiBuffer::cDesc() const { return _renderGpuBuffers[iFrame]->cDesc(); }
 
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::stride()		const { return _renderGpuBuffers[0]->stride(); }
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::bufSize()		const { return _renderGpuBuffers[0]->bufSize(); }
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const { return _renderGpuBuffers[0]->elementCount(); }
+inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::stride()		const { return _renderGpuBuffers[iFrame]->stride(); }
+inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::bufSize()		const { return _renderGpuBuffers[iFrame]->bufSize(); }
+inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const { return _renderGpuBuffers[iFrame]->elementCount(); }
 
 inline RenderGpuBuffer*			RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[iFrame]; }
 inline const RenderGpuBuffer*	RenderGpuMultiBuffer::renderGpuBuffer() const	{ return _renderGpuBuffers[iFrame]; }

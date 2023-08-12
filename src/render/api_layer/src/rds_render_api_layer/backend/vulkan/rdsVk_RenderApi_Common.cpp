@@ -78,6 +78,13 @@ RenderApiUtil_Vk::debugCallback(
 	return VK_FALSE;
 }
 
+VkOffset2D 
+RenderApiUtil_Vk::toVkOffset2D(const Rect2f& rect2)
+{
+	VkOffset2D vkOffset = { sCast<int>(rect2.x), sCast<int>(rect2.y) };
+	return vkOffset;
+}
+
 VkExtent2D 
 RenderApiUtil_Vk::toVkExtent2D(const Rect2f& rect2)
 {
@@ -98,6 +105,12 @@ RenderApiUtil_Vk::toVkExtent2D(const Vec2f& vec2)
 		sCast<u32>(vec2.y)
 	};
 	return vkExtent;
+}
+
+RenderApiUtil_Vk::Rect2f
+RenderApiUtil_Vk::toRect2f(const VkExtent2D& ext2d)
+{
+	return Rect2f{ 0, 0, sCast<float>(ext2d.width), sCast<float>(ext2d.height) };
 }
 
 VkFormat
@@ -177,6 +190,9 @@ RenderApiUtil_Vk::toVkFormat(RenderDataType v)
 		case SRC::Float32x3:	{ return VK_FORMAT_R32G32B32_SFLOAT;	} break;
 		case SRC::Float32x4:	{ return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
 			//---
+		//case SRC::Float24Norm8:	{ return VK_FORMAT_D24_SFLOAT_S8_UINT;	} break;
+		case SRC::Float32Norm8:	{ return VK_FORMAT_D32_SFLOAT_S8_UINT;	} break;
+
 		default: { throw RDS_ERROR("unsupported RenderDataType"); } break;
 	}
 }
@@ -208,10 +224,35 @@ RenderApiUtil_Vk::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
 	return flags;
 }
 
+VkIndexType 
+RenderApiUtil_Vk::toVkIndexType(RenderDataType idxType)
+{
+	using SRC = RenderDataType;
+	switch (idxType)
+	{
+		case SRC::UInt16: { return VK_INDEX_TYPE_UINT16; } break;
+		case SRC::UInt32: { return VK_INDEX_TYPE_UINT32; } break;
+		default: { throwError(""); }
+	}
+	return VK_INDEX_TYPE_UINT16;
+}
+
+bool 
+RenderApiUtil_Vk::isDepthFormat(VkFormat format)
+{
+	return isDepthOnlyFormat(format) || hasStencilComponent(format);
+}
+
+bool 
+RenderApiUtil_Vk::isDepthOnlyFormat(VkFormat format)
+{
+	return format == VK_FORMAT_D16_UNORM || format == VK_FORMAT_D32_SFLOAT;
+}
+
 bool 
 RenderApiUtil_Vk::hasStencilComponent(VkFormat format)
 {
-	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT || format == VK_FORMAT_D16_UNORM_S8_UINT;
 }
 
 bool 
@@ -226,6 +267,54 @@ RenderApiUtil_Vk::isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFor
 	bool isOptimal	= tiling == VK_IMAGE_TILING_OPTIMAL	&& BitUtil::has(props.optimalTilingFeatures, features);
 
 	return isLinear || isOptimal;
+}
+
+VkAttachmentLoadOp	
+RenderApiUtil_Vk::toVkAttachmentLoadOp (RenderAttachmentLoadOp loadOp)
+{
+	using SRC = RenderAttachmentLoadOp;
+	switch (loadOp)
+	{
+		case SRC::Load:		{ return VK_ATTACHMENT_LOAD_OP_LOAD; }		break;
+		case SRC::Clear:	{ return VK_ATTACHMENT_LOAD_OP_CLEAR; }		break;
+		case SRC::DontCare: { return VK_ATTACHMENT_LOAD_OP_DONT_CARE; } break;
+		//default:			{ throwError(""); } break;
+	}
+	return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
+}
+
+VkAttachmentStoreOp	
+RenderApiUtil_Vk::toVkAttachmentStoreOp(RenderAttachmentStoreOp storeOp)
+{
+	using SRC = RenderAttachmentStoreOp;
+	switch (storeOp)
+	{
+		case SRC::Store:	{ return VK_ATTACHMENT_STORE_OP_STORE; }	break;
+		case SRC::DontCare: { return VK_ATTACHMENT_STORE_OP_DONT_CARE; } break;
+		//default:			{ throwError(""); } break;
+	}
+	return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
+}
+
+VkClearValue 
+RenderApiUtil_Vk::toVkClearValue(const Color4f& color)
+{
+	VkClearValue o;
+	auto& f32s = o.color.float32;
+	f32s[0] = color.r;
+	f32s[1] = color.g;
+	f32s[2] = color.b;
+	f32s[3] = color.a;
+	return o;
+}
+
+VkClearValue 
+RenderApiUtil_Vk::toVkClearValue(float depth, u32 stencil)
+{
+	VkClearValue o;
+	o.depthStencil.depth = depth;
+	o.depthStencil.stencil = stencil;
+	return o;
 }
 
 u32
@@ -539,10 +628,10 @@ RenderApiUtil_Vk::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkIm
 
 	if (dstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_UNDEFINED ) 
 	{
-		srcStage			= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;		// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
-		dstStage			= VK_PIPELINE_STAGE_TRANSFER_BIT;
-		srcAccessMask		= 0;
-		dstAccessMask		= VK_ACCESS_TRANSFER_WRITE_BIT;
+		srcStage		= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;		// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		dstStage		= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcAccessMask	= 0;
+		dstAccessMask	= VK_ACCESS_TRANSFER_WRITE_BIT;
 	}
 	else if (dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
 	{
@@ -560,7 +649,7 @@ RenderApiUtil_Vk::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkIm
 	}
 	else 
 	{
-		throwIf(true, "");
+		throwError("");
 	}
 
 	VkImageAspectFlags aspectMask = dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;

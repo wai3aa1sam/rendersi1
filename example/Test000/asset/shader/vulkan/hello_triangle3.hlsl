@@ -32,6 +32,7 @@ PixelIn vs_main(VertexIn i)
     //o.positionOS    = positions[i.vertexId];
     //o.color         = colors[i.vertexId];
     o.positionHCS = mul(rds_matrix_mvp, i.positionOS);
+    //o.positionHCS = i.positionOS;
     o.color       = i.color;
     o.uv          = i.uv;
     
@@ -41,6 +42,7 @@ PixelIn vs_main(VertexIn i)
 float4 ps_main(PixelIn i) : SV_TARGET
 {
     //float2 pos2f = i.positionOS;
+    i.uv.x = -i.uv.x;
 	float4 o = texture0.Sample(texture0_Sampler, i.uv);
 	//o += i.color * texture2.Sample(texture2_Sampler, i.uv);
 

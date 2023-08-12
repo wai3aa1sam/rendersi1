@@ -10,7 +10,7 @@ namespace rds
 SPtr<RenderGpuBuffer> 
 Renderer_Vk::onCreateRenderGpuBuffer(const RenderGpuBuffer_CreateDesc& cDesc)
 {
-	auto p = SPtr<RenderGpuBuffer>(RDS_NEW(RenderGpuBuffer_Vk)());
+	auto p = SPtr<RenderGpuBuffer>(makeSPtr<RenderGpuBuffer_Vk>());
 	p->create(cDesc);
 	return p;
 }

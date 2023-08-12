@@ -72,7 +72,7 @@ TransferCommand_UploadBuffer*
 RenderFrameUploadBuffer::_addData(ByteSpan data)
 {
 	SizeType	bufOffset	= 0;
-	u32			bufSize		= sCast<u32>(data.size());
+	u32			bufSize		= sCast<u32>(math::alignTo(data.size(), RenderGpuBuffer::s_kAlign));
 
 	_totalDataSize += bufSize;
 
@@ -100,7 +100,11 @@ RenderFrameUploadBuffer::_addData(ByteSpan data)
 
 RenderFrame::RenderFrame()
 {
-
+	for (size_t i = 0; i < s_kThreadCount; i++)
+	{
+		_renderCommandAllocators.emplace_back(makeUPtr<LinearAllocator>());
+	}
+	_renderCommandAllocators.resize(s_kThreadCount);
 }
 
 RenderFrame::~RenderFrame()
@@ -113,6 +117,11 @@ RenderFrame::clear()
 {
 	_transferReq.clear();
 	_rdfUploadBuffer.clear();
+
+	for (auto& e : _renderCommandAllocators)
+	{
+		e->clear();
+	}
 }
 
 void 
@@ -133,6 +142,13 @@ RenderFrame::addUploadBufferParent(RenderGpuMultiBuffer* parent)
 	_rdfUploadBuffer.addParent(parent);
 }
 
+RenderCommandBuffer* 
+RenderFrame::requestCommandBuffer()
+{
+	return nullptr;
+}
+
+
 #endif
 
 #if 0
@@ -146,6 +162,7 @@ RenderFrameContext::RenderFrameContext()
 	: Base()
 {
 	_renderFrames.resize(s_kFrameInFlightCount);
+	_renderQueues.resize(s_kFrameInFlightCount);
 }
 
 RenderFrameContext::~RenderFrameContext()
@@ -156,6 +173,7 @@ void
 RenderFrameContext::clear()
 {
 	_renderFrames.clear();
+	_renderQueues.clear();
 }
 
 void 
@@ -163,6 +181,7 @@ RenderFrameContext::rotate()
 {
 	iFrame = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
 	renderFrame().clear();
+	renderQueue().clear();
 }
 
 #endif

@@ -9,3 +9,4 @@
 #include "rds_core_base/log/rds_log.h"
 #include "rds_core_base/math/rds_math.h"
 #include "rds_core_base/file_io/rds_file_io.h"
+#include "rds_core_base/job_system/rds_job_system.h"

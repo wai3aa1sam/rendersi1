@@ -55,16 +55,34 @@ Vk_CommandBuffer::reset()
 }
 
 void 
-Vk_CommandBuffer::beginRecord(Vk_Queue* vkQueue, VkCommandBufferUsageFlags usageFlags)
+Vk_CommandBuffer::beginRecord(Vk_Queue* vkQueue, VkCommandBufferUsageFlags usageFlags, const VkCommandBufferInheritanceInfo* inheriInfo)
 {
+	RDS_CORE_ASSERT(!inheriInfo || (inheriInfo && BitUtil::has(usageFlags, (VkFlags)VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)), "");
+
 	_vkQueue = vkQueue;
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags				= usageFlags;		// Optional
-	beginInfo.pInheritanceInfo	= nullptr;			// Optional
+	beginInfo.pInheritanceInfo	= inheriInfo;		// Optional
+
+	if (inheriInfo)
+		usageFlags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+
 	auto ret = vkBeginCommandBuffer(hnd(), &beginInfo);
 	Util::throwIfError(ret);
+}
+
+void 
+Vk_CommandBuffer::beginSecondaryRecord(Vk_Queue* vkQueue, Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, u32 subpassIdx, VkCommandBufferUsageFlags usageFlags)
+{
+	VkCommandBufferInheritanceInfo cmdBufferInheritanceInfo = {};
+	cmdBufferInheritanceInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+	cmdBufferInheritanceInfo.renderPass		= vkRenderPass->hnd();
+	cmdBufferInheritanceInfo.framebuffer	= vkFramebuffer->hnd();
+	cmdBufferInheritanceInfo.subpass		= subpassIdx;
+
+	beginRecord(vkQueue, usageFlags, &cmdBufferInheritanceInfo);
 }
 
 void 
@@ -130,6 +148,75 @@ Vk_CommandBuffer::waitIdle()
 {
 	RDS_CORE_ASSERT(_vkQueue, "{}", RDS_SRCLOC);
 	vkQueueWaitIdle(_vkQueue->hnd());
+}
+
+void 
+Vk_CommandBuffer::swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachain, u32 imageIdx, Vk_Semaphore* vkWaitSmp)
+{
+	VkPresentInfoKHR presentInfo = {};
+
+	Vk_Semaphore*	waitVkSmps[]   = { vkWaitSmp };
+	Vk_Swapchain*	vkSwapChains[] = { vkSwpachain };
+	u32				imageIndices[] = { imageIdx };
+
+	presentInfo.sType				= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount	= ArraySize<decltype(waitVkSmps)>;
+	presentInfo.swapchainCount		= ArraySize<decltype(vkSwapChains)>;
+	presentInfo.pWaitSemaphores		= waitVkSmps;
+	presentInfo.pSwapchains			= vkSwapChains;
+	presentInfo.pImageIndices		= imageIndices;
+	presentInfo.pResults			= nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
+
+	auto ret = vkQueuePresentKHR(vkPresentQueue->hnd(), &presentInfo);
+	/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
+	{
+	createSwapchain();
+	} */
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_CommandBuffer::setViewport(const math::Rect2f& rect, float minDepth, float maxDepth)
+{
+	VkViewport viewport = {};
+	viewport.x			= rect.x;
+	viewport.y			= rect.y;
+	viewport.width		= rect.w;
+	viewport.height		= rect.h;
+	viewport.minDepth	= minDepth;
+	viewport.maxDepth	= maxDepth;
+	vkCmdSetViewport(hnd(), 0, 1, &viewport);
+}
+
+void 
+Vk_CommandBuffer::setScissor(const math::Rect2f& rect)
+{
+	VkRect2D scissor = {};
+	scissor.offset = { sCast<int>(rect.x), sCast<int>(rect.y)};
+	scissor.extent = Util::toVkExtent2D(rect);
+	vkCmdSetScissor(hnd(), 0, 1, &scissor);
+}
+
+void 
+Vk_CommandBuffer::beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues)
+{
+	VkRenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass			= vkRenderPass->hnd();
+	renderPassInfo.framebuffer			= vkFramebuffer->hnd();
+	renderPassInfo.renderArea.offset	= Util::toVkOffset2D(rect2);
+	renderPassInfo.renderArea.extent	= Util::toVkExtent2D(rect2);
+	renderPassInfo.clearValueCount		= sCast<u32>(vkClearValues.size());
+	renderPassInfo.pClearValues			= vkClearValues.data();	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
+
+	VkSubpassContents subpassContents = _level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
+	vkCmdBeginRenderPass(hnd(), &renderPassInfo, subpassContents);
+}
+
+void 
+Vk_CommandBuffer::endRenderPass()
+{
+	vkCmdEndRenderPass(hnd());
 }
 
 void 

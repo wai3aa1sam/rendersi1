@@ -23,11 +23,23 @@ public:
 
 	void reset();
 
-	void beginRecord(Vk_Queue* vkQueue, VkCommandBufferUsageFlags usageFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	void beginRecord(Vk_Queue* vkQueue, VkCommandBufferUsageFlags usageFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, const VkCommandBufferInheritanceInfo* inheriInfo = nullptr);
+	void beginSecondaryRecord(Vk_Queue* vkQueue, Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer
+							, u32 subpassIdx = 0, VkCommandBufferUsageFlags usageFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT);
 	void endRecord();
+
 	void submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, VkPipelineStageFlags2 waitStage, Vk_Semaphore* signalVkSmp, VkPipelineStageFlags2 signalStage);
 	void submit();
 	void waitIdle();
+
+	void swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachain, u32 imageIdx, Vk_Semaphore* vkWaitSmp);
+
+	void setViewport(const math::Rect2f& rect, float minDepth = 0.0f, float maxDepth = 1.0f);
+	void setScissor(const math::Rect2f& rect);
+	
+	void beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues);
+	void endRenderPass();
+
 
 	bool isPrimiary() const;
 	bool isSecondary() const;

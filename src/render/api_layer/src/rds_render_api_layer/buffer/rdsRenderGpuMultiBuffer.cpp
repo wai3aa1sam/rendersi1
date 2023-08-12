@@ -15,7 +15,7 @@ namespace rds
 SPtr<RenderGpuMultiBuffer> 
 Renderer::createRenderGpuMultiBuffer(const RenderGpuBuffer_CreateDesc& cDesc)
 {
-	auto p = SPtr<RenderGpuMultiBuffer>(RDS_NEW(RenderGpuMultiBuffer)());
+	auto p = SPtr<RenderGpuMultiBuffer>(makeSPtr<RenderGpuMultiBuffer>());
 	p->create(cDesc);
 	p->onPostCreate(cDesc);
 	return p;
@@ -70,7 +70,7 @@ void RenderGpuMultiBuffer::onDestroy()
 void 
 RenderGpuMultiBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
 {
-	nextBuffer()->uploadToGpu(data, offset);
+	nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
 	RenderFrameContext::instance()->renderFrame().addUploadBufferParent(this);
 }
 
@@ -80,12 +80,14 @@ void RenderGpuMultiBuffer::rotate()
 }
 
 SPtr<RenderGpuBuffer>& 
-RenderGpuMultiBuffer::nextBuffer()
+RenderGpuMultiBuffer::nextBuffer(SizeType bufSize)
 {
 	auto nextIdx = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
 	if (_renderGpuBuffers.size() < s_kFrameInFlightCount)
 	{
-		_renderGpuBuffers.emplace_back(RenderGpuBuffer::make(cDesc()));
+		auto newCDesc = cDesc();
+		newCDesc.bufSize = bufSize;
+		_renderGpuBuffers.emplace_back(RenderGpuBuffer::make(newCDesc));
 	}
 	return _renderGpuBuffers[nextIdx];
 }

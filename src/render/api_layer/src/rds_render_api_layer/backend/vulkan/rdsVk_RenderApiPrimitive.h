@@ -86,6 +86,8 @@ class Vk_RenderApiPrimitive : public NonCopyable
 public:
 	using Util = RenderApiUtil_Vk;
 
+	using HndType = T;
+
 public:
 	Vk_RenderApiPrimitive()		= default;
 	~Vk_RenderApiPrimitive()	= default;
