@@ -42,9 +42,16 @@ public:
 
 	Vk_CommandPool& commandPool(QueueTypeFlags queueType);
 
+	Vk_Semaphore*	imageAvaliableSmp();
+	Vk_Semaphore*	renderCompletedSmp();
+	Vk_Fence*		inFlightFence();
+
 protected:
 	void createCommandPool (Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 queueIdx);
 	void destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool);
+
+	void createSyncObjects();
+	void destroySyncObjects();
 
 protected:
 	Vector<Vk_CommandPool, s_kThreadCount> _graphicsCommandPools;
@@ -52,6 +59,11 @@ protected:
 	Vector<Vk_CommandPool, s_kThreadCount> _transferCommandPools;
 
 	//Vector<Vk_DescriptorPool, s_kThreadCount> // use VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, only reset the pool
+
+	// maybe put back on RenderContext_Vk
+	Vk_Semaphore	_imageAvailableVkSmp;
+	Vk_Semaphore	_renderCompletedVkSmp;
+	Vk_Fence		_inFlightVkFence;
 };
 
 inline
@@ -72,6 +84,11 @@ Vk_RenderFrame::commandPool(QueueTypeFlags queueType)
 
 	return _graphicsCommandPools[tlid];
 }
+
+inline Vk_Semaphore*	Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
+inline Vk_Semaphore*	Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }
+inline Vk_Fence*		Vk_RenderFrame::inFlightFence()			{ return &_inFlightVkFence; }
+
 
 #endif
 

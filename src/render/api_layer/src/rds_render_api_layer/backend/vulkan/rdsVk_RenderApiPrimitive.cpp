@@ -476,29 +476,74 @@ Vk_RenderApiPrimitive<Vk_CommandBuffer_T>::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Semaphore>-Impl ---
+#pragma mark --- rdsVk_Semaphore-Impl ---
 #endif // 0
 #if 1
 
 void 
-Vk_RenderApiPrimitive<Vk_Semaphore>::destroy()
+Vk_Semaphore::create()
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroySemaphore(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	VkSemaphoreCreateInfo cInfo = {};
+	cInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	create(&cInfo);
 }
+
+void 
+Vk_Semaphore::create(const VkSemaphoreCreateInfo* pCreateInfo)
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	auto ret = vkCreateSemaphore(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());	
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_Semaphore::destroy()
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	vkDestroySemaphore(vkDev, hnd(), vkAllocCallbacks);
+}
+
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Fence>-Impl ---
+#pragma mark --- rdsVk_Fence-Impl ---
 #endif // 0
 #if 1
 
 void 
-Vk_RenderApiPrimitive<Vk_Fence>::destroy()
+Vk_Fence::create()
+{
+	VkFenceCreateInfo cInfo = {};
+	cInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	cInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;			// create with signaled state
+
+	create(&cInfo);
+}
+
+void 
+Vk_Fence::create(const VkFenceCreateInfo* pCreateInfo)
+{
+	auto* renderer			= Renderer_Vk::instance();
+	auto* vkDev				= renderer->vkDevice();
+	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+
+	auto ret = vkCreateFence(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());			
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_Fence::destroy()
 {
 	auto* renderer = Renderer_Vk::instance();
-	vkDestroyFence(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	vkDestroyFence(renderer->vkDevice(), hnd(), renderer->allocCallbacks());
 }
 
 #endif

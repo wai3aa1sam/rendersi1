@@ -50,6 +50,8 @@ Vk_RenderFrame::create()
 	createCommandPool(_graphicsCommandPools, queueFamily.getQueueIdx(QueueTypeFlags::Graphics));
 	createCommandPool(_computeCommandPools,  queueFamily.getQueueIdx(QueueTypeFlags::Compute));
 	createCommandPool(_transferCommandPools, queueFamily.getQueueIdx(QueueTypeFlags::Transfer));
+
+	createSyncObjects();
 }
 
 void 
@@ -122,6 +124,25 @@ Vk_RenderFrame::destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPo
 {
 	cmdPool.clear();
 }
+
+void 
+Vk_RenderFrame::createSyncObjects()
+{
+	//auto* vkDevice = Renderer_Vk::instance()->vkDevice();
+
+	_imageAvailableVkSmp.create();
+	_renderCompletedVkSmp.create();
+	_inFlightVkFence.create();
+}
+
+void 
+Vk_RenderFrame::destroySyncObjects()
+{
+	_inFlightVkFence.destroy();
+	_renderCompletedVkSmp.destroy();
+	_imageAvailableVkSmp.destroy();
+}
+
 
 
 

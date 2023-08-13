@@ -183,8 +183,8 @@ public:
 
 	static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
 
-	static void createSemaphore(Vk_Semaphore** out, Vk_Device* vkDevice);
-	static void createFence(Vk_Fence** out, Vk_Device* vkDevice);
+	static void createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice);
+	static void createFence(Vk_Fence_T** out, Vk_Device* vkDevice);
 
 	static void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 	static void createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel);

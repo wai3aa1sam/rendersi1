@@ -28,8 +28,8 @@ using Vk_ShaderModule			= VkShaderModule_T;
 using Vk_CommandPool_T			= VkCommandPool_T;
 using Vk_CommandBuffer_T		= VkCommandBuffer_T;
 
-using Vk_Semaphore				= VkSemaphore_T;
-using Vk_Fence					= VkFence_T;
+using Vk_Semaphore_T			= VkSemaphore_T;
+using Vk_Fence_T				= VkFence_T;
 
 using Vk_Buffer_T				= VkBuffer_T;
 using Vk_BufferView_T			= VkBufferView_T;
@@ -500,28 +500,49 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Semaphore>-Impl ---
+#pragma mark --- rdsVk_Semaphore-Impl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_Semaphore> : public RenderApiPrimitive_Base_Vk<Vk_Semaphore>
+
+class Vk_Semaphore : public Vk_RenderApiPrimitive<Vk_Semaphore_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_Semaphore_T>;
+
+public:
+	Vk_Semaphore() = default;
+	~Vk_Semaphore() { destroy(); }
+
+	Vk_Semaphore(Vk_Semaphore&&)	{ throwIf(true, ""); }
+	void operator=(Vk_Semaphore&&)	{ throwIf(true, ""); }
+
+	void create();
+	void create(const VkSemaphoreCreateInfo* pCreateInfo);
 	void destroy();
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Fence>-Impl ---
+#pragma mark --- rdsVk_Fence-Impl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_Fence> : public RenderApiPrimitive_Base_Vk<Vk_Fence>
+class Vk_Fence : public Vk_RenderApiPrimitive<Vk_Fence_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_Fence_T>;
+
+public:
+	Vk_Fence() = default;
+	~Vk_Fence() { destroy(); }
+
+	Vk_Fence(Vk_Fence&&)		{ throwIf(true, ""); }
+	void operator=(Vk_Fence&&)	{ throwIf(true, ""); }
+
+	void create();
+	void create(const VkFenceCreateInfo* pCreateInfo);
 	void destroy();
 };
 

@@ -212,8 +212,6 @@ protected:
 	void destroyDepthResources();
 
 	void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx);
-	void createCommandBuffer(Vk_CommandPool* vkCmdPool);
-	void createSyncObjects();
 
 	void createTestRenderPass();
 	void createTestGraphicsPipeline();
@@ -273,10 +271,6 @@ protected:
 
 	Vector<Vk_RenderFrame, s_kFrameInFlightCount> _renderFrames;
 	Vk_CommandBuffer* _curGraphicsCmdBuf = nullptr;
-
-	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_imageAvailableVkSmps;
-	Vector<VkPtr<Vk_Semaphore>,		s_kFrameInFlightCount>	_renderCompletedVkSmps;
-	Vector<VkPtr<Vk_Fence>,			s_kFrameInFlightCount>	_inFlightVkFences;
 
 	u32 _curImageIdx = 0;
 	u32 _curFrameIdx = 0;

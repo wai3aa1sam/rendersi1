@@ -68,8 +68,6 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	
 	createSwapchainInfo(_swapchainInfo, _renderer->swapchainAvailableInfo(), cDesc.window->clientRect());
 
-	createSyncObjects();
-
 	createTestUniformBuffer();
 	updateTestUBO(_curImageIdx);
 
@@ -118,7 +116,7 @@ RenderContext_Vk::onBeginRender()
 	VkResult ret;
 
 	//const auto* inFlightVkFence = reinCast<const VkFence*>(_inFlightVkFence.address());
-	Vk_Fence* vkFences[] = { _inFlightVkFences[_curFrameIdx] };
+	Vk_Fence_T* vkFences[] = { renderFrame().inFlightFence()->hnd()};
 	u32 vkFenceCount = ArraySize<decltype(vkFences)>;
 	{
 		RDS_PROFILE_SECTION("vkWaitForFences()");
@@ -129,7 +127,7 @@ RenderContext_Vk::onBeginRender()
 	{
 		RDS_PROFILE_SECTION("vkAcquireNextImageKHR()");
 		u32 imageIdx;
-		ret = vkAcquireNextImageKHR(vkDevice, _vkSwapchain, NumLimit<u64>::max(), _imageAvailableVkSmps[_curFrameIdx], VK_NULL_HANDLE, &imageIdx);
+		ret = vkAcquireNextImageKHR(vkDevice, _vkSwapchain, NumLimit<u64>::max(), renderFrame().imageAvaliableSmp()->hnd(), VK_NULL_HANDLE, &imageIdx);
 		_curImageIdx = imageIdx;
 	}
 
@@ -187,7 +185,7 @@ RenderContext_Vk::onEndRender()
 	if (_shdSwapBuffers)
 	{
 		RDS_WARN_ONCE("TODO: handle do not get next image idx if no swap buffers in the next frame");
-		_curGraphicsCmdBuf->swapBuffers(&_vkPresentQueue, _vkSwapchain, _curImageIdx, _renderCompletedVkSmps[_curFrameIdx]);
+		_curGraphicsCmdBuf->swapBuffers(&_vkPresentQueue, _vkSwapchain, _curImageIdx, renderFrame().renderCompletedSmp() );
 		_shdSwapBuffers = false;
 	}
 
@@ -374,15 +372,15 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 	_curGraphicsCmdBuf->endRecord();
 
 	{
-		Vk_Fence* vkFences[] = { _inFlightVkFences[_curFrameIdx] };
-		u32 vkFenceCount = ArraySize<decltype(vkFences)>;
+		Vk_Fence_T* vkFences[]		= { renderFrame().inFlightFence()->hnd()};
+		u32			vkFenceCount	= ArraySize<decltype(vkFences)>;
 		ret = vkResetFences(vkDevice, vkFenceCount, vkFences);		// should handle it to signaled if the function throw?
 		Util::throwIfError(ret);
 	}
 
-	_curGraphicsCmdBuf->submit(_inFlightVkFences[_curFrameIdx]
-		, _imageAvailableVkSmps[_curFrameIdx],	VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-		, _renderCompletedVkSmps[_curFrameIdx], VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+	_curGraphicsCmdBuf->submit(renderFrame().inFlightFence()
+							 , renderFrame().imageAvaliableSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+							 , renderFrame().renderCompletedSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 }
 
 void
@@ -591,41 +589,6 @@ void
 RenderContext_Vk::createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx)
 {
 	Util::createCommandPool(outVkCmdPool, queueIdx, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-}
-
-//void
-//RenderContext_Vk::createCommandBuffer(Vk_CommandPool* vkCmdPool)
-//{
-//	_vkCommandBuffers.resize(s_kFrameInFlightCount);
-//	for (auto& e : _vkCommandBuffers)
-//	{
-//		e.create(vkCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-//	}
-//}
-
-void
-RenderContext_Vk::createSyncObjects()
-{
-	auto* vkDevice = renderer()->vkDevice();
-
-	_imageAvailableVkSmps.resize(s_kFrameInFlightCount);
-	_renderCompletedVkSmps.resize(s_kFrameInFlightCount);
-	_inFlightVkFences.resize(s_kFrameInFlightCount);
-
-	Vector<Vk_Semaphore*, s_kFrameInFlightCount> tmpVkSmps0;	tmpVkSmps0.resize(s_kFrameInFlightCount);
-	Vector<Vk_Semaphore*, s_kFrameInFlightCount> tmpVkSmps1;	tmpVkSmps1.resize(s_kFrameInFlightCount);
-	Vector<Vk_Fence*, s_kFrameInFlightCount> tmpVkFences;	tmpVkFences.resize(s_kFrameInFlightCount);
-
-	for (size_t i = 0; i < s_kFrameInFlightCount; i++)
-	{
-		Util::createSemaphore(&tmpVkSmps0[i], vkDevice);
-		Util::createSemaphore(&tmpVkSmps1[i], vkDevice);
-		Util::createFence(&tmpVkFences[i], vkDevice);
-	}
-
-	Util::convertToVkPtrs(_imageAvailableVkSmps, tmpVkSmps0);
-	Util::convertToVkPtrs(_renderCompletedVkSmps, tmpVkSmps1);
-	Util::convertToVkPtrs(_inFlightVkFences, tmpVkFences);
 }
 
 void

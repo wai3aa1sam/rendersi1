@@ -99,12 +99,12 @@ Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, VkPipel
 
 	VkSemaphoreSubmitInfoKHR waitSmpInfo = {};
 	waitSmpInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	waitSmpInfo.semaphore	= waitVkSmp;
+	waitSmpInfo.semaphore	= waitVkSmp->hnd();
 	waitSmpInfo.stageMask	= waitStage;
 
 	VkSemaphoreSubmitInfoKHR signalVkSmpInfo = {};
 	signalVkSmpInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	signalVkSmpInfo.semaphore	= signalVkSmp;
+	signalVkSmpInfo.semaphore	= signalVkSmp->hnd();
 	signalVkSmpInfo.stageMask	= signalStage;
 
 	VkCommandBufferSubmitInfoKHR cmdBufSubmitInfo = {};
@@ -120,7 +120,7 @@ Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, VkPipel
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-	auto ret = vkQueueSubmit2(_vkQueue->hnd(), 1, &submitInfo, signalFence);
+	auto ret = vkQueueSubmit2(_vkQueue->hnd(), 1, &submitInfo, signalFence->hnd());
 	Util::throwIfError(ret);
 }
 
@@ -155,7 +155,7 @@ Vk_CommandBuffer::swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachai
 {
 	VkPresentInfoKHR presentInfo = {};
 
-	Vk_Semaphore*	waitVkSmps[]   = { vkWaitSmp };
+	Vk_Semaphore_T*	waitVkSmps[]   = { vkWaitSmp->hnd()};
 	Vk_Swapchain*	vkSwapChains[] = { vkSwpachain };
 	u32				imageIndices[] = { imageIdx };
 

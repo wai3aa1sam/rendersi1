@@ -454,7 +454,7 @@ RenderApiUtil_Vk::createShaderModule(Vk_ShaderModule** out, StrView filename, Vk
 }
 
 void 
-RenderApiUtil_Vk::createSemaphore(Vk_Semaphore** out, Vk_Device* vkDevice)
+RenderApiUtil_Vk::createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice)
 {
 	auto* vkAllocCallbacks = Renderer_Vk::instance()->allocCallbacks();
 
@@ -466,7 +466,7 @@ RenderApiUtil_Vk::createSemaphore(Vk_Semaphore** out, Vk_Device* vkDevice)
 }
 
 void 
-RenderApiUtil_Vk::createFence(Vk_Fence** out, Vk_Device* vkDevice)
+RenderApiUtil_Vk::createFence(Vk_Fence_T** out, Vk_Device* vkDevice)
 {
 	auto* vkAllocCallbacks = Renderer_Vk::instance()->allocCallbacks();
 
