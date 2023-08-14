@@ -151,6 +151,7 @@ public:
 public:
 	static constexpr SizeType s_kSwapchainImageLocalSize	= Traits::s_kSwapchainImageLocalSize;
 	static constexpr SizeType s_kFrameInFlightCount			= Traits::s_kFrameInFlightCount;
+	static constexpr SizeType s_kThreadCount				= Traits::s_kThreadCount;
 
 public:
 	RenderContext_Vk();

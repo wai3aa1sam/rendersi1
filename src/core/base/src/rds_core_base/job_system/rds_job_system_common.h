@@ -13,6 +13,7 @@ namespace rds
 using JobSystem             = ::nmsp::JobSystem_T;
 using JobSystem_CreateDesc  = ::nmsp::JobSystem_CreateDesc;
 
+using JobArgs			= ::nmsp::JobArgs;
 using Job_Base			= ::nmsp::Job_Base;
 using JobFor_Base		= ::nmsp::JobFor_Base;
 using JobParFor_Base	= ::nmsp::JobParFor_Base;

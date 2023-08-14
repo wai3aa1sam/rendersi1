@@ -30,6 +30,7 @@ public:
 
 	void submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, VkPipelineStageFlags2 waitStage, Vk_Semaphore* signalVkSmp, VkPipelineStageFlags2 signalStage);
 	void submit();
+	void executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs);
 	void waitIdle();
 
 	void swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachain, u32 imageIdx, Vk_Semaphore* vkWaitSmp);

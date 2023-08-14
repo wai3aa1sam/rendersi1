@@ -36,6 +36,8 @@ public:
 	void reset();
 
 	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
+	template<size_t N> void requestCommandBuffers(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
+
 
 	void resetCommandPools();
 	void resetCommandPool(QueueTypeFlags queueType);
@@ -66,6 +68,20 @@ protected:
 	Vk_Fence		_inFlightVkFence;
 };
 
+template<size_t N> inline
+void 
+Vk_RenderFrame::requestCommandBuffers(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel)
+{
+	out.clear();
+	out.resize(n);
+	for (size_t i = 0; i < n; i++)
+	{
+		auto& e = out[i];
+		e = requestCommandBuffer(queueType, bufLevel);
+	}
+}
+
+
 inline
 Vk_CommandPool& 
 Vk_RenderFrame::commandPool(QueueTypeFlags queueType)
@@ -88,6 +104,7 @@ Vk_RenderFrame::commandPool(QueueTypeFlags queueType)
 inline Vk_Semaphore*	Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
 inline Vk_Semaphore*	Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }
 inline Vk_Fence*		Vk_RenderFrame::inFlightFence()			{ return &_inFlightVkFence; }
+
 
 
 #endif

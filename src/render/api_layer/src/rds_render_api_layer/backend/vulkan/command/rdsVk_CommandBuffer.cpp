@@ -144,6 +144,17 @@ Vk_CommandBuffer::submit()
 }
 
 void 
+Vk_CommandBuffer::executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs)
+{
+	Vector<Vk_CommandBuffer_T*, 32> vkCmdBufs;
+	auto n = sCast<u32>(cmdBufs.size());
+	vkCmdBufs.resize(n);
+	Util::convertToHnds(vkCmdBufs, cmdBufs);
+
+	vkCmdExecuteCommands(hnd(), n, vkCmdBufs.data());
+}
+
+void 
 Vk_CommandBuffer::waitIdle()
 {
 	RDS_CORE_ASSERT(_vkQueue, "{}", RDS_SRCLOC);

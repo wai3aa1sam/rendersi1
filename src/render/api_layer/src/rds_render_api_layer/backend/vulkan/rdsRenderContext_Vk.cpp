@@ -1277,7 +1277,7 @@ void
 RenderContext_Vk::onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd)
 {
 	_shdSwapBuffers = true;
-	//_curGraphicsCmdBuf->swapBuffers(&_vkPresentQueue, _vkSwapchain, _curImageIdx, _renderCompletedVkSmps[_curFrameIdx]);
+	//_curGraphicsCmdBuf->swapBuffers(&_vkPresentQueue, _vkSwapchain, _curImageIdx, renderFrame().renderCompletedSmp());
 }
 
 void
@@ -1329,6 +1329,101 @@ RenderContext_Vk::onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd)
 void 
 RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd)
 {
+	const auto&	drawCallCmds	= cmd->hashedDrawCallCmds->drawCallCmds();
+	auto		drawCallCount	= drawCallCmds.size();
+	//auto batchSize		= drawCallCount / OsTraits::logicalThreadCount();
+	auto batchSize		= 400;
+	auto jobCount		= drawCallCount / batchSize;
+	
+	class ParRecordDrawCall : public JobFor_Base
+	{
+	public:
+		void setup(SizeType startIdx, RenderContext_Vk* rdCtx, HashedDrawCallCommands* drawCallCmds
+					, Vk_CommandBuffer* vkCmdBuf, Vk_Queue* graphicsQueue, Vk_RenderPass* renderPass, Vk_Framebuffer* vkFrameBuf, u32 subpassIdx, SwapchainInfo_Vk* swapchainInfo)
+		{
+			_startIdx		= startIdx;
+			_rdCtx			= rdCtx;
+			_drawCallCmds	= drawCallCmds;
+			_vkCmdBuf		= vkCmdBuf;
+			_graphicsQueue	= graphicsQueue;
+			_renderPass		= renderPass;
+			_vkFrameBuf		= vkFrameBuf;
+			_subpassIdx		= subpassIdx;
+			_swapchainInfo	= swapchainInfo;
+		}
+
+		virtual void onBegin()
+		{
+			_notYetSupported(); // need to modify the jobsystem and test, if the job is no parent, then call the JobDispatchBase::onBegin/onEnd()
+
+			auto* vkCmdBuf = _vkCmdBuf;
+
+			vkCmdBuf->beginSecondaryRecord(_graphicsQueue, _renderPass, _vkFrameBuf, _subpassIdx);
+
+			auto rect2 = Util::toRect2f(_swapchainInfo->extent);
+			vkCmdBuf->setViewport(rect2);
+			vkCmdBuf->setScissor (rect2);
+		}
+
+		virtual void onEnd()
+		{
+			_notYetSupported();
+
+			auto* vkCmdBuf = _vkCmdBuf;
+
+			vkCmdBuf->endRecord();
+		}
+
+		virtual void execute(const JobArgs& args) override
+		{
+			const auto& drawCallCmds = _drawCallCmds->drawCallCmds();
+
+			auto idx = args.loopIndex + _startIdx;
+			_rdCtx->_dispatchCommand(_rdCtx, drawCallCmds[idx]);
+		}
+
+	public:
+		SizeType				_startIdx		= 0;
+		RenderContext_Vk*		_rdCtx			= nullptr;
+		HashedDrawCallCommands* _drawCallCmds	= nullptr;
+		Vk_CommandBuffer*		_vkCmdBuf		= nullptr;
+		Vk_Queue*				_graphicsQueue	= nullptr;
+		Vk_RenderPass*			_renderPass		= nullptr;
+		Vk_Framebuffer*			_vkFrameBuf		= nullptr;
+		u32						_subpassIdx		= 0;
+		SwapchainInfo_Vk*		_swapchainInfo	= nullptr;
+	};
+
+	Vector<Vk_CommandBuffer*,		s_kThreadCount> vkCmdBufs;
+	Vector<UPtr<ParRecordDrawCall>, s_kThreadCount> recordJobs;
+	Vector<JobHandle,				s_kThreadCount> recordJobHandles;
+
+	renderFrame().requestCommandBuffers(vkCmdBufs, jobCount, QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+	recordJobs.resize(jobCount);
+	recordJobHandles.resize(jobCount);
+
+	SizeType startIdx = 0; _notYetSupported();
+
+	for (int i = 0; i < jobCount; ++i)
+	{
+		auto& job		= recordJobs[i];
+		auto* vkCmdBuf	= vkCmdBufs[i];
+		job = makeUPtr<ParRecordDrawCall>();
+
+		job->setup(startIdx, this, cmd->hashedDrawCallCmds, vkCmdBuf, vkGraphicsQueue()
+				, &_testVkRenderPass, &_vkSwapchainFramebuffers[_curImageIdx], 0, &_swapchainInfo);
+
+		auto handle = job->dispatch(batchSize);
+		recordJobHandles[i] = handle;
+	}
+
+	for (auto* e : recordJobHandles)
+	{
+		JobSystem::instance()->waitForComplete(e);
+	}
+
+	auto* primaryCmdBuf = _curGraphicsCmdBuf;
+	primaryCmdBuf->executeSecondaryCmdBufs(vkCmdBufs.span());
 }
 
 

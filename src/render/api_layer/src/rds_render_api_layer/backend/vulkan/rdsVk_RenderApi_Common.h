@@ -168,6 +168,8 @@ public:
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
 
+	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T> src);
+	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> src);
 	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src);
 	
 public:
@@ -365,9 +367,9 @@ RenderApiUtil_Vk::convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>&
 	convertToVkPtrs(dst, (T**)src.data(), sCast<u32>(src.size()));
 }
 
-template<class T, size_t N> inline
+template<class T, size_t N> inline 
 void 
-RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src)
+RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T> src)
 {
 	auto n = src.size();
 	dst.clear();
@@ -376,6 +378,26 @@ RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, const Vect
 	{
 		dst.emplace_back(src[i].hnd());
 	}
+}
+
+template<class T, size_t N> inline 
+void 
+RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> src)
+{
+	auto n = src.size();
+	dst.clear();
+	dst.resize(n);
+	for (size_t i = 0; i < n; i++)
+	{
+		dst.emplace_back(src[i]->hnd());
+	}
+}
+
+template<class T, size_t N> inline
+void 
+RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src)
+{
+	convertToHnds(dst, src.span());
 }
 
 template<size_t N> inline

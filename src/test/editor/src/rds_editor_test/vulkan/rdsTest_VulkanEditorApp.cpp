@@ -239,6 +239,8 @@ public:
 		}
 
 		uploadTestMultiBuf();
+
+		RDS_DUMP_VAR(sizeof(::nmsp::Job_T));
 	}
 
 	virtual void onRender() override
