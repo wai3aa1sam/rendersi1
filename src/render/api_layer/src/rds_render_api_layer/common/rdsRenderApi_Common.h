@@ -56,6 +56,15 @@ RDS_ENUM_CLASS(RenderMemoryUsage, u8);
 RDS_ENUM_CLASS(RenderAllocFlags, u8);
 RDS_ENUM_ALL_OPERATOR(RenderAllocFlags);
 
+#define RenderPrimitiveType_ENUM_LIST(E) \
+	E(None, = 0) \
+	\
+	E(Triangle,) \
+	\
+	E(_kCount,) \
+//---
+RDS_ENUM_CLASS(RenderPrimitiveType, u8);
+
 }
 
 

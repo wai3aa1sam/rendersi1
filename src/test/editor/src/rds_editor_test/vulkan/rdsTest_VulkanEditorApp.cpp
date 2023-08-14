@@ -76,7 +76,7 @@ void testEditMesh()
 
 const VertexLayout* getertexLayout_RndColorTriangle() { return Vertex_PosColorUv<1>::vertexLayout(); }
 
-Vector<u8, 1024> makeRndColorTriangle(float z = 0.0f)
+EditMesh makeRndColorTriangleMesh(float z = 0.0f)
 {
 	static size_t s_kVtxCount = 4;
 	EditMesh editMesh;
@@ -111,10 +111,17 @@ Vector<u8, 1024> makeRndColorTriangle(float z = 0.0f)
 		e.emplace_back(1.0f, 1.0f);
 	}
 
-	RDS_ASSERT(editMesh.getVertexLayout() == getertexLayout_RndColorTriangle(), "");
+	editMesh.indices = { 0, 2, 1, 2, 0, 3 };
 
+	RDS_ASSERT(editMesh.getVertexLayout() == getertexLayout_RndColorTriangle(), "");
+	return editMesh;
+}
+
+Vector<u8, 1024>	makeRndColorTriangleData(float z = 0.0f)
+{
+	auto mesh = makeRndColorTriangleMesh(z);
 	Vector<u8, 1024> o;
-	editMesh.createPackedVtxData(o);
+	mesh.createPackedVtxData(o);
 	return o;
 }
 
@@ -255,26 +262,32 @@ public:
 		rdCtx.beginRender();
 
 
-		auto& rdCmdBuf = rdReq.renderCommandBuffer();
+		auto& rdCmdBuf = _rdReq.renderCommandBuffer();
 		rdCmdBuf.clear();
-
-		rdReq.clearFramebuffers(Color4f{0.7f, 0.5f, 1.0f, 1.0f}, 1.0f);
+		_rdReq.clearFramebuffers(Color4f{0.7f, 0.5f, 1.0f, 1.0f}, 1.0f);
 		
-		rdReq.swapBuffers();
+		#if 1
 
-		auto addDrawCall = [](RenderRequest& rdReq, SPtr<RenderGpuMultiBuffer>& vtxBuf, SPtr<RenderGpuBuffer>& idxBuf)
+		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh1);
+		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh2);
+
+		#else
+
+		auto addDrawCall = [](RenderRequest& _rdReq, SPtr<RenderGpuMultiBuffer>& vtxBuf, SPtr<RenderGpuBuffer>& idxBuf)
 		{
-			auto* p = rdReq.addDrawCall();
+			auto* p = _rdReq.addDrawCall();
 			p->vertexBuffer = vtxBuf->renderGpuBuffer();
 			p->vertexCount	= vtxBuf->elementCount();
 			p->indexBuffer	= idxBuf;
 			p->indexCount	= idxBuf->elementCount();
 		};
-		addDrawCall(rdReq, _testMultiBuffer, _testIdxBuf);
-		addDrawCall(rdReq, _testMultiBuffer2, _testIdxBuf);
+		addDrawCall(_rdReq, _testMultiBuffer, _testIdxBuf);
+		addDrawCall(_rdReq, _testMultiBuffer2, _testIdxBuf);
 
+		#endif // 0
+
+		_rdReq.swapBuffers();
 		rdCtx.commit(rdCmdBuf);
-		
 		rdCtx.endRender();
 
 		uploadTestMultiBuf();
@@ -291,7 +304,7 @@ public:
 		{
 			auto makeBuf = [](SPtr<RenderGpuMultiBuffer>& buf, float z = 0.0f)
 			{
-				auto data			= makeRndColorTriangle(z);
+				auto data			= makeRndColorTriangleData(z);
 
 				auto bufCDesc		= RenderGpuMultiBuffer::makeCDesc();
 				bufCDesc.bufSize	= data.size();
@@ -315,18 +328,24 @@ public:
 			_testIdxBuf->uploadToGpu(indices.byteSpan());
 		}
 
-		auto data  = makeRndColorTriangle();
-		auto data2 = makeRndColorTriangle(0.5f);
+		auto data  = makeRndColorTriangleData();
+		auto data2 = makeRndColorTriangleData(0.5f);
 		_testMultiBuffer->uploadToGpu(data.byteSpan());
 		_testMultiBuffer2->uploadToGpu(data2.byteSpan());
+
+		_rdMesh1.upload(makeRndColorTriangleMesh());
+		_rdMesh2.upload(makeRndColorTriangleMesh(0.5));
 	}
 
 protected:
+	RenderRequest _rdReq;
+
 	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
 	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer2;
 	SPtr<RenderGpuBuffer>		_testIdxBuf;
-	RenderRequest rdReq;
 
+	RenderMesh _rdMesh1;
+	RenderMesh _rdMesh2;
 };
 
 class Test_VulkanEditorApp : public UnitTest

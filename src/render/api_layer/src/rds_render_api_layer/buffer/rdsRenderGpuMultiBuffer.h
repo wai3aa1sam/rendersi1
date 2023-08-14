@@ -47,8 +47,8 @@ public:
 	SizeType bufSize()		const;
 	SizeType elementCount()	const;
 
-	RenderGpuBuffer* renderGpuBuffer();
-	const RenderGpuBuffer* renderGpuBuffer() const;
+			SPtr<RenderGpuBuffer>& renderGpuBuffer();
+	const	SPtr<RenderGpuBuffer>& renderGpuBuffer() const;
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -70,8 +70,8 @@ inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::stride()		const { re
 inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::bufSize()		const { return _renderGpuBuffers[iFrame]->bufSize(); }
 inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const { return _renderGpuBuffers[iFrame]->elementCount(); }
 
-inline RenderGpuBuffer*			RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[iFrame]; }
-inline const RenderGpuBuffer*	RenderGpuMultiBuffer::renderGpuBuffer() const	{ return _renderGpuBuffers[iFrame]; }
+inline			SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[iFrame]; }
+inline const	SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer() const	{ return _renderGpuBuffers[iFrame]; }
 
 #endif
 }

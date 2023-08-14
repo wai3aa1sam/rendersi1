@@ -9,6 +9,8 @@ class RenderMesh;
 class RenderGpuBuffer;
 class HashedDrawCallCommands;
 
+class VertexLayout;
+
 using DrawingSettings = u64;
 
 #if 0
@@ -43,6 +45,10 @@ public:
 	virtual ~RenderCommand() {};
 
 	Type type() const { return _type; }
+
+	#if RDS_DEBUG
+	SrcLoc _debugLoc;
+	#endif // RDS_DEBUG
 
 protected:
 	RenderCommandType _type;
@@ -91,7 +97,9 @@ public:
 	using This = RenderCommand_DrawCall;
 
 public:
-	RenderDataType indexType = RenderDataType::UInt16;
+	RenderDataType		indexType			= RenderDataType::UInt16;
+	RenderPrimitiveType renderPrimitiveType = RenderPrimitiveType::Triangle;
+	const VertexLayout* vertexLayout		= nullptr;
 
 	SizeType vertexCount	= 0;
 	SizeType indexCount		= 0;

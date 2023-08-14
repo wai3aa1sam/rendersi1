@@ -13,7 +13,7 @@ namespace rds
 
 struct PackedVtxDataHelper;
 
-class EditMesh : public NonCopyable
+class EditMesh
 {
 public:
 	using PosType		= Tuple3f;
@@ -34,8 +34,9 @@ public:
 	static constexpr u8 s_kBinormalCount	= 1;
 
 public:
-	template<size_t N>	void		createPackedVtxData(Vector<u8, N>& out);
-						Vector<u8>	makePackedVtxData();
+	template<size_t N>	const VertexLayout*	createPackedVtxData(Vector<u8, N>& out) const;
+	template<size_t N>	void				createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout) const;
+						Vector<u8>			makePackedVtxData() const;
 
 	const VertexLayout* getVertexLayout() const;
 
@@ -46,13 +47,15 @@ public:
 	Vector<Tuple3f>	normal;
 	Vector<Tuple3f>	tangent;
 	Vector<Tuple3f>	binormal;
+
+	Vector<u32> indices;
 };
 
 template<size_t N> inline
-void
-EditMesh::createPackedVtxData(Vector<u8, N>& out)
+const VertexLayout*
+EditMesh::createPackedVtxData(Vector<u8, N>& out) const
 {
-	PackedVtxDataHelper::createPackedVtxData(out
+	return PackedVtxDataHelper::createPackedVtxData(out
 		, &pos,			s_kPosCount
 		, &color,		s_kColorCount
 		, uvs,			s_kUvCount
@@ -62,7 +65,21 @@ EditMesh::createPackedVtxData(Vector<u8, N>& out)
 	);
 }
 
-inline Vector<u8> EditMesh::makePackedVtxData() { Vector<u8> o; createPackedVtxData(o); return o; }
+template<size_t N> inline 
+void
+EditMesh::createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout) const
+{
+	return PackedVtxDataHelper::createPackedVtxData(out, vertexLayout
+		, &pos,			s_kPosCount
+		, &color,		s_kColorCount
+		, uvs,			s_kUvCount
+		, &normal,		s_kNormalCount
+		, &tangent,		s_kTangentCount
+		, &binormal,	s_kBinormalCount
+	);
+}
+
+inline Vector<u8> EditMesh::makePackedVtxData() const { Vector<u8> o; createPackedVtxData(o); return o; }
 
 #endif
 
@@ -172,7 +189,24 @@ struct PackedVtxDataHelper
 		, class TANGNET_TYPE
 		, class BINORMAL_TYPE
 	>
-	static void createPackedVtxData(Vector<u8, N>& out
+	static const VertexLayout* createPackedVtxData(Vector<u8, N>& out
+									, const Vector<POS_TYPE>*		positions,		u8 posCount
+									, const Vector<COLOR_TYPE>*		colors,			u8 colorCount
+									, const Vector<UV_TYPE>*		uvs,			u8 uvCount
+									, const Vector<NORMAL_TYPE>*	normals,		u8 normalCount
+									, const Vector<TANGNET_TYPE>*	tangents,		u8 tangentCount
+									, const Vector<BINORMAL_TYPE>*	binormals,		u8 binormalCount
+		);
+
+	template<size_t N
+		, class POS_TYPE
+		, class COLOR_TYPE
+		, class UV_TYPE
+		, class NORMAL_TYPE
+		, class TANGNET_TYPE
+		, class BINORMAL_TYPE
+	>
+	static void createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout
 									, const Vector<POS_TYPE>*		positions,		u8 posCount
 									, const Vector<COLOR_TYPE>*		colors,			u8 colorCount
 									, const Vector<UV_TYPE>*		uvs,			u8 uvCount
@@ -278,9 +312,8 @@ template<size_t N
 		, class NORMAL_TYPE
 		, class TANGNET_TYPE
 		, class BINORMAL_TYPE
-		>
-inline
-void 
+		> inline
+const VertexLayout* 
 PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out
 							, const Vector<POS_TYPE>*		positions,		u8 posCount
 							, const Vector<COLOR_TYPE>*		colors,			u8 colorCount
@@ -309,6 +342,59 @@ PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out
 												, normals,		normalCount
 												, tangents,		tangentCount
 												, binormals,	binormalCount);
+	createPackedVtxData(out, vtxLayout
+		, positions,	posCount
+		, colors,		colorCount
+		, uvs,			uvCount
+		, normals,		normalCount
+		, tangents,		tangentCount
+		, binormals,	binormalCount);
+
+	return vtxLayout;
+}
+
+template<size_t N
+	, class POS_TYPE
+	, class COLOR_TYPE
+	, class UV_TYPE
+	, class NORMAL_TYPE
+	, class TANGNET_TYPE
+	, class BINORMAL_TYPE
+>
+inline
+void
+PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout
+										, const Vector<POS_TYPE>*		positions,		u8 posCount
+										, const Vector<COLOR_TYPE>*		colors,			u8 colorCount
+										, const Vector<UV_TYPE>*		uvs,			u8 uvCount
+										, const Vector<NORMAL_TYPE>*	normals,		u8 normalCount
+										, const Vector<TANGNET_TYPE>*	tangents,		u8 tangentCount
+										, const Vector<BINORMAL_TYPE>*	binormals,		u8 binormalCount
+)
+{
+	using PosType		= POS_TYPE;
+	using ColorType_	= COLOR_TYPE;
+	using UvType		= UV_TYPE;
+	using NormalType	= NORMAL_TYPE;
+	using TangentType	= TANGNET_TYPE;
+	using BinormalType	= BINORMAL_TYPE;
+
+	using Helper	= PackedVtxDataHelper;
+	using SizeType	= Helper::SizeType;
+
+	RDS_CORE_ASSERT(posCount == 1, "only 1 pos count supported");
+	static_assert(IsSame<NormalType, TangentType> && IsSame<NormalType, BinormalType>, "");
+
+	const auto* vtxLayout = vertexLayout;
+		
+	RDS_CORE_ASSERT(vtxLayout 
+					==	Helper::getVertexLayout(positions,	posCount
+												, colors,		colorCount
+												, uvs,			uvCount
+												, normals,		normalCount
+												, tangents,		tangentCount
+												, binormals,	binormalCount), "");
+
 	auto stride = vtxLayout->stride();
 
 	SizeType vtxCount = positions[0].size();
@@ -337,7 +423,10 @@ PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out
 			case SemanticT::BINORMAL:	{ auto& src = binormals[semanticIdx];	Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
 		}
 	}
+
+	//return vtxLayout;
 }
+
 
 #endif // 1
 
