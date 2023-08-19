@@ -1284,8 +1284,15 @@ void
 RenderContext_Vk::onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd)
 {
 	RDS_PROFILE_SCOPED();
+	_onRenderCommand_DrawCall(_curGraphicsCmdBuf, cmd);
+}
 
-	auto* vkCmdBuf = _curGraphicsCmdBuf->hnd();
+void 
+RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd)
+{
+	RDS_PROFILE_SCOPED();
+
+	auto* vkCmdBuf = cmdBuf->hnd();
 
 	bool isDefaultRenderState	= true;
 	bool isDefaultMaterial		= true;
@@ -1329,12 +1336,14 @@ RenderContext_Vk::onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd)
 void 
 RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd)
 {
+	static constexpr SizeType s_kMinBatchSize = 400;
+
 	const auto&	drawCallCmds	= cmd->hashedDrawCallCmds->drawCallCmds();
 	auto		drawCallCount	= drawCallCmds.size();
 	//auto batchSize		= drawCallCount / OsTraits::logicalThreadCount();
-	auto batchSize		= 400;
-	auto jobCount		= drawCallCount / batchSize;
-	
+	auto batchSizePerThread	= math::max(s_kMinBatchSize, drawCallCount / OsTraits::logicalThreadCount());
+	auto jobCount			= sCast<SizeType>(math::ceil((float)drawCallCount / batchSizePerThread));
+
 	class ParRecordDrawCall : public JobFor_Base
 	{
 	public:
@@ -1377,9 +1386,10 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 		virtual void execute(const JobArgs& args) override
 		{
 			const auto& drawCallCmds = _drawCallCmds->drawCallCmds();
+			auto* vkCmdBuf = _vkCmdBuf;
 
 			auto idx = args.loopIndex + _startIdx;
-			_rdCtx->_dispatchCommand(_rdCtx, drawCallCmds[idx]);
+			_rdCtx->_onRenderCommand_DrawCall(vkCmdBuf, drawCallCmds[idx]);
 		}
 
 	public:
@@ -1402,18 +1412,21 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 	recordJobs.resize(jobCount);
 	recordJobHandles.resize(jobCount);
 
-	SizeType startIdx = 0; _notYetSupported();
-
+	SizeType remainCmds = drawCallCount;
+	RDS_WARN_ONCE("TODO: make a JobGatherer, the for loop dispatch can ");
 	for (int i = 0; i < jobCount; ++i)
 	{
 		auto& job		= recordJobs[i];
 		auto* vkCmdBuf	= vkCmdBufs[i];
 		job = makeUPtr<ParRecordDrawCall>();
 
-		job->setup(startIdx, this, cmd->hashedDrawCallCmds, vkCmdBuf, vkGraphicsQueue()
+		auto batchSize = math::min(batchSizePerThread, remainCmds);
+		remainCmds -= batchSize;
+
+		job->setup(batchSizePerThread * i, this, cmd->hashedDrawCallCmds, vkCmdBuf, vkGraphicsQueue()
 				, &_testVkRenderPass, &_vkSwapchainFramebuffers[_curImageIdx], 0, &_swapchainInfo);
 
-		auto handle = job->dispatch(batchSize);
+		auto handle = job->dispatch(sCast<u32>(batchSize));
 		recordJobHandles[i] = handle;
 	}
 

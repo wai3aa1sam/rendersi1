@@ -3,6 +3,8 @@
 #include "rds_render_api_layer.h"
 #include "rds_editor.h"
 
+#include "rdsTest_CRenderableSystem.h"
+
 namespace rds 
 {
 
@@ -131,11 +133,12 @@ class VulkanEditorMainWindow : public EditorMainWindow
 public:
 	~VulkanEditorMainWindow()
 	{
-
+		destroy();
 	}
 
 	void destroy()
 	{
+		_renderContext.reset(nullptr);
 	}
 
 protected:
@@ -148,8 +151,6 @@ protected:
 		auto renderContextCDesc = RenderContext::makeCDesc();
 		renderContextCDesc.window = this;
 		_renderContext = renderer->createContext(renderContextCDesc);
-
-
 	}
 
 private:
@@ -166,20 +167,25 @@ public:
 public:
 	~VulkanEditorApp()
 	{
-		
 	}
+
 
 	VulkanEditorMainWindow* mainWin() { return &_vulkanMainWin; }
 
 protected:
 
-	virtual void VulkanEditorApp::onCreate	(const CreateDesc_Base& cDesc) override
+	virtual void onCreate(const CreateDesc_Base& cDesc) override
 	{
 		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 		//Base::onCreate(thisCDesc);
 
 		JobSystem::init();
 		Renderer::init();
+
+		{
+			auto jobSysCDesc = JobSystem::makeCDesc();
+			JobSystem::instance()->create(jobSysCDesc);
+		}
 		
 		{
 			auto rendererCDesc = Renderer::makeCDesc();
@@ -198,10 +204,13 @@ protected:
 		pushLayer(makeUPtr<VulkanLayer>());
 	}
 
+	virtual void onDestroy() override
+	{
+		mainWin()->destroy();
+	}
+
 	virtual void willQuit() override
 	{
-		_vulkanMainWin.~VulkanEditorMainWindow();
-
 		Base::willQuit();
 	}
 
@@ -248,6 +257,13 @@ public:
 		uploadTestMultiBuf();
 
 		RDS_DUMP_VAR(sizeof(::nmsp::Job_T));
+
+		_cRenderableSys.createTest(1920, _rdMesh1);
+	}
+
+	virtual void onUpdate() override
+	{
+		_cRenderableSys.execute();
 	}
 
 	virtual void onRender() override
@@ -270,6 +286,7 @@ public:
 
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh1);
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh2);
+		_rdReq.drawRenderables(DrawingSettings{});
 
 		#else
 
@@ -300,6 +317,7 @@ public:
 
 	void uploadTestMultiBuf()
 	{
+		#if 1
 		if (!_testMultiBuffer)
 		{
 			auto makeBuf = [](SPtr<RenderGpuMultiBuffer>& buf, float z = 0.0f)
@@ -324,7 +342,7 @@ public:
 			bufCDesc.bufSize	= indices.size() * bufCDesc.stride;
 			bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Index;
 			_testIdxBuf			= RenderGpuBuffer::make(bufCDesc);
-			
+
 			_testIdxBuf->uploadToGpu(indices.byteSpan());
 		}
 
@@ -335,6 +353,7 @@ public:
 
 		_rdMesh1.upload(makeRndColorTriangleMesh());
 		_rdMesh2.upload(makeRndColorTriangleMesh(0.5));
+		#endif // 0
 	}
 
 protected:
@@ -346,6 +365,8 @@ protected:
 
 	RenderMesh _rdMesh1;
 	RenderMesh _rdMesh2;
+
+	Test_CRenderableSystem _cRenderableSys;
 };
 
 class Test_VulkanEditorApp : public UnitTest
@@ -450,7 +471,4 @@ void test_VulkanEditorApp()
 	RDS_TEST_CASE(Test_VulkanEditorApp, test());
 
 }
-
-
-
 

@@ -131,6 +131,43 @@ public:
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderCommandBuffer-Impl ---
+#endif // 0
+#if 1
+
+template<typename T>
+class RenderCmdIter
+{
+public:
+	using ValueType = T;
+
+	RenderCmdIter(T* p)
+		: _p(p)
+	{}
+
+			ValueType& operator*()			{ return *_p; }
+	const	ValueType& operator*() const	{ return *_p; }
+
+	operator		ValueType*()			{ return _p; }
+	operator const	ValueType*() const		{ return _p; }
+
+	constexpr		ValueType* operator->() 		{ return &(operator*()); }
+	constexpr const ValueType* operator->() const	{ return &(operator*()); }
+
+	constexpr RenderCmdIter& operator++()		{ advance(); return *this; }
+	constexpr RenderCmdIter  operator++(int)	{ RenderCmdIter it(*this); advance(); return it; }
+	//constexpr RenderCmdIter& operator--()		{ --_p; return *this; }
+	//constexpr RenderCmdIter  operator--(int)	{ RenderCmdIter it(*this); --_p; return it; }
+
+protected:
+	void advance() { _p = reinCast<T*>(reinCast<u8*>(_p) + sizeof(T)); }
+
+private:
+	T* _p = nullptr;
+};
+
+#endif
 
 #if 0
 #pragma mark --- rdsRenderCommandBuffer-Impl ---
@@ -151,7 +188,7 @@ public:
 	static constexpr SizeType s_kDrawCallLocalSize	= 512;
 
 public:
-	using DrawCallCmds = Vector<RenderCommand_DrawCall*, s_kLocalSize>;
+	using DrawCallCmds = Vector<RenderCommand_DrawCall*, s_kLocalSize, Mallocator>;
 
 public:
 	RenderCommandBuffer();
@@ -166,15 +203,13 @@ public:
 	RenderCommand_SwapBuffers*			swapBuffers();
 	RenderCommand_DrawCall*				addDrawCall();
 
-	void drawRenderables(const DrawingSettings& settings);
-
 	Span<RenderCommand*> commands();
 
 	const RenderCommand_ClearFramebuffers* getClearFramebuffersCmd() const;
 
 private:
 	template<class CMD> CMD* addCommand();
-	void* allocCommand(SizeType n, SizeType align);
+	void* alloc(SizeType n, SizeType align);
 
 private:
 	Vector<RenderCommand*, s_kLocalSize>	_commands;
@@ -185,7 +220,7 @@ template<class CMD> inline
 CMD* 
 RenderCommandBuffer::addCommand()
 {
-	void* buf = allocCommand(sizeof(CMD), s_kAlign);
+	void* buf = alloc(sizeof(CMD), s_kAlign);
 	auto* cmd = new(buf) CMD();
 	_commands.emplace_back(cmd);
 	return cmd;

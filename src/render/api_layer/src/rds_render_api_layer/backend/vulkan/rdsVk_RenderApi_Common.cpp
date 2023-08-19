@@ -232,9 +232,8 @@ RenderApiUtil_Vk::toVkIndexType(RenderDataType idxType)
 	{
 		case SRC::UInt16: { return VK_INDEX_TYPE_UINT16; } break;
 		case SRC::UInt32: { return VK_INDEX_TYPE_UINT32; } break;
-		default: { throwError(""); }
+		default: { return VK_INDEX_TYPE_MAX_ENUM; }
 	}
-	return VK_INDEX_TYPE_UINT16;
 }
 
 bool 

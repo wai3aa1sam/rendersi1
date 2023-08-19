@@ -117,7 +117,9 @@ RenderFrame::clear()
 {
 	_transferReq.clear();
 	_rdfUploadBuffer.clear();
+	renderQueue().clear();
 
+	// must be last
 	for (auto& e : _renderCommandAllocators)
 	{
 		e->clear();
@@ -162,7 +164,6 @@ RenderFrameContext::RenderFrameContext()
 	: Base()
 {
 	_renderFrames.resize(s_kFrameInFlightCount);
-	_renderQueues.resize(s_kFrameInFlightCount);
 }
 
 RenderFrameContext::~RenderFrameContext()
@@ -173,7 +174,6 @@ void
 RenderFrameContext::clear()
 {
 	_renderFrames.clear();
-	_renderQueues.clear();
 }
 
 void 
@@ -181,7 +181,6 @@ RenderFrameContext::rotate()
 {
 	iFrame = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
 	renderFrame().clear();
-	renderQueue().clear();
 }
 
 #endif

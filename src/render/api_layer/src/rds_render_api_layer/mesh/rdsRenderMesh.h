@@ -86,6 +86,8 @@ public:
 	Span<		RenderSubMesh>	subMeshes();
 	Span<const	RenderSubMesh>	subMeshes() const;
 
+	SizeType	subMeshCount() const;
+
 	const VertexLayout* vertexLayout() const;
 	RenderPrimitiveType renderPrimitiveType() const;
 
@@ -101,6 +103,8 @@ inline const	RenderSubMesh&	RenderMesh::subMesh()	const	{ return _subMeshes[0]; 
 
 inline Span<		RenderSubMesh>	RenderMesh::subMeshes()			{ return _subMeshes.span(); }
 inline Span<const	RenderSubMesh>	RenderMesh::subMeshes() const	{ return _subMeshes.span(); }
+
+inline RenderMesh::SizeType	RenderMesh::subMeshCount() const		{ return subMeshes().size(); }
 
 inline const VertexLayout* RenderMesh::vertexLayout()			const { return _vertexLayout; }
 inline RenderPrimitiveType RenderMesh::renderPrimitiveType()	const { return _renderPrimitveType; }

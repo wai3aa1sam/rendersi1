@@ -37,6 +37,7 @@ public:
 
 protected:
 	virtual void onCreate	(const CreateDesc_Base& cd) override;
+	virtual void onDestroy  ();
 	virtual void onRun		() override;
 	virtual void onQuit		() override;
 	virtual void willQuit	() override;

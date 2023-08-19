@@ -2,6 +2,7 @@
 
 #include "rdsMemoryContext.h"
 
+#include "rds_core_base/job_system/rds_job_system.h"
 
 namespace rds 
 {
@@ -33,6 +34,13 @@ MemoryContext::MemoryContext()
 	{
 		_allocStacks[i].emplace_back(&_defaultAllocators[i]);
 	}
+
+	for (int i = 0; i < s_kThreadCount; i++)
+	{
+		_defaultAllocators[i].setThreadId(i);
+	}
+
+	_log("TODO: ThreadAllocatorStack also need a thread id to check sanity");
 }
 
 MemoryContext::~MemoryContext()

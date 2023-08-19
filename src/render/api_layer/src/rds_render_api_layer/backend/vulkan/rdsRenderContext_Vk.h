@@ -172,6 +172,7 @@ public:
 	void onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd);
 
 	void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd);
+	void _onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd);
 
 	void onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd);
 

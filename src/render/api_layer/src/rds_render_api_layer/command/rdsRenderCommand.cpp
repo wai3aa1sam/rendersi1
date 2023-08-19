@@ -32,16 +32,9 @@ RenderCommandBuffer::clear()
 }
 
 void* 
-RenderCommandBuffer::allocCommand(SizeType n, SizeType align)
+RenderCommandBuffer::alloc(SizeType n, SizeType align)
 {
 	return RenderFrameContext::instance()->renderFrame().renderCommandAllocator().alloc(n, align);
-}
-
-void 
-RenderCommandBuffer::drawRenderables(const DrawingSettings& settings)
-{
-	auto* p = addCommand<RenderCommand_DrawRenderables>(); RDS_UNUSED(p);
-	p->hashedDrawCallCmds = RenderFrameContext::instance()->renderQueue().drawRenderables(settings);
 }
 
 

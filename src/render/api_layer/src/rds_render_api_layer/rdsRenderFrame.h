@@ -60,6 +60,7 @@ private:
 
 	Atm<u32> _totalDataSize = 0;
 	MutexProtected<InlineUploadBuffer> _inlineUploadBuffer; // TODO: better thread-safe approach (eg. SMtx if assumed only 1 LinearAllocator::Chunk, or per thread LinearAlloc)
+
 };
 
 inline u32 RenderFrameUploadBuffer::totalDataSize() { return _totalDataSize; }
@@ -103,15 +104,18 @@ public:
 
 	RenderFrameUploadBuffer&	renderFrameUploadBuffer();
 	TransferRequest&			transferRequest();
+	RenderQueue& renderQueue();
 
 	LinearAllocator& renderCommandAllocator();
 
 protected:
+	Vector<UPtr<LinearAllocator>,	Traits::s_kThreadCount>	_renderCommandAllocators;
+	Vector<RenderCommandPool,		Traits::s_kThreadCount>	_renderCommandPools;
+
 	TransferRequest			_transferReq;
 	RenderFrameUploadBuffer _rdfUploadBuffer;
 
-	Vector<UPtr<LinearAllocator>,	Traits::s_kThreadCount>	_renderCommandAllocators;
-	Vector<RenderCommandPool,		Traits::s_kThreadCount>	_renderCommandPools;
+	RenderQueue _renderQueue;
 };
 
 inline RenderFrameUploadBuffer& RenderFrame::renderFrameUploadBuffer()	{ return _rdfUploadBuffer; }
@@ -121,6 +125,7 @@ inline u32 RenderFrame::totalUploadDataSize() { return _rdfUploadBuffer.totalDat
 
 inline LinearAllocator& RenderFrame::renderCommandAllocator() { auto tlid = OsTraits::threadLocalId(); return *_renderCommandAllocators[tlid]; }
 
+inline RenderQueue& RenderFrame::renderQueue() { return _renderQueue; }
 
 #endif
 
@@ -149,19 +154,16 @@ public:
 	void rotate();
 
 	RenderFrame& renderFrame();
-	RenderQueue& renderQueue();
 
 protected:
 	Atm<u32> iFrame = 0;
 	Vector<RenderFrame,				s_kFrameInFlightCount> _renderFrames;
-	Vector<RenderFrameUploadBuffer, s_kFrameInFlightCount> _renderFrameUploadBufs;
-
-	Vector<RenderQueue, s_kFrameInFlightCount> _renderQueues;
 };
 
 inline RenderFrame& RenderFrameContext::renderFrame() { return _renderFrames[iFrame]; }
-inline RenderQueue& RenderFrameContext::renderQueue() { return _renderQueues[iFrame]; }
 
 #endif
 
 }
+
+

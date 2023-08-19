@@ -56,6 +56,12 @@ EditorApp::onCreate	(const CreateDesc_Base& cd)
 }
 
 void 
+EditorApp::onDestroy()
+{
+
+}
+
+void 
 EditorApp::onRun		()
 {
 	RDS_PROFILE_SCOPED();
@@ -92,6 +98,7 @@ void
 EditorApp::willQuit	()
 {
 	Base::willQuit();
+	onDestroy();
 
 	Renderer::terminate();
 	JobSystem::terminate();
