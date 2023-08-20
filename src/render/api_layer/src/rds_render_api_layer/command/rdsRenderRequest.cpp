@@ -48,7 +48,9 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMes
 void 
 RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
-	RenderFrameContext::instance()->renderFrame().renderQueue().drawRenderables(settings);
+	auto* drawCalls = RenderFrameContext::instance()->renderFrame().renderQueue().drawRenderables(settings);
+	auto* cmd = renderCommandBuffer().addCommand<RenderCommand_DrawRenderables>();
+	cmd->hashedDrawCallCmds = drawCalls;
 }
 
 RenderCommand_ClearFramebuffers* 

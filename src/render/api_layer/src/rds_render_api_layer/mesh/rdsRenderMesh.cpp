@@ -90,7 +90,9 @@ RenderMesh::create(const EditMesh& editMesh)
 
 void RenderMesh::upload(const EditMesh& editMesh)
 {
-	_vertexLayout = editMesh.getVertexLayout();
+	auto newVtxLayout = editMesh.getVertexLayout();
+	throwIf(_vertexLayout && _vertexLayout != newVtxLayout, "");
+	_vertexLayout = newVtxLayout;
 	setSubMeshCount(1);
 	_subMeshes[0].create(editMesh);
 }

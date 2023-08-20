@@ -8,6 +8,7 @@ namespace rds
 class RenderMesh;
 class RenderGpuBuffer;
 class HashedDrawCallCommands;
+class RenderRequest;
 
 class VertexLayout;
 
@@ -176,6 +177,7 @@ private:
 
 class RenderCommandBuffer : public NonCopyable
 {
+	friend class RenderRequest;
 public:
 	using Traits	= RenderApiLayerTraits;
 	using Util		= RenderApiUtil;

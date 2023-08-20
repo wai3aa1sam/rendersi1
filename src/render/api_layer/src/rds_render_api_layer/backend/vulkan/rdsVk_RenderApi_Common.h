@@ -386,10 +386,11 @@ RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> s
 {
 	auto n = src.size();
 	dst.clear();
-	dst.resize(n);
+	dst.reserve(n);
 	for (size_t i = 0; i < n; i++)
 	{
-		dst.emplace_back(src[i]->hnd());
+		auto* hnd = src[i]->hnd();
+		dst.emplace_back(hnd);
 	}
 }
 

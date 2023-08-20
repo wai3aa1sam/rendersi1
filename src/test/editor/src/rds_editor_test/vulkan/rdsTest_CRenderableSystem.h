@@ -4,6 +4,8 @@
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
 #include "rds_render_api_layer/rdsRenderFrame.h"
 
+#include "rds_editor.h"
+
 namespace rds
 {
 
@@ -188,7 +190,6 @@ public:
 
 	void createTest(SizeType n, RenderMesh& rdMesh)
 	{
-		
 		_cRenderables.resize(n);
 		for (auto& e : _cRenderables)
 		{
@@ -196,9 +197,110 @@ public:
 		}
 	}
 
+	void reserve(SizeType n)
+	{
+		_cRenderables.reserve(n);
+	}
+
+	void addRenderable(RenderMesh& rdMesh)
+	{
+		_cRenderables.emplace_back(makeSPtr<Test_CRenderable>(rdMesh));
+	}
+
 public:
 	Vector<SPtr<Test_CRenderable>> _cRenderables;
 };
 
+
+
+class Test_MultiThreadDrawCalls
+{
+public:
+	static EditMesh makeEditMesh(Vec3f translate, Vec3f scale, float z = 0.0f)
+	{
+		static size_t s_kVtxCount = 4;
+		EditMesh editMesh;
+		auto rnd = Random{};
+		
+		{
+			auto& e = editMesh.pos;
+			e.reserve(s_kVtxCount);
+			//v = 0.5f;
+
+			auto transform = Mat4f::s_TS(translate, scale);
+
+			e.emplace_back(-0.5f, -0.5f, z); e.back() = transform.mulPoint4x3(e.back()).toTuple3();
+			e.emplace_back(0.5f,  -0.5f, z); e.back() = transform.mulPoint4x3(e.back()).toTuple3();
+			e.emplace_back(0.5f,   0.5f, z); e.back() = transform.mulPoint4x3(e.back()).toTuple3();
+			e.emplace_back(-0.5f,  0.5f, z); e.back() = transform.mulPoint4x3(e.back()).toTuple3();
+		}
+		{
+			auto& e = editMesh.color;
+			e.reserve(s_kVtxCount);
+			auto r0 = sCast<u8>(rnd.range(0, 255));
+			//auto r1 = sCast<u8>(rnd.range(0, 255));
+			e.emplace_back(r0, 0, 0, 255);
+			e.emplace_back(0, r0, 0, 255);
+			e.emplace_back(0, 0, r0, 255);
+			e.emplace_back(255, 255, 255, 255);
+		}
+		{
+			auto& e = editMesh.uvs[0];
+			e.reserve(s_kVtxCount);
+			e.emplace_back(1.0f, 0.0f);
+			e.emplace_back(0.0f, 0.0f);
+			e.emplace_back(0.0f, 1.0f);
+			e.emplace_back(1.0f, 1.0f);
+		}
+
+		editMesh.indices = { 0, 2, 1, 2, 0, 3 };
+
+		RDS_ASSERT(editMesh.getVertexLayout() == Vertex_PosColorUv<1>::vertexLayout(), "");
+		return editMesh;
+	}
+
+	void create(size_t n)
+	{
+		_rdMeshes.clear();
+		_cRdSys.clear();
+
+		auto count = n * n;
+
+		_cRdSys.reserve(count);
+		_rdMeshes.reserve(count);
+
+		float dx = 1 / sCast<float>(n);
+		float dy = 1 / sCast<float>(n);
+
+		float offsetX = sCast<float>(n) / -2;
+		float offsetY = sCast<float>(n) / -2;
+
+		offsetX = 0.0f;
+		offsetY = 0.0f;
+
+		auto scaleFactor	= 1 / sCast<float>(n);
+		auto scale			= Vec3f{ scaleFactor, scaleFactor, scaleFactor };
+
+		for (size_t iy = 0; iy < n; iy++)
+		{
+			for (size_t ix = 0; ix < n; ix++)
+			{
+				auto& rdMesh = _rdMeshes.emplace_back();
+
+				rdMesh.create(makeEditMesh(Vec3f{ sCast<float>(ix * dx + offsetX),  sCast<float>(iy * dy + offsetY), 0.0f }, scale, 0.3f));
+				_cRdSys.addRenderable(rdMesh);
+			}
+		}
+	}
+
+	void execute()
+	{
+		_cRdSys.execute();
+	}
+
+private:
+	Vector<RenderMesh>		_rdMeshes;
+	Test_CRenderableSystem	_cRdSys;
+};
 
 }

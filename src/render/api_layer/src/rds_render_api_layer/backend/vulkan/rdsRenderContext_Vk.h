@@ -194,6 +194,8 @@ protected:
 	void		_onUploadBuffer_MemCopyPerThread(RenderFrameUploadBuffer& rdfUploadBuf);
 	void		_onUploadBuffer_StagePerThread	(RenderFrameUploadBuffer& rdfUploadBuf);
 
+	void test_extraDrawCall(RenderCommandBuffer& renderCmdBuf);
+
 protected:
 	void beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
 	void endRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);

@@ -256,14 +256,12 @@ public:
 
 		uploadTestMultiBuf();
 
-		RDS_DUMP_VAR(sizeof(::nmsp::Job_T));
-
-		_cRenderableSys.createTest(1920, _rdMesh1);
+		_testMultiThreadDrawCalls.create(10);
 	}
 
 	virtual void onUpdate() override
 	{
-		_cRenderableSys.execute();
+		_testMultiThreadDrawCalls.execute();
 	}
 
 	virtual void onRender() override
@@ -276,7 +274,6 @@ public:
 
 		rdCtx.setFramebufferSize(mainWin->clientRect().size);
 		rdCtx.beginRender();
-
 
 		auto& rdCmdBuf = _rdReq.renderCommandBuffer();
 		rdCmdBuf.clear();
@@ -366,7 +363,7 @@ protected:
 	RenderMesh _rdMesh1;
 	RenderMesh _rdMesh2;
 
-	Test_CRenderableSystem _cRenderableSys;
+	Test_MultiThreadDrawCalls _testMultiThreadDrawCalls;
 };
 
 class Test_VulkanEditorApp : public UnitTest

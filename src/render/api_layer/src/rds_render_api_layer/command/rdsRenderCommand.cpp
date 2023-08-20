@@ -28,7 +28,6 @@ RenderCommandBuffer::clear()
 		cmd->~RenderCommand();
 	}
 	_commands.clear();
-	auto* p = clearFramebuffers(); RDS_UNUSED(p);
 }
 
 void* 

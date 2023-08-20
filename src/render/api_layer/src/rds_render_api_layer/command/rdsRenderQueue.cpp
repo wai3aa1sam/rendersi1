@@ -139,7 +139,6 @@ RenderQueue::recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMe
 	auto materialPassCount = 1;
 	auto nDrawCalls = rdMesh.subMeshCount() * materialPassCount;
 	auto it = allocCommands<RenderCommand_DrawCall>(out, nDrawCalls);
-	it->indexCount = 10;
 	
 	for (auto& e : rdMesh.subMeshes())
 	{

@@ -209,7 +209,7 @@ Vk_CommandBuffer::setScissor(const math::Rect2f& rect)
 }
 
 void 
-Vk_CommandBuffer::beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues)
+Vk_CommandBuffer::beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents)
 {
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -220,7 +220,7 @@ Vk_CommandBuffer::beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* v
 	renderPassInfo.clearValueCount		= sCast<u32>(vkClearValues.size());
 	renderPassInfo.pClearValues			= vkClearValues.data();	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
 
-	VkSubpassContents subpassContents = _level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
+	//VkSubpassContents subpassContents = _level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 	vkCmdBeginRenderPass(hnd(), &renderPassInfo, subpassContents);
 }
 

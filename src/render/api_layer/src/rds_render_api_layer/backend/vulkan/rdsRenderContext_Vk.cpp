@@ -243,16 +243,23 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 
 		auto fbufRect2 = Util::toRect2f(_swapchainInfo.extent);
 
-		_curGraphicsCmdBuf->beginRenderPass(&_testVkRenderPass, &_vkSwapchainFramebuffers[_curImageIdx], fbufRect2, clearValues.span());
+		// VK_SUBPASS_CONTENTS_INLINE, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
+		_curGraphicsCmdBuf->beginRenderPass(&_testVkRenderPass, &_vkSwapchainFramebuffers[_curImageIdx], fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 	}
 
-	_curGraphicsCmdBuf->setViewport(Util::toRect2f(_swapchainInfo.extent));
-	 _curGraphicsCmdBuf->setScissor(Util::toRect2f(_swapchainInfo.extent));
+	//_curGraphicsCmdBuf->setViewport(Util::toRect2f(_swapchainInfo.extent));
+	// _curGraphicsCmdBuf->setScissor(Util::toRect2f(_swapchainInfo.extent));
 
 	for (auto* cmd : renderCmdBuf.commands())
 	{
+		RDS_WARN_ONCE("TODO: remove");
+		if (cmd->type() == RenderCommandType::DrawCall)
+			continue;
+
 		_dispatchCommand(this, cmd);
 	}
+
+	test_extraDrawCall(renderCmdBuf);
 
 	// end render pass
 	_curGraphicsCmdBuf->endRenderPass();
@@ -260,6 +267,33 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	endRecord(_curGraphicsCmdBuf->hnd(), _curImageIdx);
 
 	#endif // !RDS_TEST_DRAW_CALL
+}
+
+void 
+RenderContext_Vk::test_extraDrawCall(RenderCommandBuffer& renderCmdBuf)
+{
+	RDS_WARN_ONCE("TODO: renderCmdBuf.drawCallCmds() for a extra Sec.cmd buf to execute but seems has order problem or maybe copy unity to have a executeCmdBuf()");
+	{
+		auto* vkCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+		vkCmdBuf->beginSecondaryRecord(vkGraphicsQueue(), &_testVkRenderPass, &_vkSwapchainFramebuffers[_curImageIdx], 0);
+
+		auto rect2 = Util::toRect2f(_swapchainInfo.extent);
+		vkCmdBuf->setViewport(rect2);
+		vkCmdBuf->setScissor(rect2);
+
+		for (auto* cmd : renderCmdBuf.commands())
+		{
+			if (cmd->type() != RenderCommandType::DrawCall)
+				continue;
+			_onRenderCommand_DrawCall(vkCmdBuf, sCast<RenderCommand_DrawCall*>(cmd));
+		}
+
+		vkCmdBuf->endRecord();
+
+		auto* primaryCmdBuf = _curGraphicsCmdBuf;
+		primaryCmdBuf->executeSecondaryCmdBufs(Span<Vk_CommandBuffer*>{ &vkCmdBuf, 1});
+	}
 }
 
 void 
@@ -406,7 +440,7 @@ RenderContext_Vk::beginRenderPass(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 
 	auto fbufRect2 = Util::toRect2f(_swapchainInfo.extent);
 
-	_curGraphicsCmdBuf->beginRenderPass(&_testVkRenderPass, &_vkSwapchainFramebuffers[imageIdx], fbufRect2, clearValues.span());
+	_curGraphicsCmdBuf->beginRenderPass(&_testVkRenderPass, &_vkSwapchainFramebuffers[imageIdx], fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void 
@@ -1336,7 +1370,7 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 void 
 RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd)
 {
-	static constexpr SizeType s_kMinBatchSize = 400;
+	static constexpr SizeType s_kMinBatchSize = 200;
 
 	const auto&	drawCallCmds	= cmd->hashedDrawCallCmds->drawCallCmds();
 	auto		drawCallCount	= drawCallCmds.size();
@@ -1344,16 +1378,18 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 	auto batchSizePerThread	= math::max(s_kMinBatchSize, drawCallCount / OsTraits::logicalThreadCount());
 	auto jobCount			= sCast<SizeType>(math::ceil((float)drawCallCount / batchSizePerThread));
 
-	class ParRecordDrawCall : public JobFor_Base
+	class ParRecordDrawCall : public Job_Base
 	{
 	public:
-		void setup(SizeType startIdx, RenderContext_Vk* rdCtx, HashedDrawCallCommands* drawCallCmds
-					, Vk_CommandBuffer* vkCmdBuf, Vk_Queue* graphicsQueue, Vk_RenderPass* renderPass, Vk_Framebuffer* vkFrameBuf, u32 subpassIdx, SwapchainInfo_Vk* swapchainInfo)
+		void setup(SizeType batchOffset, SizeType batchSize, SizeType batchId, RenderContext_Vk* rdCtx, HashedDrawCallCommands* drawCallCmds
+					, Span<Vk_CommandBuffer*> outVkCmdBufs, Vk_Queue* graphicsQueue, Vk_RenderPass* renderPass, Vk_Framebuffer* vkFrameBuf, u32 subpassIdx, SwapchainInfo_Vk* swapchainInfo)
 		{
-			_startIdx		= startIdx;
+			_batchOffset	= batchOffset;
+			_batchSize		= batchSize;
+			_batchId		= batchId;
 			_rdCtx			= rdCtx;
 			_drawCallCmds	= drawCallCmds;
-			_vkCmdBuf		= vkCmdBuf;
+			_outVkCmdBufs	= outVkCmdBufs;
 			_graphicsQueue	= graphicsQueue;
 			_renderPass		= renderPass;
 			_vkFrameBuf		= vkFrameBuf;
@@ -1361,6 +1397,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 			_swapchainInfo	= swapchainInfo;
 		}
 
+		#if 0
 		virtual void onBegin()
 		{
 			_notYetSupported(); // need to modify the jobsystem and test, if the job is no parent, then call the JobDispatchBase::onBegin/onEnd()
@@ -1372,7 +1409,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 			auto rect2 = Util::toRect2f(_swapchainInfo->extent);
 			vkCmdBuf->setViewport(rect2);
 			vkCmdBuf->setScissor (rect2);
-		}
+	}
 
 		virtual void onEnd()
 		{
@@ -1382,21 +1419,41 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 
 			vkCmdBuf->endRecord();
 		}
+		#endif // 0
 
-		virtual void execute(const JobArgs& args) override
+
+		virtual void execute() override
 		{
-			const auto& drawCallCmds = _drawCallCmds->drawCallCmds();
-			auto* vkCmdBuf = _vkCmdBuf;
+			RDS_PROFILE_SCOPED();
 
-			auto idx = args.loopIndex + _startIdx;
-			_rdCtx->_onRenderCommand_DrawCall(vkCmdBuf, drawCallCmds[idx]);
+			auto* vkCmdBuf = _rdCtx->renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+			vkCmdBuf->beginSecondaryRecord(_graphicsQueue, _renderPass, _vkFrameBuf, _subpassIdx);
+
+			auto rect2 = Util::toRect2f(_swapchainInfo->extent);
+			vkCmdBuf->setViewport(rect2);
+			vkCmdBuf->setScissor (rect2);
+
+			for (size_t i = 0; i < _batchSize; i++)
+			{
+				auto id = _batchOffset + i;
+
+				const auto& drawCallCmds = _drawCallCmds->drawCallCmds();
+				_rdCtx->_onRenderCommand_DrawCall(vkCmdBuf, drawCallCmds[id]);
+			}
+
+			vkCmdBuf->endRecord();
+
+			_outVkCmdBufs[_batchId] = vkCmdBuf;
 		}
 
 	public:
-		SizeType				_startIdx		= 0;
+		SizeType				_batchOffset	= 0;
+		SizeType				_batchSize		= 0;
+		SizeType				_batchId		= 0;
 		RenderContext_Vk*		_rdCtx			= nullptr;
 		HashedDrawCallCommands* _drawCallCmds	= nullptr;
-		Vk_CommandBuffer*		_vkCmdBuf		= nullptr;
+		Span<Vk_CommandBuffer*> _outVkCmdBufs;
 		Vk_Queue*				_graphicsQueue	= nullptr;
 		Vk_RenderPass*			_renderPass		= nullptr;
 		Vk_Framebuffer*			_vkFrameBuf		= nullptr;
@@ -1408,25 +1465,24 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 	Vector<UPtr<ParRecordDrawCall>, s_kThreadCount> recordJobs;
 	Vector<JobHandle,				s_kThreadCount> recordJobHandles;
 
-	renderFrame().requestCommandBuffers(vkCmdBufs, jobCount, QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 	recordJobs.resize(jobCount);
 	recordJobHandles.resize(jobCount);
+	vkCmdBufs.resize(jobCount);
 
-	SizeType remainCmds = drawCallCount;
+	SizeType remain = drawCallCount;
 	RDS_WARN_ONCE("TODO: make a JobGatherer, the for loop dispatch can ");
 	for (int i = 0; i < jobCount; ++i)
 	{
 		auto& job		= recordJobs[i];
-		auto* vkCmdBuf	= vkCmdBufs[i];
 		job = makeUPtr<ParRecordDrawCall>();
 
-		auto batchSize = math::min(batchSizePerThread, remainCmds);
-		remainCmds -= batchSize;
+		auto batchSize = math::min(batchSizePerThread, remain);
+		remain -= batchSize;
 
-		job->setup(batchSizePerThread * i, this, cmd->hashedDrawCallCmds, vkCmdBuf, vkGraphicsQueue()
+		job->setup(batchSizePerThread * i, batchSize, i, this, cmd->hashedDrawCallCmds, vkCmdBufs.span(), vkGraphicsQueue()
 				, &_testVkRenderPass, &_vkSwapchainFramebuffers[_curImageIdx], 0, &_swapchainInfo);
 
-		auto handle = job->dispatch(sCast<u32>(batchSize));
+		auto handle = job->dispatch();
 		recordJobHandles[i] = handle;
 	}
 
