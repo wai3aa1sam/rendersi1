@@ -16,7 +16,7 @@ namespace rds
 class Vk_RenderFrame : public NonCopyable	// not a derived class of RenderFrame
 {
 public:
-	using Util = RenderApiUtil_Vk;
+	using Util = Vk_RenderApiUtil;
 	using SizeType = RenderApiLayerTraits::SizeType;
 
 public:

@@ -90,6 +90,8 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 {
 	_framebufferSize.x = cDesc.window->clientRect().w;
 	_framebufferSize.y = cDesc.window->clientRect().h;
+
+	_nativeUIWindow = cDesc.window;
 }
 
 void 

@@ -2,6 +2,7 @@
 #include "rdsVk_CommandBuffer.h"
 #include "rdsVk_CommandPool.h"
 #include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsVk_Swapchain.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -167,7 +168,7 @@ Vk_CommandBuffer::swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachai
 	VkPresentInfoKHR presentInfo = {};
 
 	Vk_Semaphore_T*	waitVkSmps[]   = { vkWaitSmp->hnd()};
-	Vk_Swapchain*	vkSwapChains[] = { vkSwpachain };
+	Vk_Swapchain_T*	vkSwapChains[] = { vkSwpachain->hnd()};
 	u32				imageIndices[] = { imageIdx };
 
 	presentInfo.sType				= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

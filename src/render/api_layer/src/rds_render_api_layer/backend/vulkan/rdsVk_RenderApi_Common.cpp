@@ -9,12 +9,12 @@
 namespace rds
 {
 #if 0
-#pragma mark --- rdsRenderApiUtil_Vk-Impl ---
+#pragma mark --- rdsVk_RenderApiUtil-Impl ---
 #endif // 0
 #if 1
 
 void
-RenderApiUtil_Vk::throwIfError(Result ret)
+Vk_RenderApiUtil::throwIfError(Result ret)
 {
 	if (_checkError(ret))
 	{
@@ -24,7 +24,7 @@ RenderApiUtil_Vk::throwIfError(Result ret)
 }
 
 bool
-RenderApiUtil_Vk::assertIfError(Result ret)
+Vk_RenderApiUtil::assertIfError(Result ret)
 {
 	if (_checkError(ret))
 	{
@@ -36,7 +36,7 @@ RenderApiUtil_Vk::assertIfError(Result ret)
 }
 
 void
-RenderApiUtil_Vk::reportError(Result ret)
+Vk_RenderApiUtil::reportError(Result ret)
 {
 	RDS_ASSERT(_checkError(ret), "reportError(): not an error");
 	auto str = getStrFromVkResult(ret);
@@ -44,7 +44,7 @@ RenderApiUtil_Vk::reportError(Result ret)
 }
 
 String
-RenderApiUtil_Vk::getStrFromVkResult(Result ret)
+Vk_RenderApiUtil::getStrFromVkResult(Result ret)
 {
 	const char* str = string_VkResult(ret);
 	return String(str);
@@ -52,13 +52,13 @@ RenderApiUtil_Vk::getStrFromVkResult(Result ret)
 }
 
 bool
-RenderApiUtil_Vk::_checkError(Result ret)
+Vk_RenderApiUtil::_checkError(Result ret)
 {
 	return ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL
-RenderApiUtil_Vk::debugCallback(
+Vk_RenderApiUtil::debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT		messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT				messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -79,14 +79,14 @@ RenderApiUtil_Vk::debugCallback(
 }
 
 VkOffset2D 
-RenderApiUtil_Vk::toVkOffset2D(const Rect2f& rect2)
+Vk_RenderApiUtil::toVkOffset2D(const Rect2f& rect2)
 {
 	VkOffset2D vkOffset = { sCast<int>(rect2.x), sCast<int>(rect2.y) };
 	return vkOffset;
 }
 
 VkExtent2D 
-RenderApiUtil_Vk::toVkExtent2D(const Rect2f& rect2)
+Vk_RenderApiUtil::toVkExtent2D(const Rect2f& rect2)
 {
 	VkExtent2D vkExtent = 
 	{
@@ -97,7 +97,7 @@ RenderApiUtil_Vk::toVkExtent2D(const Rect2f& rect2)
 }
 
 VkExtent2D 
-RenderApiUtil_Vk::toVkExtent2D(const Vec2f& vec2)
+Vk_RenderApiUtil::toVkExtent2D(const Vec2f& vec2)
 {
 	VkExtent2D vkExtent = 
 	{
@@ -107,14 +107,14 @@ RenderApiUtil_Vk::toVkExtent2D(const Vec2f& vec2)
 	return vkExtent;
 }
 
-RenderApiUtil_Vk::Rect2f
-RenderApiUtil_Vk::toRect2f(const VkExtent2D& ext2d)
+Vk_RenderApiUtil::Rect2f
+Vk_RenderApiUtil::toRect2f(const VkExtent2D& ext2d)
 {
 	return Rect2f{ 0, 0, sCast<float>(ext2d.width), sCast<float>(ext2d.height) };
 }
 
 VkFormat
-RenderApiUtil_Vk::toVkFormat(RenderDataType v)
+Vk_RenderApiUtil::toVkFormat(RenderDataType v)
 {
 	using SRC = RenderDataType;
 	switch (v) 
@@ -198,7 +198,7 @@ RenderApiUtil_Vk::toVkFormat(RenderDataType v)
 }
 
 VkBufferUsageFlagBits 
-RenderApiUtil_Vk::toVkBufferUsage(RenderGpuBufferTypeFlags typeFlags)
+Vk_RenderApiUtil::toVkBufferUsage(RenderGpuBufferTypeFlags typeFlags)
 {
 	using SRC = RenderGpuBufferTypeFlags;
 	switch (typeFlags)
@@ -215,7 +215,7 @@ RenderApiUtil_Vk::toVkBufferUsage(RenderGpuBufferTypeFlags typeFlags)
 }
 
 VkMemoryPropertyFlags 
-RenderApiUtil_Vk::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
+Vk_RenderApiUtil::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
 {
 	VkMemoryPropertyFlags flags = {};
 	//if (BitUtil::has(requiredProperties, sCast<VkFlags>(VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))) { return RenderMemoryUsage::CpuToGpu;	}
@@ -225,7 +225,7 @@ RenderApiUtil_Vk::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
 }
 
 VkIndexType 
-RenderApiUtil_Vk::toVkIndexType(RenderDataType idxType)
+Vk_RenderApiUtil::toVkIndexType(RenderDataType idxType)
 {
 	using SRC = RenderDataType;
 	switch (idxType)
@@ -237,25 +237,25 @@ RenderApiUtil_Vk::toVkIndexType(RenderDataType idxType)
 }
 
 bool 
-RenderApiUtil_Vk::isDepthFormat(VkFormat format)
+Vk_RenderApiUtil::isDepthFormat(VkFormat format)
 {
 	return isDepthOnlyFormat(format) || hasStencilComponent(format);
 }
 
 bool 
-RenderApiUtil_Vk::isDepthOnlyFormat(VkFormat format)
+Vk_RenderApiUtil::isDepthOnlyFormat(VkFormat format)
 {
 	return format == VK_FORMAT_D16_UNORM || format == VK_FORMAT_D32_SFLOAT;
 }
 
 bool 
-RenderApiUtil_Vk::hasStencilComponent(VkFormat format)
+Vk_RenderApiUtil::hasStencilComponent(VkFormat format)
 {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT || format == VK_FORMAT_D16_UNORM_S8_UINT;
 }
 
 bool 
-RenderApiUtil_Vk::isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features)
+Vk_RenderApiUtil::isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
 	auto* vkPhyDev = Renderer_Vk::instance()->vkPhysicalDevice();
 
@@ -269,7 +269,7 @@ RenderApiUtil_Vk::isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFor
 }
 
 VkAttachmentLoadOp	
-RenderApiUtil_Vk::toVkAttachmentLoadOp (RenderAttachmentLoadOp loadOp)
+Vk_RenderApiUtil::toVkAttachmentLoadOp (RenderAttachmentLoadOp loadOp)
 {
 	using SRC = RenderAttachmentLoadOp;
 	switch (loadOp)
@@ -283,7 +283,7 @@ RenderApiUtil_Vk::toVkAttachmentLoadOp (RenderAttachmentLoadOp loadOp)
 }
 
 VkAttachmentStoreOp	
-RenderApiUtil_Vk::toVkAttachmentStoreOp(RenderAttachmentStoreOp storeOp)
+Vk_RenderApiUtil::toVkAttachmentStoreOp(RenderAttachmentStoreOp storeOp)
 {
 	using SRC = RenderAttachmentStoreOp;
 	switch (storeOp)
@@ -296,7 +296,7 @@ RenderApiUtil_Vk::toVkAttachmentStoreOp(RenderAttachmentStoreOp storeOp)
 }
 
 VkClearValue 
-RenderApiUtil_Vk::toVkClearValue(const Color4f& color)
+Vk_RenderApiUtil::toVkClearValue(const Color4f& color)
 {
 	VkClearValue o;
 	auto& f32s = o.color.float32;
@@ -308,7 +308,7 @@ RenderApiUtil_Vk::toVkClearValue(const Color4f& color)
 }
 
 VkClearValue 
-RenderApiUtil_Vk::toVkClearValue(float depth, u32 stencil)
+Vk_RenderApiUtil::toVkClearValue(float depth, u32 stencil)
 {
 	VkClearValue o;
 	o.depthStencil.depth = depth;
@@ -317,7 +317,7 @@ RenderApiUtil_Vk::toVkClearValue(float depth, u32 stencil)
 }
 
 u32
-RenderApiUtil_Vk::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties)
+Vk_RenderApiUtil::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties)
 {
 	auto& vkMemProps = Vk_MemoryContext::instance()->vkMemoryProperties();
 	const u32 memoryCount = vkMemProps.memoryTypeCount;
@@ -338,7 +338,7 @@ RenderApiUtil_Vk::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryProper
 
 
 void 
-RenderApiUtil_Vk::createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out)
+Vk_RenderApiUtil::createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out)
 {
 	out = {};
 
@@ -350,7 +350,7 @@ RenderApiUtil_Vk::createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& o
 }
 
 void 
-RenderApiUtil_Vk::createSurface(Vk_Surface** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window)
+Vk_RenderApiUtil::createSurface(Vk_Surface_T** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window)
 {
 	#if RDS_OS_WINDOWS
 
@@ -369,8 +369,8 @@ RenderApiUtil_Vk::createSurface(Vk_Surface** out, Vk_Instance_T* vkInstance, con
 }
 
 void 
-RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
-								  const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices)
+Vk_RenderApiUtil::createSwapchain(Vk_Swapchain_T** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
+								  const Vk_SwapchainInfo& info, const Vk_SwapchainAvailableInfo& avaInfo, const QueueFamilyIndices& queueFamilyIndices)
 {
 	//u32 imageCount	= avaInfo.capabilities.minImageCount + 1;
 	u32 imageCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
@@ -378,11 +378,11 @@ RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_
 
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType			= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface			= vkSurface;
+	createInfo.surface			= vkSurface->hnd();
 	createInfo.minImageCount	= imageCount;
 	createInfo.imageFormat		= info.surfaceFormat.format;
 	createInfo.imageColorSpace	= info.surfaceFormat.colorSpace;
-	createInfo.imageExtent		= info.extent;
+	createInfo.imageExtent		= toVkExtent2D(info.rect2f);
 	createInfo.imageArrayLayers = 1;		// For non-stereoscopic-3D applications, this value is 1.
 	createInfo.imageUsage		= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -414,7 +414,7 @@ RenderApiUtil_Vk::createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_
 }
 
 void 
-RenderApiUtil_Vk::createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
+Vk_RenderApiUtil::createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
 {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -438,7 +438,7 @@ RenderApiUtil_Vk::createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_
 }
 
 void 
-RenderApiUtil_Vk::createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice)
+Vk_RenderApiUtil::createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice)
 {
 	Vector<u8> bin;
 	File::readFile(filename, bin);
@@ -453,7 +453,7 @@ RenderApiUtil_Vk::createShaderModule(Vk_ShaderModule** out, StrView filename, Vk
 }
 
 void 
-RenderApiUtil_Vk::createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice)
+Vk_RenderApiUtil::createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice)
 {
 	auto* vkAllocCallbacks = Renderer_Vk::instance()->allocCallbacks();
 
@@ -465,7 +465,7 @@ RenderApiUtil_Vk::createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice)
 }
 
 void 
-RenderApiUtil_Vk::createFence(Vk_Fence_T** out, Vk_Device* vkDevice)
+Vk_RenderApiUtil::createFence(Vk_Fence_T** out, Vk_Device* vkDevice)
 {
 	auto* vkAllocCallbacks = Renderer_Vk::instance()->allocCallbacks();
 
@@ -478,7 +478,7 @@ RenderApiUtil_Vk::createFence(Vk_Fence_T** out, Vk_Device* vkDevice)
 }
 
 void 
-RenderApiUtil_Vk::createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags)
+Vk_RenderApiUtil::createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags)
 {
 	auto* renderer = Renderer_Vk::instance();
 	auto* vkDevice = renderer->vkDevice();
@@ -494,7 +494,7 @@ RenderApiUtil_Vk::createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueId
 }
 
 void 
-RenderApiUtil_Vk::createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel)
+Vk_RenderApiUtil::createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel)
 {
 	auto* renderer = Renderer_Vk::instance();
 	auto* vkDevice = renderer->vkDevice();
@@ -519,7 +519,7 @@ RenderApiUtil_Vk::createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_Comma
 }
 
 void 
-RenderApiUtil_Vk::createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
+Vk_RenderApiUtil::createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
 								, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags)
 {
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
@@ -560,7 +560,7 @@ RenderApiUtil_Vk::createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem
 }
 
 void 
-RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue)
+Vk_RenderApiUtil::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue)
 {
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
 	//auto* vkAllocCallbacks	= Renderer_Vk::instance()->allocCallbacks();
@@ -616,7 +616,7 @@ RenderApiUtil_Vk::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 }
 
 void 
-RenderApiUtil_Vk::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
+Vk_RenderApiUtil::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
 {
 	vkCmdBuf->beginRecord(srcQueue);
 
@@ -720,7 +720,7 @@ RenderApiUtil_Vk::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkIm
 }
 
 void 
-RenderApiUtil_Vk::copyBufferToImage(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 width, u32 height, Vk_Queue* vkQueue, Vk_CommandBuffer* vkCmdBuf)
+Vk_RenderApiUtil::copyBufferToImage(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 width, u32 height, Vk_Queue* vkQueue, Vk_CommandBuffer* vkCmdBuf)
 {
 	vkCmdBuf->beginRecord(vkQueue);
 
@@ -752,13 +752,13 @@ RenderApiUtil_Vk::copyBufferToImage(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 w
 }
 
 void 
-RenderApiUtil_Vk::createBuffer(Vk_Buffer& outBuf, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
+Vk_RenderApiUtil::createBuffer(Vk_Buffer& outBuf, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
 {
 	outBuf.create(vkAlloc, allocInfo, size, usage, queueTypeFlags);
 }
 
 void 
-RenderApiUtil_Vk::createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
+Vk_RenderApiUtil::createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
 {
 	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
 
@@ -782,7 +782,7 @@ RenderApiUtil_Vk::createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_A
 }
 
 void
-RenderApiUtil_Vk::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice)
+Vk_RenderApiUtil::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice)
 {
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(phyDevice, &deviceProperties);
@@ -809,7 +809,7 @@ RenderApiUtil_Vk::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_Physic
 }
 
 void
-RenderApiUtil_Vk::getPhyDeviceFeaturesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice)
+Vk_RenderApiUtil::getPhyDeviceFeaturesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice)
 {
 	VkPhysicalDeviceFeatures deviceFeatures;
 	vkGetPhysicalDeviceFeatures(phyDevice, &deviceFeatures);
@@ -822,7 +822,7 @@ RenderApiUtil_Vk::getPhyDeviceFeaturesTo(RenderAdapterInfo& outInfo, Vk_Physical
 	outInfo.feature = temp;
 }
 
-void RenderApiUtil_Vk::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info)
+void Vk_RenderApiUtil::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info)
 {
 	out = {};
 
@@ -833,7 +833,7 @@ void RenderApiUtil_Vk::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, c
 }
 
 bool
-RenderApiUtil_Vk::getSwapchainAvailableInfoTo(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhyDevice, Vk_Surface* vkSurface)
+Vk_RenderApiUtil::getSwapchainAvailableInfoTo(Vk_SwapchainAvailableInfo& out, Vk_PhysicalDevice* vkPhyDevice, Vk_Surface_T* vkSurface)
 {
 	auto& swInfo = out;
 
@@ -861,12 +861,12 @@ RenderApiUtil_Vk::getSwapchainAvailableInfoTo(SwapchainAvailableInfo_Vk& out, Vk
 
 
 #if 0
-#pragma mark --- rdsExtensionInfo_Vk-Impl ---
+#pragma mark --- rdsVk_ExtensionInfo-Impl ---
 #endif // 0
 #if 1
 
 u32
-ExtensionInfo_Vk::getAvailableValidationLayersTo(Vector<VkLayerProperties, s_kLocalSize>& out, bool logAvaliable)
+Vk_ExtensionInfo::getAvailableValidationLayersTo(Vector<VkLayerProperties, s_kLocalSize>& out, bool logAvaliable)
 {
 	out.clear();
 
@@ -892,7 +892,7 @@ ExtensionInfo_Vk::getAvailableValidationLayersTo(Vector<VkLayerProperties, s_kLo
 }
 
 u32
-ExtensionInfo_Vk::getAvailableInstanceExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, bool logAvaliable)
+Vk_ExtensionInfo::getAvailableInstanceExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, bool logAvaliable)
 {
 	out.clear();
 
@@ -916,7 +916,7 @@ ExtensionInfo_Vk::getAvailableInstanceExtensionsTo(Vector<VkExtensionProperties,
 }
 
 u32
-ExtensionInfo_Vk::getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice, bool logAvaliable)
+Vk_ExtensionInfo::getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties, s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice, bool logAvaliable)
 {
 	auto& availableExtensions = out;
 	availableExtensions.clear();
@@ -942,7 +942,7 @@ ExtensionInfo_Vk::getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties
 }
 
 void
-ExtensionInfo_Vk::createInstanceExtensions(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension)
+Vk_ExtensionInfo::createInstanceExtensions(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension)
 {
 	getAvailableInstanceExtensionsTo(_availableExts, logAvaliableExtension);
 	auto& out = _instanceExts;
@@ -963,7 +963,7 @@ ExtensionInfo_Vk::createInstanceExtensions(const RenderAdapterInfo& adapterInfo,
 }
 
 void
-ExtensionInfo_Vk::createValidationLayers(const RenderAdapterInfo& adapterInfo)
+Vk_ExtensionInfo::createValidationLayers(const RenderAdapterInfo& adapterInfo)
 {
 	getAvailableValidationLayersTo(_availableLayers);
 	if (!adapterInfo.isDebug)
@@ -980,7 +980,7 @@ ExtensionInfo_Vk::createValidationLayers(const RenderAdapterInfo& adapterInfo)
 }
 
 void
-ExtensionInfo_Vk::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo, const Renderer_CreateDesc& cDesc, Vk_PhysicalDevice* phyDevice)
+Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo, const Renderer_CreateDesc& cDesc, Vk_PhysicalDevice* phyDevice)
 {
 	getAvailablePhyDeviceExtensionsTo(_availablePhyDeviceExts, phyDevice);
 
@@ -998,7 +998,7 @@ ExtensionInfo_Vk::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 
 
 bool 
-ExtensionInfo_Vk::isSupportValidationLayer(const char* validationLayerName) const
+Vk_ExtensionInfo::isSupportValidationLayer(const char* validationLayerName) const
 {
 	RDS_CORE_ASSERT(validationLayers().size() > 0);
 
@@ -1015,7 +1015,7 @@ ExtensionInfo_Vk::isSupportValidationLayer(const char* validationLayerName) cons
 }
 
 void 
-ExtensionInfo_Vk::checkValidationLayersExist()
+Vk_ExtensionInfo::checkValidationLayersExist()
 {
 	for (const auto& layerName : validationLayers())
 	{

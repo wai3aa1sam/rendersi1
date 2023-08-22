@@ -2,6 +2,7 @@
 
 [SearchableFiles.include]
 /src/
+external/nmsplib/src/core
 #/external/vcpkg/buildtrees/nlohmann-json
 /external/vcpkg/buildtrees/imgui
 #/external/vcpkg/buildtrees/eabase

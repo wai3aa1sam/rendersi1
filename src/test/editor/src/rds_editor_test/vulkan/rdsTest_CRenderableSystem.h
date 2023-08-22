@@ -127,7 +127,9 @@ public:
 		recordJobs.resize(jobCount);
 
 		JobHandle scatterJobParent = JobSystem::instance()->createEmptyJob();
-		JobHandle sortCmdJobHandle = JobSystem::instance()->createEmptyJob();;
+		JobHandle sortCmdJobHandle = JobSystem::instance()->createEmptyJob();
+		RDS_WARN_ONCE("TODO: sort the render cmds / sort the mesh");
+
 
 		out._internal_jobHandle() = sortCmdJobHandle;
 		scatterJobParent->runBefore(sortCmdJobHandle);

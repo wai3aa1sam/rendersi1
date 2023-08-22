@@ -12,6 +12,8 @@ namespace rds
 #if 1
 
 class Vk_CommandPool;
+class Vk_Swapchain;
+
 class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T>
 {
 public:

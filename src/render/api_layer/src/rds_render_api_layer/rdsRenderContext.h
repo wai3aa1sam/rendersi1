@@ -59,6 +59,8 @@ public:
 
 	virtual void waitIdle();
 
+	NativeUIWindow* nativeUIWindow();
+
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onPostCreate(const CreateDesc& cDesc);
@@ -79,14 +81,15 @@ protected:
 
 protected:
 	//RenderContext(const CreateDesc&)
-
-	Vec2f	_framebufferSize {0,0};
+	NativeUIWindow* _nativeUIWindow = nullptr;
+	Vec2f			_framebufferSize {0,0};
 
 private:
 
 };
 
-inline const Vec2f& RenderContext::framebufferSize() const { return _framebufferSize; }
+inline const Vec2f&		RenderContext::framebufferSize() const	{ return _framebufferSize; }
+inline NativeUIWindow*	RenderContext::nativeUIWindow()			{ return _nativeUIWindow; }
 
 template<class CTX> inline
 void 

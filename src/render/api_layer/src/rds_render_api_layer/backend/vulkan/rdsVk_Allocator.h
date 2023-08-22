@@ -22,7 +22,7 @@ struct Vk_AllocInfo
 class Vk_Allocator : public NonCopyable
 {
 public:
-	using Util = RenderApiUtil_Vk;
+	using Util = Vk_RenderApiUtil;
 
 public:
 	Vk_Allocator();

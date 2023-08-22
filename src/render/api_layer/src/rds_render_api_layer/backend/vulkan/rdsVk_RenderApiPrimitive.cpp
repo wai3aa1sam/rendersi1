@@ -46,7 +46,7 @@ void Vk_Instance::destroy()
 	if (!_hnd)
 		return;
 
-
+	vkDestroyInstance(hnd(), Renderer_Vk::instance()->allocCallbacks());
 }
 
 #endif
@@ -92,9 +92,61 @@ void Vk_RenderApiPrimitive<Vk_Device>::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Surface>-Impl ---
+#pragma mark --- rdsVk_Surface-Impl ---
 #endif // 0
 #if 1
+
+void 
+Vk_Surface::create(NativeUIWindow* wnd)
+{
+	if (!wnd)
+		return;
+
+	auto* vkInst			= Renderer_Vk::instance()->vkInstance();
+	auto* vkAllocCallbacks	= Renderer_Vk::instance()->allocCallbacks();
+
+#if RDS_OS_WINDOWS
+
+	VkWin32SurfaceCreateInfoKHR createInfo = {};
+	createInfo.sType		= VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	createInfo.hwnd			= wnd->wndHnd();
+	createInfo.hinstance	= ::GetModuleHandle(nullptr);		// get handle of current process
+
+#else
+	#error("createSurface() not support int this platform")
+#endif // RDS_OS_WINDOWS
+
+	create(wnd, vkInst, &createInfo, vkAllocCallbacks);
+}
+
+void 
+Vk_Surface::create(NativeUIWindow* wnd, Vk_Instance_T* instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator)
+{
+	if (wnd == _wnd || !wnd)
+		return;
+
+	destroy(wnd);
+
+	_wnd = wnd;
+	auto ret = vkCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, hndForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_Surface::destroy(NativeUIWindow* wnd)
+{
+	if (!hnd() || _wnd == wnd)
+		return;
+
+	auto* renderer = Renderer_Vk::instance();
+	vkDestroySurfaceKHR(renderer->vkInstance(), hnd(), renderer->allocCallbacks());
+
+	_hnd = VK_NULL_HANDLE;
+	_wnd = nullptr;
+}
+
+
+#else
 
 void
 Vk_RenderApiPrimitive<Vk_Surface>::destroy()
@@ -137,7 +189,7 @@ Vk_Queue::destroy()
 #if 0
 #pragma mark --- rdsVk_RenderApiPrimitive<Vk_Swapchain>-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 void
 Vk_RenderApiPrimitive<Vk_Swapchain>::destroy()

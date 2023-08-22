@@ -15,7 +15,7 @@ class RenderGpuBuffer_Vk : public RenderGpuBuffer
 {
 public:
 	using Base = RenderGpuBuffer;
-	using Util = RenderApiUtil_Vk;
+	using Util = Vk_RenderApiUtil;
 
 public:
 

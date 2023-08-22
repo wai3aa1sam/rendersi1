@@ -12,8 +12,8 @@ using Vk_Instance_T				= VkInstance_T;
 using Vk_PhysicalDevice			= VkPhysicalDevice_T;
 using Vk_Device					= VkDevice_T;
 using Vk_Queue_T				= VkQueue_T;
-using Vk_Surface				= VkSurfaceKHR_T;
-using Vk_Swapchain				= VkSwapchainKHR_T;
+using Vk_Surface_T				= VkSurfaceKHR_T;
+using Vk_Swapchain_T			= VkSwapchainKHR_T;
 using Vk_Framebuffer_T			= VkFramebuffer_T;
 
 using Vk_RenderPass_T			= VkRenderPass_T;
@@ -40,13 +40,13 @@ using Vk_DeviceMemory			= VkDeviceMemory_T;
 
 using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
 
-struct RenderApiUtil_Vk;
+struct Vk_RenderApiUtil;
 
 template<class T>
 class RenderApiResource_Vk : public NonCopyable
 {
 public:
-	using Util = RenderApiUtil_Vk;
+	using Util = Vk_RenderApiUtil;
 
 public:
 	RenderApiResource_Vk()	= default;
@@ -84,7 +84,7 @@ template<class T>
 class Vk_RenderApiPrimitive : public NonCopyable
 {
 public:
-	using Util = RenderApiUtil_Vk;
+	using Util = Vk_RenderApiUtil;
 
 	using HndType = T;
 
@@ -204,9 +204,34 @@ public:
 
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Surface>-Impl ---
+#pragma mark --- rdsVk_Surface-Impl ---
 #endif // 0
 #if 1
+
+class Vk_Surface : public Vk_RenderApiPrimitive<Vk_Surface_T>
+{
+public:
+	using Base = Vk_RenderApiPrimitive<Vk_Surface_T>;
+
+public:
+	Vk_Surface() = default;
+	~Vk_Surface() 
+	{
+		destroy(nullptr);
+	}
+
+	Vk_Surface(Vk_Surface&&)		{ throwIf(true, ""); }
+	void operator=(Vk_Surface&&)	{ throwIf(true, ""); }
+
+	void create(NativeUIWindow* wnd);
+	void create(NativeUIWindow* wnd, Vk_Instance_T* instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator);
+	void destroy(NativeUIWindow* wnd);
+
+protected:
+	NativeUIWindow* _wnd = nullptr;
+};
+
+#else
 
 template<>
 class Vk_RenderApiPrimitive<Vk_Surface> : public RenderApiPrimitive_Base_Vk<Vk_Surface>
@@ -214,6 +239,7 @@ class Vk_RenderApiPrimitive<Vk_Surface> : public RenderApiPrimitive_Base_Vk<Vk_S
 public:
 	void destroy();
 };
+
 
 #endif
 
@@ -261,7 +287,7 @@ inline u32 Vk_Queue::queueIdx()		const { return _queueIdx; }
 #if 0
 #pragma mark --- rdsVk_RenderApiPrimitive<Vk_Swapchain>-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 template<>
 class Vk_RenderApiPrimitive<Vk_Swapchain> : public RenderApiPrimitive_Base_Vk<Vk_Swapchain>
@@ -671,7 +697,7 @@ public:
 //class Vk_RenderApiPrimitive<Vk_DescriptorSet_T> : public NonCopyable
 //{
 //public:
-//	using Util = RenderApiUtil_Vk;
+//	using Util = Vk_RenderApiUtil;
 //
 //public:
 //	Vk_RenderApiPrimitive()		= default;

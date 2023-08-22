@@ -19,7 +19,7 @@ class Renderer_Vk : public Renderer
 	friend class RenderContext_Vk;
 public:
 	using Base = Renderer;
-	using Util = RenderApiUtil_Vk;
+	using Util = Vk_RenderApiUtil;
 
 	using SizeType = RenderApiLayerTraits::SizeType;
 
@@ -30,6 +30,9 @@ public:
 	Renderer_Vk();
 	virtual ~Renderer_Vk();
 
+	void waitIdle();
+
+public:
 	Vk_MemoryContext*				memoryContext();
 	const VkAllocationCallbacks*	allocCallbacks();
 
@@ -37,8 +40,9 @@ public:
 	Vk_PhysicalDevice*		vkPhysicalDevice();
 	Vk_Device*				vkDevice();
 
-	const ExtensionInfo_Vk&				extInfo()					const;
-	const SwapchainAvailableInfo_Vk&	swapchainAvailableInfo()	const;
+	const Vk_ExtensionInfo&				extInfo()					const;
+	const Vk_SwapchainAvailableInfo&	swapchainAvailableInfo()	const;
+		  Vk_SwapchainAvailableInfo&	swapchainAvailableInfo();
 	QueueFamilyIndices&					queueFamilyIndices();
 
 	Vk_RenderFrame* renderFrame();
@@ -65,8 +69,8 @@ private:
 private:
 	Vk_MemoryContext			_memoryContextVk;
 
-	ExtensionInfo_Vk			_extInfo;
-	SwapchainAvailableInfo_Vk	_swapchainAvaliableInfo;
+	Vk_ExtensionInfo			_extInfo;
+	Vk_SwapchainAvailableInfo	_swapchainAvaliableInfo;
 	Vector<VkQueueFamilyProperties, QueueFamilyIndices::s_kQueueTypeCount> _queueFamilyProperties;
 	QueueFamilyIndices _queueFamilyIndices;
 
@@ -98,8 +102,9 @@ inline Vk_Instance_T*		Renderer_Vk::vkInstance()				{ return _vkInstance.hnd(); 
 inline Vk_PhysicalDevice*	Renderer_Vk::vkPhysicalDevice()			{ return _vkPhysicalDevice; }
 inline Vk_Device*			Renderer_Vk::vkDevice()					{ return _vkDevice; }
 
-inline const ExtensionInfo_Vk&			Renderer_Vk::extInfo()					const { return _extInfo; }
-inline const SwapchainAvailableInfo_Vk& Renderer_Vk::swapchainAvailableInfo()	const { return _swapchainAvaliableInfo; }
+inline const Vk_ExtensionInfo&			Renderer_Vk::extInfo()					const { return _extInfo; }
+inline const Vk_SwapchainAvailableInfo& Renderer_Vk::swapchainAvailableInfo()	const { return _swapchainAvaliableInfo; }
+inline Vk_SwapchainAvailableInfo&		Renderer_Vk::swapchainAvailableInfo()		  { return _swapchainAvaliableInfo; }
 
 inline QueueFamilyIndices&		Renderer_Vk::queueFamilyIndices()	{ return _queueFamilyIndices; }
 

@@ -16,18 +16,6 @@ namespace rds
 class Vk_CommandBuffer;
 class Vk_CommandPool;
 
-#if 1
-
-template<size_t N>	using SwapChainImages_Vk_N			= Vector<Vk_Image, N>;
-					using SwapChainImages_Vk			= Vector<Vk_Image,			RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
-template<size_t N>	using SwapChainImageViews_Vk_N		= Vector<Vk_ImageView, N>;
-					using SwapChainImageViews_Vk		= Vector<Vk_ImageView,		RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
-template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<Vk_Framebuffer, N>;
-					using SwapChainFramebuffers_Vk		= Vector<Vk_Framebuffer,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
-
-#endif // 1
-
-
 #if 1	// TODO: remove / modify
 
 struct QueueFamilyIndices 
@@ -85,7 +73,7 @@ public:
 
 #if 1	// TODO: remove / modify
 
-struct SwapchainAvailableInfo_Vk 
+struct Vk_SwapchainAvailableInfo 
 {
 public:
 	using SizeType = RenderApiLayerTraits::SizeType;
@@ -100,23 +88,28 @@ public:
 };
 
 // TODO: change to our Swapchain_CreateDesc
-struct SwapchainInfo_Vk
+struct Vk_SwapchainInfo
 {
+	Vk_SwapchainInfo() : rect2f() {}
+	~Vk_SwapchainInfo() = default;
+
 	//VkSurfaceCapabilitiesKHR	capabilities;
 	VkSurfaceFormatKHR			surfaceFormat;
+	VkFormat					depthFormat;
 	VkPresentModeKHR			presentMode;
-	VkExtent2D					extent;
+	//VkExtent2D					extent;
+	math::Rect2f				rect2f;
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsRenderApiUtil_Vk-Decl ---
+#pragma mark --- rdsVk_RenderApiUtil-Decl ---
 #endif // 0
 #if 1
 
 
-struct RenderApiUtil_Vk : public RenderApiUtil
+struct Vk_RenderApiUtil : public RenderApiUtil
 {
 public:
 	friend class Renderer_Vk;
@@ -129,7 +122,7 @@ public:
 	//using SwapchainAvailInfo	= SwapchainAvailInfo_Vk;
 
 public:
-	RenderApiUtil_Vk() = delete;
+	Vk_RenderApiUtil() = delete;
 
 public:
 	static void throwIfError	(Result ret);
@@ -178,9 +171,9 @@ public:
 	// for create vk objects
 public:
 	static void createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out);
-	static void createSurface(Vk_Surface** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
-	static void createSwapchain(Vk_Swapchain** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
-								const SwapchainInfo_Vk& info, const SwapchainAvailableInfo_Vk& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
+	static void createSurface(Vk_Surface_T** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
+	static void createSwapchain(Vk_Swapchain_T** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
+								const Vk_SwapchainInfo& info, const Vk_SwapchainAvailableInfo& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
 	static void createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 	static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
@@ -193,10 +186,6 @@ public:
 
 	template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 
 													VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
-
-	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out, Vk_Swapchain* vkSwapchain, Vk_Device* vkDevice);
-	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, Vk_Device* vkDevice, 
-															 VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 	static void createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
 							, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags);
@@ -216,7 +205,7 @@ public:
 	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice);
 	static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice);
 	static void getVkPhyDeviceFeaturesTo	(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info);
-	static bool getSwapchainAvailableInfoTo	(SwapchainAvailableInfo_Vk& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface* vkSurface);
+	static bool getSwapchainAvailableInfoTo	(Vk_SwapchainAvailableInfo& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface_T* vkSurface);
 
 
 private:
@@ -230,20 +219,20 @@ private:
 		void*										pUserData);
 };
 
-template<class T> inline VkDeviceSize RenderApiUtil_Vk::toVkDeviceSize(T v) { RDS_S_ASSERT(IsIntegral<T>); return sCast<VkDeviceSize>(v); }
+template<class T> inline VkDeviceSize Vk_RenderApiUtil::toVkDeviceSize(T v) { RDS_S_ASSERT(IsIntegral<T>); return sCast<VkDeviceSize>(v); }
 
 #endif
 
 #if 0
-#pragma mark --- rdsExtensionInfo_Vk-Decl ---
+#pragma mark --- rdsVk_ExtensionInfo-Decl ---
 #endif // 0
 #if 1
 struct Renderer_CreateDesc;
 
-struct ExtensionInfo_Vk
+struct Vk_ExtensionInfo
 {
 public:
-	using Util		= RenderApiUtil_Vk;
+	using Util		= Vk_RenderApiUtil;
 	using SizeType	= RenderApiLayerTraits::SizeType;
 
 public:
@@ -296,7 +285,7 @@ private:
 
 template<class T> inline 
 T 
-ExtensionInfo_Vk::getInstanceExtFunction(const char* funcName) const
+Vk_ExtensionInfo::getInstanceExtFunction(const char* funcName) const
 {
 	auto& table = _deviceExtFuncTable;
 	auto it = table.find(funcName);
@@ -313,7 +302,7 @@ ExtensionInfo_Vk::getInstanceExtFunction(const char* funcName) const
 
 template<class T> inline 
 T
-ExtensionInfo_Vk::getDeviceExtFunction(const char* funcName) const
+Vk_ExtensionInfo::getDeviceExtFunction(const char* funcName) const
 {
 	auto& table = _deviceExtFuncTable;
 	auto it = table.find(funcName);
@@ -328,29 +317,29 @@ ExtensionInfo_Vk::getDeviceExtFunction(const char* funcName) const
 	return reinCast<T>(it->second);
 }
 
-inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::instanceExts()		const		{ return _instanceExts; }
-inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::validationLayers()	const		{ return _validationLayers; }
-inline const Vector<const char*,			ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::phyDeviceExts()		const		{ return _phyDeviceExts; }
+inline const Vector<const char*,			Vk_ExtensionInfo::s_kLocalSize>& Vk_ExtensionInfo::instanceExts()		const		{ return _instanceExts; }
+inline const Vector<const char*,			Vk_ExtensionInfo::s_kLocalSize>& Vk_ExtensionInfo::validationLayers()	const		{ return _validationLayers; }
+inline const Vector<const char*,			Vk_ExtensionInfo::s_kLocalSize>& Vk_ExtensionInfo::phyDeviceExts()		const		{ return _phyDeviceExts; }
 
-inline const StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::instanceExtFuncTable()	const		{ return _instanceExtFuncTable; }
-inline		 StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::instanceExtFuncTable()				{ return _instanceExtFuncTable; }
-inline const StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::deviceExtFuncTable()		const		{ return _deviceExtFuncTable; }
-inline		 StringMap<PFN_vkVoidFunction>&									 ExtensionInfo_Vk::deviceExtFuncTable()					{ return _deviceExtFuncTable; }
+inline const StringMap<PFN_vkVoidFunction>&									 Vk_ExtensionInfo::instanceExtFuncTable()	const		{ return _instanceExtFuncTable; }
+inline		 StringMap<PFN_vkVoidFunction>&									 Vk_ExtensionInfo::instanceExtFuncTable()				{ return _instanceExtFuncTable; }
+inline const StringMap<PFN_vkVoidFunction>&									 Vk_ExtensionInfo::deviceExtFuncTable()		const		{ return _deviceExtFuncTable; }
+inline		 StringMap<PFN_vkVoidFunction>&									 Vk_ExtensionInfo::deviceExtFuncTable()					{ return _deviceExtFuncTable; }
 
-inline const Vector<VkLayerProperties,		ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableLayers()	const		{ return _availableLayers; };
-inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availableExts()		const		{ return _availableExts; };
-inline const Vector<VkExtensionProperties,	ExtensionInfo_Vk::s_kLocalSize>& ExtensionInfo_Vk::availablePhyDeviceExts()const	{ return _availablePhyDeviceExts; };
+inline const Vector<VkLayerProperties,		Vk_ExtensionInfo::s_kLocalSize>& Vk_ExtensionInfo::availableLayers()	const		{ return _availableLayers; };
+inline const Vector<VkExtensionProperties,	Vk_ExtensionInfo::s_kLocalSize>& Vk_ExtensionInfo::availableExts()		const		{ return _availableExts; };
+inline const Vector<VkExtensionProperties,	Vk_ExtensionInfo::s_kLocalSize>& Vk_ExtensionInfo::availablePhyDeviceExts()const	{ return _availablePhyDeviceExts; };
 
 #endif
 
 #if 0
-#pragma mark --- rdsRenderApiUtil_Vk-Decl ---
+#pragma mark --- rdsVk_RenderApiUtil-Decl ---
 #endif // 0
 #if 1
 
 template<class T, size_t N> inline
 void
-RenderApiUtil_Vk::convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n)
+Vk_RenderApiUtil::convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n)
 {
 	out.clear();
 	out.resize(n);
@@ -362,14 +351,14 @@ RenderApiUtil_Vk::convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n)
 
 template<class T, size_t N> inline
 void 
-RenderApiUtil_Vk::convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src)
+Vk_RenderApiUtil::convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src)
 {
 	convertToVkPtrs(dst, (T**)src.data(), sCast<u32>(src.size()));
 }
 
 template<class T, size_t N> inline 
 void 
-RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T> src)
+Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T> src)
 {
 	auto n = src.size();
 	dst.clear();
@@ -382,7 +371,7 @@ RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T> sr
 
 template<class T, size_t N> inline 
 void 
-RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> src)
+Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> src)
 {
 	auto n = src.size();
 	dst.clear();
@@ -396,14 +385,14 @@ RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> s
 
 template<class T, size_t N> inline
 void 
-RenderApiUtil_Vk::convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src)
+Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src)
 {
 	convertToHnds(dst, src.span());
 }
 
 template<size_t N> inline
 void 
-RenderApiUtil_Vk::createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice,
+Vk_RenderApiUtil::createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice,
 								   VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
 {
 	out.clear();
@@ -417,43 +406,8 @@ RenderApiUtil_Vk::createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Ve
 }
 
 template<size_t N> inline
-u32 
-RenderApiUtil_Vk::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapchain* vkSwapchain, Vk_Device* vkDevice)
-{
-	u32 imageCount = 0;
-	vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
-
-	Vector<Vk_Image_T*, 16> vkImages;
-	vkImages.resize(imageCount);
-	auto ret = vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, vkImages.data());
-	throwIfError(ret);
-
-	out.clear();
-	out.resize(imageCount);
-	for (size_t i = 0; i < imageCount; i++)
-	{
-		out[i].create(vkImages[i]);
-	}
-
-	return imageCount;
-}
-
-template<size_t N> inline 
-void 
-RenderApiUtil_Vk::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, Vk_Device* vkDevice, 
-											VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
-{
-	out.clear();
-	out.resize(vkImages.size());
-	for (size_t i = 0; i < vkImages.size(); ++i)
-	{
-		out[i].create(vkImages[i].hnd(), format, aspectFlags, mipLevels);
-	}
-}
-
-template<size_t N> inline
 u32
-RenderApiUtil_Vk::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice*, N>& out, Vk_Instance_T* vkInstance)
+Vk_RenderApiUtil::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice*, N>& out, Vk_Instance_T* vkInstance)
 {
 	u32 deviceCount = 0;
 	vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
@@ -471,7 +425,7 @@ RenderApiUtil_Vk::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice*, N>& out, V
 
 template<size_t N> inline
 u32 
-RenderApiUtil_Vk::getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out,	Vk_PhysicalDevice* vkPhyDevice)
+Vk_RenderApiUtil::getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out,	Vk_PhysicalDevice* vkPhyDevice)
 {
 	u32 queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(vkPhyDevice, &queueFamilyCount, nullptr);
@@ -489,7 +443,7 @@ RenderApiUtil_Vk::getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>&
 
 
 #if 0
-#pragma mark --- rdsRenderApiUtil_Vk-Impl ---
+#pragma mark --- rdsVk_RenderApiUtil-Impl ---
 #endif // 0
 #if 1
 

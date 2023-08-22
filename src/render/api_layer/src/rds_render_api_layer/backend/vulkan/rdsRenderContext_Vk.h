@@ -2,7 +2,10 @@
 
 #include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
+
+#include "rdsVk_Swapchain.h"
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
+
 
 #include "rdsGpuProfilerContext_Vk.h"
 
@@ -28,7 +31,7 @@ public:
 
 public:
 	using Type = Vertex_PosColorUv<1>;
-	using Util = RenderApiUtil_Vk;
+	using Util = Vk_RenderApiUtil;
 
 public:
 	Tuple3f pos;
@@ -146,7 +149,7 @@ class RenderContext_Vk : public RenderContext
 public:
 	using Base = RenderContext;
 	using Traits = RenderApiLayerTraits;
-	using Util = RenderApiUtil_Vk;
+	using Util = Vk_RenderApiUtil;
 
 public:
 	static constexpr SizeType s_kSwapchainImageLocalSize	= Traits::s_kSwapchainImageLocalSize;
@@ -206,18 +209,9 @@ protected:
 	void testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx, Vk_Buffer* vtxBuf);
 
 protected:
-	void createSwapchainInfo(SwapchainInfo_Vk& out, const SwapchainAvailableInfo_Vk& info, const math::Rect2f& rect2);
-
-	void createSwapchain(const SwapchainInfo_Vk& swapchainInfo);
-	void destroySwapchain();
-
-	void createSwapchainFramebuffers();
-	void createDepthResources();
-	void destroyDepthResources();
-
 	void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx);
 
-	void createTestRenderPass();
+	void createTestRenderPass(Vk_Swapchain_CreateDesc& vkSwapchainCDesc);
 	void createTestGraphicsPipeline();
 	void createTestVertexBuffer(Vk_Buffer* vkBuf, float z = 0.0f);
 	void createTestIndexBuffer();
@@ -235,12 +229,14 @@ protected:
 	void reflectShader(StrView spvFilename);
 
 protected:
-	Renderer_Vk* _renderer = nullptr;
+	Renderer_Vk*	_renderer		= nullptr;
 
 
 	RDS_PROFILE_GPU_CTX_VK(_gpuProfilerCtx);
 
-	SwapchainInfo_Vk	_swapchainInfo;
+
+	Vk_Swapchain	_vkSwapchain;
+	/*Vk_SwapchainInfo	_swapchainInfo;
 
 	VkPtr<Vk_Surface>			_vkSurface;
 	VkPtr<Vk_Swapchain>			_vkSwapchain;
@@ -250,7 +246,7 @@ protected:
 
 	Vk_Image		_vkDepthImage;
 	Vk_ImageView	_vkDepthImageView;
-	VkFormat		_vkDepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+	VkFormat		_vkDepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;*/
 	
 	VkPtr<Vk_Pipeline>				_testVkPipeline;
 	Vk_RenderPass					_testVkRenderPass;
@@ -276,7 +272,7 @@ protected:
 	Vector<Vk_RenderFrame, s_kFrameInFlightCount> _renderFrames;
 	Vk_CommandBuffer* _curGraphicsCmdBuf = nullptr;
 
-	u32 _curImageIdx = 0;
+	//u32 _curImageIdx = 0;
 	u32 _curFrameIdx = 0;
 
 	bool _shdSwapBuffers = false;

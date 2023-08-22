@@ -256,12 +256,12 @@ public:
 
 		uploadTestMultiBuf();
 
-		_testMultiThreadDrawCalls.create(10);
+		//_testMultiThreadDrawCalls.create(10);
 	}
 
 	virtual void onUpdate() override
 	{
-		_testMultiThreadDrawCalls.execute();
+		//_testMultiThreadDrawCalls.execute();
 	}
 
 	virtual void onRender() override
@@ -283,7 +283,7 @@ public:
 
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh1);
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh2);
-		_rdReq.drawRenderables(DrawingSettings{});
+		//_rdReq.drawRenderables(DrawingSettings{});
 
 		#else
 
@@ -363,7 +363,7 @@ protected:
 	RenderMesh _rdMesh1;
 	RenderMesh _rdMesh2;
 
-	Test_MultiThreadDrawCalls _testMultiThreadDrawCalls;
+	// Test_MultiThreadDrawCalls _testMultiThreadDrawCalls;
 };
 
 class Test_VulkanEditorApp : public UnitTest

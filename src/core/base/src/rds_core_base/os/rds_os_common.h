@@ -2,6 +2,7 @@
 
 #include "rds_core_base/common/rds_core_base_common.h"
 #include <nmsp_os/atomic/extra/nmspMutexProtected.h>
+#include <nmsp_os/common/nmspOsUtil.h>
 
 #if 0
 #pragma mark --- XXXX-Decl/Impl ---
@@ -22,6 +23,8 @@ namespace rds
 #if 1
 namespace rds
 {
+
+using OsUtil = ::nmsp::OsUtil;
 
 #if 0
 #pragma mark --- rds_os_app-Impl ---

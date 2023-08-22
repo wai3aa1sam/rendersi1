@@ -47,6 +47,12 @@ Renderer_Vk::onDestroy()
 	_memoryContextVk.destroy();
 }
 
+void 
+Renderer_Vk::waitIdle()
+{
+	vkDeviceWaitIdle(vkDevice());
+}
+
 void
 Renderer_Vk::createVkInstance()
 {
@@ -114,15 +120,15 @@ Renderer_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 
 	NativeUIWindow tmpWindow;
 	Util::createTempWindow(tmpWindow);
-	VkPtr<Vk_Surface> tmpSurface;
-	Util::createSurface(tmpSurface.ptrForInit(), vkInstance(), allocCallbacks(), &tmpWindow);
+	Vk_Surface tempSurface;
+	tempSurface.create(&tmpWindow);
 
 	i64 largestScore		= NumLimit<i64>::min();
 	i64 largestScoreIndex	= NumLimit<i64>::min();
 	for (u32 i = 0; i < phyDevices.size(); i++)
 	{
 		auto* e = phyDevices[i];
-		auto score = _rateAndInitVkPhyDevice(_adapterInfo, cDesc, e, tmpSurface);
+		auto score = _rateAndInitVkPhyDevice(_adapterInfo, cDesc, e, &tempSurface);
 		if (score > largestScore)
 		{
 			largestScore = score;
@@ -131,7 +137,7 @@ Renderer_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 	}
 
 	_vkPhysicalDevice.reset(phyDevices[largestScoreIndex]);
-	_rateAndInitVkPhyDevice(_adapterInfo, cDesc, _vkPhysicalDevice.ptr(), tmpSurface);
+	_rateAndInitVkPhyDevice(_adapterInfo, cDesc, _vkPhysicalDevice.ptr(), &tempSurface);
 	Util::getPhyDevicePropertiesTo(_adapterInfo, _vkPhysicalDevice);
 }
 
@@ -197,7 +203,7 @@ i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDes
 	_extInfo.createPhyDeviceExtensions(out, cDesc, e);
 	Util::getPhyDeviceFeaturesTo(out, e);
 	Util::getQueueFaimlyPropertiesTo(_queueFamilyProperties, vkPhyDevice);
-	Util::getSwapchainAvailableInfoTo(_swapchainAvaliableInfo, e, vkSurface);
+	Util::getSwapchainAvailableInfoTo(_swapchainAvaliableInfo, e, vkSurface->hnd());
 
 	u32 maxTry		= 10;
 	u32 curTryIdx	= 0;
@@ -208,7 +214,7 @@ i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDes
 			auto& prop = _queueFamilyProperties[i];
 
 			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vkPhyDevice, i, vkSurface, &presentSupport);
+			vkGetPhysicalDeviceSurfaceSupportKHR(vkPhyDevice, i, vkSurface->hnd(), &presentSupport);
 
 			//bool isFoundGraphics	= _queueFamilyIndices.graphics.has_value();
 			//bool isFoundPresent		= _queueFamilyIndices.present.has_value();
