@@ -136,6 +136,13 @@ RenderContext::onUploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf)
 
 }
 
+float 
+RenderContext::aspectRatio() const
+{
+	auto y = framebufferSize().y != 0 ? framebufferSize().y : 1;
+	return framebufferSize().x / y;
+}
+
 
 #endif
 }

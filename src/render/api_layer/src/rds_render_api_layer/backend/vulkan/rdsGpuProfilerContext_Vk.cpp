@@ -22,10 +22,10 @@ GpuProfilerContext_Vk::onCreate(const CreateDesc& cDesc)
 	auto vkFuncExtCtd	= (rdr->extInfo().getInstanceExtFunction<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
 	auto vkFuncExtCt	= (rdr->extInfo().getInstanceExtFunction<PFN_vkGetCalibratedTimestampsEXT>					("vkGetCalibratedTimestampsEXT"));
 
-	auto* vkPhyDev			= rdr->vkPhysicalDevice();
-	auto* vkDev				= rdr->vkDevice();
-	auto* vkGraphicsQueue	= rdCtxVk->vkGraphicsQueue();
-	auto* vkCmdBuf			= rdCtxVk->vkCommandBuffer();
+	auto* vkPhyDev			= rdr->vkPhysicalDevice();		RDS_UNUSED(vkPhyDev			);
+	auto* vkDev				= rdr->vkDevice();				RDS_UNUSED(vkDev			);
+	auto* vkGraphicsQueue	= rdCtxVk->vkGraphicsQueue();	RDS_UNUSED(vkGraphicsQueue	);
+	auto* vkCmdBuf			= rdCtxVk->vkCommandBuffer();	RDS_UNUSED(vkCmdBuf			);
 
 	RDS_ASSERT(vkFuncExtCtd && vkFuncExtCt || !vkFuncExtCtd && !vkFuncExtCt, "must be both exist or both not exist");
 	if (!vkFuncExtCtd && !vkFuncExtCt)

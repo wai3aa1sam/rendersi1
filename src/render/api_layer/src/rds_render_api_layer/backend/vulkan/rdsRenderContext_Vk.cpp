@@ -983,7 +983,7 @@ RenderContext_Vk::updateTestUBO(u32 curImageIdx)
 	TestUBO ubo = {};
 	ubo.model		= Mat4f::s_rotateZ(math::radians(90.0f) * time);
 	ubo.view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
-	ubo.proj		= Mat4f::s_perspective(math::radians(45.0f), _framebufferSize.x / _framebufferSize.y, 0.1f, 10.0f);
+	ubo.proj		= Mat4f::s_perspective(math::radians(45.0f), aspectRatio(), 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;
 	ubo.mvp			= ubo.proj * ubo.view * ubo.model;
 

@@ -73,6 +73,9 @@ public:
 		{
 			return;
 		}
+
+		RDS_WARN_ONCE("Profiler will continue increase process memory, Sanitizer will use many cpu rate");
+
 		_unitTestManager.destroy();
 		ProjectSetting::terminate();
 		Logger::terminate();

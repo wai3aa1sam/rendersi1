@@ -54,8 +54,9 @@ public:
 	void commit(TransferCommandBuffer& transferBuf);
 	void uploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf);
 
-	void		 setFramebufferSize(const Vec2f& newSize);
-	const Vec2f& framebufferSize() const;
+	void			setFramebufferSize(const Vec2f& newSize);
+	const Vec2f&	framebufferSize() const;
+	float			aspectRatio() const;
 
 	virtual void waitIdle();
 
