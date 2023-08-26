@@ -2,6 +2,8 @@
 
 //#include <nmsp_core.h>
 
+#define NMSP_CUSTOM_ALLOC 1
+
 #include <nmsp_core_base.h>
 
 //#include <nmsp_stl.h>

@@ -3,6 +3,7 @@
 #include "rds_core_base/common/rds_core_base_common.h"
 #include <nmsp_os/atomic/extra/nmspMutexProtected.h>
 #include <nmsp_os/common/nmspOsUtil.h>
+#include <nmsp_os/atomic/extra/nmspSynchronize.h>
 
 #if 0
 #pragma mark --- XXXX-Decl/Impl ---
@@ -70,6 +71,48 @@ using ::nmsp::AtmQueueTraits;
 template<class T, size_t N = 256, class ALLOC = DefaultAllocator, class TRAITS = AtmQueueTraits<N, ALLOC> > using AtmQueue			= ::nmsp::AtmQueue_T<T, N, ALLOC, TRAITS>;
 template<class T, class QUEUE = AtmQueue<T> >																using AtmStealQueue		= ::nmsp::AtmStealQueue_T<T>;
 template<class T, size_t N_PRIORITY, class PRIORITY, class QUEUE = AtmStealQueue<T> >						using AtmPriorityQueue	= ::nmsp::AtmPriorityQueue_T<T, N_PRIORITY, PRIORITY, QUEUE>;
+
+
+#if 0
+#pragma mark --- rds_os_sync-Impl ---
+#endif // 0
+#if 1
+
+using CheckOnce				= ::nmsp::CheckOnce_T;
+using CheckExclusive		= ::nmsp::CheckExclusive_T;
+using ScopedCheckExclusive	= ::nmsp::ScopedCheckExclusive_T;
+
+#if RDS_ENABLE_ASSERT
+
+#define RDS_CHECK_ONCE_VAR(VAR_NAME)	CheckOnce VAR_NAME
+#define RDS_CHECK_ONCE(VAR_NAME)		VAR_NAME.check()
+
+#define RDS_CHECK_EXCLU_BEGIN_V(VAR)	VAR.acquire()
+#define RDS_CHECK_EXCLU_END_V(VAR)		VAR.release()
+#define RDS_CHECK_EXCLU_SCOPED_V(VAR)	ScopedCheckExclusive(VAR)
+
+inline CheckExclusive g_checkExclu;
+#define RDS_CHECK_EXCLU_BEGIN()		RDS_CHECK_EXCLU_BEGIN_V(g_checkExclu)
+#define RDS_CHECK_EXCLU_END()		RDS_CHECK_EXCLU_END_V(g_checkExclu)
+#define RDS_CHECK_EXCLU_SCOPED()	RDS_CHECK_EXCLU_SCOPED_V(&g_checkExclu)
+
+#else
+
+#define RDS_CHECK_ONCE_VAR(VAR_NAME)	
+#define RDS_CHECK_ONCE(VAR_NAME)		
+
+#define RDS_CHECK_EXCLU_BEGIN_V(VAR)	
+#define RDS_CHECK_EXCLU_END_V(VAR)		
+#define RDS_CHECK_EXCLU_SCOPED_V(VAR)	
+
+#define RDS_CHECK_EXCLU_BEGIN()		
+#define RDS_CHECK_EXCLU_END()		
+#define RDS_CHECK_EXCLU_SCOPED()	
+
+#endif // RDS_ENABLE_ASSERT
+
+
+#endif
 
 #endif
 

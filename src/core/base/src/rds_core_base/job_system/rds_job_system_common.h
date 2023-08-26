@@ -21,7 +21,7 @@ using JobParFor_Base	= ::nmsp::JobParFor_Base;
 using Job           = ::nmsp::Job_T;
 using JobHandle     = ::nmsp::JobHandle_T;
 
-using JobGraph		= void;
+using JobFlow		= ::nmsp::JobFlow_T;
 
 }
 #endif

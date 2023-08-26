@@ -130,9 +130,11 @@ public:
 		JobHandle sortCmdJobHandle = JobSystem::instance()->createEmptyJob();
 		RDS_WARN_ONCE("TODO: sort the render cmds / sort the mesh");
 
+		JobFlow jf;
 
 		out._internal_jobHandle() = sortCmdJobHandle;
-		scatterJobParent->runBefore(sortCmdJobHandle);
+		jf.emplace(sortCmdJobHandle, scatterJobParent);
+		jf.xDependOnY(sortCmdJobHandle, scatterJobParent);
 
 		SizeType remain = n;
 		for (SizeType i = 0; i < jobCount; ++i)
@@ -144,16 +146,25 @@ public:
 			
 			job = makeUPtr<ParRecordRenderCommandJob>(batchSizePerThread * i, batchSize, &out, _cRenderables.span(), &rdQueue, &mtx);
 
-			auto handle = job->delayDispatch();
+			auto handle = job->prepareDispatch();
 			handle->setParent(scatterJobParent);
 			JobSystem::instance()->submit(handle);
 		}
+
+		#if 1
+
+		jf.runAndWait();
+
+		#else
 
 		// the parent use as spwan task is better, the local variable should use a class and store to the CRenderableSystem per frame
 		JobSystem::instance()->submit(scatterJobParent);
 
 		RDS_WARN_ONCE("TODO: remove the wait, must keep now since the jobs are local variable");
 		JobSystem::instance()->waitForComplete(sortCmdJobHandle);
+
+		#endif // 0
+
 
 		return sortCmdJobHandle;
 	}
@@ -292,6 +303,24 @@ public:
 				rdMesh.create(makeEditMesh(Vec3f{ sCast<float>(ix * dx + offsetX),  sCast<float>(iy * dy + offsetY), 0.0f }, scale, 0.3f));
 				_cRdSys.addRenderable(rdMesh);
 			}
+		}
+	}
+
+	void createFixed(size_t n)
+	{
+		_rdMeshes.clear();
+		_cRdSys.clear();
+
+		_cRdSys.reserve(n);
+		_rdMeshes.reserve(1);
+
+		auto mesh = makeEditMesh(Vec3f{ 0.0f, 1.0f, 0.0f }, Vec3f::s_one());
+		auto& rdMesh = _rdMeshes.emplace_back();
+		rdMesh.create(mesh);
+
+		for (size_t ix = 0; ix < n; ix++)
+		{
+			_cRdSys.addRenderable(rdMesh);
 		}
 	}
 

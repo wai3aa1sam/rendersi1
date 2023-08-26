@@ -13,12 +13,15 @@ MemoryArena<DefaultAllocator_Impl, void> DefaultAllocator::s_instance;
 DefaultAllocator_Impl::DefaultAllocator_Impl(const char* name)
 	: Base(name)
 {
-	_nmspAllocationCallback.allocCallback = [](size_t n, size_t align, size_t offset) -> void*
+	static NmspAllocationCallback s_nmspAllocaCallback;
+	_nmspAllocationCallback = &s_nmspAllocaCallback;
+
+	_nmspAllocationCallback->allocCallback = [](size_t n, size_t align, size_t offset) -> void*
 	{
 		return DefaultAllocator_Impl::alloc(n, align, offset);
 	};
 
-	_nmspAllocationCallback.freeCallback = [](void* p, size_t n)
+	_nmspAllocationCallback->freeCallback = [](void* p, size_t n)
 	{
 		DefaultAllocator_Impl::free(p, n);
 	};

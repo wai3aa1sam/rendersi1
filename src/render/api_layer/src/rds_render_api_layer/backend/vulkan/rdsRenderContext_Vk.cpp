@@ -1289,7 +1289,6 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 		}
 		#endif // 0
 
-
 		virtual void execute() override
 		{
 			RDS_PROFILE_SCOPED();

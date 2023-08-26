@@ -256,7 +256,8 @@ public:
 
 		uploadTestMultiBuf();
 
-		_testMultiThreadDrawCalls.create(10);
+		//_testMultiThreadDrawCalls.create(10);
+		_testMultiThreadDrawCalls.createFixed(1920);
 	}
 
 	virtual void onUpdate() override
