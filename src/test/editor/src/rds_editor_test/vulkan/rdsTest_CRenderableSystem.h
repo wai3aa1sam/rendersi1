@@ -59,7 +59,7 @@ public:
 		// , then sort it 
 
 		// --- both method should only wait when it is actually use to record
-		recordDrawCallCommands(rdQueue, hashedCmds);
+		recordDrawCallCommands2(rdQueue, hashedCmds);
 	}
 
 	JobHandle recordDrawCallCommands(RenderQueue& rdQueue, HashedDrawCallCommands& out)
@@ -169,35 +169,82 @@ public:
 		return sortCmdJobHandle;
 	}
 
-	template<class T, class ALLOC = DefaultAllocator, size_t N = OsTraits::s_kEstLogicalThreadCount, class... ARGS>
-	JobHandle prepareGatherJobs(Vector<UPtr<T>, N, ALLOC>& jobs, SizeType loopCount, SizeType minBatchSize, ARGS&&... ctor_args)
+	JobHandle recordDrawCallCommands2(RenderQueue& rdQueue, HashedDrawCallCommands& out)
 	{
-		static_assert(IsBaseOf<Job_Base, T>);
+		//auto& outDrawCmds = out._interal_drawCallCmds();
+		using DrawCallCmds = RenderCommandBuffer::DrawCallCmds;
 
-		auto		n					= loopCount;
-		auto		batchSizePerThread	= math::max(minBatchSize, n / OsTraits::logicalThreadCount());
-		auto		jobCount			= sCast<SizeType>(math::ceil((float)n / batchSizePerThread));
-
-		jobs.clear();
-		jobs.resize(jobCount);
-
-		JobHandle parent = JobSystem::instance()->createEmptyJob();
-
-		SizeType remain = n;
-		for (int i = 0; i < jobCount; ++i)
+		class ParRecordRenderCommandJob : public JobCluster_Base<Job_Base>
 		{
-			auto& job		= jobs[i];
-			job = makeUPtr<T>(nmsp::forward<ARGS>(ctor_args)...);
+		public:
+			ParRecordRenderCommandJob(HashedDrawCallCommands* outCmds, Span<SPtr<Test_CRenderable> > cRenderables
+										, RenderQueue* rdQueue, Mutex* mtx)
+			{
+				_cRenderables	= cRenderables;
+				_outCmds		= outCmds;
+				_rdQueue		= rdQueue;
+				_mtx			= mtx;
+			}
 
-			auto batchSize = math::min(batchSizePerThread, remain);
-			remain -= batchSize;
+			virtual void onBegin() override
+			{
+				Base::onBegin();
+			}
 
-			auto handle = job->delayDispatch();
-			// handle->setParent(parent);
-			JobSystem::submit(handle);
-		}
+			virtual void onEnd() override
+			{
+				RDS_PROFILE_SCOPED();
 
-		return parent;
+				Base::onEnd();
+
+				ULock<Mutex> lock{*_mtx};
+				auto oldSize = _outCmds->size();
+				_outCmds->resize(_outCmds->size() + _cmds.size());
+				auto** dst = _outCmds->_internal_drawCallCmds().data() + oldSize; RDS_UNUSED(dst);
+				memory_copy(dst, _cmds.data(), _cmds.size());
+			}
+
+			virtual void execute() override
+			{
+				RDS_PROFILE_SCOPED();
+				for (size_t i = 0; i < clusterArgs().clusterSize; i++)
+				{
+					auto id = clusterArgs().clusterOffset + i;
+					auto& cRenderables = _cRenderables[id];
+					_rdQueue->recordDrawCall(_cmds, cRenderables->_rdMesh, Mat4f::s_identity());
+				}
+			}
+
+		private:
+			Span<SPtr<Test_CRenderable> >		_cRenderables;
+			HashedDrawCallCommands*				_outCmds		= nullptr;
+			RenderQueue*						_rdQueue		= nullptr;
+			Mutex*								_mtx			= nullptr;
+
+			Vector<RenderCommand_DrawCall*> _cmds;
+		};
+
+		Vector<UPtr<ParRecordRenderCommandJob>,	s_kThreadCount> recordJobs;
+		Mutex mtx;
+
+		u32 minBatchSize = 200;
+		const auto loopCount = sCast<u32>(_cRenderables.size());
+		//auto jobClusterHnd = JobCluster::dispatch(recordJobs, loopCount, minBatchSize, &out, _cRenderables.span(), &rdQueue, &mtx);
+		auto jobClusterHnd = JobCluster::prepare(recordJobs, loopCount, minBatchSize, &out, _cRenderables.span(), &rdQueue, &mtx);
+
+		RDS_WARN_ONCE("TODO: impl both methoed sort the render cmds first / sort the mesh first");
+		JobFlow jf;
+
+		RDS_WARN_ONCE("TODO: impl multi-threaded sort");
+		JobHandle sortCmdJobHandle = JobSystem::instance()->createEmptyJob();
+
+		out._internal_jobHandle() = sortCmdJobHandle;
+		jf.emplace(sortCmdJobHandle, jobClusterHnd);
+		jf.xDependOnY(sortCmdJobHandle, jobClusterHnd);
+
+		jf.runAndWait();
+
+		return sortCmdJobHandle;
 	}
 
 
