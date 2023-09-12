@@ -18,8 +18,6 @@ public:
 	using Util = Vk_RenderApiUtil;
 
 public:
-
-public:
 	RenderGpuBuffer_Vk();
 	virtual ~RenderGpuBuffer_Vk();
 

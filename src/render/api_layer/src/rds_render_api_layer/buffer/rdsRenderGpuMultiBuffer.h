@@ -11,20 +11,13 @@ namespace rds
 #endif // 0
 #if 1
 
-class RenderGpuMultiBuffer : public RefCount_Base
+class RenderGpuMultiBuffer : public RenderResource
 {
 	friend class Renderer;
-
 public:
-	using Base = RefCount_Base;
-	using CreateDesc = RenderGpuBuffer::CreateDesc;
-
-	using Util = RenderApiUtil;
-
-	using SizeType = RenderApiLayerTraits::SizeType;
-
-public:
-	static constexpr SizeType s_kFrameInFlightCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
+	using Base			= RenderResource;
+	using CreateDesc	= RenderGpuBuffer::CreateDesc;
+	using Util			= RenderApiUtil;
 
 public:
 	static CreateDesc					makeCDesc();
@@ -41,7 +34,7 @@ public:
 
 	void rotate();
 
-	const CreateDesc& cDesc() const;
+	const CreateDesc& desc() const;
 
 	SizeType stride()		const;
 	SizeType bufSize()		const;
@@ -64,7 +57,7 @@ protected:
 	Vector<SPtr<RenderGpuBuffer>, s_kFrameInFlightCount> _renderGpuBuffers;
 };
 
-inline const RenderGpuMultiBuffer::CreateDesc& RenderGpuMultiBuffer::cDesc() const { return _renderGpuBuffers[iFrame]->cDesc(); }
+inline const RenderGpuMultiBuffer::CreateDesc& RenderGpuMultiBuffer::desc() const { return _renderGpuBuffers[iFrame]->desc(); }
 
 inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::stride()		const { return _renderGpuBuffers[iFrame]->stride(); }
 inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::bufSize()		const { return _renderGpuBuffers[iFrame]->bufSize(); }

@@ -85,7 +85,7 @@ RenderGpuMultiBuffer::nextBuffer(SizeType bufSize)
 	auto nextIdx = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
 	if (_renderGpuBuffers.size() < s_kFrameInFlightCount)
 	{
-		auto newCDesc = cDesc();
+		auto newCDesc = desc();
 		newCDesc.bufSize = bufSize;
 		_renderGpuBuffers.emplace_back(RenderGpuBuffer::make(newCDesc));
 	}

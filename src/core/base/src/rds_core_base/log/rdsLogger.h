@@ -23,6 +23,8 @@
 
 #define RDS_WARN_ONCE(...) do { static RDS_UNIQUE_VAR(bool) = false; if (!RDS_UNIQUE_VAR_NAME(bool)) { RDS_CORE_LOG_WARN(__VA_ARGS__); RDS_UNIQUE_VAR_NAME(bool) = true; } } while(false)
 
+#define RDS_TODO(...) do { static RDS_UNIQUE_VAR(bool) = false; if (!RDS_UNIQUE_VAR_NAME(bool)) { RDS_CORE_LOG_DEBUG("{}", _todo(RDS_SRCLOC, RDS_ARGS(__VA_ARGS__))); RDS_UNIQUE_VAR_NAME(bool) = true; } } while(false)
+
 #if RDS_DEBUG
 	#define RDS_CORE_LOG_DEBUG(...)	    do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Debug,	    __VA_ARGS__); } while(false)
 

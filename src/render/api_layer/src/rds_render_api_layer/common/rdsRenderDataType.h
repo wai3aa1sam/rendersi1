@@ -43,6 +43,7 @@ namespace rds
 	E(Texture1D,)		E(Texture2D,)		E(Texture3D,)		E(TextureCube,) \
 	E(Texture1DArray,)	E(Texture2DArray,)	E(Texture3DArray,)	E(TextureCubeArray,) \
 	\
+	E(Depth,) \
 	E(Float24Norm8,)	E(Float32Norm8,) \
 	\
 	E(_kCount,) \

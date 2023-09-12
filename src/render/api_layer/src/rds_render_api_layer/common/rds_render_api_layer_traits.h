@@ -5,10 +5,23 @@
 
 namespace rds 
 {
+
+#define RDS_RENDER_API_LAYER_COMMON_BODY() \
+public:																						\
+	using Traits	= RenderApiLayerTraits;													\
+	using SizeType	= Traits::SizeType;														\
+public:																						\
+	static constexpr SizeType s_kThreadCount		= Traits::s_kThreadCount;				\
+	static constexpr SizeType s_kFrameInFlightCount	= Traits::s_kFrameInFlightCount;		\
+private:																					\
+//---
+
 #if 0
 #pragma mark --- RenderApiLayerTraits-Impl ---
 #endif // 0
 #if 1
+
+
 struct RenderApiLayerDefaultTraits_T : public CoreTraits
 {
 public:

@@ -24,16 +24,13 @@ struct RenderContext_CreateDesc
 	NativeUIWindow* window = nullptr;
 };
 
-class RenderContext : public RefCount_Base
+class RenderContext : public RenderResource
 {
 	friend class Renderer;
 public:
-	using Base = RefCount_Base;
-	using CreateDesc = RenderContext_CreateDesc;
-
-	using Util = RenderApiUtil;
-
-	using SizeType = RenderApiLayerTraits::SizeType;
+	using Base			= RefCount_Base;
+	using CreateDesc	= RenderContext_CreateDesc;
+	using Util			= RenderApiUtil;
 
 public:
 	static CreateDesc makeCDesc();

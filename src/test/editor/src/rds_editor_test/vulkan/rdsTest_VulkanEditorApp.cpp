@@ -4,6 +4,7 @@
 #include "rds_editor.h"
 
 #include "rdsTest_CRenderableSystem.h"
+#include "rdsTest_RenderGraph.h"
 
 namespace rds 
 {
@@ -173,7 +174,6 @@ public:
 	VulkanEditorMainWindow* mainWin() { return &_vulkanMainWin; }
 
 protected:
-
 	virtual void onCreate(const CreateDesc_Base& cDesc) override
 	{
 		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
@@ -258,6 +258,13 @@ public:
 
 		//_testMultiThreadDrawCalls.create(10);
 		_testMultiThreadDrawCalls.createFixed(1920);
+
+		_testRenderGraph._rdGraph.create("Test Render Graph", Renderer::instance(), &VulkanEditorApp::instance()->mainWin()->renderContext());
+		_testRenderGraph.setup();
+		_testRenderGraph.compile();
+		_testRenderGraph.dump();
+
+		//JobSystem::instance()->setSingleThreadMode(true);
 	}
 
 	virtual void onUpdate() override
@@ -364,7 +371,8 @@ protected:
 	RenderMesh _rdMesh1;
 	RenderMesh _rdMesh2;
 
-	Test_MultiThreadDrawCalls _testMultiThreadDrawCalls;
+	Test_MultiThreadDrawCalls	_testMultiThreadDrawCalls;
+	Test_RenderGraph			_testRenderGraph;
 };
 
 class Test_VulkanEditorApp : public UnitTest

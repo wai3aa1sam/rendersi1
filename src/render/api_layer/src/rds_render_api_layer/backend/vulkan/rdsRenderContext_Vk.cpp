@@ -328,7 +328,7 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 	}
 
 	Vk_Buffer vkStageBuf;
-
+	RDS_TODO("use exclusive queue instead of concurrent");
 	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage  = RenderMemoryUsage::CpuOnly;
 	allocInfo.flags |= RenderAllocFlags::HostWrite;
@@ -364,19 +364,17 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 		RDS_ASSERT(!BitUtil::has(cmd->queueTypeflags, QueueTypeFlags::Compute), "not yet support");
 	}
 
-	{
-		static bool v = false;
-		if (!v)
-		{
-			RDS_LOG_WARN("TODO: add smp for transfer and graphics queue");
-			v = true;
-		}
-	}
+	RDS_TODO("add smp for transfer and graphics queue");
 
 	transferCmdBuf->endRecord();
 	transferCmdBuf->submit();
 
-	RDS_WARN_ONCE("TODO: remove transferCmdBuf->waitIdle()");
+	RDS_TODO("remove transferCmdBuf->waitIdle()");
+	/*
+	example:
+	https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples#swapchain-image-acquire-and-present
+	Command Buffer Recording and Submission for a unified transfer/graphics queue:
+	*/
 	transferCmdBuf->waitIdle();
 
 	// TODO: delay rotate
@@ -1235,6 +1233,8 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 void 
 RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd)
 {
+	RDS_PROFILE_SCOPED();
+
 	#if 0
 
 	static constexpr SizeType s_kMinBatchSize = 200;

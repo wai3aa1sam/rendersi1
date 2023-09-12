@@ -49,6 +49,15 @@ using ::nmsp::memory_set;
 
 #endif
 
+#if 0
+#pragma mark --- rds_stl_algorithm-Impl ---
+#endif
+#if 1
+
+using ::nmsp::find_if;
+
+#endif
+
 #endif
 
 
@@ -106,6 +115,7 @@ template<class VALUE, class PRED = StrLess<const char*>, class ALLOC = DefaultAl
 template<class T> using Span = ::nmsp::Span_T<T>;
 using ByteSpan = ::nmsp::ByteSpan_T;
 using ::nmsp::spanCast;
+using ::nmsp::spanConstCast;
 
 template<class T> using StrView_T = ::nmsp::StrView_T<T>;
 using StrView  = ::nmsp::StrViewA_T;

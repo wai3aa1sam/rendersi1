@@ -6,6 +6,7 @@
 
 LocalTemp/
 local_temp/
+debug/
 
 *.bak
 *.lnk
