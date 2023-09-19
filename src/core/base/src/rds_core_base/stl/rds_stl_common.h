@@ -183,7 +183,7 @@ using Lexer_Token		= ::nmsp::Lexer_Token_T;
 using Lexer				= ::nmsp::Lexer_T;
 
 using StrUtil = ::nmsp::StrUtil;
-using UtfUtil = ::nmsp::UtfUtil;
+using UtfUtil = ::nmsp::UtfUtil_T<DefaultAllocator>;
 
 
 #endif // 0

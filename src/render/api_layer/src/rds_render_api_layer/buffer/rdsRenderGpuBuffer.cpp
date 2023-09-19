@@ -12,7 +12,6 @@ namespace rds
 SPtr<RenderGpuBuffer> Renderer::createRenderGpuBuffer(const RenderGpuBuffer_CreateDesc& cDesc)
 {
 	auto p = onCreateRenderGpuBuffer(cDesc);
-	p->onPostCreate(cDesc);
 	return p;
 }
 
@@ -36,6 +35,8 @@ RenderGpuBuffer::~RenderGpuBuffer()
 void RenderGpuBuffer::create(const CreateDesc& cDesc)
 {
 	onCreate(cDesc);
+
+	onPostCreate(cDesc);
 }
 
 void RenderGpuBuffer::destroy()

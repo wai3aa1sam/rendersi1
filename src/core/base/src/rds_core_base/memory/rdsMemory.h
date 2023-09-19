@@ -70,14 +70,15 @@ template<class T> inline
 void
 Singleton<T>::init()
 {
-	RDS_NEW(T)();
+	RDS_NEW(T)();	// ctor will assign this memory to s_instance;
 }
 
 template<class T> inline
 void
 Singleton<T>::terminate()
 {
-	RDS_DELETE(instance());
+	// throwIf(!s_instance, "Singleton<T> terminate failed, no inited yet"); // don't throw in dtor
+	RDS_DELETE(s_instance);
 }
 
 }

@@ -177,8 +177,13 @@ protected:
 	virtual void onCreate(const CreateDesc_Base& cDesc) override
 	{
 		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
-		//Base::onCreate(thisCDesc);
 
+		// TestScope will create Logger and ProjectSetting, so commented
+		// updated: turned off TestScope log and ProjectSetting
+		Base::onCreate(thisCDesc);		
+		
+		// created in Base::onCreate()
+		#if 0
 		JobSystem::init();
 		Renderer::init();
 
@@ -186,11 +191,13 @@ protected:
 			auto jobSysCDesc = JobSystem::makeCDesc();
 			JobSystem::instance()->create(jobSysCDesc);
 		}
-		
+
 		{
 			auto rendererCDesc = Renderer::makeCDesc();
 			Renderer::instance()->create(rendererCDesc);
 		}
+		#endif // 0
+
 
 		{ Process sh = { "asset/shader/vulkan/compile_shader.bat" }; }
 

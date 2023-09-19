@@ -56,7 +56,7 @@ HashedDrawCallCommands::sort()
 {
 	checkValid();
 
-	_notYetSupported();
+	RDS_NOT_YET_SUPPORT();
 
 	return _jobHandle;
 }

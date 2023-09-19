@@ -43,7 +43,7 @@ protected:
 	virtual void willQuit	() override;
 
 protected:
-	EditorMainWindow _mainWin;
+	//EditorMainWindow _mainWin;
 };
 
 

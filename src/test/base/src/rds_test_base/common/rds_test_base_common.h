@@ -26,6 +26,8 @@ public:
 	template<class FUNC>
 	TestScope(FUNC&& func, bool enableBenchmark, int& argc, char* argv[])
 	{
+		_enableLog = false;
+		_enableProjectSetting = false;
 		MemoryLeakReportScope reportScope;
 		create();
 		{
@@ -47,11 +49,18 @@ public:
 		_isDestroyed = false;
 
 		MemoryContext::init();
-		Logger::init();
-		ProjectSetting::init();
+		
 
-		Logger::instance()->create(Logger::makeCDesc());
+		if (_enableLog)
 		{
+			Logger::init();
+			Logger::instance()->create(Logger::makeCDesc());
+		}
+
+		if (_enableProjectSetting)
+		{
+			ProjectSetting::init();
+
 			App_Base app;
 			String file = app.getExecutableFilename();
 			String path = Path::dirname(file);
@@ -64,6 +73,7 @@ public:
 			path.append("/example/Test000");
 			proj->setProjectRoot(path);
 		}
+		
 		_unitTestManager.create();
 	}
 
@@ -74,14 +84,18 @@ public:
 			return;
 		}
 
-		RDS_WARN_ONCE("Profiler will continue increase process memory, Sanitizer will use many cpu rate");
+		_log("Profiler will continue increase process memory, Sanitizer will use many cpu rate");
 
 		_unitTestManager.destroy();
-		ProjectSetting::terminate();
-		Logger::terminate();
+		if (_enableProjectSetting)
+			ProjectSetting::terminate();
+		if (_enableLog)
+			Logger::terminate();
 		MemoryContext::terminate();
 		_isDestroyed = true;
 	}
+
+	void setEnableLog(bool v) { _enableLog = v; }
 
 	~TestScope()
 	{
@@ -90,7 +104,9 @@ public:
 	}
 
 private:
-	bool _isDestroyed : 1;
+	bool _isDestroyed			: 1;
+	bool _enableLog				: 1;
+	bool _enableProjectSetting	: 1;
 	UnitTestManager _unitTestManager;
 };
 

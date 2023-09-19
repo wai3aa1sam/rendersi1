@@ -47,12 +47,12 @@ EditorApp::onCreate	(const CreateDesc_Base& cd)
 		Renderer::instance()->create(cDesc);
 	}
 
-	{
+	/*{
 		auto cDesc = _mainWin.makeCDesc();
 		cDesc.isMainWindow = true;
 		_mainWin.create(cDesc);
 		_mainWin.setWindowTitle("RDS Editor");
-	}
+	}*/
 }
 
 void 
@@ -65,6 +65,10 @@ void
 EditorApp::onRun		()
 {
 	RDS_PROFILE_SCOPED();
+
+	RDS_TODO("nmsp::UtfUtil to nmsp::UtfUtil<UtfUtil_Traits>");
+	RDS_TODO("do not use auto in general");
+
 
 	while (!_shouldQuit)
 	{
@@ -102,6 +106,7 @@ EditorApp::willQuit	()
 
 	Renderer::terminate();
 	JobSystem::terminate();
+	Logger::terminate();
 }
 
 #endif

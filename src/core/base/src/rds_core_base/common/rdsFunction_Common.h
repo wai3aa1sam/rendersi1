@@ -3,9 +3,12 @@
 #include "rdsNmsplib_Common.h"
 
 #if 0
-#pragma mark --- rdsTypeTraits-Impl ---
+#pragma mark --- rdsFunction_Common-Impl ---
 #endif // 0
 #if 1
+
+#define RDS_NOT_YET_SUPPORT() NMSP_NOT_YET_SUPPORT()
+
 namespace rds
 {
 

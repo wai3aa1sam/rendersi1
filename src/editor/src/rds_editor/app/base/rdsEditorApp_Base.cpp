@@ -76,6 +76,7 @@ EditorApp_Base::willQuit	()
 {
 	Base::willQuit();
 	_appLayerStack.clear();
+	ProjectSetting::terminate();
 }
 
 #endif

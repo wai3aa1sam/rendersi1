@@ -9,8 +9,6 @@
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 
-#include <spirv_cross.hpp>
-
 #if RDS_RENDER_HAS_VULKAN
 
 #define RDS_TEST_DRAW_CALL 0
@@ -71,9 +69,6 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	createTestTextureImageView();
 	createTestTextureSampler();
 
-	reflectShader("asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.vert.spv");
-	reflectShader("asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.frag.spv");
-
 	createTestDescriptorSetLayout();
 	createTestDescriptorPool();
 	createTestDescriptorSets();
@@ -88,12 +83,12 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	vkSwapchainCDesc.depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 	createTestRenderPass(vkSwapchainCDesc);
+	_vkSwapchain.create(vkSwapchainCDesc);
+
 	createTestGraphicsPipeline();
 	createTestVertexBuffer(&_testVkVtxBuffer);
 	createTestVertexBuffer(&_testVkVtxBuffer2, -0.5f);
 	createTestIndexBuffer();
-
-	_vkSwapchain.create(vkSwapchainCDesc);
 	
 	_curGraphicsCmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
@@ -425,7 +420,7 @@ RenderContext_Vk::bindPipeline(Vk_CommandBuffer_T* vkCmdBuf, Vk_Pipeline* vkPipe
 {
 	RDS_PROFILE_SCOPED();
 
-	vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
+	vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->hnd());
 
 	// since we set viewport and scissor state is dynamic
 	const auto& rect2f = _vkSwapchain.framebufferRect2f();
@@ -457,7 +452,7 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx, Vk_Bu
 {
 	RDS_PROFILE_SCOPED();
 
-	bindPipeline(vkCmdBuf, _testVkPipeline);
+	bindPipeline(vkCmdBuf, &_testVkPipeline);
 
 	{
 		Vk_Buffer_T* vertexBuffers[]	= { vtxBuf->hnd() };
@@ -471,7 +466,7 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx, Vk_Bu
 
 	{
 		Vk_DescriptorSet_T* descSets[] = { _testVkDescriptorSets[imageIdx].hnd() };
-		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout, 0, 1, descSets, 0, nullptr);
+		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout.hnd(), 0, 1, descSets, 0, nullptr);
 	}
 
 	//u32 vtxCount = TestVertex::s_kVtxCount;
@@ -576,29 +571,29 @@ RenderContext_Vk::createTestGraphicsPipeline()
 {
 	RDS_PROFILE_SCOPED();
 
-	auto* vkDevice = _renderer->vkDevice();
-	const auto* vkAllocCallbacks = _renderer->allocCallbacks();
+	//auto* vkDevice					= _renderer->vkDevice();
+	//const auto* vkAllocCallbacks	= _renderer->allocCallbacks();
 
 	// shader module and stage
 	VkPipelineShaderStageCreateInfo	vsStageInfo = {};
 	VkPipelineShaderStageCreateInfo	psStageInfo = {};
 
-	VkPtr<Vk_ShaderModule> vsModule;
-	VkPtr<Vk_ShaderModule> psModule;
+	Vk_ShaderModule vsModule;
+	Vk_ShaderModule psModule;
 
 	{
-		Util::createShaderModule(vsModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.vert.spv", vkDevice);
-		Util::createShaderModule(psModule.ptrForInit(), "asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.frag.spv", vkDevice);
+		vsModule.create(renderer(), "asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.vert.spv");
+		psModule.create(renderer(), "asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.frag.spv");
 
-		vsStageInfo.sType				= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vsStageInfo.stage				= VK_SHADER_STAGE_VERTEX_BIT;
-		vsStageInfo.module				= vsModule;
-		vsStageInfo.pName				= "vs_main";
-		vsStageInfo.pSpecializationInfo	= nullptr;
+		vsStageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vsStageInfo.stage					= VK_SHADER_STAGE_VERTEX_BIT;
+		vsStageInfo.module					= vsModule.hnd();
+		vsStageInfo.pName					= "vs_main";
+		vsStageInfo.pSpecializationInfo		= nullptr;
 
 		psStageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		psStageInfo.stage					= VK_SHADER_STAGE_FRAGMENT_BIT;
-		psStageInfo.module					= psModule;
+		psStageInfo.module					= psModule.hnd();
 		psStageInfo.pName					= "ps_main";
 		psStageInfo.pSpecializationInfo		= nullptr;
 
@@ -734,8 +729,7 @@ RenderContext_Vk::createTestGraphicsPipeline()
 		pipelineLayoutInfo.pSetLayouts				= setLayouts;						// Optional
 		pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
 		pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
-		auto ret = vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, vkAllocCallbacks, _testVkPipelineLayout.ptrForInit());
-		Util::throwIfError(ret);
+		_testVkPipelineLayout.create(renderer(), &pipelineLayoutInfo);
 	}
 
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -750,15 +744,14 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	pipelineInfo.pDepthStencilState		= &depthStencilCreateInfo;			// Optional
 	pipelineInfo.pColorBlendState		= &colorBlending;
 	pipelineInfo.pDynamicState			= &dynamicState;
-	pipelineInfo.layout					= _testVkPipelineLayout;
+	pipelineInfo.layout					= _testVkPipelineLayout.hnd();
 	pipelineInfo.renderPass				= _testVkRenderPass.hnd();
 	pipelineInfo.subpass				= 0;
 	pipelineInfo.basePipelineHandle		= VK_NULL_HANDLE;	// Optional for creating a new graphics pipeline by deriving from an existing pipeline with VK_PIPELINE_CREATE_DERIVATIVE_BIT
 	pipelineInfo.basePipelineIndex		= -1;				// Optional
 
 	Vk_PipelineCache* vkPipelineCache = VK_NULL_HANDLE;
-	auto ret = vkCreateGraphicsPipelines(vkDevice, vkPipelineCache, 1, &pipelineInfo, vkAllocCallbacks, _testVkPipeline.ptrForInit());
-	Util::throwIfError(ret);
+	_testVkPipeline.create(renderer(), &pipelineInfo, 1, vkPipelineCache);
 }
 
 void
@@ -1066,96 +1059,6 @@ RenderContext_Vk::createTestTextureSampler()
 	_testVkTextureSampler.create(&samplerInfo);
 }
 
-void 
-RenderContext_Vk::reflectShader(StrView spvFilename)
-{
-	RDS_LOG_WARN("TODO: remove {}", RDS_SRCLOC);
-
-	using namespace spirv_cross;
-
-	Vector<u8> bin;
-	File::readFile(spvFilename, bin);
-	Compiler compiler(reinCast<u32*>(bin.data()), bin.size() / (sizeof(u32) / sizeof(u8)));
-
-	auto active = compiler.get_active_interface_variables();
-	ShaderResources res = compiler.get_shader_resources(active);
-	compiler.set_enabled_interface_variables(nmsp::move(active));
-
-	for (const Resource &resource : res.uniform_buffers)
-	{
-		auto &type = compiler.get_type(resource.base_type_id);
-		size_t size = compiler.get_declared_struct_size(type);
-
-		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
-		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
-
-		RDS_LOG("UBO size: {}, set: {}, binding: {}", size, set, binding);
-
-		size_t member_count = type.member_types.size();
-		for (unsigned i = 0; i < member_count; i++)
-		{
-			auto &member_type = compiler.get_type(type.member_types[i]);
-			size_t member_size = compiler.get_declared_struct_member_size(type, i);
-
-			// Get member offset within this struct.
-			size_t offset = compiler.type_struct_member_offset(type, i);
-
-			if (!member_type.array.empty())
-			{
-				// Get array stride, e.g. float4 foo[]; Will have array stride of 16 bytes.
-				size_t array_stride = compiler.type_struct_member_array_stride(type, i);
-				RDS_LOG("array_stride: {}", array_stride);
-			}
-
-			if (member_type.columns > 1)
-			{
-				// Get bytes stride between columns (if column major), for float4x4 -> 16 bytes.
-				size_t matrix_stride = compiler.type_struct_member_matrix_stride(type, i);
-				RDS_LOG("matrix_stride: {}", matrix_stride);
-
-			}
-			const auto& name = compiler.get_member_name(type.self, i);
-			RDS_LOG("name: {}, offset: {}, member_size: {}", name, offset, member_size);
-		}
-	}
-
-	for (const Resource &resource : res.sampled_images)
-	{
-		auto &type = compiler.get_type(resource.base_type_id);
-		size_t size = compiler.get_declared_struct_size(type);
-
-		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
-		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
-
-		RDS_LOG("SampledImage size: {}, set: {}, binding: {}", size, set, binding);
-	}
-
-	for (const Resource &resource : res.separate_samplers)
-	{
-		//auto &type = compiler.get_type(resource.base_type_id);
-
-		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
-		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
-
-		RDS_LOG("separate_samplers set: {}, binding: {}", set, binding);
-	}
-
-	for (const Resource &resource : res.separate_images)
-	{
-		//auto &type = compiler.get_type(resource.base_type_id);
-
-		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
-		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
-
-		RDS_LOG("separate_images set: {}, binding: {}", set, binding);
-	}
-
-	for (const Resource &resource : res.subpass_inputs)
-	{
-		u32 attachment_index = compiler.get_decoration(resource.id, spv::DecorationInputAttachmentIndex);	RDS_UNUSED(attachment_index);
-	}
-}
-
 #endif // 1
 
 #if 0
@@ -1196,13 +1099,13 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 
 	if (isDefaultRenderState)
 	{
-		vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipeline);
+		vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipeline.hnd());
 	}
 
 	if (isDefaultMaterial)
 	{
 		Vk_DescriptorSet_T* descSets[] = { _testVkDescriptorSets[_vkSwapchain.curImageIdx()].hnd() };
-		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout, 0, 1, descSets, 0, nullptr);
+		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout.hnd(), 0, 1, descSets, 0, nullptr);
 	}
 
 	auto* vtxBufVk = sCast<RenderGpuBuffer_Vk*>(cmd->vertexBuffer.ptr());

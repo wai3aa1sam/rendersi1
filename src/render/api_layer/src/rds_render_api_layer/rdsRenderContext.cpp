@@ -11,7 +11,6 @@ namespace rds
 SPtr<RenderContext> Renderer::createContext(const RenderContext_CreateDesc& cDesc)
 {
 	auto p = onCreateContext(cDesc);
-	p->onPostCreate(cDesc);
 	return p;
 }
 

@@ -220,7 +220,7 @@ Vk_RenderApiUtil::toVkMemoryPropFlags(RenderMemoryUsage memUsage)
 	VkMemoryPropertyFlags flags = {};
 	//if (BitUtil::has(requiredProperties, sCast<VkFlags>(VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))) { return RenderMemoryUsage::CpuToGpu;	}
 	//if (BitUtil::has(requiredProperties, sCast<VkFlags>(VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))) { return RenderMemoryUsage::GpuOnly;	}
-	_notYetSupported();
+	RDS_NOT_YET_SUPPORT();
 	return flags;
 }
 
@@ -434,21 +434,6 @@ Vk_RenderApiUtil::createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_
 	viewInfo.subresourceRange.layerCount		= 1;
 
 	VkResult ret = vkCreateImageView(vkDevice, &viewInfo, Renderer_Vk::instance()->allocCallbacks(), out);
-	throwIfError(ret);
-}
-
-void 
-Vk_RenderApiUtil::createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice)
-{
-	Vector<u8> bin;
-	File::readFile(filename, bin);
-
-	VkShaderModuleCreateInfo createInfo = {};
-	createInfo.sType	= VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize	= bin.size();
-	createInfo.pCode	= reinterpret_cast<const u32*>(bin.data());
-
-	auto ret = vkCreateShaderModule(vkDevice, &createInfo, Renderer_Vk::instance()->allocCallbacks(), out);
 	throwIfError(ret);
 }
 

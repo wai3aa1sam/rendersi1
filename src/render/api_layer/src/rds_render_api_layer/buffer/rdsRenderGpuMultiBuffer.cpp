@@ -7,19 +7,18 @@
 namespace rds
 {
 
-#if 0
-#pragma mark --- rdsRenderGpuMultiBuffer-Impl ---
-#endif // 0
-#if 1
-
 SPtr<RenderGpuMultiBuffer> 
 Renderer::createRenderGpuMultiBuffer(const RenderGpuBuffer_CreateDesc& cDesc)
 {
 	auto p = SPtr<RenderGpuMultiBuffer>(makeSPtr<RenderGpuMultiBuffer>());
 	p->create(cDesc);
-	p->onPostCreate(cDesc);
 	return p;
 }
+
+#if 0
+#pragma mark --- rdsRenderGpuMultiBuffer-Impl ---
+#endif // 0
+#if 1
 
 RenderGpuMultiBuffer::CreateDesc RenderGpuMultiBuffer::makeCDesc() { return CreateDesc{}; }
 
@@ -38,6 +37,8 @@ RenderGpuMultiBuffer::~RenderGpuMultiBuffer()
 void RenderGpuMultiBuffer::create(const CreateDesc& cDesc)
 {
 	onCreate(cDesc);
+
+	onPostCreate(cDesc);
 }
 
 void RenderGpuMultiBuffer::destroy()

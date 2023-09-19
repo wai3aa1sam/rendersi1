@@ -3,6 +3,8 @@
 #include "rds_core_base/common/rds_core_base_common.h"
 
 
+#define RDS_NAMED_FIXED_IO(SE, MEMBER) SE.named_fixed_io(this->MEMBER, #MEMBER)
+
 #if 0
 #pragma mark --- rds_file_io-Impl ---
 #endif // 0
@@ -93,6 +95,9 @@ using Json              = ::nmsp::Json_T;
 using JsonSerializer    = ::nmsp::JsonSerializer_T;
 using JsonDeserializer  = ::nmsp::JsonDeserializer_T;
 
+//template<class T> using JsonIo = ::nmsp::JsonIo<T>;
+
+using JsonUtil			= ::nmsp::JsonUtil;
 
 #endif
 

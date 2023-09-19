@@ -17,13 +17,13 @@ using Vk_Swapchain_T			= VkSwapchainKHR_T;
 using Vk_Framebuffer_T			= VkFramebuffer_T;
 
 using Vk_RenderPass_T			= VkRenderPass_T;
-using Vk_Pipeline				= VkPipeline_T;
-using Vk_PipelineLayout			= VkPipelineLayout_T;
-using Vk_PipelineCache			= VkPipelineCache_T;
+using Vk_Pipeline_T				= VkPipeline_T;
+using Vk_PipelineLayout_T		= VkPipelineLayout_T;
+using Vk_PipelineCache_T		= VkPipelineCache_T;
 using Vk_DescriptorSet_T		= VkDescriptorSet_T;
 using Vk_DescriptorSetLayout_T	= VkDescriptorSetLayout_T;
 using Vk_DescriptorPool_T		= VkDescriptorPool_T;
-using Vk_ShaderModule			= VkShaderModule_T;
+using Vk_ShaderModule_T			= VkShaderModule_T;
 
 using Vk_CommandPool_T			= VkCommandPool_T;
 using Vk_CommandBuffer_T		= VkCommandBuffer_T;
@@ -40,7 +40,10 @@ using Vk_DeviceMemory			= VkDeviceMemory_T;
 
 using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
 
+class Vk_PipelineCache;
+
 struct Vk_RenderApiUtil;
+class Renderer_Vk;
 
 template<class T>
 class RenderApiResource_Vk : public NonCopyable
@@ -425,15 +428,27 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_ShaderModule>-Impl ---
+#pragma mark --- rdsVk_ShaderModule-Impl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_ShaderModule> : public RenderApiPrimitive_Base_Vk<Vk_ShaderModule>
+class Vk_ShaderModule : public Vk_RenderApiPrimitive<Vk_ShaderModule_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_ShaderModule_T>;
+
+public:
+	Vk_ShaderModule() = default;
+	~Vk_ShaderModule() { destroy(); }
+
+	Vk_ShaderModule(Vk_ShaderModule&&)	{ throwIf(true, ""); }
+	void operator=(Vk_ShaderModule&&)	{ throwIf(true, ""); }
+
+	void create(Renderer_Vk* rdr, StrView filename);
 	void destroy();
+
+protected:
+	Renderer_Vk* _rdr = nullptr;
 };
 
 #endif
@@ -459,8 +474,8 @@ public:
 	Vk_RenderPass() = default;
 	~Vk_RenderPass() { destroy(); }
 
-	Vk_RenderPass(Vk_RenderPass&&)	{ throwIf(true, ""); }
-	void operator=(Vk_RenderPass&&)	{ throwIf(true, ""); }
+	Vk_RenderPass	(Vk_RenderPass&&) { throwIf(true, ""); }
+	void operator=	(Vk_RenderPass&&) { throwIf(true, ""); }
 
 	void create(const VkRenderPassCreateInfo* pCreateInfo);
 	void destroy();
@@ -474,24 +489,64 @@ public:
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_PipelineLayout> : public RenderApiPrimitive_Base_Vk<Vk_PipelineLayout>
+class Vk_PipelineLayout : public Vk_RenderApiPrimitive<Vk_PipelineLayout_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_PipelineLayout_T>;
+
+public:
+	Vk_PipelineLayout() = default;
+	~Vk_PipelineLayout() { destroy(); }
+
+	Vk_PipelineLayout	(Vk_PipelineLayout&&) { throwIf(true, ""); }
+	void operator=		(Vk_PipelineLayout&&) { throwIf(true, ""); }
+
+	void create(Renderer_Vk* rdr, const VkPipelineLayoutCreateInfo* pCreateInfo);
 	void destroy();
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Pipeline>-Impl ---
+#pragma mark --- rdsVk_PipelineCache-Impl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_Pipeline> : public RenderApiPrimitive_Base_Vk<Vk_Pipeline>
+class Vk_PipelineCache : public Vk_RenderApiPrimitive<Vk_PipelineCache_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_PipelineCache_T>;
+
+public:
+	Vk_PipelineCache() = default;
+	~Vk_PipelineCache() { destroy(); }
+
+	Vk_PipelineCache(Vk_PipelineCache&&)	{ throwIf(true, ""); }
+	void operator=	(Vk_PipelineCache&&)	{ throwIf(true, ""); }
+
+	void destroy();
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_Pipeline-Impl ---
+#endif // 0
+#if 1
+
+class Vk_Pipeline : public Vk_RenderApiPrimitive<Vk_Pipeline_T>
+{
+public:
+	using Base = Vk_RenderApiPrimitive<Vk_Pipeline_T>;
+
+public:
+	Vk_Pipeline() = default;
+	~Vk_Pipeline() { destroy(); }
+
+	Vk_Pipeline		(Vk_Pipeline&&)	{ throwIf(true, ""); }
+	void operator=	(Vk_Pipeline&&)	{ throwIf(true, ""); }
+
+	void create(Renderer_Vk* rdr, const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache);
 	void destroy();
 };
 
@@ -529,7 +584,6 @@ public:
 #pragma mark --- rdsVk_Semaphore-Impl ---
 #endif // 0
 #if 1
-
 
 class Vk_Semaphore : public Vk_RenderApiPrimitive<Vk_Semaphore_T>
 {

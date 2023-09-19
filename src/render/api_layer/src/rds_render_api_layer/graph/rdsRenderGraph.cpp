@@ -58,7 +58,7 @@ RenderGraph::compile()
 void 
 RenderGraph::execute()
 {
-	_notYetSupported();
+	RDS_NOT_YET_SUPPORT();
 }
 
 void 
@@ -126,13 +126,13 @@ RenderGraph::exportBuffer(Buffer* out, RdgBufferHnd hnd)
 
 RdgTextureHnd RenderGraph::findTexture(StrView name)
 {
-	_notYetSupported();
+	RDS_NOT_YET_SUPPORT();
 	return RdgTextureHnd();
 }
 
 RdgBufferHnd RenderGraph::findBuffer(StrView name)
 {
-	_notYetSupported();
+	RDS_NOT_YET_SUPPORT();
 	return RdgBufferHnd();
 }
 

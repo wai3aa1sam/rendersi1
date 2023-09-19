@@ -426,15 +426,36 @@ Vk_Framebuffer::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_ShaderModule>-Impl ---
+#pragma mark --- rdsVk_ShaderModule-Impl ---
 #endif // 0
 #if 1
 
 void 
-Vk_RenderApiPrimitive<Vk_ShaderModule>::destroy()
+Vk_ShaderModule::create(Renderer_Vk* rdr, StrView filename)
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyShaderModule(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	_rdr = rdr;
+
+	auto* vkDev			= _rdr->vkDevice();
+	auto* vkAllocCbs	= _rdr->allocCallbacks();
+
+	Vector<u8> bin;
+	File::readFile(filename, bin);
+
+	VkShaderModuleCreateInfo createInfo = {};
+	createInfo.sType	= VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize	= bin.size();
+	createInfo.pCode	= reinCast<const u32*>(bin.data());
+
+	auto ret = vkCreateShaderModule(vkDev, &createInfo, vkAllocCbs, hndForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_ShaderModule::destroy()
+{
+	auto* vkDev			= _rdr->vkDevice();
+	auto* vkAllocCbs	= _rdr->allocCallbacks();
+	vkDestroyShaderModule(vkDev, hnd(), vkAllocCbs);
 }
 
 #endif
@@ -472,29 +493,72 @@ Vk_RenderPass::destroy()
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_PipelineLayout>-Impl ---
+#pragma mark --- rdsVk_PipelineLayout-Impl ---
 #endif // 0
 #if 1
 
 void 
-Vk_RenderApiPrimitive<Vk_PipelineLayout>::destroy()
+Vk_PipelineLayout::create(Renderer_Vk* rdr, const VkPipelineLayoutCreateInfo* pCreateInfo)
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyPipelineLayout(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	//auto* rdr			= Renderer_Vk::instance();
+	auto* vkDev			= rdr->vkDevice();
+	auto* vkAllocCbs	= rdr->allocCallbacks();
+
+	auto ret = vkCreatePipelineLayout(vkDev, pCreateInfo, vkAllocCbs, hndForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_PipelineLayout::destroy()
+{
+	auto* rdr			= Renderer_Vk::instance();
+	auto* vkDev			= rdr->vkDevice();
+	auto* vkAllocCbs	= rdr->allocCallbacks();
+
+	vkDestroyPipelineLayout(vkDev, hnd(), vkAllocCbs);
 }
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Pipeline>-Impl ---
+#pragma mark --- rdsVk_PipelineCache-Impl ---
 #endif // 0
 #if 1
 
 void 
-Vk_RenderApiPrimitive<Vk_Pipeline>::destroy()
+Vk_PipelineCache::destroy()
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyPipeline(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	RDS_NOT_YET_SUPPORT();
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_Pipeline-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_Pipeline::create(Renderer_Vk* rdr, const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache)
+{
+	//auto* rdr			= Renderer_Vk::instance();
+	auto* vkDev			= rdr->vkDevice();
+	auto* vkAllocCbs	= rdr->allocCallbacks();
+
+	auto cacheHnd = vkPipelineCache ? vkPipelineCache->hnd() : VK_NULL_HANDLE;
+
+	auto ret = vkCreateGraphicsPipelines(vkDev, cacheHnd, infoCount, pCreateInfo, vkAllocCbs, hndForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_Pipeline::destroy()
+{
+	auto* rdr			= Renderer_Vk::instance();
+	auto* vkDev			= rdr->vkDevice();
+	auto* vkAllocCbs	= rdr->allocCallbacks();
+
+	vkDestroyPipeline(vkDev, hnd(), vkAllocCbs);
 }
 
 #endif

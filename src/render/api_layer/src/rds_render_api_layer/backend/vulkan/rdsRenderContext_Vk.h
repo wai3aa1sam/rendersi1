@@ -226,8 +226,6 @@ protected:
 	void createTestTextureImageView();
 	void createTestTextureSampler();
 
-	void reflectShader(StrView spvFilename);
-
 protected:
 	Renderer_Vk*	_renderer		= nullptr;
 
@@ -248,12 +246,12 @@ protected:
 	Vk_ImageView	_vkDepthImageView;
 	VkFormat		_vkDepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;*/
 	
-	VkPtr<Vk_Pipeline>				_testVkPipeline;
-	Vk_RenderPass					_testVkRenderPass;
-	VkPtr<Vk_PipelineLayout>		_testVkPipelineLayout;
-	Vk_Buffer						_testVkVtxBuffer;
-	Vk_Buffer						_testVkVtxBuffer2;
-	Vk_Buffer						_testVkIdxBuffer;
+	Vk_Pipeline			_testVkPipeline;
+	Vk_RenderPass		_testVkRenderPass;
+	Vk_PipelineLayout	_testVkPipelineLayout;
+	Vk_Buffer			_testVkVtxBuffer;
+	Vk_Buffer			_testVkVtxBuffer2;
+	Vk_Buffer			_testVkIdxBuffer;
 
 	Vk_DescriptorSetLayout									_testVkDescriptorSetLayout;
 	Vector<Vk_Buffer,			s_kFrameInFlightCount>		_testVkUniformBuffers;

@@ -15,6 +15,7 @@
 #include "rdsFunction_Common.h"
 #include "rdsTypeTraits_Common.h"
 #include "rdsClass_Common.h"
+#include "rdsUtil_Common.h"
 #include "rdsFmt_Common.h"
 
 #include "rds_core_base/memory/rds_memory.h"
