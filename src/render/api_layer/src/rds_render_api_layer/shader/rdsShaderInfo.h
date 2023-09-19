@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
+#include "rds_render_api_layer/vertex/rdsVertex.h"
 
 namespace rds
 {
@@ -37,6 +38,7 @@ struct ShaderPropInfo
 {
 	ShaderPropType	type	= ShaderPropType::None;;
 	String			name;
+	String			displayName;
 	String			defaultValue;
 
 public:
@@ -44,8 +46,9 @@ public:
 	void onJsonIo(JSON_SE& se)
 	{
 		RDS_NAMED_FIXED_IO(se, type);
-		RDS_NAMED_FIXED_IO(se, offset);
 		RDS_NAMED_FIXED_IO(se, name);
+		RDS_NAMED_FIXED_IO(se, displayName);		
+		RDS_NAMED_FIXED_IO(se, defaultValue);
 	}
 };
 
@@ -235,14 +238,26 @@ struct ShaderPassInfo
 public:
 	// RenderState
 
+	String name;
+
 	String queue;
 
 	String vsFunc;
 	String psFunc;
+
+public:
+	template<class JSON_SE>
+	void onJsonIo(JSON_SE& se)
+	{
+		RDS_NAMED_FIXED_IO(se, name);
+		RDS_NAMED_FIXED_IO(se, queue);
+		RDS_NAMED_FIXED_IO(se, vsFunc);
+		RDS_NAMED_FIXED_IO(se, psFunc);
+	}
 };
 
 
-class ShaderInfo : public NonCopyable
+struct ShaderInfo : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
@@ -255,18 +270,25 @@ public:
 	static constexpr SizeType s_kLocalPassSize		= 2;
 	static constexpr SizeType s_kLocalPropSize	= 12;
 
+public:
+	Vector<Prop, s_kLocalPropSize> props;
+	Vector<Pass, s_kLocalPassSize> passes;
 
+public:
+	void clear()
+	{
+		props.clear();
+		passes.clear();
+	}
+
+public:
 	template<class JSON_SE>
 	void onJsonIo(JSON_SE& se)
 	{
-		RDS_NAMED_FIXED_IO(se, _props);
-		RDS_NAMED_FIXED_IO(se, _passes);
-		RDS_NAMED_FIXED_IO(se, _stages);
+		RDS_NAMED_FIXED_IO(se, props);
+		RDS_NAMED_FIXED_IO(se, passes);
+		//RDS_NAMED_FIXED_IO(se, stages);
 	}
-
-protected:
-	Vector<Prop, s_kLocalPropSize> _props;
-	Vector<Pass, s_kLocalPassSize> _passes;
 };
 
 

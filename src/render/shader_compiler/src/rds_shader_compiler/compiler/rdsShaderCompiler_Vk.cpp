@@ -33,29 +33,35 @@ struct SpirvUtil
 #if 1
 
 void 
-ShaderCompiler_Vk::compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt)
+ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 {
-	_opt = &opt;
+	if (desc.entry.is_empty())
+		return;
 
-	String srcPath = Path::realpath(filename);
+	_opt = desc.opt;
+
+	String			srcPath = desc.filename;		// shoulde be realpath
+	ShaderStageFlag stage	= desc.stage; 
+	TempString		dstpath;
+	fmtTo(dstpath, "{}/{}.bin", desc.outpath, Util::toShaderStageProfile(stage));
+
 	TempString args;
-	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1", SpirvUtil::toStr(stage), entry, srcPath, outpath);
+	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
 	//fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 100 -fresource-set-binding b1 1 2");
 	fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 0");
 	fmtTo(args, " -fresource-set-binding b1 1 2");
-	
+
 	{
 		CmdLine cmdl;
 		cmdl.execute(args);
 	}
 
 	Vector<u8> spvBin;
-	File::readFile(outpath, spvBin);
+	File::readFile(dstpath, spvBin);
 
-	reflect(outpath, spvBin, stage);
+	reflect(dstpath, spvBin, stage);
 
-	String realOutpath = Path::realpath(outpath);
-	_log("outputed to {}", realOutpath);
+	_log("outputed to {}", dstpath);
 
 	_opt = nullptr;
 }
@@ -81,10 +87,9 @@ ShaderCompiler_Vk::reflect(StrView outpath, ByteSpan spvBytes, ShaderStageFlag s
 	//_reflect_storageBufs	(outInfo, compiler, res);
 	//_reflect_storageImages	(outInfo, compiler, res);
 
-	//String outDir = Path::dirname(outpath);
-	String outInfoPath;
-	fmtTo(outInfoPath, "{}.json", outpath);
-	JsonUtil::writeFileIfChanged(outInfoPath, outInfo, true);
+	TempString dstpath;
+	fmtTo(dstpath, "{}.json", outpath);
+	JsonUtil::writeFileIfChanged(dstpath, outInfo, true);
 }
 
 void 

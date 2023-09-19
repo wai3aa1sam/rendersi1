@@ -316,6 +316,19 @@ Vk_RenderApiUtil::toVkClearValue(float depth, u32 stencil)
 	return o;
 }
 
+StrView 
+Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag flag)
+{
+	using SRC = rds::ShaderStageFlag;
+	switch (flag)
+	{
+		case SRC::Vertex:		{ return "vs_1.1"; } break;
+		case SRC::Pxiel:		{ return "ps_1.1"; } break;
+		case SRC::Compute:		{ return "cs_1.1"; } break;
+		default: { RDS_THROW("{}", RDS_SRCLOC); } break;
+	}
+}
+
 u32
 Vk_RenderApiUtil::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties)
 {

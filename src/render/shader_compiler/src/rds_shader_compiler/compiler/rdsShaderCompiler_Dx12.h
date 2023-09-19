@@ -30,9 +30,9 @@ public:
 	using Dxc_Compiler = IDxcCompiler3;
 	template<class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-public:
+protected:
 	/* .hlsl -> .spv */ 
-	void compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt);
+	virtual void onCompile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt);
 
 protected:
 	// reflect .spv by spirv_cross

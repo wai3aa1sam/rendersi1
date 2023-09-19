@@ -75,7 +75,7 @@ struct Dx12Util
 #if 1
 
 void 
-ShaderCompiler_Dx12::compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt)
+ShaderCompiler_Dx12::onCompile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt)
 {
 	auto srcPath = Path::realpath(filename);
 

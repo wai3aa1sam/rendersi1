@@ -8,6 +8,8 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
+#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+
 namespace rds
 {
 
@@ -24,9 +26,13 @@ public:
 	using ShaderResources	= ::spirv_cross::ShaderResources;
 	using SpirvCompiler		= ::spirv_cross::CompilerHLSL;
 
+	using Util = Vk_RenderApiUtil;
+
 public:
 	/* .hlsl -> .spv */ 
-	void compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt);
+
+protected:
+	virtual void onCompile(const CompileDesc& desc);
 
 protected:
 	// reflect .spv by spirv_cross

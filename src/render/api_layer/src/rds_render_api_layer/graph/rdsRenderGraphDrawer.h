@@ -102,6 +102,7 @@ protected:
 	SizeType _indentCount = 0;
 };
 
+inline
 const RdgDrawer::StyleSheet& 
 RdgDrawer::style() const
 {
@@ -109,6 +110,7 @@ RdgDrawer::style() const
 	return s_style;
 }
 
+inline
 void 
 RdgDrawer::indent()
 {
@@ -118,6 +120,7 @@ RdgDrawer::indent()
 	}
 }
 
+inline
 void 
 RdgDrawer::newLine(SizeType n)
 {

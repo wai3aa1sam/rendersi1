@@ -121,6 +121,7 @@ template<class T> using StrView_T = ::nmsp::StrView_T<T>;
 using StrView  = ::nmsp::StrViewA_T;
 using StrViewW = ::nmsp::StrViewW_T;
 using ::nmsp::toStrView;
+using ::nmsp::toStrViewW;
 
 using ::nmsp::makeStrView;
 using ::nmsp::makeByteSpan;

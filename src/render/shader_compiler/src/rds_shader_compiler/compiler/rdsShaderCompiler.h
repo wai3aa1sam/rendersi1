@@ -25,13 +25,31 @@ public:
 	bool isToSpirv	: 1;
 };
 
+struct ShaderCompileDesc
+{
+	using Option = ShaderCompileOption;
+
+	StrView			outpath;
+	StrView			filename;
+	ShaderStageFlag stage;
+	StrView			entry;
+	const Option*	opt = nullptr;
+};
+
 class ShaderCompiler : public NonCopyable
 {
 public:
-	using Option = ShaderCompileOption;
+	using CompileDesc	= ShaderCompileDesc;
+	using Option		= CompileDesc::Option;
 
 public:
 	virtual ~ShaderCompiler() = default;
+
+	void compile(const CompileDesc& desc);
+	void compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt);
+	
+protected:
+	virtual void onCompile(const CompileDesc& desc) = 0;
 
 protected:
 	template<class... ARGS> void log(const char* fmt, ARGS&&... args);

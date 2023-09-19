@@ -4,6 +4,7 @@
 #include "rds_render_api_layer/common/rdsRenderApi_Common.h"
 #include "rdsRenderApi_Include_Vk.h"
 #include "rdsVkPtr.h"
+#include "rds_render_api_layer/shader/rdsShaderInfo.h"
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
 
@@ -157,6 +158,8 @@ public:
 
 	static VkClearValue toVkClearValue(const Color4f& color);
 	static VkClearValue toVkClearValue(float depth, u32 stencil);
+
+	static StrView toShaderStageProfile(ShaderStageFlag flag);
 
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);

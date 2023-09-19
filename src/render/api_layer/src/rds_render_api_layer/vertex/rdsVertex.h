@@ -120,6 +120,7 @@ VertexTypeUtil::make(RenderDataType posType
 	\
 	E(SV_Position,) \
 	E(SV_VertexID,) \
+	E(SV_Target,) \
 	\
 	E(_kCount,) \
 //---
@@ -207,6 +208,13 @@ public:
 	E(SV_Position,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Position, 0)) \
 	E(SV_VertexID,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_VertexID, 0)) \
 	\
+	E(SV_Target0,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 0)) \
+	E(SV_Target1,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 1)) \
+	E(SV_Target2,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 2)) \
+	E(SV_Target3,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 3)) \
+	E(SV_Target4,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 4)) \
+	E(SV_Target5,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 5)) \
+	\
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(VertexSemantic, u16);
@@ -216,11 +224,13 @@ inline
 VertexSemantic 
 VertexSemanticUtil::parse(StrView v)
 {
-	if (v == "COLOR")		{ return VertexSemantic::COLOR0; }
-	if (v == "TEXTURE")		{ return VertexSemantic::TEXCOORD0; }
-	if (v == "NORMAL")		{ return VertexSemantic::NORMAL0; }
-	if (v == "TANGENT")		{ return VertexSemantic::TANGENT0; }
-	if (v == "BINORMAL")	{ return VertexSemantic::BINORMAL0; }
+	
+	if (StrUtil::ignoreCaseCompare(v, "COLOR")		== 0)	{ return VertexSemantic::COLOR0; }
+	if (StrUtil::ignoreCaseCompare(v, "TEXTURE")	== 0)	{ return VertexSemantic::TEXCOORD0; }
+	if (StrUtil::ignoreCaseCompare(v, "NORMAL")		== 0)	{ return VertexSemantic::NORMAL0; }
+	if (StrUtil::ignoreCaseCompare(v, "TANGENT")	== 0)	{ return VertexSemantic::TANGENT0; }
+	if (StrUtil::ignoreCaseCompare(v, "BINORMAL")	== 0)	{ return VertexSemantic::BINORMAL0; }
+	if (StrUtil::ignoreCaseCompare(v, "SV_Target")	== 0)	{ return VertexSemantic::SV_Target0; }
 
 	VertexSemantic o;
 	throwIf(!enumTryParse(o, v), "VertexSemantic parse failed");

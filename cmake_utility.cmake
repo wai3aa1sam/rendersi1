@@ -36,7 +36,7 @@ function(my_set_target_unity_build_mode target_name)
   set_target_properties(${target_name} PROPERTIES
                           UNITY_BUILD ON
                           UNITY_BUILD_MODE BATCH
-                          UNITY_BUILD_BATCH_SIZE 16
+                          UNITY_BUILD_BATCH_SIZE 8
                           )
 endfunction()
 
@@ -57,7 +57,7 @@ function(my_add_library target_name src_path)
   target_precompile_headers(${target_name} PUBLIC src/${target_name}-pch.h)
   target_include_directories(${target_name} PUBLIC src)
   my_set_target_warning_level(${target_name})
-  my_set_target_unity_build_mode(${target_name})
+  #my_set_target_unity_build_mode(${target_name})
   my_set_multi_core_compile(${target_name})
 endfunction()
 
@@ -71,7 +71,7 @@ function(my_add_executable target_name src_path)
   target_precompile_headers(${target_name} PUBLIC src/${target_name}-pch.h)
   target_include_directories(${target_name} PUBLIC src)
   my_set_target_warning_level(${target_name})	
-  my_set_target_unity_build_mode(${target_name})
+  #my_set_target_unity_build_mode(${target_name})
   my_set_multi_core_compile(${target_name})
 
   if(${${project_namespace_marco}_ENABLE_SANITIZER})
