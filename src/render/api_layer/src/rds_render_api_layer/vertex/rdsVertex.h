@@ -154,6 +154,8 @@ public:
 
 	static constexpr SemanticT	getSemantic		(VertexSemantic x) { return TBM<VertexSemantic>::getElementValue<1>(x); }
 	static constexpr u8			getSemanticIdx	(VertexSemantic x) { return TBM<VertexSemantic>::getElementValue<0>(x); }
+
+	static VertexSemantic parse(StrView v);
 };
 
 #define VertexSemantic_ENUM_LIST(E) \
@@ -209,6 +211,21 @@ public:
 //---
 RDS_ENUM_CLASS(VertexSemantic, u16);
 RDS_ENUM_ALL_OPERATOR(VertexSemantic);
+
+inline
+VertexSemantic 
+VertexSemanticUtil::parse(StrView v)
+{
+	if (v == "COLOR")		{ return VertexSemantic::COLOR0; }
+	if (v == "TEXTURE")		{ return VertexSemantic::TEXCOORD0; }
+	if (v == "NORMAL")		{ return VertexSemantic::NORMAL0; }
+	if (v == "TANGENT")		{ return VertexSemantic::TANGENT0; }
+	if (v == "BINORMAL")	{ return VertexSemantic::BINORMAL0; }
+
+	VertexSemantic o;
+	throwIf(!enumTryParse(o, v), "VertexSemantic parse failed");
+	return o;
+}
 
 #endif
 

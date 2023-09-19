@@ -20,9 +20,21 @@ my_set_opt(${project_namespace_marco}_ENABLE_SANITIZER          0)
 
 find_package(fmt                    CONFIG REQUIRED)
 find_package(benchmark              CONFIG REQUIRED)
+
+# --- vulkan
 find_package(Vulkan)
 find_package(VulkanMemoryAllocator  CONFIG REQUIRED)
+
+# --- dx12
+find_package(directx-headers        CONFIG REQUIRED)
+
+# --- shader
 find_package(spirv_cross_core       CONFIG REQUIRED)
+find_package(spirv_cross_glsl       CONFIG REQUIRED)
+find_package(spirv_cross_hlsl       CONFIG REQUIRED)
+find_package(spirv_cross_msl        CONFIG REQUIRED)
+find_package(unofficial-shaderc     CONFIG REQUIRED)
+find_package(directx-dxc            CONFIG REQUIRED)
 
 # --- git_submodule ---
 my_add_git_submodule(external/nmsplib)
@@ -35,7 +47,7 @@ add_subdirectory(src/core)
 #-- render --
 add_subdirectory(src/render)
 add_subdirectory(src/render/api_layer)
-#add_subdirectory(src/render/shader_compiler)
+add_subdirectory(src/render/shader_compiler)
 
 #-- engine
 add_subdirectory(src/engine)

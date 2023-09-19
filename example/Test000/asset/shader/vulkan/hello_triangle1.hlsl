@@ -18,8 +18,6 @@ PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
     
-    //o.positionOS    = positions[i.vertexId];
-    //o.color         = colors[i.vertexId];
     o.positionHCS = i.positionOS;
     o.color       = i.color;
     o.uv          = i.uv;
@@ -29,8 +27,6 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    //float2 pos2f = i.positionOS;
-
     float4 color = i.color;
     return color;
 }

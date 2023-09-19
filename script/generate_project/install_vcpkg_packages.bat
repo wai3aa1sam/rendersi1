@@ -30,6 +30,9 @@ vcpkg install stb:x64-windows 				        --recurse
 vcpkg install nlohmann-json:x64-windows 	        --recurse
 vcpkg install vulkan-memory-allocator:x64-windows 	--recurse
 vcpkg install spirv-cross:x64-windows 	            --recurse
+vcpkg install shaderc:x64-windows 	                --recurse
+vcpkg install directx-dxc:x64-windows 	            --recurse
+vcpkg install directx-headers:x64-windows 	        --recurse
 
 POPD
 
