@@ -212,6 +212,9 @@ Vk_CommandBuffer::setScissor(const math::Rect2f& rect)
 void 
 Vk_CommandBuffer::beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents)
 {
+	throwIf(_vkRdPass, "render pass already begin");
+	_vkRdPass = vkRenderPass;
+
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass			= vkRenderPass->hnd();
@@ -229,6 +232,7 @@ void
 Vk_CommandBuffer::endRenderPass()
 {
 	vkCmdEndRenderPass(hnd());
+	_vkRdPass = nullptr;
 }
 
 void 

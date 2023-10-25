@@ -3,6 +3,7 @@
 
 #include "rdsRenderer_Vk.h"
 #include "rdsVk_Allocator.h"
+#include "buffer/rdsRenderGpuBuffer_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -12,6 +13,12 @@ namespace rds
 #pragma mark --- rdsVk_RenderApiUtil-Impl ---
 #endif // 0
 #if 1
+
+bool 
+Vk_RenderApiUtil::isSuccess(Result ret)
+{
+	return !_checkError(ret);
+}
 
 void
 Vk_RenderApiUtil::throwIfError(Result ret)
@@ -316,6 +323,38 @@ Vk_RenderApiUtil::toVkClearValue(float depth, u32 stencil)
 	return o;
 }
 
+VkShaderStageFlagBits	
+Vk_RenderApiUtil::toVkShaderStageBit(ShaderStageFlag flag)
+{
+	using SRC = ShaderStageFlag;
+
+	switch (flag)
+	{
+		case SRC::Vertex:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT; }	break;
+		case SRC::Pixel:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT; } break;
+		case SRC::Compute:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT; }	break;
+		default: { throwError("undefined shader stage flag"); } break;
+	}
+
+	return VkShaderStageFlagBits::VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+}
+
+
+VkShaderStageFlagBits	
+Vk_RenderApiUtil::toVkShaderStageBits(ShaderStageFlag flag)
+{
+	using SRC = ShaderStageFlag;
+
+	EnumInt<VkShaderStageFlagBits> o = 0;
+
+	if (BitUtil::has(flag, SRC::Vertex))	{ o |= VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT; }
+	if (BitUtil::has(flag, SRC::Pixel))		{ o |= VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT; }
+	if (BitUtil::has(flag, SRC::Compute))	{ o |= VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT; }
+
+	return sCast<VkShaderStageFlagBits>(o);
+}
+
+
 StrView 
 Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag flag)
 {
@@ -323,9 +362,25 @@ Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag flag)
 	switch (flag)
 	{
 		case SRC::Vertex:		{ return "vs_1.1"; } break;
-		case SRC::Pxiel:		{ return "ps_1.1"; } break;
+		case SRC::Pixel:		{ return "ps_1.1"; } break;
 		case SRC::Compute:		{ return "cs_1.1"; } break;
-		default: { RDS_THROW("{}", RDS_SRCLOC); } break;
+		default: { RDS_THROW("unsupport type {}, {}", flag, RDS_SRCLOC); } break;
+	}
+}
+
+
+VkDescriptorType			
+Vk_RenderApiUtil::toVkDescriptorType(ShaderParamType paramType)
+{
+	using SRC = rds::ShaderParamType;
+	switch (paramType)
+	{
+		case SRC::ConstantBuffer:	{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; } break;
+		case SRC::Texture:			{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; } break;
+		//case SRC::Sampler:			{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; } break;
+		case SRC::StorageBuffer:	{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; } break;
+		case SRC::StorageImage:		{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; } break;
+		default: { RDS_THROW("unsupport type {}, {}", paramType, RDS_SRCLOC); } break;
 	}
 }
 
@@ -349,6 +404,11 @@ Vk_RenderApiUtil::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryProper
 	return (u32)(-1);
 }
 
+
+Vk_Buffer*		Vk_RenderApiUtil::toVkBuf		(		RenderGpuBuffer* rdGpuBuf) { return sCast<RenderGpuBuffer_Vk*>(rdGpuBuf)->vkBuf(); }
+Vk_Buffer*		Vk_RenderApiUtil::toVkBuf		(const	RenderGpuBuffer* rdGpuBuf) { return constCast(sCast<const RenderGpuBuffer_Vk*>(rdGpuBuf))->vkBuf(); }
+Vk_Buffer_T*	Vk_RenderApiUtil::toVkBufHnd	(		RenderGpuBuffer* rdGpuBuf) { return toVkBuf(rdGpuBuf)->hnd(); }
+Vk_Buffer_T*	Vk_RenderApiUtil::toVkBufHnd	(const	RenderGpuBuffer* rdGpuBuf) { return toVkBuf(rdGpuBuf)->hnd(); }
 
 void 
 Vk_RenderApiUtil::createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out)
@@ -988,6 +1048,7 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	// TODO: check extension exist
 	//o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME); // deprecated
 	o.emplace_back(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+	o.emplace_back(VK_GOOGLE_HLSL_FUNCTIONALITY_1_EXTENSION_NAME);
 	if (cDesc.isPresent)
 	{
 		o.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);

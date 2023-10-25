@@ -225,12 +225,17 @@ VertexSemantic
 VertexSemanticUtil::parse(StrView v)
 {
 	
-	if (StrUtil::ignoreCaseCompare(v, "COLOR")		== 0)	{ return VertexSemantic::COLOR0; }
-	if (StrUtil::ignoreCaseCompare(v, "TEXTURE")	== 0)	{ return VertexSemantic::TEXCOORD0; }
-	if (StrUtil::ignoreCaseCompare(v, "NORMAL")		== 0)	{ return VertexSemantic::NORMAL0; }
-	if (StrUtil::ignoreCaseCompare(v, "TANGENT")	== 0)	{ return VertexSemantic::TANGENT0; }
-	if (StrUtil::ignoreCaseCompare(v, "BINORMAL")	== 0)	{ return VertexSemantic::BINORMAL0; }
-	if (StrUtil::ignoreCaseCompare(v, "SV_Target")	== 0)	{ return VertexSemantic::SV_Target0; }
+	if (StrUtil::ignoreCaseCompare(v, "POSITION")		== 0)	{ return VertexSemantic::POSITION; }
+	if (StrUtil::ignoreCaseCompare(v, "COLOR")			== 0)	{ return VertexSemantic::COLOR0; }
+	if (StrUtil::ignoreCaseCompare(v, "TEXTURE")		== 0)	{ return VertexSemantic::TEXCOORD0; }
+	if (StrUtil::ignoreCaseCompare(v, "NORMAL")			== 0)	{ return VertexSemantic::NORMAL0; }
+	if (StrUtil::ignoreCaseCompare(v, "TANGENT")		== 0)	{ return VertexSemantic::TANGENT0; }
+	if (StrUtil::ignoreCaseCompare(v, "BINORMAL")		== 0)	{ return VertexSemantic::BINORMAL0; }
+
+	if (StrUtil::ignoreCaseCompare(v, "SV_Position")	== 0)	{ return VertexSemantic::SV_Position; }
+	if (StrUtil::ignoreCaseCompare(v, "SV_Target")		== 0)	{ return VertexSemantic::SV_Target0; }
+	if (StrUtil::ignoreCaseCompare(v, "SV_VertexID")	== 0)	{ return VertexSemantic::SV_VertexID; }
+
 
 	VertexSemantic o;
 	throwIf(!enumTryParse(o, v), "VertexSemantic parse failed");
@@ -262,14 +267,26 @@ class VertexLayout
 	template<class T, size_t N, class BASE>	friend struct VertexT_Binormal;
 
 public:
-	using SizeType = RenderApiLayerTraits::SizeType;
-
+	using SizeType	= RenderApiLayerTraits::SizeType;
+	using Element	= VertexLayoutElement;
 public:
 	Span<const VertexLayoutElement>	elements()				const { return _elements.span(); }
 	const VertexLayoutElement&		elements(SizeType i)	const { return _elements[i]; }
 
 	VertexType						vertexType()	const { return _vertexType; };
 	SizeType						stride()		const { return _stride; };
+
+	const Element* find(VertexSemantic semantic) const
+	{
+		for (const auto& e : elements())
+		{
+			if (e.semantic == semantic)
+			{
+				return &e;
+			}
+		}
+		return nullptr;
+	}
 
 protected:
 	template<class VERTEX, class ELEMENT>

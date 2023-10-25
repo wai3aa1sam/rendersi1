@@ -47,6 +47,8 @@ public:
 	bool isPrimiary() const;
 	bool isSecondary() const;
 
+	Vk_RenderPass* getRenderPass();
+
 public:
 
 
@@ -58,6 +60,7 @@ public:
 protected:
 	Vk_CommandPool*			_vkCommandPool	= nullptr;
 	Vk_Queue*				_vkQueue		= nullptr;
+	Vk_RenderPass*			_vkRdPass		= nullptr;
 
 	VkCommandBufferLevel	_level;
 };
@@ -65,6 +68,7 @@ protected:
 inline bool Vk_CommandBuffer::isPrimiary()	const { return _level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
 inline bool Vk_CommandBuffer::isSecondary()	const { return _level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
 
+inline Vk_RenderPass* Vk_CommandBuffer::getRenderPass() { return _vkRdPass; }
 
 #endif
 

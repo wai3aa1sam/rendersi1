@@ -5,12 +5,16 @@
 
 namespace rds
 {
+using ShaderParamId = int;
+
+class Texture2D;
 
 #define ShaderStageFlag_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(Vertex,	= BitUtil::bit(0)) \
-	E(Pxiel,	= BitUtil::bit(1)) \
+	E(Pixel,	= BitUtil::bit(1)) \
 	E(Compute,	= BitUtil::bit(2)) \
+	E(All,		= BitUtil::bit(3)) \
 	E(_kCount,	= 3) \
 //---
 RDS_ENUM_CLASS(ShaderStageFlag, u8);
@@ -29,6 +33,62 @@ RDS_ENUM_ALL_OPERATOR(ShaderStageFlag);
 //---
 RDS_ENUM_CLASS(ShaderPropType, u8);
 
+
+struct ShaderPropTypeUtil
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	ShaderPropTypeUtil() = delete;
+
+public:
+	using Type = ShaderPropType;
+
+public:
+	template<class T> static constexpr ShaderPropType get();
+};
+
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<int>()		{ return Type::Int; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<float>()		{ return Type::Float; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Vec2f>()		{ return Type::Vec2f; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Vec3f>()		{ return Type::Vec3f; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Vec4f>()		{ return Type::Vec4f; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Tuple2f>()	{ return Type::Vec2f; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Tuple3f>()	{ return Type::Vec3f; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Tuple4f>()	{ return Type::Vec4f; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Color4f>()	{ return Type::Color4f; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Texture2D>()	{ return Type::Texture2D; }
+
+#define ShaderParamType_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(ConstantBuffer,) \
+	E(Texture,) \
+	E(Sampler,) \
+	E(StorageBuffer,) \
+	E(StorageImage,) \
+	E(_kCount,) \
+//---
+RDS_ENUM_CLASS(ShaderParamType, u8);
+
+struct ShaderPropValueConstPtr
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	ShaderPropValueConstPtr() = default;
+
+	template<class T>
+	ShaderPropValueConstPtr(const T& v)
+	{
+		type = ShaderPropTypeUtil::get<T>();
+		data = &v;
+		size = sizeof(T);
+	}
+
+public:
+	ShaderPropType	type = ShaderPropType::None;
+	const void*		data = nullptr;
+	u32				size = 0;
+};
+
 #if 0
 #pragma mark --- rdsShaderInfo-Decl ---
 #endif // 0
@@ -36,7 +96,7 @@ RDS_ENUM_CLASS(ShaderPropType, u8);
 
 struct ShaderPropInfo
 {
-	ShaderPropType	type	= ShaderPropType::None;;
+	ShaderPropType	type	= ShaderPropType::None;
 	String			name;
 	String			displayName;
 	String			defaultValue;
@@ -98,6 +158,20 @@ public:
 		JsonUtil::readFile(filename, *this);
 	}
 
+	SizeType bindingCount() const
+	{
+		SizeType out = constBufs.size() + textures.size() + samplers.size() 
+			+ storageBufs.size() + storageImages.size();
+		return out;
+	}
+
+	SizeType bindingCountCombinedImage() const
+	{
+		SizeType out = textures.size();
+		return out;
+	}
+
+
 public:
 	// Info Type
 	#if 1
@@ -136,10 +210,28 @@ public:
 
 	struct ConstBuffer
 	{
+	public:
+		static constexpr ShaderParamType paramType() { return ShaderParamType::ConstantBuffer; }
+
+	public:
 		String				name;
 		u16					bindPoint	= 0;
+		u16					bindCount	= 0;
 		u32					size		= 0;
 		Vector<Variable, 8> variables;
+
+	public:
+		const Variable* findVariable(StrView name_) const
+		{
+			for (const auto& var : variables)
+			{
+				if (var.name == name_)
+				{
+					return &var;
+				}
+			}
+			return nullptr;
+		}
 
 	public:
 		template<class JSON_SE>
@@ -147,6 +239,7 @@ public:
 		{
 			RDS_NAMED_FIXED_IO(se, name);
 			RDS_NAMED_FIXED_IO(se, bindPoint);
+			RDS_NAMED_FIXED_IO(se, bindCount);
 			RDS_NAMED_FIXED_IO(se, size);
 			RDS_NAMED_FIXED_IO(se, variables);
 		}
@@ -154,9 +247,13 @@ public:
 
 	struct Texture
 	{
+	public:
+		static constexpr ShaderParamType paramType() { return ShaderParamType::Texture; }
+
+	public:
 		String	name;
 		u16		bindPoint = 0;
-		u16		arraySize = 0;
+		u16		bindCount = 0;
 
 	public:
 		template<class JSON_SE>
@@ -164,14 +261,18 @@ public:
 		{
 			RDS_NAMED_FIXED_IO(se, name);
 			RDS_NAMED_FIXED_IO(se, bindPoint);
+			RDS_NAMED_FIXED_IO(se, bindCount);
 		}
 	};
 
 	struct Sampler
 	{
+	public:
+		static constexpr ShaderParamType paramType() { return ShaderParamType::Sampler; }
+
 		String	name;
 		u16		bindPoint = 0;
-		u16		arraySize = 0;
+		u16		bindCount = 0;
 
 	public:
 		template<class JSON_SE>
@@ -179,26 +280,47 @@ public:
 		{
 			RDS_NAMED_FIXED_IO(se, name);
 			RDS_NAMED_FIXED_IO(se, bindPoint);
+			RDS_NAMED_FIXED_IO(se, bindCount);
 		}
 	};
 
 	struct StorageBuffer
 	{
 	public:
+		static constexpr ShaderParamType paramType() { return ShaderParamType::StorageBuffer; }
+
+	public:
+		String	name;
+		u16		bindPoint = 0;
+		u16		bindCount = 0;
+
+	public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-			
+			RDS_NAMED_FIXED_IO(se, name);
+			RDS_NAMED_FIXED_IO(se, bindPoint);
+			RDS_NAMED_FIXED_IO(se, bindCount);
 		}
 	};
 
 	struct StorageImage
 	{
 	public:
+		static constexpr ShaderParamType paramType() { return ShaderParamType::StorageImage; }
+
+	public:
+		String	name;
+		u16		bindPoint = 0;
+		u16		bindCount = 0;
+
+	public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-
+			RDS_NAMED_FIXED_IO(se, name);
+			RDS_NAMED_FIXED_IO(se, bindPoint);
+			RDS_NAMED_FIXED_IO(se, bindCount);
 		}
 	};
 

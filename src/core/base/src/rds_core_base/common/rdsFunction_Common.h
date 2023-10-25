@@ -27,6 +27,9 @@ using ::nmsp::swap;
 using ::nmsp::_alignTo;
 using ::nmsp::memberOffset;
 
+using ::nmsp::arraySize;
+using ::nmsp::arraySizeT;
+
 
 #if 0
 #pragma mark --- rds_os_alloc-Impl ---

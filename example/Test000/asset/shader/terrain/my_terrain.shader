@@ -46,7 +46,7 @@ struct PixelIn {
 	float3 normal 	: NORMAL;
 };
 
-cbuffer rds_params : register(b1)
+cbuffer rds_params
 {
 	float3		sge_camera_pos;
 	float3		sge_light_pos;
@@ -60,6 +60,21 @@ cbuffer rds_params : register(b1)
 	float4x4	sge_matrix_view;
 	float4x4	sge_matrix_proj;
 	float4x4	sge_matrix_mvp;
+}
+
+cbuffer rds_params2
+{
+	float test0[10];
+}
+
+cbuffer rds_params3
+{
+	float test2[10];
+}
+
+cbuffer rds_params4
+{
+	float test3[10];
 }
 
 float2	_patch_id;
@@ -102,6 +117,10 @@ PixelIn vs_main(VertexIn i) {
 	//o.uv.x += rdsTestStruct.rds_struct0 + rdsTestStruct.rds_structArray[2];
 	o.uv.x += sge_test_array[2];
 	o.uv.x += mainTex.SampleLevel(mainTex_Sampler, o.uv, 0).r * 200.0f;;
+
+	o.uv.x += test0[2];
+	o.uv.x += test2[2];
+	//o.uv.x += test3[2];
 
 	o.uv     = i.uv;
 	o.color	 = i.color;
@@ -174,6 +193,10 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	s.ambient    = float3(0.2, 0.2, 0.2);
 	s.diffuse	 = float3(1, 1, 1);
 	s.shininess	 = 1;
+
+	s.shininess += test0[2];
+	s.shininess += test2[2];
+	//s.shininess += test3[2];
 
 	float4 texCol = mainTex.Sample(mainTex_Sampler, i.uv);
 	float3 color = lighting_blinn_phong(s) * texCol.rgb;

@@ -45,13 +45,15 @@ public:
 		  Vk_SwapchainAvailableInfo&	swapchainAvailableInfo();
 	QueueFamilyIndices&					queueFamilyIndices();
 
-	Vk_RenderFrame* renderFrame();
-
 public:
 
 protected:
-	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc) override;
-	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc) override;
+	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc)	override;
+	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc)	override;
+	virtual SPtr<Texture2D>				onCreateTexture2D			(const Texture2D_CreateDesc&		cDesc)	override;
+	virtual SPtr<Shader>				onCreateShader				(const Shader_CreateDesc&			cDesc)	override;
+	virtual SPtr<Material>				onCreateMaterial			()											override;
+	virtual SPtr<Material>				onCreateMaterial			(Shader*							shader) override;
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -81,9 +83,6 @@ private:
 	VkPtr<Vk_Device>				_vkDevice;
 	//VkPtr<Vk_Queue>				_vkGraphicsQueue;
 	//VkPtr<Vk_Queue>				_vkPresentQueue;
-
-	Vector<UPtr<Vk_RenderFrame>, s_kFrameInFlightCount> _renderFrames;
-
 };
 
 #endif
@@ -107,9 +106,6 @@ inline const Vk_SwapchainAvailableInfo& Renderer_Vk::swapchainAvailableInfo()	co
 inline Vk_SwapchainAvailableInfo&		Renderer_Vk::swapchainAvailableInfo()		  { return _swapchainAvaliableInfo; }
 
 inline QueueFamilyIndices&		Renderer_Vk::queueFamilyIndices()	{ return _queueFamilyIndices; }
-
-inline Vk_RenderFrame* Renderer_Vk::renderFrame() { return _renderFrames[0]; }
-
 
 #endif
 

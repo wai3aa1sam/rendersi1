@@ -15,12 +15,14 @@ class RenderContext_Vk;
 
 #if 1
 
-template<size_t N>	using SwapChainImages_Vk_N			= Vector<Vk_Image, N>;
-using SwapChainImages_Vk			= Vector<Vk_Image,			RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
-template<size_t N>	using SwapChainImageViews_Vk_N		= Vector<Vk_ImageView, N>;
-using SwapChainImageViews_Vk		= Vector<Vk_ImageView,		RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+template<size_t N>	using SwapChainImages_Vk_N	= Vector<Vk_Image, N>;
+					using SwapChainImages_Vk	= Vector<Vk_Image, RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+
+template<size_t N>	using SwapChainImageViews_Vk_N	= Vector<Vk_ImageView, N>;
+					using SwapChainImageViews_Vk	= Vector<Vk_ImageView, RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+
 template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<Vk_Framebuffer, N>;
-using SwapChainFramebuffers_Vk		= Vector<Vk_Framebuffer,	RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
+					using SwapChainFramebuffers_Vk		= Vector<Vk_Framebuffer, RenderApiLayerTraits::s_kSwapchainImageLocalSize>;
 
 #endif // 1
 

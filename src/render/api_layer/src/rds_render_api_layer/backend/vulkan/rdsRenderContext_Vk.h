@@ -144,6 +144,8 @@ struct TestUBO
 #endif // 0
 #if 1
 
+extern Vk_DescriptorSetLayout_T* g_testVkDescriptorSetLayout;
+
 class RenderContext_Vk : public RenderContext
 {
 public:
@@ -166,6 +168,9 @@ public:
 	Vk_Queue* vkPresentQueue();
 
 	Vk_CommandBuffer_T* vkCommandBuffer();
+	Vk_CommandBuffer* vkGraphicsCmdBuf();
+
+
 	Vk_RenderFrame& renderFrame();
 
 	virtual void waitIdle() override;
@@ -198,6 +203,7 @@ protected:
 	void		_onUploadBuffer_StagePerThread	(RenderFrameUploadBuffer& rdfUploadBuf);
 
 	void test_extraDrawCall(RenderCommandBuffer& renderCmdBuf);
+	Vk_DescriptorSetLayout& testVkDescriptorSetLayout() { RDS_WARN_ONCE("remoev"); return _testVkDescriptorSetLayout; }
 
 protected:
 	void beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
@@ -282,7 +288,8 @@ inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return &_vkGraphicsQueue;
 inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; }
 
 
-inline Vk_CommandBuffer_T* RenderContext_Vk::vkCommandBuffer() { return _curGraphicsCmdBuf->hnd(); }
+inline Vk_CommandBuffer_T*	RenderContext_Vk::vkCommandBuffer()		{ return _curGraphicsCmdBuf->hnd(); }
+inline Vk_CommandBuffer*	RenderContext_Vk::vkGraphicsCmdBuf()	{ return _curGraphicsCmdBuf; }
 
 inline Vk_RenderFrame& RenderContext_Vk::renderFrame() { return _renderFrames[_curFrameIdx]; }
 

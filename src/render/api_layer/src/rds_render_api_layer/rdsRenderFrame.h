@@ -149,6 +149,8 @@ public:
 public:
 	RenderFrameContext();
 	~RenderFrameContext();
+	
+	void destroy();
 
 	void clear();
 	void rotate();

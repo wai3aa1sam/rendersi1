@@ -52,6 +52,8 @@ Vk_RenderFrame::create()
 	createCommandPool(_transferCommandPools, queueFamily.getQueueIdx(QueueTypeFlags::Transfer));
 
 	createSyncObjects();
+
+	_descriptorAlloc.create(renderer);
 }
 
 void 
@@ -60,6 +62,8 @@ Vk_RenderFrame::destroy()
 	destroyCommandPool(_graphicsCommandPools);
 	destroyCommandPool(_computeCommandPools);
 	destroyCommandPool(_transferCommandPools);
+
+	_descriptorAlloc.destroy();
 }
 
 void 

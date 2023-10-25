@@ -6,12 +6,14 @@
 #include "rds_render_api_layer/command/rdsTransferRequest.h"
 #include "rds_render_api_layer/rdsRenderFrame.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/shader/rdsMaterial_Vk.h"
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
 #define RDS_TEST_DRAW_CALL 0
+#define RDS_TEST_MT_DRAW_CALLS 0
 
 namespace rds
 {
@@ -71,7 +73,6 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	createTestDescriptorSetLayout();
 	createTestDescriptorPool();
-	createTestDescriptorSets();
 
 	auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
 	vkSwapchainCDesc.rdCtx				= this;
@@ -86,6 +87,8 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	_vkSwapchain.create(vkSwapchainCDesc);
 
 	createTestGraphicsPipeline();
+	createTestDescriptorSets();
+
 	createTestVertexBuffer(&_testVkVtxBuffer);
 	createTestVertexBuffer(&_testVkVtxBuffer2, -0.5f);
 	createTestIndexBuffer();
@@ -105,6 +108,8 @@ RenderContext_Vk::onDestroy()
 {
 	Base::onDestroy();
 	waitIdle();
+
+	_testVkDescriptorPool.destroy(renderer());
 }
 
 void
@@ -243,7 +248,14 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 		auto fbufRect2 = _vkSwapchain.framebufferRect2f();
 
 		// VK_SUBPASS_CONTENTS_INLINE, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
+		
+		#if RDS_TEST_MT_DRAW_CALLS
 		_curGraphicsCmdBuf->beginRenderPass(&_testVkRenderPass, _vkSwapchain.framebuffer(), fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+		#else
+		_curGraphicsCmdBuf->beginRenderPass(&_testVkRenderPass, _vkSwapchain.framebuffer(), fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_INLINE);
+		_curGraphicsCmdBuf->setViewport(fbufRect2);
+		_curGraphicsCmdBuf->setScissor (fbufRect2);
+		#endif // TE
 	}
 
 	//_curGraphicsCmdBuf->setViewport(Util::toRect2f(_swapchainInfo.extent));
@@ -252,13 +264,14 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	for (auto* cmd : renderCmdBuf.commands())
 	{
 		RDS_WARN_ONCE("TODO: if (cmd->type() == RenderCommandType::DrawCall)");
+		#if RDS_TEST_MT_DRAW_CALLS
 		if (cmd->type() == RenderCommandType::DrawCall)
 			continue;
-
+		#endif // RDS_TEST_MT_DRAW_CALLS
 		_dispatchCommand(this, cmd);
 	}
 
-	test_extraDrawCall(renderCmdBuf);
+	//test_extraDrawCall(renderCmdBuf);
 
 	// end render pass
 	_curGraphicsCmdBuf->endRenderPass();
@@ -582,8 +595,8 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	Vk_ShaderModule psModule;
 
 	{
-		vsModule.create(renderer(), "asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.vert.spv");
-		psModule.create(renderer(), "asset/shader/vulkan/local_temp/bin/hello_triangle3.hlsl.frag.spv");
+		vsModule.create(renderer(), "LocalTemp/imported/shader/asset/shader/test_texture.shader/spirv/pass0/vs_1.1.bin");
+		psModule.create(renderer(), "LocalTemp/imported/shader/asset/shader/test_texture.shader/spirv/pass0/ps_1.1.bin");
 
 		vsStageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vsStageInfo.stage					= VK_SHADER_STAGE_VERTEX_BIT;
@@ -861,12 +874,21 @@ RenderContext_Vk::createTestDescriptorSetLayout()
 	}
 	{
 		auto& e = bindings.emplace_back();
-		e.binding				= 1;
-		e.descriptorType		= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		e.binding				= 4;
+		e.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		e.descriptorCount		= 1;
 		e.stageFlags			= VK_SHADER_STAGE_FRAGMENT_BIT;
 		e.pImmutableSamplers	= nullptr;
 	}
+
+	{
+		auto& e = bindings.emplace_back();
+		e.binding				= 8;
+		e.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLER;
+		e.descriptorCount		= 1;
+		e.stageFlags			= VK_SHADER_STAGE_FRAGMENT_BIT;
+		e.pImmutableSamplers	= nullptr;
+	}////
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -874,6 +896,7 @@ RenderContext_Vk::createTestDescriptorSetLayout()
 	layoutInfo.pBindings	= bindings.data();
 
 	_testVkDescriptorSetLayout.create(&layoutInfo);
+	g_testVkDescriptorSetLayout = _testVkDescriptorSetLayout.hnd();
 }
 
 void 
@@ -898,7 +921,7 @@ RenderContext_Vk::createTestDescriptorPool()
 	poolInfo.maxSets		= sCast<u32>(s_kFrameInFlightCount);
 	//poolInfo.flags			= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-	_testVkDescriptorPool.create(&poolInfo);
+	_testVkDescriptorPool.create(&poolInfo, renderer());
 }
 
 void 
@@ -950,9 +973,22 @@ RenderContext_Vk::createTestDescriptorSets()
 			auto& e = writeDescs.emplace_back();
 			e.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			e.dstSet			= _testVkDescriptorSets[i].hnd();
-			e.dstBinding		= 1;
+			e.dstBinding		= 4;
 			e.dstArrayElement	= 0;
-			e.descriptorType	= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			e.descriptorType	= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			e.descriptorCount	= 1;
+			e.pBufferInfo		= nullptr;
+			e.pImageInfo		= &imageInfo; // Optional
+			e.pTexelBufferView	= nullptr; // Optional
+		}
+
+		{
+			auto& e = writeDescs.emplace_back();
+			e.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			e.dstSet			= _testVkDescriptorSets[i].hnd();
+			e.dstBinding		= 8;
+			e.dstArrayElement	= 0;
+			e.descriptorType	= VK_DESCRIPTOR_TYPE_SAMPLER;
 			e.descriptorCount	= 1;
 			e.pBufferInfo		= nullptr;
 			e.pImageInfo		= &imageInfo; // Optional
@@ -1092,32 +1128,38 @@ RenderContext_Vk::onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd)
 void 
 RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd)
 {
+	if (!cmd->vertexLayout) { RDS_CORE_ASSERT(false, "drawcall no vertexLayout"); return; }
+
 	auto* vkCmdBuf = cmdBuf->hnd();
-
-	bool isDefaultRenderState	= true;
-	bool isDefaultMaterial		= true;
-
-	if (isDefaultRenderState)
-	{
-		vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipeline.hnd());
-	}
-
-	if (isDefaultMaterial)
-	{
-		Vk_DescriptorSet_T* descSets[] = { _testVkDescriptorSets[_vkSwapchain.curImageIdx()].hnd() };
-		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout.hnd(), 0, 1, descSets, 0, nullptr);
-	}
-
-	auto* vtxBufVk = sCast<RenderGpuBuffer_Vk*>(cmd->vertexBuffer.ptr());
-	auto* idxBufVk = sCast<RenderGpuBuffer_Vk*>(cmd->indexBuffer.ptr());
-
-	Vk_Buffer_T*	vertexBuffers[]	= { vtxBufVk->vkBuf()->hnd() };
-	VkDeviceSize	offsets[]		= { Util::toVkDeviceSize(cmd->vertexOffset) };
-
-	vkCmdBindVertexBuffers(vkCmdBuf, 0, 1, vertexBuffers, offsets);
 
 	auto vtxCount = sCast<u32>(cmd->vertexCount);
 	auto idxCount = sCast<u32>(cmd->indexCount);
+
+	RenderGpuBuffer_Vk* idxBufVk = nullptr;
+	if (idxCount > 0)
+	{
+		idxBufVk = sCast<RenderGpuBuffer_Vk*>(cmd->indexBuffer.ptr());
+		if (!idxBufVk) { RDS_CORE_ASSERT(false, "drawcall no index buf while idxCount > 0"); return; }
+	}
+
+	auto* vtxBufHndVk = cmd->vertexBuffer ? sCast<RenderGpuBuffer_Vk*>(cmd->vertexBuffer.ptr())->vkBuf()->hnd() : nullptr;
+	//if (vtxCount > 0 && !vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf while vtxCount > 0"); return; }
+	if (!vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf"); return; }
+	
+	if (auto* pass = cmd->getMaterialPass())
+	{
+		pass->bind(this, cmd->vertexLayout);
+	}
+	else
+	{
+		Vk_DescriptorSet_T* descSets[] = { _testVkDescriptorSets[_vkSwapchain.curImageIdx()].hnd() };
+		vkCmdBindPipeline(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipeline.hnd());
+		vkCmdBindDescriptorSets(vkCmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _testVkPipelineLayout.hnd(), 0, 1, descSets, 0, nullptr);
+	}
+
+	Vk_Buffer_T* vertexBuffers[]	= { vtxBufHndVk };
+	VkDeviceSize offsets[]			= { Util::toVkDeviceSize(cmd->vertexOffset) };
+	vkCmdBindVertexBuffers(vkCmdBuf, 0, 1, vertexBuffers, offsets);
 
 	if (idxCount > 0)
 	{

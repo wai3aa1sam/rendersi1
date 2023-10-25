@@ -2,6 +2,7 @@
 
 #include "rdsRenderCommand.h"
 #include "../rdsRenderFrame.h"
+#include "../mesh/rdsRenderMesh.h"
 
 namespace rds
 {
@@ -39,5 +40,24 @@ RenderCommandBuffer::alloc(SizeType n, SizeType align)
 
 
 #endif
+
+void 
+RenderCommand_DrawCall::setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset, SizeType idxOffset)
+{
+	if (!subMesh)
+		return;
+
+	vertexOffset	= vtxOffset;
+	vertexCount		= subMesh->vertexCount();
+	vertexBuffer	= subMesh->vertexBuffer();
+
+	indexOffset		= idxOffset;
+	indexCount		= subMesh->indexCount();
+	indexBuffer		= subMesh->indexBuffer();
+
+	vertexLayout		= subMesh->vertexLayout();
+	indexType			= subMesh->indexType();
+	renderPrimitiveType = subMesh->renderPrimitiveType();
+}
 
 }

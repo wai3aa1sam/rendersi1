@@ -171,6 +171,12 @@ RenderFrameContext::~RenderFrameContext()
 }
 
 void 
+RenderFrameContext::destroy()
+{
+	clear();
+}
+
+void 
 RenderFrameContext::clear()
 {
 	_renderFrames.clear();
@@ -179,6 +185,8 @@ RenderFrameContext::clear()
 void 
 RenderFrameContext::rotate()
 {
+	RDS_TODO("RenderFrameContext should belong to Renderer");
+
 	iFrame = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
 	renderFrame().clear();
 }

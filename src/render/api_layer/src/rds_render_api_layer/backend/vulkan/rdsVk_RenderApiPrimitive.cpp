@@ -767,26 +767,43 @@ Vk_DescriptorSetLayout::destroy()
 #endif // 0
 #if 1
 
-void 
-Vk_DescriptorPool::create(const VkDescriptorPoolCreateInfo* pCreateInfo)
+Vk_DescriptorPool::~Vk_DescriptorPool()
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	RDS_CORE_ASSERT(!hnd(), "not yet destroy");
+}
 
-	auto ret = vkCreateDescriptorPool(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());
-	Util::throwIfError(ret);
+VkResult 
+Vk_DescriptorPool::create(VkDescriptorPoolCreateInfo* cInfo, Renderer_Vk* rdr)
+{
+	cInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+
+	auto* vkDev		= rdr->vkDevice();
+	auto* vkAllocCb	= rdr->allocCallbacks();
+
+	auto ret = vkCreateDescriptorPool(vkDev, cInfo, vkAllocCb, hndForInit());
+	return ret;
+	//Util::throwIfError(ret);	// should not throw, let upper layer decide
 }
 
 void 
-Vk_DescriptorPool::destroy()
+Vk_DescriptorPool::destroy(Renderer_Vk* rdr)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	if (!_hnd || !rdr)
+		return;
+	auto* vkDev				= rdr->vkDevice();
+	auto* vkAllocCallbacks	= rdr->allocCallbacks();
 
 	vkDestroyDescriptorPool(vkDev, _hnd, vkAllocCallbacks);
+	_hnd = VK_NULL_HANDLE;
 }
+
+void 
+Vk_DescriptorPool::reset(VkDescriptorPoolResetFlags flag, Renderer_Vk* rdr)
+{
+	auto* vkDev	= rdr->vkDevice();
+	vkResetDescriptorPool(vkDev, _hnd, flag);
+}
+
 
 #endif
 
@@ -795,15 +812,23 @@ Vk_DescriptorPool::destroy()
 #endif // 0
 #if 1
 
-void 
-Vk_DescriptorSet::create(const VkDescriptorSetAllocateInfo* pAllocateInfo)
+VkResult 
+Vk_DescriptorSet::create(VkDescriptorSetAllocateInfo* cInfo)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	//auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	auto* rdr = Renderer_Vk::instance();
+	auto ret = create(cInfo, rdr);
+	return ret;
+}
 
-	auto ret = vkAllocateDescriptorSets(vkDev, pAllocateInfo, hndForInit());
-	Util::throwIfError(ret);
+VkResult 
+Vk_DescriptorSet::create(VkDescriptorSetAllocateInfo* cInfo, Renderer_Vk* rdr)
+{
+	cInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+
+	auto* vkDev	= rdr->vkDevice();
+	auto ret = vkAllocateDescriptorSets(vkDev, cInfo, hndForInit());
+	return ret;
+	//Util::throwIfError(ret);	// should not throw, let upper layer decide
 }
 
 void 

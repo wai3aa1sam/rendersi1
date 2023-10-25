@@ -31,12 +31,16 @@ public:
 	static constexpr const char* s_appName		= "Rendersi1";
 	static constexpr const char* s_engineName	= "Rendersi1";
 
-	static constexpr StrView s_defaultShaderOutpath = "LocalTemp/imported/shader";
-
+	static constexpr StrView s_defaultShaderOutPath = "LocalTemp/imported/shader";
+	static constexpr StrView s_spirvPath			= "spirv";
 
 	static constexpr SizeType s_kFrameInFlightCount			= 4;
 	static constexpr SizeType s_kSwapchainImageLocalSize	= s_kFrameInFlightCount;
 	static constexpr SizeType s_kThreadCount				= OsTraits::s_kJobSystemLogicalThreadCount;
+
+	static constexpr SizeType s_kDefaultWindowWidth		= 1280;
+	static constexpr SizeType s_kDefaultWindowHeight	= 720;
+
 
 	static_assert(math::isPowOf2(s_kFrameInFlightCount));
 

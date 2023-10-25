@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
+#include "rds_render_api_layer/shader/rdsMaterial.h"
 
 namespace rds
 {
@@ -11,6 +12,10 @@ class HashedDrawCallCommands;
 class RenderRequest;
 
 class VertexLayout;
+class Material;
+
+class RenderSubMesh;
+class RenderMesh;
 
 using DrawingSettings = u64;
 
@@ -102,13 +107,21 @@ public:
 	RenderPrimitiveType renderPrimitiveType = RenderPrimitiveType::Triangle;
 	const VertexLayout* vertexLayout		= nullptr;
 
-	SizeType vertexCount	= 0;
-	SizeType indexCount		= 0;
-	SizeType vertexOffset	= 0;
-	SizeType indexOffset	= 0;
+	SizeType vertexCount		= 0;
+	SizeType indexCount			= 0;
+	SizeType vertexOffset		= 0;
+	SizeType indexOffset		= 0;
+	SizeType materialPassIdx	= 0;
 
-	SPtr<RenderGpuBuffer> vertexBuffer;
-	SPtr<RenderGpuBuffer> indexBuffer;
+	SPtr<RenderGpuBuffer>	vertexBuffer;
+	SPtr<RenderGpuBuffer>	indexBuffer;
+
+	SPtr<Material>			material;
+
+public:
+	Material::Pass* getMaterialPass() { return material ? material->getPass(materialPassIdx) : nullptr; }
+
+	void setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset = 0, SizeType idxOffset = 0);
 
 public:
 	RenderCommand_DrawCall() : Base(Type::DrawCall) {}

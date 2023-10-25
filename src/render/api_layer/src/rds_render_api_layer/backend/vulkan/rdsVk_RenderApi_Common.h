@@ -17,6 +17,8 @@ namespace rds
 class Vk_CommandBuffer;
 class Vk_CommandPool;
 
+class RenderGpuBuffer_Vk;
+
 #if 1	// TODO: remove / modify
 
 struct QueueFamilyIndices 
@@ -126,6 +128,7 @@ public:
 	Vk_RenderApiUtil() = delete;
 
 public:
+	static bool isSuccess		(Result ret);
 	static void throwIfError	(Result ret);
 	static bool assertIfError	(Result ret);
 	static void reportError		(Result ret);
@@ -159,7 +162,10 @@ public:
 	static VkClearValue toVkClearValue(const Color4f& color);
 	static VkClearValue toVkClearValue(float depth, u32 stencil);
 
-	static StrView toShaderStageProfile(ShaderStageFlag flag);
+	static VkShaderStageFlagBits	toVkShaderStageBit	(ShaderStageFlag flag);
+	static VkShaderStageFlagBits	toVkShaderStageBits	(ShaderStageFlag flag);
+	static StrView					toShaderStageProfile(ShaderStageFlag flag);
+	static VkDescriptorType			toVkDescriptorType	(ShaderParamType paramType);
 
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
@@ -170,6 +176,15 @@ public:
 	
 public:
 	static u32 getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties);
+
+public:
+	static Vk_Buffer*	toVkBuf		(		RenderGpuBuffer* rdGpuBuf);
+	static Vk_Buffer*	toVkBuf		(const	RenderGpuBuffer* rdGpuBuf);
+
+	static Vk_Buffer_T*	toVkBufHnd	(		RenderGpuBuffer* rdGpuBuf);
+	static Vk_Buffer_T*	toVkBufHnd	(const RenderGpuBuffer* rdGpuBuf);
+
+
 
 	// for create vk objects
 public:

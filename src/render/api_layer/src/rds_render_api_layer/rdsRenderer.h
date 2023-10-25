@@ -43,6 +43,15 @@ class	RenderGpuBuffer;
 struct	RenderGpuBuffer_CreateDesc;
 class	RenderGpuMultiBuffer;
 
+class	Texture;
+class	Texture2D;
+struct	Texture_CreateDesc;
+struct	Texture2D_CreateDesc;
+
+class	Shader;
+struct	Shader_CreateDesc;
+class	Material;
+
 class Renderer : public VirtualSingleton<Renderer>
 {
 public:
@@ -68,6 +77,11 @@ public:
 	SPtr<RenderContext>			createContext				(const RenderContext_CreateDesc&	cDesc);
 	SPtr<RenderGpuBuffer>		createRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc);
 	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc);
+	SPtr<Texture2D>				createTexture2D				(const Texture2D_CreateDesc&		cDesc);
+	SPtr<Shader>				createShader				(const Shader_CreateDesc&			cDesc);
+	SPtr<Shader>				createShader				(StrView							filename);
+	SPtr<Material>				createMaterial				();
+	SPtr<Material>				createMaterial				(Shader*							shader);
 
 	const RenderAdapterInfo& adapterInfo() const;
 
@@ -77,8 +91,12 @@ protected:
 	virtual void onDestroy();
 
 protected:
-	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc) = 0;
-	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc) = 0;
+	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc)	= 0;
+	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc)	= 0;
+	virtual SPtr<Texture2D>				onCreateTexture2D			(const Texture2D_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<Shader>				onCreateShader				(const Shader_CreateDesc&			cDesc)	= 0;
+	virtual SPtr<Material>				onCreateMaterial			()											= 0;
+	virtual SPtr<Material>				onCreateMaterial			(Shader*							shader) = 0;
 
 protected:
 	RenderAdapterInfo	_adapterInfo;

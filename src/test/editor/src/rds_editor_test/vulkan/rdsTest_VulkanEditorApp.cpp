@@ -264,7 +264,7 @@ public:
 		uploadTestMultiBuf();
 
 		//_testMultiThreadDrawCalls.create(10);
-		_testMultiThreadDrawCalls.createFixed(1920);
+		_testMultiThreadDrawCalls.createFixed(19);
 
 		_testRenderGraph._rdGraph.create("Test Render Graph", Renderer::instance(), &VulkanEditorApp::instance()->mainWin()->renderContext());
 		_testRenderGraph.setup();
@@ -272,6 +272,16 @@ public:
 		_testRenderGraph.dump();
 
 		//JobSystem::instance()->setSingleThreadMode(true);
+
+		{
+			_testShader = Renderer::instance()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
+			//_testShader = Renderer::instance()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+			_testShader->makeCDesc();
+
+			_testMaterial = Renderer::instance()->createMaterial();
+			_testMaterial->setShader(_testShader);
+		}
+		
 	}
 
 	virtual void onUpdate() override
@@ -293,25 +303,47 @@ public:
 		auto& rdCmdBuf = _rdReq.renderCommandBuffer();
 		rdCmdBuf.clear();
 		_rdReq.clearFramebuffers(Color4f{0.7f, 0.5f, 1.0f, 1.0f}, 1.0f);
-		
+
 		#if 1
+		{
+			auto drawCall = _rdReq.addDrawCall();
+			drawCall->setSubMesh(&_rdMesh1.subMesh());
+			drawCall->material			= _testMaterial;
+			drawCall->materialPassIdx	= 0;
+
+			static auto startTime = std::chrono::high_resolution_clock::now();
+
+			auto currentTime = std::chrono::high_resolution_clock::now();
+			float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+			Mat4f model		= Mat4f::s_rotateZ(math::radians(90.0f) * time);
+			Mat4f view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
+			Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), rdCtx.aspectRatio(), 0.1f, 10.0f);
+			proj[1][1]		*= -1;
+			Mat4f mvp		= proj * view * model;
+
+			_testMaterial->setParam("rds_matrix_mvp", mvp);
+		}
+		#endif // 0
+
+		#if 0
 
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh1);
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh2);
-		_rdReq.drawRenderables(DrawingSettings{});
-
-		#else
+		//_rdReq.drawRenderables(DrawingSettings{});
 
 		auto addDrawCall = [](RenderRequest& _rdReq, SPtr<RenderGpuMultiBuffer>& vtxBuf, SPtr<RenderGpuBuffer>& idxBuf)
-		{
-			auto* p = _rdReq.addDrawCall();
-			p->vertexBuffer = vtxBuf->renderGpuBuffer();
-			p->vertexCount	= vtxBuf->elementCount();
-			p->indexBuffer	= idxBuf;
-			p->indexCount	= idxBuf->elementCount();
-		};
+			{
+				auto* p = _rdReq.addDrawCall();
+				p->vertexBuffer = vtxBuf->renderGpuBuffer();
+				p->vertexCount	= vtxBuf->elementCount();
+				p->indexBuffer	= idxBuf;
+				p->indexCount	= idxBuf->elementCount();
+	};
 		addDrawCall(_rdReq, _testMultiBuffer, _testIdxBuf);
 		addDrawCall(_rdReq, _testMultiBuffer2, _testIdxBuf);
+		
+		#else
 
 		#endif // 0
 
@@ -380,6 +412,9 @@ protected:
 
 	Test_MultiThreadDrawCalls	_testMultiThreadDrawCalls;
 	Test_RenderGraph			_testRenderGraph;
+
+	SPtr<Shader>	_testShader;
+	SPtr<Material>	_testMaterial;
 };
 
 class Test_VulkanEditorApp : public UnitTest

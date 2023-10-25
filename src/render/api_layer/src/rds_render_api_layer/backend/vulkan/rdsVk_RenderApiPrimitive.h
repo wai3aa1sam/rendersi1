@@ -55,10 +55,21 @@ public:
 	RenderApiResource_Vk()	= default;
 	~RenderApiResource_Vk() = default;
 
+	RenderApiResource_Vk(RenderApiResource_Vk&& rhs) noexcept { move(rds::move(rhs)); }
+	void operator=		(RenderApiResource_Vk&& rhs) noexcept { move(rds::move(rhs)); } // intended no check for this == &rhs, it is rare case
+
 	void destroy();
 
-	T* hnd() { return _hnd; }
-	T** hndForInit() { return &_hnd; }
+	T*	hnd()			{ return _hnd; }
+	T**	hndArray()		{ return &_hnd; }
+	T** hndForInit()	{ return &_hnd; }
+
+protected:
+	void move(RenderApiResource_Vk&& rhs) 
+	{
+		_hnd = rhs._hnd; 
+		rhs._hnd = VK_NULL_HANDLE;
+	}
 
 protected:
 	T* _hnd = VK_NULL_HANDLE;
@@ -86,7 +97,10 @@ protected:
 template<class T> 
 class Vk_RenderApiPrimitive : public NonCopyable
 {
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
+	//using Base = typename Vk_RenderApiPrimitive<T>;
+
 	using Util = Vk_RenderApiUtil;
 
 	using HndType = T;
@@ -95,12 +109,27 @@ public:
 	Vk_RenderApiPrimitive()		= default;
 	~Vk_RenderApiPrimitive()	= default;
 
+	Vk_RenderApiPrimitive	(Vk_RenderApiPrimitive&& rhs) noexcept { move(rds::move(rhs)); }
+	void operator=			(Vk_RenderApiPrimitive&& rhs) noexcept { move(rds::move(rhs)); } // intended no check for this == &rhs, it is rare case
+
 	void destroy();
 
-				T* hnd()		{ return _hnd; }
-	/*const*/	T* hnd() const	{ return _hnd; }
+	T*	hnd()		{ return _hnd; }
+	T*	hnd() const	{ return _hnd; }
 
-	T** hndForInit() { return &_hnd; }
+	T**	hndArray()			{ return &_hnd; }
+	T**	hndArray() const	{ return constCast(&_hnd); }
+
+	T** hndForInit()	{ return &_hnd; }
+
+	explicit operator bool () const { return _hnd; }
+
+protected:
+	void move(Vk_RenderApiPrimitive&& rhs) 
+	{
+		_hnd = rhs._hnd; 
+		rhs._hnd = VK_NULL_HANDLE;
+	}
 
 protected:
 	T* _hnd = VK_NULL_HANDLE;
@@ -498,8 +527,8 @@ public:
 	Vk_PipelineLayout() = default;
 	~Vk_PipelineLayout() { destroy(); }
 
-	Vk_PipelineLayout	(Vk_PipelineLayout&&) { throwIf(true, ""); }
-	void operator=		(Vk_PipelineLayout&&) { throwIf(true, ""); }
+	Vk_PipelineLayout(Vk_PipelineLayout&& rhs)	noexcept : Base(rds::move(rhs)) {}
+	void operator=	 (Vk_PipelineLayout&& rhs)	noexcept { return Base::operator=(rds::move(rhs)); }
 
 	void create(Renderer_Vk* rdr, const VkPipelineLayoutCreateInfo* pCreateInfo);
 	void destroy();
@@ -543,8 +572,8 @@ public:
 	Vk_Pipeline() = default;
 	~Vk_Pipeline() { destroy(); }
 
-	Vk_Pipeline		(Vk_Pipeline&&)	{ throwIf(true, ""); }
-	void operator=	(Vk_Pipeline&&)	{ throwIf(true, ""); }
+	Vk_Pipeline		(Vk_Pipeline&& rhs)	noexcept : Base(rds::move(rhs)) {}
+	void operator=	(Vk_Pipeline&& rhs)	noexcept { return Base::operator=(rds::move(rhs)); }
 
 	void create(Renderer_Vk* rdr, const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache);
 	void destroy();
@@ -716,7 +745,7 @@ public:
 	Vk_DescriptorSetLayout() = default;
 	~Vk_DescriptorSetLayout() { destroy(); }
 
-	void create(const VkDescriptorSetLayoutCreateInfo* pCreateInfo);
+	void create(const VkDescriptorSetLayoutCreateInfo* cInfo);
 	void destroy();
 };
 
@@ -730,14 +759,20 @@ public:
 class Vk_DescriptorPool : public Vk_RenderApiPrimitive<Vk_DescriptorPool_T>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_DescriptorSetLayout_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_DescriptorPool_T>;
 
 public:
 	Vk_DescriptorPool() = default;
-	~Vk_DescriptorPool() { destroy(); }
+	~Vk_DescriptorPool();
 
-	void create(const VkDescriptorPoolCreateInfo* pCreateInfo);
-	void destroy();
+	Vk_DescriptorPool	(Vk_DescriptorPool&& rhs) noexcept : Base(rds::move(rhs)) {}
+	void operator=		(Vk_DescriptorPool&& rhs) noexcept { return Base::operator=(rds::move(rhs)); }
+	
+	VkResult create(VkDescriptorPoolCreateInfo* cInfo, Renderer_Vk* rdr);
+
+	void destroy(Renderer_Vk* rdr);
+
+	void reset(VkDescriptorPoolResetFlags flag, Renderer_Vk* rdr);
 };
 
 #endif
@@ -746,22 +781,6 @@ public:
 #pragma mark --- Vk_DescriptorSet-Decl ---
 #endif // 0
 #if 1
-
-//template<> 
-//class Vk_RenderApiPrimitive<Vk_DescriptorSet_T> : public NonCopyable
-//{
-//public:
-//	using Util = Vk_RenderApiUtil;
-//
-//public:
-//	Vk_RenderApiPrimitive()		= default;
-//	~Vk_RenderApiPrimitive()	= default;
-//
-//	void destroy();
-//
-//protected:
-//	//Vector<
-//};
 
 class Vk_DescriptorSet : public Vk_RenderApiPrimitive<Vk_DescriptorSet_T>
 {
@@ -772,10 +791,13 @@ public:
 	Vk_DescriptorSet() = default;
 	~Vk_DescriptorSet() { destroy(); }
 
-	Vk_DescriptorSet(Vk_DescriptorSet&&)	{ throwIf(true, ""); }
-	void operator=(Vk_DescriptorSet&&)		{ throwIf(true, ""); }
+	Vk_DescriptorSet(Vk_DescriptorSet&& rhs) noexcept : Base(rds::move(rhs)) {}
+	void operator=	(Vk_DescriptorSet&& rhs) noexcept { return Base::operator=(rds::move(rhs)); }
 
-	void create(const VkDescriptorSetAllocateInfo* pAllocateInfo);
+
+	VkResult create(VkDescriptorSetAllocateInfo* pAllocateInfo);
+	VkResult create(VkDescriptorSetAllocateInfo* pAllocateInfo, Renderer_Vk* rdr);
+
 	void destroy();
 
 protected:

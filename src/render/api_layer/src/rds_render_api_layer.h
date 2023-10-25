@@ -7,6 +7,9 @@
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 
+#include "rds_render_api_layer/shader/rdsShader.h"
+#include "rds_render_api_layer/shader/rdsMaterial.h"
+
 #include "rds_render_api_layer/vertex/rdsVertex.h"
 #include "rds_render_api_layer/vertex/rdsVertexLayoutManager.h"
 

@@ -3,6 +3,7 @@
 #include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/backend/vulkan/command/rdsVk_CommandPool.h"
 #include "rds_render_api_layer/backend/vulkan/command/rdsVk_CommandBuffer.h"
+#include "rds_render_api_layer/backend/vulkan/shader/rdsVk_DescriptorAllocator.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -42,7 +43,8 @@ public:
 	void resetCommandPools();
 	void resetCommandPool(QueueTypeFlags queueType);
 
-	Vk_CommandPool& commandPool(QueueTypeFlags queueType);
+	Vk_CommandPool&			commandPool(QueueTypeFlags queueType);
+	Vk_DescriptorAllocator& descriptorAllocator();
 
 	Vk_Semaphore*	imageAvaliableSmp();
 	Vk_Semaphore*	renderCompletedSmp();
@@ -59,6 +61,8 @@ protected:
 	Vector<Vk_CommandPool, s_kThreadCount> _graphicsCommandPools;
 	Vector<Vk_CommandPool, s_kThreadCount> _computeCommandPools;
 	Vector<Vk_CommandPool, s_kThreadCount> _transferCommandPools;
+
+	Vk_DescriptorAllocator _descriptorAlloc;
 
 	//Vector<Vk_DescriptorPool, s_kThreadCount> // use VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, only reset the pool
 
@@ -100,6 +104,8 @@ Vk_RenderFrame::commandPool(QueueTypeFlags queueType)
 
 	return _graphicsCommandPools[tlid];
 }
+
+inline Vk_DescriptorAllocator& Vk_RenderFrame::descriptorAllocator() { return _descriptorAlloc; }
 
 inline Vk_Semaphore*	Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
 inline Vk_Semaphore*	Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }

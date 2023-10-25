@@ -31,19 +31,13 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 	createVkDevice();
 
 	_memoryContextVk.create(vkDevice(), vkPhysicalDevice(), vkInstance());
-
-	_renderFrames.resize(s_kFrameInFlightCount);
-	for (auto& e : _renderFrames)
-	{
-		e.reset(RDS_NEW(Vk_RenderFrame)());
-	}
 }
 
 void
 Renderer_Vk::onDestroy()
 {
 	vkDeviceWaitIdle(vkDevice());
-	_renderFrameCtx.clear();
+	_renderFrameCtx.destroy();
 	_memoryContextVk.destroy();
 }
 
@@ -65,9 +59,9 @@ Renderer_Vk::createVkInstance()
 	appInfo.pApplicationName	= RenderApiLayerTraits::s_appName;
 	appInfo.pEngineName			= RenderApiLayerTraits::s_engineName;
 	// specific application for driver optimization
-	//appInfo.applicationVersion	= VK_MAKE_VERSION(1, 0, 0);
-	//appInfo.engineVersion		= VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_3;
+	appInfo.applicationVersion	= VK_MAKE_VERSION(1, 0, 0);
+	appInfo.engineVersion		= VK_MAKE_VERSION(1, 0, 0);
+	appInfo.apiVersion			= VK_API_VERSION_1_3;
 
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType					= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
