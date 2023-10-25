@@ -61,7 +61,7 @@ struct Dx12Util
 		switch (stage)
 		{
 			case SRC::Vertex:	{ return L"vs_6_0"; } break;
-			case SRC::Pxiel:	{ return L"ps_6_0"; } break;
+			case SRC::Pixel:	{ return L"ps_6_0"; } break;
 			case SRC::Compute:	{ return L"cs_6_0"; } break;
 		}
 		RDS_CORE_ASSERT(false);

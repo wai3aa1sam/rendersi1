@@ -45,11 +45,15 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	TempString		dstpath;
 	fmtTo(dstpath, "{}/{}.bin", desc.outpath, Util::toShaderStageProfile(stage));
 
+	//u32 uboStartIdx = 0; u32 texStartIdx = 4; u32 ssboStartIdx = 10; u32 imageStartIdx = 13; u32 samplerStartIdx = 16; 
+
 	TempString args;
-	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
+	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
+	fmtTo(args, " -fauto-bind-uniforms");	// auto bind all uniform variable
+	fmtTo(args, " -fubo-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fssbo-binding-base {} -fimage-binding-base {}", 0, 4, 8, 12 ,14); // 16 is minimum spec in vulkan
+
 	//fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 100 -fresource-set-binding b1 1 2");
-	fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 0");
-	fmtTo(args, " -fresource-set-binding b1 1 2");
+	//fmtTo(args, " -fresource-set-binding b1 1 2");
 
 	{
 		CmdLine cmdl;
@@ -165,6 +169,7 @@ ShaderCompiler_Vk::_reflect_constBufs(ShaderStageInfo& outInfo, SpirvCompiler& c
 		dst.name		= name.c_str();
 		dst.size		= sCast<u32>(size);
 		dst.bindPoint	= sCast<u16>(binding);
+		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
 		log("\tname: {}, size: {}, set: {}, binding: {}", name, size, set, binding);
 
@@ -205,8 +210,6 @@ ShaderCompiler_Vk::_reflect_constBufs(ShaderStageInfo& outInfo, SpirvCompiler& c
 			dstVar.size		= sCast<u32>(memberSize);
 			dstVar.offset	= sCast<u32>(offset);
 			log("\t\tmemberName: {}, offset: {}, membSize: {}", memberName, offset, memberSize);
-
-			
 		}
 	}
 	log("");
@@ -233,7 +236,7 @@ ShaderCompiler_Vk::_reflect_textures(ShaderStageInfo& outInfo, SpirvCompiler& co
 
 		dst.name		= name.c_str();
 		dst.bindPoint	= sCast<u16>(binding);
-		dst.arraySize	= sCast<u16>(type.array.size());
+		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
 		log("Texture name: {}, set: {}, binding: {}", name, set, binding);
 	}
@@ -262,7 +265,7 @@ ShaderCompiler_Vk::_reflect_samplers(ShaderStageInfo& outInfo, SpirvCompiler& co
 
 		dst.name		= name.c_str();
 		dst.bindPoint	= sCast<u16>(binding);
-		dst.arraySize	= sCast<u16>(type.array.size());
+		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
 		log("Sampler name: {}, set: {}, binding: {}", name, set, binding);
 	}
@@ -287,7 +290,7 @@ SpirvUtil::toStr(ShaderStageFlag flag)
 	switch (flag)
 	{
 		case SRC::Vertex:	{ return "vertex";		} break;
-		case SRC::Pxiel:	{ return "fragment";	} break;
+		case SRC::Pixel:	{ return "fragment";	} break;
 		case SRC::Compute:	{ return "compute";		} break;
 	}
 

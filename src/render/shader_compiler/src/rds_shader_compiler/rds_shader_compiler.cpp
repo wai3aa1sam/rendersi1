@@ -34,7 +34,9 @@ protected:
 		opt.isToSpirv	= true;
 		opt.enableLog	= true;
 
-		compile("asset/shader/terrain/my_terrain.shader", opt);
+		compile("asset/shader/terrain/my_terrain.shader",	opt);
+		compile("asset/shader/test.shader",					opt);
+		compile("asset/shader/test_texture.shader",			opt);
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)
@@ -49,20 +51,20 @@ protected:
 		createShaderInfo(info, filename, dstDir);
 
 		{
-			StrView				target = "spirv";
+			StrView				binpath = Traits::s_spirvPath;
 			ShaderCompiler_Vk	compiler;
 
-			Path::create(target);
+			Path::create(binpath);
 
 			SizeType passIdx = 0;
 			for (const auto& pass : info.passes)
 			{
 				TempString dstBinPath;
-				fmtTo(dstBinPath, "{}/{}/pass{}", dstDir, target, passIdx);
+				fmtTo(dstBinPath, "{}/{}/pass{}", dstDir, binpath, passIdx);
 				Path::create(dstBinPath);
 
 				compiler.compile(dstBinPath, srcpath, ShaderStageFlag::Vertex,	pass.vsFunc, opt);
-				compiler.compile(dstBinPath, srcpath, ShaderStageFlag::Pxiel,	pass.psFunc, opt);
+				compiler.compile(dstBinPath, srcpath, ShaderStageFlag::Pixel,	pass.psFunc, opt);
 			}
 		}
 	}
@@ -140,13 +142,13 @@ protected:
 		path.append("/example/Test000");
 		Directory::setCurrent(path);
 
-		Path::create(Traits::s_defaultShaderOutpath);
+		Path::create(Traits::s_defaultShaderOutPath);
 	}
 
 	template<class STR>
 	static void toOutpath(STR& out, StrView fileBasename)
 	{
-		fmtTo(out, "{}/{}", Traits::s_defaultShaderOutpath, fileBasename);
+		fmtTo(out, "{}/{}", Traits::s_defaultShaderOutPath, fileBasename);
 	}
 };
 
