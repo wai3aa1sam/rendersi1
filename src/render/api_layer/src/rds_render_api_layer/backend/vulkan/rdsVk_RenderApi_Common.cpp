@@ -204,21 +204,77 @@ Vk_RenderApiUtil::toVkFormat(RenderDataType v)
 	}
 }
 
+VkFormat
+Vk_RenderApiUtil::toVkFormat(ColorType v)
+{
+	using SRC = ColorType;
+	switch (v) 
+	{
+		case SRC::RGBAb:	{ return VK_FORMAT_R8G8B8A8_UINT;		} break;
+		case SRC::RGBAs:	{ return VK_FORMAT_R16G16B16A16_UINT;	} break;
+		case SRC::RGBAh:	{ return VK_FORMAT_R16G16B16A16_SFLOAT;	} break;
+		case SRC::RGBAf:	{ return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
+	}
+	//return VkFormat::VK_FORMAT_MAX_ENUM;
+}
+
+VkFormat	
+Vk_RenderApiUtil::toVkFormat_ShaderTexture(VkFormat v)
+{
+	using SRC = VkFormat;
+	switch (v) 
+	{
+		case SRC::VK_FORMAT_R8G8B8A8_UNORM			:
+		case SRC::VK_FORMAT_R8G8B8A8_USCALED		:
+		case SRC::VK_FORMAT_R8G8B8A8_UINT			:
+		case SRC::VK_FORMAT_R8G8B8A8_SRGB			: { return VK_FORMAT_R8G8B8A8_UNORM;	} break;
+
+		case SRC::VK_FORMAT_R16G16B16A16_UNORM		:
+		case SRC::VK_FORMAT_R16G16B16A16_USCALED	:
+		case SRC::VK_FORMAT_R16G16B16A16_UINT		:
+		case SRC::VK_FORMAT_R16G16B16A16_SFLOAT		: { return VK_FORMAT_R16G16B16A16_UNORM;	} break;
+
+			//case SRC::VK_FORMAT_R32G32B32A32_UINT		:
+			//case SRC::VK_FORMAT_R32G32B32A32_SINT		:
+			//case SRC::VK_FORMAT_R32G32B32A32_SFLOAT		: { return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
+
+		default: { RDS_THROW("unsupport type, {}", RDS_SRCLOC); }	break;
+	}
+}
+
+VkFormat	
+Vk_RenderApiUtil::toVkFormat_Srgb	(VkFormat v)
+{
+	using SRC = VkFormat;
+	switch (v) 
+	{
+		case SRC::VK_FORMAT_R8G8B8A8_UNORM			:
+		case SRC::VK_FORMAT_R8G8B8A8_SNORM			:
+		case SRC::VK_FORMAT_R8G8B8A8_USCALED		:
+		case SRC::VK_FORMAT_R8G8B8A8_SSCALED		:
+		case SRC::VK_FORMAT_R8G8B8A8_UINT			:
+		case SRC::VK_FORMAT_R8G8B8A8_SINT			:
+		case SRC::VK_FORMAT_R8G8B8A8_SRGB			: { return VK_FORMAT_R8G8B8A8_SRGB;	} break;
+
+		default: { RDS_THROW("unsupport type {}", RDS_SRCLOC); }	break;
+	}
+}
+
 VkBufferUsageFlagBits 
-Vk_RenderApiUtil::toVkBufferUsage(RenderGpuBufferTypeFlags typeFlags)
+Vk_RenderApiUtil::toVkBufferUsage(RenderGpuBufferTypeFlags v)
 {
 	using SRC = RenderGpuBufferTypeFlags;
-	switch (typeFlags)
+	switch (v)
 	{
 		case SRC::Vertex:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; }	break;
 		case SRC::Index:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_INDEX_BUFFER_BIT; }		break;
 		case SRC::Const:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; }	break;
 		case SRC::TransferSrc:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_SRC_BIT; }		break;
 		case SRC::TransferDst:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_DST_BIT; }		break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
 	}
-
-	RDS_CORE_ASSERT(false, "unsporrted buffer usage");
-	return VkBufferUsageFlagBits::VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+	//return VkBufferUsageFlagBits::VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
 }
 
 VkMemoryPropertyFlags 
@@ -324,11 +380,11 @@ Vk_RenderApiUtil::toVkClearValue(float depth, u32 stencil)
 }
 
 VkShaderStageFlagBits	
-Vk_RenderApiUtil::toVkShaderStageBit(ShaderStageFlag flag)
+Vk_RenderApiUtil::toVkShaderStageBit(ShaderStageFlag v)
 {
 	using SRC = ShaderStageFlag;
 
-	switch (flag)
+	switch (v)
 	{
 		case SRC::Vertex:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT; }	break;
 		case SRC::Pixel:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT; } break;
@@ -356,32 +412,81 @@ Vk_RenderApiUtil::toVkShaderStageBits(ShaderStageFlag flag)
 
 
 StrView 
-Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag flag)
+Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag v)
 {
 	using SRC = rds::ShaderStageFlag;
-	switch (flag)
+	switch (v)
 	{
 		case SRC::Vertex:		{ return "vs_1.1"; } break;
 		case SRC::Pixel:		{ return "ps_1.1"; } break;
 		case SRC::Compute:		{ return "cs_1.1"; } break;
-		default: { RDS_THROW("unsupport type {}, {}", flag, RDS_SRCLOC); } break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); } break;
 	}
 }
 
 
 VkDescriptorType			
-Vk_RenderApiUtil::toVkDescriptorType(ShaderParamType paramType)
+Vk_RenderApiUtil::toVkDescriptorType(ShaderResourceType v)
 {
-	using SRC = rds::ShaderParamType;
-	switch (paramType)
+	using SRC = rds::ShaderResourceType;
+	switch (v)
 	{
 		case SRC::ConstantBuffer:	{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; } break;
-		case SRC::Texture:			{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; } break;
-		//case SRC::Sampler:			{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; } break;
+		case SRC::Texture:			{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; }	break;
+		case SRC::Sampler:			{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLER; }		break;
 		case SRC::StorageBuffer:	{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; } break;
-		case SRC::StorageImage:		{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; } break;
-		default: { RDS_THROW("unsupport type {}, {}", paramType, RDS_SRCLOC); } break;
+		case SRC::StorageImage:		{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; }	break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); } break;
 	}
+	//return VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
+}
+
+VkFilter
+Vk_RenderApiUtil::toVkFilter(SamplerFilter v)
+{
+	using SRC = rds::SamplerFilter;
+	switch (v)
+	{
+		case SRC::Nearest:		{ return VkFilter::VK_FILTER_NEAREST; }		break;
+		case SRC::Linear:		{ return VkFilter::VK_FILTER_LINEAR; }		break;
+		case SRC::Bilinear:		{ return VkFilter::VK_FILTER_LINEAR; }		break;
+		case SRC::Trilinear:	{ return VkFilter::VK_FILTER_CUBIC_IMG; }	break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }		break;
+	}
+	//return VkFilter::VK_FILTER_MAX_ENUM;
+}
+
+VkSamplerAddressMode 
+Vk_RenderApiUtil::toVkSamplerAddressMode(SamplerWrap v)
+{
+	using SRC = rds::SamplerWrap;
+	switch (v)
+	{
+		case SRC::Repeat:			{ return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT; }			break;
+		case SRC::Mirrored:			{ return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT; }	break;
+		case SRC::ClampToEdge:		{ return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; }		break;
+		case SRC::ClampToBorder:	{ return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER; }	break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
+	}
+	//return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
+}
+
+VkImageViewType		
+Vk_RenderApiUtil::toVkImageViewType(RenderDataType v)
+{
+	using SRC = rds::RenderDataType;
+	switch (v)
+	{
+		case SRC::Texture1D:			{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_1D; }			break;
+		case SRC::Texture2D:			{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_2D; }			break;
+		case SRC::Texture3D:			{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_3D; }			break;
+		case SRC::TextureCube:			{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_CUBE; }		break;
+		case SRC::Texture1DArray:		{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_1D_ARRAY; }	break;
+		case SRC::Texture2DArray:		{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_2D_ARRAY; }	break;
+		case SRC::TextureCubeArray:		{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; }	break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
+	}
+	//return VkImageViewType::VK_IMAGE_VIEW_TYPE_MAX_ENUM;
 }
 
 u32

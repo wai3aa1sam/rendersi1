@@ -3,6 +3,8 @@
 #include "rdsRenderer.h"
 #include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
 
+#include "rds_render_api_layer/texture/rdsTexture.h"
+
 namespace rds
 {
 #if 0
@@ -42,6 +44,17 @@ Renderer::create(const CreateDesc& cDesc)
 {
 	auto* rdr = _init(cDesc); RDS_UNUSED(rdr);
 	rdr->onCreate(cDesc);
+
+	{
+		// wait for UploadContext, since currently use RenderContext to upload
+		//rdr->_textureStock.white	= rdr->createSolidColorTexture2D(Color4b(255, 255, 255, 255));
+		//rdr->_textureStock.black	= rdr->createSolidColorTexture2D(Color4b(0,   0,   0,   255));
+		//rdr->_textureStock.red		= rdr->createSolidColorTexture2D(Color4b(255, 0,   0,   255));
+		//rdr->_textureStock.green	= rdr->createSolidColorTexture2D(Color4b(0,   255, 0,   255));
+		//rdr->_textureStock.blue		= rdr->createSolidColorTexture2D(Color4b(0,   0,   255, 255));
+		//rdr->_textureStock.magenta	= rdr->createSolidColorTexture2D(Color4b(255, 0,   255, 255));
+		//rdr->_textureStock.error	= rdr->createSolidColorTexture2D(Color4b(255, 0,   255, 255));
+	}
 }
 
 
@@ -61,6 +74,30 @@ void
 Renderer::onDestroy()
 {
 
+}
+
+SPtr<Texture2D>	
+Renderer::createSolidColorTexture2D(const Color4b& color)
+{
+	int w = 4;
+	int h = 4;
+	Texture2D_CreateDesc texDesc;
+	texDesc.format		= ColorType::RGBAb;
+	texDesc.mipCount	= 1;
+	texDesc.size.set(w, h);
+
+	auto& image = texDesc.uploadImage;
+	image.create(Color4b::s_kColorType, w, h);
+
+	for (int y = 0; y < h; y++) 
+	{
+		auto span = image.row<Color4b>(y);
+		for (int x = 0; x < w; x++) 
+		{
+			span[x] = color;
+		}
+	}
+	return createTexture2D(texDesc);
 }
 
 Renderer*

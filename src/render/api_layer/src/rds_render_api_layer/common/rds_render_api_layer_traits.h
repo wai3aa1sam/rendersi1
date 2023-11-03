@@ -10,6 +10,7 @@ namespace rds
 public:																						\
 	using Traits	= RenderApiLayerTraits;													\
 	using SizeType	= Traits::SizeType;														\
+	using DataType	= RenderDataType;														\
 public:																						\
 	static constexpr SizeType s_kThreadCount		= Traits::s_kThreadCount;				\
 	static constexpr SizeType s_kFrameInFlightCount	= Traits::s_kFrameInFlightCount;		\

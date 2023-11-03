@@ -51,12 +51,12 @@ float4x4	rds_matrix_view;
 float4x4	rds_matrix_proj;
 float4x4	rds_matrix_mvp;
 
-#if	0
+#if	1
 Texture2D       texture0 ;//: register(t1);       // texture is a reserved word
 SamplerState    _rds_texture0_sampler ;//: register(s1);
 #else
-Texture2D       texture0 				: register(t1, space1);       // texture is a reserved word
-SamplerState    _rds_texture0_sampler 	: register(s1, space1);
+Texture2D       texture0 			: register(t1,space1);       // texture is a reserved word
+SamplerState    _rds_texture0_sampler 	: register(s1,space1);
 #endif
 
 Texture2D       texture2 			;//: register(t2, space0);       // texture is a reserved word

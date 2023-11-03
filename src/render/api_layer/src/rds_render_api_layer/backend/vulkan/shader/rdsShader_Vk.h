@@ -75,9 +75,6 @@ protected:
 protected:
 	VertexStage _vkVertexStage;
 	PixelStage	_vkPixelStage;
-
-	//Vk_DescriptorSetLayout	_testVkDescriptorSetLayout;
-	Vk_PipelineLayout		_vkPipelineLayout;
 };
 
 template<size_t N> inline 

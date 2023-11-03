@@ -181,23 +181,6 @@ protected:
 		// TestScope will create Logger and ProjectSetting, so commented
 		// updated: turned off TestScope log and ProjectSetting
 		Base::onCreate(thisCDesc);		
-		
-		// created in Base::onCreate()
-		#if 0
-		JobSystem::init();
-		Renderer::init();
-
-		{
-			auto jobSysCDesc = JobSystem::makeCDesc();
-			JobSystem::instance()->create(jobSysCDesc);
-		}
-
-		{
-			auto rendererCDesc = Renderer::makeCDesc();
-			Renderer::instance()->create(rendererCDesc);
-		}
-		#endif // 0
-
 
 		{ Process sh = { "asset/shader/vulkan/compile_shader.bat" }; }
 
@@ -273,15 +256,23 @@ public:
 
 		//JobSystem::instance()->setSingleThreadMode(true);
 
+		#if 1
 		{
-			_testShader = Renderer::instance()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
+			_testShader = Renderer::instance()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
 			//_testShader = Renderer::instance()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
 			_testMaterial = Renderer::instance()->createMaterial();
 			_testMaterial->setShader(_testShader);
+
+			auto texCDesc = _testTexture2D->makeCDesc();
+			texCDesc.create("asset/texture/uvChecker.png");
+			texCDesc.rdCtx = &VulkanEditorApp::instance()->mainWin()->renderContext();
+
+			_testTexture2D = Renderer::instance()->createTexture2D(texCDesc);
 		}
-		
+		#endif // 0
+
 	}
 
 	virtual void onUpdate() override
@@ -323,6 +314,7 @@ public:
 			Mat4f mvp		= proj * view * model;
 
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
+			_testMaterial->setParam("texture0", _testTexture2D);
 		}
 		#endif // 0
 
@@ -332,16 +324,6 @@ public:
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh2);
 		//_rdReq.drawRenderables(DrawingSettings{});
 
-		auto addDrawCall = [](RenderRequest& _rdReq, SPtr<RenderGpuMultiBuffer>& vtxBuf, SPtr<RenderGpuBuffer>& idxBuf)
-			{
-				auto* p = _rdReq.addDrawCall();
-				p->vertexBuffer = vtxBuf->renderGpuBuffer();
-				p->vertexCount	= vtxBuf->elementCount();
-				p->indexBuffer	= idxBuf;
-				p->indexCount	= idxBuf->elementCount();
-	};
-		addDrawCall(_rdReq, _testMultiBuffer, _testIdxBuf);
-		addDrawCall(_rdReq, _testMultiBuffer2, _testIdxBuf);
 		
 		#else
 
@@ -415,6 +397,8 @@ protected:
 
 	SPtr<Shader>	_testShader;
 	SPtr<Material>	_testMaterial;
+
+	SPtr<Texture2D> _testTexture2D;
 };
 
 class Test_VulkanEditorApp : public UnitTest

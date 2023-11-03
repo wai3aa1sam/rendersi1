@@ -37,6 +37,7 @@ protected:
 		compile("asset/shader/terrain/my_terrain.shader",	opt);
 		compile("asset/shader/test.shader",					opt);
 		compile("asset/shader/test_texture.shader",			opt);
+		compile("asset/shader/test_texture_set0.shader",	opt);
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)

@@ -5,6 +5,11 @@
 namespace rds
 {
 
+class Texture1D;
+class Texture2D;
+class Texture3D;
+class TextureCube;
+
 #if 0
 #pragma mark --- rdsRenderDataType-Decl ---
 #endif // 0
@@ -88,13 +93,18 @@ template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tup
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple3i>()	{ return Type::Int32x3; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple4i>()	{ return Type::Int32x4; };
 
-template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<::nmsp::Tuple2f_T>()	{ return Type::Float32x2; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple2f>()	{ return Type::Float32x2; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple3f>()	{ return Type::Float32x3; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple4f>()	{ return Type::Float32x4; };
 
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Mat4f>()		{ return Type::Float32_4x4; };
 
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Color4b>()	{ return Type::UNorm8x4; };
+
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture1D>()		{ return Type::Texture1D; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture2D>()		{ return Type::Texture2D; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture3D>()		{ return Type::Texture3D; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<TextureCube>()		{ return Type::TextureCube; };
 
 inline constexpr 
 RenderDataTypeUtil::SizeType 

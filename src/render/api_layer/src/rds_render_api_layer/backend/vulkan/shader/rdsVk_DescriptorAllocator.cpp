@@ -3,6 +3,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
 
 namespace rds
 {
@@ -69,6 +70,8 @@ Vk_DescriptorAllocator::reset()
 	}
 	_usedPools.clear();
 	_curPool = requestPool();
+
+	RDS_TODO("handle reset or use different approach to handle [free] desc set, since reset and update in each frame would have great overhead");
 }
 
 
@@ -165,21 +168,30 @@ Vk_DescriptorBuilder::Vk_DescriptorBuilder()
 }
 
 bool
-Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, const ShaderParams& shaderParams)
+Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, const ShaderResources& shaderRscs)
 {
 	dstSet = _alloc->alloc(&layout);
 	if (!dstSet)
 	{
 		return false;
 	}
-	
-	auto shaderStageFlag = Util::toVkShaderStageBit(shaderParams.info().stageFlag);
-	for (const auto& e : shaderParams.constBufs()) bindBuffer(dstSet, e, shaderStageFlag);
 
-	//for (auto& e : _writeDescs)
-	//{
-	//	e.dstSet = dstSet.hnd();
-	//}
+	#define RDS_TEMP_BIND_TEX_WITH_SAMPLER 1
+	
+	auto shaderStageFlag = Util::toVkShaderStageBit(shaderRscs.info().stageFlag);
+
+	for (const auto& e : shaderRscs.constBufs())		bindBuffer	(dstSet, e, shaderStageFlag);
+
+	#if !RDS_TEMP_BIND_TEX_WITH_SAMPLER
+
+	for (const auto& e : shaderRscs.texParams())		bindTexture	(dstSet, e, shaderStageFlag);
+	for (const auto& e : shaderRscs.samplerParams())	bindSampler	(dstSet, e, shaderStageFlag);
+
+	#else
+
+	for (const auto& e : shaderRscs.texParams())		bindTextureWithSampler	(dstSet, e, shaderRscs, shaderStageFlag);
+
+	#endif // 0
 
 	if (!_writeDescs.is_empty())
 		vkUpdateDescriptorSets(_alloc->vkDev(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
@@ -190,7 +202,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 void 
 Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, const ConstBuffer& constBuf, VkShaderStageFlags stageFlag)
 {
-	const auto& info = *constBuf.info();
+	const auto& info = constBuf.info();
 
 	auto& bufInfo	= _bufInfos.emplace_back();
 	bufInfo.buffer	= Util::toVkBufHnd(constBuf._gpuBuffer.ptr());
@@ -209,6 +221,72 @@ Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, const ConstBuffer& co
 	out.pBufferInfo			= &bufInfo;
 	out.pImageInfo			= nullptr; // Optional
 	out.pTexelBufferView	= nullptr; // Optional
+}
+
+void 
+Vk_DescriptorBuilder::bindTexture(Vk_DescriptorSet& dstSet, const TexParam& texParam, VkShaderStageFlags stageFlag)
+{
+	const auto& info = texParam.info();
+
+	auto& imageInfo	= _imageInfos.emplace_back();
+	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView		= Vk_Texture::getImageViewHnd(texParam.getUpdatedTexture());
+	//imageInfo.sampler		= _testVkTextureSampler.hnd();
+
+	auto& out = _writeDescs.emplace_back();
+	out = {};
+
+	out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	out.dstSet				= dstSet.hnd();
+	out.dstBinding			= info.bindPoint;
+	out.dstArrayElement		= 0;
+	out.descriptorType		= Util::toVkDescriptorType(info.paramType());
+	out.descriptorCount		= 1;
+	out.pBufferInfo			= nullptr;
+	out.pImageInfo			= &imageInfo;
+	out.pTexelBufferView	= nullptr;
+}
+
+void 
+Vk_DescriptorBuilder::bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam& samplerParam, VkShaderStageFlags stageFlag)
+{
+	throwIf(true, "need a global cache sampler");
+	_bindSampler(dstSet, samplerParam, nullptr, stageFlag);
+}
+
+void 
+Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, const TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag)
+{
+	bindTexture(dstSet, texParam, stageFlag);
+	TempString temp;
+	shaderRscs._getAutoSetSamplerNameTo(temp, texParam.name());
+	if (auto* samplerParam = shaderRscs.findSamplerParam(temp))
+	{
+		_bindSampler(dstSet, *samplerParam, Vk_Texture::getSamplerHnd(texParam.getUpdatedTexture()), stageFlag);
+	}
+}
+
+void 
+Vk_DescriptorBuilder::_bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam& samplerParam, Vk_Sampler_T* samplerHnd, VkShaderStageFlags stageFlag)
+{
+	const auto& info = samplerParam.info();
+
+	auto& imageInfo	= _imageInfos.emplace_back();
+	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.sampler		= samplerHnd;
+
+	auto& out = _writeDescs.emplace_back();
+	out = {};
+
+	out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	out.dstSet				= dstSet.hnd();
+	out.dstBinding			= info.bindPoint;
+	out.dstArrayElement		= 0;
+	out.descriptorType		= Util::toVkDescriptorType(info.paramType());
+	out.descriptorCount		= 1;
+	out.pBufferInfo			= nullptr;
+	out.pImageInfo			= &imageInfo;
+	out.pTexelBufferView	= nullptr;
 }
 
 #endif

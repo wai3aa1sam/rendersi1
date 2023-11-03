@@ -165,6 +165,7 @@ public:
 	Renderer_Vk* renderer();
 
 	Vk_Queue* vkGraphicsQueue();
+	Vk_Queue* vkTransferQueue();
 	Vk_Queue* vkPresentQueue();
 
 	Vk_CommandBuffer_T* vkCommandBuffer();
@@ -235,22 +236,9 @@ protected:
 protected:
 	Renderer_Vk*	_renderer		= nullptr;
 
-
 	RDS_PROFILE_GPU_CTX_VK(_gpuProfilerCtx);
 
-
 	Vk_Swapchain	_vkSwapchain;
-	/*Vk_SwapchainInfo	_swapchainInfo;
-
-	VkPtr<Vk_Surface>			_vkSurface;
-	VkPtr<Vk_Swapchain>			_vkSwapchain;
-	SwapChainImages_Vk			_vkSwapchainImages;
-	SwapChainImageViews_Vk		_vkSwapchainImageViews;
-	SwapChainFramebuffers_Vk	_vkSwapchainFramebuffers;
-
-	Vk_Image		_vkDepthImage;
-	Vk_ImageView	_vkDepthImageView;
-	VkFormat		_vkDepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;*/
 	
 	Vk_Pipeline			_testVkPipeline;
 	Vk_RenderPass		_testVkRenderPass;
@@ -285,6 +273,7 @@ protected:
 inline Renderer_Vk* RenderContext_Vk::renderer() { return _renderer; }
 
 inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return &_vkGraphicsQueue; }
+inline Vk_Queue* RenderContext_Vk::vkTransferQueue()	{ return &_vkTransferQueue; }
 inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; }
 
 

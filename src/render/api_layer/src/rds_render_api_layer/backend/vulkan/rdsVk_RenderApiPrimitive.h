@@ -45,6 +45,9 @@ class Vk_PipelineCache;
 struct Vk_RenderApiUtil;
 class Renderer_Vk;
 
+struct SamplerState;
+class Texture2D_Vk;
+
 template<class T>
 class RenderApiResource_Vk : public NonCopyable
 {
@@ -130,6 +133,8 @@ protected:
 		_hnd = rhs._hnd; 
 		rhs._hnd = VK_NULL_HANDLE;
 	}
+
+	void reset() { _hnd = VK_NULL_HANDLE; }
 
 protected:
 	T* _hnd = VK_NULL_HANDLE;
@@ -383,7 +388,7 @@ public:
 
 public:
 	Vk_ImageView() = default;
-	~Vk_ImageView() { destroy(); }
+	~Vk_ImageView() { RDS_CORE_ASSERT(!hnd(), ""); }
 
 	Vk_ImageView(Vk_ImageView&&)		{ throwIf(true, ""); }
 	void operator=(Vk_ImageView&&)	{ throwIf(true, ""); }
@@ -391,7 +396,10 @@ public:
 	void create(VkImageViewCreateInfo* viewInfo);
 	void create(Vk_Image*   vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount = 1);
 	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount = 1);
+	void create(Texture2D_Vk* tex2DVk, Renderer_Vk* rdr);
 	void destroy();
+	void destroy(Renderer_Vk* rdr);
+
 };
 
 #endif
@@ -415,13 +423,15 @@ public:
 
 public:
 	Vk_Sampler() = default;
-	~Vk_Sampler() { destroy(); }
+	~Vk_Sampler() { RDS_CORE_ASSERT(!hnd(), ""); }
 
 	Vk_Sampler(Vk_Sampler&&)		{ throwIf(true, ""); }
 	void operator=(Vk_Sampler&&)	{ throwIf(true, ""); }
 
 	void create(VkSamplerCreateInfo* samplerInfo);
-	void destroy();
+	void create(const SamplerState& samplerState, Renderer_Vk* rdr);
+
+	void destroy(Renderer_Vk* rdr);
 };
 
 #endif

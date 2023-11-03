@@ -155,6 +155,11 @@ Vk_Swapchain::destroySwapchain()
 	_vkDepthImageView.destroy();
 	_vkDepthImage.destroy();
 
+	for (auto& e : _vkSwapchainImageViews)
+	{
+		e.destroy(renderer());
+	}
+
 	_vkSwapchainFramebuffers.clear();
 	_vkSwapchainImageViews.clear();
 	_vkSwapchainImages.clear();

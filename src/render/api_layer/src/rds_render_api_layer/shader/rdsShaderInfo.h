@@ -58,7 +58,7 @@ template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Tuple4f>()	{ 
 template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Color4f>()	{ return Type::Color4f; }
 template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Texture2D>()	{ return Type::Texture2D; }
 
-#define ShaderParamType_ENUM_LIST(E) \
+#define ShaderResourceType_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(ConstantBuffer,) \
 	E(Texture,) \
@@ -67,7 +67,7 @@ template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Texture2D>()	
 	E(StorageImage,) \
 	E(_kCount,) \
 //---
-RDS_ENUM_CLASS(ShaderParamType, u8);
+RDS_ENUM_CLASS(ShaderResourceType, u8);
 
 struct ShaderPropValueConstPtr
 {
@@ -141,6 +141,7 @@ struct ShaderStageInfo
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Variable = ShaderVariableInfo;
+	using DataType = RenderDataType;
 
 public:
 	static constexpr SizeType s_kInputLocalSize			= 8;
@@ -211,7 +212,7 @@ public:
 	struct ConstBuffer
 	{
 	public:
-		static constexpr ShaderParamType paramType() { return ShaderParamType::ConstantBuffer; }
+		static constexpr ShaderResourceType paramType() { return ShaderResourceType::ConstantBuffer; }
 
 	public:
 		String				name;
@@ -248,12 +249,13 @@ public:
 	struct Texture
 	{
 	public:
-		static constexpr ShaderParamType paramType() { return ShaderParamType::Texture; }
+		static constexpr ShaderResourceType paramType() { return ShaderResourceType::Texture; }
 
 	public:
-		String	name;
-		u16		bindPoint = 0;
-		u16		bindCount = 0;
+		String		name;
+		DataType	dataType	= DataType::None;
+		u16			bindPoint	= 0;
+		u16			bindCount	= 0;
 
 	public:
 		template<class JSON_SE>
@@ -268,7 +270,7 @@ public:
 	struct Sampler
 	{
 	public:
-		static constexpr ShaderParamType paramType() { return ShaderParamType::Sampler; }
+		static constexpr ShaderResourceType paramType() { return ShaderResourceType::Sampler; }
 
 		String	name;
 		u16		bindPoint = 0;
@@ -287,7 +289,7 @@ public:
 	struct StorageBuffer
 	{
 	public:
-		static constexpr ShaderParamType paramType() { return ShaderParamType::StorageBuffer; }
+		static constexpr ShaderResourceType paramType() { return ShaderResourceType::StorageBuffer; }
 
 	public:
 		String	name;
@@ -307,7 +309,7 @@ public:
 	struct StorageImage
 	{
 	public:
-		static constexpr ShaderParamType paramType() { return ShaderParamType::StorageImage; }
+		static constexpr ShaderResourceType paramType() { return ShaderResourceType::StorageImage; }
 
 	public:
 		String	name;

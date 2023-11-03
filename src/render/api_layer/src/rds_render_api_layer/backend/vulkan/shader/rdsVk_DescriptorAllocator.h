@@ -99,17 +99,24 @@ class Vk_DescriptorBuilder
 public:
 	using Util			= Vk_RenderApiUtil;
 	using ConstBuffer	= MaterialPass_Stage::ConstBuffer;
+	using TexParam		= MaterialPass_Stage::TexParam;
+	using SamplerParam	= MaterialPass_Stage::SamplerParam;
 
 public:
 	static Vk_DescriptorBuilder make(Vk_DescriptorAllocator* alloc);
 
 public:
 	void createLayout(Vk_DescriptorSetLayout& layout, MaterialPass_Stage* stage);
-	bool build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, const ShaderParams& shaderParams);
+	bool build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, const ShaderResources& shaderRscs);
 
 protected:
-	void bindBuffer(Vk_DescriptorSet& dstSet, const ConstBuffer& constBuf, VkShaderStageFlags stageFlag);
-	void bindTexture();
+	void bindBuffer	(Vk_DescriptorSet& dstSet, const ConstBuffer&	constBuf,		VkShaderStageFlags stageFlag);
+	void bindTexture(Vk_DescriptorSet& dstSet, const TexParam&		texParam,		VkShaderStageFlags stageFlag);
+	void bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam,	VkShaderStageFlags stageFlag);
+
+	void bindTextureWithSampler(Vk_DescriptorSet& dstSet, const TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag);
+
+	void _bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam, Vk_Sampler_T* samplerHnd,	VkShaderStageFlags stageFlag);
 
 protected:
 	Vk_DescriptorBuilder();

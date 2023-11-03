@@ -52,6 +52,18 @@ class	Shader;
 struct	Shader_CreateDesc;
 class	Material;
 
+
+struct TextureStock
+{
+	SPtr<Texture2D>	white;
+	SPtr<Texture2D>	black;
+	SPtr<Texture2D>	red;
+	SPtr<Texture2D>	green;
+	SPtr<Texture2D>	blue;
+	SPtr<Texture2D>	magenta;
+	SPtr<Texture2D>	error;
+};
+
 class Renderer : public VirtualSingleton<Renderer>
 {
 public:
@@ -60,6 +72,7 @@ public:
 	using CreateDesc = Renderer_CreateDesc;
 
 	using SizeType = RenderApiLayerTraits::SizeType;
+
 
 public:
 	static constexpr SizeType s_kFrameInFlightCount = RenderApiLayerTraits::s_kFrameInFlightCount;
@@ -83,7 +96,12 @@ public:
 	SPtr<Material>				createMaterial				();
 	SPtr<Material>				createMaterial				(Shader*							shader);
 
-	const RenderAdapterInfo& adapterInfo() const;
+public:
+	SPtr<Texture2D>	createSolidColorTexture2D(const Color4b& color);
+
+public:
+	const	RenderAdapterInfo&	adapterInfo() const;
+			TextureStock&		textureStock();
 
 protected:
 	Renderer* _init(const CreateDesc& cDesc);
@@ -102,9 +120,12 @@ protected:
 	RenderAdapterInfo	_adapterInfo;
 	VertexLayoutManager _vertexLayoutManager;
 	RenderFrameContext  _renderFrameCtx;
+
+	TextureStock _textureStock;
 };
 
-inline const RenderAdapterInfo& Renderer::adapterInfo() const { return _adapterInfo; }
+inline const	RenderAdapterInfo&		Renderer::adapterInfo()		const	{ return _adapterInfo; }
+inline			TextureStock&			Renderer::textureStock()			{ return _textureStock; }
 
 
 #endif

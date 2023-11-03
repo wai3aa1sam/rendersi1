@@ -5,6 +5,7 @@
 #include "rdsShaderPass.h"
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
+#include "rdsShaderResource.h"
 
 namespace rds
 {
@@ -18,164 +19,6 @@ class MaterialPass;
 
 class RenderContext;
 
-struct ShaderParams;
-using FramedShaderParams	= Vector<ShaderParams, RenderApiLayerTraits::s_kFrameInFlightCount>;
-
-#if 0
-#pragma mark --- rdsShaderParams-Decl ---
-#endif // 0
-#if 1
-
-struct ShaderParams
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	static constexpr SizeType s_kLocalConstBufSize = 2;
-
-public:
-	template<class T> void setParam(StrView name, const T& v);
-
-	void create(ShaderStage* shaderStage);
-	void destroy();
-
-	void uploadToGpu();
-
-	void clear();
-
-	struct ConstBuffer
-	{
-	public:
-		using Info		= ShaderStageInfo::ConstBuffer;
-		using VarInfo	= ShaderVariableInfo;
-
-	public:
-		static constexpr SizeType s_kLocalDataSize = 2;
-
-	public:
-		void create(const Info* info);
-		void destroy();
-
-		template<class T> void setParam(StrView name, const T& v)
-		{
-			const ShaderVariableInfo* var = info()->findVariable(name);
-			if (!var)
-				return;
-			_setParam(*var, v);
-		}
-
-		void uploadToGpu();
-
-				u8* data();
-		const	u8* data() const;
-
-		const Info* info() const;
-
-	protected:
-		void _setParam(const VarInfo& varInfo, const i32&		v)	{ return _setParamCheckType(varInfo, v); }
-		void _setParam(const VarInfo& varInfo, const f32&		v)	{ return _setParamCheckType(varInfo, v); }
-		void _setParam(const VarInfo& varInfo, const Color4b&	v)	{ return _setParamCheckType(varInfo, v); }
-		void _setParam(const VarInfo& varInfo, const Tuple2f&	v)	{ return _setParamCheckType(varInfo, v); }
-		void _setParam(const VarInfo& varInfo, const Tuple3f&	v)	{ return _setParamCheckType(varInfo, v); }
-		void _setParam(const VarInfo& varInfo, const Tuple4f&	v)	{ return _setParamCheckType(varInfo, v); }
-		void _setParam(const VarInfo& varInfo, const Mat4f&		v)	{ return _setParamCheckType(varInfo, v); }
-
-		template<class T> void _setParamCheckType	(const VarInfo& varInfo, const T& v);
-		template<class T> bool _checkType			(const VarInfo& varInfo, const T& v);
-		template<class T> void _setValue			(const VarInfo& varInfo, const T& v);
-
-	protected:
-
-	public:
-		const Info* _info = nullptr;
-		Vector<u8, s_kLocalDataSize>	_cpuBuf;
-		SPtr<RenderGpuBuffer>			_gpuBuffer;
-
-		bool _isDirty = false;
-	};
-
-	const ShaderStageInfo& info() const;
-
-	ConstBuffer&			constBufs(SizeType i);
-	Span<ConstBuffer>		constBufs();
-	Span<const ConstBuffer>	constBufs() const;
-
-protected:
-	const ShaderStageInfo* _info = nullptr;
-	Vector<ConstBuffer, s_kLocalConstBufSize> _constBufs;
-};
-
-template<class T> inline
-void 
-ShaderParams::setParam(StrView name, const T& v)
-{
-	for (auto& e : constBufs())
-	{
-		e.setParam(name, v);
-	}
-}
-
-inline
-void 
-ShaderParams::uploadToGpu()
-{
-	for (auto& e : constBufs())
-	{
-		e.uploadToGpu();
-	}
-}
-
-inline
-void 
-ShaderParams::clear()
-{
-	this->_constBufs.clear();
-}
-
-inline ShaderParams::ConstBuffer&				ShaderParams::constBufs(SizeType i)	{ return _constBufs[i]; }
-inline Span<ShaderParams::ConstBuffer>			ShaderParams::constBufs()			{ return _constBufs; }
-inline Span<const ShaderParams::ConstBuffer>	ShaderParams::constBufs() const		{ return spanCast<const ConstBuffer>(_constBufs.span()); }
-
-#if 0
-#pragma mark --- rdsShaderParams::ConstBuffer-Impl ---
-#endif // 0
-#if 1
-
-template<class T> inline
-void 
-ShaderParams::ConstBuffer::_setParamCheckType(const VarInfo& varInfo, const T& v)
-{
-	throwIf(!_checkType(varInfo, v), "material set param failed, in valid type");
-	_setValue(varInfo, v);
-}
-
-template<class T> inline
-bool 
-ShaderParams::ConstBuffer::_checkType(const VarInfo& varInfo, const T& v)
-{
-	return varInfo.dataType == RenderDataTypeUtil::get<T>();
-}
-
-template<class T> inline
-void 
-ShaderParams::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v)
-{
-	auto end = varInfo.offset + sizeof(v);
-	throwIf(end > _cpuBuf.size(), "material set param failed, cpuBuffer overflow");
-	auto* dst = data() + varInfo.offset;
-	*reinCast<T*>(dst) = v;
-	_isDirty = true;
-}
-
-inline 			u8*									ShaderParams::ConstBuffer::data()		{ return _cpuBuf.data(); }
-inline const	u8*									ShaderParams::ConstBuffer::data() const	{ return _cpuBuf.data(); }
-inline const	ShaderParams::ConstBuffer::Info*	ShaderParams::ConstBuffer::info() const	{ return _info; }
-
-
-#endif
-
-
-#endif
-
 #if 0
 #pragma mark --- rdsMaterialPass_Stage-Decl ---
 #endif // 0
@@ -186,8 +29,10 @@ struct MaterialPass_Stage
 	friend class Material;
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	using Info					= ShaderStageInfo;
-	using ConstBuffer			= ShaderParams::ConstBuffer;
+	using Info			= ShaderStageInfo;
+	using ConstBuffer	= ShaderResources::ConstBuffer;
+	using TexParam		= ShaderResources::TexParam;
+	using SamplerParam	= ShaderResources::SamplerParam;
 
 public:
 	static constexpr SizeType s_kLocalConstBufSize = 2;
@@ -196,14 +41,16 @@ public:
 	void create(MaterialPass* pass, ShaderStage* shaderStage);
 	void destroy();
 
-	template<class T> void setParam(Material* mtl, StrView name, const T& v);
+	template<class TEX> void setTexParam	(Material* mtl, StrView name, TEX* v, bool isAutoSampler);
+	template<class T>	void setParam		(Material* mtl, StrView name, const T& v);
+						void setSamplerParam(Material* mtl, StrView name, const SamplerState& v);
 
 	const ShaderStageInfo&	info() const;
-	ShaderParams&			shaderParams(Material* mtl);
+	ShaderResources&		shaderResources(Material* mtl);
 
 protected:
-	ShaderStage* _shaderStage = nullptr;
-	FramedShaderParams _framedShaderParams;
+	ShaderStage*			_shaderStage = nullptr;
+	FramedShaderResources	_framedShaderResources;
 };
 
 #if 0
@@ -215,10 +62,30 @@ template<class T> inline
 void 
 MaterialPass_Stage::setParam(Material* mtl, StrView name, const T& v)
 {
-	if (!_shaderStage)
-		return;
+	/*if (!_shaderStage)
+		return;*/
 
-	shaderParams(mtl).setParam(name, v);
+	shaderResources(mtl).setParam(name, v);
+}
+
+template<class TEX> inline
+void 
+MaterialPass_Stage::setTexParam(Material* mtl, StrView name, TEX* v, bool isAutoSampler)
+{
+	/*if (!_shaderStage)
+	return;*/
+
+	shaderResources(mtl).setTexParam(name, v, isAutoSampler);
+}
+
+inline
+void 
+MaterialPass_Stage::setSamplerParam(Material* mtl, StrView name, const SamplerState& samplerState)
+{
+	/*if (!_shaderStage)
+	return;*/
+
+	shaderResources(mtl).setSamplerParam(name, samplerState);
 }
 
 inline const ShaderStageInfo& MaterialPass_Stage::info() const { return _shaderStage->info(); }
@@ -276,7 +143,9 @@ public:
 
 	void bind(RenderContext* ctx, const VertexLayout* vtxLayout) { onBind(ctx, vtxLayout); }
 
-	template<class T> void setParam(StrView name, const T& v);
+	template<class TEX> void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
+	template<class T>	void setParam		(StrView name, const T& v);
+						void setSamplerParam(StrView name, const SamplerState& samplerState);
 
 	const Info& info() const;
 
@@ -304,6 +173,15 @@ MaterialPass::onCreate(Material* material, ShaderPass* shaderPass)
 	_shaderPass = shaderPass;
 }
 
+template<class TEX> inline 
+void 
+MaterialPass::setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
+{
+	auto* mtl = _material;
+	if (_vertexStage)	_vertexStage->setTexParam(mtl, name, v, isAutoSetSampler);
+	if (_pixelStage)	 _pixelStage->setTexParam(mtl, name, v, isAutoSetSampler);
+}
+
 template<class T> inline 
 void 
 MaterialPass::setParam(StrView name, const T& v)
@@ -311,6 +189,15 @@ MaterialPass::setParam(StrView name, const T& v)
 	auto* mtl = _material;
 	if (_vertexStage)	_vertexStage->setParam(mtl, name, v);
 	if (_pixelStage)	 _pixelStage->setParam(mtl, name, v);
+}
+
+inline
+void 
+MaterialPass::setSamplerParam(StrView name, const SamplerState& samplerState)
+{
+	auto* mtl = _material;
+	if (_vertexStage)	_vertexStage->setSamplerParam(mtl, name, samplerState);
+	if (_pixelStage)	 _pixelStage->setSamplerParam(mtl, name, samplerState);
 }
 
 inline const MaterialPass::Info& MaterialPass::info() const { return _shaderPass->info(); }

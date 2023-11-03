@@ -3,6 +3,8 @@
 #include "rdsRenderer_Vk.h"
 #include "rdsVk_Allocator.h"
 
+#include "texture/rdsTexture_Vk.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -239,7 +241,7 @@ Vk_Image::create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 
 	imageInfo.usage			= usage;
 	imageInfo.sharingMode	= VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.samples		= VK_SAMPLE_COUNT_1_BIT;
-	imageInfo.flags			= 0; // Optional
+	imageInfo.flags			= VkImageCreateFlagBits::VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT; // Optional
 
 	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
 	auto queueCount = vkQueueIndices.get(queueIdices, queueTypeFlags);
@@ -265,7 +267,7 @@ Vk_Image::destroy()
 	if (!_hnd || !_alloc)
 		return;
 	_alloc->freeImage(_hnd, &_allocHnd);
-	_hnd = nullptr;
+	reset();
 }
 
 #endif
@@ -328,6 +330,7 @@ Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags 
 	create(&viewInfo);
 }
 
+
 void 
 Vk_ImageView::destroy()
 {
@@ -336,7 +339,19 @@ Vk_ImageView::destroy()
 	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
 	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
 	vkDestroyImageView(vkDev, _hnd, vkAllocCallBacks);
-	_hnd = nullptr;
+	reset();
+}
+
+
+void 
+Vk_ImageView::destroy(Renderer_Vk* rdr)
+{
+	if (!_hnd)
+		return;
+	auto* vkDev				= rdr->vkDevice();
+	auto* vkAllocCallBacks	= rdr->allocCallbacks();
+	vkDestroyImageView(vkDev, _hnd, vkAllocCallBacks);
+	reset();
 }
 
 #endif
@@ -357,39 +372,17 @@ Vk_Sampler::create(VkSamplerCreateInfo* samplerInfo)
 	Util::throwIfError(ret);
 }
 
-//void 
-//Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount)
-//{
-//	RDS_CORE_ASSERT(mipCount >= 1, "");
-//
-//	VkImageViewCreateInfo viewInfo = {};
-//	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-//	viewInfo.image								= vkImage;
-//	viewInfo.viewType							= VK_IMAGE_VIEW_TYPE_2D;
-//	viewInfo.format								= vkFormat;
-//
-//	viewInfo.components.r						= VK_COMPONENT_SWIZZLE_IDENTITY;
-//	viewInfo.components.g						= VK_COMPONENT_SWIZZLE_IDENTITY;
-//	viewInfo.components.b						= VK_COMPONENT_SWIZZLE_IDENTITY;
-//	viewInfo.components.a						= VK_COMPONENT_SWIZZLE_IDENTITY;
-//
-//	viewInfo.subresourceRange.aspectMask		= aspectFlags;
-//	viewInfo.subresourceRange.baseMipLevel		= 0;
-//	viewInfo.subresourceRange.baseArrayLayer	= 0;
-//	viewInfo.subresourceRange.levelCount		= mipCount;
-//	viewInfo.subresourceRange.layerCount		= 1;
-//
-//	create(&viewInfo);
-//}
 
 void 
-Vk_Sampler::destroy()
+Vk_Sampler::destroy(Renderer_Vk* rdr)
 {
-	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
-	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
+	if (!_hnd)
+		return;
+	auto* vkDev				= rdr->vkDevice();
+	auto* vkAllocCallBacks	= rdr->allocCallbacks();
 	vkDestroySampler(vkDev, _hnd, vkAllocCallBacks);
+	reset();
 }
-
 
 #endif
 

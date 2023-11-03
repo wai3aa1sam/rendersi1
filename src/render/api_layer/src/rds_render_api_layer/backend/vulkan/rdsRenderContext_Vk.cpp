@@ -109,7 +109,10 @@ RenderContext_Vk::onDestroy()
 	Base::onDestroy();
 	waitIdle();
 
+	RDS_TODO("remove");
 	_testVkDescriptorPool.destroy(renderer());
+	_testVkTextureImageView.destroy(renderer());
+	_testVkTextureSampler.destroy(renderer());
 }
 
 void
@@ -595,8 +598,8 @@ RenderContext_Vk::createTestGraphicsPipeline()
 	Vk_ShaderModule psModule;
 
 	{
-		vsModule.create(renderer(), "LocalTemp/imported/shader/asset/shader/test_texture.shader/spirv/pass0/vs_1.1.bin");
-		psModule.create(renderer(), "LocalTemp/imported/shader/asset/shader/test_texture.shader/spirv/pass0/ps_1.1.bin");
+		vsModule.create(renderer(), "LocalTemp/imported/shader/asset/shader/test_texture_set0.shader/spirv/pass0/vs_1.1.bin");
+		psModule.create(renderer(), "LocalTemp/imported/shader/asset/shader/test_texture_set0.shader/spirv/pass0/ps_1.1.bin");
 
 		vsStageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vsStageInfo.stage					= VK_SHADER_STAGE_VERTEX_BIT;
@@ -952,7 +955,13 @@ RenderContext_Vk::createTestDescriptorSets()
 		VkDescriptorImageInfo imageInfo = {};
 		imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView		= _testVkTextureImageView.hnd();
-		imageInfo.sampler		= _testVkTextureSampler.hnd();
+		//imageInfo.sampler		= _testVkTextureSampler.hnd();
+
+
+		VkDescriptorImageInfo samplerInfo = {};
+		samplerInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		//samplerInfo.imageView	= _testVkTextureImageView.hnd();
+		samplerInfo.sampler		= _testVkTextureSampler.hnd();
 
 		Vector<VkWriteDescriptorSet, 16> writeDescs;
 
@@ -991,7 +1000,7 @@ RenderContext_Vk::createTestDescriptorSets()
 			e.descriptorType	= VK_DESCRIPTOR_TYPE_SAMPLER;
 			e.descriptorCount	= 1;
 			e.pBufferInfo		= nullptr;
-			e.pImageInfo		= &imageInfo; // Optional
+			e.pImageInfo		= &samplerInfo; // Optional
 			e.pTexelBufferView	= nullptr; // Optional
 		}
 

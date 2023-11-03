@@ -7,6 +7,7 @@
 #include "rds_render_api_layer/shader/rdsShaderInfo.h"
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
+#include "rds_render_api_layer/texture/rdsTexture.h"
 
 
 #if RDS_RENDER_HAS_VULKAN
@@ -143,7 +144,10 @@ public:
 	static VkExtent2D toVkExtent2D(const Vec2f&  vec2);
 	static Rect2f	  toRect2f	  (const VkExtent2D&  ext2d);
 
-	static VkFormat	toVkFormat(RenderDataType v);
+	static VkFormat	toVkFormat(RenderDataType	v);
+	static VkFormat	toVkFormat(ColorType		v);
+	static VkFormat	toVkFormat_ShaderTexture(VkFormat v);
+	static VkFormat	toVkFormat_Srgb			(VkFormat v);
 
 	static VkBufferUsageFlagBits toVkBufferUsage(RenderGpuBufferTypeFlags type);
 
@@ -156,16 +160,21 @@ public:
 	static bool hasStencilComponent(VkFormat format);
 	static bool isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
 
-	static VkAttachmentLoadOp	toVkAttachmentLoadOp (RenderAttachmentLoadOp	loadOp);
-	static VkAttachmentStoreOp	toVkAttachmentStoreOp(RenderAttachmentStoreOp	storeOp);
+	static VkAttachmentLoadOp	toVkAttachmentLoadOp (RenderAttachmentLoadOp	v);
+	static VkAttachmentStoreOp	toVkAttachmentStoreOp(RenderAttachmentStoreOp	v);
 
 	static VkClearValue toVkClearValue(const Color4f& color);
 	static VkClearValue toVkClearValue(float depth, u32 stencil);
 
-	static VkShaderStageFlagBits	toVkShaderStageBit	(ShaderStageFlag flag);
-	static VkShaderStageFlagBits	toVkShaderStageBits	(ShaderStageFlag flag);
-	static StrView					toShaderStageProfile(ShaderStageFlag flag);
-	static VkDescriptorType			toVkDescriptorType	(ShaderParamType paramType);
+	static VkShaderStageFlagBits	toVkShaderStageBit	(ShaderStageFlag v);
+	static VkShaderStageFlagBits	toVkShaderStageBits	(ShaderStageFlag v);
+	static StrView					toShaderStageProfile(ShaderStageFlag v);
+	static VkDescriptorType			toVkDescriptorType	(ShaderResourceType v);
+
+	static VkFilter				toVkFilter				(SamplerFilter v);
+	static VkSamplerAddressMode toVkSamplerAddressMode	(SamplerWrap v);
+	static VkImageViewType		toVkImageViewType		(RenderDataType v);
+
 
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);

@@ -90,8 +90,8 @@ public:
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		{
 			pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_hnds.size());	// Optional
-			pipelineLayoutInfo.pSetLayouts				= _hnds.data();						// Optional
+			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_hnds.size());			// Optional
+			pipelineLayoutInfo.pSetLayouts				= _hnds.data();						// set0, set1, set2, ...
 			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
 			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
 		}
@@ -317,7 +317,7 @@ struct MaterialStage_Helper
 public:
 	template<class INFO, size_t N, class ALLOC>
 	static void 
-	createShaderParamLayoutBinding(Vector<VkDescriptorSetLayoutBinding, N, ALLOC>& dst, const INFO& infos, VkDescriptorType type, ShaderStageFlag stageFlag)
+	createShaderResourceLayoutBinding(Vector<VkDescriptorSetLayoutBinding, N, ALLOC>& dst, const INFO& infos, VkDescriptorType type, ShaderStageFlag stageFlag)
 	{
 		using Util = Vk_RenderApiUtil;
 		for (const auto& paramInfo : infos)
@@ -343,11 +343,11 @@ public:
 		SizeType bindingCount = info.bindingCount();
 
 		bindings.reserve(bindingCount);
-		createShaderParamLayoutBinding(bindings, info.constBufs,		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			stage->shaderStage()->stageFlag());
-		createShaderParamLayoutBinding(bindings, info.textures,			VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,			stage->shaderStage()->stageFlag());
-		createShaderParamLayoutBinding(bindings, info.samplers,			VK_DESCRIPTOR_TYPE_SAMPLER,					stage->shaderStage()->stageFlag());
-		createShaderParamLayoutBinding(bindings, info.storageBufs,		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,			stage->shaderStage()->stageFlag());
-		createShaderParamLayoutBinding(bindings, info.storageImages,	VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,			stage->shaderStage()->stageFlag());
+		createShaderResourceLayoutBinding(bindings, info.constBufs,		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			stage->shaderStage()->stageFlag());
+		createShaderResourceLayoutBinding(bindings, info.textures,		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,			stage->shaderStage()->stageFlag());
+		createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_SAMPLER,					stage->shaderStage()->stageFlag());
+		createShaderResourceLayoutBinding(bindings, info.storageBufs,	VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,			stage->shaderStage()->stageFlag());
+		createShaderResourceLayoutBinding(bindings, info.storageImages,	VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,			stage->shaderStage()->stageFlag());
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 		layoutInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -373,16 +373,17 @@ public:
 		if (!stage->shaderStage())
 			return;
 
-		auto* mtl = pass->material();
+		auto* mtl		= pass->material();
+		auto& shaderRsc = stage->shaderResources(mtl);
 
-		stage->shaderParams(mtl).uploadToGpu();
+		shaderRsc.uploadToGpu();
 
 		auto& vkDescSet = vkDescriptorSet(stage, mtl);
 		if (!vkDescSet)
 		{
 			auto&	descriptorAlloc	= ctx->renderFrame().descriptorAllocator();
 			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
-			builder.build(vkDescSet, stage->_vkDescriptorSetLayout, stage->shaderParams(mtl));
+			builder.build(vkDescSet, stage->_vkDescriptorSetLayout, shaderRsc);
 		}
 
 		VkPipelineBindPoint vkBindPt = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -436,7 +437,6 @@ Vk_MaterialPass_VertexStage::cacheVtxInputAttrCDesc(const VertexLayout* vtxLayou
 			attr.format		= Util::toVkFormat(e->dataType);
 			attr.offset		= e->offset;
 		}
-
 
 		VkVertexInputBindingDescription bindingDesc = {};
 		bindingDesc.binding		= bindingPt;
