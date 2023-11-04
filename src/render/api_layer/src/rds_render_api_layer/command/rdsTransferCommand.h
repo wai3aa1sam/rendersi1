@@ -3,6 +3,7 @@
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+#include "rds_render_api_layer/texture/rdsTexture.h"
 
 namespace rds
 {
@@ -16,6 +17,7 @@ namespace rds
 	E(None, = 0) \
 	E(UploadBuffer,) \
 	E(CopyBuffer,) \
+	E(UploadTexture,) \
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(TransferCommandType, u8);
@@ -65,6 +67,21 @@ public:
 	SPtr<RenderGpuBuffer>	src;
 	SPtr<RenderGpuBuffer>	dst;
 	QueueTypeFlags			queueTypeflags;
+};
+
+class TransferCommand_UploadTexture : public TransferCommand
+{
+public:
+	using Base = TransferCommand;
+	using This = TransferCommand_UploadBuffer;
+
+public:
+	TransferCommand_UploadTexture() : Base(Type::UploadTexture) {}
+	virtual ~TransferCommand_UploadTexture() {};
+
+public:
+	SPtr<Texture>	dst;
+	ByteSpan		data;
 };
 
 #endif
