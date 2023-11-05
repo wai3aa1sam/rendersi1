@@ -6,6 +6,8 @@
 // references:
 // - https://vkguide.dev/docs/extra-chapter/abstracting_descriptors/
 
+#if RDS_RENDER_HAS_VULKAN
+
 namespace rds
 {
 
@@ -132,3 +134,5 @@ private:
 #endif
 
 }
+
+#endif

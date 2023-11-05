@@ -33,6 +33,13 @@ RDS_DISABLE_ALL_WARNINGS();
 #include <vk_mem_alloc.h>
 RDS_RESTORE_ALL_WARNINGS();
 
+#if VK_VERSION_1_3
+	#define RDS_VK_VER_1_3 1
+#elif VK_VERSION_1_2
+	#define RDS_VK_VER_1_2 1
+#endif // 1
+
+
 namespace rds
 {
 using Vk_AllocHnd = VmaAllocation;

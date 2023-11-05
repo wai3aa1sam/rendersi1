@@ -35,13 +35,13 @@ template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<Vk_Framebuffer, N>;
 struct Vk_Swapchain_CreateDesc
 {
 	RenderContext_Vk*	rdCtx;
-	math::Rect2f		framebufferSize;
+	math::Rect2f		framebufferRect2f;
 	Vk_RenderPass*		vkRdPass;
 	NativeUIWindow*		wnd = nullptr;
 
-	VkFormat           colorFormat	= VK_FORMAT_B8G8R8A8_SRGB;
-	VkColorSpaceKHR    colorSpace	= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	VkFormat           depthFormat	= VK_FORMAT_D32_SFLOAT_S8_UINT;
+	VkFormat			colorFormat	= VK_FORMAT_B8G8R8A8_SRGB;
+	VkColorSpaceKHR		colorSpace	= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+	VkFormat			depthFormat	= VK_FORMAT_D32_SFLOAT_S8_UINT;
 };
 
 class Vk_Swapchain : public Vk_RenderApiPrimitive<Vk_Swapchain_T>
@@ -70,16 +70,19 @@ public:
 	void destroy(NativeUIWindow* wnd);
 
 	VkResult acquireNextImage(Vk_Semaphore* signalSmp);
-	void swapBuffers(Vk_Queue* presentQueue, Vk_CommandBuffer* vkCmdBuf, Vk_Semaphore* waitSmp);
+	VkResult swapBuffers(Vk_Queue* presentQueue, Vk_CommandBuffer* vkCmdBuf, Vk_Semaphore* waitSmp);
 
 	const Vk_SwapchainInfo& info() const;
 	Vk_Framebuffer*			framebuffer();
 	u32						curImageIdx() const;
 
+	bool isValid() const;
+
 	VkFormat colorFormat() const;
 	VkFormat depthFormat() const;
 	
-	const math::Rect2f&	framebufferRect2f() const;
+	const math::Rect2f&	framebufferRect2f()		const;
+	Vec2f				framebufferSize()		const;
 	VkExtent2D			framebufferVkExtent2D() const;
 
 protected:
@@ -120,14 +123,18 @@ protected:
 
 inline const Vk_SwapchainInfo& Vk_Swapchain::info() const { return _swapchainInfo; }
 
-inline Vk_Framebuffer*	Vk_Swapchain::framebuffer()			{ return &_vkSwapchainFramebuffers[curImageIdx()]; }
+inline Vk_Framebuffer*	Vk_Swapchain::framebuffer()			{ return !_vkSwapchainFramebuffers.is_empty() ? & _vkSwapchainFramebuffers[curImageIdx()] : nullptr; }
 inline u32				Vk_Swapchain::curImageIdx() const	{ return _curImageIdx; }
+
+inline bool Vk_Swapchain::isValid() const { return !math::equals0(info().rect2f.size.x) && !math::equals0(info().rect2f.size.y); }
 
 inline VkFormat Vk_Swapchain::colorFormat() const { return _swapchainInfo.surfaceFormat.format; }
 inline VkFormat Vk_Swapchain::depthFormat() const { return _swapchainInfo.depthFormat; }
 
 
 inline const math::Rect2f&	Vk_Swapchain::framebufferRect2f()		const { return info().rect2f; }
+inline Vec2f				Vk_Swapchain::framebufferSize()			const { return Vec2f{ info().rect2f.w, info().rect2f.h }; }
+
 inline VkExtent2D			Vk_Swapchain::framebufferVkExtent2D()	const { return Util::toVkExtent2D(framebufferRect2f()); }
 
 

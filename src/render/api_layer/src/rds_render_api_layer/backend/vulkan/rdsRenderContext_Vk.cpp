@@ -41,7 +41,8 @@ RenderContext_Vk::~RenderContext_Vk()
 	destroy();
 }
 
-void RenderContext_Vk::waitIdle()
+void 
+RenderContext_Vk::waitIdle()
 {
 	vkDeviceWaitIdle(renderer()->vkDevice());
 }
@@ -77,7 +78,7 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
 	vkSwapchainCDesc.rdCtx				= this;
 	vkSwapchainCDesc.wnd				= cDesc.window;
-	vkSwapchainCDesc.framebufferSize	= math::toRect2_wh(framebufferSize());
+	vkSwapchainCDesc.framebufferRect2f	= math::toRect2_wh(framebufferSize());
 	//vkSwapchainCDesc.vkRdPass			= &_testVkRenderPass;
 	vkSwapchainCDesc.colorFormat		= VK_FORMAT_B8G8R8A8_SRGB;
 	vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
@@ -134,28 +135,11 @@ RenderContext_Vk::onBeginRender()
 
 	ret = _vkSwapchain.acquireNextImage(renderFrame().imageAvaliableSmp());
 
-	#if 1
-
-	if (ret == VK_ERROR_OUT_OF_DATE_KHR)
+	if (!Util::isSuccess(ret))
 	{
+		invalidateSwapchain(ret, _vkSwapchain.framebufferSize());
 		return;
 	}
-
-	#else
-
-	// VK_ERROR_OUT_OF_DATE_KHR		means window size is changed
-	// VK_SUBOPTIMAL_KHR			means sucessfully presented but the surface properties are not matched
-	if (ret == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		createSwapchain();
-		return; // should not record if size is changed
-	}
-	else
-	{
-		throwIf(ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR, "");	// VK_SUBOPTIMAL_KHR 
-	}
-
-	#endif // 1
 
 	{
 		renderFrame().reset();
@@ -187,8 +171,9 @@ RenderContext_Vk::onEndRender()
 
 	if (_shdSwapBuffers)
 	{
-		RDS_WARN_ONCE("TODO: handle do not get next image idx if no swap buffers in the next frame");
-		_vkSwapchain.swapBuffers(&_vkPresentQueue, _curGraphicsCmdBuf, renderFrame().renderCompletedSmp());
+		RDS_TODO("handle do not get next image idx if no swap buffers in the next frame");
+		auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, _curGraphicsCmdBuf, renderFrame().renderCompletedSmp());
+		invalidateSwapchain(ret, _vkSwapchain.framebufferSize());
 		_shdSwapBuffers = false;
 	}
 
@@ -199,25 +184,22 @@ RenderContext_Vk::onEndRender()
 void
 RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
 {
-	if (newSize.x == 0 || newSize.y == 0)
+	bool isInvalidSize = math::equals0(newSize.x) || math::equals0(newSize.y);
+	if (isInvalidSize)
 		return;
 
-	auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
-	vkSwapchainCDesc.rdCtx				= this;
-	vkSwapchainCDesc.wnd				= nativeUIWindow();
-	vkSwapchainCDesc.framebufferSize	= math::toRect2_wh(newSize);
-	vkSwapchainCDesc.vkRdPass			= &_testVkRenderPass;
-	vkSwapchainCDesc.colorFormat		= VK_FORMAT_B8G8R8A8_SRGB;
-	vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	vkSwapchainCDesc.depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
-
-	_vkSwapchain.create(vkSwapchainCDesc);
+	invalidateSwapchain(VK_ERROR_OUT_OF_DATE_KHR, newSize);
 }
 
 void 
 RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 {
 	Base::onCommit(renderCmdBuf);
+
+	if (!_vkSwapchain.isValid())
+	{
+		return;
+	}
 
 	// wait job sysytem handle
 	#if !RDS_TEST_DRAW_CALL
@@ -427,8 +409,8 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 	}
 
 	_curGraphicsCmdBuf->submit(renderFrame().inFlightFence()
-							 , renderFrame().imageAvaliableSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-							 , renderFrame().renderCompletedSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+							 , renderFrame().imageAvaliableSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
+							 , renderFrame().renderCompletedSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR);
 }
 
 void
@@ -489,6 +471,39 @@ RenderContext_Vk::testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx, Vk_Bu
 	u32 idxCount = TestVertex::s_kIdxCount;
 	vkCmdDrawIndexed(vkCmdBuf, idxCount, 1, 0, 0, 0);
 }
+
+void 
+RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
+{
+	// VK_ERROR_OUT_OF_DATE_KHR		means window size is changed
+	// VK_SUBOPTIMAL_KHR			means sucessfully presented but the surface properties are not matched
+
+	if (Util::isSuccess(ret) || ret == VkResult::VK_NOT_READY)
+	{
+		return;
+	}
+
+	if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
+	{
+		auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
+		vkSwapchainCDesc.rdCtx				= this;
+		vkSwapchainCDesc.wnd				= nativeUIWindow();
+		vkSwapchainCDesc.framebufferRect2f	= math::toRect2_wh(newSize);
+		vkSwapchainCDesc.vkRdPass			= &_testVkRenderPass;
+		vkSwapchainCDesc.colorFormat		= VK_FORMAT_B8G8R8A8_SRGB;
+		vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+		vkSwapchainCDesc.depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+		_vkSwapchain.create(vkSwapchainCDesc);
+
+		return; // should not record if size is changed
+	}
+	else
+	{
+		throwIf(ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR, "");	// VK_SUBOPTIMAL_KHR 
+	}
+}
+
 
 #if 0
 #pragma mark --- rdsRenderContext_Vk-createResource

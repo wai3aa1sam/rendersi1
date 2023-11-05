@@ -265,7 +265,7 @@ ShaderResources::findSamplerParam(StrView name) const
 {
 	for (const auto& e : samplerParams())
 	{
-		bool isSame = StrUtil::ignoreCaseCompare(e.name(), name);
+		bool isSame = StrUtil::ignoreCaseCompare(e.name(), name) == 0;
 		if (isSame)
 			return &e;
 	}

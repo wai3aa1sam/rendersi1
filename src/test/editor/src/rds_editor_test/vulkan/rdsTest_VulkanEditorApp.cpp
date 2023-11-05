@@ -272,7 +272,6 @@ public:
 			_testTexture2D = Renderer::instance()->createTexture2D(texCDesc);
 		}
 		#endif // 0
-
 	}
 
 	virtual void onUpdate() override
@@ -326,6 +325,9 @@ public:
 
 		
 		#else
+
+		//OsUtil::sleep_ms(50);
+
 
 		#endif // 0
 

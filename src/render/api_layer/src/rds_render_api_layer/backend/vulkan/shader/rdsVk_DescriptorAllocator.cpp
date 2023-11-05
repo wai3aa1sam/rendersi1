@@ -5,9 +5,10 @@
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
 
+#if RDS_RENDER_HAS_VULKAN
+
 namespace rds
 {
-
 
 #if 0
 #pragma mark --- rdsVk_DescriptorAllocator-Impl---
@@ -292,3 +293,5 @@ Vk_DescriptorBuilder::_bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&
 #endif
 
 }
+
+#endif

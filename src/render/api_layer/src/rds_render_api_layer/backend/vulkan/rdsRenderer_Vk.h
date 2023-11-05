@@ -6,6 +6,7 @@
 #include "rdsVk_RenderFrame.h" 
 
 #if RDS_RENDER_HAS_VULKAN
+
 namespace rds
 {
 

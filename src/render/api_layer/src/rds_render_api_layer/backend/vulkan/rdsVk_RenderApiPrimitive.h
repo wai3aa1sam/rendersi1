@@ -40,6 +40,18 @@ using Vk_DeviceMemory			= VkDeviceMemory_T;
 
 using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
 
+#if		RDS_VK_VER_1_3
+
+using Vk_PipelineStageFlags = VkPipelineStageFlags2;
+#elif	RDS_VK_VER_1_2
+
+using Vk_PipelineStageFlags = VkPipelineStageFlags2KHR;
+
+#else
+	#error "unsupported vulkan version"
+#endif // RDS_VK_VER_1_3
+
+
 class Vk_PipelineCache;
 
 struct Vk_RenderApiUtil;

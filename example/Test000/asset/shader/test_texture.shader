@@ -80,7 +80,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 {
     //float2 pos2f = i.positionOS;
     i.uv.x = -i.uv.x;
-	float4 o = texture0.Sample(texture0_Sampler, i.uv);
+	float4 o = texture0.Sample(_rds_texture0_sampler, i.uv);
 	//o += i.color * texture2.Sample(texture2_Sampler, i.uv);
 
     o.a = 1;

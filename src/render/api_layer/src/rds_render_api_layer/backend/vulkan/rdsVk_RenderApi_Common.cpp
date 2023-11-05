@@ -79,8 +79,9 @@ Vk_RenderApiUtil::debugCallback(
 	if (messageSeverity < VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		return VK_FALSE;
 	
-	if (pCallbackData->messageIdNumber == 0x822806fa) return VK_FALSE; // "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging"
-	
+	if (pCallbackData->messageIdNumber == 0x822806fa) { RDS_WARN_ONCE("bypassed vulkan error: UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging"); return VK_FALSE; }
+	if (pCallbackData->messageIdNumber == 0xfc68be96) { RDS_WARN_ONCE("bypassed vulkan error: SPIR-V Extension SPV_GOOGLE_hlsl_functionality1 was declared, but one of the following requirements is required (VK_GOOGLE_hlsl_functionality1)"); return VK_FALSE; } 
+
 	RDS_CORE_LOG_ERROR("Vulkan validation layer: {}\n", pCallbackData->pMessage);
 	return VK_FALSE;
 }
@@ -389,10 +390,10 @@ Vk_RenderApiUtil::toVkShaderStageBit(ShaderStageFlag v)
 		case SRC::Vertex:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT; }	break;
 		case SRC::Pixel:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT; } break;
 		case SRC::Compute:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT; }	break;
-		default: { throwError("undefined shader stage flag"); } break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
 	}
 
-	return VkShaderStageFlagBits::VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+	//return VkShaderStageFlagBits::VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 }
 
 
@@ -764,10 +765,10 @@ Vk_RenderApiUtil::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 		VkSubmitInfo2KHR submitInfo = {};
 
 		VkCommandBufferSubmitInfoKHR cmdBufSubmitInfo = {};
-		cmdBufSubmitInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		cmdBufSubmitInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR;
 		cmdBufSubmitInfo.commandBuffer	= vkCmdBuf;
 
-		submitInfo.sType					= VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		submitInfo.sType					= VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR;
 		submitInfo.commandBufferInfoCount	= 1;
 		submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
@@ -1145,21 +1146,31 @@ Vk_ExtensionInfo::createValidationLayers(const RenderAdapterInfo& adapterInfo)
 void
 Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo, const Renderer_CreateDesc& cDesc, Vk_PhysicalDevice* phyDevice)
 {
-	getAvailablePhyDeviceExtensionsTo(_availablePhyDeviceExts, phyDevice);
-
+	getAvailablePhyDeviceExtensionsTo(_availablePhyDeviceExts, phyDevice, false);
 	auto& o = _phyDeviceExts;
 	o.clear();
 
+	auto emplaceIfExist = [adapterInfo](auto& dst, const char* ext, const auto& availPhyDevExts)
+	{
+		if (availPhyDevExts.findIf([ext](const auto& v) { return StrUtil::isSame(v.extensionName, ext); }) != availPhyDevExts.end())
+		{
+			dst.emplace_back(ext);
+		}
+		else
+		{
+			RDS_CORE_LOG("{} do not support vulkan extension: {}", adapterInfo.adapterName, ext);
+		}
+	};
+
 	// TODO: check extension exist
-	//o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME); // deprecated
-	o.emplace_back(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
-	o.emplace_back(VK_GOOGLE_HLSL_FUNCTIONALITY_1_EXTENSION_NAME);
+	//o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME); // deprecated, but only in 1.3?
+	emplaceIfExist(o, VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,		availablePhyDeviceExts());
+	emplaceIfExist(o, VK_GOOGLE_HLSL_FUNCTIONALITY_1_EXTENSION_NAME,	availablePhyDeviceExts());
 	if (cDesc.isPresent)
 	{
 		o.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}
 }
-
 
 bool 
 Vk_ExtensionInfo::isSupportValidationLayer(const char* validationLayerName) const

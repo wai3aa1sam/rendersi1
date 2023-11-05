@@ -94,7 +94,7 @@ Vk_CommandBuffer::endRecord()
 }
 
 void 
-Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, VkPipelineStageFlags2 waitStage, Vk_Semaphore* signalVkSmp, VkPipelineStageFlags2 signalStage)
+Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage)
 {
 	VkSubmitInfo2KHR submitInfo = {};
 
@@ -162,7 +162,7 @@ Vk_CommandBuffer::waitIdle()
 	vkQueueWaitIdle(_vkQueue->hnd());
 }
 
-void 
+VkResult
 Vk_CommandBuffer::swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachain, u32 imageIdx, Vk_Semaphore* vkWaitSmp)
 {
 	VkPresentInfoKHR presentInfo = {};
@@ -180,11 +180,12 @@ Vk_CommandBuffer::swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachai
 	presentInfo.pResults			= nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
 
 	auto ret = vkQueuePresentKHR(vkPresentQueue->hnd(), &presentInfo);
+	return ret;
 	/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
 	{
 	createSwapchain();
 	} */
-	Util::throwIfError(ret);
+	//Util::throwIfError(ret);
 }
 
 void 

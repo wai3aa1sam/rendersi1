@@ -1,5 +1,6 @@
 #include "rds_shader_compiler-pch.h"
 #include "rdsShaderCompiler_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -45,7 +46,9 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	TempString		dstpath;
 	fmtTo(dstpath, "{}/{}.bin", desc.outpath, Util::toShaderStageProfile(stage));
 
-	//u32 uboStartIdx = 0; u32 texStartIdx = 4; u32 ssboStartIdx = 10; u32 imageStartIdx = 13; u32 samplerStartIdx = 16; 
+	//u32 uboStartIdx = 0; u32 texStartIdx = 4; u32 ssboStartIdx = 10; u32 imageStartIdx = 13; u32 samplerStartIdx = 16;
+
+	RDS_TODO("check vulkan extension whether existed then add the compile option, eg. -fhlsl-functionality1");
 
 	TempString args;
 	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);

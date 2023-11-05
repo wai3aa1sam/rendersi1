@@ -3,6 +3,10 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
+#if RDS_VK_VER_1_2
+PFN_vkQueueSubmit2KHR vkQueueSubmit2;
+#endif
+
 namespace rds
 {
 
@@ -29,6 +33,10 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 	createVkInstance();
 	createVkPhyDevice(cDesc);
 	createVkDevice();
+
+	#if RDS_VK_VER_1_2
+	vkQueueSubmit2 = extInfo().getDeviceExtFunction<PFN_vkQueueSubmit2KHR>("vkQueueSubmit2KHR");
+	#endif
 
 	_memoryContextVk.create(vkDevice(), vkPhysicalDevice(), vkInstance());
 }
@@ -61,7 +69,14 @@ Renderer_Vk::createVkInstance()
 	// specific application for driver optimization
 	appInfo.applicationVersion	= VK_MAKE_VERSION(1, 0, 0);
 	appInfo.engineVersion		= VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion			= VK_API_VERSION_1_3;
+	#if RDS_VK_VER_1_3
+	appInfo.apiVersion = VK_API_VERSION_1_3;
+	#elif RDS_VK_VER_1_2
+	appInfo.apiVersion = VK_API_VERSION_1_2;
+	#else
+	#error "unsupported vulkan version";
+	#endif // RDS_VK_VER_1_3
+
 
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType					= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -122,6 +137,7 @@ Renderer_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 	for (u32 i = 0; i < phyDevices.size(); i++)
 	{
 		auto* e = phyDevices[i];
+		Util::getPhyDevicePropertiesTo(_adapterInfo, e);
 		auto score = _rateAndInitVkPhyDevice(_adapterInfo, cDesc, e, &tempSurface);
 		if (score > largestScore)
 		{
@@ -168,9 +184,22 @@ Renderer_Vk::createVkDevice()
 	VkPhysicalDeviceFeatures phyDeviceFeatures = {};
 	Util::getVkPhyDeviceFeaturesTo(phyDeviceFeatures, _adapterInfo);
 
-	VkPhysicalDeviceVulkan13Features phyDeviceFeature13 = {};
-	phyDeviceFeature13.sType			= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	phyDeviceFeature13.synchronization2 = true;
+	// vulkan core feature base on its version, otherwise it is a extension
+	#if RDS_VK_VER_1_3
+
+	VkPhysicalDeviceVulkan13Features phyDeviceFeature = {};
+	phyDeviceFeature.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	phyDeviceFeature.synchronization2	= true;
+
+	#elif RDS_VK_VER_1_2
+
+	VkPhysicalDeviceVulkan12Features phyDeviceFeature = {};
+	phyDeviceFeature.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	//phyDeviceFeature.synchronization2	= true;
+
+	#else
+	#error "unsupport vulkan version";
+	#endif // 0
 	
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -181,7 +210,7 @@ Renderer_Vk::createVkDevice()
 	createInfo.ppEnabledExtensionNames	= _extInfo.phyDeviceExts().data();
 	createInfo.enabledLayerCount		= _adapterInfo.isDebug ? sCast<u32>(_extInfo.validationLayers().size()) : 0;	// ignored in new vk impl
 	createInfo.ppEnabledLayerNames		= _extInfo.validationLayers().data();											// ignored in new vk impl
-	createInfo.pNext					= &phyDeviceFeature13;
+	createInfo.pNext					= &phyDeviceFeature;
 
 	auto ret = vkCreateDevice(_vkPhysicalDevice, &createInfo, allocCallbacks(), _vkDevice.ptrForInit());
 	Util::throwIfError(ret);
@@ -228,6 +257,7 @@ i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDes
 				_queueFamilyIndices.present = i;
 			}
 		}
+		curTryIdx++;
 	}
 
 	return _rateVkPhyDevice(out);
@@ -235,16 +265,15 @@ i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDes
 
 i64 Renderer_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
 {
-	throwIf(!_queueFamilyIndices.graphics.has_value(),	"no graphics queue family");
-	throwIf(!_queueFamilyIndices.present.has_value() ,	"no present  queue family");
-	throwIf(!_queueFamilyIndices.transfer.has_value() ,	"no transfer queue family");
-
 	i64 score = 0;
 
-	if (info.feature.hasSamplerAnisotropy) score += 100;
-	
+	if (_queueFamilyIndices.graphics.has_value())	score += 10000;
+	if (_queueFamilyIndices.present.has_value())	score += 10000;
+	if (_queueFamilyIndices.transfer.has_value())	score += 10000;
 
-	return 0;
+	if (info.feature.hasSamplerAnisotropy) score += 100;
+
+	return score;
 }
 
 

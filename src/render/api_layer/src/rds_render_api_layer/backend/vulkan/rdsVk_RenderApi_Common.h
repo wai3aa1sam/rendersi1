@@ -12,6 +12,10 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
+#if RDS_VK_VER_1_2
+extern PFN_vkQueueSubmit2KHR vkQueueSubmit2;
+#endif
+
 namespace rds
 {
 

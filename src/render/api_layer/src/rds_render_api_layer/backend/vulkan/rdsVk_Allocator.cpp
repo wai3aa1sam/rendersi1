@@ -8,7 +8,6 @@
 RDS_DISABLE_ALL_WARNINGS();
 
 #define VMA_IMPLEMENTATION
-#define VMA_VULKAN_VERSION 1003000 // Vulkan 1.3
 #include <vk_mem_alloc.h>
 
 RDS_RESTORE_ALL_WARNINGS();
@@ -80,7 +79,7 @@ Vk_Allocator::allocImage(Vk_Image_T** outImg, Vk_AllocHnd* allocHnd, const VkIma
 	VmaAllocationCreateInfo vmaAllocCInfo = {};
 	vmaAllocCInfo.usage			= toMemoryUsage(allocInfo->usage);
 	vmaAllocCInfo.flags			= toAllocFlags(allocInfo->flags);
-	vmaAllocCInfo.requiredFlags = vkMemPropFlags;
+	//vmaAllocCInfo.requiredFlags = vkMemPropFlags;
 
 	auto ret = vmaCreateImage(_allocator, imageInfo, &vmaAllocCInfo, outImg, allocHnd, nullptr);
 	Util::throwIfError(ret);

@@ -215,6 +215,8 @@ protected:
 	void endRenderPass	(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
 	void testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx, Vk_Buffer* vtxBuf);
 
+	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
+
 protected:
 	void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx);
 

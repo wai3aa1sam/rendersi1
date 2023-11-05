@@ -26,17 +26,30 @@ Vk_Swapchain::~Vk_Swapchain()
 void 
 Vk_Swapchain::create(const CreateDesc& cDesc)
 {
-	const auto& framebufferSize = cDesc.framebufferSize;
-	if (framebufferSize.size.x == 0 || framebufferSize.size.y == 0)
+	const auto& framebufferRect2f = cDesc.framebufferRect2f;
+	bool isInvalidSize = math::equals0(framebufferRect2f.size.x) || math::equals0(framebufferRect2f.size.y);
+	if (isInvalidSize || !cDesc.rdCtx)
 		return;
 
-	_rdCtx = cDesc.rdCtx;
-
 	destroy(cDesc.wnd);
-	
+
+	_rdCtx = cDesc.rdCtx;
 	_vkSurface.create(cDesc.wnd);
-	createSwapchainInfo(_swapchainInfo, renderer()->swapchainAvailableInfo(), framebufferSize, cDesc.colorFormat, cDesc.colorSpace, cDesc.depthFormat);
-	createSwapchain(framebufferSize, cDesc.vkRdPass);
+
+	if (_vkSurface.hnd())
+	{
+		// fix validation layer false positive error: vkCreateSwapchainKHR imageExtent surface capabilities
+		// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1340
+		auto ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(renderer()->vkPhysicalDevice(), _vkSurface.hnd(), &renderer()->swapchainAvailableInfo().capabilities); (void)ret;
+
+		/*
+		const auto& vkCaps = renderer()->swapchainAvailableInfo().capabilities;
+		if (vkCaps.currentExtent.height == 0 || vkCaps.currentExtent.width == 0)
+			return;*/
+	}
+
+	createSwapchainInfo(_swapchainInfo, renderer()->swapchainAvailableInfo(), framebufferRect2f, cDesc.colorFormat, cDesc.colorSpace, cDesc.depthFormat);
+	createSwapchain(info().rect2f, cDesc.vkRdPass);
 }
 
 void 
@@ -47,6 +60,7 @@ Vk_Swapchain::destroy(NativeUIWindow* wnd)
 
 	destroySwapchain();
 	_vkSurface.destroy(wnd);
+	_rdCtx = nullptr;
 }
 
 VkResult 
@@ -54,29 +68,28 @@ Vk_Swapchain::acquireNextImage(Vk_Semaphore* signalSmp)
 {
 	RDS_PROFILE_SCOPED();
 
-	RDS_CORE_ASSERT(hnd());
+	// since the width or height is 0, no swapchain is created
+	if (!hnd()) return VkResult::VK_ERROR_OUT_OF_DATE_KHR;
 
 	auto* vkDev = renderer()->vkDevice();
 
-	u32 imageIdx;
+	RDS_TODO("vkAcquireNextImageKHR timeout should be 0, but need handle");
+
+	u32 imageIdx = 0;
 	auto ret = vkAcquireNextImageKHR(vkDev, hnd(), NumLimit<u64>::max(), signalSmp->hnd(), VK_NULL_HANDLE, &imageIdx);
-	_curImageIdx = imageIdx;
+	_curImageIdx = Util::isSuccess(ret) ? imageIdx : _curImageIdx;
 
 	return ret;
-	/*if (ret == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		return;
-	}*/
 }
 
-void 
+VkResult
 Vk_Swapchain::swapBuffers(Vk_Queue* presentQueue, Vk_CommandBuffer* vkCmdBuf, Vk_Semaphore* waitSmp)
 {
-	vkCmdBuf->swapBuffers(presentQueue, this, curImageIdx(), waitSmp);
+	return vkCmdBuf->swapBuffers(presentQueue, this, curImageIdx(), waitSmp);
 }
 
 void
-Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvailableInfo& info, const math::Rect2f& framebufferSize
+Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvailableInfo& info, const math::Rect2f& framebufferRect2f
 									, VkFormat colorFormat, VkColorSpaceKHR colorSpace, VkFormat depthFormat)
 {
 	out.depthFormat = depthFormat;
@@ -106,25 +119,26 @@ Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvail
 	{
 		if (info.capabilities.currentExtent.width != math::inf<u32>())
 		{
-			//out.rect2f = Util::toRect2f(info.capabilities.currentExtent);
-			out.rect2f = framebufferSize;
+			out.rect2f = Util::toRect2f(info.capabilities.currentExtent);
+			//out.rect2f = framebufferRect2f;
 		}
 		else
 		{
 			const auto& caps = info.capabilities;
 			auto& rect2f	= out.rect2f;
-			rect2f.w		= math::clamp(rect2f.w, sCast<float>(caps.minImageExtent.width),  sCast<float>(caps.maxImageExtent.width) );
-			rect2f.h		= math::clamp(rect2f.h, sCast<float>(caps.minImageExtent.height), sCast<float>(caps.maxImageExtent.height));
+			rect2f.w		= math::clamp(framebufferRect2f.w, sCast<float>(caps.minImageExtent.width),  sCast<float>(caps.maxImageExtent.width) );
+			rect2f.h		= math::clamp(framebufferRect2f.h, sCast<float>(caps.minImageExtent.height), sCast<float>(caps.maxImageExtent.height));
 		}
 	}
 }
 
 void
-Vk_Swapchain::createSwapchain(const math::Rect2f& framebufferSize, Vk_RenderPass* vkRdPass)
+Vk_Swapchain::createSwapchain(const math::Rect2f& framebufferRect2f, Vk_RenderPass* vkRdPass)
 {
 	RDS_PROFILE_SCOPED();
 
-	if (framebufferSize.size.x == 0 || framebufferSize.size.y == 0)
+	bool isInvalidSize = math::equals0(framebufferRect2f.size.x) || math::equals0(framebufferRect2f.size.y);
+	if (isInvalidSize)
 		return;
 
 	destroySwapchain();
@@ -132,13 +146,9 @@ Vk_Swapchain::createSwapchain(const math::Rect2f& framebufferSize, Vk_RenderPass
 	auto* rdr	= renderer();
 	auto* vkDev = renderer()->vkDevice();
 
-	// fix validation layer false positive error: vkCreateSwapchainKHR imageExtent surface capabilities
-	// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1340
-	auto ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(renderer()->vkPhysicalDevice(), _vkSurface.hnd(), &renderer()->swapchainAvailableInfo().capabilities); (void)ret;
-
+	Util::createSwapchain(hndForInit(), &_vkSurface, vkDev, info(), renderer()->swapchainAvailableInfo(), rdr->queueFamilyIndices());
 	createDepthResources();
 
-	Util::createSwapchain(hndForInit(), &_vkSurface, vkDev, info(), renderer()->swapchainAvailableInfo(), rdr->queueFamilyIndices());
 	createSwapchainImages(_vkSwapchainImages, hnd(), vkDev);
 	createSwapchainImageViews(_vkSwapchainImageViews, _vkSwapchainImages, vkDev, info().surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	createSwapchainFramebuffers(vkRdPass);
@@ -165,7 +175,7 @@ Vk_Swapchain::destroySwapchain()
 	_vkSwapchainImages.clear();
 	vkDestroySwapchainKHR(renderer()->vkDevice(), hnd(), renderer()->allocCallbacks());
 
-	_hnd = VK_NULL_HANDLE;
+	_hnd	= VK_NULL_HANDLE;
 }
 
 void
