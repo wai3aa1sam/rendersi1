@@ -1,10 +1,12 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
+
+struct Vk_Cmd_AddImageMemBarrierDesc;
 
 #if 0
 #pragma mark --- Vk_CommandBuffer_T-Decl ---
@@ -16,6 +18,7 @@ class Vk_Swapchain;
 
 class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T>
 {
+	using Base = Vk_RenderApiPrimitive<Vk_CommandBuffer_T>;
 public:
 	Vk_CommandBuffer();
 	~Vk_CommandBuffer();
@@ -30,6 +33,7 @@ public:
 							, u32 subpassIdx = 0, VkCommandBufferUsageFlags usageFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT);
 	void endRecord();
 
+	void submit(Vk_Fence* signalFence, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
 	void submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
 	void submit();
 	void executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs);
@@ -50,10 +54,21 @@ public:
 	Vk_RenderPass* getRenderPass();
 
 public:
-
+	Renderer_Vk*		renderer();
+	RenderDevice_Vk*	device();
 
 public:
-	void cmd_CopyBuffer(Vk_Buffer* dst, Vk_Buffer* src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
+	void cmd_copyBuffer(Vk_Buffer*		dst, Vk_Buffer*		src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
+	void cmd_copyBuffer(Vk_Buffer_T*	dst, Vk_Buffer_T*	src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
+
+	void cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height);
+
+	void cmd_addImageMemBarrier(Vk_Image*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
+
+	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
+	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
+	void cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
+	void cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc);
 
 public:
 
@@ -68,10 +83,27 @@ protected:
 inline bool Vk_CommandBuffer::isPrimiary()	const { return _level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
 inline bool Vk_CommandBuffer::isSecondary()	const { return _level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
 
+
+
 inline Vk_RenderPass* Vk_CommandBuffer::getRenderPass() { return _vkRdPass; }
 
 #endif
 
+struct Vk_Cmd_AddImageMemBarrierDesc
+{
+	Vk_Image_T*		image		= nullptr;
+	VkFormat		format;
+	VkImageLayout	srcLayout; 
+	VkImageLayout	dstLayout;
+	u32				baseMip		= 0;
+	u32				mipCount	= 1;
+
+	u32				srcQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
+	u32				dstQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
+	bool			isSrcQueueOwner		= true;
+	//QueueTypeFlags	srcQueueType;
+	//QueueTypeFlags	dstQueueType;
+};
 
 
 }

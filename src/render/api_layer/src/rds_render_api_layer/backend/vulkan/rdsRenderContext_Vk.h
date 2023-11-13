@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
 
 #include "rdsVk_Swapchain.h"
@@ -265,9 +265,6 @@ protected:
 
 	Vector<Vk_RenderFrame, s_kFrameInFlightCount> _renderFrames;
 	Vk_CommandBuffer* _curGraphicsCmdBuf = nullptr;
-
-	//u32 _curImageIdx = 0;
-	u32 _curFrameIdx = 0;
 
 	bool _shdSwapBuffers = false;
 };

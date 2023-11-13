@@ -42,7 +42,14 @@ using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
 
 #if		RDS_VK_VER_1_3
 
-using Vk_PipelineStageFlags = VkPipelineStageFlags2;
+using Vk_PipelineStageFlags		= VkPipelineStageFlags2;
+using Vk_PipelineStageFlagBit	= VkPipelineStageFlagBits2;
+
+//enum class Vk_PipelineStageFlag : u64
+//{
+//	STAGE_2_NONE = VK_PIPELINE_STAGE_2_NONE,
+//};
+
 #elif	RDS_VK_VER_1_2
 
 using Vk_PipelineStageFlags = VkPipelineStageFlags2KHR;
@@ -122,12 +129,12 @@ public:
 
 public:
 	Vk_RenderApiPrimitive()		= default;
-	~Vk_RenderApiPrimitive()	= default;
+	~Vk_RenderApiPrimitive() { RDS_CORE_ASSERT(!hnd(), "forgot call Base::destroy() ?"); destroy(); }
 
 	Vk_RenderApiPrimitive	(Vk_RenderApiPrimitive&& rhs) noexcept { move(rds::move(rhs)); }
-	void operator=			(Vk_RenderApiPrimitive&& rhs) noexcept { move(rds::move(rhs)); } // intended no check for this == &rhs, it is rare case
+	void operator=			(Vk_RenderApiPrimitive&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
-	void destroy();
+	void destroy() {  _hnd = VK_NULL_HANDLE; }
 
 	T*	hnd()		{ return _hnd; }
 	T*	hnd() const	{ return _hnd; }
@@ -146,8 +153,6 @@ protected:
 		rhs._hnd = VK_NULL_HANDLE;
 	}
 
-	void reset() { _hnd = VK_NULL_HANDLE; }
-
 protected:
 	T* _hnd = VK_NULL_HANDLE;
 };
@@ -165,11 +170,32 @@ template<class T>
 class Vk_AllocableRenderApiPrimitive : public Vk_RenderApiPrimitive<T>
 {
 public:
+	Vk_AllocableRenderApiPrimitive() = default;
+	~Vk_AllocableRenderApiPrimitive() { RDS_CORE_ASSERT(isInvalid(), "forgot to call Base::destroy() ?"); destroy(); }
+
+	Vk_AllocableRenderApiPrimitive	(Vk_AllocableRenderApiPrimitive&& rhs) noexcept { move(rds::move(rhs)); }
+	void operator=					(Vk_AllocableRenderApiPrimitive&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
+
+	void destroy() { Vk_RenderApiPrimitive<T>::destroy(); _alloc = nullptr; }
+
 	Vk_AllocHnd*	_internal_allocHnd();
 
 	void			_internal_setAlloc(Vk_Allocator* alloc);
 	Vk_Allocator*	_internal_alloc();
 
+	bool isInvalid() { return !_alloc; }
+
+protected:
+	void move(Vk_AllocableRenderApiPrimitive&& rhs) 
+	{
+		_hnd		= rhs._hnd;
+		_alloc		= rhs._alloc;
+		_allocHnd	= rhs._allocHnd;
+
+		rhs._hnd		= VK_NULL_HANDLE;
+		rhs._alloc		= nullptr;
+		rhs._allocHnd	= {};
+	}
 protected:
 	Vk_Allocator*	_alloc		= nullptr;	// TODO: AllocablePrimitive_Vk<T>::Vk_Allocator* should be strong ref?
 	Vk_AllocHnd		_allocHnd	= {};
@@ -316,6 +342,7 @@ public:
 	Vk_Queue(Vk_Queue&&)		{ throwIf(true, ""); }
 	void operator=(Vk_Queue&&)	{ throwIf(true, ""); }
 
+	void create(QueueTypeFlags type, RenderDevice_Vk* rdDev);
 	void create(u32 familyIdx, Vk_Device* vkDevice);
 	void destroy();
 
@@ -361,8 +388,8 @@ public:
 	Vk_Image() = default;
 	~Vk_Image() { destroy(); }
 
-	Vk_Image(Vk_Image&&)		{ throwIf(true, ""); }
-	void operator=(Vk_Image&&)	{ throwIf(true, ""); }
+	Vk_Image		(Vk_Image&& rhs) noexcept { move(rds::move(rhs)); }
+	void operator=	(Vk_Image&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
 	void create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -402,7 +429,7 @@ public:
 	Vk_ImageView() = default;
 	~Vk_ImageView() { RDS_CORE_ASSERT(!hnd(), ""); }
 
-	Vk_ImageView(Vk_ImageView&&)		{ throwIf(true, ""); }
+	Vk_ImageView(Vk_ImageView&&)	{ throwIf(true, ""); }
 	void operator=(Vk_ImageView&&)	{ throwIf(true, ""); }
 
 	void create(VkImageViewCreateInfo* viewInfo);
@@ -410,7 +437,7 @@ public:
 	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount = 1);
 	void create(Texture2D_Vk* tex2DVk, Renderer_Vk* rdr);
 	void destroy();
-	void destroy(Renderer_Vk* rdr);
+	void destroy(RenderDevice_Vk* rdDev);
 
 };
 
@@ -675,6 +702,9 @@ public:
 	void create();
 	void create(const VkFenceCreateInfo* pCreateInfo);
 	void destroy();
+
+	VkResult wait(RenderDevice_Vk* rdDev, u64 timeout = NumLimit<u64>::max());
+	VkResult reset(RenderDevice_Vk* rdDev);
 };
 
 #endif
@@ -715,8 +745,8 @@ public:
 	Vk_Buffer() = default;
 	~Vk_Buffer() { destroy(); }
 
-	Vk_Buffer(Vk_Buffer&&)		{ throwIf(true, ""); }
-	void operator=(Vk_Buffer&&) { throwIf(true, ""); }
+	Vk_Buffer		(Vk_Buffer&& rhs) noexcept { move(rds::move(rhs)); }
+	void operator=	(Vk_Buffer&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
 	void create(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

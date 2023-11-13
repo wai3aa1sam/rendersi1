@@ -71,7 +71,7 @@ RenderGpuBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
 {
 	ByteSpan bs = ByteSpan{data.data() + offset, data.size() - offset};
 	QueueTypeFlags typeFlags = QueueTypeFlags::Graphics | QueueTypeFlags::Transfer;
-	RenderFrameContext::instance()->renderFrame().uploadBuffer(this, bs, typeFlags);
+	renderFrame().uploadBuffer(this, bs, typeFlags);
 }
 
 

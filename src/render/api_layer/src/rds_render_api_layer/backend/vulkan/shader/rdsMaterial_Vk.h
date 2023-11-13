@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/shader/rdsMaterial.h"
 #include "rdsShader_Vk.h"
 
@@ -94,10 +94,9 @@ public:
 	using VertexStage	= Vk_MaterialPass_VertexStage;
 	using PixelStage	= Vk_MaterialPass_PixelStage;
 
-
 public:
-	MaterialPass_Vk() {}
-	virtual ~MaterialPass_Vk() {}
+	MaterialPass_Vk();
+	virtual ~MaterialPass_Vk();
 
 	Material_Vk*	material	();
 	Shader_Vk*		shader		();
@@ -113,10 +112,10 @@ public:
 
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass) override;
+	virtual void onDestroy() override;
 	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout) override;
 
 	void bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout);
-
 
 protected:
 	void createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout);

@@ -146,7 +146,7 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsRenderCommandBuffer-Impl ---
+#pragma mark --- rdsRenderCmdIter-Impl ---
 #endif // 0
 #if 1
 
@@ -227,6 +227,7 @@ private:
 	void* alloc(SizeType n, SizeType align);
 
 private:
+	LinearAllocator							_alloc;
 	Vector<RenderCommand*, s_kLocalSize>	_commands;
 	RenderCommand_ClearFramebuffers*		_clearFramebuffersCmd = nullptr;
 };

@@ -17,17 +17,12 @@ namespace rds
 
 class RenderFrameUploadBuffer : public NonCopyable
 {
-public:
-	using Traits	= RenderApiLayerTraits;
-	using SizeType	= Traits::SizeType;
-
-public:
-	static constexpr SizeType s_kThreadCount		= Traits::s_kThreadCount;
-	static constexpr SizeType s_kFrameInFlightCount	= Traits::s_kFrameInFlightCount;
-	static constexpr SizeType s_kLocalSize			= 64;
-
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 private:
 	struct InlineUploadBuffer;
+
+public:
+	static constexpr SizeType s_kLocalSize = 64;
 
 public:
 	RenderFrameUploadBuffer();
@@ -76,15 +71,9 @@ inline const RenderFrameUploadBuffer::InlineUploadBuffer* RenderFrameUploadBuffe
 
 class RenderFrame : public NonCopyable
 {
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	using Traits	= RenderApiLayerTraits;
-	using SizeType	= Traits::SizeType;
-
 	using RenderCommandPool = Vector<UPtr<RenderCommandBuffer>, 12>;
-
-public:
-	static constexpr SizeType s_kThreadCount		= Traits::s_kThreadCount;
-	static constexpr SizeType s_kFrameInFlightCount	= Traits::s_kFrameInFlightCount;
 
 public:
 	RenderFrame();
@@ -92,6 +81,9 @@ public:
 
 	RenderFrame(RenderFrame&&)		{ throwIf(true, ""); };
 	void operator=(RenderFrame&&)	{ throwIf(true, ""); };
+
+	void create();
+	void destroy();
 
 	void clear();
 
@@ -103,23 +95,22 @@ public:
 	RenderCommandBuffer* requestCommandBuffer();
 
 	RenderFrameUploadBuffer&	renderFrameUploadBuffer();
-	TransferRequest&			transferRequest();
+
 	RenderQueue& renderQueue();
 
 	LinearAllocator& renderCommandAllocator();
 
 protected:
 	Vector<UPtr<LinearAllocator>,	Traits::s_kThreadCount>	_renderCommandAllocators;
-	Vector<RenderCommandPool,		Traits::s_kThreadCount>	_renderCommandPools;
+	//Vector<RenderCommandPool,		Traits::s_kThreadCount>	_renderCommandPools;
+	RenderCommandPool _renderCommandPool;
 
-	TransferRequest			_transferReq;
 	RenderFrameUploadBuffer _rdfUploadBuffer;
 
 	RenderQueue _renderQueue;
 };
 
 inline RenderFrameUploadBuffer& RenderFrame::renderFrameUploadBuffer()	{ return _rdfUploadBuffer; }
-inline TransferRequest& RenderFrame::transferRequest()					{ return _transferReq; }
 
 inline u32 RenderFrame::totalUploadDataSize() { return _rdfUploadBuffer.totalDataSize(); }
 
@@ -135,17 +126,9 @@ inline RenderQueue& RenderFrame::renderQueue() { return _renderQueue; }
 #if 1
 
 
-class RenderFrameContext : public StackSingleton<RenderFrameContext>
+class RenderFrameContext : public NonCopyable
 {
-public:
-	using Base = StackSingleton<RenderFrameContext>;
-	using Traits	= RenderApiLayerTraits;
-	using SizeType	= Traits::SizeType;
-
-public:
-	static constexpr SizeType s_kThreadCount		= Traits::s_kThreadCount;
-	static constexpr SizeType s_kFrameInFlightCount	= Traits::s_kFrameInFlightCount;
-
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	RenderFrameContext();
 	~RenderFrameContext();

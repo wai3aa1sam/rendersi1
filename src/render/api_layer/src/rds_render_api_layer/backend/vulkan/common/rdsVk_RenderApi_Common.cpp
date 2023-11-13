@@ -1,9 +1,9 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_RenderApi_Common.h"
 
-#include "rdsRenderer_Vk.h"
-#include "rdsVk_Allocator.h"
-#include "buffer/rdsRenderGpuBuffer_Vk.h"
+#include "../rdsRenderer_Vk.h"
+#include "../rdsVk_Allocator.h"
+#include "../buffer/rdsRenderGpuBuffer_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -488,6 +488,44 @@ Vk_RenderApiUtil::toVkImageViewType(RenderDataType v)
 		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
 	}
 	//return VkImageViewType::VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+}
+
+Vk_StageAccess
+Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout)
+{
+	Vk_StageAccess out;
+	auto& srcStage	= out.srcStage;
+	auto& dstStage	= out.dstStage;
+	auto& srcAccess = out.srcAccess;
+	auto& dstAccess	= out.dstAccess;
+
+	if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
+	{
+		srcStage	= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;		// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		dstStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcAccess	= 0;
+		dstAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
+	{
+		srcStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		srcAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
+		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
+	}
+	else if (dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_UNDEFINED) 
+	{
+		srcStage	= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;			// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		srcAccess	= 0;
+		dstAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	}
+	else 
+	{
+		throwError("");
+	}
+
+	return out;
 }
 
 u32

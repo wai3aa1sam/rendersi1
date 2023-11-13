@@ -24,6 +24,12 @@ TransferCommandBuffer::~TransferCommandBuffer()
 void 
 TransferCommandBuffer::clear()
 {
+	for (auto& cmd : _commands)
+	{
+		cmd->~TransferCommand();
+	}
+	_commands.clear();
+	_allocator.clear();
 }
 
 

@@ -244,22 +244,28 @@ public:
 			}
 		}
 
+		#if 0
+
 		uploadTestMultiBuf();
-
 		//_testMultiThreadDrawCalls.create(10);
-		_testMultiThreadDrawCalls.createFixed(19);
+		_testMultiThreadDrawCalls.createFixed(2);
+		#endif // 0
 
-		_testRenderGraph._rdGraph.create("Test Render Graph", Renderer::instance(), &VulkanEditorApp::instance()->mainWin()->renderContext());
-		_testRenderGraph.setup();
-		_testRenderGraph.compile();
-		_testRenderGraph.dump();
+
+		{
+			_testRenderGraph._rdGraph.create("Test Render Graph", Renderer::instance(), &VulkanEditorApp::instance()->mainWin()->renderContext());
+			_testRenderGraph.setup();
+			_testRenderGraph.compile();
+			_testRenderGraph.dump();
+		}
 
 		//JobSystem::instance()->setSingleThreadMode(true);
+		_rdMesh1.upload(makeRndColorTriangleMesh());
 
 		#if 1
 		{
+			//_testShader = Renderer::instance()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
 			_testShader = Renderer::instance()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
-			//_testShader = Renderer::instance()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
 			_testMaterial = Renderer::instance()->createMaterial();
@@ -267,7 +273,6 @@ public:
 
 			auto texCDesc = _testTexture2D->makeCDesc();
 			texCDesc.create("asset/texture/uvChecker.png");
-			texCDesc.rdCtx = &VulkanEditorApp::instance()->mainWin()->renderContext();
 
 			_testTexture2D = Renderer::instance()->createTexture2D(texCDesc);
 		}
@@ -283,9 +288,14 @@ public:
 	{
 		RDS_PROFILE_SCOPED();
 
+		auto* rdr		= Renderer::instance();
 		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWin->renderContext();
-		auto& rdFrame	= RenderFrameContext::instance()->renderFrame(); RDS_UNUSED(rdFrame);
+		auto& tsfCtx	= rdr->transferContext();
+
+		auto& rdFrame	= rdr->renderFrame(); RDS_UNUSED(rdFrame);
+
+		auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
 
 		rdCtx.setFramebufferSize(mainWin->clientRect().size);
 		rdCtx.beginRender();
@@ -322,25 +332,25 @@ public:
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh1);
 		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh2);
 		//_rdReq.drawRenderables(DrawingSettings{});
-
 		
 		#else
 
 		//OsUtil::sleep_ms(50);
 
-
 		#endif // 0
 
 		_rdReq.swapBuffers();
+
+		tsfReq.commit();
+
 		rdCtx.commit(rdCmdBuf);
 		rdCtx.endRender();
 
 		uploadTestMultiBuf();
 
-		rdCtx.commit(rdFrame.transferRequest().transferCommandBuffer());
 		rdCtx.uploadBuffer(rdFrame.renderFrameUploadBuffer());
 
-		RenderFrameContext::instance()->rotate();
+		Renderer::instance()->nextFrame();
 	}
 
 	void uploadTestMultiBuf()

@@ -15,8 +15,9 @@ namespace rds
 
 #define TransferCommandType_ENUM_LIST(E) \
 	E(None, = 0) \
-	E(UploadBuffer,) \
 	E(CopyBuffer,) \
+	\
+	E(UploadBuffer,) \
 	E(UploadTexture,) \
 	E(_kCount,) \
 //---
@@ -24,6 +25,7 @@ RDS_ENUM_CLASS(TransferCommandType, u8);
 
 class TransferCommand : public NonCopyable
 {
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Type = TransferCommandType;
 
@@ -35,22 +37,6 @@ public:
 
 protected:
 	TransferCommandType _type;
-};
-
-class TransferCommand_UploadBuffer : public TransferCommand
-{
-public:
-	using Base = TransferCommand;
-	using This = TransferCommand_UploadBuffer;
-
-public:
-	TransferCommand_UploadBuffer() : Base(Type::UploadBuffer) {}
-	virtual ~TransferCommand_UploadBuffer() {};
-
-public:
-	SPtr<RenderGpuBuffer>		dst;
-	ByteSpan					data;
-	QueueTypeFlags				queueTypeflags;
 };
 
 class TransferCommand_CopyBuffer : public TransferCommand
@@ -69,11 +55,32 @@ public:
 	QueueTypeFlags			queueTypeflags;
 };
 
-class TransferCommand_UploadTexture : public TransferCommand
+class TransferCommand_UploadBuffer : public TransferCommand
 {
+	friend class TransferContext;
 public:
 	using Base = TransferCommand;
 	using This = TransferCommand_UploadBuffer;
+
+public:
+	TransferCommand_UploadBuffer() : Base(Type::UploadBuffer) {}
+	virtual ~TransferCommand_UploadBuffer() {};
+
+public:
+	SPtr<RenderGpuBuffer>		dst;
+	ByteSpan					data;
+	QueueTypeFlags				queueTypeflags;
+};
+
+class TransferCommand_UploadTexture : public TransferCommand
+{
+	friend class TransferContext;
+public:
+	using Base = TransferCommand;
+	using This = TransferCommand_UploadTexture;
+
+public:
+	static constexpr SizeType s_kInvalid = NumLimit<u32>::max();
 
 public:
 	TransferCommand_UploadTexture() : Base(Type::UploadTexture) {}
@@ -81,42 +88,9 @@ public:
 
 public:
 	SPtr<Texture>	dst;
-	ByteSpan		data;
-};
 
-#endif
-
-
-#if 0
-#pragma mark --- rdsTransfer_InlineUploadBuffer-Decl ---
-#endif // 0
-#if 0
-
-struct Transfer_InlineUploadBuffer : public NonCopyable
-{
-public:
-	using SizeType = RenderApiLayerTraits::SizeType;
-
-public:
-	static constexpr SizeType s_kLocalSize = 64;
-
-public:
-	Transfer_InlineUploadBuffer();
-	void clear();
-
-	RDS_NODISCARD TransferCommand_UploadBuffer* addData(ByteSpan data);
-	void addParent(RenderGpuMultiBuffer* parent);
-
-public:
-	Mutex _mtx;	// TODO: better thread-safe approach (eg. SMtx if assumed only 1 LinearAllocator::Chunk, or per thread LinearAlloc)
-
-	LinearAllocator	allocator;
-	Vector<TransferCommand_UploadBuffer*, s_kLocalSize> uploadBufCmds;
-	LinearAllocator										bufData;
-	Vector<u32, s_kLocalSize>							bufOffsets;
-	Vector<u32, s_kLocalSize>							bufSizes;
-	Vector<SPtr<RenderGpuMultiBuffer>, s_kLocalSize>	parents;
-	Atm<u32> totalSizes;
+	//void* _stagingHnd = nullptr;
+	u32 _stagingIdx = s_kInvalid;
 };
 
 #endif
@@ -129,9 +103,10 @@ public:
 class TransferRequest;
 class TransferCommandBuffer : public NonCopyable
 {
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class TransferRequest;
 public:
-	using SizeType = RenderApiLayerTraits::SizeType;
+	static constexpr SizeType s_kLocalSize = 64;
 
 public:
 	TransferCommandBuffer();
@@ -142,13 +117,18 @@ public:
 
 	void clear();
 
-private:
+	TransferCommand_CopyBuffer*		copyBuffer()	;
+	TransferCommand_UploadBuffer*	uploadBuffer()	;
+	TransferCommand_UploadTexture*	uploadTexture()	;
 
+	Span<TransferCommand*> commands();
+
+private:
 	template<class CMD> CMD* newCommand();
 
 private:
-	LinearAllocator			_allocator;
-	Vector<TransferCommand> _commands;
+	LinearAllocator							_allocator;
+	Vector<TransferCommand*, s_kLocalSize>	_commands;
 
 };
 
@@ -161,8 +141,12 @@ CMD* TransferCommandBuffer::newCommand()
 	return cmd;
 }
 
-#endif
+inline Span<TransferCommand*> TransferCommandBuffer::commands() { return _commands; }
 
-//inline RDS_NODISCARD TransferCommand_UploadBuffer* TransferCommandBuffer::addUploadBuffer()	{ return newCommand<TransferCommand_UploadBuffer>(); }
+inline TransferCommand_CopyBuffer*		TransferCommandBuffer::copyBuffer()		{ return newCommand<TransferCommand_CopyBuffer>(); }
+inline TransferCommand_UploadBuffer*	TransferCommandBuffer::uploadBuffer()	{ return newCommand<TransferCommand_UploadBuffer>(); }
+inline TransferCommand_UploadTexture*	TransferCommandBuffer::uploadTexture()	{ return newCommand<TransferCommand_UploadTexture>(); }
+
+#endif
 
 }

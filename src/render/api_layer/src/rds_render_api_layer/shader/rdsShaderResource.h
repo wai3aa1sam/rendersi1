@@ -242,36 +242,6 @@ ShaderResources::setSamplerParam(StrView name, const SamplerState& v)
 	}
 }
 
-inline
-void 
-ShaderResources::uploadToGpu()
-{
-	for (auto& e : constBufs())
-	{
-		e.uploadToGpu();
-	}
-}
-
-inline
-void 
-ShaderResources::clear()
-{
-	this->_constBufs.clear();
-}
-
-inline
-const ShaderResources::SamplerParam* 
-ShaderResources::findSamplerParam(StrView name) const
-{
-	for (const auto& e : samplerParams())
-	{
-		bool isSame = StrUtil::ignoreCaseCompare(e.name(), name) == 0;
-		if (isSame)
-			return &e;
-	}
-	return nullptr;
-}
-
 inline				ShaderResources::ConstBuffer&	ShaderResources::constBufs(SizeType i)		{ return _constBufs[i]; }
 inline Span<		ShaderResources::ConstBuffer>	ShaderResources::constBufs()				{ return _constBufs; }
 inline Span<const	ShaderResources::ConstBuffer>	ShaderResources::constBufs() const			{ return spanCast<const ConstBuffer>(_constBufs.span()); }

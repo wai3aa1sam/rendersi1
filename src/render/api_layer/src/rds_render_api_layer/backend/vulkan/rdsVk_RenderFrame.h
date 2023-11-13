@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/backend/vulkan/command/rdsVk_CommandPool.h"
 #include "rds_render_api_layer/backend/vulkan/command/rdsVk_CommandBuffer.h"
 #include "rds_render_api_layer/backend/vulkan/shader/rdsVk_DescriptorAllocator.h"
@@ -51,7 +51,7 @@ public:
 	Vk_Fence*		inFlightFence();
 
 protected:
-	void createCommandPool (Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 queueIdx);
+	void createCommandPool (Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 familyIdx);
 	void destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool);
 
 	void createSyncObjects();

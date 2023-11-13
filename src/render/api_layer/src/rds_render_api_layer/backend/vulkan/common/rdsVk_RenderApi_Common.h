@@ -24,7 +24,7 @@ class Vk_CommandPool;
 
 class RenderGpuBuffer_Vk;
 
-#if 1	// TODO: remove / modify
+#if 1	
 
 struct QueueFamilyIndices 
 {
@@ -34,6 +34,11 @@ public:
 public:
 	static constexpr SizeType s_kQueueTypeCount = 4;
 
+	QueueFamilyIndices()
+	{
+		RDS_TODO("rework or modify");
+	}
+
 	void clear() 
 	{ 
 		graphics.reset();
@@ -41,7 +46,7 @@ public:
 		transfer.reset();
 	}
 
-	u32 getQueueIdx(QueueTypeFlags flags) const 
+	u32 getFamilyIdx(QueueTypeFlags flags) const 
 	{
 		using SRC = QueueTypeFlags;
 		switch (flags)
@@ -111,6 +116,20 @@ struct Vk_SwapchainInfo
 
 #endif
 
+
+#if 1
+
+struct Vk_StageAccess
+{
+	VkPipelineStageFlags	srcStage	= {};
+	VkPipelineStageFlags	dstStage	= {};
+	VkAccessFlags			srcAccess	= {};
+	VkAccessFlags			dstAccess	= {};
+};
+
+#endif // 1
+
+
 #if 0
 #pragma mark --- rdsVk_RenderApiUtil-Decl ---
 #endif // 0
@@ -179,6 +198,7 @@ public:
 	static VkSamplerAddressMode toVkSamplerAddressMode	(SamplerWrap v);
 	static VkImageViewType		toVkImageViewType		(RenderDataType v);
 
+	static Vk_StageAccess toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout);
 
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);

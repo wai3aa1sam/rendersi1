@@ -1,7 +1,8 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
+#include "../common/rdsRenderResource_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -11,12 +12,8 @@ namespace rds
 #endif // 0
 #if 1
 
-class Texture2D_Vk : public Texture2D
+class Texture2D_Vk : public RenderResource_Vk<Texture2D>
 {
-public:
-	using Base = Texture2D;
-	using Util = Vk_RenderApiUtil;
-
 public:
 	Texture2D_Vk();
 	virtual ~Texture2D_Vk();
@@ -26,9 +23,11 @@ public:
 	Vk_Sampler_T*	vkSamplerHnd();
 
 protected:
-	virtual void onCreate		(const CreateDesc& cDesc) override;
-	virtual void onPostCreate	(const CreateDesc& cDesc) override;
+	virtual void onCreate		(CreateDesc& cDesc) override;
+	virtual void onPostCreate	(CreateDesc& cDesc) override;
 	virtual void onDestroy		() override;
+
+	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 
 protected:
 	Vk_Image		_vkImage;
@@ -67,6 +66,7 @@ struct Vk_Texture
 	throwIf(true, ""); \
 	// ---
 
+	static Vk_Image_T*		getImageHnd		(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkImageHnd());		return nullptr; }
 	static Vk_ImageView_T*	getImageViewHnd	(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkImageViewHnd()); return nullptr; }
 	static Vk_Sampler_T*	getSamplerHnd	(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkSamplerHnd());	return nullptr; }
 

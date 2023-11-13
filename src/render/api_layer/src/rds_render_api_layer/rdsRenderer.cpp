@@ -55,25 +55,50 @@ Renderer::create(const CreateDesc& cDesc)
 		//rdr->_textureStock.magenta	= rdr->createSolidColorTexture2D(Color4b(255, 0,   255, 255));
 		//rdr->_textureStock.error	= rdr->createSolidColorTexture2D(Color4b(255, 0,   255, 255));
 	}
+
+	rdr->_tsfCtx->transferRequest().reset(rdr->_tsfCtx);
 }
 
 
 void 
 Renderer::destroy()
 {
+
 	onDestroy();
+
+	RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
+	RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");
 }
 
 void 
 Renderer::onCreate(const CreateDesc& cDesc)
 {
-
+	_rdFrames.resize(s_kFrameInFlightCount);
+	for (auto& e : _rdFrames)
+	{
+		e.create();
+	}
+	_tsfFrames.resize(s_kFrameInFlightCount);
+	for (auto& e : _tsfFrames)
+	{
+		e.create();
+	}
 }
 
 void 
 Renderer::onDestroy()
 {
+	
+}
 
+void 
+Renderer::nextFrame()
+{
+	_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
+
+	renderFrame().clear();
+	transferFrame().clear();
+	_tsfReq.reset(_tsfCtx);
 }
 
 SPtr<Texture2D>	
@@ -84,9 +109,9 @@ Renderer::createSolidColorTexture2D(const Color4b& color)
 	Texture2D_CreateDesc texDesc;
 	texDesc.format		= ColorType::RGBAb;
 	texDesc.mipCount	= 1;
-	texDesc.size.set(w, h);
+	texDesc._size.set(w, h);
 
-	auto& image = texDesc.uploadImage;
+	auto& image = texDesc._uploadImage;
 	image.create(Color4b::s_kColorType, w, h);
 
 	for (int y = 0; y < h; y++) 
@@ -117,8 +142,6 @@ Renderer::_init(const CreateDesc& cDesc)
 
 	return rdr;
 }
-
-
 
 #endif
 }

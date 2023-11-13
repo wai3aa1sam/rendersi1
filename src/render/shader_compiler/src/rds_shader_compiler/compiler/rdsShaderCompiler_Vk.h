@@ -6,7 +6,7 @@
 #include <spirv_cross.hpp>
 #include <spirv_hlsl.hpp>
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 
 #if RDS_RENDER_HAS_VULKAN
 

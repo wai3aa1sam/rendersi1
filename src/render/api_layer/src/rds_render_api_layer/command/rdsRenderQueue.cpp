@@ -4,6 +4,7 @@
 #include "rds_render_api_layer/rdsRenderFrame.h"
 #include "rds_render_api_layer/mesh/rdsRenderMesh.h"
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
+#include "rds_render_api_layer/rdsRenderer.h"
 
 namespace rds
 {
@@ -129,8 +130,10 @@ RenderQueue::drawRenderables(const DrawingSettings& drawingSettings)
 void* 
 RenderQueue::alloc(SizeType n, SizeType align) 
 {
+	RDS_TODO("make it per rdDev");
 	//RDS_ASSERT(OsTraits::isMainThread(), "only use this in main thread"); 
-	return RenderFrameContext::instance()->renderFrame().renderCommandAllocator().alloc(n, align); 
+	return Renderer::instance()->renderFrame().renderCommandAllocator().alloc(n, align); 
+	//return nullptr;
 }
 
 void 

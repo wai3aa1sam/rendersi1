@@ -2,6 +2,7 @@
 #include "rdsRenderRequest.h"
 #include "rds_render_api_layer/mesh/rdsRenderMesh.h"
 #include "rds_render_api_layer/rdsRenderFrame.h"
+#include "rds_render_api_layer/rdsRenderer.h"
 
 namespace rds
 {
@@ -16,14 +17,11 @@ RenderRequest::~RenderRequest()
 
 }
 
-// void 
-// RenderRequest::clear()
-// {
-// 	for (auto& e : _RenderCommandBuffers)
-// 	{
-// 		e.clear();
-// 	}
-// }
+ void 
+ RenderRequest::clear()
+ {
+	 _renderCmdBuf.clear();
+ }
 
 void 
 RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, const Mat4f& transform)
@@ -48,7 +46,8 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMes
 void 
 RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
-	auto* drawCalls = RenderFrameContext::instance()->renderFrame().renderQueue().drawRenderables(settings);
+	throwIf(true, "store rdCtx");
+	auto* drawCalls = Renderer::instance()->renderFrame().renderQueue().drawRenderables(settings);
 	auto* cmd = renderCommandBuffer().addCommand<RenderCommand_DrawRenderables>();
 	cmd->hashedDrawCallCmds = drawCalls;
 }

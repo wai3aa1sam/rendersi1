@@ -9,7 +9,7 @@ namespace rds
 {
 
 SPtr<Texture2D> 
-Renderer_Vk::onCreateTexture2D(const Texture2D_CreateDesc& cDesc)
+Renderer_Vk::onCreateTexture2D(Texture2D_CreateDesc& cDesc)
 {
 	auto p = SPtr<Texture2D>(makeSPtr<Texture2D_Vk>());
 	p->create(cDesc);
@@ -31,18 +31,17 @@ Texture2D_Vk::~Texture2D_Vk()
 }
 
 void 
-Texture2D_Vk::onCreate(const CreateDesc& cDesc)
+Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
-	
-	auto* rdr = Renderer_Vk::instance();
+	#if 0
 
-	RDS_TODO("Texture2D_Vk global? cache sampler + texture pool? + texture upload context");
+	auto* rdDev = device();
 
-	_vkSampler.create(cDesc.samplerState, rdr);
+	_vkSampler.create(cDesc.samplerState, rdDev);
 	{
-		auto* vkAlloc			= rdr->memoryContext()->vkAlloc();
-		const Image& image		= cDesc.uploadImage;
+		auto* vkAlloc			= rdDev->memoryContext()->vkAlloc();
+		const Image& image		= cDesc.uploadImage();
 		auto* rdCtx				= sCast<RenderContext_Vk*>(cDesc.rdCtx);
 		auto& rdFrame			= rdCtx->renderFrame();
 		auto* vkGraphicsQueue	= rdCtx->vkGraphicsQueue();
@@ -87,11 +86,13 @@ Texture2D_Vk::onCreate(const CreateDesc& cDesc)
 			Util::transitionImageLayout(&_vkImage, vkFormat, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, nullptr, vkGraphicsQueue, cmdBuf);
 		}
 	}
-	_vkImageView.create(this, rdr);
+	_vkImageView.create(this, rdDev);
+	#endif // 0
+
 }
 
 void 
-Texture2D_Vk::onPostCreate(const CreateDesc& cDesc)
+Texture2D_Vk::onPostCreate(CreateDesc& cDesc)
 {
 	Base::onPostCreate(cDesc);
 
@@ -102,10 +103,46 @@ Texture2D_Vk::onDestroy()
 {
 	Base::onDestroy();
 
-	auto* rdr = Renderer_Vk::instance();
+	auto* rdr = renderer();
 
 	_vkSampler.destroy(rdr);
 	_vkImageView.destroy(rdr);
+	_vkImage.destroy();
+}
+
+void 
+Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
+{
+	Base::onUploadToGpu(cDesc, cmd);
+
+	auto* rdDev		= device();
+	auto* vkAlloc	= rdDev->memoryContext()->vkAlloc();
+
+	auto&		srcImage	= cDesc.uploadImage();
+	auto		bytes		= sCast<VkDeviceSize>(srcImage.totalByteSize());
+	const auto& imageSize	= size();
+	auto*		stagingBuf	= transferFrame().requestStagingBuffer(cmd->_stagingIdx, bytes);
+
+	_vkSampler.create(cDesc.samplerState, rdDev);
+
+	{
+		auto memmap = Vk_ScopedMemMapBuf{ stagingBuf };
+		memory_copy(memmap.data<u8*>(), srcImage.dataPtr(), bytes);
+	}
+
+	{
+		VkFormat vkFormat = Util::toVkFormat_Srgb(Util::toVkFormat(cDesc.format));
+
+		Vk_AllocInfo allocInfo = {};
+		allocInfo.usage = RenderMemoryUsage::GpuOnly;
+
+		_vkImage.create(vkAlloc, &allocInfo
+			, imageSize.x, imageSize.y
+			, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+	}
+
+	_vkImageView.create(this, rdDev);
 }
 
 #endif

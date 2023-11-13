@@ -3,6 +3,7 @@
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "vertex/rdsVertexLayoutManager.h"
 #include "rdsRenderFrame.h"
+#include "rds_render_api_layer/transfer/rdsTransferFrame.h"
 
 namespace rds
 {
@@ -66,16 +67,10 @@ struct TextureStock
 
 class Renderer : public VirtualSingleton<Renderer>
 {
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-    using Base = VirtualSingleton<Renderer>;
-
-	using CreateDesc = Renderer_CreateDesc;
-
-	using SizeType = RenderApiLayerTraits::SizeType;
-
-
-public:
-	static constexpr SizeType s_kFrameInFlightCount = RenderApiLayerTraits::s_kFrameInFlightCount;
+    using Base			= VirtualSingleton<Renderer>;
+	using CreateDesc	= Renderer_CreateDesc;
 
 public:
 	static CreateDesc makeCDesc();
@@ -87,10 +82,12 @@ public:
 	void create(const CreateDesc& cDesc);
 	void destroy();
 
+	void nextFrame();
+
 	SPtr<RenderContext>			createContext				(const RenderContext_CreateDesc&	cDesc);
 	SPtr<RenderGpuBuffer>		createRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc);
 	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer	(const RenderGpuBuffer_CreateDesc&	cDesc);
-	SPtr<Texture2D>				createTexture2D				(const Texture2D_CreateDesc&		cDesc);
+	SPtr<Texture2D>				createTexture2D				(		Texture2D_CreateDesc&		cDesc);
 	SPtr<Shader>				createShader				(const Shader_CreateDesc&			cDesc);
 	SPtr<Shader>				createShader				(StrView							filename);
 	SPtr<Material>				createMaterial				();
@@ -102,6 +99,13 @@ public:
 public:
 	const	RenderAdapterInfo&	adapterInfo() const;
 			TextureStock&		textureStock();
+			RenderFrame&		renderFrame();
+			TransferFrame&		transferFrame();
+			TransferContext&	transferContext();
+			TransferRequest&	transferRequest();
+
+
+	u32 iFrame() const;
 
 protected:
 	Renderer* _init(const CreateDesc& cDesc);
@@ -111,7 +115,7 @@ protected:
 protected:
 	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc)	= 0;
 	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc)	= 0;
-	virtual SPtr<Texture2D>				onCreateTexture2D			(const Texture2D_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<Texture2D>				onCreateTexture2D			(		Texture2D_CreateDesc&		cDesc)	= 0;
 	virtual SPtr<Shader>				onCreateShader				(const Shader_CreateDesc&			cDesc)	= 0;
 	virtual SPtr<Material>				onCreateMaterial			()											= 0;
 	virtual SPtr<Material>				onCreateMaterial			(Shader*							shader) = 0;
@@ -119,7 +123,14 @@ protected:
 protected:
 	RenderAdapterInfo	_adapterInfo;
 	VertexLayoutManager _vertexLayoutManager;
-	RenderFrameContext  _renderFrameCtx;
+
+	//RenderFrameContext	_rdFrameCtx;
+	Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
+	Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
+	u32 _iFrame = 0;
+
+	TransferContext* _tsfCtx = nullptr;
+	TransferRequest	 _tsfReq;
 
 	TextureStock _textureStock;
 };
@@ -127,6 +138,13 @@ protected:
 inline const	RenderAdapterInfo&		Renderer::adapterInfo()		const	{ return _adapterInfo; }
 inline			TextureStock&			Renderer::textureStock()			{ return _textureStock; }
 
+inline			RenderFrame&			Renderer::renderFrame()				{ return _rdFrames[iFrame()]; }
+inline			TransferFrame&			Renderer::transferFrame()			{ return _tsfFrames[iFrame()]; }
+
+inline			TransferContext&		Renderer::transferContext()			{ return *_tsfCtx; }
+inline			TransferRequest&		Renderer::transferRequest()			{ return _tsfReq; }
+
+inline			u32						Renderer::iFrame() const			{ return _iFrame; }
 
 #endif
 

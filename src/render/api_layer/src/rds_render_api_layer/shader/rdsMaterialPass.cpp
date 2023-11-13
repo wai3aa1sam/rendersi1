@@ -11,6 +11,16 @@ namespace rds
 #endif // 0
 #if 1
 
+MaterialPass_Stage::MaterialPass_Stage()
+{
+
+}
+
+MaterialPass_Stage::~MaterialPass_Stage()
+{
+	destroy();
+}
+
 void 
 MaterialPass_Stage::create(MaterialPass* pass, ShaderStage* shaderStage)
 {
@@ -19,6 +29,8 @@ MaterialPass_Stage::create(MaterialPass* pass, ShaderStage* shaderStage)
 
 	destroy();
 	_shaderStage = shaderStage;
+
+	RDS_TODO("move to pass, 1 per ShaderResource pass, create on demand");
 	_framedShaderResources.resize(s_kFrameInFlightCount);
 	for (auto& e : _framedShaderResources)
 	{
@@ -46,13 +58,46 @@ ShaderResources& MaterialPass_Stage::shaderResources(Material* mtl) { return _fr
 #endif // 0
 #if 1
 
+MaterialPass::MaterialPass()
+{
+
+}
+
+MaterialPass::~MaterialPass()
+{
+
+}
+
+void 
+MaterialPass::create(Material* material, ShaderPass* shaderPass) 
+{ 
+	onCreate(material, shaderPass); 
+}
+
 void 
 MaterialPass::destroy()
 {
-	
+	onDestroy();
 }
 
+void 
+MaterialPass::bind(RenderContext* ctx, const VertexLayout* vtxLayout) 
+{ 
+	onBind(ctx, vtxLayout); 
+}
 
+void 
+MaterialPass::onCreate(Material* material, ShaderPass* shaderPass)
+{
+	_material	= material;
+	_shaderPass = shaderPass;
+}
+
+void 
+MaterialPass::onDestroy()
+{
+
+}
 
 #endif
 

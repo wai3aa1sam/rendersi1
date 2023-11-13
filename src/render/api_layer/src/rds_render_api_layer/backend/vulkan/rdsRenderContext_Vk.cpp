@@ -121,16 +121,16 @@ RenderContext_Vk::onBeginRender()
 {
 	RDS_PROFILE_SCOPED();
 
-	auto* vkDevice = renderer()->vkDevice();
+	auto* rdDev = renderer();
+
 	VkResult ret;
 
-	//const auto* inFlightVkFence = reinCast<const VkFence*>(_inFlightVkFence.address());
-	Vk_Fence_T* vkFences[] = { renderFrame().inFlightFence()->hnd()};
-	u32 vkFenceCount = ArraySize<decltype(vkFences)>;
+	RDS_TODO("i tihnk no need to wait too early, since it will block the cpu to record RenderCommands, query the fence and reset the frame if it is signaled");
 	{
 		RDS_PROFILE_SECTION("vkWaitForFences()");
-		vkWaitForFences(vkDevice, vkFenceCount, vkFences, VK_TRUE, NumLimit<u64>::max());
+		renderFrame().inFlightFence()->wait(rdDev);
 	}
+
 	//vkResetFences(vkDevice, vkFenceCount, vkFences);		// reset too early will cause deadlock, since the invalidate wii cause no work submitted (returned) and then no one will signal it
 
 	ret = _vkSwapchain.acquireNextImage(renderFrame().imageAvaliableSmp());
@@ -353,7 +353,7 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 	{
 		auto& cmd = inlineUploadBuffer->uploadBufCmds[iCmd];
 		auto* dstBuf = sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
-		transferCmdBuf->cmd_CopyBuffer(dstBuf->vkBuf(), &vkStageBuf, cmd->data.size(), 0, inlineUploadBuffer->bufOffsets[iCmd]);		// dst offset already handled in RenderGpuBuffer::onUpload()
+		transferCmdBuf->cmd_copyBuffer(dstBuf->vkBuf(), &vkStageBuf, cmd->data.size(), 0, inlineUploadBuffer->bufOffsets[iCmd]);		// dst offset already handled in RenderGpuBuffer::onUpload()
 		RDS_ASSERT(!BitUtil::has(cmd->queueTypeflags, QueueTypeFlags::Compute), "not yet support");
 	}
 
@@ -394,19 +394,13 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 {
 	RDS_PROFILE_SCOPED();
 
-	VkResult ret;
-	auto* vkDevice = renderer()->vkDevice();
+	auto* rdDev	= renderer();
 
 	RDS_PROFILE_GPU_COLLECT_VK(_gpuProfilerCtx, vkCmdBuf);
 
 	_curGraphicsCmdBuf->endRecord();
 
-	{
-		Vk_Fence_T* vkFences[]		= { renderFrame().inFlightFence()->hnd()};
-		u32			vkFenceCount	= ArraySize<decltype(vkFences)>;
-		ret = vkResetFences(vkDevice, vkFenceCount, vkFences);		// should handle it to signaled if the function throw?
-		Util::throwIfError(ret);
-	}
+	renderFrame().inFlightFence()->reset(rdDev);
 
 	_curGraphicsCmdBuf->submit(renderFrame().inFlightFence()
 							 , renderFrame().imageAvaliableSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR

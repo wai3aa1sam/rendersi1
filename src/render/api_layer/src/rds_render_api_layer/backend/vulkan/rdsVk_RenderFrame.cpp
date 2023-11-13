@@ -47,9 +47,9 @@ Vk_RenderFrame::create()
 	auto* renderer		= Renderer_Vk::instance();
 	auto& queueFamily	= renderer->queueFamilyIndices();
 
-	createCommandPool(_graphicsCommandPools, queueFamily.getQueueIdx(QueueTypeFlags::Graphics));
-	createCommandPool(_computeCommandPools,  queueFamily.getQueueIdx(QueueTypeFlags::Compute));
-	createCommandPool(_transferCommandPools, queueFamily.getQueueIdx(QueueTypeFlags::Transfer));
+	createCommandPool(_graphicsCommandPools, queueFamily.getFamilyIdx(QueueTypeFlags::Graphics));
+	createCommandPool(_computeCommandPools,  queueFamily.getFamilyIdx(QueueTypeFlags::Compute));
+	createCommandPool(_transferCommandPools, queueFamily.getFamilyIdx(QueueTypeFlags::Transfer));
 
 	createSyncObjects();
 
@@ -113,13 +113,13 @@ Vk_RenderFrame::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLe
 }
 
 void 
-Vk_RenderFrame::createCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 queueIdx)
+Vk_RenderFrame::createCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 familyIdx)
 {
 	cmdPool.reserve(s_kThreadCount);
 	for (size_t i = 0; i < s_kThreadCount; i++)
 	{
 		auto& e = cmdPool.emplace_back();
-		e.create(queueIdx, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+		e.create(familyIdx, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 	}
 }
 

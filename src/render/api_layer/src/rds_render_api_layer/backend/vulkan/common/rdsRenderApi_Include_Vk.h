@@ -4,7 +4,6 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
-
 #if 0
 #pragma mark --- rdsVulkan_Include-Decl ---
 #endif // 0
@@ -44,6 +43,11 @@ namespace rds
 {
 using Vk_AllocHnd = VmaAllocation;
 using Vk_Allocation = VmaAllocation;
+
+
+// TODO: remove
+class Renderer_Vk;
+using RenderDevice_Vk = Renderer_Vk;
 
 }
 

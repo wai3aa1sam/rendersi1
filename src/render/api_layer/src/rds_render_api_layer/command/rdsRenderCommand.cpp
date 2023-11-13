@@ -29,15 +29,15 @@ RenderCommandBuffer::clear()
 		cmd->~RenderCommand();
 	}
 	_commands.clear();
+	_alloc.clear();
 }
 
 void* 
 RenderCommandBuffer::alloc(SizeType n, SizeType align)
 {
-	return RenderFrameContext::instance()->renderFrame().renderCommandAllocator().alloc(n, align);
+	return _alloc.alloc(n, align);
+	//return RenderFrameContext::instance()->renderFrame().renderCommandAllocator().alloc(n, align);
 }
-
-
 
 #endif
 

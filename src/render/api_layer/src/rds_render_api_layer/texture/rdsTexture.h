@@ -5,6 +5,11 @@
 namespace rds
 {
 
+class Texture;
+class Texture2D;
+
+class TransferCommand_UploadTexture;
+
 #if 0
 #pragma mark --- rdsSamplerState-Decl ---
 #endif // 0
@@ -82,20 +87,73 @@ public:
 	u8				mipCount		= 1;
 
 	class RenderContext* rdCtx = nullptr;		// TODO: remove
+
+public:
+
+protected:
+	void loadImage(const Image& uploadImage)
+	{
+		format = uploadImage.colorType();
+	}
 };
 
 struct Texture2D_CreateDesc : public Texture_CreateDesc
 {
+public:
+	friend class Texture2D;
+	friend class Renderer;
+	friend class TransferContext;
+	friend class TransferRequest;
+
+public:
+	using Base = Texture_CreateDesc;
+
+public:
+	Texture2D_CreateDesc() = default;
+
+	Texture2D_CreateDesc(Texture2D_CreateDesc&& rhs) { move(rds::move(rhs)); }
+	void operator=		(Texture2D_CreateDesc&& rhs) { RDS_CORE_ASSERT(this != &rhs, ""); move(rds::move(rhs)); }
+
 	void create(StrView filename)
 	{
-		auto imageCDesc = Image::makeCDesc();
-		uploadImage.load(filename);
-		size	= Vec2u::s_cast(uploadImage.info().size);
-		format	= uploadImage.colorType();
+		_filename = filename;
 	}
 
-	Vec2u size = {0, 0};
-	Image uploadImage;
+	void create(Image&& uploadImage)
+	{
+		_uploadImage = rds::move(uploadImage);
+	}
+
+	const Image& uploadImage() const { return _uploadImage; }
+
+protected:
+	void loadImage()
+	{
+		RDS_CORE_ASSERT(!_filename.is_empty() && !_uploadImage.dataPtr(), "loadImage fail, forgot to call ::create() ?");
+		if (!_filename.is_empty())
+		{
+			_uploadImage.load(_filename);
+		}
+		else if(_uploadImage.dataPtr())
+		{
+		}
+
+		Base::loadImage(_uploadImage);
+		_size = Vec2u::s_cast(_uploadImage.info().size).toTuple2();
+	}
+
+protected:
+	void move(Texture2D_CreateDesc&& rhs)
+	{
+		_size			= rhs._size;
+		_uploadImage	= rds::move(rhs._uploadImage);
+		_filename		= rds::move(rhs._filename);
+	}
+
+protected:
+	Tuple2u	_size = {0, 0};
+	Image	_uploadImage;
+	String	_filename;
 };
 
 #if 0
@@ -113,6 +171,10 @@ public:
 public:
 	virtual ~Texture()				= default;
 
+	void create	(CreateDesc& cDesc);
+	void destroy();
+
+public:
 	RenderDataType		type() const;
 	const CreateDesc&	textureDesc() const;
 
@@ -120,6 +182,10 @@ public:
 	ColorType			format()		const;
 	const SamplerState&	samplerState()	const;
 	u8					mipCount()		const;
+
+	Vec3u				size()			const;
+
+protected:
 
 protected:
 	Texture(RenderDataType type);
@@ -160,22 +226,28 @@ public:
 
 public:
 	static CreateDesc		makeCDesc();
-	static SPtr<Texture2D>	make(const CreateDesc& cDesc);
+	static SPtr<Texture2D>	make(CreateDesc& cDesc);
 
 public:
 	Texture2D();
 	virtual ~Texture2D();
 
-	void create	(const CreateDesc& cDesc);
+	void create	(CreateDesc& cDesc);
 	void destroy();
+
+	void _internal_uploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
 
 	const Vec2u& size() const;
 
 protected:
-
-	virtual void onCreate		(const CreateDesc& cDesc);
-	virtual void onPostCreate	(const CreateDesc& cDesc);
+	virtual void onCreate		(CreateDesc& cDesc);
+	virtual void onPostCreate	(CreateDesc& cDesc);
 	virtual void onDestroy		();
+
+	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
+
+private:
+	void _create(CreateDesc& cDesc);
 
 protected:
 	Vec2u		_size;
@@ -194,4 +266,5 @@ class TextureCube : public Texture
 {
 
 };
+
 }

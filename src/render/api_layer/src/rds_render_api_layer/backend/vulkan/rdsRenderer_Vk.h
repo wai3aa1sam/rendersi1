@@ -1,9 +1,10 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rdsVk_MemoryContext.h"
 #include "rdsVk_RenderFrame.h" 
+#include "transfer/rdsTransferContext_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -14,6 +15,7 @@ namespace rds
 #pragma mark --- rdsRenderer_Vk-Decl ---
 #endif // 0
 #if 1
+
 
 class Renderer_Vk : public Renderer
 {
@@ -37,6 +39,8 @@ public:
 	Vk_MemoryContext*				memoryContext();
 	const VkAllocationCallbacks*	allocCallbacks();
 
+	TransferContext_Vk&				transferContext();
+
 	Vk_Instance_T*			vkInstance();
 	Vk_PhysicalDevice*		vkPhysicalDevice();
 	Vk_Device*				vkDevice();
@@ -49,10 +53,10 @@ public:
 public:
 
 protected:
-	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc)	override;
-	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const RenderGpuBuffer_CreateDesc&	cDesc)	override;
-	virtual SPtr<Texture2D>				onCreateTexture2D			(const Texture2D_CreateDesc&		cDesc)	override;
-	virtual SPtr<Shader>				onCreateShader				(const Shader_CreateDesc&			cDesc)	override;
+	virtual SPtr<RenderContext>			onCreateContext				(const	RenderContext_CreateDesc&	cDesc)	override;
+	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(const	RenderGpuBuffer_CreateDesc&	cDesc)	override;
+	virtual SPtr<Texture2D>				onCreateTexture2D			(		Texture2D_CreateDesc&		cDesc)	override;
+	virtual SPtr<Shader>				onCreateShader				(const	Shader_CreateDesc&			cDesc)	override;
 	virtual SPtr<Material>				onCreateMaterial			()											override;
 	virtual SPtr<Material>				onCreateMaterial			(Shader*							shader) override;
 
@@ -84,6 +88,9 @@ private:
 	VkPtr<Vk_Device>				_vkDevice;
 	//VkPtr<Vk_Queue>				_vkGraphicsQueue;
 	//VkPtr<Vk_Queue>				_vkPresentQueue;
+
+	//SPtr<TransferContext_Vk>		_transferCtxVk;
+	TransferContext_Vk				_transferCtxVk;
 };
 
 #endif
@@ -97,6 +104,8 @@ inline Renderer_Vk* Renderer_Vk::instance() { return sCast<Renderer_Vk*>(s_insta
 
 inline Vk_MemoryContext*			Renderer_Vk::memoryContext()	{ return &_memoryContextVk; }
 inline const VkAllocationCallbacks*	Renderer_Vk::allocCallbacks()	{ return _memoryContextVk.allocCallbacks(); }
+
+inline TransferContext_Vk&			Renderer_Vk::transferContext()	{ return _transferCtxVk; }
 
 inline Vk_Instance_T*		Renderer_Vk::vkInstance()				{ return _vkInstance.hnd(); }
 inline Vk_PhysicalDevice*	Renderer_Vk::vkPhysicalDevice()			{ return _vkPhysicalDevice; }

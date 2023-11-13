@@ -82,6 +82,8 @@ protected:
 	NativeUIWindow* _nativeUIWindow = nullptr;
 	Vec2f			_framebufferSize {0,0};
 
+	u32 _curFrameIdx = 0;
+
 private:
 
 };
@@ -106,7 +108,7 @@ RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd)
 		default: { throwError("undefined render command"); } break;
 	}
 
-	#undef _DISPACH_CMD
+	#undef _DISPACH_CMD_CASE
 }
 
 

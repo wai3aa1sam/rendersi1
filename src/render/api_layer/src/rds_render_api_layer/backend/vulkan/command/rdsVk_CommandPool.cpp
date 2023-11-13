@@ -22,7 +22,7 @@ Vk_CommandPool::~Vk_CommandPool()
 }
 
 void 
-Vk_CommandPool::create(u32 queueIdx, VkCommandPoolCreateFlags createFlags)
+Vk_CommandPool::create(u32 familyIdx, VkCommandPoolCreateFlags createFlags)
 {
 	destroy();
 
@@ -33,7 +33,7 @@ Vk_CommandPool::create(u32 queueIdx, VkCommandPoolCreateFlags createFlags)
 	VkCommandPoolCreateInfo cInfo = {};
 	cInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cInfo.flags				= createFlags;
-	cInfo.queueFamilyIndex	= queueIdx;
+	cInfo.queueFamilyIndex	= familyIdx;
 
 	auto ret = vkCreateCommandPool(vkDev, &cInfo, allocCallbacks, hndForInit());
 	Util::throwIfError(ret);
@@ -47,6 +47,7 @@ Vk_CommandPool::destroy()
 
 	auto* renderer = Renderer_Vk::instance();
 	vkDestroyCommandPool(renderer->vkDevice(), hnd(), renderer->allocCallbacks());
+	Base::destroy();
 }
 
 Vk_CommandBuffer* 

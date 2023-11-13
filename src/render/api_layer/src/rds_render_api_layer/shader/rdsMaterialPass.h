@@ -38,6 +38,9 @@ public:
 	static constexpr SizeType s_kLocalConstBufSize = 2;
 
 public:
+	MaterialPass_Stage();
+	~MaterialPass_Stage();
+
 	void create(MaterialPass* pass, ShaderStage* shaderStage);
 	void destroy();
 
@@ -135,13 +138,13 @@ public:
 	using Info = ShaderInfo::Pass;
 
 public:
-	MaterialPass() {}
-	virtual ~MaterialPass() {}
+	MaterialPass();
+	virtual ~MaterialPass();
 
-	void create(Material* material, ShaderPass* shaderPass) { onCreate(material, shaderPass); };
+	void create(Material* material, ShaderPass* shaderPass);
 	void destroy();
 
-	void bind(RenderContext* ctx, const VertexLayout* vtxLayout) { onBind(ctx, vtxLayout); }
+	void bind(RenderContext* ctx, const VertexLayout* vtxLayout);
 
 	template<class TEX> void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
 	template<class T>	void setParam		(StrView name, const T& v);
@@ -154,7 +157,7 @@ public:
 
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass);
-	virtual void onDestroy() {};
+	virtual void onDestroy();
 
 	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout) = 0;
 
@@ -164,14 +167,6 @@ protected:
 	VertexStage*	_vertexStage	= nullptr;
 	PixelStage*		_pixelStage		= nullptr;
 };
-
-inline
-void 
-MaterialPass::onCreate(Material* material, ShaderPass* shaderPass)
-{
-	_material	= material;
-	_shaderPass = shaderPass;
-}
 
 template<class TEX> inline 
 void 

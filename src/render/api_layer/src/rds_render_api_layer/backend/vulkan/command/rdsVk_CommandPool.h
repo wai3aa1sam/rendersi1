@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rdsVk_CommandBuffer.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -15,6 +15,7 @@ namespace rds
 class Vk_CommandPool : public Vk_RenderApiPrimitive<Vk_CommandPool_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_CommandPool_T>;
 
 public:
 	Vk_CommandPool();
@@ -26,7 +27,7 @@ public:
 	Vk_CommandPool(Vk_CommandPool&& rhs) { throwIf(true, ""); }
 	void operator=(Vk_CommandPool&& rhs) { throwIf(true, ""); }
 
-	void create(u32 queueIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+	void create(u32 familyIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 	void destroy();
 
 	Vk_CommandBuffer* requestCommandBuffer(VkCommandBufferLevel level);

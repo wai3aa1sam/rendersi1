@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -28,6 +28,7 @@ public:
 	Vk_Allocator();
 	~Vk_Allocator();
 
+	void create(RenderDevice_Vk* rdDev);
 	void create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks);
 	void destroy();
 

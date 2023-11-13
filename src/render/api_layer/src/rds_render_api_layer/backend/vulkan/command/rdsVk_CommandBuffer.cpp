@@ -21,7 +21,8 @@ Vk_CommandBuffer::Vk_CommandBuffer()
 
 Vk_CommandBuffer::~Vk_CommandBuffer()
 {
-
+	// when vk cmd pool desttroy, all cmd buf will destroy too
+	Base::destroy();
 }
 
 void Vk_CommandBuffer::create(Vk_CommandPool* vkCommandPool, VkCommandBufferLevel level)
@@ -44,9 +45,12 @@ void Vk_CommandBuffer::create(Vk_CommandPool* vkCommandPool, VkCommandBufferLeve
 void 
 Vk_CommandBuffer::destroy()
 {
+	// when vk cmd pool desttroy, all cmd buf will destroy too
 	auto* vkDev = Renderer_Vk::instance()->vkDevice();
 	Vk_CommandBuffer_T* vkCmdBufs[] = { hnd()};
 	vkFreeCommandBuffers(vkDev, _vkCommandPool->hnd(), ArraySize<decltype(vkCmdBufs)>, vkCmdBufs);
+	reset();
+	Base::destroy();
 }
 
 void 
@@ -94,14 +98,23 @@ Vk_CommandBuffer::endRecord()
 }
 
 void 
+Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage)
+{
+	return submit(signalFence, nullptr, VK_PIPELINE_STAGE_2_NONE, signalVkSmp, signalStage);
+}
+
+void 
 Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage)
 {
 	VkSubmitInfo2KHR submitInfo = {};
 
 	VkSemaphoreSubmitInfoKHR waitSmpInfo = {};
-	waitSmpInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	waitSmpInfo.semaphore	= waitVkSmp->hnd();
-	waitSmpInfo.stageMask	= waitStage;
+	if (waitVkSmp)
+	{
+		waitSmpInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+		waitSmpInfo.semaphore	= waitVkSmp->hnd();
+		waitSmpInfo.stageMask	= waitStage;
+	}
 
 	VkSemaphoreSubmitInfoKHR signalVkSmpInfo = {};
 	signalVkSmpInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
@@ -113,7 +126,7 @@ Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_Pipe
 	cmdBufSubmitInfo.commandBuffer	= hnd();
 
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-	submitInfo.waitSemaphoreInfoCount	= 1;
+	submitInfo.waitSemaphoreInfoCount	= waitVkSmp ? 1 : 0;
 	submitInfo.signalSemaphoreInfoCount = 1;
 	submitInfo.commandBufferInfoCount	= 1;
 	submitInfo.pWaitSemaphoreInfos		= &waitSmpInfo;
@@ -236,15 +249,180 @@ Vk_CommandBuffer::endRenderPass()
 	_vkRdPass = nullptr;
 }
 
+#if 0
+--#pragma mark --- rdsVk_CommandBuffer::cmd-Impl
+#endif // 0
+#if 1
+
 void 
-Vk_CommandBuffer::cmd_CopyBuffer(Vk_Buffer* dst, Vk_Buffer* src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
+Vk_CommandBuffer::cmd_copyBuffer(Vk_Buffer* dst, Vk_Buffer* src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
 {
+	RDS_CORE_ASSERT(dst, "dst == nullptr");
+	RDS_CORE_ASSERT(src, "src == nullptr");
+
+	cmd_copyBuffer(dst->hnd(), src->hnd(), size, dstOffset, srcOffset);
+}
+
+void 
+Vk_CommandBuffer::cmd_copyBuffer(Vk_Buffer_T* dst, Vk_Buffer_T* src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
+{
+	RDS_CORE_ASSERT(dst, "dst == nullptr");
+	RDS_CORE_ASSERT(src, "src == nullptr");
+
 	VkBufferCopy copyRegion = {};
 	copyRegion.srcOffset	= srcOffset; // Optional
 	copyRegion.dstOffset	= dstOffset; // Optional
 	copyRegion.size			= size;
-	vkCmdCopyBuffer(hnd(), src->hnd(), dst->hnd(), 1, &copyRegion);
+	vkCmdCopyBuffer(hnd(), src, dst, 1, &copyRegion);
 }
+
+void 
+Vk_CommandBuffer::cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height)
+{
+	RDS_CORE_ASSERT(width != 0 || height != 0, "");
+
+	VkBufferImageCopy region = {};
+	region.bufferOffset			= 0;
+	region.bufferRowLength		= 0;
+	region.bufferImageHeight	= 0;
+
+	region.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel		= 0;
+	region.imageSubresource.baseArrayLayer	= 0;
+	region.imageSubresource.layerCount		= 1;
+
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = { width, height, 1 };
+
+	vkCmdCopyBufferToImage(
+		hnd(),
+		src,
+		dst,
+		layout,
+		1,
+		&region
+	);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout)
+{
+	cmd_addImageMemBarrier(image->hnd(), vkFormat, srcLayout, dstLayout);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout)
+{
+	Vk_Cmd_AddImageMemBarrierDesc desc = {};
+	desc.image		= image;
+	desc.format		= vkFormat;
+	desc.srcLayout	= srcLayout;
+	desc.dstLayout	= dstLayout;
+
+	cmd_addImageMemBarrier(desc);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner)
+{
+	Vk_Cmd_AddImageMemBarrierDesc desc = {};
+	desc.image				= image;
+	desc.format				= vkFormat;
+	desc.srcLayout			= srcLayout;
+	desc.dstLayout			= dstLayout;
+	desc.srcQueueFamilyIdx	= srcQueueFamilyIdx;
+	desc.dstQueueFamilyIdx	= dstQueueFamilyIdx;
+	desc.isSrcQueueOwner	= isSrcQueueOwner;
+
+	cmd_addImageMemBarrier(desc);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc)
+{
+	auto vkStageAcess = Util::toVkStageAccess(desc.srcLayout, desc.dstLayout);
+
+	if (desc.isSrcQueueOwner)
+	{
+		vkStageAcess.dstStage	= VkPipelineStageFlagBits::VK_PIPELINE_STAGE_NONE;
+		vkStageAcess.dstAccess	= VkAccessFlagBits::VK_ACCESS_NONE;
+	}
+	else
+	{
+		vkStageAcess.srcStage	= VkPipelineStageFlagBits::VK_PIPELINE_STAGE_NONE;
+		vkStageAcess.srcAccess	= VkAccessFlagBits::VK_ACCESS_NONE;
+	}
+
+	VkImageAspectFlags aspectMask = desc.dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	if (Util::hasStencilComponent(desc.format)) 
+		aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+
+	#if 1
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType							= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout						= desc.srcLayout;
+	barrier.newLayout						= desc.dstLayout;
+	barrier.srcQueueFamilyIndex				= desc.srcQueueFamilyIdx;
+	barrier.dstQueueFamilyIndex				= desc.dstQueueFamilyIdx;
+	barrier.image							= desc.image;
+
+	barrier.subresourceRange.aspectMask		= aspectMask;
+	barrier.subresourceRange.baseMipLevel	= desc.baseMip;
+	barrier.subresourceRange.baseArrayLayer	= 0;
+	barrier.subresourceRange.levelCount		= desc.mipCount;
+	barrier.subresourceRange.layerCount		= 1;
+
+	barrier.srcAccessMask = vkStageAcess.srcAccess;
+	barrier.dstAccessMask = vkStageAcess.dstAccess;
+
+	vkCmdPipelineBarrier(
+		hnd(),
+		vkStageAcess.srcStage , vkStageAcess.dstStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+
+	#else
+
+	VkImageMemoryBarrier2 barrier;
+	barrier.sType							= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	barrier.oldLayout						= srcLayout;
+	barrier.newLayout						= dstLayout;
+	barrier.srcQueueFamilyIndex				= dstQueue ? srcQueue->familyIdx() : VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex				= dstQueue ? dstQueue->familyIdx() : VK_QUEUE_FAMILY_IGNORED;
+	barrier.image							= image->hnd();
+
+	barrier.subresourceRange.aspectMask		= aspectMask;
+	barrier.subresourceRange.baseMipLevel	= 0;
+	barrier.subresourceRange.baseArrayLayer	= 0;
+	barrier.subresourceRange.levelCount		= 1;
+	barrier.subresourceRange.layerCount		= 1;
+
+	barrier.srcAccessMask = srcAccessMask;
+	barrier.dstAccessMask = dstAccessMask;
+	barrier.srcStageMask  = srcStage;
+	barrier.dstStageMask  = dstStage;
+
+	VkDependencyInfo depInfo = {};
+	depInfo.sType					= VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	depInfo.imageMemoryBarrierCount = 1;
+	depInfo.pImageMemoryBarriers	= &barrier;
+
+	auto vkCmdPipelineBarrier23 = Renderer_Vk::instance()->extInfo().getDeviceExtFunction<PFN_vkCmdPipelineBarrier2>("vkCmdPipelineBarrier2");
+	vkCmdPipelineBarrier23(vkCmdBuf->hnd(), &depInfo);
+
+	#endif // 0
+}
+
+
+#endif // 1
+
+
+//Renderer_Vk*		Vk_CommandBuffer::renderer()	{ return _vkCommandPool-> }
+//RenderDevice_Vk*	Vk_CommandBuffer::device()		{ return _vkC }
 
 
 #endif

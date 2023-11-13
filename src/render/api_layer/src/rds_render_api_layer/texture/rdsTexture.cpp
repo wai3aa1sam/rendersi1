@@ -7,9 +7,10 @@ namespace rds
 {
 
 SPtr<Texture2D> 
-Renderer::createTexture2D(const Texture2D_CreateDesc& cDesc)
+Renderer::createTexture2D(Texture2D_CreateDesc& cDesc)
 {
 	auto p = onCreateTexture2D(cDesc);
+	p->_rdDev = this;
 	return p;
 }
 
@@ -22,6 +23,31 @@ Texture::Texture(RenderDataType type)
 	: _type(type)
 {
 
+}
+
+void 
+Texture::create	(CreateDesc& cDesc)
+{
+	_desc = cDesc;
+}
+
+void 
+Texture::destroy()
+{
+
+}
+
+
+Vec3u 
+Texture::size() const
+{
+	Vec3u o;
+	using SRC = RenderDataType;
+	switch (type())
+	{
+		case SRC::Texture2D: { o.set(sCast<const Texture2D*>(this)->size(), 1); return o; } break;
+		default: { RDS_THROW(""); } break;
+	}
 }
 
 #endif
@@ -38,12 +64,10 @@ Texture2D::makeCDesc()
 }
 
 SPtr<Texture2D>
-Texture2D::make(const CreateDesc& cDesc)
+Texture2D::make(CreateDesc& cDesc)
 {
 	return Renderer::instance()->createTexture2D(cDesc);
 }
-
-
 
 Texture2D::Texture2D()
 	: Base(RenderDataType::Texture2D)
@@ -55,7 +79,7 @@ Texture2D::~Texture2D()
 }
 
 void 
-Texture2D::create(const CreateDesc& cDesc)
+Texture2D::create(CreateDesc& cDesc)
 {
 	destroy();
 
@@ -67,18 +91,32 @@ Texture2D::create(const CreateDesc& cDesc)
 void 
 Texture2D::destroy()
 {
+	Base::destroy();
 	onDestroy();
 }
 
 void 
-Texture2D::onCreate(const CreateDesc& cDesc)
+Texture2D::_internal_uploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
-	_desc = cDesc;
-	_size = cDesc.size;
+	RDS_CORE_ASSERT(cmd, "");
+
+	cmd->dst	= this;
+
+	cDesc.loadImage();
+	_create(cDesc);
+
+	onUploadToGpu(cDesc, cmd);
 }
 
 void 
-Texture2D::onPostCreate(const CreateDesc& cDesc)
+Texture2D::onCreate(CreateDesc& cDesc)
+{
+	_create(cDesc);
+	transferRequest().uploadTexture(this, rds::move(cDesc));
+}
+
+void 
+Texture2D::onPostCreate(CreateDesc& cDesc)
 {
 
 }
@@ -87,6 +125,20 @@ void
 Texture2D::onDestroy()
 {
 
+}
+
+void 
+Texture2D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
+{
+
+}
+
+void 
+Texture2D::_create(CreateDesc& cDesc)
+{
+	//RDS_CORE_ASSERT(cDesc._size.x > 0 && cDesc._size.y > 0, "");
+	Base::create(cDesc);
+	_size = cDesc._size;
 }
 
 #endif

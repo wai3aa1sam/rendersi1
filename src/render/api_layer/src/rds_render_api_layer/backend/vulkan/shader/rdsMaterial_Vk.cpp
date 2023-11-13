@@ -470,6 +470,16 @@ Vk_MaterialPass_PixelStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdB
 #endif // 0
 #if 1
 
+MaterialPass_Vk::MaterialPass_Vk()
+{
+
+}
+
+MaterialPass_Vk::~MaterialPass_Vk()
+{
+	destroy();
+}
+
 void 
 MaterialPass_Vk::onCreate(Material* material, ShaderPass* shaderPass)
 {
@@ -486,6 +496,12 @@ MaterialPass_Vk::onCreate(Material* material, ShaderPass* shaderPass)
 		_vkPixelStage.create(this, shaderPass->pixelStage());
 		_pixelStage	= &_vkPixelStage;
 	}
+}
+
+void 
+MaterialPass_Vk::onDestroy()
+{
+	Base::onDestroy();
 }
 
 void 

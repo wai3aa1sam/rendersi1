@@ -23,7 +23,7 @@ template<class T> using Tuple2 = ::nmsp::Tuple2_T<T>;
 using Tuple2f = ::nmsp::Tuple2f_T;
 using Tuple2d = ::nmsp::Tuple2d_T;
 using Tuple2i = ::nmsp::Tuple2i_T;
-//using Tuple2u = ::nmsp::Tuple2u_T;
+using Tuple2u = ::nmsp::Tuple2u_T;
 
 template<class T> using Tuple3 = ::nmsp::Tuple3_T<T>;
 using Tuple3f = Tuple3<f32>;

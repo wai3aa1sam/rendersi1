@@ -1,6 +1,8 @@
 #pragma once
 
-#include "rds_render_api_layer/backend/vulkan/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsRenderApi_Include_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApiPrimitive.h"
 
 #if RDS_RENDER_HAS_VULKAN && RDS_ENABLE_PROFILER
 
@@ -72,8 +74,6 @@ using TracyVkCtx = int*;
 
 #if RDS_RENDER_HAS_VULKAN
 
-#include "rdsRenderApi_Include_Vk.h"
-#include "rdsVk_RenderApiPrimitive.h"
 
 #if 0
 #pragma mark --- rdsGpuProfilerContext_Vk-Impl ---

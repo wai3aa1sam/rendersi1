@@ -52,6 +52,43 @@ ShaderResources::destroy()
 }
 
 void 
+ShaderResources::uploadToGpu()
+{
+	for (auto& e : constBufs())
+	{
+		e.uploadToGpu();
+	}
+}
+
+void 
+ShaderResources::clear()
+{
+	_constBufs.clear();
+	_texParams.clear();
+	_samplerParams.clear();
+}
+
+const ShaderResources::SamplerParam* 
+ShaderResources::findSamplerParam(StrView name) const
+{
+	for (const auto& e : samplerParams())
+	{
+		bool isSame = StrUtil::ignoreCaseCompare(e.name(), name) == 0;
+		if (isSame)
+			return &e;
+	}
+	return nullptr;
+}
+
+#endif
+
+
+#if 0
+#pragma mark --- rdsShaderResources::ConstBuffer-Impl ---
+#endif // 0
+#if 1
+
+void 
 ShaderResources::ConstBuffer::create(const Info* info)
 {
 	destroy();

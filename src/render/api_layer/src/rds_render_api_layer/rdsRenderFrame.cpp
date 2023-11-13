@@ -100,14 +100,34 @@ RenderFrameUploadBuffer::_addData(ByteSpan data)
 
 RenderFrame::RenderFrame()
 {
+	
+}
+
+RenderFrame::~RenderFrame()
+{
+	destroy();
+}
+
+void RenderFrame::create()
+{
+	destroy();
+
+	RDS_TODO("remove");
+	_renderCommandAllocators.reserve(s_kThreadCount);
 	for (size_t i = 0; i < s_kThreadCount; i++)
 	{
 		_renderCommandAllocators.emplace_back(makeUPtr<LinearAllocator>());
 	}
-	_renderCommandAllocators.resize(s_kThreadCount);
+	/*_renderCommandPools.reserve(s_kThreadCount);
+	for (size_t i = 0; i < s_kThreadCount; i++)
+	{
+		_renderCommandPools[i].emplace_back(makeUPtr<RenderCommandBuffer>());
+	}*/
+	_renderCommandPool.emplace_back(makeUPtr<RenderCommandBuffer>());
+
 }
 
-RenderFrame::~RenderFrame()
+void RenderFrame::destroy()
 {
 	clear();
 }
@@ -115,7 +135,6 @@ RenderFrame::~RenderFrame()
 void 
 RenderFrame::clear()
 {
-	_transferReq.clear();
 	_rdfUploadBuffer.clear();
 	renderQueue().clear();
 
@@ -123,6 +142,11 @@ RenderFrame::clear()
 	for (auto& e : _renderCommandAllocators)
 	{
 		e->clear();
+	}
+	for (auto& e : _renderCommandPool)
+	{
+		e->clear();
+		//e.clear();
 	}
 }
 
@@ -147,7 +171,8 @@ RenderFrame::addUploadBufferParent(RenderGpuMultiBuffer* parent)
 RenderCommandBuffer* 
 RenderFrame::requestCommandBuffer()
 {
-	return nullptr;
+	RDS_TODO("better handle");
+	return _renderCommandPool[0];
 }
 
 
@@ -158,10 +183,9 @@ RenderFrame::requestCommandBuffer()
 #endif // 0
 #if 1
 
-RenderFrameContext* RenderFrameContext::s_instance = nullptr;
+//RenderFrameContext* RenderFrameContext::s_instance = nullptr;
 
 RenderFrameContext::RenderFrameContext()
-	: Base()
 {
 	_renderFrames.resize(s_kFrameInFlightCount);
 }

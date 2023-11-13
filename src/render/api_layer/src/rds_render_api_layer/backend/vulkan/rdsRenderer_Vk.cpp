@@ -39,13 +39,20 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 	#endif
 
 	_memoryContextVk.create(vkDevice(), vkPhysicalDevice(), vkInstance());
+
+	_transferCtxVk.create();
+	_tsfCtx = &_transferCtxVk;
 }
 
 void
 Renderer_Vk::onDestroy()
 {
 	vkDeviceWaitIdle(vkDevice());
-	_renderFrameCtx.destroy();
+	_tsfCtx->destroy();
+
+	_rdFrames.clear();
+	_tsfFrames.clear();
+
 	_memoryContextVk.destroy();
 }
 

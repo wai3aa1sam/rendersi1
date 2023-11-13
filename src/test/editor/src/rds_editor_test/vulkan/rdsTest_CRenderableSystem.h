@@ -48,7 +48,7 @@ public:
 	void execute(/*RenderRequest& rdReq*/)
 	{
 		DrawingSettings settings = {};
-		auto& rdQueue = RenderFrameContext::instance()->renderFrame().renderQueue();
+		auto& rdQueue = Renderer::instance()->renderFrame().renderQueue();
 		auto& hashedCmds = rdQueue.prepareDrawRenderables(settings);
 		Span<RenderCommand_DrawCall*> cmds = hashedCmds.drawCallCmds();
 
@@ -146,8 +146,8 @@ public:
 			
 			job = makeUPtr<ParRecordRenderCommandJob>(batchSizePerThread * i, batchSize, &out, _cRenderables.span(), &rdQueue, &mtx);
 
-			auto handle = job->prepareDispatch();
-			handle->setParent(scatterJobParent);
+			auto handle = job->prepareDispatch(scatterJobParent, nullptr);
+			//handle->setParent(scatterJobParent);
 			JobSystem::instance()->submit(handle);
 		}
 

@@ -8,6 +8,14 @@
 RDS_DISABLE_ALL_WARNINGS();
 
 #define VMA_IMPLEMENTATION
+
+	#if RDS_DEBUG
+		#define VMA_DEBUG_MARGIN 16
+		#define VMA_DEBUG_DETECT_CORRUPTION 1
+		//#define VMA_DEBUG_LOG
+		//#define VMA_DEBUG_LOG_FORMAT
+	#endif // RDS_DEBUG
+
 #include <vk_mem_alloc.h>
 
 RDS_RESTORE_ALL_WARNINGS();
@@ -33,6 +41,12 @@ Vk_Allocator::Vk_Allocator()
 Vk_Allocator::~Vk_Allocator()
 {
 	destroy();
+}
+
+void 
+Vk_Allocator::create(RenderDevice_Vk* rdDev)
+{
+	create(rdDev->vkDevice(), rdDev->vkPhysicalDevice(), rdDev->vkInstance(), rdDev->allocCallbacks());
 }
 
 void 
