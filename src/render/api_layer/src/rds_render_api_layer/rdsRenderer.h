@@ -109,8 +109,9 @@ public:
 
 protected:
 	Renderer* _init(const CreateDesc& cDesc);
-	virtual void onCreate(const CreateDesc& cDesc);
-	virtual void onDestroy();
+	virtual void onCreate	(const CreateDesc& cDesc);
+	virtual void onDestroy	();
+	virtual void onNextFrame();
 
 protected:
 	virtual SPtr<RenderContext>			onCreateContext				(const RenderContext_CreateDesc&	cDesc)	= 0;

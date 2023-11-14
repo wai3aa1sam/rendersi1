@@ -10,23 +10,22 @@ namespace rds
 class TransferRequest_UploadTextureJob : public Job_Base
 {
 public:
-	TransferRequest_UploadTextureJob(Texture2D* tex, Texture2D_CreateDesc&& cDesc, TransferRequest* tsfReq)
+	TransferRequest_UploadTextureJob(Texture2D* tex, Texture2D_CreateDesc&& cDesc, TransferCommand_UploadTexture* cmd)
 	{
 		_tex	= tex;
 		_cDesc	= rds::move(cDesc);
-		_tsfReq = tsfReq;
+		_cmd = cmd;
 	}
 
 	virtual void execute() override
 	{
-		auto* cmd = _tsfReq->transferCommandBuffer().uploadTexture();
-		_tex->_internal_uploadToGpu(_cDesc, cmd);
+		_tex->_internal_uploadToGpu(_cDesc, _cmd);
 	}
 
 public:
-	TransferRequest*		_tsfReq = nullptr;
-	SPtr<Texture2D>			_tex;
-	Texture2D_CreateDesc	_cDesc;
+	TransferCommand_UploadTexture*	_cmd = nullptr;
+	SPtr<Texture2D>					_tex;
+	Texture2D_CreateDesc			_cDesc;
 };
 
 #if 0
@@ -52,13 +51,19 @@ TransferRequest::reset(TransferContext* tsfCtx)
 		RDS_THROW("upload jobs must be completed before reset");
 	}*/
 
+	RDS_TODO("per frame, then no need to wait too frequently");
 	waitUploadTextureCompleted();
 
 	_tsfCtx		= tsfCtx;
-	_tsfCmdBuf	= _tsfCtx ? _tsfCtx->device()->transferFrame().requestCommandBuffer() : nullptr;
-	if (_tsfCmdBuf)
+	_tsfCmdBuf		= _tsfCtx ?  _tsfCtx->device()->transferFrame().requestCommandBuffer()	: nullptr;
+	_uploadBufCmds	= _tsfCtx ? &_tsfCtx->device()->transferFrame()._uploadBufCmds			: nullptr;
+	_uploadTexCmds	= _tsfCtx ? &_tsfCtx->device()->transferFrame()._uploadTexCmds			: nullptr;
+
+	if (_tsfCtx)
 	{
 		_tsfCmdBuf->clear();
+		_uploadBufCmds->clear();
+		_uploadTexCmds->clear();
 	}
 
 	_uploadTextureJobParentHnd = JobSystem::instance()->createParentJob()->setName("upParent");
@@ -87,6 +92,7 @@ void
 TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
 {
 	RDS_CORE_ASSERT(!cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr(), "Create Texture2D should use either filename or imageUpload, not both");
+	RDS_CORE_ASSERT(_uploadTexCmds, "");
 
 	UploadTextureJob* job = nullptr;
 	{
@@ -94,7 +100,7 @@ TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
 		auto lockedData = _uploadTextureJobs.scopedULock();
 
 		RDS_TODO("allocator for UploadTextureJob");
-		job = lockedData->emplace_back(makeUPtr<UploadTextureJob>(tex, rds::move(cDesc), this));
+		job = lockedData->emplace_back(makeUPtr<UploadTextureJob>(tex, rds::move(cDesc), uploadTexCmds().uploadTexture()));
 	}
 
 	auto hnd = job->dispatch(_uploadTextureJobParentHnd)->setName("up"); RDS_UNUSED(hnd);

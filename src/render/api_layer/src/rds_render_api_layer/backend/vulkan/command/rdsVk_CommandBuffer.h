@@ -16,6 +16,22 @@ struct Vk_Cmd_AddImageMemBarrierDesc;
 class Vk_CommandPool;
 class Vk_Swapchain;
 
+struct Vk_SmpSubmitInfo : public VkSemaphoreSubmitInfoKHR
+{
+	Vk_SmpSubmitInfo(Vk_Semaphore_T* vkSmp, VkPipelineStageFlags2 stage)
+	{
+		memory_set(this, 1, 0);
+		sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+		semaphore	= vkSmp;
+		stageMask	= stage;
+	}
+
+	~Vk_SmpSubmitInfo()
+	{
+		RDS_CORE_ASSERT(sizeof(VkSemaphoreSubmitInfoKHR) == sizeof(*this), "");
+	}
+};
+
 class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T>
 {
 	using Base = Vk_RenderApiPrimitive<Vk_CommandBuffer_T>;
@@ -35,6 +51,7 @@ public:
 
 	void submit(Vk_Fence* signalFence, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
 	void submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
+	void submit(Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
 	void submit();
 	void executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs);
 	void waitIdle();

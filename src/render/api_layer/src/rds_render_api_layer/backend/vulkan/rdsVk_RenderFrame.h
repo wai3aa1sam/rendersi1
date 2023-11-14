@@ -34,7 +34,7 @@ public:
 	void create();
 	void destroy();
 
-	void reset();
+	void clear();
 
 	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
 	template<size_t N> void requestCommandBuffers(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);

@@ -35,6 +35,8 @@ void
 TransferFrame::clear()
 {
 	_cmdBuf.clear();
+	_uploadBufCmds.clear();
+	_uploadTexCmds.clear();
 }
 
 TransferCommandBuffer* 

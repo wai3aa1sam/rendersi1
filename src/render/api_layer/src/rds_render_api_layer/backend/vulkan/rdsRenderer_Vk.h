@@ -61,8 +61,9 @@ protected:
 	virtual SPtr<Material>				onCreateMaterial			(Shader*							shader) override;
 
 protected:
-	virtual void onCreate(const CreateDesc& cDesc);
-	virtual void onDestroy();
+	virtual void onCreate	(const CreateDesc& cDesc) override;
+	virtual void onDestroy	()	override;
+	virtual void onNextFrame()	override;
 
 private:
 	void createVkInstance();

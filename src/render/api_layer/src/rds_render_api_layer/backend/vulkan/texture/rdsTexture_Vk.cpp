@@ -113,6 +113,9 @@ Texture2D_Vk::onDestroy()
 void 
 Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
+	RDS_TODO("defer destroy and create new, or multi buffer if if upload frequently, but texture should not upload frequently,");
+	destroy();
+
 	Base::onUploadToGpu(cDesc, cmd);
 
 	auto* rdDev		= device();

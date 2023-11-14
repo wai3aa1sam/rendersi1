@@ -7,14 +7,15 @@ namespace rds
 {
 
 #define RDS_RENDER_API_LAYER_COMMON_BODY() \
-public:																						\
-	using Traits	= RenderApiLayerTraits;													\
-	using SizeType	= Traits::SizeType;														\
-	using DataType	= RenderDataType;														\
-public:																						\
-	static constexpr SizeType s_kThreadCount		= Traits::s_kThreadCount;				\
-	static constexpr SizeType s_kFrameInFlightCount	= Traits::s_kFrameInFlightCount;		\
-private:																					\
+public:																								\
+	using Traits	= RenderApiLayerTraits;															\
+	using SizeType	= Traits::SizeType;																\
+	using DataType	= RenderDataType;																\
+public:																								\
+	static constexpr SizeType s_kThreadCount				= Traits::s_kThreadCount;				\
+	static constexpr SizeType s_kFrameInFlightCount			= Traits::s_kFrameInFlightCount;		\
+	static constexpr SizeType s_kSwapchainImageLocalSize	= Traits::s_kSwapchainImageLocalSize;	\
+private:																							\
 //---
 
 #if 0

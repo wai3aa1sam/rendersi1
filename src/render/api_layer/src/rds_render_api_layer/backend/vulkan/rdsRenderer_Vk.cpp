@@ -57,6 +57,13 @@ Renderer_Vk::onDestroy()
 }
 
 void 
+Renderer_Vk::onNextFrame()
+{
+	Base::onNextFrame();
+	_transferCtxVk.transferFrame().clear();
+}
+
+void 
 Renderer_Vk::waitIdle()
 {
 	vkDeviceWaitIdle(vkDevice());

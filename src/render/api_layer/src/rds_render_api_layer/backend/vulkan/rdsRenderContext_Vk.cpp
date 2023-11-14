@@ -3,6 +3,7 @@
 
 #include "rdsRenderer_Vk.h"
 
+#include "rds_render_api_layer/backend/vulkan/transfer/rdsVk_TransferFrame.h"
 #include "rds_render_api_layer/command/rdsTransferRequest.h"
 #include "rds_render_api_layer/rdsRenderFrame.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
@@ -31,7 +32,6 @@ SPtr<RenderContext> Renderer_Vk::onCreateContext(const RenderContext_CreateDesc&
 #if 1
 
 RenderContext_Vk::RenderContext_Vk()
-	: Base()
 {
 
 }
@@ -142,7 +142,7 @@ RenderContext_Vk::onBeginRender()
 	}
 
 	{
-		renderFrame().reset();
+		renderFrame().clear();
 
 		_curGraphicsCmdBuf	= renderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
@@ -178,7 +178,7 @@ RenderContext_Vk::onEndRender()
 	}
 
 	// next frame idx
-	_curFrameIdx = math::modPow2Val(_curFrameIdx + 1, s_kFrameInFlightCount);
+	_curFrameIdx = (_curFrameIdx + 1) % s_kFrameInFlightCount;
 }
 
 void
@@ -401,10 +401,29 @@ RenderContext_Vk::endRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx)
 	_curGraphicsCmdBuf->endRecord();
 
 	renderFrame().inFlightFence()->reset(rdDev);
+	#if 1
+
+	Vector<Vk_SmpSubmitInfo, 8> waitSmps;
+	Vector<Vk_SmpSubmitInfo, 8> signalSmps;
+
+	waitSmps.emplace_back	(Vk_SmpSubmitInfo{renderFrame().imageAvaliableSmp()->hnd(),									VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+	if (auto* tsfCompletedVkSmp = transferFrame().requestCompletedVkSmp(QueueTypeFlags::Graphics))
+	{
+		waitSmps.emplace_back	(Vk_SmpSubmitInfo{tsfCompletedVkSmp->hnd(),	VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT});
+	}
+
+	signalSmps.emplace_back	(Vk_SmpSubmitInfo{renderFrame().renderCompletedSmp()->hnd(),								VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+
+	_curGraphicsCmdBuf->submit(renderFrame().inFlightFence(), waitSmps, signalSmps);
+
+	#else
 
 	_curGraphicsCmdBuf->submit(renderFrame().inFlightFence()
-							 , renderFrame().imageAvaliableSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
-							 , renderFrame().renderCompletedSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR);
+		, renderFrame().imageAvaliableSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
+		, renderFrame().renderCompletedSmp(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR);
+
+	#endif // 0
+
 }
 
 void

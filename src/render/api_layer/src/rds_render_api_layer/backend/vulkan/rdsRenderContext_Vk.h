@@ -1,11 +1,11 @@
 #pragma once
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
 
 #include "rdsVk_Swapchain.h"
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
-
 
 #include "rdsGpuProfilerContext_Vk.h"
 
@@ -146,18 +146,8 @@ struct TestUBO
 
 extern Vk_DescriptorSetLayout_T* g_testVkDescriptorSetLayout;
 
-class RenderContext_Vk : public RenderContext
+class RenderContext_Vk : public RenderResource_Vk<RenderContext>
 {
-public:
-	using Base = RenderContext;
-	using Traits = RenderApiLayerTraits;
-	using Util = Vk_RenderApiUtil;
-
-public:
-	static constexpr SizeType s_kSwapchainImageLocalSize	= Traits::s_kSwapchainImageLocalSize;
-	static constexpr SizeType s_kFrameInFlightCount			= Traits::s_kFrameInFlightCount;
-	static constexpr SizeType s_kThreadCount				= Traits::s_kThreadCount;
-
 public:
 	RenderContext_Vk();
 	virtual ~RenderContext_Vk();

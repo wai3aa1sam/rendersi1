@@ -29,6 +29,11 @@ public:
 	Renderer_Vk*		renderer()	{ return sCast<Renderer_Vk*>(Base::renderer()); }
 	RenderDevice_Vk*	device()	{ return renderer(); }
 
+	u32 queueFamilyIdx			(QueueTypeFlags type);
+	u32 graphicsQueueFamilyIdx	();
+	u32 transferQueueFamilyIdx	();
+	u32 computeQueueFamilyIdx	();
+
 
 	TransferContext_Vk&	transferContext()	{ return device()->transferContext(); }
 	Vk_TransferFrame&	transferFrame()		{ return transferContext().transferFrame(); }
@@ -36,6 +41,11 @@ public:
 protected:
 
 };
+
+template<class BASE> inline u32 RenderResource_Vk<BASE>::queueFamilyIdx			(QueueTypeFlags type)	{ return device()->queueFamilyIndices().getFamilyIdx(type); }
+template<class BASE> inline u32 RenderResource_Vk<BASE>::graphicsQueueFamilyIdx	()						{ return device()->queueFamilyIndices().graphics.value(); }
+template<class BASE> inline u32 RenderResource_Vk<BASE>::transferQueueFamilyIdx	()						{ return device()->queueFamilyIndices().transfer.value(); }
+template<class BASE> inline u32 RenderResource_Vk<BASE>::computeQueueFamilyIdx	()						{ return device()->queueFamilyIndices().compute.value(); }
 
 }
 

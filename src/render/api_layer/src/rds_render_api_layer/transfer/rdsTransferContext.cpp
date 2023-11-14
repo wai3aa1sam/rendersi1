@@ -35,7 +35,7 @@ void
 TransferContext::commit(TransferRequest& tsfReq)
 {
 	tsfReq.waitUploadTextureCompleted();
-	onCommit(tsfReq.transferCommandBuffer());
+	onCommit(tsfReq);
 }
 
 void 
@@ -51,7 +51,7 @@ TransferContext::onDestroy()
 }
 
 void 
-TransferContext::onCommit(TransferCommandBuffer& cmdBuf)
+TransferContext::onCommit(TransferRequest& tsfReq)
 {
 
 }

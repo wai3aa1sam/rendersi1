@@ -1,8 +1,8 @@
 #pragma once
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
-#include "../common/rdsRenderResource_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds

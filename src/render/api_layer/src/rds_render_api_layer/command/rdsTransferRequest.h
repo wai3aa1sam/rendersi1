@@ -34,6 +34,8 @@ public:
 	void uploadBuffer();
 
 	TransferCommandBuffer& transferCommandBuffer();
+	TransferCommandBuffer& uploadBufCmds();
+	TransferCommandBuffer& uploadTexCmds();
 
 	bool isUploadTextureCompleted() const;
 	void waitUploadTextureCompleted() const;
@@ -43,7 +45,9 @@ private:
 
 	//Vector<TransferCommandBuffer, s_kThreadCount> _transferCommandBuffers;
 
-	TransferCommandBuffer* _tsfCmdBuf = nullptr;
+	TransferCommandBuffer* _tsfCmdBuf		= nullptr;
+	TransferCommandBuffer* _uploadBufCmds	= nullptr;
+	TransferCommandBuffer* _uploadTexCmds	= nullptr;
 
 	UploadTextureJobs		_uploadTextureJobs;
 	JobHandle				_uploadTextureJobParentHnd = {};
@@ -57,6 +61,8 @@ TransferCommandBuffer& TransferRequest::transferCommandBuffer()
 	//auto tlid = OsTraits::threadLocalId();
 	//return _transferCommandBuffers[tlid];
 }
+inline TransferCommandBuffer& TransferRequest::uploadBufCmds() { return *_uploadBufCmds; }
+inline TransferCommandBuffer& TransferRequest::uploadTexCmds() { return *_uploadTexCmds; }
 
 inline bool TransferRequest::isUploadTextureCompleted() const { return _uploadTextureJobParentHnd->isCompleted(); }
 

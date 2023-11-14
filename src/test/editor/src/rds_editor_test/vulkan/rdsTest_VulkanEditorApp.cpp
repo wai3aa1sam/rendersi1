@@ -271,10 +271,13 @@ public:
 			_testMaterial = Renderer::instance()->createMaterial();
 			_testMaterial->setShader(_testShader);
 
-			auto texCDesc = _testTexture2D->makeCDesc();
+			auto texCDesc = Texture2D::makeCDesc();
+			
 			texCDesc.create("asset/texture/uvChecker.png");
+			_uvCheckerTex = Renderer::instance()->createTexture2D(texCDesc);
 
-			_testTexture2D = Renderer::instance()->createTexture2D(texCDesc);
+			texCDesc.create("asset/texture/uvChecker2.png");
+			_uvChecker2Tex = Renderer::instance()->createTexture2D(texCDesc);
 		}
 		#endif // 0
 	}
@@ -321,9 +324,26 @@ public:
 			Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), rdCtx.aspectRatio(), 0.1f, 10.0f);
 			proj[1][1]		*= -1;
 			Mat4f mvp		= proj * view * model;
+			
+			u32 iFrame = Renderer::instance()->iFrame();
 
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
-			_testMaterial->setParam("texture0", _testTexture2D);
+			iFrame % 2 == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
+
+			#if 0
+			static int i = 0;
+			if (/*Renderer::instance()->iFrame() != 0 && */i >= 0 /*&& i < 100*/ /*&& i % 50 == 0*/)
+			{
+				auto texCDesc = Texture2D::makeCDesc();
+				texCDesc.create(iFrame % 2 == 0 ? "asset/texture/uvChecker2.png" : "asset/texture/uvChecker.png");
+				_textures.emplace_back(Renderer::instance()->createTexture2D(texCDesc));
+
+				_testMaterial->setParam("texture0", _textures[i]);
+
+				++i;
+			}
+			#endif // 0
+
 		}
 		#endif // 0
 
@@ -410,7 +430,10 @@ protected:
 	SPtr<Shader>	_testShader;
 	SPtr<Material>	_testMaterial;
 
-	SPtr<Texture2D> _testTexture2D;
+	SPtr<Texture2D>				_uvCheckerTex;
+	SPtr<Texture2D>				_uvChecker2Tex;
+
+	Vector<SPtr<Texture2D> >	_textures;
 };
 
 class Test_VulkanEditorApp : public UnitTest

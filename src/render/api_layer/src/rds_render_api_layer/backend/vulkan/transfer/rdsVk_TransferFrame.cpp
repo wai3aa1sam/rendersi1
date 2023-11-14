@@ -14,7 +14,7 @@ Vk_TransferFrame::Vk_TransferFrame()
 
 Vk_TransferFrame::~Vk_TransferFrame()
 {
-	RDS_CORE_ASSERT(!_vkCommandPool, "have not call destroy()");
+	RDS_CORE_ASSERT(!_transferVkCmdPool, "have not call destroy()");
 }
 
 void 
@@ -22,11 +22,19 @@ Vk_TransferFrame::create(TransferContext_Vk* ctx)
 {
 	RDS_CORE_ASSERT(ctx, "");
 
-	_completedVkSmp.create();
-	_inFlightVkFence.create();
-
 	auto& queueFamily = ctx->renderer()->queueFamilyIndices();
-	_vkCommandPool.create(queueFamily.getFamilyIdx(QueueTypeFlags::Transfer));
+	u32 transferQueueFamilyIdx	= queueFamily.getFamilyIdx(QueueTypeFlags::Transfer);
+	u32 graphicsQueueFamilyIdx	= queueFamily.getFamilyIdx(QueueTypeFlags::Graphics);
+	//u32 computeQueueFamilyIdx	= queueFamily.getFamilyIdx(QueueTypeFlags::Compute);
+
+	_inFlightVkFnc.create();
+	_completedVkSmp.create();
+	_transferVkCmdPool.create(transferQueueFamilyIdx);
+
+	RDS_TODO("remove? maybe put to main render graphics queue");
+	_graphicsInFlightVkFnc.create();
+	_graphicsCompletedVkSmp.create();
+	_graphicsVkCmdPool.create(graphicsQueueFamilyIdx);
 
 	// thread-safe
 	_stagingAlloc.create(ctx->device());
@@ -35,37 +43,56 @@ Vk_TransferFrame::create(TransferContext_Vk* ctx)
 void 
 Vk_TransferFrame::destroy(TransferContext_Vk* ctx)
 {
-	_stagingBufs.clear();
-	_vkCommandPool.destroy();
+	clear();
+
+	_graphicsVkCmdPool.destroy();
+	_transferVkCmdPool.destroy();
+
 	_stagingAlloc.destroy();
 }
 
 void 
 Vk_TransferFrame::clear()
 {
-	_stagingBufs.clear();
+	{
+		auto lockedData = _stagingBufs.scopedULock();
+		lockedData->clear();
+	}
+
+	_hasTransferedGraphicsResoures	= false;
+	_hasTransferedComputeResoures	= false;
 }
 
 Vk_Buffer* 
 Vk_TransferFrame::requestStagingBuffer(u32& outIdx, VkDeviceSize size)
 {
-	RDS_CORE_ASSERT(size > 0, "request size == 0");
+	RDS_CORE_ASSERT(size > 0, "request size must not be 0");
+	RDS_TODO("MutexProtected with a ptr element should be faster, but need a allocator (linear is ok), otherwise it need allocate everytime");
 
 	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage = RenderMemoryUsage::CpuToGpu;
 
-	outIdx = sCast<u32>(_stagingBufs.size());
-	auto& staging = _stagingBufs.emplace_back();
-	staging.create(&_stagingAlloc, &allocInfo, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, QueueTypeFlags::Transfer | QueueTypeFlags::Graphics);
+	Vk_Buffer* staging = nullptr;
+	{
+		auto lockedData = _stagingBufs.scopedULock();
+		auto& stagingBufs = *lockedData;
 
-	return &_stagingBufs.back();
+		outIdx = sCast<u32>(stagingBufs.size());
+		staging = stagingBufs.emplace_back(makeUPtr<Vk_Buffer>()).ptr();
+	}
+	staging->create(&_stagingAlloc, &allocInfo, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, QueueTypeFlags::Transfer);
+
+	return staging;
 }
 
 Vk_Buffer_T* 
 Vk_TransferFrame::getVkStagingBufHnd(u32 idx)
 {
-	RDS_CORE_ASSERT(idx < _stagingBufs.size(), "invalid vk staging buffer index");
-	return _stagingBufs[idx].hnd();
+	auto lockedData = _stagingBufs.scopedULock();
+	auto& stagingBufs = *lockedData;
+
+	RDS_CORE_ASSERT(idx < stagingBufs.size(), "invalid vk staging buffer index");
+	return stagingBufs[idx]->hnd();
 }
 
 

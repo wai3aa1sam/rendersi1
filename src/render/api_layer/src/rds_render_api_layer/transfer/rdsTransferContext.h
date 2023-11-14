@@ -30,17 +30,14 @@ public:
 	//void commit(TransferCommandBuffer& cmdBuf);
 	void commit(TransferRequest& tsfReq);
 
-	u32 iFrame() const;
-
 protected:
 	virtual void onCreate();
 	virtual void onDestroy();
 
 	template<class CTX> void _dispatchCommand(CTX* ctx, TransferCommand* cmd);
-	virtual void onCommit(TransferCommandBuffer& cmdBuf);
+	virtual void onCommit(TransferRequest& tsfReq);
 
 protected:
-	u32 _iFrame = 0;
 };
 
 template<class CTX> inline
@@ -59,9 +56,6 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 	}
 	#undef _DISPACH_CMD_CASE
 }
-
-inline u32 TransferContext::iFrame() const { return _iFrame; }
-
 
 #endif
 

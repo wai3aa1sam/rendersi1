@@ -37,7 +37,9 @@ TransferContext_Vk::onCreate()
 		e.create(this);
 	}
 
+	_vkGraphicsQueue.create(QueueTypeFlags::Graphics, device());
 	_vkTransferQueue.create(QueueTypeFlags::Transfer, device());
+	 _vkComputeQueue.create(QueueTypeFlags::Compute,  device());
 }
 
 void 
@@ -50,15 +52,18 @@ TransferContext_Vk::onDestroy()
 		e.destroy(this);
 	}
 	_vkTransferFrames.clear();
-	_vkTransferQueue.destroy();
 }
 
 void 
-TransferContext_Vk::onCommit(TransferCommandBuffer& cmdBuf)
+TransferContext_Vk::onCommit(TransferRequest& tsfReq)
 {
-	Base::onCommit(cmdBuf);
+	Base::onCommit(tsfReq);
 
-	if (cmdBuf.commands().is_empty())
+	Span<TransferCommand*> tsfCmds			= tsfReq.transferCommandBuffer().commands();
+	Span<TransferCommand*> uploadBufCmds	= tsfReq.uploadBufCmds().commands();
+	Span<TransferCommand*> uploadTexCmds	= tsfReq.uploadTexCmds().commands();
+
+	if (tsfCmds.is_empty() && uploadBufCmds.is_empty() && uploadTexCmds.is_empty())
 	{
 		return;
 	}
@@ -66,8 +71,9 @@ TransferContext_Vk::onCommit(TransferCommandBuffer& cmdBuf)
 	auto* rdDev = device();
 	auto& frame = transferFrame();
 
-	auto& cmdPool	= frame._vkCommandPool;
-	auto* vkCmdBuf	= cmdPool.requestCommandBuffer(VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	auto& inFlighVkFence	= frame._inFlightVkFnc;
+	auto& completedVkSmp	= frame._completedVkSmp;
+	auto* vkCmdBuf			= frame.requestTransferCommandBuffer(VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 	_curVkCmdBuf = vkCmdBuf;
 
@@ -75,9 +81,19 @@ TransferContext_Vk::onCommit(TransferCommandBuffer& cmdBuf)
 
 	#if 1
 
-	for (auto& cmd : cmdBuf.commands())
+	for (auto* cmd : tsfCmds)
 	{
 		_dispatchCommand(this, cmd);
+	}
+
+	for (auto* cmd : uploadBufCmds)
+	{
+		onTransferCommand_UploadBuffer(sCast<TransferCommand_UploadBuffer*>(cmd));
+	}
+
+	for (auto* cmd : uploadTexCmds)
+	{
+		onTransferCommand_UploadTexture(sCast<TransferCommand_UploadTexture*>(cmd));
 	}
 
 	#else
@@ -103,17 +119,58 @@ TransferContext_Vk::onCommit(TransferCommandBuffer& cmdBuf)
 	}
 	#endif // 1
 
+	vkCmdBuf->endRecord();
+
+	inFlighVkFence.wait(rdDev);
+	inFlighVkFence.reset(rdDev);
+
+	vkCmdBuf->submit(&inFlighVkFence, 
+					//&frame._completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
+					&completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+
+	//frame._inFlightVkFence.wait(device());
+	_commitUploadCmdsToDstQueue(tsfReq.uploadBufCmds(), tsfReq.uploadTexCmds(), QueueTypeFlags::Graphics);
+}
+
+void 
+TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType)
+{
+	auto* rdDev = device();
+	auto& frame = transferFrame();
+	auto* vkCmdBuf = frame.requestCommandBuffer(queueType);
+
+	//auto& srcInFlighVkFence = frame._inFlightVkFnc;
+	auto& srcCompletedVkSmp = frame._completedVkSmp;
+
+	auto& dstInFlighVkFnc	= *frame.requestInFlightVkFnc(queueType);
+	auto& dstCompletedVkSmp = *frame.requestCompletedVkSmp(queueType);
+
+	vkCmdBuf->beginRecord(requestVkQueue(queueType));
+
+	for (auto& e : bufCmds.commands())
+	{
+		RDS_CORE_ASSERT(e->type() == TransferCommandType::UploadBuffer, "");
+		auto* cmd = sCast<TransferCommand_UploadBuffer*>(e);
+		cmd->dst;
+	}
+
+	for (auto& e : texCmds.commands())
+	{
+		RDS_CORE_ASSERT(e->type() == TransferCommandType::UploadTexture, "");
+		auto*	cmd			= sCast<TransferCommand_UploadTexture*>(e);
+		auto	vkFormat	= Util::toVkFormat(cmd->dst->format());
+		auto*	dst			= Vk_Texture::getImageHnd(cmd->dst);
+
+		vkCmdBuf->cmd_addImageMemBarrier(dst, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), queueFamilyIdx(queueType), false);
+	}
 
 	vkCmdBuf->endRecord();
 
-	frame._inFlightVkFence.reset(rdDev);
+	dstInFlighVkFnc.reset(rdDev);
 
-	vkCmdBuf->submit(&frame._inFlightVkFence, 
-					//&frame._completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
-					&frame._completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
-
-	
-	//frame._inFlightVkFence.wait(device());
+	vkCmdBuf->submit(&dstInFlighVkFnc, 
+		&srcCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
+		&dstCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
 }
 
 void 
@@ -134,6 +191,9 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	RDS_CORE_ASSERT(cmd,		"");
 	RDS_CORE_ASSERT(cmd->dst,	"");
 
+	RDS_TODO("revisit _hasTransferedGraphicsResoures");
+	transferFrame()._hasTransferedGraphicsResoures = true;
+
 	auto* vkCmdBuf		= _curVkCmdBuf;
 	auto* statingBufHnd = transferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
 
@@ -141,13 +201,12 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	const auto&		size		= cmd->dst->size();
 	auto			vkFormat	= Util::toVkFormat(cmd->dst->format());
 
-	auto tranferFamilyIdx	= device()->queueFamilyIndices().getFamilyIdx(QueueTypeFlags::Transfer);
-	auto graphicsFamilyIdx	= device()->queueFamilyIndices().getFamilyIdx(QueueTypeFlags::Graphics);
-
 	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	vkCmdBuf->cmd_copyBufferToImage		(dst, statingBufHnd,	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, size.x, size.y);
-	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, tranferFamilyIdx, graphicsFamilyIdx, true);
+	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), graphicsQueueFamilyIdx(), true);
 }
+
+Vk_TransferFrame& TransferContext_Vk::transferFrame() { return _vkTransferFrames[device()->iFrame()]; }
 
 #endif
 

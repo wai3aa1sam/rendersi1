@@ -14,6 +14,7 @@ namespace rds
 class TransferFrame : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
+	friend class TransferRequest;
 public:
 	using TransferCommandPool = Vector<UPtr<TransferCommandBuffer>, 12>;
 
@@ -34,6 +35,10 @@ public:
 protected:
 	//TransferCommandPool _cmdPool;
 	TransferCommandBuffer _cmdBuf;
+
+	// TODO: temporary
+	TransferCommandBuffer _uploadBufCmds;
+	TransferCommandBuffer _uploadTexCmds;
 };
 
 

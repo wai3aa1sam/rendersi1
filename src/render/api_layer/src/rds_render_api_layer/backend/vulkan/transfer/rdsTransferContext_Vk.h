@@ -35,17 +35,37 @@ protected:
 	virtual void onCreate()		override;
 	virtual void onDestroy()	override;
 
-	virtual void onCommit(TransferCommandBuffer& cmdBuf) override;
+	virtual void onCommit(TransferRequest& tsfReq) override;
 
+	Vk_Queue* requestVkQueue(QueueTypeFlags type);
+
+protected:
+	void _commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType);
 
 protected:
 	Vk_TransferFrames	_vkTransferFrames;
-	Vk_Queue			_vkTransferQueue;
+
+	Vk_Queue _vkGraphicsQueue;
+	Vk_Queue _vkTransferQueue;
+	Vk_Queue _vkComputeQueue;
 
 	Vk_CommandBuffer* _curVkCmdBuf = nullptr;
 };
 
-inline Vk_TransferFrame& TransferContext_Vk::transferFrame() { return _vkTransferFrames[iFrame()]; }
+
+inline 
+Vk_Queue* 
+TransferContext_Vk::requestVkQueue(QueueTypeFlags type)
+{
+	using SRC = QueueTypeFlags;
+	switch (type)
+	{
+		case SRC::Graphics: { return &_vkGraphicsQueue; } break;
+		case SRC::Transfer: { return &_vkTransferQueue; } break;
+		case SRC::Compute:	{ return &_vkComputeQueue; } break;
+		default: { RDS_THROW(""); }
+	}
+}
 
 #endif
 
