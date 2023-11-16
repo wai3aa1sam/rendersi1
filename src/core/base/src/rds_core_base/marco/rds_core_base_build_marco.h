@@ -11,7 +11,8 @@
 	#define RDS_DEBUG 0
 #endif // _DEBUG
 
-#define RDS_ENABLE_ASSERT 1
+#define RDS_DEVELOPMENT		1
+#define RDS_ENABLE_ASSERT	1
 
 #if RDS_OS_WINDOWS
 	#ifdef RDS_DYNAMIC_LINK

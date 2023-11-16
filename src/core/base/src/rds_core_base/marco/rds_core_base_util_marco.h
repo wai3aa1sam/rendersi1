@@ -41,6 +41,8 @@
 
 #define RDS_S_ASSERT(COND, ...) static_assert(COND, RDS_FUNC_NAME_SZ ## "() " "--- " #COND ## " --- " ## __VA_ARGS__)
 
+#define RDS_CALL_ONCE(...) do { static RDS_UNIQUE_VAR(bool) = false; if (!RDS_UNIQUE_VAR_NAME(bool)) { __VA_ARGS__; RDS_UNIQUE_VAR_NAME(bool) = true; } } while(false)
+
 #if RDS_DEBUG || RDS_ENABLE_ASSERT
 	#define RDS_CORE_ASSERT(X, ...)	do{ if(!(X)) { _log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
 	#define RDS_ASSERT(X, ...)		do{ if(!(X)) { _log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
@@ -49,13 +51,13 @@
 	#define RDS_ASSERT(X, ...)	
 #endif // RDS_ENABLE_ASSERT
 
-#if RDS_DEBUG
-	#define RDS_SRCLOC	SrcLoc(RDS_FILE, RDS_LINE, RDS_FUNC_NAME_SZ)
+#if RDS_DEBUG || RDS_DEVELOPMENT
+	#define RDS_SRCLOC	::rds::SrcLoc(RDS_FILE, RDS_LINE, RDS_FUNC_NAME_SZ)
 
 	#define RDS_DEBUG_CALL(FUNC) FUNC
 
 #else
-	#define RDS_SRCLOC	SrcLoc()
+	#define RDS_SRCLOC	::rds::SrcLoc()
 
 	#define RDS_DEBUG_CALL(FUNC)
 #endif

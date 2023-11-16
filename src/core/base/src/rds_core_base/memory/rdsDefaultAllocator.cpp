@@ -14,6 +14,7 @@ DefaultAllocator_Impl::DefaultAllocator_Impl(const char* name)
 	: Base(name)
 {
 	static NmspAllocationCallback s_nmspAllocaCallback;
+
 	_nmspAllocationCallback = &s_nmspAllocaCallback;
 
 	_nmspAllocationCallback->allocCallback = [](size_t n, size_t align, size_t offset) -> void*

@@ -37,7 +37,13 @@ void
 EditorApp_Base::onCreate	(const CreateDesc_Base& cd)
 {
 	auto thisCDesc = sCast<const CreateDesc&>(cd);
+
+	_log("--- warning ---");
+	_log("currently off NMSP_CUSTOM_ALLOC, since it will crash in Release mode after this line (ProjectSetting::init()), further debug is needed, also the NMSP_CUSTOM_ALLOC should be revisited too");
+	_log("NMSP_DEVELOPMENT should be off when shipped");
+	_log("---");
 	ProjectSetting::init();
+
 	{
 		String file = getExecutableFilename();
 		String path = Path::dirname(file);

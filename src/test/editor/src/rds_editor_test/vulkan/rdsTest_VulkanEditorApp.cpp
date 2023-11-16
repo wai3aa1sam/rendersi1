@@ -166,10 +166,15 @@ public:
 	static VulkanEditorApp* instance() { return sCast<VulkanEditorApp*>(s_instance); }
 
 public:
+
+	VulkanEditorApp()
+	{
+
+	}
+
 	~VulkanEditorApp()
 	{
 	}
-
 
 	VulkanEditorMainWindow* mainWin() { return &_vulkanMainWin; }
 
@@ -180,7 +185,10 @@ protected:
 
 		// TestScope will create Logger and ProjectSetting, so commented
 		// updated: turned off TestScope log and ProjectSetting
-		Base::onCreate(thisCDesc);		
+		Base::onCreate(thisCDesc);
+
+		JobSystem::instance()->setSingleThreadMode(true);
+
 
 		{ Process sh = { "asset/shader/vulkan/compile_shader.bat" }; }
 
@@ -284,11 +292,14 @@ public:
 
 	virtual void onUpdate() override
 	{
-		_testMultiThreadDrawCalls.execute();
+		//_testMultiThreadDrawCalls.execute();
 	}
 
 	virtual void onRender() override
 	{
+		RDS_TODO("no commit render cmd buf will have error");
+		RDS_TODO("by pass whole fn will have error");
+
 		RDS_PROFILE_SCOPED();
 
 		auto* rdr		= Renderer::instance();
@@ -324,12 +335,11 @@ public:
 			Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), rdCtx.aspectRatio(), 0.1f, 10.0f);
 			proj[1][1]		*= -1;
 			Mat4f mvp		= proj * view * model;
-			
-			u32 iFrame = Renderer::instance()->iFrame();
 
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
-			iFrame % 2 == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
 
+			u32 iFrame = Renderer::instance()->iFrame();
+			iFrame % 2 == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
 			#if 0
 			static int i = 0;
 			if (/*Renderer::instance()->iFrame() != 0 && */i >= 0 /*&& i < 100*/ /*&& i % 50 == 0*/)
@@ -443,6 +453,7 @@ public:
 	{
 		VulkanEditorApp app;
 		auto appCDesc = app.makeCDesc();
+
 		app.run(appCDesc);
 	}
 

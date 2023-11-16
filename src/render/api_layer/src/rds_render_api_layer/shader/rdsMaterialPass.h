@@ -67,7 +67,6 @@ MaterialPass_Stage::setParam(Material* mtl, StrView name, const T& v)
 {
 	/*if (!_shaderStage)
 		return;*/
-
 	shaderResources(mtl).setParam(name, v);
 }
 
@@ -77,7 +76,6 @@ MaterialPass_Stage::setTexParam(Material* mtl, StrView name, TEX* v, bool isAuto
 {
 	/*if (!_shaderStage)
 	return;*/
-
 	shaderResources(mtl).setTexParam(name, v, isAutoSampler);
 }
 
@@ -87,7 +85,6 @@ MaterialPass_Stage::setSamplerParam(Material* mtl, StrView name, const SamplerSt
 {
 	/*if (!_shaderStage)
 	return;*/
-
 	shaderResources(mtl).setSamplerParam(name, samplerState);
 }
 

@@ -80,6 +80,19 @@ ShaderResources::findSamplerParam(StrView name) const
 	return nullptr;
 }
 
+
+void 
+ShaderResources::setSamplerParam(StrView name, const SamplerState& v)
+{
+	for (auto& e : samplerParams())
+	{
+		bool isSame = name.compare(e.info().name) == 0;
+		if (!isSame)
+			continue;
+		e.setSamplerParam(v);
+	}
+}
+
 #endif
 
 
@@ -92,14 +105,35 @@ void
 ShaderResources::ConstBuffer::create(const Info* info)
 {
 	destroy();
+	throwIf(info->size == 0, "constbuffer size is 0");
+
+	auto bufSize = info->size;
 
 	_info = info;
-	_cpuBuf.resize(info->size);
+	_cpuBuf.resize(bufSize);
 
 	auto bufCDesc = RenderGpuBuffer::makeCDesc();
 	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Const;
-	bufCDesc.bufSize	= info->size;
+	bufCDesc.bufSize	= bufSize;
 	_gpuBuffer = Renderer::instance()->createRenderGpuBuffer(bufCDesc);
+}
+
+void 
+passTest(Vector<u8>& data, const ShaderResources::ConstBuffer::VarInfo& varInfo, const ShaderResources::ConstBuffer::Info* info, const void* value)
+{
+	for (size_t i = 0; i < data.size(); i++)
+	{
+		//RDS_DUMP_VAR(i, data[i]);
+		data[i] = 0;
+	}
+	RDS_CALL_ONCE(RDS_LOG("sizeof(Mat4f) == {}, *reinCast<const Mat4f*>(value) = {}", sizeof(Mat4f), *reinCast<const Mat4f*>(value)));
+	RDS_CALL_ONCE(RDS_DUMP_VAR(*reinCast<Mat4f*>(&data[varInfo.offset])));
+	//memcpy(data.data() + varInfo.offset, value, sizeof(Mat4f));										// this will success
+	//memory_copy(reinCast<Mat4f*>(data.data() + varInfo.offset), sCast<const Mat4f*>(value), 1);		// this will faile
+	//reinterpret_cast<Mat4f&>(data[varInfo.offset]) = *reinCast<const Mat4f*>(value);
+	RDS_CALL_ONCE(RDS_LOG("passTest end"));
+
+	RDS_TODO("ShaderResources::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v) will crash in release mode, further debug is needed");
 }
 
 void 
@@ -115,6 +149,7 @@ ShaderResources::ConstBuffer::uploadToGpu()
 	if (!_isDirty)
 		return;
 
+	// ByteSpan{_cpuBuf.data(), _cpuBuf.size()}
 	_gpuBuffer->uploadToGpu(_cpuBuf);
 	_isDirty = false;
 }

@@ -2,7 +2,7 @@
 
 //#include <nmsp_core.h>
 
-#define NMSP_CUSTOM_ALLOC 1
+//#define NMSP_CUSTOM_ALLOC 1
 
 #include <nmsp_core_base.h>
 

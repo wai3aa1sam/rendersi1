@@ -13,10 +13,18 @@
 #define RDS_LOG_WARN(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Warning,  __VA_ARGS__); } while(false)
 #define RDS_LOG_ERROR(...)			do{ ::rds::Logger::instance()->clientLog(::rds::LogLevel::Error,	__VA_ARGS__); } while(false)
 
-#define RDS_DUMP_VAR_1(v0)				do{ RDS_LOG("DUMP_VAR: {}=[{}]",							#v0, (v0)); } while(false)
-#define RDS_DUMP_VAR_2(v0, v1)			do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}]",					#v0, (v0), #v1, (v1)); } while(false)
-#define RDS_DUMP_VAR_3(v0, v1, v2)		do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}], {}=[{}]",			#v0, (v0), #v1, (v1), #v2, (v2)); } while(false)
-#define RDS_DUMP_VAR_4(v0, v1, v2, v3)	do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}], {}=[{}], {}=[{}]",	#v0, (v0), #v1, (v1), #v2, (v2), #v3, (v3)); } while(false)
+#define RDS_DUMP_VAR_1(v0)					do{ RDS_LOG("DUMP_VAR: {}=[{}]",										#v0, (v0)); } while(false)
+#define RDS_DUMP_VAR_2(v0, v1)				do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}]",								#v0, (v0), #v1, (v1)); } while(false)
+#define RDS_DUMP_VAR_3(v0, v1, v2)			do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}], {}=[{}]",						#v0, (v0), #v1, (v1), #v2, (v2)); } while(false)
+#define RDS_DUMP_VAR_4(v0, v1, v2, v3)		do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}], {}=[{}], {}=[{}]",				#v0, (v0), #v1, (v1), #v2, (v2), #v3, (v3)); } while(false)
+#define RDS_DUMP_VAR_5(v0, v1, v2, v3, v4)	do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}]",	#v0, (v0), #v1, (v1), #v2, (v2), #v3, (v3), #v4, (v4)); } while(false)
+
+#define RDS_DUMP_VAR_6(v0, v1, v2, v3, v4, v5)			do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}]",						\
+														#v0, (v0), #v1, (v1), #v2, (v2), #v3, (v3), #v4, (v4), #v5, (v5)); } while(false)
+#define RDS_DUMP_VAR_7(v0, v1, v2, v3, v4, v5, v6)		do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}]",				\
+														#v0, (v0), #v1, (v1), #v2, (v2), #v3, (v3), #v4, (v4), #v5, (v5), #v6, (v6)); } while(false)
+#define RDS_DUMP_VAR_8(v0, v1, v2, v3, v4, v5, v6, v7)	do{ RDS_LOG("DUMP_VAR: {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}], {}=[{}]",		\
+														#v0, (v0), #v1, (v1), #v2, (v2), #v3, (v3), #v4, (v4), #v5, (v5), #v6, (v6), #v7, (v7)); } while(false)
 
 #define RDS_DUMP_VAR_SELECT(COUNT) RDS_DUMP_VAR_##COUNT
 #define RDS_DUMP_VAR(...) NMSP_IDENTITY(NMSP_CALL(RDS_DUMP_VAR_SELECT, NMSP_VA_ARGS_COUNT(__VA_ARGS__) (__VA_ARGS__)))

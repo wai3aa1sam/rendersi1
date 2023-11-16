@@ -35,7 +35,8 @@ RenderCommandBuffer::clear()
 void* 
 RenderCommandBuffer::alloc(SizeType n, SizeType align)
 {
-	return _alloc.alloc(n, align);
+	auto* p = _alloc.alloc(n, align);
+	return p;
 	//return RenderFrameContext::instance()->renderFrame().renderCommandAllocator().alloc(n, align);
 }
 

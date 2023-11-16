@@ -24,9 +24,9 @@ class TestScope
 {
 public:
 	template<class FUNC>
-	TestScope(FUNC&& func, bool enableBenchmark, int& argc, char* argv[])
+	TestScope(FUNC&& func, bool enableLog, bool enableBenchmark, int& argc, char* argv[])
 	{
-		_enableLog = false;
+		_enableLog = enableLog;
 		_enableProjectSetting = false;
 		MemoryLeakReportScope reportScope;
 		create();

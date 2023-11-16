@@ -112,7 +112,7 @@ public:
 
 		void uploadToGpu();
 
-		u8* data();
+				u8* data();
 		const	u8* data() const;
 
 	protected:
@@ -131,8 +131,8 @@ public:
 	protected:
 
 	public:
-		Vector<u8, s_kLocalDataSize>	_cpuBuf;
-		SPtr<RenderGpuBuffer>			_gpuBuffer;
+		Vector<u8>				_cpuBuf;
+		SPtr<RenderGpuBuffer>	_gpuBuffer;
 
 		bool _isDirty = false;
 	};
@@ -229,19 +229,6 @@ ShaderResources::setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
 	}
 }
 
-inline
-void 
-ShaderResources::setSamplerParam(StrView name, const SamplerState& v)
-{
-	for (auto& e : samplerParams())
-	{
-		bool isSame = name.compare(e.info().name) == 0;
-		if (!isSame)
-			continue;
-		e.setSamplerParam(v);
-	}
-}
-
 inline				ShaderResources::ConstBuffer&	ShaderResources::constBufs(SizeType i)		{ return _constBufs[i]; }
 inline Span<		ShaderResources::ConstBuffer>	ShaderResources::constBufs()				{ return _constBufs; }
 inline Span<const	ShaderResources::ConstBuffer>	ShaderResources::constBufs() const			{ return spanCast<const ConstBuffer>(_constBufs.span()); }
@@ -283,14 +270,27 @@ ShaderResources::ConstBuffer::_checkType(const VarInfo& varInfo, const T& v)
 	return varInfo.dataType == RenderDataTypeUtil::get<T>();
 }
 
+void passTest(Vector<u8>& data, const ShaderResources::ConstBuffer::VarInfo& varInfo, const ShaderResources::ConstBuffer::Info* info, const void* value);
+
 template<class T> inline
 void 
 ShaderResources::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v)
 {
 	auto end = varInfo.offset + sizeof(v);
-	throwIf(end > _cpuBuf.size(), "material set param failed, cpuBuffer overflow");
-	auto* dst = data() + varInfo.offset;
-	*reinCast<T*>(dst) = v;
+	throwIf(end > _cpuBuf.size() || !data(), "material set param failed, cpuBuffer overflow");
+
+	_cpuBuf.resize(_info->size);
+	auto* dst = reinCast<T*>(data() + varInfo.offset);
+	
+	passTest(_cpuBuf, varInfo, _info, &v);
+	RDS_CALL_ONCE(RDS_DUMP_VAR(varInfo.offset, _cpuBuf.size(), end, sizeof(v), sCast<void*>(data()), sCast<void*>(dst)));
+
+	//*dst = v;
+	//memory_copy(dst, &v, 1);
+	::memcpy(dst, &v, sizeof(T));
+
+	RDS_WARN_ONCE("*dst = v success");
+
 	_isDirty = true;
 }
 
