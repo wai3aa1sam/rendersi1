@@ -17,7 +17,10 @@ namespace rds
 void 
 GpuProfilerContext_Vk::onCreate(const CreateDesc& cDesc)
 {
+	_rdCtx = cDesc.rdCtx;
+
 	auto* rdDeviceVk = rdDevVk();
+
 	auto vkFuncExtCtd	= (rdDeviceVk->extInfo().getInstanceExtFunction<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
 	auto vkFuncExtCt	= (rdDeviceVk->extInfo().getInstanceExtFunction<PFN_vkGetCalibratedTimestampsEXT>					("vkGetCalibratedTimestampsEXT"));
 
@@ -47,6 +50,7 @@ GpuProfilerContext_Vk::onDestroy()
 		RDS_PROFILE_GPU_DESTROY_CTX_VK_IMPL(_ctx);
 		_ctx = nullptr;
 	}
+	_rdCtx = nullptr;
 }
 
 void 

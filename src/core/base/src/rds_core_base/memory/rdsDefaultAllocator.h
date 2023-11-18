@@ -2,6 +2,7 @@
 
 #include "rds_memory_common.h"
 #include "rdsMemoryContext.h"
+#include "rds_core_base/profiler/rds_profiler.h"
 
 #define RDS_TEMPORARY_ALLOC_MODE 1
 
@@ -78,14 +79,15 @@ DefaultAllocator::alloc(SizeType n, SizeType align, SizeType offset)
 	NMSP_TODO("there is two temp solution to fix 1. use new u8[n], but those use NMSP_NEW eg. ::nmsp::Singleton will need to change too");
 	NMSP_TODO("2. use memory_copy instead of dereference the buf");
 	NMSP_TODO("--- end warning");
-	return ::nmsp::nmsp_alloc(n, align, offset);
+	auto* p = ::nmsp::nmsp_alloc(n, align, offset);
+	RDS_PROFILE_ALLOC(p, rds::_alignTo(n, align));
+	return p;
 	//return new char[n];
 	//return ::new(align, offset,    "", 0, 0, __FILE__, __LINE__) char[n];
 	#else
 	_notYetSupported(RDS_SRCLOC);
 	return s_instance.alloc(n, align, offset); 
 	#endif // RDS_TEMPORARY_ALLOC_MODE
-
 };
 
 inline
@@ -93,6 +95,7 @@ void
 DefaultAllocator::free(void* p, SizeType n)
 {
 	#if RDS_TEMPORARY_ALLOC_MODE
+	RDS_PROFILE_FREE(p, n);
 	::nmsp::nmsp_free(p, n);
 	//delete[] (char*)p;
 	#else

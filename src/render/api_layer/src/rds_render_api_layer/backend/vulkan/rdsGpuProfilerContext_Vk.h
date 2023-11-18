@@ -135,7 +135,7 @@ protected:
 
 private:
 	ProfilerCtx		_ctx	= nullptr;
-	RenderContext* _rdCtx	= nullptr;
+	RenderContext*	_rdCtx	= nullptr;
 };
 
 inline
