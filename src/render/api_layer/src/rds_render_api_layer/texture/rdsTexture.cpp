@@ -2,15 +2,14 @@
 #include "rdsTexture.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 
-
 namespace rds
 {
 
 SPtr<Texture2D> 
-Renderer::createTexture2D(Texture2D_CreateDesc& cDesc)
+RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
 {
+	cDesc._internal_create(this);
 	auto p = onCreateTexture2D(cDesc);
-	p->_rdDev = this;
 	return p;
 }
 
@@ -28,13 +27,14 @@ Texture::Texture(RenderDataType type)
 void 
 Texture::create	(CreateDesc& cDesc)
 {
+	Base::create(cDesc);
 	_desc = cDesc;
 }
 
 void 
 Texture::destroy()
 {
-
+	Base::destroy();
 }
 
 
@@ -66,7 +66,7 @@ Texture2D::makeCDesc()
 SPtr<Texture2D>
 Texture2D::make(CreateDesc& cDesc)
 {
-	return Renderer::instance()->createTexture2D(cDesc);
+	return Renderer::rdDev()->createTexture2D(cDesc);
 }
 
 Texture2D::Texture2D()
@@ -76,6 +76,7 @@ Texture2D::Texture2D()
 
 Texture2D::~Texture2D()
 {
+	RDS_PROFILE_SCOPED();
 }
 
 void 
@@ -83,16 +84,16 @@ Texture2D::create(CreateDesc& cDesc)
 {
 	destroy();
 
+	// _create(cDesc);
 	onCreate(cDesc);
-
 	onPostCreate(cDesc);
 }
 
 void 
 Texture2D::destroy()
 {
-	Base::destroy();
 	onDestroy();
+	Base::destroy();
 }
 
 void 
@@ -103,6 +104,7 @@ Texture2D::_internal_uploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTextur
 	cmd->dst	= this;
 
 	cDesc.loadImage();
+	cDesc._isBypassChecking = true;
 	_create(cDesc);
 
 	onUploadToGpu(cDesc, cmd);
@@ -130,7 +132,7 @@ Texture2D::onDestroy()
 void 
 Texture2D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
-
+	_create(cDesc);
 }
 
 void 

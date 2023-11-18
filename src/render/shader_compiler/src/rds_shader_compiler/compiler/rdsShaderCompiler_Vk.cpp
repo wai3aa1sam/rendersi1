@@ -1,6 +1,6 @@
 #include "rds_shader_compiler-pch.h"
 #include "rdsShaderCompiler_Vk.h"
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 

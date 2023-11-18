@@ -152,6 +152,9 @@ public:
 	VertexStage*	vertexStage();
 	PixelStage*		pixelStage();
 
+	Material&		material();
+	ShaderPass&		shaderPass();
+
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass);
 	virtual void onDestroy();
@@ -196,6 +199,9 @@ inline const MaterialPass::Info& MaterialPass::info() const { return _shaderPass
 
 inline MaterialPass::VertexStage*	MaterialPass::vertexStage() { return _vertexStage; }
 inline MaterialPass::PixelStage*	MaterialPass::pixelStage()	{ return _pixelStage; }
+
+inline Material&					MaterialPass::material()	{ return *_material; }
+inline ShaderPass&					MaterialPass::shaderPass()	{ return *_shaderPass; }
 
 #endif
 

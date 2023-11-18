@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
 #include "rds_render_api_layer/shader/rdsShader.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -15,35 +16,77 @@ class ShaderPass_Vk;
 #endif // 0
 #if 1
 
-
-struct Vk_VertexShaderStage : public VertexShaderStage
+template<class VK_SHADER_STAGE>
+struct Vk_ShaderStage : public VK_SHADER_STAGE
 {
 public:
-	using Base = VertexShaderStage;
+	using Base = VK_SHADER_STAGE;
 	using Util = Vk_RenderApiUtil;
 
 public:
-	void load(ShaderPass_Vk* pass, StrView passPath);
+	Vk_ShaderStage()
+	{
 
-	VkPipelineShaderStageCreateInfo createVkStageInfo(const char* entry);
+	}
+
+	~Vk_ShaderStage()
+	{
+		
+	}
+
+	void create(ShaderPass_Vk* pass, StrView passPath)
+	{
+		TempString binPath;
+		fmtTo(binPath, "{}/{}.bin", passPath, Util::toShaderStageProfile(stageFlag()));
+
+		auto* rdDevVk = pass->shader()->renderDeviceVk();
+		_vkModule.create(binPath, rdDevVk);
+
+		binPath += ".json";
+		JsonUtil::readFile(binPath, _info);
+	}
+
+	void destroy(ShaderPass_Vk* pass)
+	{
+		_vkModule.destroy(pass->shader()->renderDeviceVk());
+	}
+
+	VkPipelineShaderStageCreateInfo createVkStageInfo(const char* entry)
+	{
+
+		VkPipelineShaderStageCreateInfo	stageInfo = {};
+		stageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		stageInfo.stage					= Util::toVkShaderStageBit(stageFlag());
+		stageInfo.module				= _vkModule.hnd();
+		stageInfo.pName					= entry;
+		stageInfo.pSpecializationInfo	= nullptr;
+
+		return stageInfo;
+	}
+
+	//RenderDevice_Vk* renderDeviceVk() { return pass->shader()->renderDeviceVk(); }
 
 protected:
+	//ShaderPass_Vk*	_passVk = nullptr;
 	Vk_ShaderModule _vkModule;
 };
 
-struct Vk_PixelShaderStage : public PixelShaderStage
+struct Vk_VertexShaderStage : public Vk_ShaderStage<VertexShaderStage>
 {
 public:
-	using Base = PixelShaderStage;
-	using Util = Vk_RenderApiUtil;
+	using Base = Vk_ShaderStage<VertexShaderStage>;
 
 public:
-	void load(ShaderPass_Vk* pass, StrView passPath);
+	
+};
 
-	VkPipelineShaderStageCreateInfo createVkStageInfo(const char* entry);
+struct Vk_PixelShaderStage : public Vk_ShaderStage<PixelShaderStage>
+{
+public:
+	using Base = Vk_ShaderStage<PixelShaderStage>;
 
-protected:
-	Vk_ShaderModule _vkModule;
+public:
+	
 };
 
 class ShaderPass_Vk : public ShaderPass
@@ -56,18 +99,19 @@ public:
 	using PixelStage	= Vk_PixelShaderStage;
 
 public:
-	ShaderPass_Vk() {}
-	virtual ~ShaderPass_Vk() {}
-
-public:
-	virtual void onCreate(Shader* shader, const Info* info, StrView passPath) override;
-
-	template<size_t N> void createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos);
+	ShaderPass_Vk();
+	virtual ~ShaderPass_Vk();
 
 	Shader_Vk* shader();
 
 	VertexStage* vkVertexStage();
 	PixelStage*	 vkPixelStage();
+
+protected:
+	virtual void onCreate(Shader* shader, const Info* info, StrView passPath) override;
+	virtual void onDestroy() override;
+
+	template<size_t N> void createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos);
 
 protected:
 	void onCreateRenderPass();
@@ -100,12 +144,10 @@ inline ShaderPass_Vk::PixelStage*	ShaderPass_Vk::vkPixelStage	() { return &_vkPi
 #endif // 0
 #if 1
 
-class Shader_Vk : public Shader
+class Shader_Vk : public RenderResource_Vk<Shader>
 {
 public:
-	using Base = Shader;
-	using Util = Vk_RenderApiUtil;
-
+	using Base = RenderResource_Vk<Shader>;
 	using Pass = ShaderPass_Vk;
 
 public:

@@ -19,10 +19,14 @@ extern PFN_vkQueueSubmit2KHR vkQueueSubmit2;
 namespace rds
 {
 
+class RenderDevice_Vk;
+
 class Vk_CommandBuffer;
 class Vk_CommandPool;
 
 class RenderGpuBuffer_Vk;
+
+struct RenderDevice_CreateDesc;
 
 #if 1	
 
@@ -139,7 +143,7 @@ struct Vk_StageAccess
 struct Vk_RenderApiUtil : public RenderApiUtil
 {
 public:
-	friend class Renderer_Vk;
+	friend class RenderDevice_Vk;
 
 	using Rect2f = math::Rect2f;
 
@@ -181,7 +185,7 @@ public:
 	static bool isDepthFormat(VkFormat format);
 	static bool isDepthOnlyFormat(VkFormat format);
 	static bool hasStencilComponent(VkFormat format);
-	static bool isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
+	static bool isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features, RenderDevice_Vk* rdDevVk);
 
 	static VkAttachmentLoadOp	toVkAttachmentLoadOp (RenderAttachmentLoadOp	v);
 	static VkAttachmentStoreOp	toVkAttachmentStoreOp(RenderAttachmentStoreOp	v);
@@ -208,7 +212,7 @@ public:
 	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src);
 	
 public:
-	static u32 getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties);
+	static u32 getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties, RenderDevice_Vk* rdDevVk);
 
 public:
 	static Vk_Buffer*	toVkBuf		(		RenderGpuBuffer* rdGpuBuf);
@@ -222,41 +226,40 @@ public:
 	// for create vk objects
 public:
 	static void createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out);
-	static void createSurface(Vk_Surface_T** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
-	static void createSwapchain(Vk_Swapchain_T** out, Vk_Surface* vkSurface, Vk_Device* vkDevice, 
-								const Vk_SwapchainInfo& info, const Vk_SwapchainAvailableInfo& avaInfo, const QueueFamilyIndices& queueFamilyIndices);
-	static void createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
+	//static void createSurface(Vk_Surface_T** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
+	static void createSwapchain(Vk_Swapchain_T** out, Vk_Surface_T* vkSurface, Vk_Device_T* vkDevice, const Vk_SwapchainInfo& info, const Vk_SwapchainAvailableInfo& avaInfo, RenderDevice_Vk* rdDevVk);
+	//static void createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
-	static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
+	//static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
 
-	static void createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice);
-	static void createFence(Vk_Fence_T** out, Vk_Device* vkDevice);
+	//static void createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice);
+	//static void createFence(Vk_Fence_T** out, Vk_Device* vkDevice);
 
-	static void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	static void createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel);
+	//static void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	//static void createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel);
 
-	template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 
-													VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
+	//template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 
+	//												VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
-	static void createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
-							, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags);
+	//static void createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
+	//						, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags);
 
-	static void createBuffer(Vk_Buffer& outBuf, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
-	static void createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
+	static void createBuffer(Vk_Buffer& outBuf, RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
+	//static void createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
 
 public:
-	static void copyBuffer				(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue);
+	static void copyBuffer				(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue, RenderDevice_Vk* rdDevVk);
 	static void transitionImageLayout	(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf);
 	static void copyBufferToImage		(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 width, u32 height, Vk_Queue* vkQueue, Vk_CommandBuffer* vkCmdBuf);
 
 public:
-	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice*,		 N>& out, Vk_Instance_T* vkInstance);
-	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out, Vk_PhysicalDevice* vkPhyDevice);
+	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice_T*,	 N>& out, Vk_Instance_T* vkInstance);
+	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out, Vk_PhysicalDevice_T* vkPhyDevice);
 
-	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice);
-	static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& outInfo, Vk_PhysicalDevice* phyDevice);
+	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice);
+	static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice);
 	static void getVkPhyDeviceFeaturesTo	(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info);
-	static bool getSwapchainAvailableInfoTo	(Vk_SwapchainAvailableInfo& out, Vk_PhysicalDevice* vkPhydevice, Vk_Surface_T* vkSurface);
+	static bool getSwapchainAvailableInfoTo	(Vk_SwapchainAvailableInfo& out, Vk_PhysicalDevice_T* vkPhydevice, Vk_Surface_T* vkSurface);
 
 
 private:
@@ -278,7 +281,6 @@ template<class T> inline VkDeviceSize Vk_RenderApiUtil::toVkDeviceSize(T v) { RD
 #pragma mark --- rdsVk_ExtensionInfo-Decl ---
 #endif // 0
 #if 1
-struct Renderer_CreateDesc;
 
 struct Vk_ExtensionInfo
 {
@@ -292,12 +294,14 @@ public:
 public:
 	static u32 getAvailableValidationLayersTo	(Vector<VkLayerProperties,		s_kLocalSize>& out, bool logAvaliable = false);
 	static u32 getAvailableInstanceExtensionsTo	(Vector<VkExtensionProperties,	s_kLocalSize>& out, bool logAvaliable = false);
-	static u32 getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties,	s_kLocalSize>& out, Vk_PhysicalDevice* phyDevice, bool logAvaliable = false);
+	static u32 getAvailablePhyDeviceExtensionsTo(Vector<VkExtensionProperties,	s_kLocalSize>& out, Vk_PhysicalDevice_T* phyDevice, bool logAvaliable = false);
 
 public:
+	void create(RenderDevice_Vk* rdDevVk);
+
 	void createInstanceExtensions	(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension = false);
 	void createValidationLayers		(const RenderAdapterInfo& adapterInfo);
-	void createPhyDeviceExtensions	(const RenderAdapterInfo& adapterInfo, const Renderer_CreateDesc& cDesc, Vk_PhysicalDevice* phyDevice);
+	void createPhyDeviceExtensions	(const RenderAdapterInfo& adapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice);
 
 	template<class T> T getInstanceExtFunction(const char* funcName) const;
 	template<class T> T getDeviceExtFunction(const char* funcName) const;
@@ -322,6 +326,8 @@ private:
 	void checkValidationLayersExist();
 
 private:
+	RenderDevice_Vk* _rdDevVk = nullptr;
+
 	Vector<const char*,				s_kLocalSize>	_instanceExts;
 	Vector<const char*,				s_kLocalSize>	_validationLayers;
 	Vector<const char*,				s_kLocalSize>	_phyDeviceExts;
@@ -342,7 +348,7 @@ Vk_ExtensionInfo::getInstanceExtFunction(const char* funcName) const
 	auto it = table.find(funcName);
 	if (it == table.end())
 	{
-		PFN_vkVoidFunction func = vkGetInstanceProcAddr(Renderer_Vk::instance()->vkInstance(), funcName);
+		PFN_vkVoidFunction func = vkGetInstanceProcAddr(_rdDevVk->vkInstance(), funcName);
 		if (!func)
 			return nullptr;
 		constCast<StringMap<PFN_vkVoidFunction>&>(table)[funcName] = func;
@@ -359,7 +365,7 @@ Vk_ExtensionInfo::getDeviceExtFunction(const char* funcName) const
 	auto it = table.find(funcName);
 	if (it == table.end())
 	{
-		PFN_vkVoidFunction func = vkGetDeviceProcAddr(Renderer_Vk::instance()->vkDevice(), funcName);
+		PFN_vkVoidFunction func = vkGetDeviceProcAddr(_rdDevVk->vkDevice(), funcName);
 		if (!func)
 			return nullptr;
 		constCast<StringMap<PFN_vkVoidFunction>&>(table)[funcName] = func;
@@ -441,24 +447,24 @@ Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, const Vect
 	convertToHnds(dst, src.span());
 }
 
-template<size_t N> inline
-void 
-Vk_RenderApiUtil::createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice,
-								   VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
-{
-	out.clear();
-	out.resize(vkImages.size());
-	for (size_t i = 0; i < vkImages.size(); ++i)
-	{
-		Vk_ImageView* p = nullptr;
-		createImageView(&p, (Vk_Image*)vkImages[i].ptr(), vkDevice, format, aspectFlags, mipLevels);
-		out[i].reset(p);
-	}
-}
+//template<size_t N> inline
+//void 
+//Vk_RenderApiUtil::createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device_T* vkDevice,
+//								   VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
+//{
+//	out.clear();
+//	out.resize(vkImages.size());
+//	for (size_t i = 0; i < vkImages.size(); ++i)
+//	{
+//		Vk_ImageView* p = nullptr;
+//		createImageView(&p, (Vk_Image*)vkImages[i].ptr(), vkDevice, format, aspectFlags, mipLevels);
+//		out[i].reset(p);
+//	}
+//}
 
 template<size_t N> inline
 u32
-Vk_RenderApiUtil::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice*, N>& out, Vk_Instance_T* vkInstance)
+Vk_RenderApiUtil::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice_T*, N>& out, Vk_Instance_T* vkInstance)
 {
 	u32 deviceCount = 0;
 	vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
@@ -476,7 +482,7 @@ Vk_RenderApiUtil::getAvailableGPUDevicesTo(Vector<Vk_PhysicalDevice*, N>& out, V
 
 template<size_t N> inline
 u32 
-Vk_RenderApiUtil::getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out,	Vk_PhysicalDevice* vkPhyDevice)
+Vk_RenderApiUtil::getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out,	Vk_PhysicalDevice_T* vkPhyDevice)
 {
 	u32 queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(vkPhyDevice, &queueFamilyCount, nullptr);

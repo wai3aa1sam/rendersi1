@@ -1,7 +1,8 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_RenderFrame.h"
 
-#include "rdsRenderer_Vk.h"
+#include "rdsRenderDevice_Vk.h"
+#include "rdsRenderContext_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -12,8 +13,6 @@ namespace rds
 #endif // 0
 #if 1
 
-//Vk_RenderFrame* Vk_RenderFrame::instance() { return /*rdsRenderer_Vk::instance()->RenderFrame();*/ nullptr; }
-
 Vk_RenderFrame::Vk_RenderFrame()
 {
 	
@@ -22,6 +21,7 @@ Vk_RenderFrame::Vk_RenderFrame()
 Vk_RenderFrame::~Vk_RenderFrame()
 {
 	destroy();
+	RDS_CORE_ASSERT(!_imageAvailableVkSmp, "");
 }
 
 Vk_RenderFrame::Vk_RenderFrame(Vk_RenderFrame&& rhs)
@@ -40,30 +40,38 @@ void Vk_RenderFrame::operator=(Vk_RenderFrame&& rhs)
 }
 
 void 
-Vk_RenderFrame::create()
+Vk_RenderFrame::create(RenderContext_Vk* rdCtxVk)
 {
 	destroy();
 
-	auto* renderer		= Renderer_Vk::instance();
-	auto& queueFamily	= renderer->queueFamilyIndices();
+	_rdCtxVk = rdCtxVk;
+
+	auto& queueFamily	= rdDevVk()->queueFamilyIndices();
 
 	createCommandPool(_graphicsCommandPools, queueFamily.getFamilyIdx(QueueTypeFlags::Graphics));
 	createCommandPool(_computeCommandPools,  queueFamily.getFamilyIdx(QueueTypeFlags::Compute));
 	createCommandPool(_transferCommandPools, queueFamily.getFamilyIdx(QueueTypeFlags::Transfer));
 
 	createSyncObjects();
-
-	_descriptorAlloc.create(renderer);
+	_descriptorAlloc.create(rdDevVk());
 }
 
 void 
 Vk_RenderFrame::destroy()
 {
+	if (!_rdCtxVk)
+		return;
+
 	destroyCommandPool(_graphicsCommandPools);
 	destroyCommandPool(_computeCommandPools);
 	destroyCommandPool(_transferCommandPools);
 
 	_descriptorAlloc.destroy();
+	_imageAvailableVkSmp.destroy(rdDevVk());
+	_renderCompletedVkSmp.destroy(rdDevVk());
+	_inFlightVkFence.destroy(rdDevVk());
+
+	_rdCtxVk = nullptr;
 }
 
 void 
@@ -87,9 +95,9 @@ Vk_RenderFrame::resetCommandPool(QueueTypeFlags queueType)
 
 	switch (queueType)
 	{
-		case SRC::Graphics: { for (auto& e : _graphicsCommandPools) { e.reset(); } } break;
-		case SRC::Compute:	{ for (auto& e : _computeCommandPools)  { e.reset(); } } break;
-		case SRC::Transfer: { for (auto& e : _transferCommandPools) { e.reset(); } } break;
+		case SRC::Graphics: { for (auto& e : _graphicsCommandPools) { e.reset(rdDevVk()); } } break;
+		case SRC::Compute:	{ for (auto& e : _computeCommandPools)  { e.reset(rdDevVk()); } } break;
+		case SRC::Transfer: { for (auto& e : _transferCommandPools) { e.reset(rdDevVk()); } } break;
 		default: { throwIf(true, ""); } break;
 	}
 }
@@ -103,9 +111,9 @@ Vk_RenderFrame::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLe
 
 	switch (queueType)
 	{
-		case SRC::Graphics: { return _graphicsCommandPools[tlid].requestCommandBuffer(bufLevel); } break;
-		case SRC::Compute:	{ return  _computeCommandPools[tlid].requestCommandBuffer(bufLevel); } break;
-		case SRC::Transfer: { return _transferCommandPools[tlid].requestCommandBuffer(bufLevel); } break;
+		case SRC::Graphics: { return _graphicsCommandPools[tlid].requestCommandBuffer(bufLevel, rdDevVk()); } break;
+		case SRC::Compute:	{ return  _computeCommandPools[tlid].requestCommandBuffer(bufLevel, rdDevVk()); } break;
+		case SRC::Transfer: { return _transferCommandPools[tlid].requestCommandBuffer(bufLevel, rdDevVk()); } break;
 		default: { throwIf(true, ""); } break;
 	}
 
@@ -119,35 +127,42 @@ Vk_RenderFrame::createCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPoo
 	for (size_t i = 0; i < s_kThreadCount; i++)
 	{
 		auto& e = cmdPool.emplace_back();
-		e.create(familyIdx, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+		e.create(familyIdx, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, rdDevVk());
 	}
 }
 
 void 
 Vk_RenderFrame::destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool)
 {
+	for (auto& e : cmdPool)
+	{
+		e.destroy(rdDevVk());
+	}
 	cmdPool.clear();
 }
 
 void 
 Vk_RenderFrame::createSyncObjects()
 {
-	//auto* vkDevice = Renderer_Vk::instance()->vkDevice();
+	_imageAvailableVkSmp.create(rdDevVk());
+	_renderCompletedVkSmp.create(rdDevVk());
+	_inFlightVkFence.create(rdDevVk());
 
-	_imageAvailableVkSmp.create();
-	_renderCompletedVkSmp.create();
-	_inFlightVkFence.create();
 }
 
 void 
 Vk_RenderFrame::destroySyncObjects()
 {
-	_inFlightVkFence.destroy();
-	_renderCompletedVkSmp.destroy();
-	_imageAvailableVkSmp.destroy();
+	_inFlightVkFence.destroy(rdDevVk());
+	_renderCompletedVkSmp.destroy(rdDevVk());
+	_imageAvailableVkSmp.destroy(rdDevVk());
 }
 
-
+RenderDevice_Vk* 
+Vk_RenderFrame::rdDevVk() 
+{ 
+	return rdCtxVk()->renderDeviceVk(); 
+}
 
 
 #endif

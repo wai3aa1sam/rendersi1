@@ -49,13 +49,13 @@ public:
 
 };
 
-struct RdgBuffer_CreateDesc : public RdgResource_BufferT::CreateDesc
+struct RdgBuffer_CreateDesc : public RdgResource_BufferT::Desc
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	using Base = RdgResource_BufferT::CreateDesc;
+	using Base = RdgResource_BufferT::Desc;
 
-	using RenderResourceCDesc = RdgResource_BufferT::CreateDesc;
+	using RenderResourceCDesc = RdgResource_BufferT::Desc;
 
 public:
 	RdgBuffer_CreateDesc() = default;

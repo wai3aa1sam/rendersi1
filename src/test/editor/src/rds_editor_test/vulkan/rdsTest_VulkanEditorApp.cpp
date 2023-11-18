@@ -148,10 +148,10 @@ protected:
 		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 		Base::onCreate(thisCDesc);
 
-		auto* renderer = Renderer::instance();
+		auto* rdDev = Renderer::rdDev();
 		auto renderContextCDesc = RenderContext::makeCDesc();
 		renderContextCDesc.window = this;
-		_renderContext = renderer->createContext(renderContextCDesc);
+		_renderContext = rdDev->createContext(renderContextCDesc);
 	}
 
 private:
@@ -174,6 +174,7 @@ public:
 
 	~VulkanEditorApp()
 	{
+
 	}
 
 	VulkanEditorMainWindow* mainWin() { return &_vulkanMainWin; }
@@ -223,7 +224,7 @@ public:
 	VulkanLayer() = default;
 	virtual ~VulkanLayer()
 	{
-		VulkanEditorApp::instance()->mainWin()->renderContext().waitIdle();
+		Renderer::rdDev()->waitIdle();
 	}
 
 	virtual void onCreate() override
@@ -252,16 +253,15 @@ public:
 			}
 		}
 
-		#if 0
+		#if 1
 
 		uploadTestMultiBuf();
 		//_testMultiThreadDrawCalls.create(10);
 		_testMultiThreadDrawCalls.createFixed(2);
 		#endif // 0
 
-
 		{
-			_testRenderGraph._rdGraph.create("Test Render Graph", Renderer::instance(), &VulkanEditorApp::instance()->mainWin()->renderContext());
+			_testRenderGraph._rdGraph.create("Test Render Graph", Renderer::rdDev(), &VulkanEditorApp::instance()->mainWin()->renderContext());
 			_testRenderGraph.setup();
 			_testRenderGraph.compile();
 			_testRenderGraph.dump();
@@ -272,20 +272,20 @@ public:
 
 		#if 1
 		{
-			//_testShader = Renderer::instance()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
-			_testShader = Renderer::instance()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+			//_testShader = Renderer::rdDev()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
+			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
-			_testMaterial = Renderer::instance()->createMaterial();
+			_testMaterial = Renderer::rdDev()->createMaterial();
 			_testMaterial->setShader(_testShader);
 
 			auto texCDesc = Texture2D::makeCDesc();
 			
 			texCDesc.create("asset/texture/uvChecker.png");
-			_uvCheckerTex = Renderer::instance()->createTexture2D(texCDesc);
+			_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
 
 			texCDesc.create("asset/texture/uvChecker2.png");
-			_uvChecker2Tex = Renderer::instance()->createTexture2D(texCDesc);
+			_uvChecker2Tex = Renderer::rdDev()->createTexture2D(texCDesc);
 		}
 		#endif // 0
 	}
@@ -302,12 +302,12 @@ public:
 
 		RDS_PROFILE_SCOPED();
 
-		auto* rdr		= Renderer::instance();
+		auto* rdDev		= Renderer::rdDev();
 		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWin->renderContext();
-		auto& tsfCtx	= rdr->transferContext();
+		auto& tsfCtx	= rdDev->transferContext();
 
-		auto& rdFrame	= rdr->renderFrame(); RDS_UNUSED(rdFrame);
+		auto& rdFrame	= rdDev->renderFrame(); RDS_UNUSED(rdFrame);
 
 		auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
 
@@ -335,18 +335,30 @@ public:
 			Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), rdCtx.aspectRatio(), 0.1f, 10.0f);
 			proj[1][1]		*= -1;
 			Mat4f mvp		= proj * view * model;
+			
+			// later should use this line to get the material cpu buffer of constBuf
+			#if 0
+			{
+				Vector<u8> buf;
+				buf.resize(256);
+				auto* dst = reinCast<Mat4f*>(buf.data() + 192);
+				*dst = mvp;
+
+				RDS_LOG("~~~ success");
+			}
+			#endif // 0
 
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
 
-			u32 iFrame = Renderer::instance()->iFrame();
+			u32 iFrame = Renderer::rdDev()->iFrame();
 			iFrame % 2 == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
 			#if 0
 			static int i = 0;
-			if (/*Renderer::instance()->iFrame() != 0 && */i >= 0 /*&& i < 100*/ /*&& i % 50 == 0*/)
+			if (/*Renderer::rdDev()->iFrame() != 0 && */i >= 0 /*&& i < 100*/ /*&& i % 50 == 0*/)
 			{
 				auto texCDesc = Texture2D::makeCDesc();
 				texCDesc.create(iFrame % 2 == 0 ? "asset/texture/uvChecker2.png" : "asset/texture/uvChecker.png");
-				_textures.emplace_back(Renderer::instance()->createTexture2D(texCDesc));
+				_textures.emplace_back(Renderer::rdDev()->createTexture2D(texCDesc));
 
 				_testMaterial->setParam("texture0", _textures[i]);
 
@@ -380,7 +392,7 @@ public:
 
 		rdCtx.uploadBuffer(rdFrame.renderFrameUploadBuffer());
 
-		Renderer::instance()->nextFrame();
+		Renderer::rdDev()->nextFrame();
 	}
 
 	void uploadTestMultiBuf()

@@ -1,7 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_Swapchain.h"
 
-#include "rdsRenderer_Vk.h"
+#include "rdsRenderDevice_Vk.h"
 #include "rdsRenderContext_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -34,21 +34,24 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	destroy(cDesc.wnd);
 
 	_rdCtx = cDesc.rdCtx;
-	_vkSurface.create(cDesc.wnd);
+	auto* rdDevVk = renderDeviceVk();
+
+
+	_vkSurface.create(cDesc.wnd, rdDevVk);
 
 	if (_vkSurface.hnd())
 	{
 		// fix validation layer false positive error: vkCreateSwapchainKHR imageExtent surface capabilities
 		// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1340
-		auto ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(renderer()->vkPhysicalDevice(), _vkSurface.hnd(), &renderer()->swapchainAvailableInfo().capabilities); (void)ret;
+		auto ret = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(rdDevVk->vkPhysicalDevice(), _vkSurface.hnd(), &rdDevVk->swapchainAvailableInfo().capabilities); (void)ret;
 
 		/*
-		const auto& vkCaps = renderer()->swapchainAvailableInfo().capabilities;
+		const auto& vkCaps = rdDevVk->swapchainAvailableInfo().capabilities;
 		if (vkCaps.currentExtent.height == 0 || vkCaps.currentExtent.width == 0)
 			return;*/
 	}
 
-	createSwapchainInfo(_swapchainInfo, renderer()->swapchainAvailableInfo(), framebufferRect2f, cDesc.colorFormat, cDesc.colorSpace, cDesc.depthFormat);
+	createSwapchainInfo(_swapchainInfo, rdDevVk->swapchainAvailableInfo(), framebufferRect2f, cDesc.colorFormat, cDesc.colorSpace, cDesc.depthFormat);
 	createSwapchain(info().rect2f, cDesc.vkRdPass);
 }
 
@@ -58,8 +61,10 @@ Vk_Swapchain::destroy(NativeUIWindow* wnd)
 	if (!hnd())
 		return;
 
+	auto* rdDevVk = renderDeviceVk();
+
 	destroySwapchain();
-	_vkSurface.destroy(wnd);
+	_vkSurface.destroy(wnd, rdDevVk);
 	_rdCtx = nullptr;
 }
 
@@ -71,7 +76,8 @@ Vk_Swapchain::acquireNextImage(Vk_Semaphore* signalSmp)
 	// since the width or height is 0, no swapchain is created
 	if (!hnd()) return VkResult::VK_ERROR_OUT_OF_DATE_KHR;
 
-	auto* vkDev = renderer()->vkDevice();
+	auto* rdDevVk	= renderDeviceVk();
+	auto* vkDev		= rdDevVk->vkDevice();
 
 	RDS_TODO("vkAcquireNextImageKHR timeout should be 0, but need handle");
 
@@ -143,14 +149,14 @@ Vk_Swapchain::createSwapchain(const math::Rect2f& framebufferRect2f, Vk_RenderPa
 
 	destroySwapchain();
 
-	auto* rdr	= renderer();
-	auto* vkDev = renderer()->vkDevice();
+	auto* rdDevVk	= renderDeviceVk();
+	auto* vkDev		= rdDevVk->vkDevice();
 
-	Util::createSwapchain(hndForInit(), &_vkSurface, vkDev, info(), renderer()->swapchainAvailableInfo(), rdr->queueFamilyIndices());
+	Util::createSwapchain(hndForInit(), _vkSurface.hnd(), vkDev, info(), rdDevVk->swapchainAvailableInfo(), rdDevVk);
 	createDepthResources();
 
 	createSwapchainImages(_vkSwapchainImages, hnd(), vkDev);
-	createSwapchainImageViews(_vkSwapchainImageViews, _vkSwapchainImages, vkDev, info().surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+	createSwapchainImageViews(_vkSwapchainImageViews, _vkSwapchainImages, rdDevVk, info().surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	createSwapchainFramebuffers(vkRdPass);
 }
 
@@ -160,20 +166,26 @@ Vk_Swapchain::destroySwapchain()
 	if (!hnd())
 		return;
 
-	renderer()->waitIdle();
+	auto* rdDevVk = renderDeviceVk();
+	rdDevVk->waitIdle();
 
-	_vkDepthImageView.destroy();
+	_vkDepthImageView.destroy(rdDevVk);
 	_vkDepthImage.destroy();
 
 	for (auto& e : _vkSwapchainImageViews)
 	{
-		e.destroy(renderer());
+		e.destroy(rdDevVk);
+	}
+
+	for (auto& e : _vkSwapchainFramebuffers)
+	{
+		e.destroy(rdDevVk);
 	}
 
 	_vkSwapchainFramebuffers.clear();
 	_vkSwapchainImageViews.clear();
 	_vkSwapchainImages.clear();
-	vkDestroySwapchainKHR(renderer()->vkDevice(), hnd(), renderer()->allocCallbacks());
+	vkDestroySwapchainKHR(rdDevVk->vkDevice(), hnd(), rdDevVk->allocCallbacks());
 
 	_hnd	= VK_NULL_HANDLE;
 }
@@ -181,7 +193,8 @@ Vk_Swapchain::destroySwapchain()
 void
 Vk_Swapchain::createSwapchainFramebuffers(Vk_RenderPass* vkRdPass)
 {
-	auto count = _vkSwapchainImageViews.size();
+	auto* rdDevVk	= renderDeviceVk();
+	auto count		= _vkSwapchainImageViews.size();
 
 	_vkSwapchainFramebuffers.resize(count);
 	for (size_t i = 0; i < count; i++)
@@ -202,31 +215,34 @@ Vk_Swapchain::createSwapchainFramebuffers(Vk_RenderPass* vkRdPass)
 		framebufferInfo.height			= sCast<u32>(_swapchainInfo.rect2f.h);
 		framebufferInfo.layers			= 1;
 
-		_vkSwapchainFramebuffers[i].create(&framebufferInfo);
+		_vkSwapchainFramebuffers[i].create(&framebufferInfo, rdDevVk);
 	}
 }
 
 void 
 Vk_Swapchain::createDepthResources()
 {
+
 	destroyDepthResources();
 
-	auto* vkAllocCallbacks	= renderer()->memoryContext()->vkAlloc();
+	auto* rdDevVk			= renderDeviceVk();
+	auto* vkAllocCallbacks	= rdDevVk->memoryContext()->vkAlloc();
 	auto* vkGraphicsQueue	= _rdCtx->vkGraphicsQueue();
-	auto& rdFrame			= _rdCtx->renderFrame();
+	auto& vkRdFrame			= _rdCtx->vkRdFrame();
 
 	auto depthFormat = info().depthFormat;
 
-	RDS_CORE_ASSERT(Util::isVkFormatSupport(depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), "");
+	RDS_CORE_ASSERT(Util::isVkFormatSupport(depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT, rdDevVk), "");
 
 	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage = RenderMemoryUsage::GpuOnly;
-	_vkDepthImage.create(vkAllocCallbacks, &allocInfo, sCast<u32>(info().rect2f.w), sCast<u32>(info().rect2f.h)
+	_vkDepthImage.create(rdDevVk, vkAllocCallbacks, &allocInfo, sCast<u32>(info().rect2f.w), sCast<u32>(info().rect2f.h)
 		, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, QueueTypeFlags::Graphics);
-	_vkDepthImageView.create(_vkDepthImage.hnd(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	_vkDepthImageView.create(_vkDepthImage.hnd(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, rdDevVk);
 
 	{
-		auto* cmdBuf = rdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		RDS_TODO("maybe modify here, but it is not critical path, simple is better");
+		auto* cmdBuf = vkRdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		Util::transitionImageLayout(&_vkDepthImage, depthFormat, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, nullptr, vkGraphicsQueue, cmdBuf);
 
 		//auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -237,11 +253,18 @@ Vk_Swapchain::createDepthResources()
 void 
 Vk_Swapchain::destroyDepthResources()
 {
-	_vkDepthImageView.destroy();
+	auto* rdDevVk = renderDeviceVk();
+
+	_vkDepthImageView.destroy(rdDevVk);
 	_vkDepthImage.destroy();
 }
 
-Renderer_Vk* Vk_Swapchain::renderer() { return Renderer_Vk::instance(); }
+RenderDevice_Vk* 
+Vk_Swapchain::renderDeviceVk()
+{
+	RDS_CORE_ASSERT(_rdCtx, "");
+	return _rdCtx->renderDeviceVk();
+}
 
 #endif
 }

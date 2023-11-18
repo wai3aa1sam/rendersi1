@@ -55,9 +55,11 @@ TransferRequest::reset(TransferContext* tsfCtx)
 	waitUploadTextureCompleted();
 
 	_tsfCtx		= tsfCtx;
-	_tsfCmdBuf		= _tsfCtx ?  _tsfCtx->device()->transferFrame().requestCommandBuffer()	: nullptr;
-	_uploadBufCmds	= _tsfCtx ? &_tsfCtx->device()->transferFrame()._uploadBufCmds			: nullptr;
-	_uploadTexCmds	= _tsfCtx ? &_tsfCtx->device()->transferFrame()._uploadTexCmds			: nullptr;
+	auto* rdDev = _tsfCtx ?  _tsfCtx->renderDevice() : nullptr;
+
+	_tsfCmdBuf		= _tsfCtx ?  rdDev->transferFrame().requestCommandBuffer()	: nullptr;
+	_uploadBufCmds	= _tsfCtx ? &rdDev->transferFrame()._uploadBufCmds			: nullptr;
+	_uploadTexCmds	= _tsfCtx ? &rdDev->transferFrame()._uploadTexCmds			: nullptr;
 
 	if (_tsfCtx)
 	{
@@ -91,8 +93,12 @@ TransferRequest::uploadTexture(Texture2D* tex, StrView filename)
 void 
 TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
 {
+	throwIf(!OsTraits::isMainThread(), "transferFrame() is not thread safe");
+
 	RDS_CORE_ASSERT(!cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr(), "Create Texture2D should use either filename or imageUpload, not both");
 	RDS_CORE_ASSERT(_uploadTexCmds, "");
+
+	cDesc._internal_create(_tsfCtx->renderDevice());
 
 	UploadTextureJob* job = nullptr;
 	{

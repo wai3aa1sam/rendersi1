@@ -8,8 +8,10 @@
 namespace rds
 {
 
-SPtr<RenderContext> Renderer::createContext(const RenderContext_CreateDesc& cDesc)
+SPtr<RenderContext> 
+RenderDevice::createContext(const RenderContext_CreateDesc& cDesc)
 {
+	cDesc._internal_create(this);
 	auto p = onCreateContext(cDesc);
 	p->onPostCreate(cDesc);
 	return p;
@@ -20,9 +22,17 @@ SPtr<RenderContext> Renderer::createContext(const RenderContext_CreateDesc& cDes
 #endif // 0
 #if 1
 
-RenderContext::CreateDesc RenderContext::makeCDesc() { return CreateDesc{}; }
+RenderContext::CreateDesc 
+RenderContext::makeCDesc() 
+{ 
+	return CreateDesc{}; 
+}
 
-SPtr<RenderContext> RenderContext::make(const CreateDesc& cDesc) { return Renderer::instance()->createContext(cDesc); }
+SPtr<RenderContext> 
+RenderContext::make(const CreateDesc& cDesc) 
+{ 
+	return Renderer::rdDev()->createContext(cDesc); 
+}
 
 RenderContext::RenderContext()
 {
@@ -31,19 +41,26 @@ RenderContext::RenderContext()
 
 RenderContext::~RenderContext()
 {
-
+	RDS_LOG_DEBUG("~RenderContext()");
 }
 
 void
 RenderContext::create(const CreateDesc& cDesc)
 {
+	destroy();
+
+	Base::create(cDesc);
 	onCreate(cDesc);
 }
 
 void
 RenderContext::destroy()
 {
+	if (!Base::hasCreated())
+		return;
+
 	onDestroy();
+	Base::destroy();
 }
 
 void
@@ -91,12 +108,6 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 	_framebufferSize.y = cDesc.window->clientRect().h;
 
 	_nativeUIWindow = cDesc.window;
-}
-
-void 
-RenderContext::waitIdle()
-{
-	RDS_CORE_ASSERT(false);
 }
 
 void

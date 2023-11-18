@@ -144,27 +144,24 @@ struct TestUBO
 #endif // 0
 #if 1
 
-extern Vk_DescriptorSetLayout_T* g_testVkDescriptorSetLayout;
-
 class RenderContext_Vk : public RenderResource_Vk<RenderContext>
 {
 public:
+	using Base				= RenderResource_Vk<RenderContext>;
+	using Vk_RenderFrames	= Vector<Vk_RenderFrame, s_kFrameInFlightCount>;
+
+public:
 	RenderContext_Vk();
 	virtual ~RenderContext_Vk();
-
-	Renderer_Vk* renderer();
 
 	Vk_Queue* vkGraphicsQueue();
 	Vk_Queue* vkTransferQueue();
 	Vk_Queue* vkPresentQueue();
 
 	Vk_CommandBuffer_T* vkCommandBuffer();
-	Vk_CommandBuffer* vkGraphicsCmdBuf();
+	Vk_CommandBuffer*	graphicsVkCmdBuf();
 
-
-	Vk_RenderFrame& renderFrame();
-
-	virtual void waitIdle() override;
+	Vk_RenderFrame& vkRdFrame();
 
 public:
 	void onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd);
@@ -190,11 +187,8 @@ protected:
 	virtual void onCommit(TransferCommandBuffer& transferBuf) override;
 	virtual void onUploadBuffer					(RenderFrameUploadBuffer& rdfUploadBuf) override;
 	void		_onUploadBuffer_MemCopyMutex	(RenderFrameUploadBuffer& rdfUploadBuf);
-	void		_onUploadBuffer_MemCopyPerThread(RenderFrameUploadBuffer& rdfUploadBuf);
-	void		_onUploadBuffer_StagePerThread	(RenderFrameUploadBuffer& rdfUploadBuf);
 
 	void test_extraDrawCall(RenderCommandBuffer& renderCmdBuf);
-	Vk_DescriptorSetLayout& testVkDescriptorSetLayout() { RDS_WARN_ONCE("remoev"); return _testVkDescriptorSetLayout; }
 
 protected:
 	void beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
@@ -203,73 +197,37 @@ protected:
 
 	void beginRenderPass(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
 	void endRenderPass	(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
-	void testDrawCall(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx, Vk_Buffer* vtxBuf);
 
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
 
 protected:
-	void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx);
-
 	void createTestRenderPass(Vk_Swapchain_CreateDesc& vkSwapchainCDesc);
-	void createTestGraphicsPipeline();
-	void createTestVertexBuffer(Vk_Buffer* vkBuf, float z = 0.0f);
-	void createTestIndexBuffer();
-
-	void createTestDescriptorSetLayout();
-	void createTestUniformBuffer();
-	void createTestDescriptorPool();
-	void createTestDescriptorSets();
-	void updateTestUBO(u32 curImageIdx);
-
-	void createTestTextureImage();
-	void createTestTextureImageView();
-	void createTestTextureSampler();
 
 protected:
-	Renderer_Vk*	_renderer		= nullptr;
-
 	RDS_PROFILE_GPU_CTX_VK(_gpuProfilerCtx);
 
 	Vk_Swapchain	_vkSwapchain;
-	
-	Vk_Pipeline			_testVkPipeline;
-	Vk_RenderPass		_testVkRenderPass;
-	Vk_PipelineLayout	_testVkPipelineLayout;
-	Vk_Buffer			_testVkVtxBuffer;
-	Vk_Buffer			_testVkVtxBuffer2;
-	Vk_Buffer			_testVkIdxBuffer;
-
-	Vk_DescriptorSetLayout									_testVkDescriptorSetLayout;
-	Vector<Vk_Buffer,			s_kFrameInFlightCount>		_testVkUniformBuffers;
-	Vector<Vk_ScopedMemMapBuf,	s_kFrameInFlightCount>		_memMapUniformBufs;
-	Vk_DescriptorPool										_testVkDescriptorPool;
-	Vector<Vk_DescriptorSet, s_kFrameInFlightCount>			_testVkDescriptorSets;
-
-	Vk_Image		_testVkTextureImage;
-	Vk_ImageView	_testVkTextureImageView;
-	Vk_Sampler		_testVkTextureSampler;
+	Vk_RenderPass	_testVkRenderPass;
 
 	Vk_Queue _vkGraphicsQueue;
 	Vk_Queue _vkPresentQueue;
 	Vk_Queue _vkTransferQueue;
 
-	Vector<Vk_RenderFrame, s_kFrameInFlightCount> _renderFrames;
-	Vk_CommandBuffer* _curGraphicsCmdBuf = nullptr;
+	Vk_RenderFrames		_vkRdFrames;
+	Vk_CommandBuffer*	_curGraphicsVkCmdBuf = nullptr;
 
 	bool _shdSwapBuffers = false;
 };
-
-inline Renderer_Vk* RenderContext_Vk::renderer() { return _renderer; }
 
 inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return &_vkGraphicsQueue; }
 inline Vk_Queue* RenderContext_Vk::vkTransferQueue()	{ return &_vkTransferQueue; }
 inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; }
 
 
-inline Vk_CommandBuffer_T*	RenderContext_Vk::vkCommandBuffer()		{ return _curGraphicsCmdBuf->hnd(); }
-inline Vk_CommandBuffer*	RenderContext_Vk::vkGraphicsCmdBuf()	{ return _curGraphicsCmdBuf; }
+inline Vk_CommandBuffer_T*	RenderContext_Vk::vkCommandBuffer()		{ return _curGraphicsVkCmdBuf->hnd(); }
+inline Vk_CommandBuffer*	RenderContext_Vk::graphicsVkCmdBuf()	{ return _curGraphicsVkCmdBuf; }
 
-inline Vk_RenderFrame& RenderContext_Vk::renderFrame() { return _renderFrames[_curFrameIdx]; }
+inline Vk_RenderFrame& RenderContext_Vk::vkRdFrame() { return _vkRdFrames[_curFrameIdx]; }
 
 
 #endif

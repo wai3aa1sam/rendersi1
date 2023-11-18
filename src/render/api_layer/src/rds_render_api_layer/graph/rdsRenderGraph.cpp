@@ -19,7 +19,7 @@ RenderGraph::~RenderGraph()
 	destroy();
 }
 
-void RenderGraph::create(StrView name, Renderer* rdr, RenderContext* rdCtx, IAllocator* alloc)
+void RenderGraph::create(StrView name, RenderDevice* rdDev, RenderContext* rdCtx, IAllocator* alloc)
 {
 	destroy();
 

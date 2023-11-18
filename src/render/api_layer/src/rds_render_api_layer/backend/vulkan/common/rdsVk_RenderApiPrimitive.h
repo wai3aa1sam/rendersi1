@@ -9,8 +9,8 @@ namespace rds
 {
 
 using Vk_Instance_T				= VkInstance_T;
-using Vk_PhysicalDevice			= VkPhysicalDevice_T;
-using Vk_Device					= VkDevice_T;
+using Vk_PhysicalDevice_T		= VkPhysicalDevice_T;
+using Vk_Device_T				= VkDevice_T;
 using Vk_Queue_T				= VkQueue_T;
 using Vk_Surface_T				= VkSurfaceKHR_T;
 using Vk_Swapchain_T			= VkSwapchainKHR_T;
@@ -36,9 +36,9 @@ using Vk_BufferView_T			= VkBufferView_T;
 using Vk_Image_T				= VkImage_T;
 using Vk_Sampler_T				= VkSampler_T;
 using Vk_ImageView_T			= VkImageView_T;
-using Vk_DeviceMemory			= VkDeviceMemory_T;
+using Vk_DeviceMemory_T			= VkDeviceMemory_T;
 
-using Vk_DebugUtilsMessenger	= VkDebugUtilsMessengerEXT_T;
+using Vk_DebugUtilsMessenger_T	= VkDebugUtilsMessengerEXT_T;
 
 #if		RDS_VK_VER_1_3
 
@@ -59,13 +59,13 @@ using Vk_PipelineStageFlags = VkPipelineStageFlags2KHR;
 #endif // RDS_VK_VER_1_3
 
 
-class Vk_PipelineCache;
+class	Vk_PipelineCache;
 
-struct Vk_RenderApiUtil;
-class Renderer_Vk;
+struct	Vk_RenderApiUtil;
+class	RenderDevice_Vk;
 
-struct SamplerState;
-class Texture2D_Vk;
+struct	SamplerState;
+class	Texture2D_Vk;
 
 template<class T>
 class RenderApiResource_Vk : public NonCopyable
@@ -211,7 +211,7 @@ template<class T> inline Vk_Allocator*	Vk_AllocableRenderApiPrimitive<T>::_inter
 
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive-Impl ---
+#pragma mark --- rdsVk_RenderApiPrimitive-Decl ---
 #endif // 0
 #if 1
 
@@ -227,59 +227,89 @@ public:
 
 public:
 	Vk_Instance() = default;
-	~Vk_Instance() { destroy(); }
+	~Vk_Instance() = default;
 
-	void create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator);
-	void destroy();
+	Vk_Instance(Vk_Instance&&)	{ throwIf(true, ""); }
+	void operator=(Vk_Instance&&)		{ throwIf(true, ""); }
+
+	void create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_DebugUtilsMessenger>-Impl ---
+#pragma mark --- rdsVk_DebugUtilsMessenger-Decl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger> : public RenderApiPrimitive_Base_Vk<Vk_DebugUtilsMessenger>
+class Vk_DebugUtilsMessenger : public Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger_T>
 {
 public:
-	void destroy();
+	using Base = Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger_T>;
+
+public:
+	Vk_DebugUtilsMessenger()	= default;
+	~Vk_DebugUtilsMessenger()	= default;
+
+	Vk_DebugUtilsMessenger(Vk_DebugUtilsMessenger&&)	{ throwIf(true, ""); }
+	void operator=(Vk_DebugUtilsMessenger&&)			{ throwIf(true, ""); }
+
+	void create	(RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_PhysicalDevice>-Impl ---
+#pragma mark --- rdsVk_PhysicalDevice-Decl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_PhysicalDevice> : public RenderApiPrimitive_Base_Vk<Vk_PhysicalDevice>
+class Vk_PhysicalDevice : public Vk_RenderApiPrimitive<Vk_PhysicalDevice_T>
 {
 public:
+	using Base = Vk_RenderApiPrimitive<Vk_PhysicalDevice_T>;
+
+public:
+	Vk_PhysicalDevice()		= default;
+	~Vk_PhysicalDevice()	= default;
+
+	Vk_PhysicalDevice(Vk_PhysicalDevice&&)	{ throwIf(true, ""); }
+	void operator=(Vk_PhysicalDevice&&)		{ throwIf(true, ""); }
+
+	void create	(Vk_PhysicalDevice_T* vkPhyDevHnd);
 	void destroy();
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Device>-Impl ---
+#pragma mark --- rdsVk_Device-Decl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_Device> : public RenderApiPrimitive_Base_Vk<Vk_Device>
+class Vk_Device : public Vk_RenderApiPrimitive<Vk_Device_T>
 {
 public:
-	void destroy();
+	using Base = Vk_RenderApiPrimitive<Vk_Device_T>;
+
+public:
+	Vk_Device()	= default;
+	~Vk_Device()	= default;
+
+	Vk_Device(Vk_Device&&)		{ throwIf(true, ""); }
+	void operator=(Vk_Device&&)	{ throwIf(true, ""); }
+
+	void create	(RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 
 #if 0
-#pragma mark --- rdsVk_Surface-Impl ---
+#pragma mark --- rdsVk_Surface-Decl ---
 #endif // 0
 #if 1
 
@@ -289,46 +319,26 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_Surface_T>;
 
 public:
-	Vk_Surface() = default;
-	~Vk_Surface() 
-	{
-		destroy(nullptr);
-	}
+	Vk_Surface()	= default;
+	~Vk_Surface()	= default;
 
 	Vk_Surface(Vk_Surface&&)		{ throwIf(true, ""); }
 	void operator=(Vk_Surface&&)	{ throwIf(true, ""); }
 
-	void create(NativeUIWindow* wnd);
-	void create(NativeUIWindow* wnd, Vk_Instance_T* instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator);
-	void destroy(NativeUIWindow* wnd);
+	void create	(NativeUIWindow* wnd, RenderDevice_Vk* rdDevVk);
+	void create	(NativeUIWindow* wnd, Vk_Instance_T* instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, RenderDevice_Vk* rdDevVk);
+	void destroy(NativeUIWindow* wnd, RenderDevice_Vk* rdDevVk);
 
 protected:
 	NativeUIWindow* _wnd = nullptr;
 };
 
-#else
-
-template<>
-class Vk_RenderApiPrimitive<Vk_Surface> : public RenderApiPrimitive_Base_Vk<Vk_Surface>
-{
-public:
-	void destroy();
-};
-
-
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Queue>-Impl ---
+#pragma mark --- rdsVk_Queue-Decl ---
 #endif // 0
 #if 1
-
-//template<>
-//class Vk_RenderApiPrimitive<Vk_Queue> : public RenderApiPrimitive_Base_Vk<Vk_Queue>
-//{
-//public:
-//	void destroy();
-//};
 
 class Vk_Queue : public Vk_RenderApiPrimitive<Vk_Queue_T>
 {
@@ -342,8 +352,8 @@ public:
 	Vk_Queue(Vk_Queue&&)		{ throwIf(true, ""); }
 	void operator=(Vk_Queue&&)	{ throwIf(true, ""); }
 
-	void create(QueueTypeFlags type, RenderDevice_Vk* rdDev);
-	void create(u32 familyIdx, Vk_Device* vkDevice);
+	void create(QueueTypeFlags type, RenderDevice_Vk* rdDevVk);
+	void create(u32 familyIdx, Vk_Device_T* vkDevice);
 	void destroy();
 
 	u32 familyIdx() const;
@@ -361,21 +371,7 @@ inline u32 Vk_Queue::queueIdx()		const { return _queueIdx; }
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Swapchain>-Impl ---
-#endif // 0
-#if 0
-
-template<>
-class Vk_RenderApiPrimitive<Vk_Swapchain> : public RenderApiPrimitive_Base_Vk<Vk_Swapchain>
-{
-public:
-	void destroy();
-};
-
-#endif
-
-#if 0
-#pragma mark --- rdsVk_Image-Impl ---
+#pragma mark --- rdsVk_Image-Decl ---
 #endif // 0
 #if 1
 
@@ -392,33 +388,18 @@ public:
 	void operator=	(Vk_Image&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
 	void create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	void create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create(Vk_Image_T* vkImage);
 
 	void destroy();
 };
 
-
-//template<>
-//class Vk_RenderApiPrimitive<Vk_Image> : public RenderApiPrimitive_Base_Vk<Vk_Image>
-//{
-//public:
-//	void destroy();
-//};
-
 #endif
 
 #if 0
-#pragma mark --- rdsVk_ImageView-Impl ---
+#pragma mark --- rdsVk_ImageView-Decl ---
 #endif // 0
 #if 1
-
-//template<>
-//class Vk_RenderApiPrimitive<Vk_ImageView> : public RenderApiPrimitive_Base_Vk<Vk_ImageView>
-//{
-//public:
-//	void destroy();
-//};
 
 class Vk_ImageView : public Vk_RenderApiPrimitive<Vk_ImageView_T>
 {
@@ -426,34 +407,26 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_ImageView_T>;
 
 public:
-	Vk_ImageView() = default;
-	~Vk_ImageView() { RDS_CORE_ASSERT(!hnd(), ""); }
+	Vk_ImageView()	= default;
+	~Vk_ImageView() = default;
 
 	Vk_ImageView(Vk_ImageView&&)	{ throwIf(true, ""); }
 	void operator=(Vk_ImageView&&)	{ throwIf(true, ""); }
 
-	void create(VkImageViewCreateInfo* viewInfo);
-	void create(Vk_Image*   vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount = 1);
-	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount = 1);
-	void create(Texture2D_Vk* tex2DVk, Renderer_Vk* rdr);
-	void destroy();
-	void destroy(RenderDevice_Vk* rdDev);
+	void create(VkImageViewCreateInfo* viewInfo, RenderDevice_Vk* rdDevVk);
+	void create(Vk_Image*	vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount, RenderDevice_Vk* rdDevVk);
+	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount, RenderDevice_Vk* rdDevVk);
+	void create(Texture2D_Vk* tex2DVk, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_ImageView-Impl ---
+#pragma mark --- rdsVk_ImageView-Decl ---
 #endif // 0
 #if 1
-
-//template<>
-//class Vk_RenderApiPrimitive<Vk_ImageView> : public RenderApiPrimitive_Base_Vk<Vk_ImageView>
-//{
-//public:
-//	void destroy();
-//};
 
 class Vk_Sampler : public Vk_RenderApiPrimitive<Vk_Sampler_T>
 {
@@ -467,25 +440,18 @@ public:
 	Vk_Sampler(Vk_Sampler&&)		{ throwIf(true, ""); }
 	void operator=(Vk_Sampler&&)	{ throwIf(true, ""); }
 
-	void create(VkSamplerCreateInfo* samplerInfo);
-	void create(const SamplerState& samplerState, Renderer_Vk* rdr);
+	void create(VkSamplerCreateInfo* samplerInfo, RenderDevice_Vk* rdDevVk);
+	void create(const SamplerState& samplerState, RenderDevice_Vk* rdDevVk);
 
-	void destroy(Renderer_Vk* rdr);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_Framebuffer-Impl ---
+#pragma mark --- rdsVk_Framebuffer-Decl ---
 #endif // 0
 #if 1
-
-//template<>
-//class Vk_RenderApiPrimitive<Vk_Framebuffer> : public RenderApiPrimitive_Base_Vk<Vk_Framebuffer>
-//{
-//public:
-//	void destroy();
-//};
 
 class Vk_Framebuffer : public Vk_RenderApiPrimitive<Vk_Framebuffer_T>
 {
@@ -493,20 +459,20 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_Framebuffer_T>;
 
 public:
-	Vk_Framebuffer() = default;
-	~Vk_Framebuffer() { destroy(); }
+	Vk_Framebuffer()	= default;
+	~Vk_Framebuffer()	= default;
 
 	Vk_Framebuffer(Vk_Framebuffer&&)	{ throwIf(true, ""); }
 	void operator=(Vk_Framebuffer&&)	{ throwIf(true, ""); }
 
-	void create(const VkFramebufferCreateInfo* pCreateInfo);
-	void destroy();
+	void create	(const VkFramebufferCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_ShaderModule-Impl ---
+#pragma mark --- rdsVk_ShaderModule-Decl ---
 #endif // 0
 #if 1
 
@@ -517,31 +483,21 @@ public:
 
 public:
 	Vk_ShaderModule() = default;
-	~Vk_ShaderModule() { destroy(); }
+	~Vk_ShaderModule();
 
-	Vk_ShaderModule(Vk_ShaderModule&&)	{ throwIf(true, ""); }
-	void operator=(Vk_ShaderModule&&)	{ throwIf(true, ""); }
+	Vk_ShaderModule	(Vk_ShaderModule&&)	{ throwIf(true, ""); }
+	void operator=	(Vk_ShaderModule&&)	{ throwIf(true, ""); }
 
-	void create(Renderer_Vk* rdr, StrView filename);
-	void destroy();
-
-protected:
-	Renderer_Vk* _rdr = nullptr;
+	void create	(StrView filename, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderPass-Impl ---
+#pragma mark --- rdsVk_RenderPass-Decl ---
 #endif // 0
 #if 1
-
-//template<>
-//class Vk_RenderApiPrimitive<Vk_RenderPass> : public RenderApiPrimitive_Base_Vk<Vk_RenderPass>
-//{
-//public:
-//	void destroy();
-//};
 
 class Vk_RenderPass : public Vk_RenderApiPrimitive<Vk_RenderPass_T>
 {
@@ -549,21 +505,21 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_RenderPass_T>;
 
 public:
-	Vk_RenderPass() = default;
-	~Vk_RenderPass() { destroy(); }
+	Vk_RenderPass()		= default;
+	~Vk_RenderPass()	= default;
 
 	Vk_RenderPass	(Vk_RenderPass&&) { throwIf(true, ""); }
 	void operator=	(Vk_RenderPass&&) { throwIf(true, ""); }
 
-	void create(const VkRenderPassCreateInfo* pCreateInfo);
-	void destroy();
+	void create	(const VkRenderPassCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_PipelineLayout>-Impl ---
+#pragma mark --- rdsVk_PipelineLayout-Decl ---
 #endif // 0
 #if 1
 
@@ -573,20 +529,20 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_PipelineLayout_T>;
 
 public:
-	Vk_PipelineLayout() = default;
-	~Vk_PipelineLayout() { destroy(); }
+	Vk_PipelineLayout()		= default;
+	~Vk_PipelineLayout()	= default;
 
 	Vk_PipelineLayout(Vk_PipelineLayout&& rhs)	noexcept : Base(rds::move(rhs)) {}
 	void operator=	 (Vk_PipelineLayout&& rhs)	noexcept { return Base::operator=(rds::move(rhs)); }
 
-	void create(Renderer_Vk* rdr, const VkPipelineLayoutCreateInfo* pCreateInfo);
-	void destroy();
+	void create	(const VkPipelineLayoutCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_PipelineCache-Impl ---
+#pragma mark --- rdsVk_PipelineCache-Decl ---
 #endif // 0
 #if 1
 
@@ -608,7 +564,7 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_Pipeline-Impl ---
+#pragma mark --- rdsVk_Pipeline-Decl ---
 #endif // 0
 #if 1
 
@@ -618,48 +574,20 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_Pipeline_T>;
 
 public:
-	Vk_Pipeline() = default;
-	~Vk_Pipeline() { destroy(); }
+	Vk_Pipeline()	= default;
+	~Vk_Pipeline() = default;
 
 	Vk_Pipeline		(Vk_Pipeline&& rhs)	noexcept : Base(rds::move(rhs)) {}
 	void operator=	(Vk_Pipeline&& rhs)	noexcept { return Base::operator=(rds::move(rhs)); }
 
-	void create(Renderer_Vk* rdr, const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache);
-	void destroy();
+	void create	(const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_CommandPool_T>-Impl ---
-#endif // 0
-#if 0
-
-template<>
-class Vk_RenderApiPrimitive<Vk_CommandPool_T> : public RenderApiPrimitive_Base_Vk<Vk_CommandPool_T>
-{
-public:
-	void destroy();
-};
-
-#endif
-
-#if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_CommandBuffer_T>-Impl ---
-#endif // 0
-#if 0
-
-template<>
-class Vk_RenderApiPrimitive<Vk_CommandBuffer_T> : public RenderApiPrimitive_Base_Vk<Vk_CommandBuffer_T>
-{
-public:
-	void destroy();
-};
-
-#endif
-
-#if 0
-#pragma mark --- rdsVk_Semaphore-Impl ---
+#pragma mark --- rdsVk_Semaphore-Decl ---
 #endif // 0
 #if 1
 
@@ -669,21 +597,21 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_Semaphore_T>;
 
 public:
-	Vk_Semaphore() = default;
-	~Vk_Semaphore() { destroy(); }
+	Vk_Semaphore()	= default;
+	~Vk_Semaphore() = default;
 
 	Vk_Semaphore(Vk_Semaphore&&)	{ throwIf(true, ""); }
 	void operator=(Vk_Semaphore&&)	{ throwIf(true, ""); }
 
-	void create();
-	void create(const VkSemaphoreCreateInfo* pCreateInfo);
-	void destroy();
+	void create	(RenderDevice_Vk* rdDevVk);
+	void create	(const VkSemaphoreCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_Fence-Impl ---
+#pragma mark --- rdsVk_Fence-Decl ---
 #endif // 0
 #if 1
 
@@ -693,32 +621,34 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_Fence_T>;
 
 public:
-	Vk_Fence() = default;
-	~Vk_Fence() { destroy(); }
+	Vk_Fence()	= default;
+	~Vk_Fence() = default;
 
 	Vk_Fence(Vk_Fence&&)		{ throwIf(true, ""); }
 	void operator=(Vk_Fence&&)	{ throwIf(true, ""); }
 
-	void create();
-	void create(const VkFenceCreateInfo* pCreateInfo);
-	void destroy();
+	void create	(RenderDevice_Vk* rdDevVk);
+	void create	(const VkFenceCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 
-	VkResult wait(RenderDevice_Vk* rdDev, u64 timeout = NumLimit<u64>::max());
-	VkResult reset(RenderDevice_Vk* rdDev);
+	VkResult wait	(RenderDevice_Vk* rdDev, u64 timeout = NumLimit<u64>::max());
+	VkResult reset	(RenderDevice_Vk* rdDev);
 };
 
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_DeviceMemory>-Impl ---
+#pragma mark --- rdsVk_DeviceMemory-Decl ---
 #endif // 0
 #if 1
 
-template<>
-class Vk_RenderApiPrimitive<Vk_DeviceMemory> : public RenderApiPrimitive_Base_Vk<Vk_DeviceMemory>
+class Vk_DeviceMemory : public Vk_RenderApiPrimitive<Vk_DeviceMemory_T>
 {
 public:
-	void destroy();
+	using Base = Vk_RenderApiPrimitive<Vk_DeviceMemory_T>;
+
+public:
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
@@ -727,14 +657,6 @@ public:
 #pragma mark --- rdsVk_Buffer-Decl ---
 #endif // 0
 #if 1
-
-//template<>
-//class Vk_RenderApiPrimitive<Vk_Buffer> : public AllocablePrimitive_Vk<Vk_Buffer>
-//{
-//public:
-//	void destroy();
-//};
-
 
 class Vk_Buffer : public Vk_AllocableRenderApiPrimitive<Vk_Buffer_T>
 {
@@ -748,8 +670,8 @@ public:
 	Vk_Buffer		(Vk_Buffer&& rhs) noexcept { move(rds::move(rhs)); }
 	void operator=	(Vk_Buffer&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
-	void create(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	void create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create	(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create	(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void destroy();
 };
 
@@ -757,16 +679,9 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_BufferView>-Impl ---
+#pragma mark --- rdsVk_BufferView-Decl ---
 #endif // 0
 #if 1
-
-//template<>
-//class Vk_RenderApiPrimitive<Vk_BufferView> : public RenderApiPrimitive_Base_Vk<Vk_BufferView>
-//{
-//public:
-//	void destroy();
-//};
 
 class Vk_BufferView : public Vk_RenderApiPrimitive<Vk_BufferView_T>
 {
@@ -774,17 +689,17 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_BufferView_T>;
 
 public:
-	Vk_BufferView() = default;
-	~Vk_BufferView() { destroy(); }
+	Vk_BufferView()		= default;
+	~Vk_BufferView()	= default;
 
-	void create(const VkDescriptorSetLayoutCreateInfo* pCreateInfo);
-	void destroy();
+	void create	(const VkDescriptorSetLayoutCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- Vk_DescriptorSetLayout-Decl ---
+#pragma mark --- rdsVk_DescriptorSetLayout-Decl ---
 #endif // 0
 #if 1
 
@@ -794,17 +709,17 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_DescriptorSetLayout_T>;
 
 public:
-	Vk_DescriptorSetLayout() = default;
-	~Vk_DescriptorSetLayout() { destroy(); }
+	Vk_DescriptorSetLayout()	= default;
+	~Vk_DescriptorSetLayout()	= default;
 
-	void create(const VkDescriptorSetLayoutCreateInfo* cInfo);
-	void destroy();
+	void create	(const VkDescriptorSetLayoutCreateInfo* cInfo, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- Vk_DescriptorPool-Decl ---
+#pragma mark --- rdsVk_DescriptorPool-Decl ---
 #endif // 0
 #if 1
 
@@ -814,23 +729,22 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_DescriptorPool_T>;
 
 public:
-	Vk_DescriptorPool() = default;
-	~Vk_DescriptorPool();
+	Vk_DescriptorPool()		= default;
+	~Vk_DescriptorPool()	= default;
 
 	Vk_DescriptorPool	(Vk_DescriptorPool&& rhs) noexcept : Base(rds::move(rhs)) {}
 	void operator=		(Vk_DescriptorPool&& rhs) noexcept { return Base::operator=(rds::move(rhs)); }
 	
-	VkResult create(VkDescriptorPoolCreateInfo* cInfo, Renderer_Vk* rdr);
+	VkResult	create(VkDescriptorPoolCreateInfo* cInfo, RenderDevice_Vk* rdDevVk);
+	void		destroy(RenderDevice_Vk* rdDevVk);
 
-	void destroy(Renderer_Vk* rdr);
-
-	void reset(VkDescriptorPoolResetFlags flag, Renderer_Vk* rdr);
+	void reset(VkDescriptorPoolResetFlags flag, RenderDevice_Vk* rdDevVk);
 };
 
 #endif
 
 #if 0
-#pragma mark --- Vk_DescriptorSet-Decl ---
+#pragma mark --- rdsVk_DescriptorSet-Decl ---
 #endif // 0
 #if 1
 
@@ -840,17 +754,15 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_DescriptorSet_T>;
 
 public:
-	Vk_DescriptorSet() = default;
-	~Vk_DescriptorSet() { destroy(); }
+	Vk_DescriptorSet()	= default;
+	~Vk_DescriptorSet();
 
 	Vk_DescriptorSet(Vk_DescriptorSet&& rhs) noexcept : Base(rds::move(rhs)) {}
 	void operator=	(Vk_DescriptorSet&& rhs) noexcept { return Base::operator=(rds::move(rhs)); }
 
 
-	VkResult create(VkDescriptorSetAllocateInfo* pAllocateInfo);
-	VkResult create(VkDescriptorSetAllocateInfo* pAllocateInfo, Renderer_Vk* rdr);
-
-	void destroy();
+	VkResult	create (VkDescriptorSetAllocateInfo* pAllocateInfo, RenderDevice_Vk* rdDevVk);
+	void		destroy();
 
 protected:
 

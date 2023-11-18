@@ -2,6 +2,8 @@
 #include "rdsShaderResource.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 
+#include "rdsShader.h"
+
 namespace rds
 {
 
@@ -14,7 +16,7 @@ namespace rds
 const ShaderStageInfo& ShaderResources::info() const { return *this->_info; }
 
 void 
-ShaderResources::create(ShaderStage* shaderStage)
+ShaderResources::create(ShaderStage* shaderStage, ShaderPass* pass)
 {
 	using ConstBufInfo = ShaderStageInfo::ConstBuffer;
 
@@ -25,7 +27,7 @@ ShaderResources::create(ShaderStage* shaderStage)
 	for (const ConstBufInfo& e : constBufInfos)
 	{
 		ConstBuffer& cb = _constBufs.emplace_back();
-		cb.create(&e);
+		cb.create(&e, pass);
 	}
 
 	const auto& texInfos = info().textures;
@@ -33,7 +35,7 @@ ShaderResources::create(ShaderStage* shaderStage)
 	for (const auto& e : texInfos)
 	{
 		auto& texParam = _texParams.emplace_back();
-		texParam.create(&e);
+		texParam.create(&e, pass);
 	}
 
 	const auto& samplerInfos = info().samplers;
@@ -41,7 +43,7 @@ ShaderResources::create(ShaderStage* shaderStage)
 	for (const auto& e : samplerInfos)
 	{
 		auto& samplerParam = _samplerParams.emplace_back();
-		samplerParam.create(&e);
+		samplerParam.create(&e, pass);
 	}
 }
 
@@ -102,20 +104,21 @@ ShaderResources::setSamplerParam(StrView name, const SamplerState& v)
 #if 1
 
 void 
-ShaderResources::ConstBuffer::create(const Info* info)
+ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass)
 {
 	destroy();
 	throwIf(info->size == 0, "constbuffer size is 0");
 
-	auto bufSize = info->size;
-
+	auto* rdDev		= pass->shader()->renderDevice();
+	auto bufSize	= info->size;
+	
 	_info = info;
 	_cpuBuf.resize(bufSize);
 
 	auto bufCDesc = RenderGpuBuffer::makeCDesc();
 	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Const;
 	bufCDesc.bufSize	= bufSize;
-	_gpuBuffer = Renderer::instance()->createRenderGpuBuffer(bufCDesc);
+	_gpuBuffer = rdDev->createRenderGpuBuffer(bufCDesc);
 }
 
 void 
@@ -162,15 +165,20 @@ ShaderResources::ConstBuffer::uploadToGpu()
 #endif // 0
 #if 1
 
+void 
+ShaderResources::TexParam::create(const Info* info, ShaderPass* pass)
+{
+	Base::create(info);
+}
+
 Texture* 
-ShaderResources::TexParam::getUpdatedTexture()
+ShaderResources::TexParam::getUpdatedTexture(RenderDevice* rdDev)
 {
 	if (!_tex) 
 	{
-		auto* rdr = Renderer::instance();
 		switch (_info->dataType) 
 		{
-			case DataType::Texture2D: { return rdr->textureStock().error; } break;
+			case DataType::Texture2D: { return rdDev->textureStock().error; } break;
 		}
 		RDS_THROW("unsupported texture type");
 	}
@@ -180,5 +188,25 @@ ShaderResources::TexParam::getUpdatedTexture()
 }
 
 #endif
+
+#if 0
+#pragma mark --- rdsShaderResources::SamplerParam-Impl ---
+#endif // 0
+#if 1
+
+void 
+ShaderResources::SamplerParam::create(const Info* info, ShaderPass* pass)
+{
+	Base::create(info);
+}
+
+void 
+ShaderResources::SamplerParam::setSamplerParam(const SamplerState& v)
+{
+	_samplerState = v;
+}
+
+#endif
+
 
 }

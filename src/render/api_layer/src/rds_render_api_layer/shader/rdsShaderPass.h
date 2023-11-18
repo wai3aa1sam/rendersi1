@@ -64,18 +64,22 @@ public:
 	using Info = ShaderInfo::Pass;
 
 public:
-	ShaderPass() {}
-	virtual ~ShaderPass() {}
+	ShaderPass();
+	virtual ~ShaderPass();
 
 	void create(Shader* shader, const Info* info, StrView passPath);
+	void destroy();
 
 	VertexStage*	vertexStage();
 	PixelStage*		pixelStage();
 
 	const Info& info() const;
 
+	Shader* shader();
+
 protected:
-	virtual void onCreate(Shader* shader, const Info* info, StrView passPath) {};
+	virtual void onCreate(Shader* shader, const Info* info, StrView passPath);
+	virtual void onDestroy();
 
 protected:
 	Shader*			_shader			= nullptr;
@@ -84,13 +88,14 @@ protected:
 	PixelStage*		_pixelStage		= nullptr;
 };
 
-inline void ShaderPass::create(Shader* shader, const Info* info, StrView passPath) { onCreate(shader, info, passPath); }
 
 inline ShaderPass::VertexStage*	ShaderPass::vertexStage()	{ return _vertexStage; }
 inline ShaderPass::PixelStage*	ShaderPass::pixelStage()	{ return _pixelStage; }
 
 
-inline const ShaderPass::Info& ShaderPass::info() const { return *_info; }
+inline const	ShaderPass::Info&	ShaderPass::info() const	{ return *_info; }
+
+inline			Shader*				ShaderPass::shader()		{ return _shader; }
 
 #endif
 

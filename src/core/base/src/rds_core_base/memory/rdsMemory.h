@@ -70,6 +70,7 @@ template<class T> inline
 void
 Singleton<T>::init()
 {
+	RDS_CORE_ASSERT(!s_instance, "Singleton<T> init failed, already inited");
 	RDS_NEW(T)();	// ctor will assign this memory to s_instance;
 }
 
@@ -77,7 +78,7 @@ template<class T> inline
 void
 Singleton<T>::terminate()
 {
-	// throwIf(!s_instance, "Singleton<T> terminate failed, no inited yet"); // don't throw in dtor
+	RDS_CORE_ASSERT(s_instance, "Singleton<T> terminate failed, no inited yet");
 	RDS_DELETE(s_instance);
 }
 

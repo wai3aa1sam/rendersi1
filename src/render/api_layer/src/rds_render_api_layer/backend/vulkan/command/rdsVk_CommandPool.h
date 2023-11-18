@@ -7,6 +7,8 @@
 namespace rds
 {
 
+class RenderDevice_Vk;
+
 #if 0
 #pragma mark --- Vk_CommandPool-Decl ---
 #endif // 0
@@ -27,14 +29,14 @@ public:
 	Vk_CommandPool(Vk_CommandPool&& rhs) { throwIf(true, ""); }
 	void operator=(Vk_CommandPool&& rhs) { throwIf(true, ""); }
 
-	void create(u32 familyIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-	void destroy();
+	void create	(u32 familyIdx, VkCommandPoolCreateFlags createFlags /* = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT*/, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 
-	Vk_CommandBuffer* requestCommandBuffer(VkCommandBufferLevel level);
-	void reset();
+	Vk_CommandBuffer* requestCommandBuffer(VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk);
+	void reset(RenderDevice_Vk* rdDevVk);
 
 protected:
-	template<size_t N> Vk_CommandBuffer* _requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level);
+	template<size_t N> Vk_CommandBuffer* _requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk);
 	void resetCommandBuffers();
 
 protected:
@@ -48,7 +50,7 @@ protected:
 
 template<size_t N> inline
 Vk_CommandBuffer* 
-Vk_CommandPool::_requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level)
+Vk_CommandPool::_requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk)
 {
 	Vk_CommandBuffer* p = nullptr;
 	if (activeCount < vkCmdBufs.size())
@@ -58,7 +60,7 @@ Vk_CommandPool::_requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBu
 	else
 	{
 		auto& cmdBuf = vkCmdBufs.emplace_back(RDS_NEW(Vk_CommandBuffer)());
-		cmdBuf->create(this, level);
+		cmdBuf->create(this, level, rdDevVk);
 		p = cmdBuf.ptr();
 	}
 	activeCount++;

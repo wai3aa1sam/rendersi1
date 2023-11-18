@@ -1,7 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_DescriptorAllocator.h"
 
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
 
@@ -28,17 +28,17 @@ Vk_DescriptorAllocator::~Vk_DescriptorAllocator()
 }
 
 void 
-Vk_DescriptorAllocator::create(Renderer_Vk* rdr)
+Vk_DescriptorAllocator::create(RenderDevice_Vk* rdDevVk)
 {
-	create(makeCDesc(), rdr);
+	create(makeCDesc(), rdDevVk);
 }
 
 void 
-Vk_DescriptorAllocator::create(const CreateDesc& cDesc, Renderer_Vk* rdr)
+Vk_DescriptorAllocator::create(const CreateDesc& cDesc, RenderDevice_Vk* rdDevVk)
 {
 	destroy();
 
-	_rdr		= rdr;
+	_rdDevVk	= rdDevVk;
 	_curPool	= requestPool();
 }
 
@@ -47,18 +47,18 @@ Vk_DescriptorAllocator::destroy()
 {
 	for (auto& e : _freePools)
 	{
-		e.destroy(_rdr);
+		e.destroy(_rdDevVk);
 	}
 	for (auto& e : _usedPools)
 	{
-		e.destroy(_rdr);
+		e.destroy(_rdDevVk);
 	}
 
 	_freePools.clear();
 	_usedPools.clear();
 
-	_curPool.destroy(_rdr);
-	_rdr = nullptr;
+	_curPool.destroy(_rdDevVk);
+	_rdDevVk = nullptr;
 }
 
 void 
@@ -66,7 +66,7 @@ Vk_DescriptorAllocator::reset()
 {
 	for (auto& e : _usedPools)
 	{
-		e.reset(sCast<VkDescriptorPoolResetFlags>(0), _rdr);
+		e.reset(sCast<VkDescriptorPoolResetFlags>(0), _rdDevVk);
 		_freePools.emplace_back(rds::move(e));
 	}
 	_usedPools.clear();
@@ -80,7 +80,7 @@ Vk_DescriptorSet
 Vk_DescriptorAllocator::alloc(const Vk_DescriptorSetLayout* layout)
 {
 	RDS_ASSERT(_curPool.hnd(), "");
-	
+
 	Vk_DescriptorSet out;
 	auto ret = createSet(out, layout, &_curPool);
 
@@ -107,14 +107,14 @@ Vk_DescriptorAllocator::requestPool()
 	}
 	else
 	{
-		createPool(out, _cDesc.poolSizes, _cDesc.setReservedSize, _cDesc.cFlag, _rdr);
+		createPool(out, _cDesc.poolSizes, _cDesc.setReservedSize, _cDesc.cFlag, _rdDevVk);
 	}
 
 	return out;
 }
 
 VkResult 
-Vk_DescriptorAllocator::createPool(Vk_DescriptorPool& out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, Renderer_Vk* rdr)
+Vk_DescriptorAllocator::createPool(Vk_DescriptorPool& out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk)
 {
 	Vector<VkDescriptorPoolSize, 32> sizes;
 	sizes.reserve(poolSizes.sizes.size());
@@ -130,7 +130,7 @@ Vk_DescriptorAllocator::createPool(Vk_DescriptorPool& out, const PoolSizes& pool
 	poolCInfo.poolSizeCount = sCast<u32>(sizes.size());
 	poolCInfo.pPoolSizes	= sizes.data();
 
-	return out.create(&poolCInfo, _rdr);
+	return out.create(&poolCInfo, _rdDevVk);
 }
 
 VkResult 
@@ -142,10 +142,10 @@ Vk_DescriptorAllocator::createSet(Vk_DescriptorSet& out, const Vk_DescriptorSetL
 	allocInfo.descriptorSetCount	= 1;
 	allocInfo.pSetLayouts			= layout->hndArray();
 
-	return out.create(&allocInfo, _rdr);
+	return out.create(&allocInfo, _rdDevVk);
 }
 
-Vk_Device* Vk_DescriptorAllocator::vkDev() { return _rdr->vkDevice(); }
+Vk_Device_T* Vk_DescriptorAllocator::vkDevHnd() { return _rdDevVk->vkDevice(); }
 
 #endif
 
@@ -195,7 +195,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 	#endif // 0
 
 	if (!_writeDescs.is_empty())
-		vkUpdateDescriptorSets(_alloc->vkDev(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
+		vkUpdateDescriptorSets(_alloc->vkDevHnd(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
 
 	return true;
 }
@@ -231,7 +231,7 @@ Vk_DescriptorBuilder::bindTexture(Vk_DescriptorSet& dstSet, const TexParam& texP
 
 	auto& imageInfo	= _imageInfos.emplace_back();
 	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView		= Vk_Texture::getImageViewHnd(texParam.getUpdatedTexture());
+	imageInfo.imageView		= Vk_Texture::getImageViewHnd(texParam.getUpdatedTexture(rdDevVk()));
 	//imageInfo.sampler		= _testVkTextureSampler.hnd();
 
 	auto& out = _writeDescs.emplace_back();
@@ -263,7 +263,7 @@ Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, const Tex
 	shaderRscs._getAutoSetSamplerNameTo(temp, texParam.name());
 	if (auto* samplerParam = shaderRscs.findSamplerParam(temp))
 	{
-		_bindSampler(dstSet, *samplerParam, Vk_Texture::getSamplerHnd(texParam.getUpdatedTexture()), stageFlag);
+		_bindSampler(dstSet, *samplerParam, Vk_Texture::getSamplerHnd(texParam.getUpdatedTexture(rdDevVk())), stageFlag);
 	}
 }
 

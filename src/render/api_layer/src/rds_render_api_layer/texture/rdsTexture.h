@@ -67,6 +67,11 @@ public:
 
 #endif // 1
 
+#if 0
+#pragma mark --- rdsTexture_CreateDesc-Impl ---
+#endif // 0
+#if 1
+
 #define TextureUsage_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(ShaderResource,) \
@@ -77,7 +82,8 @@ public:
 //---
 RDS_ENUM_CLASS(TextureUsage, u8);
 
-struct Texture_CreateDesc
+
+struct Texture_CreateDesc : public RenderResource_CreateDesc
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
@@ -86,14 +92,33 @@ public:
 	SamplerState	samplerState;
 	u8				mipCount		= 1;
 
-	class RenderContext* rdCtx = nullptr;		// TODO: remove
-
-public:
-
 protected:
 	void loadImage(const Image& uploadImage)
 	{
 		format = uploadImage.colorType();
+	}
+
+	void move(Texture_CreateDesc&& rhs)
+	{
+		*this = rhs;
+	}
+};
+
+struct Texture_Desc
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	TextureUsage	usage			= TextureUsage::ShaderResource;
+	ColorType		format			= ColorType::RGBAb;
+	SamplerState	samplerState;
+	u8				mipCount		= 1;
+
+public:
+	Texture_Desc() = default;
+	Texture_Desc(const Texture_CreateDesc& cDesc)
+		: usage(cDesc.usage), format(cDesc.format), samplerState(cDesc.samplerState), mipCount(cDesc.mipCount)
+	{
+
 	}
 };
 
@@ -145,6 +170,7 @@ protected:
 protected:
 	void move(Texture2D_CreateDesc&& rhs)
 	{
+		Base::move(rds::move(rhs));
 		_size			= rhs._size;
 		_uploadImage	= rds::move(rhs._uploadImage);
 		_filename		= rds::move(rhs._filename);
@@ -155,6 +181,8 @@ protected:
 	Image	_uploadImage;
 	String	_filename;
 };
+
+#endif
 
 #if 0
 #pragma mark --- rdsTexture-Decl ---
@@ -167,6 +195,7 @@ public:
 	using Base			= RenderResource;
 	using This			= Texture;
 	using CreateDesc	= Texture_CreateDesc;
+	using Desc			= Texture_Desc;
 
 public:
 	virtual ~Texture()				= default;
@@ -175,8 +204,8 @@ public:
 	void destroy();
 
 public:
-	RenderDataType		type() const;
-	const CreateDesc&	textureDesc() const;
+	RenderDataType		type()			const;
+	const Desc&			textureDesc()	const;
 
 	TextureUsage		usage()			const;
 	ColorType			format()		const;
@@ -191,16 +220,16 @@ protected:
 	Texture(RenderDataType type);
 
 	RenderDataType	_type;
-	CreateDesc		_desc;
+	Desc			_desc;
 };
 
 inline RenderDataType				Texture::type()			const { return _type; }
-inline const Texture::CreateDesc&	Texture::textureDesc()	const { return _desc; }
+inline const Texture::Desc&			Texture::textureDesc()	const { return _desc; }
 
-inline TextureUsage			Texture::usage()		const	{ return textureDesc().usage; }
-inline ColorType			Texture::format()		const	{ return textureDesc().format; }
-inline const SamplerState&	Texture::samplerState()	const	{ return textureDesc().samplerState; }
-inline u8					Texture::mipCount()		const	{ return textureDesc().mipCount; }
+inline TextureUsage					Texture::usage()		const { return textureDesc().usage; }
+inline ColorType					Texture::format()		const { return textureDesc().format; }
+inline const SamplerState&			Texture::samplerState()	const { return textureDesc().samplerState; }
+inline u8							Texture::mipCount()		const { return textureDesc().mipCount; }
 
 #endif
 

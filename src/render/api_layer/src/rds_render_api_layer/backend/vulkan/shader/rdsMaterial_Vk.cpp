@@ -1,7 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsMaterial_Vk.h"
 
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/rdsRenderContext_Vk.h"
@@ -11,25 +11,13 @@
 namespace rds
 {
 
-Vk_DescriptorSetLayout_T* g_testVkDescriptorSetLayout;
-
-
 SPtr<Material> 
-Renderer_Vk::onCreateMaterial(Shader* shader)
-{
-	auto p = onCreateMaterial();
-	p->setShader(shader);
-	return p;
-}
-
-SPtr<Material> 
-Renderer_Vk::onCreateMaterial()
+RenderDevice_Vk::onCreateMaterial(const	Material_CreateDesc& cDesc)
 {
 	auto p = SPtr<Material>(makeSPtr<Material_Vk>());
-	p->create();
+	p->create(cDesc);
 	return p;
 }
-
 
 #if 0
 #pragma mark --- rdsVk_PipelineCDesc-Impl ---
@@ -40,7 +28,7 @@ struct Vk_ShaderStagesCDesc
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	using Vk_ShaderStages = Vector<VkPipelineShaderStageCreateInfo, enumInt(ShaderStageFlag::_kCount)>;
+	using Vk_ShaderStageCInfos = Vector<VkPipelineShaderStageCreateInfo, enumInt(ShaderStageFlag::_kCount)>;
 
 public:
 	static constexpr SizeType s_kLocalSize = 8;
@@ -49,26 +37,26 @@ public:
 	void create(VkGraphicsPipelineCreateInfo& out, ShaderPass_Vk* shaderPass)
 	{
 		destroy();
-		_shaderStages.reserve(enumInt(ShaderStageFlag::_kCount));
+		_shaderStageCInfos.reserve(enumInt(ShaderStageFlag::_kCount));
 
 		const auto& info = shaderPass->info();
 
-		if (!info.vsFunc.is_empty()) { _shaderStages.emplace_back(shaderPass->vkVertexStage()->createVkStageInfo(info.vsFunc.c_str())); }
-		if (!info.psFunc.is_empty()) { _shaderStages.emplace_back(shaderPass->vkPixelStage ()->createVkStageInfo(info.psFunc.c_str())); }
+		if (!info.vsFunc.is_empty()) { _shaderStageCInfos.emplace_back(VkPipelineShaderStageCreateInfo{shaderPass->vkVertexStage()->createVkStageInfo(info.vsFunc.c_str())}); }
+		if (!info.psFunc.is_empty()) { _shaderStageCInfos.emplace_back(VkPipelineShaderStageCreateInfo{shaderPass->vkPixelStage ()->createVkStageInfo(info.psFunc.c_str())}); }
 
-		out.stageCount	= sCast<u32>(_shaderStages.size());
-		out.pStages		= _shaderStages.data();
+		out.stageCount	= sCast<u32>(_shaderStageCInfos.size());
+		out.pStages		= _shaderStageCInfos.data();
 	}
 
 
 protected:
 	void destroy()
 	{
-		_shaderStages.clear();
+		_shaderStageCInfos.clear();
 	}
 
 private:
-	Vk_ShaderStages _shaderStages;
+	Vk_ShaderStageCInfos _shaderStageCInfos;
 };
 
 struct Vk_PipelineLayoutCDesc
@@ -78,7 +66,7 @@ public:
 	static constexpr SizeType s_kLocalSize = 8;
 
 public:
-	void create(Vk_PipelineLayout& out, MaterialPass_Vk* pass, Renderer_Vk* rdr)
+	void create(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDev)
 	{
 		destroy();
 
@@ -95,7 +83,7 @@ public:
 			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
 			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
 		}
-		out.create(rdr, &pipelineLayoutInfo);
+		out.create(&pipelineLayoutInfo, rdDev);
 	}
 
 protected:
@@ -335,7 +323,7 @@ public:
 
 	template<class STAGE>
 	static void 
-	createVkDescriptorSetLayout(Vk_DescriptorSetLayout* dst, STAGE* stage)
+	createVkDescriptorSetLayout(Vk_DescriptorSetLayout* dst, STAGE* stage, RenderDevice_Vk* rdDevVk)
 	{
 		Vector<VkDescriptorSetLayoutBinding, 64> bindings;
 		const ShaderStageInfo& info = stage->info();
@@ -354,15 +342,15 @@ public:
 		layoutInfo.bindingCount = sCast<u32>(bindings.size());
 		layoutInfo.pBindings	= bindings.data();
 
-		dst->create(&layoutInfo);
+		dst->create(&layoutInfo, rdDevVk);
 	}
 
 
 	template<class STAGE> static 
 	void 
-	createVkDescriptorSet(STAGE* stage)
+	createVkDescriptorSet(STAGE* stage, RenderDevice_Vk* rdDevVk)
 	{
-		createVkDescriptorSetLayout(&stage->_vkDescriptorSetLayout, stage);
+		createVkDescriptorSetLayout(&stage->_vkDescriptorSetLayout, stage, rdDevVk);
 		stage->_vkFramedDescSets.resize(s_kFrameInFlightCount);
 	}
 
@@ -381,7 +369,7 @@ public:
 		auto& vkDescSet = vkDescriptorSet(stage, mtl);
 		if (!vkDescSet)
 		{
-			auto&	descriptorAlloc	= ctx->renderFrame().descriptorAllocator();
+			auto&	descriptorAlloc	= ctx->vkRdFrame().descriptorAllocator();
 			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
 			builder.build(vkDescSet, stage->_vkDescriptorSetLayout, shaderRsc);
 		}
@@ -398,12 +386,27 @@ public:
 	}
 };
 
+Vk_MaterialPass_VertexStage::Vk_MaterialPass_VertexStage()
+{
+
+}
+
+Vk_MaterialPass_VertexStage::~Vk_MaterialPass_VertexStage()
+{
+}
+
 void
 Vk_MaterialPass_VertexStage::create(MaterialPass_Vk* pass, ShaderStage* shaderStage)
 {
 	RDS_WARN_ONCE("move vk set to material pass, union reflection info");
 	Base::create(pass, shaderStage);
-	Helper::createVkDescriptorSet(this);
+	Helper::createVkDescriptorSet(this, pass->renderDeviceVk());
+}
+
+void
+Vk_MaterialPass_VertexStage::destroy(MaterialPass_Vk* pass)
+{
+	_vkDescriptorSetLayout.destroy(pass->renderDeviceVk());
 }
 
 void 
@@ -454,7 +457,13 @@ Vk_MaterialPass_PixelStage::create(MaterialPass_Vk* pass, ShaderStage* shaderSta
 {
 	Base::create(pass, shaderStage);
 	using Helper = MaterialStage_Helper;
-	Helper::createVkDescriptorSet(this);
+	Helper::createVkDescriptorSet(this, pass->renderDeviceVk());
+}
+
+void 
+Vk_MaterialPass_PixelStage::destroy(MaterialPass_Vk* pass)
+{
+	_vkDescriptorSetLayout.destroy(pass->renderDeviceVk());
 }
 
 void 
@@ -501,6 +510,30 @@ MaterialPass_Vk::onCreate(Material* material, ShaderPass* shaderPass)
 void 
 MaterialPass_Vk::onDestroy()
 {
+	auto* rdDevVk = renderDeviceVk();
+
+	if (_vertexStage)
+	{
+		_vkVertexStage.destroy(this);
+		_vertexStage = nullptr;
+	}
+
+	if (_pixelStage)
+	{
+		_vkPixelStage.destroy(this);
+		_pixelStage	= nullptr;
+	}
+
+	for (auto& e : _vkPipelineMap)
+	{
+		e.second.destroy(rdDevVk);
+	}
+	_vkPipelineMap.clear();
+
+	_vkPipelineLayout.destroy(rdDevVk);
+	//_vkDescriptorSetLayout.destroy(rdDevVk);
+	//_vkFramedDescSets.clear();
+
 	Base::onDestroy();
 }
 
@@ -508,7 +541,7 @@ void
 MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout)
 {
 	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
-	auto* vkCmdBuf	= vkCtx->vkGraphicsCmdBuf();
+	auto* vkCmdBuf	= vkCtx->graphicsVkCmdBuf();
 	auto* vkRdPass	= vkCmdBuf->getRenderPass();
 
 	throwIf(!vkRdPass, "no render pass");
@@ -546,48 +579,15 @@ MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPas
 void
 MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout)
 {
-	Renderer_Vk* rdr = Renderer_Vk::instance();
+	auto* rdDevVk = material()->renderDeviceVk();
 
 	VkGraphicsPipelineCreateInfo pipelineCInfo = {};
-
-	#if 1
 
 	Vk_ShaderStagesCDesc vkShaderStagesCDesc;
 	vkShaderStagesCDesc.create(pipelineCInfo, shaderPass());
 
-	#else
-
-	VkPipelineShaderStageCreateInfo	vsStageInfo = {};
-	VkPipelineShaderStageCreateInfo	psStageInfo = {};
-
-	Vk_ShaderModule vsModule;
-	Vk_ShaderModule psModule;
-
-	{
-		vsModule.create(Renderer_Vk::instance(), "LocalTemp/imported/shader/asset/shader/test.shader/spirv/pass0/vs_1.1.bin");
-		psModule.create(Renderer_Vk::instance(), "LocalTemp/imported/shader/asset/shader/test.shader/spirv/pass0/ps_1.1.bin");
-
-		vsStageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vsStageInfo.stage					= VK_SHADER_STAGE_VERTEX_BIT;
-		vsStageInfo.module					= vsModule.hnd();
-		vsStageInfo.pName					= "vs_main";
-		vsStageInfo.pSpecializationInfo		= nullptr;
-
-		psStageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		psStageInfo.stage					= VK_SHADER_STAGE_FRAGMENT_BIT;
-		psStageInfo.module					= psModule.hnd();
-		psStageInfo.pName					= "ps_main";
-		psStageInfo.pSpecializationInfo		= nullptr;
-
-	}
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vsStageInfo, psStageInfo };
-	pipelineCInfo.stageCount	= 2;
-	pipelineCInfo.pStages		= shaderStages;
-
-	#endif // 1
-
 	Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
-	vkPipelineLayoutCDesc.create(_vkPipelineLayout, this, rdr);
+	vkPipelineLayoutCDesc.create(_vkPipelineLayout, this, rdDevVk);
 
 	Vk_RenderStateCDesc vkRenderStateCDesc;
 	vkRenderStateCDesc.createDefault(pipelineCInfo);
@@ -603,7 +603,7 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 	pipelineCInfo.basePipelineIndex		= -1;				// Optional
 
 	Vk_PipelineCache* vkPipelineCache = VK_NULL_HANDLE;
-	out.create(rdr, &pipelineCInfo, 1, vkPipelineCache);
+	out.create(&pipelineCInfo, 1, vkPipelineCache, rdDevVk);
 }
 
 #endif
@@ -623,25 +623,22 @@ Material_Vk::~Material_Vk()
 }
 
 void 
-Material_Vk::onCreate()
+Material_Vk::onCreate(const CreateDesc& cDesc)
 {
-	Base::onCreate();
-
-
+	Base::onCreate(cDesc);
 }
 
 void 
-Material_Vk::onPostCreate()
+Material_Vk::onPostCreate(const CreateDesc& cDesc)
 {
-	Base::onPostCreate();
-
+	Base::onPostCreate(cDesc);
 }
 
 void 
 Material_Vk::onDestroy()
 {
-	Base::onDestroy();
 
+	Base::onDestroy();
 }
 
 #endif

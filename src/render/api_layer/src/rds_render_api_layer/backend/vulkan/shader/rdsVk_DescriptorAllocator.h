@@ -61,31 +61,32 @@ public:
 	Vk_DescriptorAllocator();
 	~Vk_DescriptorAllocator();
 
-	void create(Renderer_Vk* rdr);
-	void create(const CreateDesc& cDesc, Renderer_Vk* rdr);
+	void create(RenderDevice_Vk* rdDevVk);
+	void create(const CreateDesc& cDesc, RenderDevice_Vk* rdDevVk);
 	void destroy();
 
 	void reset();
 	Vk_DescriptorSet alloc(const Vk_DescriptorSetLayout* layout);
 
-	Vk_Device* vkDev();
+	Vk_Device_T*		vkDevHnd();
+	RenderDevice_Vk*	rdDevVk();
 
 protected:
 	Vk_DescriptorPool requestPool();
 
-	VkResult createPool	(Vk_DescriptorPool& out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, Renderer_Vk* rdr);
+	VkResult createPool	(Vk_DescriptorPool& out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk);
 	VkResult createSet	(Vk_DescriptorSet& out, const Vk_DescriptorSetLayout* layout, Vk_DescriptorPool* pool);
 
 private:
-	Renderer_Vk*		_rdr		= nullptr;
+	RenderDevice_Vk*	_rdDevVk = nullptr;
 	Vk_DescriptorPool	_curPool;
 	CreateDesc			_cDesc;
-	
 	
 	Vector<Vk_DescriptorPool, 8> _usedPools;
 	Vector<Vk_DescriptorPool, 8> _freePools;
 };
 
+inline RenderDevice_Vk* Vk_DescriptorAllocator::rdDevVk() { return _rdDevVk; }
 
 #endif
 
@@ -123,6 +124,8 @@ protected:
 protected:
 	Vk_DescriptorBuilder();
 
+	RenderDevice_Vk* rdDevVk();
+
 private:
 	Vk_DescriptorAllocator* _alloc = nullptr;
 
@@ -130,6 +133,9 @@ private:
 	Vector<VkDescriptorBufferInfo,	16>	_bufInfos;
 	Vector<VkDescriptorImageInfo,	16>	_imageInfos;
 };
+
+inline RenderDevice_Vk* Vk_DescriptorBuilder::rdDevVk() { return _alloc->rdDevVk(); }
+
 
 #endif
 

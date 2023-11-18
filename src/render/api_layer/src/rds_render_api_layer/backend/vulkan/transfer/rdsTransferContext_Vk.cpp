@@ -1,6 +1,6 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsTransferContext_Vk.h"
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
@@ -27,9 +27,9 @@ TransferContext_Vk::~TransferContext_Vk()
 }
 
 void 
-TransferContext_Vk::onCreate()
+TransferContext_Vk::onCreate(const CreateDesc& cDesc)
 {
-	Base::onCreate();
+	Base::onCreate(cDesc);
 
 	_vkTransferFrames.resize(s_kFrameInFlightCount);
 	for (auto& e : _vkTransferFrames)
@@ -37,21 +37,18 @@ TransferContext_Vk::onCreate()
 		e.create(this);
 	}
 
-	_vkGraphicsQueue.create(QueueTypeFlags::Graphics, device());
-	_vkTransferQueue.create(QueueTypeFlags::Transfer, device());
-	 _vkComputeQueue.create(QueueTypeFlags::Compute,  device());
+	auto* rdDevVk		= renderDeviceVk();
+
+	_vkGraphicsQueue.create(QueueTypeFlags::Graphics, rdDevVk);
+	_vkTransferQueue.create(QueueTypeFlags::Transfer, rdDevVk);
+	 _vkComputeQueue.create(QueueTypeFlags::Compute,  rdDevVk);
 }
 
 void 
 TransferContext_Vk::onDestroy()
 {
-	Base::onDestroy();
-
-	for (auto& e : _vkTransferFrames)
-	{
-		e.destroy(this);
-	}
 	_vkTransferFrames.clear();
+	Base::onDestroy();
 }
 
 void 
@@ -68,12 +65,12 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq)
 		return;
 	}
 
-	auto* rdDev = device();
-	auto& frame = transferFrame();
+	auto* rdDevVk		= renderDeviceVk();
+	auto& vkTsfFrame	= vkTransferFrame();
 
-	auto& inFlighVkFence	= frame._inFlightVkFnc;
-	auto& completedVkSmp	= frame._completedVkSmp;
-	auto* vkCmdBuf			= frame.requestTransferCommandBuffer(VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	auto& inFlighVkFence	= vkTsfFrame._inFlightVkFnc;
+	auto& completedVkSmp	= vkTsfFrame._completedVkSmp;
+	auto* vkCmdBuf			= vkTsfFrame.requestTransferCommandBuffer(VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 	_curVkCmdBuf = vkCmdBuf;
 
@@ -121,8 +118,8 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq)
 
 	vkCmdBuf->endRecord();
 
-	inFlighVkFence.wait(rdDev);
-	inFlighVkFence.reset(rdDev);
+	inFlighVkFence.wait(rdDevVk);
+	inFlighVkFence.reset(rdDevVk);
 
 	vkCmdBuf->submit(&inFlighVkFence, 
 					//&frame._completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
@@ -135,15 +132,15 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq)
 void 
 TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType)
 {
-	auto* rdDev = device();
-	auto& frame = transferFrame();
-	auto* vkCmdBuf = frame.requestCommandBuffer(queueType);
+	auto* rdDevVk		= renderDeviceVk();
+	auto& vkTsfFrame	= vkTransferFrame();
+	auto* vkCmdBuf		= vkTsfFrame.requestCommandBuffer(queueType);
 
 	//auto& srcInFlighVkFence = frame._inFlightVkFnc;
-	auto& srcCompletedVkSmp = frame._completedVkSmp;
+	auto& srcCompletedVkSmp = vkTsfFrame._completedVkSmp;
 
-	auto& dstInFlighVkFnc	= *frame.requestInFlightVkFnc(queueType);
-	auto& dstCompletedVkSmp = *frame.requestCompletedVkSmp(queueType);
+	auto& dstInFlighVkFnc	= *vkTsfFrame.requestInFlightVkFnc(queueType);
+	auto& dstCompletedVkSmp = *vkTsfFrame.requestCompletedVkSmp(queueType);
 
 	vkCmdBuf->beginRecord(requestVkQueue(queueType));
 
@@ -166,7 +163,7 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 
 	vkCmdBuf->endRecord();
 
-	dstInFlighVkFnc.reset(rdDev);
+	dstInFlighVkFnc.reset(rdDevVk);
 
 	vkCmdBuf->submit(&dstInFlighVkFnc, 
 		&srcCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
@@ -192,10 +189,10 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	RDS_CORE_ASSERT(cmd->dst,	"");
 
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");
-	transferFrame()._hasTransferedGraphicsResoures = true;
+	vkTransferFrame()._hasTransferedGraphicsResoures = true;
 
 	auto* vkCmdBuf		= _curVkCmdBuf;
-	auto* statingBufHnd = transferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
+	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
 
 	auto*			dst			= Vk_Texture::getImageHnd(cmd->dst);
 	const auto&		size		= cmd->dst->size();
@@ -206,7 +203,7 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), graphicsQueueFamilyIdx(), true);
 }
 
-Vk_TransferFrame& TransferContext_Vk::transferFrame() { return _vkTransferFrames[device()->iFrame()]; }
+Vk_TransferFrame& TransferContext_Vk::vkTransferFrame() { return _vkTransferFrames[renderDeviceVk()->iFrame()]; }
 
 #endif
 

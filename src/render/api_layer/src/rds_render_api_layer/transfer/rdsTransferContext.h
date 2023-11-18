@@ -8,6 +8,11 @@ namespace rds
 
 class Texture;
 
+struct TransferContext_CreateDesc : public RenderResource_CreateDesc
+{
+
+};
+
 #if 0
 #pragma mark --- rdsUploadContext-Decl ---
 #endif // 0
@@ -16,23 +21,27 @@ class Texture;
 
 class TransferContext : public RenderResource
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	static constexpr SizeType s_kLocalSize	= 64;
+	using Base			= RenderResource;
+	using CreateDesc	= TransferContext_CreateDesc;
+
+public:
+	static CreateDesc				makeCDesc();
+	static SPtr<TransferContext>	make(const CreateDesc& cDesc);
 
 public:
 	TransferContext();
 	~TransferContext();
 
-	void create();
+	void create	(const CreateDesc& cDesc);
 	void destroy();
 
 	//void commit(TransferCommandBuffer& cmdBuf);
 	void commit(TransferRequest& tsfReq);
 
 protected:
-	virtual void onCreate();
-	virtual void onDestroy();
+	virtual void onCreate	(const CreateDesc& cDesc);
+	virtual void onDestroy	();
 
 	template<class CTX> void _dispatchCommand(CTX* ctx, TransferCommand* cmd);
 	virtual void onCommit(TransferRequest& tsfReq);

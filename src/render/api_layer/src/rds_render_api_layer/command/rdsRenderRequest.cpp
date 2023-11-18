@@ -47,7 +47,7 @@ void
 RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
 	throwIf(true, "store rdCtx");
-	auto* drawCalls = Renderer::instance()->renderFrame().renderQueue().drawRenderables(settings);
+	auto* drawCalls = Renderer::rdDev()->renderFrame().renderQueue().drawRenderables(settings);
 	auto* cmd = renderCommandBuffer().addCommand<RenderCommand_DrawRenderables>();
 	cmd->hashedDrawCallCmds = drawCalls;
 }

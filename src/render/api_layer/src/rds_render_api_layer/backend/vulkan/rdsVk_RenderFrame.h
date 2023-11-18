@@ -9,6 +9,9 @@
 namespace rds
 {
 
+class RenderDevice_Vk;
+class RenderContext_Vk;
+
 #if 0
 #pragma mark --- rdsVk_RenderFrame-Decl ---
 #endif // 0
@@ -31,13 +34,13 @@ public:
 	Vk_RenderFrame(Vk_RenderFrame&& rhs);
 	void operator=(Vk_RenderFrame&& rhs);
 
-	void create();
+	void create	(RenderContext_Vk* rdCtxVk);
 	void destroy();
 
 	void clear();
 
-	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
-	template<size_t N> void requestCommandBuffers(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
+						Vk_CommandBuffer*	requestCommandBuffer	(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
+	template<size_t N>	void				requestCommandBuffersTo	(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
 
 
 	void resetCommandPools();
@@ -50,14 +53,19 @@ public:
 	Vk_Semaphore*	renderCompletedSmp();
 	Vk_Fence*		inFlightFence();
 
+	RenderDevice_Vk*	rdDevVk();
+	RenderContext_Vk*	rdCtxVk();
+
 protected:
 	void createCommandPool (Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 familyIdx);
 	void destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool);
 
-	void createSyncObjects();
-	void destroySyncObjects();
+	void createSyncObjects	();
+	void destroySyncObjects	();
 
 protected:
+	RenderContext_Vk* _rdCtxVk = nullptr;
+
 	Vector<Vk_CommandPool, s_kThreadCount> _graphicsCommandPools;
 	Vector<Vk_CommandPool, s_kThreadCount> _computeCommandPools;
 	Vector<Vk_CommandPool, s_kThreadCount> _transferCommandPools;
@@ -74,7 +82,7 @@ protected:
 
 template<size_t N> inline
 void 
-Vk_RenderFrame::requestCommandBuffers(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel)
+Vk_RenderFrame::requestCommandBuffersTo(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel)
 {
 	out.clear();
 	out.resize(n);
@@ -84,7 +92,6 @@ Vk_RenderFrame::requestCommandBuffers(Vector<Vk_CommandBuffer*, N>& out, SizeTyp
 		e = requestCommandBuffer(queueType, bufLevel);
 	}
 }
-
 
 inline
 Vk_CommandPool& 
@@ -110,6 +117,8 @@ inline Vk_DescriptorAllocator& Vk_RenderFrame::descriptorAllocator() { return _d
 inline Vk_Semaphore*	Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
 inline Vk_Semaphore*	Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }
 inline Vk_Fence*		Vk_RenderFrame::inFlightFence()			{ return &_inFlightVkFence; }
+
+inline RenderContext_Vk* Vk_RenderFrame::rdCtxVk() { return _rdCtxVk; }
 
 
 

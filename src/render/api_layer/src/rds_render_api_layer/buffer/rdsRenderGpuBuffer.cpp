@@ -1,16 +1,17 @@
 #include "rds_render_api_layer-pch.h"
-
 #include "rdsRenderGpuBuffer.h"
 
-#include "../rdsRenderer.h"
-#include "../command/rdsTransferRequest.h"
-#include "../rdsRenderFrame.h"
+#include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/rdsRenderFrame.h"
 
 namespace rds
 {
 
-SPtr<RenderGpuBuffer> Renderer::createRenderGpuBuffer(const RenderGpuBuffer_CreateDesc& cDesc)
+SPtr<RenderGpuBuffer> 
+RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 {
+	cDesc._internal_create(this);
 	auto p = onCreateRenderGpuBuffer(cDesc);
 	return p;
 }
@@ -22,7 +23,11 @@ SPtr<RenderGpuBuffer> Renderer::createRenderGpuBuffer(const RenderGpuBuffer_Crea
 
 RenderGpuBuffer::CreateDesc RenderGpuBuffer::makeCDesc() { return CreateDesc{}; }
 
-SPtr<RenderGpuBuffer> RenderGpuBuffer::make(const CreateDesc& cDesc) { return Renderer::instance()->createRenderGpuBuffer(cDesc); }
+SPtr<RenderGpuBuffer> 
+RenderGpuBuffer::make(CreateDesc& cDesc)
+{ 
+	return Renderer::rdDev()->createRenderGpuBuffer(cDesc); 
+}
 
 RenderGpuBuffer::RenderGpuBuffer()
 {
@@ -32,24 +37,25 @@ RenderGpuBuffer::~RenderGpuBuffer()
 {
 }
 
-void RenderGpuBuffer::create(const CreateDesc& cDesc)
+void RenderGpuBuffer::create(CreateDesc& cDesc)
 {
+	Base::create(cDesc);
 	onCreate(cDesc);
-
 	onPostCreate(cDesc);
 }
 
 void RenderGpuBuffer::destroy()
 {
 	onDestroy();
+	Base::destroy();
 }
 
-void RenderGpuBuffer::onCreate(const CreateDesc& cDesc)
+void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 {
-	_cDesc = cDesc;
+	_desc = cDesc;
 }
 
-void RenderGpuBuffer::onPostCreate(const CreateDesc& cDesc)
+void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
 {
 
 }

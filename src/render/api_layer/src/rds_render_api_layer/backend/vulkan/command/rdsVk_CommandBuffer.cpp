@@ -1,7 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_CommandBuffer.h"
 #include "rdsVk_CommandPool.h"
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/rdsVk_Swapchain.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -25,12 +25,12 @@ Vk_CommandBuffer::~Vk_CommandBuffer()
 	Base::destroy();
 }
 
-void Vk_CommandBuffer::create(Vk_CommandPool* vkCommandPool, VkCommandBufferLevel level)
+void Vk_CommandBuffer::create(Vk_CommandPool* vkCommandPool, VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk)
 {
 	_vkCommandPool = vkCommandPool;
 	_level = level;
 
-	auto* vkDevice = Renderer_Vk::instance()->vkDevice();
+	auto* vkDev = rdDevVk->vkDevice();
 
 	VkCommandBufferAllocateInfo cInfo = {};
 	cInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -38,15 +38,15 @@ void Vk_CommandBuffer::create(Vk_CommandPool* vkCommandPool, VkCommandBufferLeve
 	cInfo.level					= level;
 	cInfo.commandBufferCount	= 1;
 
-	auto ret = vkAllocateCommandBuffers(vkDevice, &cInfo, hndForInit());
+	auto ret = vkAllocateCommandBuffers(vkDev, &cInfo, hndForInit());
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_CommandBuffer::destroy()
+Vk_CommandBuffer::destroy(RenderDevice_Vk* rdDevVk)
 {
 	// when vk cmd pool desttroy, all cmd buf will destroy too
-	auto* vkDev = Renderer_Vk::instance()->vkDevice();
+	auto* vkDev = rdDevVk->vkDevice();
 	Vk_CommandBuffer_T* vkCmdBufs[] = { hnd()};
 	vkFreeCommandBuffers(vkDev, _vkCommandPool->hnd(), ArraySize<decltype(vkCmdBufs)>, vkCmdBufs);
 	reset();

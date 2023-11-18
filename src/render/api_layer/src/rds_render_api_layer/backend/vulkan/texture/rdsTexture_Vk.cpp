@@ -1,15 +1,14 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsTexture_Vk.h"
 
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
-#include "rds_render_api_layer/backend/vulkan/rdsRenderContext_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
 
 SPtr<Texture2D> 
-Renderer_Vk::onCreateTexture2D(Texture2D_CreateDesc& cDesc)
+RenderDevice_Vk::onCreateTexture2D(Texture2D_CreateDesc& cDesc)
 {
 	auto p = SPtr<Texture2D>(makeSPtr<Texture2D_Vk>());
 	p->create(cDesc);
@@ -103,10 +102,10 @@ Texture2D_Vk::onDestroy()
 {
 	Base::onDestroy();
 
-	auto* rdr = renderer();
+	auto* rdDevVk = renderDeviceVk();
 
-	_vkSampler.destroy(rdr);
-	_vkImageView.destroy(rdr);
+	_vkSampler.destroy(rdDevVk);
+	_vkImageView.destroy(rdDevVk);
 	_vkImage.destroy();
 }
 
@@ -118,15 +117,15 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 
 	Base::onUploadToGpu(cDesc, cmd);
 
-	auto* rdDev		= device();
-	auto* vkAlloc	= rdDev->memoryContext()->vkAlloc();
+	auto* rdDevVk	= renderDeviceVk();
+	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
 
 	auto&		srcImage	= cDesc.uploadImage();
 	auto		bytes		= sCast<VkDeviceSize>(srcImage.totalByteSize());
 	const auto& imageSize	= size();
-	auto*		stagingBuf	= transferFrame().requestStagingBuffer(cmd->_stagingIdx, bytes);
+	auto*		stagingBuf	= vkTransferFrame().requestStagingBuffer(cmd->_stagingIdx, bytes, rdDevVk);
 
-	_vkSampler.create(cDesc.samplerState, rdDev);
+	_vkSampler.create(cDesc.samplerState, rdDevVk);
 
 	{
 		auto memmap = Vk_ScopedMemMapBuf{ stagingBuf };
@@ -139,13 +138,13 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 		Vk_AllocInfo allocInfo = {};
 		allocInfo.usage = RenderMemoryUsage::GpuOnly;
 
-		_vkImage.create(vkAlloc, &allocInfo
+		_vkImage.create(rdDevVk, vkAlloc, &allocInfo
 			, imageSize.x, imageSize.y
 			, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
 			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 	}
 
-	_vkImageView.create(this, rdDev);
+	_vkImageView.create(this, rdDevVk);
 }
 
 #endif
@@ -156,9 +155,9 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 #if 1
 
 void 
-Vk_Sampler::create(const SamplerState& samplerState, Renderer_Vk* rdr)
+Vk_Sampler::create(const SamplerState& samplerState, RenderDevice_Vk* rdDevVk)
 {
-	const auto& adapterInfo = Renderer_Vk::instance()->adapterInfo();
+	const auto& adapterInfo = rdDevVk->adapterInfo();
 
 	VkSamplerCreateInfo cInfo = {};
 	cInfo.sType						= VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -178,8 +177,8 @@ Vk_Sampler::create(const SamplerState& samplerState, Renderer_Vk* rdr)
 	cInfo.minLod					= samplerState.minLod;
 	cInfo.maxLod					= samplerState.maxLod;
 
-	auto* vkDev				= rdr->vkDevice();
-	auto* vkAllocCallBacks	= rdr->allocCallbacks();
+	auto* vkDev				= rdDevVk->vkDevice();
+	auto* vkAllocCallBacks	= rdDevVk->allocCallbacks();
 
 	auto ret = vkCreateSampler(vkDev, &cInfo, vkAllocCallBacks, hndForInit());
 	Util::throwIfError(ret);
@@ -193,7 +192,7 @@ Vk_Sampler::create(const SamplerState& samplerState, Renderer_Vk* rdr)
 #if 1
 
 void 
-Vk_ImageView::create(Texture2D_Vk* tex2DVk, Renderer_Vk* rdr)
+Vk_ImageView::create(Texture2D_Vk* tex2DVk, RenderDevice_Vk* rdDevVk)
 {
 	throwIf(!tex2DVk->vkImageHnd(), "no VkImage while creating image view");
 
@@ -220,8 +219,8 @@ Vk_ImageView::create(Texture2D_Vk* tex2DVk, Renderer_Vk* rdr)
 	cInfo.subresourceRange.levelCount		= tex2DVk->mipCount();
 	cInfo.subresourceRange.layerCount		= 1;
 
-	auto* vkDev			= rdr->vkDevice();
-	auto* vkAllocCbs	= rdr->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	auto ret = vkCreateImageView(vkDev, &cInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);

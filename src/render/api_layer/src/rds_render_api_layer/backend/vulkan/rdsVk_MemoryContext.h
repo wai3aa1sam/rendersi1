@@ -12,16 +12,13 @@ namespace rds
 #endif // 0
 #if 1
 
-class Vk_MemoryContext /*: public Singleton<Vk_MemoryContext>*/
+class Vk_MemoryContext : public NonCopyable
 {
-public:
-	static Vk_MemoryContext* instance();
-
 public:
 	Vk_MemoryContext();
 	~Vk_MemoryContext();
 
-	void create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst);
+	void create(Vk_Device_T* vkDev, Vk_PhysicalDevice_T* vkPhyDev, Vk_Instance_T* vkInst);
 	void destroy();
 
 	const VkAllocationCallbacks*			allocCallbacks();

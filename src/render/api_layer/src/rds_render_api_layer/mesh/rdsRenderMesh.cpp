@@ -14,7 +14,7 @@ namespace rds
 void 
 RenderSubMesh::create(const EditMesh& editMesh)
 {
-	auto*		rdr			= Renderer::instance();
+	auto*		rdDev		= Renderer::rdDev();
 	const auto* vtxLayout	= _renderMesh->vertexLayout();
 	
 	Vector<u8, 1024> buf;
@@ -27,7 +27,7 @@ RenderSubMesh::create(const EditMesh& editMesh)
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Vertex;
 		if (!_vtxBuf)
 		{
-			_vtxBuf = rdr->createRenderGpuMultiBuffer(cDesc);
+			_vtxBuf = rdDev->createRenderGpuMultiBuffer(cDesc);
 		}
 		_vtxBuf->uploadToGpu(buf.byteSpan());
 	}
@@ -66,7 +66,7 @@ RenderSubMesh::create(const EditMesh& editMesh)
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Index;
 		if (!_idxBuf)
 		{
-			_idxBuf = rdr->createRenderGpuMultiBuffer(cDesc);
+			_idxBuf = rdDev->createRenderGpuMultiBuffer(cDesc);
 		}
 		_idxBuf->uploadToGpu(idxDataSpan);
 	}

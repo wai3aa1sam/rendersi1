@@ -1,14 +1,14 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderGpuBuffer_Vk.h"
 
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
 
 SPtr<RenderGpuBuffer> 
-Renderer_Vk::onCreateRenderGpuBuffer(const RenderGpuBuffer_CreateDesc& cDesc)
+RenderDevice_Vk::onCreateRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 {
 	auto p = SPtr<RenderGpuBuffer>(makeSPtr<RenderGpuBuffer_Vk>());
 	p->create(cDesc);
@@ -32,25 +32,24 @@ RenderGpuBuffer_Vk::~RenderGpuBuffer_Vk()
 }
 
 void
-RenderGpuBuffer_Vk::onCreate(const CreateDesc& cDesc)
+RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 {
-	destroy();
-
 	Base::onCreate(cDesc);
-
-	auto* vkAlloc	= Renderer_Vk::instance()->memoryContext()->vkAlloc();
+	
+	auto* rdDevVk	= renderDeviceVk();
+	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
 
 	auto targetSize = math::alignTo(bufSize(), s_kAlign);
 	
 	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage  = RenderMemoryUsage::GpuOnly;
-	_vkBuf.create(vkAlloc, &allocInfo, targetSize, 
+	_vkBuf.create(rdDevVk, vkAlloc, &allocInfo, targetSize, 
 				VK_BUFFER_USAGE_TRANSFER_DST_BIT | Util::toVkBufferUsage(cDesc.typeFlags)
 				, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
 }
 
 void
-RenderGpuBuffer_Vk::onPostCreate(const CreateDesc& cDesc)
+RenderGpuBuffer_Vk::onPostCreate(CreateDesc& cDesc)
 {
 	Base::onPostCreate(cDesc);
 }
@@ -58,6 +57,8 @@ RenderGpuBuffer_Vk::onPostCreate(const CreateDesc& cDesc)
 void
 RenderGpuBuffer_Vk::onDestroy()
 {
+
+
 	Base::onDestroy();
 }
 

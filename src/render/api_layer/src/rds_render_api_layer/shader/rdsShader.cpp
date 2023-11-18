@@ -7,19 +7,20 @@ namespace rds
 {
 
 SPtr<Shader> 
-Renderer::createShader(const Shader_CreateDesc& cDesc)
+RenderDevice::createShader(const Shader_CreateDesc& cDesc)
 {
+	cDesc._internal_create(this);
 	auto p = onCreateShader(cDesc);
 	return p;
 }
 
 SPtr<Shader> 
-Renderer::createShader(StrView filename)
+RenderDevice::createShader(StrView filename)
 {
 	auto cDesc = Shader::makeCDesc();
-	cDesc.filename = filename;
+	cDesc.filename	= filename;
 
-	SPtr<Shader> p = onCreateShader(cDesc);
+	SPtr<Shader> p = createShader(cDesc);
 	return p;
 }
 
@@ -37,7 +38,7 @@ Shader::makeCDesc()
 SPtr<Shader>
 Shader::make(const CreateDesc& cDesc)
 {
-	return Renderer::instance()->createShader(cDesc);
+	return Renderer::rdDev()->createShader(cDesc);
 }
 
 Shader::Shader()
@@ -51,6 +52,13 @@ Shader::~Shader()
 }
 
 void 
+Shader::create(const CreateDesc& cDesc)
+{
+	Base::create(cDesc);
+	onCreate(cDesc);
+}
+
+void 
 Shader::create(StrView filename)
 {
 	CreateDesc cDesc = makeCDesc();
@@ -59,15 +67,10 @@ Shader::create(StrView filename)
 }
 
 void 
-Shader::create(const CreateDesc& cDesc)
-{
-	onCreate(cDesc);
-}
-
-void 
 Shader::destroy()
 {
-
+	onDestroy();
+	Base::destroy();
 }
 
 void 
@@ -86,7 +89,7 @@ Shader::onPostCreate(const CreateDesc& cDesc)
 void 
 Shader::onDestroy()
 {
-
+	_passes.clear();
 }
 
 void 

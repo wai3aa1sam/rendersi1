@@ -9,9 +9,8 @@
 namespace rds
 {
 
-class Renderer_Vk;
+class RenderDevice_Vk;
 class RenderContext_Vk;
-
 
 #if 1
 
@@ -34,10 +33,10 @@ template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<Vk_Framebuffer, N>;
 
 struct Vk_Swapchain_CreateDesc
 {
-	RenderContext_Vk*	rdCtx;
+	RenderContext_Vk*	rdCtx	= nullptr;
+	NativeUIWindow*		wnd		= nullptr;
 	math::Rect2f		framebufferRect2f;
 	Vk_RenderPass*		vkRdPass;
-	NativeUIWindow*		wnd = nullptr;
 
 	VkFormat			colorFormat	= VK_FORMAT_B8G8R8A8_SRGB;
 	VkColorSpaceKHR		colorSpace	= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
@@ -47,26 +46,17 @@ struct Vk_Swapchain_CreateDesc
 class Vk_Swapchain : public Vk_RenderApiPrimitive<Vk_Swapchain_T>
 {
 public:
-	using Base		= Vk_RenderApiPrimitive<Vk_Swapchain_T>;
-	using Traits	= RenderApiLayerTraits;
-	using Util		= Vk_RenderApiUtil;
-
-	using CreateDesc = Vk_Swapchain_CreateDesc;
-
-	using SizeType = Traits::SizeType;
+	using Base			= Vk_RenderApiPrimitive<Vk_Swapchain_T>;
+	using CreateDesc	= Vk_Swapchain_CreateDesc;
 
 public:
-	static constexpr SizeType s_kSwapchainImageLocalSize = Traits::s_kSwapchainImageLocalSize;
-	static constexpr SizeType s_kFrameInFlightCount      = Traits::s_kFrameInFlightCount;
-	static constexpr SizeType s_kThreadCount             = Traits::s_kThreadCount;
-
 	static CreateDesc makeCDesc() { return CreateDesc{}; }
 
 public:
 	Vk_Swapchain();
 	~Vk_Swapchain();
 
-	void create(const CreateDesc& cDesc); // RenderContext_Vk* rdCtx, const math::Rect2f& framebufferSize, Vk_RenderPass* vkRdPass, NativeUIWindow* wnd
+	void create	(const CreateDesc& cDesc); // RenderContext_Vk* rdCtx, const math::Rect2f& framebufferSize, Vk_RenderPass* vkRdPass, NativeUIWindow* wnd
 	void destroy(NativeUIWindow* wnd);
 
 	VkResult acquireNextImage(Vk_Semaphore* signalSmp);
@@ -96,13 +86,13 @@ protected:
 	void createDepthResources();
 	void destroyDepthResources();
 
-	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T* vkSwapchain, Vk_Device* vkDevice);
-	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, Vk_Device* vkDevice, 
-		VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
+	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice);
+	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk
+		, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 
 protected:
-	Renderer_Vk* renderer();
+	RenderDevice_Vk* renderDeviceVk();
 
 protected:
 	RenderContext_Vk*	_rdCtx	= nullptr;
@@ -140,7 +130,7 @@ inline VkExtent2D			Vk_Swapchain::framebufferVkExtent2D()	const { return Util::t
 
 template<size_t N> inline
 u32 
-Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T* vkSwapchain, Vk_Device* vkDevice)
+Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice)
 {
 	u32 imageCount = 0;
 	vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
@@ -162,14 +152,14 @@ Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T
 
 template<size_t N> inline 
 void 
-Vk_Swapchain::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, Vk_Device* vkDevice, 
+Vk_Swapchain::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk, 
 	VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
 {
 	out.clear();
 	out.resize(vkImages.size());
 	for (size_t i = 0; i < vkImages.size(); ++i)
 	{
-		out[i].create(vkImages[i].hnd(), format, aspectFlags, mipLevels);
+		out[i].create(vkImages[i].hnd(), format, aspectFlags, mipLevels, rdDevVk);
 	}
 }
 

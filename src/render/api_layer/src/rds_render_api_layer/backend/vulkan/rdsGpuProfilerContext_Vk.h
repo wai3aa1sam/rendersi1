@@ -89,6 +89,8 @@ namespace rds
 // RDS_GPU_PROFILE_ZONE(...) GpuProfilerContextCtx->zone(...);
 
 class RenderContext;
+class RenderContext_Vk;
+class RenderDevice_Vk;
 
 struct GpuProfilerContext_CreateDesc
 {
@@ -127,8 +129,12 @@ public:
 
 	ProfilerCtx& ctx();
 
+protected:
+	RenderContext_Vk*	rdCtxVk();
+	RenderDevice_Vk*	rdDevVk();
+
 private:
-	ProfilerCtx _ctx		= nullptr;
+	ProfilerCtx		_ctx	= nullptr;
 	RenderContext* _rdCtx	= nullptr;
 };
 

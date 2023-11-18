@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
+#include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
 #include "rds_render_api_layer/shader/rdsMaterial.h"
 #include "rdsShader_Vk.h"
 
@@ -42,7 +43,12 @@ public:
 	using Vk_VertexInputAttrs = Vector<VkVertexInputAttributeDescription, s_kVtxInputAttrLocalSize>;
 
 public:
-	void create(MaterialPass_Vk* pass, ShaderStage* shaderStage);
+	Vk_MaterialPass_VertexStage();
+	~Vk_MaterialPass_VertexStage();
+
+	void create	(MaterialPass_Vk* pass, ShaderStage* shaderStage);
+	void destroy(MaterialPass_Vk* pass);
+
 	void bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass);
 
 	const Vk_VertexInputAttrs& cacheVtxInputAttrCDesc(const VertexLayout* vtxLayout);
@@ -71,7 +77,9 @@ public:
 	using Helper	= MaterialStage_Helper;
 
 public:
-	void create(MaterialPass_Vk* pass, ShaderStage* shaderStage);
+	void create	(MaterialPass_Vk* pass, ShaderStage* shaderStage);
+	void destroy(MaterialPass_Vk* pass);
+
 	void bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass);
 
 	Vk_PixelShaderStage*	vkShaderStage();
@@ -109,6 +117,8 @@ public:
 	PixelStage&		vkPixelStage_NoCheck();
 
 	Vk_PipelineLayout& vkPipelineLayout();
+
+	RenderDevice_Vk* renderDeviceVk();
 
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass) override;
@@ -155,11 +165,10 @@ inline MaterialPass_Vk::PixelStage&		MaterialPass_Vk::vkPixelStage_NoCheck()	{ r
 #endif // 0
 #if 1
 
-class Material_Vk : public Material
+class Material_Vk : public RenderResource_Vk<Material>
 {
 public:
-	using Base = Material;
-	using Util = Vk_RenderApiUtil;
+	using Base = RenderResource_Vk<Material>;
 
 	using Pass			= MaterialPass_Vk;
 	using VertexStage	= Vk_MaterialPass_VertexStage;
@@ -170,8 +179,8 @@ public:
 	~Material_Vk();
 
 protected:
-	virtual void onCreate		();
-	virtual void onPostCreate	();
+	virtual void onCreate		(const CreateDesc& cDesc) override;
+	virtual void onPostCreate	(const CreateDesc& cDesc) override;
 	virtual void onDestroy		();
 
 	virtual UPtr<MaterialPass> onMakePass();
@@ -190,5 +199,8 @@ Material_Vk::onMakePass()
 
 
 #endif
+
+inline RenderDevice_Vk*	MaterialPass_Vk::renderDeviceVk() { return material()->renderDeviceVk(); }
+
 }
 #endif

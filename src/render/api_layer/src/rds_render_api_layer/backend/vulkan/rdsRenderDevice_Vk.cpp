@@ -1,5 +1,5 @@
 #include "rds_render_api_layer-pch.h"
-#include "rdsRenderer_Vk.h"
+#include "rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -11,23 +11,23 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsRenderer_Vk-Impl ---
+#pragma mark --- rdsRenderDevice_Vk-Impl ---
 #endif // 0
 #if 1
 
 
-Renderer_Vk::Renderer_Vk()
+RenderDevice_Vk::RenderDevice_Vk()
 	: Base()
 {
 }
 
-Renderer_Vk::~Renderer_Vk()
+RenderDevice_Vk::~RenderDevice_Vk()
 {
 	destroy();
 }
 
 void
-Renderer_Vk::onCreate(const CreateDesc& cDesc)
+RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
 	createVkInstance();
@@ -38,42 +38,56 @@ Renderer_Vk::onCreate(const CreateDesc& cDesc)
 	vkQueueSubmit2 = extInfo().getDeviceExtFunction<PFN_vkQueueSubmit2KHR>("vkQueueSubmit2KHR");
 	#endif
 
-	_memoryContextVk.create(vkDevice(), vkPhysicalDevice(), vkInstance());
+	_vkMemoryContext.create(vkDevice(), vkPhysicalDevice(), vkInstance());
 
-	_transferCtxVk.create();
-	_tsfCtx = &_transferCtxVk;
+	{
+		auto tsfCtxCDesc = TransferContext::makeCDesc();
+		tsfCtxCDesc._internal_create(this);
+		_transferCtxVk.create(tsfCtxCDesc);
+		_tsfCtx = &_transferCtxVk;
+	}
 }
 
 void
-Renderer_Vk::onDestroy()
+RenderDevice_Vk::onDestroy()
 {
-	vkDeviceWaitIdle(vkDevice());
+	waitIdle();
+
 	_tsfCtx->destroy();
 
 	_rdFrames.clear();
 	_tsfFrames.clear();
 
-	_memoryContextVk.destroy();
+	_vkMemoryContext.destroy();
+
+	RDS_TODO("since VkAllocCallbacks is inside _vkMemoryContext, destroyed will cause VkDevice, ... cannot destroy, or they just use nullptr for VkAllocCallbacks");;
+
+	_vkDevice.destroy(this);
+	_vkPhysicalDevice.destroy();
+	_vkDebugMessenger.destroy(this);
+	_vkInstance.destroy(this);
+
+	Base::onDestroy();
 }
 
 void 
-Renderer_Vk::onNextFrame()
+RenderDevice_Vk::onNextFrame()
 {
 	Base::onNextFrame();
-	_transferCtxVk.transferFrame().clear();
+	_transferCtxVk.vkTransferFrame().clear();
 }
 
 void 
-Renderer_Vk::waitIdle()
+RenderDevice_Vk::waitIdle()
 {
 	vkDeviceWaitIdle(vkDevice());
 }
 
 void
-Renderer_Vk::createVkInstance()
+RenderDevice_Vk::createVkInstance()
 {
-	_extInfo.createValidationLayers(_adapterInfo);
-	_extInfo.createInstanceExtensions(_adapterInfo);
+	_vkExtInfo.createValidationLayers(_adapterInfo);
+	_vkExtInfo.createInstanceExtensions(_adapterInfo);
 
 	VkApplicationInfo appInfo = {};
 	appInfo.sType				= VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -91,14 +105,13 @@ Renderer_Vk::createVkInstance()
 	#error "unsupported vulkan version";
 	#endif // RDS_VK_VER_1_3
 
-
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType					= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo			= &appInfo;
-	createInfo.enabledExtensionCount	= sCast<u32>(_extInfo.instanceExts().size());
-	createInfo.ppEnabledExtensionNames	= _extInfo.instanceExts().data();
-	createInfo.enabledLayerCount		= sCast<u32>(_extInfo.validationLayers().size());
-	createInfo.ppEnabledLayerNames		= _extInfo.validationLayers().data();
+	createInfo.enabledExtensionCount	= sCast<u32>(_vkExtInfo.instanceExts().size());
+	createInfo.ppEnabledExtensionNames	= _vkExtInfo.instanceExts().data();
+	createInfo.enabledLayerCount		= sCast<u32>(_vkExtInfo.validationLayers().size());
+	createInfo.ppEnabledLayerNames		= _vkExtInfo.validationLayers().data();
 
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};	// don't destroy in scope before vkCreateInstance()
 	if (_adapterInfo.isDebug)
@@ -114,37 +127,33 @@ Renderer_Vk::createVkInstance()
 		//createInfo.pNext = &features;
 	}
 
-	_vkInstance.create(&createInfo, allocCallbacks());
+	_vkInstance.create(&createInfo, allocCallbacks(), this);
+	_vkExtInfo.create(this);
 
 	if (_adapterInfo.isDebug)
 	{
-		createVkDebugMessenger();
+		_vkDebugMessenger.create(this);
 	}
 }
 
-void 
-Renderer_Vk::createVkDebugMessenger()
-{
-	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
-	Util::createDebugMessengerInfo(createInfo);
-
-	auto func	= _extInfo.getInstanceExtFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
-	auto ret	= func(vkInstance(), &createInfo, allocCallbacks(), _vkDebugMessenger.ptrForInit());
-	Util::throwIfError(ret);
-}
-
 void
-Renderer_Vk::createVkPhyDevice(const CreateDesc& cDesc)
+RenderDevice_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 {
 	static constexpr SizeType s_kLocalSize = 8;
-	Vector<Vk_PhysicalDevice*, s_kLocalSize> phyDevices;
+	Vector<Vk_PhysicalDevice_T*, s_kLocalSize> phyDevices;
 	Util::getAvailableGPUDevicesTo(phyDevices, vkInstance());
 	throwIf(phyDevices.is_empty(), "cannot find any available gpu");
 
 	NativeUIWindow tmpWindow;
 	Util::createTempWindow(tmpWindow);
 	Vk_Surface tempSurface;
-	tempSurface.create(&tmpWindow);
+	tempSurface.create(&tmpWindow, this);
+	auto leaveScopeAction = makeLeaveScopeAction(
+		[&]()
+		{
+			tempSurface.destroy(nullptr, this);
+		}
+	);
 
 	i64 largestScore		= NumLimit<i64>::min();
 	i64 largestScoreIndex	= NumLimit<i64>::min();
@@ -152,7 +161,7 @@ Renderer_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 	{
 		auto* e = phyDevices[i];
 		Util::getPhyDevicePropertiesTo(_adapterInfo, e);
-		auto score = _rateAndInitVkPhyDevice(_adapterInfo, cDesc, e, &tempSurface);
+		auto score = _rateAndInitVkPhyDevice(_adapterInfo, cDesc, e, tempSurface.hnd());
 		if (score > largestScore)
 		{
 			largestScore = score;
@@ -160,13 +169,13 @@ Renderer_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 		}
 	}
 
-	_vkPhysicalDevice.reset(phyDevices[largestScoreIndex]);
-	_rateAndInitVkPhyDevice(_adapterInfo, cDesc, _vkPhysicalDevice.ptr(), &tempSurface);
-	Util::getPhyDevicePropertiesTo(_adapterInfo, _vkPhysicalDevice);
+	_vkPhysicalDevice.create(phyDevices[largestScoreIndex]);
+	_rateAndInitVkPhyDevice(_adapterInfo, cDesc, _vkPhysicalDevice.hnd(), tempSurface.hnd());
+	Util::getPhyDevicePropertiesTo(_adapterInfo, _vkPhysicalDevice.hnd());
 }
 
 void 
-Renderer_Vk::createVkDevice()
+RenderDevice_Vk::createVkDevice()
 {
 	Vector<VkDeviceQueueCreateInfo, QueueFamilyIndices::s_kQueueTypeCount>	queueCreateInfos;
 	float	queuePriority		= 1.0f;
@@ -220,38 +229,37 @@ Renderer_Vk::createVkDevice()
 	createInfo.queueCreateInfoCount		= sCast<u32>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos		= queueCreateInfos.data();
 	createInfo.pEnabledFeatures			= &phyDeviceFeatures;
-	createInfo.enabledExtensionCount	= sCast<u32>(_extInfo.phyDeviceExts().size());
-	createInfo.ppEnabledExtensionNames	= _extInfo.phyDeviceExts().data();
-	createInfo.enabledLayerCount		= _adapterInfo.isDebug ? sCast<u32>(_extInfo.validationLayers().size()) : 0;	// ignored in new vk impl
-	createInfo.ppEnabledLayerNames		= _extInfo.validationLayers().data();											// ignored in new vk impl
+	createInfo.enabledExtensionCount	= sCast<u32>(_vkExtInfo.phyDeviceExts().size());
+	createInfo.ppEnabledExtensionNames	= _vkExtInfo.phyDeviceExts().data();
+	createInfo.enabledLayerCount		= _adapterInfo.isDebug ? sCast<u32>(_vkExtInfo.validationLayers().size()) : 0;	// ignored in new vk impl
+	createInfo.ppEnabledLayerNames		= _vkExtInfo.validationLayers().data();											// ignored in new vk impl
 	createInfo.pNext					= &phyDeviceFeature;
 
-	auto ret = vkCreateDevice(_vkPhysicalDevice, &createInfo, allocCallbacks(), _vkDevice.ptrForInit());
+	auto ret = vkCreateDevice(_vkPhysicalDevice.hnd(), &createInfo, allocCallbacks(), _vkDevice.hndForInit());
 	Util::throwIfError(ret);
 
 	/*vkGetDeviceQueue(_vkDevice, _queueFamilyIndices.graphics.value(),	graphicsQueueIdx, _vkGraphicsQueue.ptrForInit());
 	vkGetDeviceQueue(_vkDevice, _queueFamilyIndices.present.value(),	graphicsQueueIdx, _vkPresentQueue.ptrForInit());*/
 }
 
-i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDesc& cDesc, Vk_PhysicalDevice* vkPhyDevice, Vk_Surface* vkSurface)
+i64	RenderDevice_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDesc& cDesc, Vk_PhysicalDevice_T* vkPhyDevHnd, Vk_Surface_T* vkSurfHnd)
 {
-	auto* e = vkPhyDevice;
 	_queueFamilyIndices.clear();
-	_extInfo.createPhyDeviceExtensions(out, cDesc, e);
-	Util::getPhyDeviceFeaturesTo(out, e);
-	Util::getQueueFaimlyPropertiesTo(_queueFamilyProperties, vkPhyDevice);
-	Util::getSwapchainAvailableInfoTo(_swapchainAvaliableInfo, e, vkSurface->hnd());
+	_vkExtInfo.createPhyDeviceExtensions(out, cDesc, vkPhyDevHnd);
+	Util::getPhyDeviceFeaturesTo(out, vkPhyDevHnd);
+	Util::getQueueFaimlyPropertiesTo(_vkQueueFamilyProps, vkPhyDevHnd);
+	Util::getSwapchainAvailableInfoTo(_vkSwapchainAvaliableInfo, vkPhyDevHnd, vkSurfHnd);
 
 	u32 maxTry		= 10;
 	u32 curTryIdx	= 0;
 	while (curTryIdx < maxTry && !_queueFamilyIndices.isAllUnique())
 	{
-		for (u32 i = 0; i < _queueFamilyProperties.size(); ++i) 
+		for (u32 i = 0; i < _vkQueueFamilyProps.size(); ++i) 
 		{
-			auto& prop = _queueFamilyProperties[i];
+			auto& prop = _vkQueueFamilyProps[i];
 
 			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vkPhyDevice, i, vkSurface->hnd(), &presentSupport);
+			vkGetPhysicalDeviceSurfaceSupportKHR(vkPhyDevHnd, i, vkSurfHnd, &presentSupport);
 
 			//bool isFoundGraphics	= _queueFamilyIndices.graphics.has_value();
 			//bool isFoundPresent		= _queueFamilyIndices.present.has_value();
@@ -277,7 +285,7 @@ i64	Renderer_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDes
 	return _rateVkPhyDevice(out);
 }
 
-i64 Renderer_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
+i64 RenderDevice_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
 {
 	i64 score = 0;
 

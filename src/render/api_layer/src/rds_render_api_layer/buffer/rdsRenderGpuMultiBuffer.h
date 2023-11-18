@@ -13,28 +13,28 @@ namespace rds
 
 class RenderGpuMultiBuffer : public RenderResource
 {
-	friend class Renderer;
+	friend class RenderDevice;
 public:
 	using Base			= RenderResource;
 	using CreateDesc	= RenderGpuBuffer::CreateDesc;
-	using Util			= RenderApiUtil;
+	using Desc			= RenderGpuBuffer::Desc;
 
 public:
 	static CreateDesc					makeCDesc();
-	static SPtr<RenderGpuMultiBuffer>	make(const CreateDesc& cDesc);
+	static SPtr<RenderGpuMultiBuffer>	make(CreateDesc& cDesc);
 
 public:
 	RenderGpuMultiBuffer();
 	virtual ~RenderGpuMultiBuffer();
 
-	void create(const CreateDesc& cDesc);
+	void create(CreateDesc& cDesc);
 	void destroy();
 
 	void uploadToGpu(ByteSpan data, SizeType offset = 0);
 
 	void rotate();
 
-	const CreateDesc& desc() const;
+	const Desc& desc() const;
 
 	SizeType stride()		const;
 	SizeType bufSize()		const;
@@ -44,9 +44,9 @@ public:
 	const	SPtr<RenderGpuBuffer>& renderGpuBuffer() const;
 
 protected:
-	virtual void onCreate(const CreateDesc& cDesc);
-	virtual void onPostCreate(const CreateDesc& cDesc);
-	virtual void onDestroy();
+	virtual void onCreate		(CreateDesc& cDesc);
+	virtual void onPostCreate	(CreateDesc& cDesc);
+	virtual void onDestroy		();
 
 	virtual void onUploadToGpu(ByteSpan data, SizeType offset);
 
@@ -57,7 +57,7 @@ protected:
 	Vector<SPtr<RenderGpuBuffer>, s_kFrameInFlightCount> _renderGpuBuffers;
 };
 
-inline const RenderGpuMultiBuffer::CreateDesc& RenderGpuMultiBuffer::desc() const { return _renderGpuBuffers[iFrame]->desc(); }
+inline const RenderGpuMultiBuffer::Desc& RenderGpuMultiBuffer::desc()		const { return _renderGpuBuffers[iFrame]->desc(); }
 
 inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::stride()		const { return _renderGpuBuffers[iFrame]->stride(); }
 inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::bufSize()		const { return _renderGpuBuffers[iFrame]->bufSize(); }

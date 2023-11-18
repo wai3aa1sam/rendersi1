@@ -13,22 +13,22 @@ namespace rds
 #endif // 0
 #if 1
 
-class RenderGpuBuffer_Vk : public RenderGpuBuffer
+class RenderGpuBuffer_Vk : public RenderResource_Vk<RenderGpuBuffer>
 {
 public:
-	using Base = RenderGpuBuffer;
-	using Util = Vk_RenderApiUtil;
+	using Base = RenderResource_Vk<RenderGpuBuffer>;
 
 public:
 	RenderGpuBuffer_Vk();
 	virtual ~RenderGpuBuffer_Vk();
 
-	Vk_Buffer* vkBuf();
+	Vk_Buffer*		vkBuf();
+	Vk_Buffer_T*	vkBufHnd();
 
 protected:
-	virtual void onCreate(const CreateDesc& cDesc) override;
-	virtual void onPostCreate(const CreateDesc& cDesc) override;
-	virtual void onDestroy() override;
+	virtual void onCreate		(CreateDesc& cDesc)	override;
+	virtual void onPostCreate	(CreateDesc& cDesc)	override;
+	virtual void onDestroy		()					override;
 
 	virtual void onUploadToGpu(ByteSpan data, SizeType offset) override;
 
@@ -36,7 +36,8 @@ protected:
 	Vk_Buffer _vkBuf;
 };
 
-inline Vk_Buffer* RenderGpuBuffer_Vk::vkBuf() { return &_vkBuf; }
+inline Vk_Buffer*	RenderGpuBuffer_Vk::vkBuf()		{ return &_vkBuf; }
+inline Vk_Buffer_T* RenderGpuBuffer_Vk::vkBufHnd()	{ return vkBuf()->hnd(); }
 
 #endif
 }

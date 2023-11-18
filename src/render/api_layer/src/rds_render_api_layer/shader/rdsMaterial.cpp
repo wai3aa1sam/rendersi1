@@ -1,23 +1,35 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsMaterial.h"
-#include "rds_render_api_layer/rdsRenderer.h"
 #include "rdsShader.h"
+#include "rds_render_api_layer/rdsRenderer.h"
 
 namespace rds
 {
 
 SPtr<Material> 
-Renderer::createMaterial(Shader* shader)
+RenderDevice::createMaterial(const Material_CreateDesc& cDesc)
 {
-	auto p = onCreateMaterial();
-	p->setShader(shader);
+	cDesc._internal_create(this);
+	auto p = onCreateMaterial(cDesc);
+	p->setShader(cDesc.shader);
 	return p;
 }
 
 SPtr<Material> 
-Renderer::createMaterial()
+RenderDevice::createMaterial(Shader* shader)
 {
-	auto p = onCreateMaterial();
+	auto cDesc = Material::makeCDesc();
+	cDesc._internal_create(this);
+	cDesc.shader = shader;
+
+	return createMaterial(cDesc);
+}
+
+SPtr<Material> 
+RenderDevice::createMaterial()
+{
+	auto cDesc = Material::makeCDesc();
+	auto p = createMaterial(cDesc);
 	return p;
 }
 
@@ -26,10 +38,22 @@ Renderer::createMaterial()
 #endif // 0
 #if 1
 
+Material::CreateDesc 
+Material::makeCDesc()
+{
+	return CreateDesc{};
+}
+
+SPtr<Material> 
+Material::make(const Material_CreateDesc& cDesc)
+{
+	return Renderer::rdDev()->createMaterial(cDesc);
+}
+
 SPtr<Material>
 Material::make(Shader* shader)
 {
-	return Renderer::instance()->createMaterial(shader);
+	return Renderer::rdDev()->createMaterial(shader);
 }
 
 Material::Material()
@@ -39,12 +63,16 @@ Material::Material()
 
 Material::~Material()
 {
+	RDS_PROFILE_SCOPED();
 }
 
 void 
-Material::create()
+Material::create(const CreateDesc& cDesc)
 {
-	onCreate();
+	destroy();
+
+	Base::create(cDesc);
+	onCreate(cDesc);
 }
 
 void 
@@ -52,18 +80,21 @@ Material::destroy()
 {
 	_passes.clear();
 	_shader.reset(nullptr);
+
+	onDestroy();
+	Base::destroy();
 }
 
 void 
 Material::setShader(Shader* shader)
 {
-	destroy();
-
 	if (!shader)
 	{
+		destroy();
 		return;
 	}
 
+	Base::create(shader->renderDevice());
 	_shader = shader;
 
 	SizeType passCount = info().passes.size();
@@ -76,12 +107,12 @@ Material::setShader(Shader* shader)
 }
 
 void
-Material::onCreate()
+Material::onCreate(const CreateDesc& cDesc)
 {
 }
 
 void
-Material::onPostCreate()
+Material::onPostCreate(const CreateDesc& cDesc)
 {
 }
 

@@ -34,9 +34,9 @@ public:
 
 protected:
 	//TransferCommandPool _cmdPool;
-	TransferCommandBuffer _cmdBuf;
 
 	// TODO: temporary
+	TransferCommandBuffer _cmdBuf;
 	TransferCommandBuffer _uploadBufCmds;
 	TransferCommandBuffer _uploadTexCmds;
 };

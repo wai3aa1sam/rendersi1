@@ -15,6 +15,10 @@ class RenderContext;
 #endif // 0
 #if 1
 
+struct Material_CreateDesc : public RenderResource_CreateDesc
+{
+	Shader* shader = nullptr;
+};
 
 class Material : public RenderResource
 {
@@ -22,23 +26,27 @@ public:
 	using Base			= RenderResource;
 	using This			= Material;
 
+	using CreateDesc	= Material_CreateDesc;
+
 	using Pass			= MaterialPass;
 	using Stage			= MaterialPass_Stage;
 	using VertexStage	= MaterialPass_VertexStage;
 	using PixelStage	= MaterialPass_PixelStage;
 
 public:
-	static constexpr SizeType s_kShaderStageCount = enumInt(ShaderStageFlag::_kCount);
-	static constexpr SizeType s_kLocalPassSize = 2;
+	static constexpr SizeType s_kShaderStageCount	= enumInt(ShaderStageFlag::_kCount);
+	static constexpr SizeType s_kLocalPassSize		= 2;
 
 public:
+	static CreateDesc		makeCDesc();
+	static SPtr<Material>	make(const CreateDesc& cDesc);
 	static SPtr<Material>	make(Shader* shader);
 
 public:
 	Material();
 	virtual ~Material();
 
-	void create();
+	void create	(const CreateDesc& cDesc);
 	void destroy();
 
 	void setShader(Shader* shader);
@@ -64,8 +72,8 @@ public:
 	u32 frameIdx() const;
 
 protected:
-	virtual void onCreate		();
-	virtual void onPostCreate	();
+	virtual void onCreate		(const CreateDesc& cDesc);
+	virtual void onPostCreate	(const CreateDesc& cDesc);
 	virtual void onDestroy		();
 
 	virtual UPtr<MaterialPass> onMakePass() = 0;

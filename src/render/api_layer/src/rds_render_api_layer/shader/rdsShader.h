@@ -6,7 +6,7 @@
 namespace rds
 {
 
-struct Shader_CreateDesc
+struct Shader_CreateDesc : public RenderResource_CreateDesc
 {
 	StrView filename;
 };
@@ -39,8 +39,8 @@ public:
 	Shader();
 	virtual ~Shader();
 
-	void create(StrView filename);
 	void create(const CreateDesc& cDesc);
+	void create(StrView filename);
 	void destroy();
 
 	ShaderParamId getParamId() const;

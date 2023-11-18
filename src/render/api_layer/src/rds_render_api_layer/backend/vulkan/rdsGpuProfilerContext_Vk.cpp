@@ -2,7 +2,7 @@
 #include "rdsGpuProfilerContext_Vk.h"
 
 #include "rdsRenderContext_Vk.h"
-#include "rdsRenderer_Vk.h"
+#include "rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -17,15 +17,14 @@ namespace rds
 void 
 GpuProfilerContext_Vk::onCreate(const CreateDesc& cDesc)
 {
-	auto* rdCtxVk = sCast<RenderContext_Vk*>(cDesc.rdCtx);
-	auto* rdr = rdCtxVk->renderer();
-	auto vkFuncExtCtd	= (rdr->extInfo().getInstanceExtFunction<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
-	auto vkFuncExtCt	= (rdr->extInfo().getInstanceExtFunction<PFN_vkGetCalibratedTimestampsEXT>					("vkGetCalibratedTimestampsEXT"));
+	auto* rdDeviceVk = rdDevVk();
+	auto vkFuncExtCtd	= (rdDeviceVk->extInfo().getInstanceExtFunction<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
+	auto vkFuncExtCt	= (rdDeviceVk->extInfo().getInstanceExtFunction<PFN_vkGetCalibratedTimestampsEXT>					("vkGetCalibratedTimestampsEXT"));
 
-	auto* vkPhyDev			= rdr->vkPhysicalDevice();		RDS_UNUSED(vkPhyDev			);
-	auto* vkDev				= rdr->vkDevice();				RDS_UNUSED(vkDev			);
-	auto* vkGraphicsQueue	= rdCtxVk->vkGraphicsQueue();	RDS_UNUSED(vkGraphicsQueue	);
-	auto* vkCmdBuf			= rdCtxVk->vkCommandBuffer();	RDS_UNUSED(vkCmdBuf			);
+	auto* vkPhyDev			= rdDeviceVk->vkPhysicalDevice();		RDS_UNUSED(vkPhyDev			);
+	auto* vkDev				= rdDeviceVk->vkDevice();				RDS_UNUSED(vkDev			);
+	auto* vkGraphicsQueue	= rdCtxVk()->vkGraphicsQueue();			RDS_UNUSED(vkGraphicsQueue	);
+	auto* vkCmdBuf			= rdCtxVk()->vkCommandBuffer();			RDS_UNUSED(vkCmdBuf			);
 
 	RDS_ASSERT(vkFuncExtCtd && vkFuncExtCt || !vkFuncExtCtd && !vkFuncExtCt, "must be both exist or both not exist");
 	if (!vkFuncExtCtd && !vkFuncExtCt)
@@ -66,6 +65,18 @@ void
 GpuProfilerContext_Vk::setName(const char* name)
 {
 	RDS_PROFILE_GPU_CTX_NAME_VK_IMPL(_ctx, name);
+}
+
+RenderContext_Vk*	
+GpuProfilerContext_Vk::rdCtxVk()
+{
+	return sCast<RenderContext_Vk*>(_rdCtx);
+}
+
+RenderDevice_Vk* 
+GpuProfilerContext_Vk::rdDevVk()
+{
+	return rdCtxVk()->renderDeviceVk();
 }
 
 #endif

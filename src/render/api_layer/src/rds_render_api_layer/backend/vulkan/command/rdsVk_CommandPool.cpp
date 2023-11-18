@@ -1,6 +1,6 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_CommandPool.h"
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -18,55 +18,56 @@ Vk_CommandPool::Vk_CommandPool()
 
 Vk_CommandPool::~Vk_CommandPool()
 {
-	destroy();
+	
 }
 
 void 
-Vk_CommandPool::create(u32 familyIdx, VkCommandPoolCreateFlags createFlags)
+Vk_CommandPool::create(u32 familyIdx, VkCommandPoolCreateFlags createFlags, RenderDevice_Vk* rdDevVk)
 {
-	destroy();
+	destroy(rdDevVk);
 
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* allocCallbacks	= renderer->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	VkCommandPoolCreateInfo cInfo = {};
 	cInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cInfo.flags				= createFlags;
 	cInfo.queueFamilyIndex	= familyIdx;
 
-	auto ret = vkCreateCommandPool(vkDev, &cInfo, allocCallbacks, hndForInit());
+	auto ret = vkCreateCommandPool(vkDev, &cInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_CommandPool::destroy()
+Vk_CommandPool::destroy(RenderDevice_Vk* rdDevVk)
 {
 	if (!hnd())
 		return;
 
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyCommandPool(renderer->vkDevice(), hnd(), renderer->allocCallbacks());
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkDestroyCommandPool(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
 }
 
 Vk_CommandBuffer* 
-Vk_CommandPool::requestCommandBuffer(VkCommandBufferLevel level)
+Vk_CommandPool::requestCommandBuffer(VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk)
 {
 	switch (level)
 	{
-		case VK_COMMAND_BUFFER_LEVEL_PRIMARY:	{ return _requestCommandBuffer(_primaryVkCmdBufs,	_activePrimaryCmdBufCount, level); }	break;
-		case VK_COMMAND_BUFFER_LEVEL_SECONDARY: { return _requestCommandBuffer(_secondaryVkCmdBufs, _activeSecondaryCmdBufCount, level); }	break;
+		case VK_COMMAND_BUFFER_LEVEL_PRIMARY:	{ return _requestCommandBuffer(_primaryVkCmdBufs,	_activePrimaryCmdBufCount,	 level, rdDevVk); }	break;
+		case VK_COMMAND_BUFFER_LEVEL_SECONDARY: { return _requestCommandBuffer(_secondaryVkCmdBufs, _activeSecondaryCmdBufCount, level, rdDevVk); }	break;
 		default: throwIf(true, "");
 	}
 	return nullptr;
 }
 
 void 
-Vk_CommandPool::reset()
+Vk_CommandPool::reset(RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
+	auto* vkDev	= rdDevVk->vkDevice();
+
 	auto ret = vkResetCommandPool(vkDev, hnd(), 0);
 	resetCommandBuffers();
 	Util::throwIfError(ret);

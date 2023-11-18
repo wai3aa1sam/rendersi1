@@ -10,6 +10,9 @@ namespace rds
 
 struct ShaderStage;
 
+class Shader;
+class ShaderPass;
+
 struct	ShaderResources;
 using	FramedShaderResources = Vector<ShaderResources, RenderApiLayerTraits::s_kFrameInFlightCount>;
 
@@ -80,7 +83,7 @@ public:
 	template<class TEX>	void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
 						void setSamplerParam(StrView name, const SamplerState& v);
 
-	void create(ShaderStage* shaderStage);
+	void create	(ShaderStage* shaderStage, ShaderPass* pass);
 	void destroy();
 
 	void bind();
@@ -99,10 +102,11 @@ public:
 		static constexpr SizeType s_kLocalDataSize = 2;
 
 	public:
-		void create(const Info* info);
+		void create	(const Info* info, ShaderPass* pass);
 		void destroy();
 
-		template<class T> void setParam(StrView name, const T& v)
+		template<class T> 
+		void setParam(StrView name, const T& v)
 		{
 			const ShaderVariableInfo* var = info().findVariable(name);
 			if (!var)
@@ -143,15 +147,15 @@ public:
 		using Base = ShaderResource<ShaderStageInfo::Texture>;
 
 	public:
-		void create(const Info* info);
+		void create(const Info* info, ShaderPass* pass);
 
 		template<class TEX> void setTexure(TEX* v);
 
-								Texture*	getUpdatedTexture();
-		template<class TEX_T>	TEX_T*		getUpdatedTextureT();
+								Texture*	getUpdatedTexture (RenderDevice* rdDev);
+		template<class TEX_T>	TEX_T*		getUpdatedTextureT(RenderDevice* rdDev);
 		
-								Texture*	getUpdatedTexture()		const;
-		template<class TEX_T>	TEX_T*		getUpdatedTextureT()	const;
+								Texture*	getUpdatedTexture (RenderDevice* rdDev)	const;
+		template<class TEX_T>	TEX_T*		getUpdatedTextureT(RenderDevice* rdDev)	const;
 
 	public:
 		SPtr<Texture>		_tex;
@@ -163,7 +167,7 @@ public:
 		using Base = ShaderResource<ShaderStageInfo::Sampler>;
 
 	public:
-		void create(const Info* info);
+		void create(const Info* info, ShaderPass* pass);
 
 		void setSamplerParam(const SamplerState& v);
 		const SamplerState& samplerState() const;
@@ -305,13 +309,6 @@ inline const	u8*	ShaderResources::ConstBuffer::data() const	{ return _cpuBuf.dat
 #endif // 0
 #if 1
 
-inline
-void 
-ShaderResources::TexParam::create(const Info* info)
-{
-	Base::create(info);
-}
-
 template<class TEX> inline
 void 
 ShaderResources::TexParam::setTexure(TEX* v)
@@ -329,13 +326,13 @@ ShaderResources::TexParam::setTexure(TEX* v)
 
 template<class TEX_T> inline
 TEX_T* 
-ShaderResources::TexParam::getUpdatedTextureT()
+ShaderResources::TexParam::getUpdatedTextureT(RenderDevice* rdDev)
 {
-	return sCast<TEX_T*>(getUpdatedTexture());
+	return sCast<TEX_T*>(getUpdatedTexture(rdDev));
 }
 
-						inline Texture*	ShaderResources::TexParam::getUpdatedTexture()	const { return constCast(this)->getUpdatedTexture(); }
-template<class TEX_T>	inline TEX_T*	ShaderResources::TexParam::getUpdatedTextureT()	const { return constCast(this)->getUpdatedTextureT<TEX_T>(); }
+						inline Texture*	ShaderResources::TexParam::getUpdatedTexture (RenderDevice* rdDev)	const { return constCast(this)->getUpdatedTexture(rdDev); }
+template<class TEX_T>	inline TEX_T*	ShaderResources::TexParam::getUpdatedTextureT(RenderDevice* rdDev)	const { return constCast(this)->getUpdatedTextureT<TEX_T>(rdDev); }
 
 #endif
 
@@ -345,19 +342,6 @@ template<class TEX_T>	inline TEX_T*	ShaderResources::TexParam::getUpdatedTexture
 #endif // 0
 #if 1
 
-inline
-void 
-ShaderResources::SamplerParam::create(const Info* info)
-{
-	Base::create(info);
-}
-
-inline
-void 
-ShaderResources::SamplerParam::setSamplerParam(const SamplerState& v)
-{
-	_samplerState = v;
-}
 
 inline const SamplerState& ShaderResources::SamplerParam::samplerState() const { return _samplerState; }
 

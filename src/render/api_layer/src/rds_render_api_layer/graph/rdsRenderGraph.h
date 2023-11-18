@@ -46,7 +46,7 @@ public:
 	RenderGraph();
 	~RenderGraph();
 
-	void create(StrView name, Renderer* rdr, RenderContext* rdCtx, IAllocator* alloc = nullptr);
+	void create(StrView name, RenderDevice* rdDev, RenderContext* rdCtx, IAllocator* alloc = nullptr);
 	void destroy();
 
 	void compile();

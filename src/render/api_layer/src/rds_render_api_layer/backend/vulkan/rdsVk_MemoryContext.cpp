@@ -1,7 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_MemoryContext.h"
 
-#include "rdsRenderer_Vk.h"
+#include "rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -13,12 +13,6 @@ namespace rds
 #endif // 0
 #if 1
 
-Vk_MemoryContext* 
-Vk_MemoryContext::instance()
-{
-	return Renderer_Vk::instance()->memoryContext();
-}
-
 Vk_MemoryContext::Vk_MemoryContext()
 {
 	//_allocationCallbacks.pfnAllocation
@@ -29,7 +23,7 @@ Vk_MemoryContext::~Vk_MemoryContext()
 }
 
 void 
-Vk_MemoryContext::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst)
+Vk_MemoryContext::create(Vk_Device_T* vkDev, Vk_PhysicalDevice_T* vkPhyDev, Vk_Instance_T* vkInst)
 {
 	vkGetPhysicalDeviceMemoryProperties(vkPhyDev, &_vkMemProperties);
 

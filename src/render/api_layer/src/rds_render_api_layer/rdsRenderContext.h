@@ -19,28 +19,27 @@ class	TransferRequest;
 struct	Transfer_InlineUploadBuffer;
 class	RenderFrameUploadBuffer;
 
-struct RenderContext_CreateDesc
+struct RenderContext_CreateDesc : public RenderResource_CreateDesc
 {
 	NativeUIWindow* window = nullptr;
 };
 
 class RenderContext : public RenderResource
 {
-	friend class Renderer;
+	friend class RenderDevice;
 public:
-	using Base			= RefCount_Base;
+	using Base			= RenderResource;
 	using CreateDesc	= RenderContext_CreateDesc;
-	using Util			= RenderApiUtil;
 
 public:
-	static CreateDesc makeCDesc();
-	static SPtr<RenderContext> make(const CreateDesc& cDesc);
+	static CreateDesc			makeCDesc();
+	static SPtr<RenderContext>	make(const CreateDesc& cDesc);
 
 public:
 	RenderContext();
 	virtual ~RenderContext();
 
-	void create(const CreateDesc& cDesc);
+	void create	(const CreateDesc& cDesc);
 	void destroy();
 
 	void beginRender();
@@ -55,13 +54,11 @@ public:
 	const Vec2f&	framebufferSize() const;
 	float			aspectRatio() const;
 
-	virtual void waitIdle();
-
 	NativeUIWindow* nativeUIWindow();
 
 protected:
-	virtual void onCreate(const CreateDesc& cDesc);
-	virtual void onPostCreate(const CreateDesc& cDesc);
+	virtual void onCreate		(const CreateDesc& cDesc);
+	virtual void onPostCreate	(const CreateDesc& cDesc);
 	virtual void onDestroy();
 
 	virtual void onBeginRender()	{};

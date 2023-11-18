@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rdsClass_Common.h"
+#include "rds_core_base/common/rdsClass_Common.h"
 
 namespace rds
 {
@@ -75,14 +75,14 @@ Singleton<T>::instance()
 template<class T> inline
 Singleton<T>::Singleton()
 {
-	RDS_CORE_ASSERT(!s_instance);
+	RDS_CORE_ASSERT(!s_instance, "!s_instance");
 	s_instance = sCast<T*>(this);
 }
 
 template<class T> inline
 Singleton<T>::~Singleton()
 {
-	RDS_CORE_ASSERT(s_instance == this);
+	RDS_CORE_ASSERT(s_instance == this, "s_instance == this");
 	s_instance = nullptr;
 }
 

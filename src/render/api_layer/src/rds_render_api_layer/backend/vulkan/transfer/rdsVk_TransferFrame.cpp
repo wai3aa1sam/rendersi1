@@ -1,6 +1,6 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_TransferFrame.h"
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -14,41 +14,53 @@ Vk_TransferFrame::Vk_TransferFrame()
 
 Vk_TransferFrame::~Vk_TransferFrame()
 {
-	RDS_CORE_ASSERT(!_transferVkCmdPool, "have not call destroy()");
+	//RDS_CORE_ASSERT(!_transferVkCmdPool, "have not call destroy()");
+	destroy();
 }
 
 void 
-Vk_TransferFrame::create(TransferContext_Vk* ctx)
+Vk_TransferFrame::create(TransferContext_Vk* tsfCtxVk)
 {
-	RDS_CORE_ASSERT(ctx, "");
+	RDS_CORE_ASSERT(tsfCtxVk, "");
 
-	auto& queueFamily = ctx->renderer()->queueFamilyIndices();
+	_tsfCtxVk = tsfCtxVk;
+	auto* rdDevVk = tsfCtxVk->renderDeviceVk();
+
+	auto& queueFamily = rdDevVk->queueFamilyIndices();
 	u32 transferQueueFamilyIdx	= queueFamily.getFamilyIdx(QueueTypeFlags::Transfer);
 	u32 graphicsQueueFamilyIdx	= queueFamily.getFamilyIdx(QueueTypeFlags::Graphics);
 	//u32 computeQueueFamilyIdx	= queueFamily.getFamilyIdx(QueueTypeFlags::Compute);
 
-	_inFlightVkFnc.create();
-	_completedVkSmp.create();
-	_transferVkCmdPool.create(transferQueueFamilyIdx);
+	 _inFlightVkFnc.create(rdDevVk);
+	_completedVkSmp.create(rdDevVk);
+	_transferVkCmdPool.create(transferQueueFamilyIdx, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, rdDevVk);
 
 	RDS_TODO("remove? maybe put to main render graphics queue");
-	_graphicsInFlightVkFnc.create();
-	_graphicsCompletedVkSmp.create();
-	_graphicsVkCmdPool.create(graphicsQueueFamilyIdx);
+	 _graphicsInFlightVkFnc.create(rdDevVk);
+	_graphicsCompletedVkSmp.create(rdDevVk);
+	_graphicsVkCmdPool.create(graphicsQueueFamilyIdx, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, rdDevVk);
 
 	// thread-safe
-	_stagingAlloc.create(ctx->device());
+	_stagingAlloc.create(rdDevVk);
 }
 
 void 
-Vk_TransferFrame::destroy(TransferContext_Vk* ctx)
+Vk_TransferFrame::destroy()
 {
 	clear();
 
-	_graphicsVkCmdPool.destroy();
-	_transferVkCmdPool.destroy();
+	auto* rdDevVk = renderDeviceVk();
+
+	_graphicsVkCmdPool.destroy(rdDevVk);
+	_transferVkCmdPool.destroy(rdDevVk);
 
 	_stagingAlloc.destroy();
+
+	 _inFlightVkFnc.destroy(rdDevVk);
+	_completedVkSmp.destroy(rdDevVk);
+
+	 _graphicsInFlightVkFnc.destroy(rdDevVk);
+	_graphicsCompletedVkSmp.destroy(rdDevVk);
 }
 
 void 
@@ -64,7 +76,7 @@ Vk_TransferFrame::clear()
 }
 
 Vk_Buffer* 
-Vk_TransferFrame::requestStagingBuffer(u32& outIdx, VkDeviceSize size)
+Vk_TransferFrame::requestStagingBuffer(u32& outIdx, VkDeviceSize size, RenderDevice_Vk* rdDevVk)
 {
 	RDS_CORE_ASSERT(size > 0, "request size must not be 0");
 	RDS_TODO("MutexProtected with a ptr element should be faster, but need a allocator (linear is ok), otherwise it need allocate everytime");
@@ -80,7 +92,7 @@ Vk_TransferFrame::requestStagingBuffer(u32& outIdx, VkDeviceSize size)
 		outIdx = sCast<u32>(stagingBufs.size());
 		staging = stagingBufs.emplace_back(makeUPtr<Vk_Buffer>()).ptr();
 	}
-	staging->create(&_stagingAlloc, &allocInfo, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, QueueTypeFlags::Transfer);
+	staging->create(rdDevVk, &_stagingAlloc, &allocInfo, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, QueueTypeFlags::Transfer);
 
 	return staging;
 }
@@ -95,6 +107,7 @@ Vk_TransferFrame::getVkStagingBufHnd(u32 idx)
 	return stagingBufs[idx]->hnd();
 }
 
+RenderDevice_Vk* Vk_TransferFrame::renderDeviceVk() { return _tsfCtxVk->renderDeviceVk(); }
 
 }
 

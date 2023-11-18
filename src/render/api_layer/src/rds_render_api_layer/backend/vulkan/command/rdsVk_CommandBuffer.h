@@ -6,6 +6,8 @@
 namespace rds
 {
 
+class RenderDevice_Vk;
+
 struct Vk_Cmd_AddImageMemBarrierDesc;
 
 #if 0
@@ -39,8 +41,8 @@ public:
 	Vk_CommandBuffer();
 	~Vk_CommandBuffer();
 
-	void create(Vk_CommandPool* vkCommandPool, VkCommandBufferLevel level);
-	void destroy();
+	void create	(Vk_CommandPool* vkCommandPool, VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk);
+	void destroy(RenderDevice_Vk* rdDevVk);
 
 	void reset();
 
@@ -71,8 +73,7 @@ public:
 	Vk_RenderPass* getRenderPass();
 
 public:
-	Renderer_Vk*		renderer();
-	RenderDevice_Vk*	device();
+	//RenderDevice_Vk*	renderDeviceVk();
 
 public:
 	void cmd_copyBuffer(Vk_Buffer*		dst, Vk_Buffer*		src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);

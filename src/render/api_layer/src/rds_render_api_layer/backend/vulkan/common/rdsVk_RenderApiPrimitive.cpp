@@ -1,6 +1,6 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_RenderApiPrimitive.h"
-#include "rds_render_api_layer/backend/vulkan/rdsRenderer_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/rdsVk_Allocator.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
 
@@ -21,12 +21,8 @@ namespace rds
 #endif // 0
 #if 1
 
-//void Vk_RenderApiPrimitive<Vk_Instance_T>::destroy()
-//{
-//	vkDestroyInstance(_p, Vk_MemoryContext::instance()->allocCallbacks());
-//}
-
-void Vk_Instance::create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator)
+void 
+Vk_Instance::create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, RenderDevice_Vk* rdDevVk)
 {
 	VkResult ret = vkCreateInstance(pCreateInfo, pAllocator, hndForInit());
 
@@ -44,12 +40,14 @@ void Vk_Instance::create(const VkInstanceCreateInfo* pCreateInfo, const VkAlloca
 	Util::throwIfError(ret);
 }
 
-void Vk_Instance::destroy()
+void
+Vk_Instance::destroy(RenderDevice_Vk* rdDevVk)
 {
-	if (!_hnd)
-		return;
+	RDS_CORE_ASSERT(hnd(), "");
 
-	vkDestroyInstance(hnd(), Renderer_Vk::instance()->allocCallbacks());
+	auto* vkAllocCbs = rdDevVk->allocCallbacks();
+
+	vkDestroyInstance(hnd(), vkAllocCbs);
 	Base::destroy();
 }
 
@@ -61,12 +59,34 @@ void Vk_Instance::destroy()
 #endif // 0
 #if 1
 
-void 
-Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger>::destroy()
+void
+Vk_DebugUtilsMessenger::create(RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer = Renderer_Vk::instance();
-	auto func = renderer->extInfo().getInstanceExtFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
-	func(renderer->vkInstance(), _p, renderer->allocCallbacks());
+	const auto& vkExtInfo	= rdDevVk->extInfo();
+	auto*		vkInst		= rdDevVk->vkInstance();
+	auto*		vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+	Util::createDebugMessengerInfo(createInfo);
+
+	auto fn	= vkExtInfo.getInstanceExtFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
+	auto ret	= fn(vkInst, &createInfo, vkAllocCbs, hndForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_DebugUtilsMessenger::destroy(RenderDevice_Vk* rdDevVk)
+{
+	if (!hnd())
+		return;
+
+	auto* vkInst		= rdDevVk->vkInstance();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	auto fn = rdDevVk->extInfo().getInstanceExtFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
+	fn(vkInst, hnd(), vkAllocCbs);
+
+	Base::destroy();
 }
 
 #endif
@@ -77,9 +97,17 @@ Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger>::destroy()
 #if 1
 
 void 
-Vk_RenderApiPrimitive<Vk_PhysicalDevice>::destroy()
+Vk_PhysicalDevice::create(Vk_PhysicalDevice_T* vkPhyDevHnd)
 {
+	_hnd = vkPhyDevHnd;
+}
 
+void 
+Vk_PhysicalDevice::destroy()
+{
+	RDS_CORE_ASSERT(hnd(), "");
+
+	Base::destroy();
 }
 
 #endif
@@ -89,10 +117,17 @@ Vk_RenderApiPrimitive<Vk_PhysicalDevice>::destroy()
 #endif // 0
 #if 1
 
-void Vk_RenderApiPrimitive<Vk_Device>::destroy()
+void 
+Vk_Device::destroy(RenderDevice_Vk* rdDevVk)
 {
-	vkDestroyDevice(_p, Vk_MemoryContext::instance()->allocCallbacks());
+	RDS_CORE_ASSERT(hnd(), "");
+
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkDestroyDevice(hnd(), vkAllocCbs);
+	Base::destroy();
 }
+
 #endif
 
 #if 0
@@ -101,13 +136,13 @@ void Vk_RenderApiPrimitive<Vk_Device>::destroy()
 #if 1
 
 void 
-Vk_Surface::create(NativeUIWindow* wnd)
+Vk_Surface::create(NativeUIWindow* wnd, RenderDevice_Vk* rdDevVk)
 {
 	if (!wnd)
 		return;
 
-	auto* vkInst			= Renderer_Vk::instance()->vkInstance();
-	auto* vkAllocCallbacks	= Renderer_Vk::instance()->allocCallbacks();
+	auto* vkInst		= rdDevVk->vkInstance();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 #if RDS_OS_WINDOWS
 
@@ -120,16 +155,16 @@ Vk_Surface::create(NativeUIWindow* wnd)
 	#error("createSurface() not support int this platform")
 #endif // RDS_OS_WINDOWS
 
-	create(wnd, vkInst, &createInfo, vkAllocCallbacks);
+	create(wnd, vkInst, &createInfo, vkAllocCbs, rdDevVk);
 }
 
 void 
-Vk_Surface::create(NativeUIWindow* wnd, Vk_Instance_T* instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator)
+Vk_Surface::create(NativeUIWindow* wnd, Vk_Instance_T* instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, RenderDevice_Vk* rdDevVk)
 {
 	if (wnd == _wnd || !wnd)
 		return;
 
-	destroy(wnd);
+	destroy(wnd, rdDevVk);
 
 	_wnd = wnd;
 	auto ret = vkCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, hndForInit());
@@ -137,26 +172,15 @@ Vk_Surface::create(NativeUIWindow* wnd, Vk_Instance_T* instance, const VkWin32Su
 }
 
 void 
-Vk_Surface::destroy(NativeUIWindow* wnd)
+Vk_Surface::destroy(NativeUIWindow* wnd, RenderDevice_Vk* rdDevVk)
 {
 	if (!hnd() || _wnd == wnd)
 		return;
 
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroySurfaceKHR(renderer->vkInstance(), hnd(), renderer->allocCallbacks());
+	vkDestroySurfaceKHR(rdDevVk->vkInstance(), hnd(), rdDevVk->allocCallbacks());
 
 	_wnd = nullptr;
 	Base::destroy();
-}
-
-
-#else
-
-void
-Vk_RenderApiPrimitive<Vk_Surface>::destroy()
-{
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroySurfaceKHR(renderer->vkInstance(), _p, renderer->allocCallbacks());
 }
 
 #endif
@@ -167,20 +191,14 @@ Vk_RenderApiPrimitive<Vk_Surface>::destroy()
 #endif // 0
 #if 1
 
-//void 
-//Vk_RenderApiPrimitive<Vk_Queue>::destroy()
-//{
-//
-//}
-
 void 
-Vk_Queue::create(QueueTypeFlags type, RenderDevice_Vk* rdDev)
+Vk_Queue::create(QueueTypeFlags type, RenderDevice_Vk* rdDevVk)
 {
-	create(rdDev->queueFamilyIndices().getFamilyIdx(type), rdDev->vkDevice());
+	create(rdDevVk->queueFamilyIndices().getFamilyIdx(type), rdDevVk->vkDevice());
 }
 
 void 
-Vk_Queue::create(u32 familyIdx, Vk_Device* vkDevice)
+Vk_Queue::create(u32 familyIdx, Vk_Device_T* vkDevice)
 {
 	vkGetDeviceQueue(vkDevice, familyIdx, _queueIdx, hndForInit());
 	_familyIdx = familyIdx;
@@ -189,24 +207,11 @@ Vk_Queue::create(u32 familyIdx, Vk_Device* vkDevice)
 void 
 Vk_Queue::destroy()
 {
+	RDS_CORE_ASSERT(hnd(), "");
+
 	_familyIdx	= ~u32(0);
 	_queueIdx	= 0;
 	Base::destroy();
-}
-
-#endif
-
-
-#if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Swapchain>-Impl ---
-#endif // 0
-#if 0
-
-void
-Vk_RenderApiPrimitive<Vk_Swapchain>::destroy()
-{
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroySwapchainKHR(renderer->vkDevice(), _p, renderer->allocCallbacks());
 }
 
 #endif
@@ -215,13 +220,6 @@ Vk_RenderApiPrimitive<Vk_Swapchain>::destroy()
 #pragma mark --- rdsVk_Image-Impl ---
 #endif // 0
 #if 1
-
-//void
-//Vk_RenderApiPrimitive<Vk_Image>::destroy()
-//{
-//	auto* renderer = Renderer_Vk::instance();
-//	vkDestroyImage(renderer->vkDevice(), _p, renderer->allocCallbacks());
-//}
 
 void 
 Vk_Image::create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
@@ -232,11 +230,11 @@ Vk_Image::create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, cons
 }
 
 void 
-Vk_Image::create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags)
+Vk_Image::create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	RDS_CORE_ASSERT(width > 0 && height > 0, "");
 
-	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
+	auto& vkQueueIndices = rdDevVk->queueFamilyIndices();
 
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType			= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -277,6 +275,7 @@ Vk_Image::destroy()
 {
 	if (!_hnd || !_alloc)
 		return;
+
 	_alloc->freeImage(_hnd, &_allocHnd);
 	Base::destroy();
 }
@@ -288,31 +287,24 @@ Vk_Image::destroy()
 #endif // 0
 #if 1
 
-//void
-//Vk_RenderApiPrimitive<Vk_ImageView>::destroy()
-//{
-//	auto* renderer = Renderer_Vk::instance();
-//	vkDestroyImageView(renderer->vkDevice(), _p, renderer->allocCallbacks());
-//}
-
 void 
-Vk_ImageView::create(VkImageViewCreateInfo* viewInfo)
+Vk_ImageView::create(VkImageViewCreateInfo* viewInfo, RenderDevice_Vk* rdDevVk)
 {
-	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
-	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
+	auto* vkDev				= rdDevVk->vkDevice();
+	auto* vkAllocCallBacks	= rdDevVk->allocCallbacks();
 
 	auto ret = vkCreateImageView(vkDev, viewInfo, vkAllocCallBacks, hndForInit());
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_ImageView::create(Vk_Image* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount)
+Vk_ImageView::create(Vk_Image* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount, RenderDevice_Vk* rdDevVk)
 {
-	create(vkImage->hnd(), vkFormat, aspectFlags, mipCount);
+	create(vkImage->hnd(), vkFormat, aspectFlags, mipCount, rdDevVk);
 }
 
 void 
-Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount)
+Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount, RenderDevice_Vk* rdDevVk)
 {
 	RDS_CORE_ASSERT(mipCount >= 1, "");
 
@@ -338,14 +330,7 @@ Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags 
 	viewInfo.subresourceRange.levelCount		= mipCount;
 	viewInfo.subresourceRange.layerCount		= 1;
 
-	create(&viewInfo);
-}
-
-
-void 
-Vk_ImageView::destroy()
-{
-	destroy(Renderer_Vk::instance());
+	create(&viewInfo, rdDevVk);
 }
 
 void 
@@ -353,8 +338,10 @@ Vk_ImageView::destroy(RenderDevice_Vk* rdDev)
 {
 	if (!_hnd)
 		return;
+
 	auto* vkDev				= rdDev->vkDevice();
 	auto* vkAllocCallBacks	= rdDev->allocCallbacks();
+
 	vkDestroyImageView(vkDev, _hnd, vkAllocCallBacks);
 	Base::destroy();
 }
@@ -368,22 +355,24 @@ Vk_ImageView::destroy(RenderDevice_Vk* rdDev)
 #if 1
 
 void 
-Vk_Sampler::create(VkSamplerCreateInfo* samplerInfo)
+Vk_Sampler::create(VkSamplerCreateInfo* samplerInfo, RenderDevice_Vk* rdDevVk)
 {
-	auto* vkDev				= Renderer_Vk::instance()->vkDevice();
-	auto* vkAllocCallBacks	= Renderer_Vk::instance()->allocCallbacks();
+	auto* vkDev				= rdDevVk->vkDevice();
+	auto* vkAllocCallBacks	= rdDevVk->allocCallbacks();
 
 	auto ret = vkCreateSampler(vkDev, samplerInfo, vkAllocCallBacks, hndForInit());
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_Sampler::destroy(Renderer_Vk* rdr)
+Vk_Sampler::destroy(RenderDevice_Vk* rdDevVk)
 {
 	if (!_hnd)
 		return;
-	auto* vkDev				= rdr->vkDevice();
-	auto* vkAllocCallBacks	= rdr->allocCallbacks();
+
+	auto* vkDev				= rdDevVk->vkDevice();
+	auto* vkAllocCallBacks	= rdDevVk->allocCallbacks();
+
 	vkDestroySampler(vkDev, _hnd, vkAllocCallBacks);
 	Base::destroy();
 }
@@ -395,29 +384,25 @@ Vk_Sampler::destroy(Renderer_Vk* rdr)
 #endif // 0
 #if 1
 
-//void
-//Vk_RenderApiPrimitive<Vk_Framebuffer>::destroy()
-//{
-//	auto* renderer = Renderer_Vk::instance();
-//	vkDestroyFramebuffer(renderer->vkDevice(), _p, renderer->allocCallbacks());
-//}
-
 void 
-Vk_Framebuffer::create(const VkFramebufferCreateInfo* pCreateInfo)
+Vk_Framebuffer::create(const VkFramebufferCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
-	auto ret = vkCreateFramebuffer(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());
+	auto ret = vkCreateFramebuffer(vkDev, pCreateInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_Framebuffer::destroy()
+Vk_Framebuffer::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyFramebuffer(renderer->vkDevice(), _hnd, renderer->allocCallbacks());
+	RDS_CORE_ASSERT(hnd(), "");
+
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkDestroyFramebuffer(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
 }
 
@@ -428,13 +413,16 @@ Vk_Framebuffer::destroy()
 #endif // 0
 #if 1
 
-void 
-Vk_ShaderModule::create(Renderer_Vk* rdr, StrView filename)
+Vk_ShaderModule::~Vk_ShaderModule()
 {
-	_rdr = rdr;
 
-	auto* vkDev			= _rdr->vkDevice();
-	auto* vkAllocCbs	= _rdr->allocCallbacks();
+}
+
+void 
+Vk_ShaderModule::create(StrView filename, RenderDevice_Vk* rdDevVk)
+{
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	Vector<u8> bin;
 	File::readFile(filename, bin);
@@ -449,10 +437,14 @@ Vk_ShaderModule::create(Renderer_Vk* rdr, StrView filename)
 }
 
 void 
-Vk_ShaderModule::destroy()
+Vk_ShaderModule::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* vkDev			= _rdr->vkDevice();
-	auto* vkAllocCbs	= _rdr->allocCallbacks();
+	RDS_CORE_ASSERT(rdDevVk, "rdDevVk == nullptr");
+	RDS_CORE_ASSERT(hnd(), "");
+
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
 	vkDestroyShaderModule(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
 }
@@ -463,30 +455,26 @@ Vk_ShaderModule::destroy()
 #pragma mark --- rdsVk_RenderPass-Impl ---
 #endif // 0
 #if 1
-//
-//void 
-//Vk_RenderApiPrimitive<Vk_RenderPass>::destroy()
-//{
-//	auto* renderer = Renderer_Vk::instance();
-//	vkDestroyRenderPass(renderer->vkDevice(), _p, renderer->allocCallbacks());
-//}
 
 void 
-Vk_RenderPass::create(const VkRenderPassCreateInfo* pCreateInfo)
+Vk_RenderPass::create(const VkRenderPassCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
-	auto ret = vkCreateRenderPass(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());
+	auto ret = vkCreateRenderPass(vkDev, pCreateInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_RenderPass::destroy()
+Vk_RenderPass::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyRenderPass(renderer->vkDevice(), hnd(), renderer->allocCallbacks());
+	RDS_CORE_ASSERT(hnd(), "");
+
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkDestroyRenderPass(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
 }
 
@@ -498,22 +486,22 @@ Vk_RenderPass::destroy()
 #if 1
 
 void 
-Vk_PipelineLayout::create(Renderer_Vk* rdr, const VkPipelineLayoutCreateInfo* pCreateInfo)
+Vk_PipelineLayout::create(const VkPipelineLayoutCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
 {
-	//auto* rdr			= Renderer_Vk::instance();
-	auto* vkDev			= rdr->vkDevice();
-	auto* vkAllocCbs	= rdr->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	auto ret = vkCreatePipelineLayout(vkDev, pCreateInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_PipelineLayout::destroy()
+Vk_PipelineLayout::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* rdr			= Renderer_Vk::instance();
-	auto* vkDev			= rdr->vkDevice();
-	auto* vkAllocCbs	= rdr->allocCallbacks();
+	RDS_CORE_ASSERT(hnd(), "");
+
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	vkDestroyPipelineLayout(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
@@ -540,11 +528,10 @@ Vk_PipelineCache::destroy()
 #if 1
 
 void 
-Vk_Pipeline::create(Renderer_Vk* rdr, const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache)
+Vk_Pipeline::create(const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache, RenderDevice_Vk* rdDevVk)
 {
-	//auto* rdr			= Renderer_Vk::instance();
-	auto* vkDev			= rdr->vkDevice();
-	auto* vkAllocCbs	= rdr->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	auto cacheHnd = vkPipelineCache ? vkPipelineCache->hnd() : VK_NULL_HANDLE;
 
@@ -553,42 +540,15 @@ Vk_Pipeline::create(Renderer_Vk* rdr, const VkGraphicsPipelineCreateInfo* pCreat
 }
 
 void 
-Vk_Pipeline::destroy()
+Vk_Pipeline::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* rdr			= Renderer_Vk::instance();
-	auto* vkDev			= rdr->vkDevice();
-	auto* vkAllocCbs	= rdr->allocCallbacks();
+	RDS_CORE_ASSERT(hnd(), "");
+
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	vkDestroyPipeline(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
-}
-
-#endif
-
-#if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_CommandPool_T>-Impl ---
-#endif // 0
-#if 0
-
-void 
-Vk_RenderApiPrimitive<Vk_CommandPool_T>::destroy()
-{
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyCommandPool(renderer->vkDevice(), _p, renderer->allocCallbacks());
-}
-
-#endif
-
-#if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_CommandBuffer_T>-Impl ---
-#endif // 0
-#if 0
-
-void 
-Vk_RenderApiPrimitive<Vk_CommandBuffer_T>::destroy()
-{
-	//auto* renderer = Renderer_Vk::instance();
-	//vkFreeCommandBuffers(renderer->vkDevice(), _p, renderer->allocCallbacks()); 
 }
 
 #endif
@@ -599,33 +559,33 @@ Vk_RenderApiPrimitive<Vk_CommandBuffer_T>::destroy()
 #if 1
 
 void 
-Vk_Semaphore::create()
+Vk_Semaphore::create(RenderDevice_Vk* rdDevVk)
 {
 	VkSemaphoreCreateInfo cInfo = {};
 	cInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	create(&cInfo);
+	create(&cInfo, rdDevVk);
 }
 
 void 
-Vk_Semaphore::create(const VkSemaphoreCreateInfo* pCreateInfo)
+Vk_Semaphore::create(const VkSemaphoreCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
-	auto ret = vkCreateSemaphore(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());	
+	auto ret = vkCreateSemaphore(vkDev, pCreateInfo, vkAllocCbs, hndForInit());	
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_Semaphore::destroy()
+Vk_Semaphore::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	RDS_CORE_ASSERT(hnd(), "");
 
-	vkDestroySemaphore(vkDev, hnd(), vkAllocCallbacks);
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkDestroySemaphore(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
 }
 
@@ -638,39 +598,43 @@ Vk_Semaphore::destroy()
 #if 1
 
 void 
-Vk_Fence::create()
+Vk_Fence::create(RenderDevice_Vk* rdDevVk)
 {
 	VkFenceCreateInfo cInfo = {};
 	cInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	cInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;			// create with signaled state
 
-	create(&cInfo);
+	create(&cInfo, rdDevVk);
 }
 
 void 
-Vk_Fence::create(const VkFenceCreateInfo* pCreateInfo)
+Vk_Fence::create(const VkFenceCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
-	auto ret = vkCreateFence(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());			
+	auto ret = vkCreateFence(vkDev, pCreateInfo, vkAllocCbs, hndForInit());			
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_Fence::destroy()
+Vk_Fence::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkDestroyFence(renderer->vkDevice(), hnd(), renderer->allocCallbacks());
+	RDS_CORE_ASSERT(hnd(), "");
+
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkDestroyFence(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
 }
 
 VkResult 
 Vk_Fence::wait(RenderDevice_Vk* rdDev, u64 timeout)
 {
-	Vk_Fence_T* vkFences[] = { hnd()};
+	Vk_Fence_T* vkFences[] = { hnd() };
 	u32 vkFenceCount = ArraySize<decltype(vkFences)>;
+
 	auto ret = vkWaitForFences(rdDev->vkDevice(), vkFenceCount, vkFences, VK_TRUE, timeout);
 	Util::throwIfError(ret);
 	return ret;
@@ -679,8 +643,9 @@ Vk_Fence::wait(RenderDevice_Vk* rdDev, u64 timeout)
 VkResult
 Vk_Fence::reset(RenderDevice_Vk* rdDev)
 {
-	Vk_Fence_T* vkFences[]		= { hnd()};
+	Vk_Fence_T* vkFences[]		= { hnd() };
 	u32			vkFenceCount	= ArraySize<decltype(vkFences)>;
+
 	auto ret = vkResetFences(rdDev->vkDevice(), vkFenceCount, vkFences);		// should handle it to signaled if the function throw?
 	Util::throwIfError(ret);
 	return ret;
@@ -695,10 +660,15 @@ Vk_Fence::reset(RenderDevice_Vk* rdDev)
 #if 1
 
 void 
-Vk_RenderApiPrimitive<Vk_DeviceMemory>::destroy()
+Vk_DeviceMemory::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer = Renderer_Vk::instance();
-	vkFreeMemory(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	RDS_CORE_ASSERT(hnd(), "");
+
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkFreeMemory(vkDev, hnd(), vkAllocCbs);
+	Base::destroy();
 }
 
 #endif
@@ -717,9 +687,9 @@ Vk_Buffer::create(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, con
 }
 
 void 
-Vk_Buffer::create(Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags)
+Vk_Buffer::create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags)
 {
-	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
+	auto& vkQueueIndices	= rdDevVk->queueFamilyIndices();
 
 	VkBufferCreateInfo bufferInfo = {};
 	bufferInfo.sType					= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -757,10 +727,16 @@ Vk_Buffer::destroy()
 #if 1
 
 void 
-Vk_RenderApiPrimitive<Vk_BufferView>::destroy()
+Vk_BufferView::create	(const VkDescriptorSetLayoutCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
 {
-	//auto* renderer = Renderer_Vk::instance();
-	//vkDestroyFence(renderer->vkDevice(), _p, renderer->allocCallbacks());
+	_notYetSupported(RDS_SRCLOC);
+}
+
+void 
+Vk_BufferView::destroy(RenderDevice_Vk* rdDevVk)
+{
+	RDS_CORE_ASSERT(hnd(), "");
+
 }
 
 #endif
@@ -771,24 +747,24 @@ Vk_RenderApiPrimitive<Vk_BufferView>::destroy()
 #if 1
 
 void 
-Vk_DescriptorSetLayout::create(const VkDescriptorSetLayoutCreateInfo* pCreateInfo)
+Vk_DescriptorSetLayout::create(const VkDescriptorSetLayoutCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
-	auto ret = vkCreateDescriptorSetLayout(vkDev, pCreateInfo, vkAllocCallbacks, hndForInit());
+	auto ret = vkCreateDescriptorSetLayout(vkDev, pCreateInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);
 }
 
 void 
-Vk_DescriptorSetLayout::destroy()
+Vk_DescriptorSetLayout::destroy(RenderDevice_Vk* rdDevVk)
 {
-	auto* renderer			= Renderer_Vk::instance();
-	auto* vkDev				= renderer->vkDevice();
-	auto* vkAllocCallbacks	= renderer->allocCallbacks();
+	RDS_CORE_ASSERT(hnd(), "");
 
-	vkDestroyDescriptorSetLayout(vkDev, _hnd, vkAllocCallbacks);
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkDestroyDescriptorSetLayout(vkDev, _hnd, vkAllocCbs);
 	Base::destroy();
 }
 
@@ -799,40 +775,35 @@ Vk_DescriptorSetLayout::destroy()
 #endif // 0
 #if 1
 
-Vk_DescriptorPool::~Vk_DescriptorPool()
-{
-	RDS_CORE_ASSERT(!hnd(), "not yet destroy");
-}
-
 VkResult 
-Vk_DescriptorPool::create(VkDescriptorPoolCreateInfo* cInfo, Renderer_Vk* rdr)
+Vk_DescriptorPool::create(VkDescriptorPoolCreateInfo* cInfo, RenderDevice_Vk* rdDevVk)
 {
 	cInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 
-	auto* vkDev		= rdr->vkDevice();
-	auto* vkAllocCb	= rdr->allocCallbacks();
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
-	auto ret = vkCreateDescriptorPool(vkDev, cInfo, vkAllocCb, hndForInit());
+	auto ret = vkCreateDescriptorPool(vkDev, cInfo, vkAllocCbs, hndForInit());
 	return ret;
-	//Util::throwIfError(ret);	// should not throw, let upper layer decide
 }
 
 void 
-Vk_DescriptorPool::destroy(Renderer_Vk* rdr)
+Vk_DescriptorPool::destroy(RenderDevice_Vk* rdDevVk)
 {
-	if (!_hnd || !rdr)
+	if (!_hnd || !rdDevVk)
 		return;
-	auto* vkDev				= rdr->vkDevice();
-	auto* vkAllocCallbacks	= rdr->allocCallbacks();
 
-	vkDestroyDescriptorPool(vkDev, _hnd, vkAllocCallbacks);
-	_hnd = VK_NULL_HANDLE;
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	vkDestroyDescriptorPool(vkDev, _hnd, vkAllocCbs);
+	Base::destroy();
 }
 
 void 
-Vk_DescriptorPool::reset(VkDescriptorPoolResetFlags flag, Renderer_Vk* rdr)
+Vk_DescriptorPool::reset(VkDescriptorPoolResetFlags flag, RenderDevice_Vk* rdDevVk)
 {
-	auto* vkDev	= rdr->vkDevice();
+	auto* vkDev	= rdDevVk->vkDevice();
 	vkResetDescriptorPool(vkDev, _hnd, flag);
 }
 
@@ -844,23 +815,19 @@ Vk_DescriptorPool::reset(VkDescriptorPoolResetFlags flag, Renderer_Vk* rdr)
 #endif // 0
 #if 1
 
-VkResult 
-Vk_DescriptorSet::create(VkDescriptorSetAllocateInfo* cInfo)
+Vk_DescriptorSet::~Vk_DescriptorSet()
 {
-	auto* rdr = Renderer_Vk::instance();
-	auto ret = create(cInfo, rdr);
-	return ret;
+	destroy();
 }
 
 VkResult 
-Vk_DescriptorSet::create(VkDescriptorSetAllocateInfo* cInfo, Renderer_Vk* rdr)
+Vk_DescriptorSet::create(VkDescriptorSetAllocateInfo* cInfo, RenderDevice_Vk* rdDevVk)
 {
 	cInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 
-	auto* vkDev	= rdr->vkDevice();
+	auto* vkDev	= rdDevVk->vkDevice();
 	auto ret = vkAllocateDescriptorSets(vkDev, cInfo, hndForInit());
 	return ret;
-	//Util::throwIfError(ret);	// should not throw, let upper layer decide
 }
 
 void 

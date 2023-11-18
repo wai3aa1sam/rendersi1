@@ -1,7 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsVk_Allocator.h"
 
-#include "rdsRenderer_Vk.h"
+#include "rdsRenderDevice_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -50,7 +50,7 @@ Vk_Allocator::create(RenderDevice_Vk* rdDev)
 }
 
 void 
-Vk_Allocator::create(Vk_Device* vkDev, Vk_PhysicalDevice* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks)
+Vk_Allocator::create(Vk_Device_T* vkDev, Vk_PhysicalDevice_T* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.instance				= vkInst;

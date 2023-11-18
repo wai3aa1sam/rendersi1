@@ -24,7 +24,7 @@ public:
 	TransferContext_Vk();
 	~TransferContext_Vk();
 
-	Vk_TransferFrame& transferFrame();
+	Vk_TransferFrame& vkTransferFrame();
 
 public:
 	void onTransferCommand_CopyBuffer	(TransferCommand_CopyBuffer*	cmd);
@@ -32,8 +32,8 @@ public:
 	void onTransferCommand_UploadTexture(TransferCommand_UploadTexture* cmd);
 
 protected:
-	virtual void onCreate()		override;
-	virtual void onDestroy()	override;
+	virtual void onCreate	(const CreateDesc& cDesc)	override;
+	virtual void onDestroy	()							override;
 
 	virtual void onCommit(TransferRequest& tsfReq) override;
 

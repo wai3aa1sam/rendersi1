@@ -44,11 +44,6 @@ namespace rds
 using Vk_AllocHnd = VmaAllocation;
 using Vk_Allocation = VmaAllocation;
 
-
-// TODO: remove
-class Renderer_Vk;
-using RenderDevice_Vk = Renderer_Vk;
-
 }
 
 
