@@ -12,10 +12,6 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
-#if RDS_VK_VER_1_2
-extern PFN_vkQueueSubmit2KHR vkQueueSubmit2;
-#endif
-
 namespace rds
 {
 
@@ -204,15 +200,16 @@ public:
 
 	static Vk_StageAccess toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout);
 
-	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
-	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);
+	/*template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
+	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);*/
 
-	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T> src);
-	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> src);
-	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src);
+	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType, N>& dst, Span<T> src);
+	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType, N>& dst, Span<T*> src);
+	template<class T, size_t N> static void convertToHnds(Vector<typename T::HndType, N>& dst, const Vector<T, N>& src);
 	
 public:
-	static u32 getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties, RenderDevice_Vk* rdDevVk);
+	static u32	getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties, RenderDevice_Vk* rdDevVk);
+	static void setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const String& name, const void* vkHnd);
 
 public:
 	static Vk_Buffer*	toVkBuf		(		RenderGpuBuffer* rdGpuBuf);
@@ -226,17 +223,8 @@ public:
 	// for create vk objects
 public:
 	static void createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& out);
-	//static void createSurface(Vk_Surface_T** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window);
 	static void createSwapchain(Vk_Swapchain_T** out, Vk_Surface_T* vkSurface, Vk_Device_T* vkDevice, const Vk_SwapchainInfo& info, const Vk_SwapchainAvailableInfo& avaInfo, RenderDevice_Vk* rdDevVk);
 	//static void createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
-
-	//static void createShaderModule(Vk_ShaderModule** out, StrView filename, Vk_Device* vkDevice);
-
-	//static void createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice);
-	//static void createFence(Vk_Fence_T** out, Vk_Device* vkDevice);
-
-	//static void createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	//static void createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel);
 
 	//template<size_t N> static void createImageViews(Vector<VkPtr<Vk_ImageView>, N>& out, const Vector<VkPtr<Vk_Image>, N>& vkImages, Vk_Device* vkDevice, 
 	//												VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
@@ -245,7 +233,6 @@ public:
 	//						, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, QueueTypeFlags queueTypeFlags);
 
 	static void createBuffer(Vk_Buffer& outBuf, RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
-	//static void createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags);
 
 public:
 	static void copyBuffer				(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue, RenderDevice_Vk* rdDevVk);
@@ -390,32 +377,32 @@ inline const Vector<VkExtensionProperties,	Vk_ExtensionInfo::s_kLocalSize>& Vk_E
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiUtil-Decl ---
+#pragma mark --- rdsVk_RenderApiUtil-Impl ---
 #endif // 0
 #if 1
 
-template<class T, size_t N> inline
-void
-Vk_RenderApiUtil::convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n)
-{
-	out.clear();
-	out.resize(n);
-	for (size_t i = 0; i < n; i++)
-	{
-		out[i].reset(vkData[i]);
-	}
-}
-
-template<class T, size_t N> inline
-void 
-Vk_RenderApiUtil::convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src)
-{
-	convertToVkPtrs(dst, (T**)src.data(), sCast<u32>(src.size()));
-}
+//template<class T, size_t N> inline
+//void
+//Vk_RenderApiUtil::convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n)
+//{
+//	out.clear();
+//	out.resize(n);
+//	for (size_t i = 0; i < n; i++)
+//	{
+//		out[i].reset(vkData[i]);
+//	}
+//}
+//
+//template<class T, size_t N> inline
+//void 
+//Vk_RenderApiUtil::convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src)
+//{
+//	convertToVkPtrs(dst, (T**)src.data(), sCast<u32>(src.size()));
+//}
 
 template<class T, size_t N> inline 
 void 
-Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T> src)
+Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType, N>& dst, Span<T> src)
 {
 	auto n = src.size();
 	dst.clear();
@@ -428,7 +415,7 @@ Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T> sr
 
 template<class T, size_t N> inline 
 void 
-Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> src)
+Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType, N>& dst, Span<T*> src)
 {
 	auto n = src.size();
 	dst.clear();
@@ -442,7 +429,7 @@ Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, Span<T*> s
 
 template<class T, size_t N> inline
 void 
-Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType*, N>& dst, const Vector<T, N>& src)
+Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType, N>& dst, const Vector<T, N>& src)
 {
 	convertToHnds(dst, src.span());
 }

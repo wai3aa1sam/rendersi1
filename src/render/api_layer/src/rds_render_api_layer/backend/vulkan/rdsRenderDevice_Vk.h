@@ -69,6 +69,9 @@ private:
 	i64	 _rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDesc& cDesc, Vk_PhysicalDevice_T* vkPhyDevHnd, Vk_Surface_T* vkSurfHnd);
 	i64	 _rateVkPhyDevice		(const RenderAdapterInfo& info);
 
+	void loadVkInstFn	(Vk_ExtensionInfo& vkExtInfo);
+	void loadVkDevFn	(Vk_ExtensionInfo& vkExtInfo);
+
 private:
 	Vk_MemoryContext				_vkMemoryContext;
 

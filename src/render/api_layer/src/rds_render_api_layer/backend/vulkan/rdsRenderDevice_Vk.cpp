@@ -3,10 +3,6 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
-#if RDS_VK_VER_1_2
-PFN_vkQueueSubmit2KHR vkQueueSubmit2;
-#endif
-
 namespace rds
 {
 
@@ -33,10 +29,9 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 	createVkInstance();
 	createVkPhyDevice(cDesc);
 	createVkDevice();
-
-	#if RDS_VK_VER_1_2
-	vkQueueSubmit2 = extInfo().getDeviceExtFunction<PFN_vkQueueSubmit2KHR>("vkQueueSubmit2KHR");
-	#endif
+	
+	loadVkInstFn(_vkExtInfo);
+	loadVkDevFn(_vkExtInfo);
 
 	_vkMemoryContext.create(vkDevice(), vkPhysicalDevice(), vkInstance());
 
@@ -46,6 +41,8 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 		_transferCtxVk.create(tsfCtxCDesc);
 		_tsfCtx = &_transferCtxVk;
 	}
+
+
 }
 
 void
@@ -298,6 +295,42 @@ i64 RenderDevice_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
 	return score;
 }
 
+void 
+RenderDevice_Vk::loadVkInstFn(Vk_ExtensionInfo& vkExtInfo)
+{
+	#define RDS_VK_LOAD_INST_FN(VAR, FALLBACK_FN) \
+	VAR = vkExtInfo.getInstanceExtFunction<RDS_CONCAT(RDS_CONCAT(PFN_, VAR), EXT)>(RDS_CONCAT_TO_STR(VAR, EXT)); \
+	if (VAR == nullptr) \
+	{ \
+		VAR = FALLBACK_FN; \
+	} \
+	// ---
+
+	RDS_VK_LOAD_INST_FN(vkSetDebugUtilsObjectName,	[](VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) { return VK_SUCCESS; });
+	RDS_VK_LOAD_INST_FN(vkCmdBeginDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
+	RDS_VK_LOAD_INST_FN(vkCmdEndDebugUtilsLabel,	[](VkCommandBuffer commandBuffer) {});
+	RDS_VK_LOAD_INST_FN(vkCmdInsertDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
+
+	#undef RDS_VK_LOAD_INST_FN
+}
+
+void 
+RenderDevice_Vk::loadVkDevFn(Vk_ExtensionInfo& vkExtInfo)
+{
+	#define RDS_VK_LOAD_DV_FN(VAR, FALLBACK_FN) \
+	VAR = vkExtInfo.getDeviceExtFunction<RDS_CONCAT(RDS_CONCAT(PFN_, VAR), KHR)>(RDS_CONCAT_TO_STR(VAR, KHR)) \
+	if (VAR == nullptr) \
+	{ \
+		VAR = FALLBACK_FN; \
+	} \
+	// ---
+
+	#if RDS_VK_VER_1_2
+	RDS_VK_LOAD_DV_FN(vkQueueSubmit2, [](VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) { return VK_SUCCESS; });
+	#endif
+
+	#undef RDS_VK_LOAD_DEV_FN
+}
 
 #endif
 

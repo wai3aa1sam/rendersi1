@@ -34,9 +34,9 @@ struct Vk_SmpSubmitInfo : public VkSemaphoreSubmitInfoKHR
 	}
 };
 
-class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T>
+class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T, VK_OBJECT_TYPE_COMMAND_BUFFER>
 {
-	using Base = Vk_RenderApiPrimitive<Vk_CommandBuffer_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_CommandBuffer_T, VK_OBJECT_TYPE_COMMAND_BUFFER>;
 public:
 	Vk_CommandBuffer();
 	~Vk_CommandBuffer();

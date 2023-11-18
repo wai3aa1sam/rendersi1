@@ -14,10 +14,10 @@ class RenderDevice_Vk;
 #endif // 0
 #if 1
 
-class Vk_CommandPool : public Vk_RenderApiPrimitive<Vk_CommandPool_T>
+class Vk_CommandPool : public Vk_RenderApiPrimitive<Vk_CommandPool_T, VK_OBJECT_TYPE_COMMAND_POOL>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_CommandPool_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_CommandPool_T, VK_OBJECT_TYPE_COMMAND_POOL>;
 
 public:
 	Vk_CommandPool();

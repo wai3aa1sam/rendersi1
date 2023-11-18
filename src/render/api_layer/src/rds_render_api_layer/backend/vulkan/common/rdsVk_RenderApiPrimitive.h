@@ -67,65 +67,21 @@ class	RenderDevice_Vk;
 struct	SamplerState;
 class	Texture2D_Vk;
 
-template<class T>
-class RenderApiResource_Vk : public NonCopyable
-{
-public:
-	using Util = Vk_RenderApiUtil;
-
-public:
-	RenderApiResource_Vk()	= default;
-	~RenderApiResource_Vk() = default;
-
-	RenderApiResource_Vk(RenderApiResource_Vk&& rhs) noexcept { move(rds::move(rhs)); }
-	void operator=		(RenderApiResource_Vk&& rhs) noexcept { move(rds::move(rhs)); } // intended no check for this == &rhs, it is rare case
-
-	void destroy();
-
-	T*	hnd()			{ return _hnd; }
-	T**	hndArray()		{ return &_hnd; }
-	T** hndForInit()	{ return &_hnd; }
-
-protected:
-	void move(RenderApiResource_Vk&& rhs) 
-	{
-		_hnd = rhs._hnd; 
-		rhs._hnd = VK_NULL_HANDLE;
-	}
-
-protected:
-	T* _hnd = VK_NULL_HANDLE;
-};
-
-
 #if 0
 #pragma mark --- rdsRenderApiPrmivitive_Vk-Decl ---
 #endif // 0
 #if 1
 
-template<class T>
-class RenderApiPrimitive_Base_Vk : public RefCount_Base
-{
-public:
-	RenderApiPrimitive_Base_Vk()	= default;
-	~RenderApiPrimitive_Base_Vk()	= default;
-
-	void destroy();
-
-protected:
-	T* _p = VK_NULL_HANDLE;
-};
-
-template<class T> 
+template<class T, VkObjectType VK_OBJ_T> 
 class Vk_RenderApiPrimitive : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	//using Base = typename Vk_RenderApiPrimitive<T>;
+	using Util		= Vk_RenderApiUtil;
+	using HndType	= T*;
 
-	using Util = Vk_RenderApiUtil;
-
-	using HndType = T;
+public:
+	static VkObjectType vkObjectType() { return VkObjectType::VK_OBJ_T; }
 
 public:
 	Vk_RenderApiPrimitive()		= default;
@@ -135,6 +91,14 @@ public:
 	void operator=			(Vk_RenderApiPrimitive&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
 	void destroy() {  _hnd = VK_NULL_HANDLE; }
+
+	void setDebugName(StrView name, RenderDevice_Vk* rdDevVk)
+	{
+		#if RDS_DEBUG || RDS_DEVELOPMENT
+		_debugName = name;
+		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), T::vkObjectType(), _debugName, hnd());
+		#endif // RDS_DEBUG || RDS_DEVELOPMENT
+	}
 
 	T*	hnd()		{ return _hnd; }
 	T*	hnd() const	{ return _hnd; }
@@ -146,6 +110,15 @@ public:
 
 	explicit operator bool () const { return _hnd; }
 
+	const char* debugName() const
+	{
+		#if RDS_DEBUG || RDS_DEVELOPMENT
+		return _debugName;
+		#else
+		return nullptr;
+		#endif // 1
+	}
+
 protected:
 	void move(Vk_RenderApiPrimitive&& rhs) 
 	{
@@ -154,7 +127,8 @@ protected:
 	}
 
 protected:
-	T* _hnd = VK_NULL_HANDLE;
+	T*		_hnd = VK_NULL_HANDLE;
+	String	_debugName;
 };
 
 #endif
@@ -166,9 +140,12 @@ protected:
 
 class  Vk_Allocator;
 struct Vk_AllocInfo;
-template<class T>
-class Vk_AllocableRenderApiPrimitive : public Vk_RenderApiPrimitive<T>
+template<class T, VkObjectType VK_OBJ_T>
+class Vk_AllocableRenderApiPrimitive : public Vk_RenderApiPrimitive<T, VK_OBJ_T>
 {
+public:
+	using Base = Vk_RenderApiPrimitive<T, VK_OBJ_T>;
+
 public:
 	Vk_AllocableRenderApiPrimitive() = default;
 	~Vk_AllocableRenderApiPrimitive() { RDS_CORE_ASSERT(isInvalid(), "forgot to call Base::destroy() ?"); destroy(); }
@@ -176,7 +153,7 @@ public:
 	Vk_AllocableRenderApiPrimitive	(Vk_AllocableRenderApiPrimitive&& rhs) noexcept { move(rds::move(rhs)); }
 	void operator=					(Vk_AllocableRenderApiPrimitive&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
-	void destroy() { Vk_RenderApiPrimitive<T>::destroy(); _alloc = nullptr; }
+	void destroy() { Base::destroy(); _alloc = nullptr; }
 
 	Vk_AllocHnd*	_internal_allocHnd();
 
@@ -201,10 +178,10 @@ protected:
 	Vk_AllocHnd		_allocHnd	= {};
 };
 
-template<class T> inline Vk_AllocHnd*	Vk_AllocableRenderApiPrimitive<T>::_internal_allocHnd()						{ return &_allocHnd; }
+template<class T, VkObjectType VK_OBJ_T> inline Vk_AllocHnd*	Vk_AllocableRenderApiPrimitive<T, VK_OBJ_T>::_internal_allocHnd()						{ return &_allocHnd; }
 
-template<class T> inline void			Vk_AllocableRenderApiPrimitive<T>::_internal_setAlloc(Vk_Allocator* alloc)	{ _alloc = alloc; }
-template<class T> inline Vk_Allocator*	Vk_AllocableRenderApiPrimitive<T>::_internal_alloc()						{ return _alloc; }
+template<class T, VkObjectType VK_OBJ_T> inline void			Vk_AllocableRenderApiPrimitive<T, VK_OBJ_T>::_internal_setAlloc(Vk_Allocator* alloc)	{ _alloc = alloc; }
+template<class T, VkObjectType VK_OBJ_T> inline Vk_Allocator*	Vk_AllocableRenderApiPrimitive<T, VK_OBJ_T>::_internal_alloc()							{ return _alloc; }
 
 
 #endif // 1
@@ -220,20 +197,21 @@ template<class T> inline Vk_Allocator*	Vk_AllocableRenderApiPrimitive<T>::_inter
 #endif // 0
 #if 1
 
-class Vk_Instance : public Vk_RenderApiPrimitive<Vk_Instance_T>
+class Vk_Instance : public Vk_RenderApiPrimitive<Vk_Instance_T, VK_OBJECT_TYPE_INSTANCE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Instance_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Instance_T, VK_OBJECT_TYPE_INSTANCE>;
 
 public:
 	Vk_Instance() = default;
 	~Vk_Instance() = default;
 
-	Vk_Instance(Vk_Instance&&)	{ throwIf(true, ""); }
-	void operator=(Vk_Instance&&)		{ throwIf(true, ""); }
+	Vk_Instance(Vk_Instance&&)		{ throwIf(true, ""); }
+	void operator=(Vk_Instance&&)	{ throwIf(true, ""); }
 
 	void create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
+
 };
 
 #endif
@@ -243,10 +221,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_DebugUtilsMessenger : public Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger_T>
+class Vk_DebugUtilsMessenger : public Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger_T, VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_DebugUtilsMessenger_T, VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT>;
 
 public:
 	Vk_DebugUtilsMessenger()	= default;
@@ -266,10 +244,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_PhysicalDevice : public Vk_RenderApiPrimitive<Vk_PhysicalDevice_T>
+class Vk_PhysicalDevice : public Vk_RenderApiPrimitive<Vk_PhysicalDevice_T, VK_OBJECT_TYPE_PHYSICAL_DEVICE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_PhysicalDevice_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_PhysicalDevice_T, VK_OBJECT_TYPE_PHYSICAL_DEVICE>;
 
 public:
 	Vk_PhysicalDevice()		= default;
@@ -289,10 +267,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_Device : public Vk_RenderApiPrimitive<Vk_Device_T>
+class Vk_Device : public Vk_RenderApiPrimitive<Vk_Device_T, VK_OBJECT_TYPE_DEVICE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Device_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Device_T, VK_OBJECT_TYPE_DEVICE>;
 
 public:
 	Vk_Device()	= default;
@@ -313,10 +291,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_Surface : public Vk_RenderApiPrimitive<Vk_Surface_T>
+class Vk_Surface : public Vk_RenderApiPrimitive<Vk_Surface_T, VK_OBJECT_TYPE_SURFACE_KHR>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Surface_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Surface_T, VK_OBJECT_TYPE_SURFACE_KHR>;
 
 public:
 	Vk_Surface()	= default;
@@ -340,10 +318,10 @@ protected:
 #endif // 0
 #if 1
 
-class Vk_Queue : public Vk_RenderApiPrimitive<Vk_Queue_T>
+class Vk_Queue : public Vk_RenderApiPrimitive<Vk_Queue_T, VK_OBJECT_TYPE_QUEUE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Queue_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Queue_T, VK_OBJECT_TYPE_QUEUE>;
 
 public:
 	Vk_Queue() = default;
@@ -375,10 +353,10 @@ inline u32 Vk_Queue::queueIdx()		const { return _queueIdx; }
 #endif // 0
 #if 1
 
-class Vk_Image : public Vk_AllocableRenderApiPrimitive<Vk_Image_T>
+class Vk_Image : public Vk_AllocableRenderApiPrimitive<Vk_Image_T, VK_OBJECT_TYPE_IMAGE>
 {
 public:
-	using Base = Vk_AllocableRenderApiPrimitive<Vk_Image_T>;
+	using Base = Vk_AllocableRenderApiPrimitive<Vk_Image_T, VK_OBJECT_TYPE_IMAGE>;
 
 public:
 	Vk_Image() = default;
@@ -401,10 +379,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_ImageView : public Vk_RenderApiPrimitive<Vk_ImageView_T>
+class Vk_ImageView : public Vk_RenderApiPrimitive<Vk_ImageView_T, VK_OBJECT_TYPE_IMAGE_VIEW>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_ImageView_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_ImageView_T, VK_OBJECT_TYPE_IMAGE_VIEW>;
 
 public:
 	Vk_ImageView()	= default;
@@ -424,14 +402,14 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_ImageView-Decl ---
+#pragma mark --- rdsVk_Sampler-Decl ---
 #endif // 0
 #if 1
 
-class Vk_Sampler : public Vk_RenderApiPrimitive<Vk_Sampler_T>
+class Vk_Sampler : public Vk_RenderApiPrimitive<Vk_Sampler_T, VK_OBJECT_TYPE_SAMPLER>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Sampler_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Sampler_T, VK_OBJECT_TYPE_SAMPLER>;
 
 public:
 	Vk_Sampler() = default;
@@ -453,10 +431,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_Framebuffer : public Vk_RenderApiPrimitive<Vk_Framebuffer_T>
+class Vk_Framebuffer : public Vk_RenderApiPrimitive<Vk_Framebuffer_T, VK_OBJECT_TYPE_FRAMEBUFFER>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Framebuffer_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Framebuffer_T, VK_OBJECT_TYPE_FRAMEBUFFER>;
 
 public:
 	Vk_Framebuffer()	= default;
@@ -476,10 +454,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_ShaderModule : public Vk_RenderApiPrimitive<Vk_ShaderModule_T>
+class Vk_ShaderModule : public Vk_RenderApiPrimitive<Vk_ShaderModule_T, VK_OBJECT_TYPE_SHADER_MODULE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_ShaderModule_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_ShaderModule_T, VK_OBJECT_TYPE_SHADER_MODULE>;
 
 public:
 	Vk_ShaderModule() = default;
@@ -499,10 +477,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_RenderPass : public Vk_RenderApiPrimitive<Vk_RenderPass_T>
+class Vk_RenderPass : public Vk_RenderApiPrimitive<Vk_RenderPass_T, VK_OBJECT_TYPE_RENDER_PASS>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_RenderPass_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_RenderPass_T, VK_OBJECT_TYPE_RENDER_PASS>;
 
 public:
 	Vk_RenderPass()		= default;
@@ -523,10 +501,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_PipelineLayout : public Vk_RenderApiPrimitive<Vk_PipelineLayout_T>
+class Vk_PipelineLayout : public Vk_RenderApiPrimitive<Vk_PipelineLayout_T, VK_OBJECT_TYPE_PIPELINE_LAYOUT>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_PipelineLayout_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_PipelineLayout_T, VK_OBJECT_TYPE_PIPELINE_LAYOUT>;
 
 public:
 	Vk_PipelineLayout()		= default;
@@ -546,10 +524,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_PipelineCache : public Vk_RenderApiPrimitive<Vk_PipelineCache_T>
+class Vk_PipelineCache : public Vk_RenderApiPrimitive<Vk_PipelineCache_T, VK_OBJECT_TYPE_PIPELINE_CACHE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_PipelineCache_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_PipelineCache_T, VK_OBJECT_TYPE_PIPELINE_CACHE>;
 
 public:
 	Vk_PipelineCache() = default;
@@ -568,10 +546,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_Pipeline : public Vk_RenderApiPrimitive<Vk_Pipeline_T>
+class Vk_Pipeline : public Vk_RenderApiPrimitive<Vk_Pipeline_T, VK_OBJECT_TYPE_PIPELINE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Pipeline_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Pipeline_T, VK_OBJECT_TYPE_PIPELINE>;
 
 public:
 	Vk_Pipeline()	= default;
@@ -591,10 +569,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_Semaphore : public Vk_RenderApiPrimitive<Vk_Semaphore_T>
+class Vk_Semaphore : public Vk_RenderApiPrimitive<Vk_Semaphore_T, VK_OBJECT_TYPE_SEMAPHORE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Semaphore_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Semaphore_T, VK_OBJECT_TYPE_SEMAPHORE>;
 
 public:
 	Vk_Semaphore()	= default;
@@ -615,10 +593,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_Fence : public Vk_RenderApiPrimitive<Vk_Fence_T>
+class Vk_Fence : public Vk_RenderApiPrimitive<Vk_Fence_T, VK_OBJECT_TYPE_FENCE>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_Fence_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_Fence_T, VK_OBJECT_TYPE_FENCE>;
 
 public:
 	Vk_Fence()	= default;
@@ -642,10 +620,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_DeviceMemory : public Vk_RenderApiPrimitive<Vk_DeviceMemory_T>
+class Vk_DeviceMemory : public Vk_RenderApiPrimitive<Vk_DeviceMemory_T, VK_OBJECT_TYPE_DEVICE_MEMORY>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_DeviceMemory_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_DeviceMemory_T, VK_OBJECT_TYPE_DEVICE_MEMORY>;
 
 public:
 	void destroy(RenderDevice_Vk* rdDevVk);
@@ -658,10 +636,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_Buffer : public Vk_AllocableRenderApiPrimitive<Vk_Buffer_T>
+class Vk_Buffer : public Vk_AllocableRenderApiPrimitive<Vk_Buffer_T, VK_OBJECT_TYPE_BUFFER>
 {
 public:
-	using Base = Vk_AllocableRenderApiPrimitive<Vk_Buffer_T>;
+	using Base = Vk_AllocableRenderApiPrimitive<Vk_Buffer_T, VK_OBJECT_TYPE_BUFFER>;
 
 public:
 	Vk_Buffer() = default;
@@ -683,10 +661,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_BufferView : public Vk_RenderApiPrimitive<Vk_BufferView_T>
+class Vk_BufferView : public Vk_RenderApiPrimitive<Vk_BufferView_T, VK_OBJECT_TYPE_BUFFER_VIEW>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_BufferView_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_BufferView_T, VK_OBJECT_TYPE_BUFFER_VIEW>;
 
 public:
 	Vk_BufferView()		= default;
@@ -703,10 +681,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_DescriptorSetLayout : public Vk_RenderApiPrimitive<Vk_DescriptorSetLayout_T>
+class Vk_DescriptorSetLayout : public Vk_RenderApiPrimitive<Vk_DescriptorSetLayout_T, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_DescriptorSetLayout_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_DescriptorSetLayout_T, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT>;
 
 public:
 	Vk_DescriptorSetLayout()	= default;
@@ -723,10 +701,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_DescriptorPool : public Vk_RenderApiPrimitive<Vk_DescriptorPool_T>
+class Vk_DescriptorPool : public Vk_RenderApiPrimitive<Vk_DescriptorPool_T, VK_OBJECT_TYPE_DESCRIPTOR_POOL>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_DescriptorPool_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_DescriptorPool_T, VK_OBJECT_TYPE_DESCRIPTOR_POOL>;
 
 public:
 	Vk_DescriptorPool()		= default;
@@ -748,10 +726,10 @@ public:
 #endif // 0
 #if 1
 
-class Vk_DescriptorSet : public Vk_RenderApiPrimitive<Vk_DescriptorSet_T>
+class Vk_DescriptorSet : public Vk_RenderApiPrimitive<Vk_DescriptorSet_T, VK_OBJECT_TYPE_DESCRIPTOR_SET>
 {
 public:
-	using Base = Vk_RenderApiPrimitive<Vk_DescriptorSet_T>;
+	using Base = Vk_RenderApiPrimitive<Vk_DescriptorSet_T, VK_OBJECT_TYPE_DESCRIPTOR_SET>;
 
 public:
 	Vk_DescriptorSet()	= default;

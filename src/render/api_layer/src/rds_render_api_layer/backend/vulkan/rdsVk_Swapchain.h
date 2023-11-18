@@ -43,10 +43,10 @@ struct Vk_Swapchain_CreateDesc
 	VkFormat			depthFormat	= VK_FORMAT_D32_SFLOAT_S8_UINT;
 };
 
-class Vk_Swapchain : public Vk_RenderApiPrimitive<Vk_Swapchain_T>
+class Vk_Swapchain : public Vk_RenderApiPrimitive<Vk_Swapchain_T, VK_OBJECT_TYPE_SWAPCHAIN_KHR>
 {
 public:
-	using Base			= Vk_RenderApiPrimitive<Vk_Swapchain_T>;
+	using Base			= Vk_RenderApiPrimitive<Vk_Swapchain_T, VK_OBJECT_TYPE_SWAPCHAIN_KHR>;
 	using CreateDesc	= Vk_Swapchain_CreateDesc;
 
 public:

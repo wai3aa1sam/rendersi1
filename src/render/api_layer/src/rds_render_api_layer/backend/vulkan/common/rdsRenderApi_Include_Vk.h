@@ -38,6 +38,29 @@ RDS_RESTORE_ALL_WARNINGS();
 	#define RDS_VK_VER_1_2 1
 #endif // 1
 
+#if 0
+#pragma mark --- rdsVkInstFn-Decl ---
+#endif // 0
+#if 1
+
+#if RDS_VK_VER_1_2
+inline PFN_vkQueueSubmit2KHR vkQueueSubmit2;
+#endif
+
+#endif // 1
+
+#if 0
+#pragma mark --- rdsVkInstFn-Decl ---
+#endif // 0
+#if 1
+
+inline PFN_vkSetDebugUtilsObjectNameEXT		vkSetDebugUtilsObjectName;
+inline PFN_vkCmdBeginDebugUtilsLabelEXT		vkCmdBeginDebugUtilsLabel;
+inline PFN_vkCmdEndDebugUtilsLabelEXT		vkCmdEndDebugUtilsLabel;
+inline PFN_vkCmdInsertDebugUtilsLabelEXT	vkCmdInsertDebugUtilsLabel;
+
+#endif // 1
+
 
 namespace rds
 {

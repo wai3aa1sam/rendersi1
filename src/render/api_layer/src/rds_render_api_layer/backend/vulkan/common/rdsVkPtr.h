@@ -10,7 +10,7 @@ namespace rds
 #if 0
 #pragma mark --- rdsVkPtr-Decl ---
 #endif // 0
-#if 1
+#if 0
 
 template<class T>
 class VkPtr : public Vk_RenderApiPrimitive<T>

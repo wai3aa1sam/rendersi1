@@ -548,6 +548,19 @@ Vk_RenderApiUtil::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryProper
 	return (u32)(-1);
 }
 
+void 
+Vk_RenderApiUtil::setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const String& name, const void* vkHnd)
+{
+	VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+	nameInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+	nameInfo.objectType		= vkObjT;
+	nameInfo.pObjectName	= name.c_str();
+	nameInfo.objectHandle	= reinCast<u64>(vkHnd);
+	nameInfo.pNext			= VK_NULL_HANDLE;
+
+	auto ret = vkSetDebugUtilsObjectName(vkDevHnd, &nameInfo);
+	throwIfError(ret);
+}
 
 Vk_Buffer*		Vk_RenderApiUtil::toVkBuf		(		RenderGpuBuffer* rdGpuBuf) { return sCast<RenderGpuBuffer_Vk*>(rdGpuBuf)->vkBuf(); }
 Vk_Buffer*		Vk_RenderApiUtil::toVkBuf		(const	RenderGpuBuffer* rdGpuBuf) { return constCast(sCast<const RenderGpuBuffer_Vk*>(rdGpuBuf))->vkBuf(); }
@@ -566,25 +579,6 @@ Vk_RenderApiUtil::createDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& o
 	out.pUserData		= nullptr; // Optional
 }
 
-//void 
-//Vk_RenderApiUtil::createSurface(Vk_Surface_T** out, Vk_Instance_T* vkInstance, const VkAllocationCallbacks* allocCallbacks, NativeUIWindow* window)
-//{
-//	#if RDS_OS_WINDOWS
-//
-//	VkWin32SurfaceCreateInfoKHR createInfo = {};
-//	createInfo.sType		= VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-//	createInfo.hwnd			= window->wndHnd();
-//	createInfo.hinstance	= ::GetModuleHandle(nullptr);		// get handle of current process
-//
-//	auto ret = vkCreateWin32SurfaceKHR(vkInstance, &createInfo, allocCallbacks, out);
-//
-//	#else
-//	#error("createSurface() not support int this platform")
-//	#endif // RDS_OS_WINDOWS
-//
-//	throwIfError(ret);
-//}
-//
 void 
 Vk_RenderApiUtil::createSwapchain(Vk_Swapchain_T** out, Vk_Surface_T* vkSurface, Vk_Device_T* vkDevice, 
 								  const Vk_SwapchainInfo& info, const Vk_SwapchainAvailableInfo& avaInfo, RenderDevice_Vk* rdDevVk)
@@ -631,96 +625,6 @@ Vk_RenderApiUtil::createSwapchain(Vk_Swapchain_T** out, Vk_Surface_T* vkSurface,
 	auto ret = vkCreateSwapchainKHR(vkDevice, &createInfo, rdDevVk->allocCallbacks(), out);
 	throwIfError(ret);
 }
-//
-//void 
-//Vk_RenderApiUtil::createImageView(Vk_ImageView_T** out, Vk_Image_T* vkImage, Vk_Device* vkDevice, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
-//{
-//	VkImageViewCreateInfo viewInfo = {};
-//	viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-//	viewInfo.image								= vkImage;
-//	viewInfo.viewType							= VK_IMAGE_VIEW_TYPE_2D;
-//	viewInfo.format								= format;
-//
-//	viewInfo.components.r						= VK_COMPONENT_SWIZZLE_IDENTITY;
-//	viewInfo.components.g						= VK_COMPONENT_SWIZZLE_IDENTITY;
-//	viewInfo.components.b						= VK_COMPONENT_SWIZZLE_IDENTITY;
-//	viewInfo.components.a						= VK_COMPONENT_SWIZZLE_IDENTITY;
-//
-//	viewInfo.subresourceRange.aspectMask		= aspectFlags;
-//	viewInfo.subresourceRange.baseMipLevel		= 0;
-//	viewInfo.subresourceRange.levelCount		= mipLevels;
-//	viewInfo.subresourceRange.baseArrayLayer	= 0;
-//	viewInfo.subresourceRange.layerCount		= 1;
-//
-//	VkResult ret = vkCreateImageView(vkDevice, &viewInfo, Renderer_Vk::instance()->allocCallbacks(), out);
-//	throwIfError(ret);
-//}
-
-//void 
-//Vk_RenderApiUtil::createSemaphore(Vk_Semaphore_T** out, Vk_Device* vkDevice)
-//{
-//	auto* vkAllocCallbacks = Renderer_Vk::instance()->allocCallbacks();
-//
-//	VkSemaphoreCreateInfo cInfo = {};
-//	cInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-//
-//	auto ret = vkCreateSemaphore(vkDevice, &cInfo, vkAllocCallbacks, out);	
-//	throwIfError(ret);
-//}
-//
-//void 
-//Vk_RenderApiUtil::createFence(Vk_Fence_T** out, Vk_Device* vkDevice)
-//{
-//	auto* vkAllocCallbacks = Renderer_Vk::instance()->allocCallbacks();
-//
-//	VkFenceCreateInfo cInfo = {};
-//	cInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-//	cInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;			// create with signaled state
-//
-//	auto ret = vkCreateFence(vkDevice, &cInfo, vkAllocCallbacks, out);			
-//	throwIfError(ret);
-//}
-
-//void 
-//Vk_RenderApiUtil::createCommandPool(Vk_CommandPool_T** outVkCmdPool, u32 queueIdx, VkCommandPoolCreateFlags createFlags)
-//{
-//	auto* renderer = Renderer_Vk::instance();
-//	auto* vkDevice = renderer->vkDevice();
-//	auto* allocCallbacks = renderer->allocCallbacks();
-//
-//	VkCommandPoolCreateInfo cInfo = {};
-//	cInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-//	cInfo.flags				= createFlags;
-//	cInfo.queueFamilyIndex	= queueIdx;
-//
-//	auto ret = vkCreateCommandPool(vkDevice, &cInfo, allocCallbacks, outVkCmdPool);
-//	throwIfError(ret);
-//}
-
-//void 
-//Vk_RenderApiUtil::createCommandBuffer(Vk_CommandBuffer_T** outVkCmdBuf, Vk_CommandPool_T* vkCmdPool, VkCommandBufferLevel vkBufLevel)
-//{
-//	auto* renderer = Renderer_Vk::instance();
-//	auto* vkDevice = renderer->vkDevice();
-//	//auto* allocCallbacks = renderer->allocCallbacks();
-//
-//	//static constexpr auto s_kFrameInFlightCount = RenderApiLayerTraits::s_kFrameInFlightCount;
-//	static constexpr size_t count = 1;
-//	Vector<Vk_CommandBuffer_T*, count> tmp;
-//	tmp.resize(count);
-//	//_vkCommandBuffers.resize(s_kFrameInFlightCount);
-//
-//	VkCommandBufferAllocateInfo cInfo = {};
-//	cInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-//	cInfo.commandPool			= vkCmdPool;
-//	cInfo.level					= vkBufLevel;
-//	cInfo.commandBufferCount	= count;
-//
-//	auto ret = vkAllocateCommandBuffers(vkDevice, &cInfo, tmp.data());
-//	throwIfError(ret);
-//	//Util::convertToVkPtrs(_vkCommandBuffers, tmp);
-//	outVkCmdBuf = tmp.data();
-//}
 
 //void 
 //Vk_RenderApiUtil::createBuffer(Vk_Buffer_T** outBuf, Vk_DeviceMemory** outBufMem, VkDeviceSize size
@@ -960,30 +864,6 @@ Vk_RenderApiUtil::createBuffer(Vk_Buffer& outBuf, RenderDevice_Vk* rdDevVk, Vk_A
 {
 	outBuf.create(rdDevVk, vkAlloc, allocInfo, size, usage, queueTypeFlags);
 }
-//
-//void 
-//Vk_RenderApiUtil::createBuffer(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags)
-//{
-//	auto& vkQueueIndices	= Renderer_Vk::instance()->queueFamilyIndices();
-//
-//	VkBufferCreateInfo bufferInfo = {};
-//	bufferInfo.sType					= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-//	bufferInfo.size						= size;
-//	bufferInfo.usage					= usage;
-//	bufferInfo.sharingMode				= VK_SHARING_MODE_EXCLUSIVE;
-//	
-//	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
-//	auto queueCount = vkQueueIndices.get(queueIdices, queueTypeFlags);
-//	if (queueCount > 1)
-//	{
-//		bufferInfo.sharingMode				= VK_SHARING_MODE_CONCURRENT;
-//		bufferInfo.queueFamilyIndexCount	= queueCount;
-//		bufferInfo.pQueueFamilyIndices		= queueIdices.data();
-//	}
-//
-//	auto ret = vkAlloc->allocBuf(outBuf, allocHnd, &bufferInfo, allocInfo);
-//	throwIfError(ret);
-//}
 
 void
 Vk_RenderApiUtil::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice)
