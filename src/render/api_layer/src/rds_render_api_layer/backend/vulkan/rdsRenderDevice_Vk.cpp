@@ -42,7 +42,7 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 		_tsfCtx = &_transferCtxVk;
 	}
 
-
+	_setDebugName();
 }
 
 void
@@ -330,6 +330,18 @@ RenderDevice_Vk::loadVkDevFn(Vk_ExtensionInfo& vkExtInfo)
 	#endif
 
 	#undef RDS_VK_LOAD_DEV_FN
+}
+
+void 
+RenderDevice_Vk::_setDebugName()
+{
+	RDS_VK_SET_DEBUG_NAME(_vkInstance);
+	if (adapterInfo().isDebug)
+	{
+		RDS_VK_SET_DEBUG_NAME(_vkDebugMessenger);
+	}
+	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice);
+	RDS_VK_SET_DEBUG_NAME(_vkDevice);
 }
 
 #endif

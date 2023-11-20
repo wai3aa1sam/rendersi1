@@ -5,6 +5,12 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
+#define RDS_VK_SET_DEBUG_NAME_IMPL(VK_OBJ, NAME, RD_DEV_VK)		(VK_OBJ).setDebugName(NAME, RD_DEV_VK)
+#define RDS_VK_SET_DEBUG_NAME(VK_OBJ)							RDS_VK_SET_DEBUG_NAME_IMPL(VK_OBJ,	::rds::fmtAs_T<::rds::TempString>("{}:{}-{}", RDS_FUNC_NAME_SZ, RDS_LINE, RDS_STRINGIFY(VK_OBJ) ), renderDeviceVk() )
+
+#define RDS_VK_SET_DEBUG_NAME_FMT_IMPL(VK_OBJ, RD_DEV_VK, ...)	RDS_VK_SET_DEBUG_NAME_IMPL(VK_OBJ,	::rds::fmtAs_T<::rds::TempString>("{}:{}-{}", RDS_FUNC_NAME_SZ, RDS_LINE, ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__) ), RD_DEV_VK )
+#define RDS_VK_SET_DEBUG_NAME_FMT(VK_OBJ, ...)					RDS_VK_SET_DEBUG_NAME_FMT_IMPL(VK_OBJ, renderDeviceVk(), __VA_ARGS__ )
+
 namespace rds
 {
 
@@ -81,7 +87,7 @@ public:
 	using HndType	= T*;
 
 public:
-	static VkObjectType vkObjectType() { return VkObjectType::VK_OBJ_T; }
+	static VkObjectType vkObjectType() { return VK_OBJ_T; }
 
 public:
 	Vk_RenderApiPrimitive()		= default;
@@ -90,14 +96,21 @@ public:
 	Vk_RenderApiPrimitive	(Vk_RenderApiPrimitive&& rhs) noexcept { move(rds::move(rhs)); }
 	void operator=			(Vk_RenderApiPrimitive&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
-	void destroy() {  _hnd = VK_NULL_HANDLE; }
+	void destroy() 
+	{  
+		_hnd = VK_NULL_HANDLE;
+		#if RDS_DEVELOPMENT
+		_debugName.clear();
+		#endif
+	}
 
 	void setDebugName(StrView name, RenderDevice_Vk* rdDevVk)
 	{
-		#if RDS_DEBUG || RDS_DEVELOPMENT
+		RDS_CORE_ASSERT(hnd(), "VkObjectType: {}, setDebugName, hnd == nullptr", enumInt(VK_OBJ_T));
+		#if RDS_DEVELOPMENT
 		_debugName = name;
-		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), T::vkObjectType(), _debugName, hnd());
-		#endif // RDS_DEBUG || RDS_DEVELOPMENT
+		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), vkObjectType(), _debugName, hnd());
+		#endif // RDS_DEVELOPMENT
 	}
 
 	T*	hnd()		{ return _hnd; }
@@ -113,7 +126,7 @@ public:
 	const char* debugName() const
 	{
 		#if RDS_DEBUG || RDS_DEVELOPMENT
-		return _debugName;
+		return _debugName.c_str();
 		#else
 		return nullptr;
 		#endif // 1
@@ -124,11 +137,18 @@ protected:
 	{
 		_hnd = rhs._hnd; 
 		rhs._hnd = VK_NULL_HANDLE;
+
+		#if RDS_DEVELOPMENT
+		_debugName = rds::move(rhs._debugName);
+		#endif
 	}
 
 protected:
 	T*		_hnd = VK_NULL_HANDLE;
+
+	#if RDS_DEVELOPMENT
 	String	_debugName;
+	#endif
 };
 
 #endif
@@ -155,6 +175,17 @@ public:
 
 	void destroy() { Base::destroy(); _alloc = nullptr; }
 
+	void setDebugName(StrView name, RenderDevice_Vk* rdDevVk)
+	{
+		#if RDS_DEVELOPMENT
+		
+		RDS_CORE_ASSERT(_alloc && _allocHnd, "");
+
+		Base::setDebugName(name, rdDevVk);
+		_alloc->setAllocationDebugName(debugName(), &_allocHnd);
+		#endif // RDS_DEVELOPMENT
+	}
+
 	Vk_AllocHnd*	_internal_allocHnd();
 
 	void			_internal_setAlloc(Vk_Allocator* alloc);
@@ -165,14 +196,14 @@ public:
 protected:
 	void move(Vk_AllocableRenderApiPrimitive&& rhs) 
 	{
-		_hnd		= rhs._hnd;
+		Base::move(rds::move(rhs));
 		_alloc		= rhs._alloc;
 		_allocHnd	= rhs._allocHnd;
 
-		rhs._hnd		= VK_NULL_HANDLE;
 		rhs._alloc		= nullptr;
 		rhs._allocHnd	= {};
 	}
+
 protected:
 	Vk_Allocator*	_alloc		= nullptr;	// TODO: AllocablePrimitive_Vk<T>::Vk_Allocator* should be strong ref?
 	Vk_AllocHnd		_allocHnd	= {};
@@ -412,8 +443,8 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_Sampler_T, VK_OBJECT_TYPE_SAMPLER>;
 
 public:
-	Vk_Sampler() = default;
-	~Vk_Sampler() { RDS_CORE_ASSERT(!hnd(), ""); }
+	Vk_Sampler()	= default;
+	~Vk_Sampler()	= default;
 
 	Vk_Sampler(Vk_Sampler&&)		{ throwIf(true, ""); }
 	void operator=(Vk_Sampler&&)	{ throwIf(true, ""); }

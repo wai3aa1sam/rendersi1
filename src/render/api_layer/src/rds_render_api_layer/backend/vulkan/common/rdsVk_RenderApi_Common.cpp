@@ -551,6 +551,8 @@ Vk_RenderApiUtil::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryProper
 void 
 Vk_RenderApiUtil::setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const String& name, const void* vkHnd)
 {
+	RDS_CORE_ASSERT(vkHnd, "");
+
 	VkDebugUtilsObjectNameInfoEXT nameInfo = {};
 	nameInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
 	nameInfo.objectType		= vkObjT;

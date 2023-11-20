@@ -46,6 +46,8 @@ RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 	_vkBuf.create(rdDevVk, vkAlloc, &allocInfo, targetSize, 
 				VK_BUFFER_USAGE_TRANSFER_DST_BIT | Util::toVkBufferUsage(cDesc.typeFlags)
 				, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+
+	RDS_VK_SET_DEBUG_NAME(_vkBuf);
 }
 
 void

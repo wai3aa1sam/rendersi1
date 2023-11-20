@@ -39,8 +39,8 @@ public:
 
 	void clear();
 
-						Vk_CommandBuffer*	requestCommandBuffer	(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
-	template<size_t N>	void				requestCommandBuffersTo	(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel);
+						Vk_CommandBuffer*	requestCommandBuffer	(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
+	template<size_t N>	void				requestCommandBuffersTo	(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 
 
 	void resetCommandPools();
@@ -53,15 +53,18 @@ public:
 	Vk_Semaphore*	renderCompletedSmp();
 	Vk_Fence*		inFlightFence();
 
-	RenderDevice_Vk*	rdDevVk();
+	RenderDevice_Vk*	renderDeviceVk();
 	RenderContext_Vk*	rdCtxVk();
 
 protected:
-	void createCommandPool (Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, u32 familyIdx);
+	void createCommandPool (Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, QueueTypeFlags type);
 	void destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool);
 
 	void createSyncObjects	();
 	void destroySyncObjects	();
+
+protected:
+	void _setDebugName();
 
 protected:
 	RenderContext_Vk* _rdCtxVk = nullptr;
@@ -82,14 +85,14 @@ protected:
 
 template<size_t N> inline
 void 
-Vk_RenderFrame::requestCommandBuffersTo(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel)
+Vk_RenderFrame::requestCommandBuffersTo(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName)
 {
 	out.clear();
 	out.resize(n);
 	for (size_t i = 0; i < n; i++)
 	{
 		auto& e = out[i];
-		e = requestCommandBuffer(queueType, bufLevel);
+		e = requestCommandBuffer(queueType, bufLevel, debugName);
 	}
 }
 

@@ -42,6 +42,8 @@ Vk_TransferFrame::create(TransferContext_Vk* tsfCtxVk)
 
 	// thread-safe
 	_stagingAlloc.create(rdDevVk);
+
+	_setDebugName();
 }
 
 void 
@@ -105,6 +107,18 @@ Vk_TransferFrame::getVkStagingBufHnd(u32 idx)
 
 	RDS_CORE_ASSERT(idx < stagingBufs.size(), "invalid vk staging buffer index");
 	return stagingBufs[idx]->hnd();
+}
+
+void 
+Vk_TransferFrame::_setDebugName()
+{
+	RDS_VK_SET_DEBUG_NAME(_inFlightVkFnc);
+	RDS_VK_SET_DEBUG_NAME(_completedVkSmp);
+	RDS_VK_SET_DEBUG_NAME(_transferVkCmdPool);
+
+	RDS_VK_SET_DEBUG_NAME(_graphicsInFlightVkFnc);
+	RDS_VK_SET_DEBUG_NAME(_graphicsCompletedVkSmp);
+	RDS_VK_SET_DEBUG_NAME(_graphicsVkCmdPool);
 }
 
 RenderDevice_Vk* Vk_TransferFrame::renderDeviceVk() { return _tsfCtxVk->renderDeviceVk(); }

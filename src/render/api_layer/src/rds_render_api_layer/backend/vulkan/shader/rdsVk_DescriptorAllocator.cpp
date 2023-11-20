@@ -88,9 +88,12 @@ Vk_DescriptorAllocator::alloc(const Vk_DescriptorSetLayout* layout)
 	{
 		_usedPools.emplace_back(rds::move(_curPool));
 		_curPool = requestPool();
+		ret = createSet(out, layout, &_curPool);
 	}
 
-	ret = createSet(out, layout, &_curPool);
+	RDS_TODO("allocation debug name");
+	RDS_VK_SET_DEBUG_NAME(out);
+
 	RDS_ASSERT(out.hnd(), "");
 
 	return out;
@@ -108,6 +111,7 @@ Vk_DescriptorAllocator::requestPool()
 	else
 	{
 		createPool(out, _cDesc.poolSizes, _cDesc.setReservedSize, _cDesc.cFlag, _rdDevVk);
+		RDS_VK_SET_DEBUG_NAME(out);
 	}
 
 	return out;
@@ -143,6 +147,12 @@ Vk_DescriptorAllocator::createSet(Vk_DescriptorSet& out, const Vk_DescriptorSetL
 	allocInfo.pSetLayouts			= layout->hndArray();
 
 	return out.create(&allocInfo, _rdDevVk);
+}
+
+void 
+Vk_DescriptorAllocator::_setDebugName()
+{
+
 }
 
 Vk_Device_T* Vk_DescriptorAllocator::vkDevHnd() { return _rdDevVk->vkDevice(); }
@@ -231,7 +241,7 @@ Vk_DescriptorBuilder::bindTexture(Vk_DescriptorSet& dstSet, const TexParam& texP
 
 	auto& imageInfo	= _imageInfos.emplace_back();
 	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView		= Vk_Texture::getImageViewHnd(texParam.getUpdatedTexture(rdDevVk()));
+	imageInfo.imageView		= Vk_Texture::getImageViewHnd(texParam.getUpdatedTexture(renderDeviceVk()));
 	//imageInfo.sampler		= _testVkTextureSampler.hnd();
 
 	auto& out = _writeDescs.emplace_back();
@@ -263,7 +273,7 @@ Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, const Tex
 	shaderRscs._getAutoSetSamplerNameTo(temp, texParam.name());
 	if (auto* samplerParam = shaderRscs.findSamplerParam(temp))
 	{
-		_bindSampler(dstSet, *samplerParam, Vk_Texture::getSamplerHnd(texParam.getUpdatedTexture(rdDevVk())), stageFlag);
+		_bindSampler(dstSet, *samplerParam, Vk_Texture::getSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk())), stageFlag);
 	}
 }
 

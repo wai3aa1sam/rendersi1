@@ -42,6 +42,8 @@ protected:
 protected:
 	void _commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType);
 
+	void _setDebugName();
+
 protected:
 	Vk_TransferFrames	_vkTransferFrames;
 

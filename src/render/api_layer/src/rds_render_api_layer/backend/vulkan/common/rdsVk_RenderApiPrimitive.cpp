@@ -69,7 +69,7 @@ Vk_DebugUtilsMessenger::create(RenderDevice_Vk* rdDevVk)
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 	Util::createDebugMessengerInfo(createInfo);
 
-	auto fn	= vkExtInfo.getInstanceExtFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
+	auto fn		= vkExtInfo.getInstanceExtFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
 	auto ret	= fn(vkInst, &createInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);
 }

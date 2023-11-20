@@ -36,7 +36,6 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	_rdCtx = cDesc.rdCtx;
 	auto* rdDevVk = renderDeviceVk();
 
-
 	_vkSurface.create(cDesc.wnd, rdDevVk);
 
 	if (_vkSurface.hnd())
@@ -153,6 +152,7 @@ Vk_Swapchain::createSwapchain(const math::Rect2f& framebufferRect2f, Vk_RenderPa
 	auto* vkDev		= rdDevVk->vkDevice();
 
 	Util::createSwapchain(hndForInit(), _vkSurface.hnd(), vkDev, info(), rdDevVk->swapchainAvailableInfo(), rdDevVk);
+
 	createDepthResources();
 
 	createSwapchainImages(_vkSwapchainImages, hnd(), vkDev);
@@ -222,7 +222,6 @@ Vk_Swapchain::createSwapchainFramebuffers(Vk_RenderPass* vkRdPass)
 void 
 Vk_Swapchain::createDepthResources()
 {
-
 	destroyDepthResources();
 
 	auto* rdDevVk			= renderDeviceVk();
@@ -242,7 +241,7 @@ Vk_Swapchain::createDepthResources()
 
 	{
 		RDS_TODO("maybe modify here, but it is not critical path, simple is better");
-		auto* cmdBuf = vkRdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		auto* cmdBuf = vkRdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Vk_Swapchain::createDepthResources-cmdBuf");
 		Util::transitionImageLayout(&_vkDepthImage, depthFormat, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, nullptr, vkGraphicsQueue, cmdBuf);
 
 		//auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -257,6 +256,26 @@ Vk_Swapchain::destroyDepthResources()
 
 	_vkDepthImageView.destroy(rdDevVk);
 	_vkDepthImage.destroy();
+}
+
+void 
+Vk_Swapchain::_setDebugName()
+{
+	RDS_VK_SET_DEBUG_NAME(_vkSurface);
+
+	for (size_t i = 0; i < _vkSwapchainImages.size(); i++)
+	{
+		RDS_VK_SET_DEBUG_NAME(_vkSwapchainImages[i]);
+		RDS_VK_SET_DEBUG_NAME(_vkSwapchainImageViews[i]);
+	}
+
+	for (size_t i = 0; i < _vkSwapchainFramebuffers.size(); i++)
+	{
+		RDS_VK_SET_DEBUG_NAME(_vkSwapchainFramebuffers[i]);
+	}
+
+	RDS_VK_SET_DEBUG_NAME(_vkDepthImage);
+	RDS_VK_SET_DEBUG_NAME(_vkDepthImageView);
 }
 
 RenderDevice_Vk* 

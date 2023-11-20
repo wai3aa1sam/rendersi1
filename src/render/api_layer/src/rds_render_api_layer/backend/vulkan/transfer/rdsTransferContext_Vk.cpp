@@ -42,6 +42,8 @@ TransferContext_Vk::onCreate(const CreateDesc& cDesc)
 	_vkGraphicsQueue.create(QueueTypeFlags::Graphics, rdDevVk);
 	_vkTransferQueue.create(QueueTypeFlags::Transfer, rdDevVk);
 	 _vkComputeQueue.create(QueueTypeFlags::Compute,  rdDevVk);
+
+	 _setDebugName();
 }
 
 void 
@@ -70,7 +72,7 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq)
 
 	auto& inFlighVkFence	= vkTsfFrame._inFlightVkFnc;
 	auto& completedVkSmp	= vkTsfFrame._completedVkSmp;
-	auto* vkCmdBuf			= vkTsfFrame.requestTransferCommandBuffer(VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	auto* vkCmdBuf			= vkTsfFrame.requestTransferCommandBuffer(VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY, "TransferContext_Vk::onCommit-vkCmdBuf");
 
 	_curVkCmdBuf = vkCmdBuf;
 
@@ -134,7 +136,7 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 {
 	auto* rdDevVk		= renderDeviceVk();
 	auto& vkTsfFrame	= vkTransferFrame();
-	auto* vkCmdBuf		= vkTsfFrame.requestCommandBuffer(queueType);
+	auto* vkCmdBuf		= vkTsfFrame.requestCommandBuffer(queueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, RDS_FMT_DEBUG("_commitUploadCmdsToDstQueue-{}", queueType));
 
 	//auto& srcInFlighVkFence = frame._inFlightVkFnc;
 	auto& srcCompletedVkSmp = vkTsfFrame._completedVkSmp;
@@ -171,6 +173,20 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 }
 
 void 
+TransferContext_Vk::_setDebugName()
+{
+	RDS_VK_SET_DEBUG_NAME(_vkGraphicsQueue);
+	RDS_VK_SET_DEBUG_NAME(_vkTransferQueue);
+	RDS_VK_SET_DEBUG_NAME(_vkComputeQueue);
+
+}
+
+#if 0
+
+#endif // 0
+#if 1
+
+void 
 TransferContext_Vk::onTransferCommand_CopyBuffer	(TransferCommand_CopyBuffer* cmd)
 {
 	RDS_NOT_YET_SUPPORT();
@@ -202,6 +218,9 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	vkCmdBuf->cmd_copyBufferToImage		(dst, statingBufHnd,	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, size.x, size.y);
 	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), graphicsQueueFamilyIdx(), true);
 }
+
+
+#endif // 1
 
 Vk_TransferFrame& TransferContext_Vk::vkTransferFrame() { return _vkTransferFrames[renderDeviceVk()->iFrame()]; }
 

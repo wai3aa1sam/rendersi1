@@ -90,6 +90,7 @@ protected:
 	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk
 		, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
+	void _setDebugName();
 
 protected:
 	RenderDevice_Vk* renderDeviceVk();

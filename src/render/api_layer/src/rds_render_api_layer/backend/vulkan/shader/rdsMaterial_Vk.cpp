@@ -570,6 +570,7 @@ MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPas
 			auto& outVkPipeline = _vkPipelineMap[vkRdPass];
 			createVkPipeline(outVkPipeline, vkRdPass, vtxLayout);
 			vkPipeline = &outVkPipeline;
+			RDS_VK_SET_DEBUG_NAME_FMT(*vkPipeline, "{}-{}", shader()->filename(), "vkPipeline");
 		}
 	}
 	
@@ -588,6 +589,7 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 
 	Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
 	vkPipelineLayoutCDesc.create(_vkPipelineLayout, this, rdDevVk);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", shader()->filename(), "vkPipelineLayout");
 
 	Vk_RenderStateCDesc vkRenderStateCDesc;
 	vkRenderStateCDesc.createDefault(pipelineCInfo);
@@ -637,7 +639,6 @@ Material_Vk::onPostCreate(const CreateDesc& cDesc)
 void 
 Material_Vk::onDestroy()
 {
-
 	Base::onDestroy();
 }
 

@@ -29,7 +29,18 @@
 
 
 RDS_DISABLE_ALL_WARNINGS();
-#include <vk_mem_alloc.h>
+
+	#if RDS_DEVELOPMENT
+
+		#define VMA_DEBUG_MARGIN 16
+		#define VMA_DEBUG_DETECT_CORRUPTION 1
+		//#define VMA_DEBUG_LOG
+		//#define VMA_DEBUG_LOG_FORMAT
+
+	#endif // RDS_DEBUG
+
+	#include <vk_mem_alloc.h>
+
 RDS_RESTORE_ALL_WARNINGS();
 
 #if VK_VERSION_1_3
@@ -64,7 +75,7 @@ inline PFN_vkCmdInsertDebugUtilsLabelEXT	vkCmdInsertDebugUtilsLabel;
 
 namespace rds
 {
-using Vk_AllocHnd = VmaAllocation;
+using Vk_AllocHnd	= VmaAllocation;
 using Vk_Allocation = VmaAllocation;
 
 }

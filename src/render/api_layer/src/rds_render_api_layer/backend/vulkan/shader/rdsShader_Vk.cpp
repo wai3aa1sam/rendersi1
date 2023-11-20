@@ -20,60 +20,6 @@ RenderDevice_Vk::onCreateShader(const Shader_CreateDesc& cDesc)
 #endif // 0
 #if 1
 
-//VkPipelineShaderStageCreateInfo	
-//createVkStageInfo_Helper(ShaderStageFlag flag, const char* entry, Vk_ShaderModule& module)
-//{
-//	using Util = Vk_RenderApiUtil;
-//
-//	VkPipelineShaderStageCreateInfo	stageInfo = {};
-//	stageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-//	stageInfo.stage					= Util::toVkShaderStageBit(flag);
-//	stageInfo.module				= module.hnd();
-//	stageInfo.pName					= entry;
-//	stageInfo.pSpecializationInfo	= nullptr;
-//
-//	return stageInfo;
-//}
-//
-//void 
-//loadShaderStage_Helper(ShaderPass_Vk* pass, StrView passPath, ShaderStageFlag stage, ShaderStageInfo& info, Vk_ShaderModule& module)
-//{
-//	using Util = Vk_RenderApiUtil;
-//
-//	TempString binPath;
-//	fmtTo(binPath, "{}/{}.bin", passPath, Util::toShaderStageProfile(stage));
-//	
-//	auto* rdDevVk = pass->shader()->renderDeviceVk();
-//	module.create(binPath, rdDevVk);
-//
-//	binPath += ".json";
-//	JsonUtil::readFile(binPath, info);
-//}
-
-//void 
-//Vk_VertexShaderStage::load(ShaderPass_Vk* pass, StrView passPath)
-//{
-//	loadShaderStage_Helper(pass, passPath, stageFlag(), _info, _vkModule);
-//}
-//
-//VkPipelineShaderStageCreateInfo 
-//Vk_VertexShaderStage::createVkStageInfo(const char* entry)
-//{
-//	return createVkStageInfo_Helper(stageFlag(), entry, _vkModule);
-//}
-//
-//void 
-//Vk_PixelShaderStage::load(ShaderPass_Vk* pass, StrView passPath)
-//{
-//	loadShaderStage_Helper(pass, passPath, stageFlag(), _info, _vkModule);
-//}
-//
-//VkPipelineShaderStageCreateInfo 
-//Vk_PixelShaderStage::createVkStageInfo(const char* entry)
-//{
-//	return createVkStageInfo_Helper(stageFlag(), entry, _vkModule);
-//}
-
 #endif
 
 #if 0

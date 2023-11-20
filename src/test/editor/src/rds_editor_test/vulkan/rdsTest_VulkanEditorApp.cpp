@@ -272,8 +272,8 @@ public:
 
 		#if 1
 		{
-			//_testShader = Renderer::rdDev()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
-			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+			_testShader = Renderer::rdDev()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
+			//_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
 			_testMaterial = Renderer::rdDev()->createMaterial();
@@ -286,6 +286,13 @@ public:
 
 			texCDesc.create("asset/texture/uvChecker2.png");
 			_uvChecker2Tex = Renderer::rdDev()->createTexture2D(texCDesc);
+
+			// for testing vma print name when somethings are not freed
+			static auto a = _uvChecker2Tex;
+
+			//auto* rdDev		= Renderer::rdDev();
+			//auto& tsfReq	= rdDev->transferRequest();
+			//tsfReq.uploadTexture(_uvChecker2Tex, "asset/texture/uvChecker2.png");
 		}
 		#endif // 0
 	}
@@ -349,9 +356,9 @@ public:
 			#endif // 0
 
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
-
-			u32 iFrame = Renderer::rdDev()->iFrame();
-			iFrame % 2 == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
+			
+			//u32 iFrame = Renderer::rdDev()->iFrame();
+			//iFrame % 2 == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
 			#if 0
 			static int i = 0;
 			if (/*Renderer::rdDev()->iFrame() != 0 && */i >= 0 /*&& i < 100*/ /*&& i % 50 == 0*/)

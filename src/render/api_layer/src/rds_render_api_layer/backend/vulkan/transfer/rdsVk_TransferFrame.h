@@ -44,10 +44,11 @@ public:
 
 	Vk_Buffer* requestStagingBuffer(u32& outIdx, VkDeviceSize size, RenderDevice_Vk* rdDevVk);
 
-	Vk_CommandBuffer* requestCommandBuffer			(QueueTypeFlags type, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	Vk_CommandBuffer* requestGraphicsCommandBuffer	(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	Vk_CommandBuffer* requestTransferCommandBuffer	(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	Vk_CommandBuffer* requestComputeCommandBuffer	(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	// VK_COMMAND_BUFFER_LEVEL_PRIMARY
+	Vk_CommandBuffer* requestCommandBuffer			(QueueTypeFlags type, VkCommandBufferLevel level, StrView debugName);
+	Vk_CommandBuffer* requestGraphicsCommandBuffer	(VkCommandBufferLevel level, StrView debugName);
+	Vk_CommandBuffer* requestTransferCommandBuffer	(VkCommandBufferLevel level, StrView debugName);
+	Vk_CommandBuffer* requestComputeCommandBuffer	(VkCommandBufferLevel level, StrView debugName);
 
 	Vk_Fence*		requestInFlightVkFnc	(QueueTypeFlags type);
 	Vk_Semaphore*	requestCompletedVkSmp	(QueueTypeFlags type);
@@ -56,6 +57,8 @@ public:
 
 protected:
 	Vk_Buffer_T* getVkStagingBufHnd(u32 idx);
+
+	void _setDebugName();
 
 protected:
 	TransferContext_Vk*	_tsfCtxVk = nullptr;
@@ -101,20 +104,20 @@ protected:
 
 inline 
 Vk_CommandBuffer* 
-Vk_TransferFrame::requestCommandBuffer(QueueTypeFlags type, VkCommandBufferLevel level) 
+Vk_TransferFrame::requestCommandBuffer(QueueTypeFlags type, VkCommandBufferLevel level, StrView debugName)
 {
 	using SRC = QueueTypeFlags;
 	switch (type)
 	{
-		case SRC::Graphics: { return requestGraphicsCommandBuffer(level); } break;
+		case SRC::Graphics: { return requestGraphicsCommandBuffer(level, debugName); } break;
 		//case SRC::Compute:	{ return _graphicsVkCmdPool.requestCommandBuffer(level); } break;
-		case SRC::Transfer: { return requestTransferCommandBuffer(level); } break;
+		case SRC::Transfer: { return requestTransferCommandBuffer(level, debugName); } break;
 		default: { RDS_THROW(""); }
 	}
 }
 
-inline Vk_CommandBuffer* Vk_TransferFrame::requestGraphicsCommandBuffer(VkCommandBufferLevel level) { return _graphicsVkCmdPool.requestCommandBuffer(level, renderDeviceVk()); }
-inline Vk_CommandBuffer* Vk_TransferFrame::requestTransferCommandBuffer(VkCommandBufferLevel level) { return _transferVkCmdPool.requestCommandBuffer(level, renderDeviceVk()); }
+inline Vk_CommandBuffer* Vk_TransferFrame::requestGraphicsCommandBuffer(VkCommandBufferLevel level, StrView debugName) { return _graphicsVkCmdPool.requestCommandBuffer(level, debugName, renderDeviceVk()); }
+inline Vk_CommandBuffer* Vk_TransferFrame::requestTransferCommandBuffer(VkCommandBufferLevel level, StrView debugName) { return _transferVkCmdPool.requestCommandBuffer(level, debugName, renderDeviceVk()); }
 
 inline Vk_Fence*		
 Vk_TransferFrame::requestInFlightVkFnc(QueueTypeFlags type)

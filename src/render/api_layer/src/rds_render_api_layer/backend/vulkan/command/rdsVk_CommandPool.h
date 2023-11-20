@@ -32,11 +32,11 @@ public:
 	void create	(u32 familyIdx, VkCommandPoolCreateFlags createFlags /* = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT*/, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 
-	Vk_CommandBuffer* requestCommandBuffer(VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk);
+	Vk_CommandBuffer* requestCommandBuffer(VkCommandBufferLevel level, StrView debugName, RenderDevice_Vk* rdDevVk);
 	void reset(RenderDevice_Vk* rdDevVk);
 
 protected:
-	template<size_t N> Vk_CommandBuffer* _requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk);
+	template<size_t N> Vk_CommandBuffer* _requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level, StrView debugName, RenderDevice_Vk* rdDevVk);
 	void resetCommandBuffers();
 
 protected:
@@ -50,7 +50,7 @@ protected:
 
 template<size_t N> inline
 Vk_CommandBuffer* 
-Vk_CommandPool::_requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk)
+Vk_CommandPool::_requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level, StrView debugName, RenderDevice_Vk* rdDevVk)
 {
 	Vk_CommandBuffer* p = nullptr;
 	if (activeCount < vkCmdBufs.size())
@@ -61,6 +61,8 @@ Vk_CommandPool::_requestCommandBuffer(Vector<UPtr<Vk_CommandBuffer>, N>& vkCmdBu
 	{
 		auto& cmdBuf = vkCmdBufs.emplace_back(RDS_NEW(Vk_CommandBuffer)());
 		cmdBuf->create(this, level, rdDevVk);
+		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(*cmdBuf, rdDevVk, "{}", debugName);
+
 		p = cmdBuf.ptr();
 	}
 	activeCount++;

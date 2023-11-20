@@ -21,124 +21,6 @@
 namespace rds
 {
 
-struct TestVertex
-{
-public:
-	using SizeType = RenderApiLayerTraits::SizeType;
-	static constexpr u32 s_kVtxCount		= 4;
-	static constexpr u32 s_kIdxCount		= 6;
-	static constexpr u32 s_kElementCount	= 3;
-
-public:
-	using Type = Vertex_PosColorUv<1>;
-	using Util = Vk_RenderApiUtil;
-
-public:
-	Tuple3f pos;
-	Color4b color;
-	Tuple2f	uv;
-
-public:
-	static Vector<u8, 1024> make2(float z = 0.0f)
-	{
-		EditMesh editMesh;
-		{
-			auto& e = editMesh.pos;
-			e.reserve(s_kVtxCount);
-			e.emplace_back(-0.5f, -0.5f, z);
-			e.emplace_back( 0.5f, -0.5f, z);
-			e.emplace_back( 0.5f,  0.5f, z);
-			e.emplace_back(-0.5f,  0.5f, z);
-		}
-		{
-			auto& e = editMesh.color;
-			e.reserve(s_kVtxCount);
-			e.emplace_back(255,	  0,	  0,	255);
-			e.emplace_back(0,	255,	  0,	255);
-			e.emplace_back(0,	  0,	255,	255);
-			e.emplace_back(255,	255,	255,	255);
-		}
-		{
-			auto& e = editMesh.uvs[0];
-			e.reserve(s_kVtxCount);
-			e.emplace_back(1.0f, 0.0f);
-			e.emplace_back(0.0f, 0.0f);
-			e.emplace_back(0.0f, 1.0f);
-			e.emplace_back(1.0f, 1.0f);
-		}
-
-		Vector<u8, 1024> o;
-		editMesh.createPackedVtxData(o);
-		return o;
-	}
-
-	static Vector<TestVertex, s_kVtxCount> make()
-	{
-		Vector<TestVertex, s_kVtxCount> vertices;
-		#if 1
-
-		vertices.emplace_back(TestVertex{ { -0.5f, -0.5f, 0.0f }, { 255,	0,		0,		255 }, { 1.0f, 0.0f } });
-		vertices.emplace_back(TestVertex{ {  0.5f, -0.5f, 0.0f }, { 0,		255,	0,		255 }, { 0.0f, 0.0f } });
-		vertices.emplace_back(TestVertex{ {  0.5f,  0.5f, 0.0f }, { 0,		0,		255,	255 }, { 0.0f, 1.0f } });
-		vertices.emplace_back(TestVertex{ { -0.5f,  0.5f, 0.0f }, { 255,	255,	255,	255 }, { 1.0f, 1.0f } });
-
-		/*vertices.emplace_back(TestVertex{ { -0.5f, -0.5f, -0.5f }, { 255,	0,		0,		255 }, { 1.0f, 0.0f } });
-		vertices.emplace_back(TestVertex{ {  0.5f, -0.5f, -0.5f }, { 0,		255,	0,		255 }, { 0.0f, 0.0f } });
-		vertices.emplace_back(TestVertex{ {  0.5f,  0.5f, -0.5f }, { 0,		0,		255,	255 }, { 0.0f, 1.0f } });
-		vertices.emplace_back(TestVertex{ { -0.5f,  0.5f, -0.5f }, { 255,	255,	255,	255 }, { 1.0f, 1.0f } });*/
-
-		#else
-		
-		vertices.emplace_back(TestVertex{ {  -0.5f,  0.5f, 0.0f },	{   0,		  0,	255,	255 }, { 0.0f, 1.0f } });
-		vertices.emplace_back(TestVertex{ {   0.0f, -0.5f, 0.0f },	{ 255,	      0,	  0,	255 }, { 1.0f, 0.0f } });
-		vertices.emplace_back(TestVertex{ {   0.5f,  0.5f, 0.0f },	{   0,		255,	  0,	255 }, { 0.0f, 0.0f } });
-
-		#endif // 0
-
-
-		return vertices;
-	}
-
-	static Vector<u16, s_kIdxCount> makeIndices()
-	{
-		Vector<u16, s_kIdxCount> indices = { 0, 2, 1, 2, 0, 3 };
-		return indices;
-	}
-
-	static VkVertexInputBindingDescription getBindingDescription() 
-	{
-		VkVertexInputBindingDescription bindingDescription = {};
-		bindingDescription.binding		= 0;
-		bindingDescription.stride		= sizeof(TestVertex);
-		bindingDescription.inputRate	= VK_VERTEX_INPUT_RATE_VERTEX;
-		return bindingDescription;
-	}
-
-	static Vector<VkVertexInputAttributeDescription, s_kElementCount> getAttributeDescriptions() 
-	{
-		Vector<VkVertexInputAttributeDescription, s_kElementCount> attributeDescriptions;
-		
-		const auto* v = VertexLayoutManager::instance()->get(Type::s_kVertexType);
-		for (u32 i = 0; i < v->elements().size(); ++i)
-		{
-			auto& e = v->elements(i);
-			auto& attr = attributeDescriptions.emplace_back();
-
-			attr.binding	= 0;
-			attr.location	= i;
-			attr.format		= Util::toVkFormat(e.dataType);
-			attr.offset		= e.offset;
-		}
-
-		return attributeDescriptions;
-	}
-};
-
-struct TestUBO
-{
-	Mat4f model, view, proj, mvp;
-};
-
 #if 0
 #pragma mark --- rdsRenderContext_Vk-Decl ---
 #endif // 0
@@ -199,6 +81,8 @@ protected:
 	void endRenderPass	(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
 
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
+
+	void _setDebugName();
 
 protected:
 	void createTestRenderPass(Vk_Swapchain_CreateDesc& vkSwapchainCDesc);

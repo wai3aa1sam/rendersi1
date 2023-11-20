@@ -52,12 +52,12 @@ Vk_CommandPool::destroy(RenderDevice_Vk* rdDevVk)
 }
 
 Vk_CommandBuffer* 
-Vk_CommandPool::requestCommandBuffer(VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk)
+Vk_CommandPool::requestCommandBuffer(VkCommandBufferLevel level, StrView debugName, RenderDevice_Vk* rdDevVk)
 {
 	switch (level)
 	{
-		case VK_COMMAND_BUFFER_LEVEL_PRIMARY:	{ return _requestCommandBuffer(_primaryVkCmdBufs,	_activePrimaryCmdBufCount,	 level, rdDevVk); }	break;
-		case VK_COMMAND_BUFFER_LEVEL_SECONDARY: { return _requestCommandBuffer(_secondaryVkCmdBufs, _activeSecondaryCmdBufCount, level, rdDevVk); }	break;
+		case VK_COMMAND_BUFFER_LEVEL_PRIMARY:	{ return _requestCommandBuffer(_primaryVkCmdBufs,	_activePrimaryCmdBufCount,	 level, debugName, rdDevVk); }	break;
+		case VK_COMMAND_BUFFER_LEVEL_SECONDARY: { return _requestCommandBuffer(_secondaryVkCmdBufs, _activeSecondaryCmdBufCount, level, debugName, rdDevVk); }	break;
 		default: throwIf(true, "");
 	}
 	return nullptr;

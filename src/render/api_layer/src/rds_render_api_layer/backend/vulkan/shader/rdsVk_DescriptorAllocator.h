@@ -69,13 +69,16 @@ public:
 	Vk_DescriptorSet alloc(const Vk_DescriptorSetLayout* layout);
 
 	Vk_Device_T*		vkDevHnd();
-	RenderDevice_Vk*	rdDevVk();
+	RenderDevice_Vk*	renderDeviceVk();
 
 protected:
 	Vk_DescriptorPool requestPool();
 
 	VkResult createPool	(Vk_DescriptorPool& out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk);
 	VkResult createSet	(Vk_DescriptorSet& out, const Vk_DescriptorSetLayout* layout, Vk_DescriptorPool* pool);
+
+protected:
+	void _setDebugName();
 
 private:
 	RenderDevice_Vk*	_rdDevVk = nullptr;
@@ -86,7 +89,7 @@ private:
 	Vector<Vk_DescriptorPool, 8> _freePools;
 };
 
-inline RenderDevice_Vk* Vk_DescriptorAllocator::rdDevVk() { return _rdDevVk; }
+inline RenderDevice_Vk* Vk_DescriptorAllocator::renderDeviceVk() { return _rdDevVk; }
 
 #endif
 
@@ -124,7 +127,7 @@ protected:
 protected:
 	Vk_DescriptorBuilder();
 
-	RenderDevice_Vk* rdDevVk();
+	RenderDevice_Vk* renderDeviceVk();
 
 private:
 	Vk_DescriptorAllocator* _alloc = nullptr;
@@ -134,7 +137,7 @@ private:
 	Vector<VkDescriptorImageInfo,	16>	_imageInfos;
 };
 
-inline RenderDevice_Vk* Vk_DescriptorBuilder::rdDevVk() { return _alloc->rdDevVk(); }
+inline RenderDevice_Vk* Vk_DescriptorBuilder::renderDeviceVk() { return _alloc->renderDeviceVk(); }
 
 
 #endif

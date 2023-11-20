@@ -215,8 +215,6 @@ public:
 	Vec3u				size()			const;
 
 protected:
-
-protected:
 	Texture(RenderDataType type);
 
 	RenderDataType	_type;

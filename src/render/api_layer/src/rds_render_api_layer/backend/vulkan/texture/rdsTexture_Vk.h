@@ -30,9 +30,12 @@ protected:
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 
 protected:
+	void _setDebugName();
+
+protected:
 	Vk_Image		_vkImage;
 	Vk_ImageView	_vkImageView;
-	Vk_Sampler		_vkSampler;		// TODO: sampler in Renderer_Vk;
+	Vk_Sampler		_vkSampler;		// TODO: sampler in RenderDevice_Vk, shared globally;
 };
 
 inline Vk_Image_T*		Texture2D_Vk::vkImageHnd()		{ return _vkImage.hnd(); }

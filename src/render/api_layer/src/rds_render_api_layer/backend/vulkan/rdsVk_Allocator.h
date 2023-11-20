@@ -43,6 +43,8 @@ public:
 	void mapMem(u8** outData,	Vk_AllocHnd* allocHnd);
 	void unmapMem(Vk_AllocHnd* allocHnd);
 
+	void setAllocationDebugName(const char* name, Vk_AllocHnd* allocHnd);
+
 private:
 	VmaMemoryUsage				toMemoryUsage(RenderMemoryUsage v);
 	VmaAllocationCreateFlags	toAllocFlags(RenderAllocFlags v);

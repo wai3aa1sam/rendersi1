@@ -7,16 +7,8 @@
 
 RDS_DISABLE_ALL_WARNINGS();
 
-#define VMA_IMPLEMENTATION
-
-	#if RDS_DEBUG
-		#define VMA_DEBUG_MARGIN 16
-		#define VMA_DEBUG_DETECT_CORRUPTION 1
-		//#define VMA_DEBUG_LOG
-		//#define VMA_DEBUG_LOG_FORMAT
-	#endif // RDS_DEBUG
-
-#include <vk_mem_alloc.h>
+	#define VMA_IMPLEMENTATION
+	#include <vk_mem_alloc.h>
 
 RDS_RESTORE_ALL_WARNINGS();
 
@@ -70,10 +62,19 @@ Vk_Allocator::destroy()
 VkResult
 Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
+	RDS_CORE_ASSERT(outBuf || allocHnd, "");
+
 	VmaAllocationCreateInfo vmaAllocCInfo = {};
 	vmaAllocCInfo.usage			= toMemoryUsage(allocInfo->usage);
 	vmaAllocCInfo.flags			= toAllocFlags(allocInfo->flags);
 	vmaAllocCInfo.requiredFlags = vkMemPropFlags;
+
+	//vmaAllocCInfo.pUserData = nullptr;
+	/*
+	VkBuffer buffer;
+	VmaAllocation allocation;
+	vmaCreateBuffer(allocator, &bufCreateInfo, &allocCreateInfo, &buffer, &allocation, nullptr);
+	*/
 	
 	auto ret = vmaCreateBuffer(_allocator, bufferInfo, &vmaAllocCInfo, outBuf, allocHnd, nullptr);
 	Util::throwIfError(ret);
@@ -90,6 +91,8 @@ Vk_Allocator::freeBuf(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd)
 VkResult	
 Vk_Allocator::allocImage(Vk_Image_T** outImg, Vk_AllocHnd* allocHnd, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
+	RDS_CORE_ASSERT(outImg || allocHnd, "");
+
 	VmaAllocationCreateInfo vmaAllocCInfo = {};
 	vmaAllocCInfo.usage			= toMemoryUsage(allocInfo->usage);
 	vmaAllocCInfo.flags			= toAllocFlags(allocInfo->flags);
@@ -111,19 +114,29 @@ Vk_Allocator::freeImage	(Vk_Image_T* vkImg, Vk_AllocHnd* allocHnd)
 void 
 Vk_Allocator::mapMem(void** outData, Vk_AllocHnd* allocHnd)
 {
+	RDS_CORE_ASSERT(outData || allocHnd, "");
 	vmaMapMemory(_allocator, *allocHnd, outData);
 }
 
 void 
 Vk_Allocator::mapMem(u8** outData, Vk_AllocHnd* allocHnd)
 {
+	RDS_CORE_ASSERT(allocHnd, "");
 	mapMem(reinCast<void**>(outData), allocHnd);
 }
 
 void 
 Vk_Allocator::unmapMem(Vk_AllocHnd* allocHnd)
 {
+	RDS_CORE_ASSERT(allocHnd, "");
 	vmaUnmapMemory(_allocator, *allocHnd);
+}
+
+void 
+Vk_Allocator::setAllocationDebugName(const char* name, Vk_AllocHnd* allocHnd)
+{
+	RDS_CORE_ASSERT(allocHnd, "");
+	vmaSetAllocationName(_allocator, *allocHnd, name);
 }
 
 VmaMemoryUsage 
@@ -157,6 +170,7 @@ Vk_Allocator::toAllocFlags(RenderAllocFlags v)
 
 Vk_ScopedMemMapBuf::Vk_ScopedMemMapBuf(Vk_Buffer* vkBuf)
 {
+	RDS_CORE_ASSERT(vkBuf, "");
 	_p = vkBuf;
 	_p->_internal_alloc()->mapMem(&_data, _p->_internal_allocHnd());
 }

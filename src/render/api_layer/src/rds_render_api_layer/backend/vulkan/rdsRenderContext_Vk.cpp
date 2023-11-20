@@ -72,9 +72,13 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	createTestRenderPass(vkSwapchainCDesc);
 	_vkSwapchain.create(vkSwapchainCDesc);
-	
-	_curGraphicsVkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+	_curGraphicsVkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "RenderContext_Vk::_curGraphicsVkCmdBuf-Prim");
+
+	RDS_TODO("recitfy");
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
+
+	_setDebugName();
 }
 
 void
@@ -124,7 +128,7 @@ RenderContext_Vk::onBeginRender()
 	{
 		vkRdFrame().clear();
 
-		_curGraphicsVkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		_curGraphicsVkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "RenderContext_Vk::_curGraphicsVkCmdBuf-Prim");
 
 		#if RDS_TEST_DRAW_CALL
 		auto* vkCmdBuf		= _curGraphicsVkCmdBuf->hnd();
@@ -251,7 +255,7 @@ RenderContext_Vk::test_extraDrawCall(RenderCommandBuffer& renderCmdBuf)
 {
 	RDS_WARN_ONCE("TODO: renderCmdBuf.drawCallCmds() for a extra Sec.cmd buf to execute but seems has order problem or maybe copy unity to have a executeCmdBuf()");
 	{
-		auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_SECONDARY, "RenderContext_Vk::extraDrawCall-2ry");
 
 		vkCmdBuf->beginSecondaryRecord(vkGraphicsQueue(), &_testVkRenderPass, _vkSwapchain.framebuffer(), 0);
 
@@ -325,7 +329,7 @@ RenderContext_Vk::_onUploadBuffer_MemCopyMutex(RenderFrameUploadBuffer& rdfUploa
 		}
 	}
 
-	auto* transferCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	auto* transferCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "RenderContext_Vk::Transfer-Prim");
 	transferCmdBuf->beginRecord(&_vkTransferQueue, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	auto CmdCount = inlineUploadBuffer->uploadBufCmds.size();
@@ -791,7 +795,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 
 		virtual void onBegin()
 		{
-			_vkCmdBuf = _rdCtx->vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+			_vkCmdBuf = _rdCtx->vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY, "RenderContext_Vk::ParRecordDrawCall-2ry");
 
 			auto* vkCmdBuf = _vkCmdBuf;
 			vkCmdBuf->beginSecondaryRecord(_graphicsQueue, _renderPass, _vkFrameBuf, _subpassIdx);
@@ -850,10 +854,18 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 	#endif // 0
 }
 
-
-
 #endif // 1
 
+void 
+RenderContext_Vk::_setDebugName()
+{
+	RDS_VK_SET_DEBUG_NAME_FMT(_testVkRenderPass);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkSwapchain);
+
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkGraphicsQueue);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkPresentQueue);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkTransferQueue);
+}
 
 
 #endif

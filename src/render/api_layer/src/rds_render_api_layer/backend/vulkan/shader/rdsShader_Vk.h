@@ -44,6 +44,8 @@ public:
 
 		binPath += ".json";
 		JsonUtil::readFile(binPath, _info);
+
+		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(_vkModule, rdDevVk, "{}-{}", pass->shader()->filename(), stageFlag());
 	}
 
 	void destroy(ShaderPass_Vk* pass)

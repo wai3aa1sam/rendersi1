@@ -141,10 +141,21 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 		_vkImage.create(rdDevVk, vkAlloc, &allocInfo
 			, imageSize.x, imageSize.y
 			, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-			, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+			, QueueTypeFlags::Transfer);
+		_vkImage.setDebugName("Texture2D::_vkImage", rdDevVk);
 	}
 
 	_vkImageView.create(this, rdDevVk);
+
+	_setDebugName();
+}
+
+void 
+Texture2D_Vk::_setDebugName()
+{
+	RDS_VK_SET_DEBUG_NAME(_vkSampler);
+	RDS_VK_SET_DEBUG_NAME(_vkImage);
+	RDS_VK_SET_DEBUG_NAME(_vkImageView);
 }
 
 #endif

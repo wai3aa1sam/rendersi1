@@ -15,6 +15,15 @@
 
 #define RDS_FORMATTER(CLASS) RDS_FORMATTER_T(RDS_EMPTY, CLASS)
 
+#if RDS_DEVELOPMENT
+
+#define RDS_FMT_DEBUG(...) ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__)
+
+#else
+
+#define RDS_FMT_DEBUG(...) ""
+
+#endif // RDS_DEVELOPMENT
 
 #if 0
 #pragma mark --- rdsFmt-Impl ---

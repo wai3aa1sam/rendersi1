@@ -47,6 +47,8 @@ public:
 			Vk_SwapchainAvailableInfo&	swapchainAvailableInfo();
 			QueueFamilyIndices&			queueFamilyIndices();
 
+			RenderDevice_Vk* renderDeviceVk() { RDS_TODO("remove"); return this; }
+
 public:
 
 protected:
@@ -72,6 +74,9 @@ private:
 	void loadVkInstFn	(Vk_ExtensionInfo& vkExtInfo);
 	void loadVkDevFn	(Vk_ExtensionInfo& vkExtInfo);
 
+protected:
+	void _setDebugName();
+
 private:
 	Vk_MemoryContext				_vkMemoryContext;
 
@@ -85,7 +90,7 @@ private:
 	Vk_PhysicalDevice		_vkPhysicalDevice;
 	Vk_Device				_vkDevice;
 
-	TransferContext_Vk				_transferCtxVk;
+	TransferContext_Vk		_transferCtxVk;
 };
 
 #endif
