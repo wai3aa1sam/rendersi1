@@ -6,94 +6,6 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsRenderFrameUploadBuffer-Impl ---
-#endif // 0
-#if 1
-
-RenderFrameUploadBuffer::RenderFrameUploadBuffer()
-{
-}
-
-RenderFrameUploadBuffer::~RenderFrameUploadBuffer()
-{
-	clear();
-}
-
-void 
-RenderFrameUploadBuffer::clear()
-{
-	_totalDataSize = 0;
-
-	auto& uploadBuf = *_inlineUploadBuffer.scopedULock();
-
-	for (auto& e: uploadBuf.uploadBufCmds)
-	{
-		e->~TransferCommand_UploadBuffer();
-	}
-	uploadBuf.uploadBufCmds.clear();
-
-	uploadBuf.allocator.clear();
-	uploadBuf.bufData.clear();
-	uploadBuf.bufOffsets.clear();
-	uploadBuf.bufSizes.clear();
-	uploadBuf.parents.clear();
-}
-
-void 
-RenderFrameUploadBuffer::uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags)
-{
-	if (data.is_empty())
-	{
-		return;
-	}
-
-	auto* cmd = _addData(data);
-	cmd->dst			= dst;
-	cmd->data			= data;
-	cmd->queueTypeflags = queueTypeflags;
-	RDS_ASSERT(BitUtil::has(queueTypeflags, QueueTypeFlags::Transfer), "");
-}
-
-void 
-RenderFrameUploadBuffer::uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags, RenderGpuMultiBuffer* parent)
-{
-	uploadBuffer(dst, data, queueTypeflags);
-	addParent(parent);
-}
-
-void 
-RenderFrameUploadBuffer::addParent(RenderGpuMultiBuffer* parent)
-{
-	auto& uploadBuf = *_inlineUploadBuffer.scopedULock();
-	uploadBuf.parents.emplace_back(parent);
-}
-
-TransferCommand_UploadBuffer* 
-RenderFrameUploadBuffer::_addData(ByteSpan data)
-{
-	SizeType	bufOffset	= 0;
-	u32			bufSize		= sCast<u32>(math::alignTo(data.size(), RenderGpuBuffer::s_kAlign));
-
-	_totalDataSize += bufSize;
-
-	auto& uploadBuf = *_inlineUploadBuffer.scopedULock();
-
-	auto* dst = reinCast<u8*>(uploadBuf.bufData.alloc(data.size(), RenderGpuBuffer::s_kAlign, 0, &bufOffset));
-	memory_copy(dst, data.data(), data.size());
-	uploadBuf.bufOffsets.emplace_back(sCast<u32>(bufOffset));
-	uploadBuf.bufSizes.emplace_back(bufSize);
-
-	using Cmd_UploadBuf = TransferCommand_UploadBuffer;
-	auto* buf = uploadBuf.allocator.alloc(sizeof(Cmd_UploadBuf));
-	auto* cmd = new(buf) Cmd_UploadBuf();
-	uploadBuf.uploadBufCmds.emplace_back(cmd);
-
-	return cmd;
-}
-
-#endif
-
-#if 0
 #pragma mark --- rdsRenderFrame-Impl ---
 #endif // 0
 #if 1
@@ -135,7 +47,6 @@ void RenderFrame::destroy()
 void 
 RenderFrame::clear()
 {
-	_rdfUploadBuffer.clear();
 	renderQueue().clear();
 
 	// must be last
@@ -148,24 +59,6 @@ RenderFrame::clear()
 		e->clear();
 		//e.clear();
 	}
-}
-
-void 
-RenderFrame::uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags)
-{
-	_rdfUploadBuffer.uploadBuffer(dst, data, queueTypeflags);
-}
-
-void 
-RenderFrame::uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags, RenderGpuMultiBuffer* parent)
-{
-	_rdfUploadBuffer.uploadBuffer(dst, data, queueTypeflags, parent);
-}
-
-void 
-RenderFrame::addUploadBufferParent(RenderGpuMultiBuffer* parent)
-{
-	_rdfUploadBuffer.addParent(parent);
 }
 
 RenderCommandBuffer* 

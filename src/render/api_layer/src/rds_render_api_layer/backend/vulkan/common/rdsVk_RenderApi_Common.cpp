@@ -245,7 +245,7 @@ Vk_RenderApiUtil::toVkFormat_ShaderTexture(VkFormat v)
 }
 
 VkFormat	
-Vk_RenderApiUtil::toVkFormat_Srgb	(VkFormat v)
+Vk_RenderApiUtil::toVkFormat_srgb	(VkFormat v)
 {
 	using SRC = VkFormat;
 	switch (v) 

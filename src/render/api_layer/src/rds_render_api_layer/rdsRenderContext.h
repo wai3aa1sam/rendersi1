@@ -16,8 +16,6 @@ class	RenderCommandBuffer;
 class	RenderRequest;
 class	TransferCommandBuffer;
 class	TransferRequest;
-struct	Transfer_InlineUploadBuffer;
-class	RenderFrameUploadBuffer;
 
 struct RenderContext_CreateDesc : public RenderResource_CreateDesc
 {
@@ -47,9 +45,6 @@ public:
 
 	void commit(RenderCommandBuffer& renderCmdBuf);
 
-	void commit(TransferCommandBuffer& transferBuf);
-	void uploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf);
-
 	void			setFramebufferSize(const Vec2f& newSize);
 	const Vec2f&	framebufferSize() const;
 	float			aspectRatio() const;
@@ -67,9 +62,6 @@ protected:
 	virtual void onSetFramebufferSize(const Vec2f& newSize) {};
 
 	virtual void onCommit(RenderCommandBuffer& renderBuf);
-	virtual void onCommit(TransferCommandBuffer& transferBuf);
-
-	virtual void	onUploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf);
 
 protected:
 	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd);

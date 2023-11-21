@@ -83,12 +83,6 @@ RenderContext::commit(RenderCommandBuffer& renderBuf)
 	onCommit(renderBuf);
 }
 
-void 
-RenderContext::commit(TransferCommandBuffer& transferBuf)
-{
-	onCommit(transferBuf);
-}
-
 void
 RenderContext::setFramebufferSize(const Vec2f& newSize)
 {
@@ -124,24 +118,6 @@ RenderContext::onDestroy()
 
 void 
 RenderContext::onCommit(RenderCommandBuffer& renderBuf)
-{
-
-}
-
-void
-RenderContext::onCommit(TransferCommandBuffer& transferBuf)
-{
-
-}
-
-void 
-RenderContext::uploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf)
-{
-	onUploadBuffer(rdfUploadBuf);
-}
-
-void 
-RenderContext::onUploadBuffer(RenderFrameUploadBuffer& rdfUploadBuf)
 {
 
 }

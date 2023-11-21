@@ -288,7 +288,7 @@ public:
 			_uvChecker2Tex = Renderer::rdDev()->createTexture2D(texCDesc);
 
 			// for testing vma print name when somethings are not freed
-			static auto a = _uvChecker2Tex;
+			//static auto a = _uvChecker2Tex;
 
 			//auto* rdDev		= Renderer::rdDev();
 			//auto& tsfReq	= rdDev->transferRequest();
@@ -396,8 +396,6 @@ public:
 		rdCtx.endRender();
 
 		uploadTestMultiBuf();
-
-		rdCtx.uploadBuffer(rdFrame.renderFrameUploadBuffer());
 
 		Renderer::rdDev()->nextFrame();
 	}

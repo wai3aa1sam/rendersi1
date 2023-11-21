@@ -170,7 +170,7 @@ public:
 	static VkFormat	toVkFormat(RenderDataType	v);
 	static VkFormat	toVkFormat(ColorType		v);
 	static VkFormat	toVkFormat_ShaderTexture(VkFormat v);
-	static VkFormat	toVkFormat_Srgb			(VkFormat v);
+	static VkFormat	toVkFormat_srgb			(VkFormat v);
 
 	static VkBufferUsageFlagBits toVkBufferUsage(RenderGpuBufferTypeFlags type);
 

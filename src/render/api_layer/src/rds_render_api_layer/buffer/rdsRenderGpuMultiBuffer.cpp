@@ -87,7 +87,7 @@ void
 RenderGpuMultiBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
 {
 	nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
-	renderFrame().addUploadBufferParent(this);
+	//renderFrame().addUploadBufferParent(this);
 }
 
 void RenderGpuMultiBuffer::rotate()

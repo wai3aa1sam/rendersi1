@@ -33,61 +33,6 @@ void
 Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
-	#if 0
-
-	auto* rdDev = device();
-
-	_vkSampler.create(cDesc.samplerState, rdDev);
-	{
-		auto* vkAlloc			= rdDev->memoryContext()->vkAlloc();
-		const Image& image		= cDesc.uploadImage();
-		auto* rdCtx				= sCast<RenderContext_Vk*>(cDesc.rdCtx);
-		auto& rdFrame			= rdCtx->renderFrame();
-		auto* vkGraphicsQueue	= rdCtx->vkGraphicsQueue();
-		auto* vkTransferQueue	= rdCtx->vkTransferQueue();
-
-		Vk_Buffer stagingBuffer;
-		{
-			Vk_AllocInfo allocInfo = {};
-			allocInfo.usage = RenderMemoryUsage::CpuToGpu;
-
-			stagingBuffer.create(vkAlloc, &allocInfo, image.totalByteSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
-
-			Vk_ScopedMemMapBuf memmap { &stagingBuffer };
-			memory_copy(memmap.data<u8*>(), image.data().data(), image.totalByteSize());
-		}
-
-		u32 imageWidth	= sCast<u32>(image.width());
-		u32 imageHeight = sCast<u32>(image.height());
-
-		VkFormat vkFormat = Util::toVkFormat_Srgb(Util::toVkFormat(cDesc.format));
-
-		{
-			Vk_AllocInfo allocInfo = {};
-			allocInfo.usage = RenderMemoryUsage::GpuOnly;
-
-			_vkImage.create(vkAlloc, &allocInfo
-				, imageWidth, imageHeight
-				, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-				, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
-		}
-
-		{
-			auto* cmdBuf = rdFrame.requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-			Util::transitionImageLayout(&_vkImage, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, nullptr, vkTransferQueue, cmdBuf);
-		}
-		{
-			auto* cmdBuf = rdFrame.requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-			Util::copyBufferToImage(&_vkImage, &stagingBuffer, imageWidth, imageHeight, vkTransferQueue, cmdBuf);
-		}
-		{
-			auto* cmdBuf = rdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-			Util::transitionImageLayout(&_vkImage, vkFormat, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, nullptr, vkGraphicsQueue, cmdBuf);
-		}
-	}
-	_vkImageView.create(this, rdDev);
-	#endif // 0
-
 }
 
 void 
@@ -133,7 +78,7 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 	}
 
 	{
-		VkFormat vkFormat = Util::toVkFormat_Srgb(Util::toVkFormat(cDesc.format));
+		VkFormat vkFormat = Util::toVkFormat_srgb(Util::toVkFormat(cDesc.format));
 
 		Vk_AllocInfo allocInfo = {};
 		allocInfo.usage = RenderMemoryUsage::GpuOnly;
@@ -142,7 +87,6 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 			, imageSize.x, imageSize.y
 			, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
 			, QueueTypeFlags::Transfer);
-		_vkImage.setDebugName("Texture2D::_vkImage", rdDevVk);
 	}
 
 	_vkImageView.create(this, rdDevVk);

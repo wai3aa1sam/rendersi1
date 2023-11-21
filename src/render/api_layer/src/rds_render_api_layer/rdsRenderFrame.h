@@ -9,61 +9,6 @@
 namespace rds
 {
 
-
-#if 0
-#pragma mark --- rdsRenderFrameUploadBuffer-Decl ---
-#endif // 0
-#if 1
-
-class RenderFrameUploadBuffer : public NonCopyable
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-private:
-	struct InlineUploadBuffer;
-
-public:
-	static constexpr SizeType s_kLocalSize = 64;
-
-public:
-	RenderFrameUploadBuffer();
-	~RenderFrameUploadBuffer();
-
-	void clear();
-
-	void uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags);
-	void uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags, RenderGpuMultiBuffer* parent);
-
-	void addParent(RenderGpuMultiBuffer* parent);
-
-	u32 totalDataSize();
-
-	const InlineUploadBuffer* getInlineUploadBuffer();
-
-protected:
-	RDS_NODISCARD TransferCommand_UploadBuffer* _addData(ByteSpan data);
-
-private:
-	struct InlineUploadBuffer
-	{
-		LinearAllocator										allocator;
-		Vector<TransferCommand_UploadBuffer*, s_kLocalSize> uploadBufCmds;
-		LinearAllocator										bufData;
-		Vector<u32, s_kLocalSize>							bufOffsets;
-		Vector<u32, s_kLocalSize>							bufSizes;
-		Vector<SPtr<RenderGpuMultiBuffer>, s_kLocalSize>	parents;
-	};
-
-	Atm<u32> _totalDataSize = 0;
-	MutexProtected<InlineUploadBuffer> _inlineUploadBuffer; // TODO: better thread-safe approach (eg. SMtx if assumed only 1 LinearAllocator::Chunk, or per thread LinearAlloc)
-
-};
-
-inline u32 RenderFrameUploadBuffer::totalDataSize() { return _totalDataSize; }
-inline const RenderFrameUploadBuffer::InlineUploadBuffer* RenderFrameUploadBuffer::getInlineUploadBuffer() { return _inlineUploadBuffer.scopedULock().operator->(); }
-
-
-#endif
-
 #if 0
 #pragma mark --- rdsRenderFrame-Decl ---
 #endif // 0
@@ -87,36 +32,21 @@ public:
 
 	void clear();
 
-	void uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags);
-	void uploadBuffer(RenderGpuBuffer* dst, ByteSpan data, QueueTypeFlags queueTypeflags, RenderGpuMultiBuffer* parent);
-	void addUploadBufferParent(RenderGpuMultiBuffer* parent);
-	u32  totalUploadDataSize();
-
 	RenderCommandBuffer* requestCommandBuffer();
 
-	RenderFrameUploadBuffer&	renderFrameUploadBuffer();
-
-	RenderQueue& renderQueue();
-
-	LinearAllocator& renderCommandAllocator();
+	RenderQueue&		renderQueue();
+	LinearAllocator&	renderCommandAllocator();
 
 protected:
 	Vector<UPtr<LinearAllocator>,	Traits::s_kThreadCount>	_renderCommandAllocators;
 	//Vector<RenderCommandPool,		Traits::s_kThreadCount>	_renderCommandPools;
 	RenderCommandPool _renderCommandPool;
 
-	RenderFrameUploadBuffer _rdfUploadBuffer;
-
 	RenderQueue _renderQueue;
 };
 
-inline RenderFrameUploadBuffer& RenderFrame::renderFrameUploadBuffer()	{ return _rdfUploadBuffer; }
-
-inline u32 RenderFrame::totalUploadDataSize() { return _rdfUploadBuffer.totalDataSize(); }
-
-inline LinearAllocator& RenderFrame::renderCommandAllocator() { auto tlid = OsTraits::threadLocalId(); return *_renderCommandAllocators[tlid]; }
-
-inline RenderQueue& RenderFrame::renderQueue() { return _renderQueue; }
+inline LinearAllocator&		RenderFrame::renderCommandAllocator()	{ auto tlid = OsTraits::threadLocalId(); return *_renderCommandAllocators[tlid]; }
+inline RenderQueue&			RenderFrame::renderQueue()				{ return _renderQueue; }
 
 #endif
 

@@ -66,10 +66,6 @@ protected:
 
 	virtual void onCommit(RenderCommandBuffer& renderBuf) override;
 
-	virtual void onCommit(TransferCommandBuffer& transferBuf) override;
-	virtual void onUploadBuffer					(RenderFrameUploadBuffer& rdfUploadBuf) override;
-	void		_onUploadBuffer_MemCopyMutex	(RenderFrameUploadBuffer& rdfUploadBuf);
-
 	void test_extraDrawCall(RenderCommandBuffer& renderCmdBuf);
 
 protected:
