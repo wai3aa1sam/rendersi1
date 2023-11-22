@@ -65,17 +65,22 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 	auto* rdDevVk	= renderDeviceVk();
 	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
 
-	auto&		srcImage	= cDesc.uploadImage();
-	auto		bytes		= sCast<VkDeviceSize>(srcImage.totalByteSize());
+	const auto& srcImage	= cDesc.uploadImage();
 	const auto& imageSize	= size();
-	auto*		stagingBuf	= vkTransferFrame().requestStagingBuffer(cmd->_stagingIdx, bytes, rdDevVk);
+
+	transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, srcImage.data());
+
+	/*{
+		auto		bytes		= sCast<VkDeviceSize>(srcImage.totalByteSize());
+		auto*		stagingBuf	= vkTransferFrame().requestStagingBuffer(cmd->_stagingIdx, bytes, rdDevVk);
+
+		{
+			auto memmap = Vk_ScopedMemMapBuf{ stagingBuf };
+			memory_copy(memmap.data<u8*>(), srcImage.dataPtr(), bytes);
+		}
+	}*/
 
 	_vkSampler.create(cDesc.samplerState, rdDevVk);
-
-	{
-		auto memmap = Vk_ScopedMemMapBuf{ stagingBuf };
-		memory_copy(memmap.data<u8*>(), srcImage.dataPtr(), bytes);
-	}
 
 	{
 		VkFormat vkFormat = Util::toVkFormat_srgb(Util::toVkFormat(cDesc.format));

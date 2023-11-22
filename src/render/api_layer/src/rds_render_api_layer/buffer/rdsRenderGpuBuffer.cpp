@@ -68,14 +68,15 @@ void RenderGpuBuffer::onDestroy()
 void 
 RenderGpuBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 {
-	throwIf(data.size() + offset > bufSize(), "RenderGpuBuffer oversize");
-	onUploadToGpu(data, offset);
+	transferRequest().uploadBuffer(this, data, offset);
 }
 
 void 
-RenderGpuBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
+RenderGpuBuffer::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 {
-	ByteSpan bs = ByteSpan{data.data() + offset, data.size() - offset};
+	RDS_CORE_ASSERT(cmd->data.size() > 0 && cmd->data.size() <= bufSize(), "");
+
+	//ByteSpan bs = ByteSpan{data.data() + offset, data.size() - offset};
 	//QueueTypeFlags typeFlags = QueueTypeFlags::Graphics | QueueTypeFlags::Transfer;
 	//renderFrame().uploadBuffer(this, bs, typeFlags);
 }

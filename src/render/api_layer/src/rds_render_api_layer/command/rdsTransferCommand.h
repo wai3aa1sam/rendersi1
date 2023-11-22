@@ -63,13 +63,23 @@ public:
 	using This = TransferCommand_UploadBuffer;
 
 public:
+	static constexpr SizeType s_kInvalid = NumLimit<u32>::max();
+
+public:
 	TransferCommand_UploadBuffer() : Base(Type::UploadBuffer) {}
 	virtual ~TransferCommand_UploadBuffer() {};
 
 public:
 	SPtr<RenderGpuBuffer>		dst;
 	ByteSpan					data;
-	QueueTypeFlags				queueTypeflags;
+	SizeType					offset = 0;
+	QueueTypeFlags				queueTypeflags = QueueTypeFlags::Graphics | QueueTypeFlags::Compute;
+	
+	SPtr<RenderGpuMultiBuffer>	parent;
+
+	//Vector<u8>					data;
+
+	u32 _stagingIdx = s_kInvalid;
 };
 
 class TransferCommand_UploadTexture : public TransferCommand

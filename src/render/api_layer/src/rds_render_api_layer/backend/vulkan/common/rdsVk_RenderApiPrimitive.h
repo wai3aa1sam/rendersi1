@@ -73,6 +73,8 @@ class	RenderDevice_Vk;
 struct	SamplerState;
 class	Texture2D_Vk;
 
+class	Vk_Buffer;
+
 #if 0
 #pragma mark --- rdsRenderApiPrmivitive_Vk-Decl ---
 #endif // 0
@@ -663,6 +665,30 @@ public:
 #endif
 
 #if 0
+#pragma mark --- rdsVk_ScopedMemMapBuf-Decl ---
+#endif // 0
+#if 1
+
+class Vk_ScopedMemMapBuf
+{
+public:
+	Vk_ScopedMemMapBuf(Vk_Buffer* vkBuf);
+	~Vk_ScopedMemMapBuf();
+
+	template<class T> T data();
+
+	void unmap();
+
+protected:
+	Vk_Buffer*	_p		= nullptr;
+	void*		_data	= nullptr;
+};
+
+#endif
+
+template<class T> inline T Vk_ScopedMemMapBuf::data() { return reinCast<T>(_data); }
+
+#if 0
 #pragma mark --- rdsVk_Buffer-Decl ---
 #endif // 0
 #if 1
@@ -682,6 +708,8 @@ public:
 	void create	(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create	(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void destroy();
+
+	Vk_ScopedMemMapBuf scopedMemMap();
 };
 
 

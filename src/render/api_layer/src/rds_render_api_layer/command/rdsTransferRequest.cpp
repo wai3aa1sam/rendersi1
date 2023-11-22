@@ -28,6 +28,28 @@ public:
 	Texture2D_CreateDesc			_cDesc;
 };
 
+class TransferRequest_UploadBufferJob : public Job_Base
+{
+public:
+	TransferRequest_UploadBufferJob(RenderGpuBuffer* rdBuf, TransferCommand_UploadBuffer* cmd)
+	{
+		_rdBuf	= rdBuf;
+		//_cDesc	= rds::move(cDesc);
+		_cmd = cmd;
+	}
+
+	virtual void execute() override
+	{
+		_rdBuf->onUploadToGpu(_cmd);
+		//_tex->_internal_uploadToGpu(_cDesc, _cmd);
+	}
+
+public:
+	TransferCommand_UploadBuffer*	_cmd = nullptr;
+	SPtr<RenderGpuBuffer>			_rdBuf;
+	//Texture2D_CreateDesc			_cDesc;
+};
+
 #if 0
 #pragma mark --- rdsTransferRequest-Impl ---
 #endif // 0
@@ -74,6 +96,11 @@ TransferRequest::reset(TransferContext* tsfCtx)
 		auto lockedData = _uploadTextureJobs.scopedULock();
 		lockedData->clear();
 	}
+
+	{
+		auto lockedData = _uploadBufferJobs.scopedULock();
+		lockedData->clear();
+	}
 }
 
 void 
@@ -95,10 +122,12 @@ TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
 {
 	throwIf(!OsTraits::isMainThread(), "transferFrame() is not thread safe");
 
+	RDS_TODO("put the logic to Texture.h");
+
 	RDS_CORE_ASSERT(!cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr(), "Create Texture2D should use either filename or imageUpload, not both");
 	RDS_CORE_ASSERT(_uploadTexCmds, "");
 
-	cDesc._internal_create(_tsfCtx->renderDevice());
+	cDesc._internal_create(_tsfCtx->renderDevice(), true);
 
 	UploadTextureJob* job = nullptr;
 	{
@@ -110,7 +139,36 @@ TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
 	}
 
 	auto hnd = job->dispatch(_uploadTextureJobParentHnd)->setName("up"); RDS_UNUSED(hnd);
-	//_uploadTextureJobHnds.emplace_back(hnd);
+}
+
+void 
+TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType offset, RenderGpuMultiBuffer* rdMultiBuf)
+{
+	throwIf(!OsTraits::isMainThread(), "transferFrame() is not thread safe");
+
+	RDS_TODO("put the logic to RenderGpuBuffer.h");
+
+	auto* cmd = uploadBufCmds().uploadBuffer();
+	cmd->dst	= rdBuf;
+	cmd->data	= data;
+	cmd->offset = offset;
+	cmd->parent = rdMultiBuf;
+
+	rdBuf->onUploadToGpu(cmd);
+}
+
+
+void 
+TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType offset)
+{
+	uploadBuffer(rdBuf, data, offset, nullptr);
+}
+
+void 
+TransferRequest::uploadBufferAsync(RenderGpuBuffer* rdBuf, Vector<u8>&& data)
+{
+	throwIf(!OsTraits::isMainThread(), "transferFrame() is not thread safe");
+
 }
 
 void 

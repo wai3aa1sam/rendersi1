@@ -168,26 +168,6 @@ Vk_Allocator::toAllocFlags(RenderAllocFlags v)
 	return flags;
 }
 
-Vk_ScopedMemMapBuf::Vk_ScopedMemMapBuf(Vk_Buffer* vkBuf)
-{
-	RDS_CORE_ASSERT(vkBuf, "");
-	_p = vkBuf;
-	_p->_internal_alloc()->mapMem(&_data, _p->_internal_allocHnd());
-}
-
-Vk_ScopedMemMapBuf::~Vk_ScopedMemMapBuf()
-{
-	if (_p)
-	{
-		unmap();
-	}
-}
-
-void Vk_ScopedMemMapBuf::unmap()
-{
-	_p->_internal_alloc()->unmapMem(_p->_internal_allocHnd());
-	_p = nullptr;
-}
 
 #endif
 

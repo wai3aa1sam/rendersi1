@@ -132,11 +132,14 @@ passTest(Vector<u8>& data, const ShaderResources::ConstBuffer::VarInfo& varInfo,
 	RDS_CALL_ONCE(RDS_LOG("sizeof(Mat4f) == {}, *reinCast<const Mat4f*>(value) = {}", sizeof(Mat4f), *reinCast<const Mat4f*>(value)));
 	RDS_CALL_ONCE(RDS_DUMP_VAR(reinCast<void*>(data.data()), *reinCast<Mat4f*>(&data[varInfo.offset])));
 	//memcpy(data.data() + varInfo.offset, value, sizeof(Mat4f));										// this will success
-	//memory_copy(reinCast<Mat4f*>(data.data() + varInfo.offset), sCast<const Mat4f*>(value), 1);		// this will faile
-	//reinterpret_cast<Mat4f&>(data[varInfo.offset]) = *reinCast<const Mat4f*>(value);
+	//memory_copy(reinCast<Mat4f*>(data.data() + varInfo.offset), sCast<const Mat4f*>(value), 1);		// this will fail
+
 	RDS_CALL_ONCE(RDS_LOG("passTest end"));
 
 	RDS_TODO("ShaderResources::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v) will crash in release mode, further debug is needed");
+	RDS_TODO("2023.11.22, the offset is not align as 16, it is align as 8");
+	//reinterpret_cast<Mat4f&>(data[varInfo.offset - 8]) = *reinCast<const Mat4f*>(value);				// this will success
+	//reinterpret_cast<Mat4f&>(data[varInfo.offset]) = *reinCast<const Mat4f*>(value);					// this will fail
 }
 
 void 

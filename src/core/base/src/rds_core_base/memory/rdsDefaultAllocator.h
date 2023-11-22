@@ -80,7 +80,7 @@ DefaultAllocator::alloc(SizeType n, SizeType align, SizeType offset)
 	NMSP_TODO("2. use memory_copy instead of dereference the buf");
 	NMSP_TODO("--- end warning");
 	auto* p = ::nmsp::nmsp_alloc(n, align, offset);
-	RDS_PROFILE_ALLOC(p, rds::_alignTo(n, align));
+	//RDS_PROFILE_ALLOC(p, rds::_alignTo(n, align));
 	return p;
 	//return new char[n];
 	//return ::new(align, offset,    "", 0, 0, __FILE__, __LINE__) char[n];
@@ -95,7 +95,7 @@ void
 DefaultAllocator::free(void* p, SizeType n)
 {
 	#if RDS_TEMPORARY_ALLOC_MODE
-	RDS_PROFILE_FREE(p, n);
+	//RDS_PROFILE_FREE(p, n);
 	::nmsp::nmsp_free(p, n);
 	//delete[] (char*)p;
 	#else

@@ -30,8 +30,7 @@ protected:
 	virtual void onPostCreate	(CreateDesc& cDesc)	override;
 	virtual void onDestroy		()					override;
 
-	virtual void onUploadToGpu(ByteSpan data, SizeType offset) override;
-
+	virtual void onUploadToGpu	(TransferCommand_UploadBuffer* cmd) override;
 protected:
 	Vk_Buffer _vkBuf;
 };

@@ -53,23 +53,6 @@ private:
 	VmaAllocator _allocator;
 };
 
-class Vk_ScopedMemMapBuf
-{
-public:
-	Vk_ScopedMemMapBuf(Vk_Buffer* vkBuf);
-	~Vk_ScopedMemMapBuf();
-
-	template<class T> T data();
-
-	void unmap();
-
-protected:
-	Vk_Buffer*	_p		= nullptr;
-	void*		_data	= nullptr;
-};
-
-template<class T> inline T Vk_ScopedMemMapBuf::data() { return reinCast<T>(_data); }
-
 #endif
 }
 

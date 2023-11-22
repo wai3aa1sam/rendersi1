@@ -364,6 +364,7 @@ public:
 		auto* mtl		= pass->material();
 		auto& shaderRsc = stage->shaderResources(mtl);
 
+		RDS_TODO("since the TransferContext is committed before RenderContext, using staging will not cause it failed to upload (cleared)");
 		shaderRsc.uploadToGpu();
 
 		auto& vkDescSet = vkDescriptorSet(stage, mtl);

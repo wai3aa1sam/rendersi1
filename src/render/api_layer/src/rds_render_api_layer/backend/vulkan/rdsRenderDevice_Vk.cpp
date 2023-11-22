@@ -335,13 +335,16 @@ RenderDevice_Vk::loadVkDevFn(Vk_ExtensionInfo& vkExtInfo)
 void 
 RenderDevice_Vk::_setDebugName()
 {
-	RDS_VK_SET_DEBUG_NAME(_vkInstance);
+	//RDS_VK_SET_DEBUG_NAME(_vkInstance);	// set debug name for instance will crash RenderDoc
+
 	if (adapterInfo().isDebug)
 	{
 		RDS_VK_SET_DEBUG_NAME(_vkDebugMessenger);
 	}
 	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice);
 	RDS_VK_SET_DEBUG_NAME(_vkDevice);
+
+
 }
 
 #endif

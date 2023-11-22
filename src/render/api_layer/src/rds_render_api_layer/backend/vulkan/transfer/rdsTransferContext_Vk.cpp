@@ -134,6 +134,9 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq)
 void 
 TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType)
 {
+	if (queueType == QueueTypeFlags::Graphics	&& !vkTransferFrame().hasTransferedGraphicsResoures())	{ return; }
+	if (queueType == QueueTypeFlags::Compute	&& !vkTransferFrame().hasTransferedComputeResoures())	{ return; }
+
 	auto* rdDevVk		= renderDeviceVk();
 	auto& vkTsfFrame	= vkTransferFrame();
 	auto* vkCmdBuf		= vkTsfFrame.requestCommandBuffer(queueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, RDS_FMT_DEBUG("_commitUploadCmdsToDstQueue-{}", queueType));
@@ -170,6 +173,37 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 	vkCmdBuf->submit(&dstInFlighVkFnc, 
 		&srcCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
 		&dstCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+
+
+	#if 1
+	RDS_TODO("delay rotate, another vector for should rotate parents? maybe not too, upload request should be less");
+	dstInFlighVkFnc.wait(rdDevVk);
+	for (auto& e : bufCmds.commands())
+	{
+		auto* cmd = sCast<TransferCommand_UploadBuffer*>(e);
+
+		RDS_CORE_ASSERT(e->type() == TransferCommandType::UploadBuffer, "");
+		RDS_CORE_ASSERT(BitUtil::has(cmd->queueTypeflags, queueType), "");
+
+		if (auto parent = cmd->parent)
+		{
+			parent->rotate();
+		}
+	}
+	#endif // 1
+}
+
+void 
+TransferContext_Vk::uploadToStagingBuf(u32& outStagingIdx, ByteSpan data, SizeType offset)
+{
+	RDS_CORE_ASSERT(data.size() > 0, "");
+
+	auto*	rdDevVk		= renderDeviceVk();
+	auto	bytes		= sCast<VkDeviceSize>(data.size());
+	auto*	stagingBuf	= vkTransferFrame().requestStagingBuffer(outStagingIdx, bytes, rdDevVk);
+
+	auto memmap = Vk_ScopedMemMapBuf{ stagingBuf };
+	memory_copy(memmap.data<u8*>(), data.data(), bytes);
 }
 
 void 
@@ -189,18 +223,36 @@ TransferContext_Vk::_setDebugName()
 void 
 TransferContext_Vk::onTransferCommand_CopyBuffer	(TransferCommand_CopyBuffer* cmd)
 {
+	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::CopyBuffer, "");
 	RDS_NOT_YET_SUPPORT();
 }
 
 void 
 TransferContext_Vk::onTransferCommand_UploadBuffer	(TransferCommand_UploadBuffer* cmd)
 {
-	RDS_NOT_YET_SUPPORT();
+	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::UploadBuffer, "");
+	RDS_CORE_ASSERT(cmd->dst, "RenderGpuBuffer_vk is nullptr");
+
+	RDS_TODO("revisit _hasTransferedGraphicsResoures");
+	vkTransferFrame()._hasTransferedGraphicsResoures = true;
+
+	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
+	auto* dstBufHnd		= dstBuf->vkBufHnd();
+	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
+
+	RDS_CORE_ASSERT(dstBuf && dstBufHnd && statingBufHnd, "buffer is nullptr");
+
+	const auto size = Util::toVkDeviceSize(cmd->data.size());
+	RDS_CORE_ASSERT(size > 0 && size <= cmd->dst->bufSize(), "overflow");
+
+	auto* vkCmdBuf		= _curVkCmdBuf;
+	vkCmdBuf->cmd_copyBuffer(dstBufHnd, statingBufHnd, size, 0, 0);
 }
 
 void 
 TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTexture* cmd)
 {
+	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::UploadTexture, "");
 	RDS_CORE_ASSERT(cmd,		"");
 	RDS_CORE_ASSERT(cmd->dst,	"");
 

@@ -26,6 +26,8 @@ RenderResource::create(const RenderResource_CreateDesc& cDesc)
 {
 	RDS_CORE_ASSERT(!hasCreated() || cDesc._isBypassChecking, "");
 	RDS_CORE_ASSERT(cDesc._rdDev, "");
+	RDS_CORE_ASSERT(!hasCreated() || (cDesc._rdDev && _rdDev && cDesc._rdDev == _rdDev), "RenderDevice is not the same as the original one");
+
 	_rdDev = cDesc._rdDev;
 }
 

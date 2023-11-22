@@ -62,7 +62,10 @@ void
 RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 {
 	RDS_TODO("upload to first buffer instead of create a new");
-	onUploadToGpu(data, offset);
+
+	transferRequest().uploadBuffer(nextBuffer(data.size() - offset), data, offset, this);
+	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
+	//onUploadToGpu(data, offset);
 }
 
 void 
@@ -86,7 +89,7 @@ void RenderGpuMultiBuffer::onDestroy()
 void 
 RenderGpuMultiBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
 {
-	nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
+	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
 	//renderFrame().addUploadBufferParent(this);
 }
 

@@ -3,6 +3,8 @@
 
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
+#include "rds_render_api_layer/command/rdsTransferRequest.h"
+
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
@@ -40,12 +42,20 @@ RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
 
 	auto targetSize = math::alignTo(bufSize(), s_kAlign);
+
+	RDS_TODO("if it is const buf, no need staging");
+
+	VkBufferUsageFlags usageFlags = Util::toVkBufferUsage(cDesc.typeFlags);
+	if (cDesc.typeFlags != RenderGpuBufferTypeFlags::Const)
+	{
+		usageFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	}
 	
 	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage  = RenderMemoryUsage::GpuOnly;
-	_vkBuf.create(rdDevVk, vkAlloc, &allocInfo, targetSize, 
-				VK_BUFFER_USAGE_TRANSFER_DST_BIT | Util::toVkBufferUsage(cDesc.typeFlags)
-				, QueueTypeFlags::Graphics | QueueTypeFlags::Transfer);
+	_vkBuf.create(rdDevVk, vkAlloc, &allocInfo, targetSize
+				, usageFlags
+				, QueueTypeFlags::Graphics);
 
 	RDS_VK_SET_DEBUG_NAME(_vkBuf);
 }
@@ -59,16 +69,31 @@ RenderGpuBuffer_Vk::onPostCreate(CreateDesc& cDesc)
 void
 RenderGpuBuffer_Vk::onDestroy()
 {
-
-
 	Base::onDestroy();
 }
 
 void 
-RenderGpuBuffer_Vk::onUploadToGpu(ByteSpan data, SizeType offset)
+RenderGpuBuffer_Vk::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 {
-	Base::onUploadToGpu(data, offset);
+	Base::onUploadToGpu(cmd);
+
+	// or create each time, but it has to handle destroy, cannot destroy it when using
+	throwIf(!_vkBuf, "RenderGpuBuffer not yet created");
+
+	RDS_TODO("revisit, if the data is large, may be put to other thread");
+	RDS_TODO("should have a inline staging buffer, ");
+
+	if (BitUtil::has(typeFlags(), RenderGpuBufferTypeFlags::Const))
+	{
+		auto memmap =_vkBuf.scopedMemMap();
+		memory_copy(memmap.data<u8*>(), cmd->data.data(), cmd->data.size());
+	}
+	else
+	{
+		transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, cmd->data);
+	}
 }
+
 
 
 #endif

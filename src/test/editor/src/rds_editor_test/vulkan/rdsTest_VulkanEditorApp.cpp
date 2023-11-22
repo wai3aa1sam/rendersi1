@@ -77,7 +77,7 @@ void testEditMesh()
 	}
 }
 
-const VertexLayout* getertexLayout_RndColorTriangle() { return Vertex_PosColorUv<1>::vertexLayout(); }
+const VertexLayout* getVertexLayout_RndColorTriangle() { return Vertex_PosColorUv<1>::vertexLayout(); }
 
 EditMesh makeRndColorTriangleMesh(float z = 0.0f)
 {
@@ -116,7 +116,7 @@ EditMesh makeRndColorTriangleMesh(float z = 0.0f)
 
 	editMesh.indices = { 0, 2, 1, 2, 0, 3 };
 
-	RDS_ASSERT(editMesh.getVertexLayout() == getertexLayout_RndColorTriangle(), "");
+	RDS_ASSERT(editMesh.getVertexLayout() == getVertexLayout_RndColorTriangle(), "");
 	return editMesh;
 }
 
@@ -256,6 +256,7 @@ public:
 		#if 1
 
 		uploadTestMultiBuf();
+
 		//_testMultiThreadDrawCalls.create(10);
 		_testMultiThreadDrawCalls.createFixed(2);
 		#endif // 0
@@ -268,12 +269,11 @@ public:
 		}
 
 		//JobSystem::instance()->setSingleThreadMode(true);
-		_rdMesh1.upload(makeRndColorTriangleMesh());
 
 		#if 1
 		{
-			_testShader = Renderer::rdDev()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
-			//_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+			//_testShader = Renderer::rdDev()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
+			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
 			_testMaterial = Renderer::rdDev()->createMaterial();
@@ -300,6 +300,7 @@ public:
 	virtual void onUpdate() override
 	{
 		//_testMultiThreadDrawCalls.execute();
+		//uploadTestMultiBuf();
 	}
 
 	virtual void onRender() override
@@ -308,15 +309,16 @@ public:
 		RDS_TODO("by pass whole fn will have error");
 
 		RDS_PROFILE_SCOPED();
-
+		
 		auto* rdDev		= Renderer::rdDev();
+
 		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWin->renderContext();
-		auto& tsfCtx	= rdDev->transferContext();
-
 		auto& rdFrame	= rdDev->renderFrame(); RDS_UNUSED(rdFrame);
 
+		auto& tsfCtx	= rdDev->transferContext();
 		auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
+		tsfReq.commit();
 
 		rdCtx.setFramebufferSize(mainWin->clientRect().size);
 		rdCtx.beginRender();
@@ -328,7 +330,27 @@ public:
 		#if 1
 		{
 			auto drawCall = _rdReq.addDrawCall();
+			
+			#if 1
+
 			drawCall->setSubMesh(&_rdMesh1.subMesh());
+
+			#else
+
+			drawCall->vertexOffset	= 0;
+			drawCall->vertexCount	= _testVtxBuf->elementCount();
+			drawCall->vertexBuffer	= _testVtxBuf;
+
+			drawCall->indexOffset	= 0;
+			drawCall->indexCount	= _testIdxBuf->elementCount();
+			drawCall->indexBuffer	= _testIdxBuf;
+
+			drawCall->vertexLayout			= getVertexLayout_RndColorTriangle();
+			drawCall->indexType				= RenderDataType::UInt16;
+			drawCall->renderPrimitiveType	= RenderPrimitiveType::Triangle;
+
+			#endif // 0
+
 			drawCall->material			= _testMaterial;
 			drawCall->materialPassIdx	= 0;
 
@@ -356,7 +378,8 @@ public:
 			#endif // 0
 
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
-			
+			_testMaterial->setParam("texture0", _uvCheckerTex);
+
 			//u32 iFrame = Renderer::rdDev()->iFrame();
 			//iFrame % 2 == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
 			#if 0
@@ -372,7 +395,6 @@ public:
 				++i;
 			}
 			#endif // 0
-
 		}
 		#endif // 0
 
@@ -390,12 +412,8 @@ public:
 
 		_rdReq.swapBuffers();
 
-		tsfReq.commit();
-
 		rdCtx.commit(rdCmdBuf);
 		rdCtx.endRender();
-
-		uploadTestMultiBuf();
 
 		Renderer::rdDev()->nextFrame();
 	}
@@ -411,7 +429,7 @@ public:
 
 				auto bufCDesc		= RenderGpuMultiBuffer::makeCDesc();
 				bufCDesc.bufSize	= data.size();
-				bufCDesc.stride		= getertexLayout_RndColorTriangle()->stride();
+				bufCDesc.stride		= getVertexLayout_RndColorTriangle()->stride();
 				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 
 				buf = RenderGpuMultiBuffer::make(bufCDesc);
@@ -419,25 +437,45 @@ public:
 			makeBuf(_testMultiBuffer);
 			makeBuf(_testMultiBuffer2, 0.5f);
 
-			auto bufCDesc		= RenderGpuMultiBuffer::makeCDesc();
-			//Vector<u16, 6> indices = { 0, 1, 2, 2, 3, 0 };
-			Vector<u16, 6> indices = { 0, 2, 1, 2, 0, 3 };
-
-			bufCDesc.stride		= RenderDataTypeUtil::getByteSize(RenderDataTypeUtil::get<u16>());
-			bufCDesc.bufSize	= indices.size() * bufCDesc.stride;
-			bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Index;
-			_testIdxBuf			= RenderGpuBuffer::make(bufCDesc);
-
-			_testIdxBuf->uploadToGpu(indices.byteSpan());
 		}
 
-		auto data  = makeRndColorTriangleData();
-		auto data2 = makeRndColorTriangleData(0.5f);
-		_testMultiBuffer->uploadToGpu(data.byteSpan());
-		_testMultiBuffer2->uploadToGpu(data2.byteSpan());
+		#if 1
+		{
+			auto data  = makeRndColorTriangleData();
+			auto data2 = makeRndColorTriangleData(0.5f);
+			_testMultiBuffer->uploadToGpu(data.byteSpan());
+			_testMultiBuffer2->uploadToGpu(data2.byteSpan());
 
-		_rdMesh1.upload(makeRndColorTriangleMesh());
-		_rdMesh2.upload(makeRndColorTriangleMesh(0.5));
+			_rdMesh1.upload(makeRndColorTriangleMesh());
+			_rdMesh2.upload(makeRndColorTriangleMesh(0.5));
+		}
+		#endif // 0
+
+		{
+			{
+				auto bufCDesc		= RenderGpuBuffer::makeCDesc();
+				//Vector<u16, 6> indices = { 0, 1, 2, 2, 3, 0 };
+				Vector<u16, 6> indices = { 0, 2, 1, 2, 0, 3 };
+
+				bufCDesc.stride		= RenderDataTypeUtil::getByteSize(RenderDataTypeUtil::get<u16>());
+				bufCDesc.bufSize	= indices.size() * bufCDesc.stride;
+				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Index;
+				_testIdxBuf			= RenderGpuBuffer::make(bufCDesc);
+				_testIdxBuf->uploadToGpu(indices.byteSpan());
+			}
+			{
+				auto data			= makeRndColorTriangleData();
+
+				auto bufCDesc		= RenderGpuBuffer::makeCDesc();
+				bufCDesc.bufSize	= data.size();
+				bufCDesc.stride		= getVertexLayout_RndColorTriangle()->stride();
+				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
+
+				_testVtxBuf = RenderGpuBuffer::make(bufCDesc);
+				_testVtxBuf->uploadToGpu(data.byteSpan());
+			}
+		}
+
 		#endif // 0
 	}
 
@@ -446,6 +484,8 @@ protected:
 
 	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
 	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer2;
+
+	SPtr<RenderGpuBuffer>		_testVtxBuf;
 	SPtr<RenderGpuBuffer>		_testIdxBuf;
 
 	RenderMesh _rdMesh1;

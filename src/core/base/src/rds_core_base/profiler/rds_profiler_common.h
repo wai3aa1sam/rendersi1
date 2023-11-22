@@ -31,13 +31,6 @@ namespace rds
 
 	#define RDS_PROFILE_SET_THREAD_NAME(NAME)		NMSP_PROFILE_SET_THREAD_NAME(NAME)
 
-namespace rds
-{
-
-using PColor = ::nmsp::PColor;
-
-}
-
 #else
 
 	#define RDS_PROFILE_SCOPED()					
@@ -53,6 +46,14 @@ using PColor = ::nmsp::PColor;
 	#define RDS_PROFILE_SET_THREAD_NAME(NAME)		
 
 #endif // RDS_ENABLE_PROFILER
+
+
+namespace rds
+{
+
+using PColor = ::nmsp::PColor;
+
+}
 
 #endif
 

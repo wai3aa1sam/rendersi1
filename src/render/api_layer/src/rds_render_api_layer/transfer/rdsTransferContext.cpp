@@ -52,6 +52,7 @@ void
 TransferContext::commit(TransferRequest& tsfReq)
 {
 	tsfReq.waitUploadTextureCompleted();
+	// tsfReq.waitUploadBufferCompleted();
 	onCommit(tsfReq);
 }
 

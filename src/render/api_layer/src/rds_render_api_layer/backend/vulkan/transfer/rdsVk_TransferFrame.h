@@ -55,6 +55,9 @@ public:
 
 	RenderDevice_Vk* renderDeviceVk();
 
+	bool hasTransferedGraphicsResoures()	const;
+	bool hasTransferedComputeResoures()		const;
+
 protected:
 	Vk_Buffer_T* getVkStagingBufHnd(u32 idx);
 
@@ -74,8 +77,8 @@ protected:
 	bool _hasTransferedComputeResoures	= false;
 
 	// need thread-safe
-	Vk_Allocator						_stagingAlloc;
-	MutexProtected<Vector<UPtr<Vk_Buffer> >>	_stagingBufs;		// if use mutex, Vk_Buffer should be a ptr, otherwise will gg, when resize or assigned before unlock
+	Vk_Allocator								_stagingAlloc;
+	MutexProtected<Vector<UPtr<Vk_Buffer> > >	_stagingBufs;		// if use mutex, Vk_Buffer should be a ptr, otherwise will gg, when resize or assigned before unlock
 	
 	// TODO: remove
 	#if 0
@@ -101,6 +104,9 @@ protected:
 	Vk_UploadImageRequests	_uploadImgReqs;
 	#endif // 0
 };
+
+inline bool Vk_TransferFrame::hasTransferedGraphicsResoures() const { return _hasTransferedGraphicsResoures; }
+inline bool Vk_TransferFrame::hasTransferedComputeResoures() const	{ return _hasTransferedComputeResoures; }
 
 inline 
 Vk_CommandBuffer* 

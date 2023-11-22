@@ -655,7 +655,7 @@ Vk_Fence::reset(RenderDevice_Vk* rdDev)
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_DeviceMemory>-Impl ---
+#pragma mark --- rdsVk_DeviceMemory-Impl ---
 #endif // 0
 #if 1
 
@@ -669,6 +669,34 @@ Vk_DeviceMemory::destroy(RenderDevice_Vk* rdDevVk)
 
 	vkFreeMemory(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_ScopedMemMapBuf-Impl ---
+#endif // 0
+#if 1
+
+Vk_ScopedMemMapBuf::Vk_ScopedMemMapBuf(Vk_Buffer* vkBuf)
+{
+	RDS_CORE_ASSERT(vkBuf, "");
+	_p = vkBuf;
+	_p->_internal_alloc()->mapMem(&_data, _p->_internal_allocHnd());
+}
+
+Vk_ScopedMemMapBuf::~Vk_ScopedMemMapBuf()
+{
+	if (_p)
+	{
+		unmap();
+	}
+}
+
+void Vk_ScopedMemMapBuf::unmap()
+{
+	_p->_internal_alloc()->unmapMem(_p->_internal_allocHnd());
+	_p = nullptr;
 }
 
 #endif
@@ -717,6 +745,12 @@ Vk_Buffer::destroy()
 	}
 	_alloc->freeBuf(_hnd, _internal_allocHnd());
 	Base::destroy();
+}
+
+Vk_ScopedMemMapBuf 
+Vk_Buffer::scopedMemMap()
+{
+	return Vk_ScopedMemMapBuf{ this };
 }
 
 #endif
