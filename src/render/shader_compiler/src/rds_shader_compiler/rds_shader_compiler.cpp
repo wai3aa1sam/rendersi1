@@ -32,7 +32,7 @@ protected:
 		ShaderCompileOption opt;
 		opt.isDebug		= true;
 		opt.isToSpirv	= true;
-		opt.enableLog	= true;
+		opt.enableLog	= false;
 
 		compile("asset/shader/terrain/my_terrain.shader",	opt);
 		compile("asset/shader/test.shader",					opt);

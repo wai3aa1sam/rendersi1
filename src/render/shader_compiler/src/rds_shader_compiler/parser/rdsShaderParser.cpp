@@ -161,13 +161,12 @@ void ShaderParser::_parsePass()
 		if (token.isOperator("}"))	{ nextToken(); break; }
 		if (token.isNewline())		{ nextToken(); continue; }
 
-		if (token.isIdentifier("VsFunc"))	{ nextToken(); readIdentifier(o.vsFunc); continue; }
-		if (token.isIdentifier("PsFunc"))	{ nextToken(); readIdentifier(o.psFunc); continue; }
+		if (token.isIdentifier("VsFunc"))		{ nextToken(); readIdentifier(o.vsFunc); continue; }
+		if (token.isIdentifier("PsFunc"))		{ nextToken(); readIdentifier(o.psFunc); continue; }
 
-		#if 0
 		if (token.isIdentifier("Cull"))			{ nextToken(); readEnum(o.renderState.cull); continue; }
 
-		if (token.isIdentifier("DepthTest") )	{ nextToken(); readEnum(o.renderState.depthTest.op); continue; }
+		if (token.isIdentifier("DepthTest"))	{ nextToken(); readEnum(o.renderState.depthTest.op); continue; }
 		if (token.isIdentifier("DepthWrite"))	{ nextToken(); readBool(o.renderState.depthTest.writeMask); continue; }
 
 		if (token.isIdentifier("Wireframe"))	{ nextToken(); readBool(o.renderState.wireframe); continue; }
@@ -175,25 +174,27 @@ void ShaderParser::_parsePass()
 		if (token.isIdentifier("BlendRGB")   )	{ nextToken(); _readBlendFunc(o.renderState.blend.rgb); continue; }
 		if (token.isIdentifier("BlendAlpha") )	{ nextToken(); _readBlendFunc(o.renderState.blend.alpha); continue; }
 
-
-		#endif // 0
-
-		RDS_TODO("parse render state");
-		nextToken();
-		continue;
-
-		//return errorUnexpectedToken();
+		return errorUnexpectedToken();
 	}
 }
 
-void ShaderParser::_parsePermutation()
+void 
+ShaderParser::_parsePermutation()
 {
 }
 
-void ShaderParser::_parsePermutation_Value()
+void 
+ShaderParser::_parsePermutation_Value()
 {
 }
 
+void 
+ShaderParser::_readBlendFunc(RenderState::BlendFunc& v)
+{
+	readEnum(v.op);
+	readEnum(v.srcFactor);
+	readEnum(v.dstFactor);
+}
 
 
 #endif

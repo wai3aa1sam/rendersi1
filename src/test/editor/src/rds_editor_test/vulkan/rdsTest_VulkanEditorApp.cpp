@@ -190,8 +190,7 @@ protected:
 
 		JobSystem::instance()->setSingleThreadMode(true);
 
-
-		{ Process sh = { "asset/shader/vulkan/compile_shader.bat" }; }
+		{ Process sh = { "compile_shader.bat" }; }
 
 		{
 			auto windowCDesc = _vulkanMainWin.makeCDesc();

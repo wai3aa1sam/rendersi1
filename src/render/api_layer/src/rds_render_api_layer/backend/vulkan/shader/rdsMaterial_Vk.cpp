@@ -24,10 +24,8 @@ RenderDevice_Vk::onCreateMaterial(const	Material_CreateDesc& cDesc)
 #endif // 0
 #if 1
 
-struct Vk_ShaderStagesCDesc
+struct Vk_ShaderStagesCDesc : public Vk_CDesc_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
 	using Vk_ShaderStageCInfos = Vector<VkPipelineShaderStageCreateInfo, enumInt(ShaderStageFlag::_kCount)>;
 
 public:
@@ -59,12 +57,9 @@ private:
 	Vk_ShaderStageCInfos _shaderStageCInfos;
 };
 
-struct Vk_PipelineLayoutCDesc
+struct Vk_PipelineLayoutCDesc : public Vk_CDesc_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
 	static constexpr SizeType s_kLocalSize = 8;
-
 public:
 	void create(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDev)
 	{
@@ -96,33 +91,31 @@ private:
 	Vector<Vk_DescriptorSetLayout_T*, s_kLocalSize> _hnds;
 };
 
-struct Vk_RenderStateCDesc
+struct Vk_RenderStateCDesc : public Vk_CDesc_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	Vk_RenderStateCDesc()
 	{
-		_dynamicStates.emplace_back(VK_DYNAMIC_STATE_VIEWPORT);
-		_dynamicStates.emplace_back(VK_DYNAMIC_STATE_SCISSOR);
-
-		dynamicState.sType				= VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicState.dynamicStateCount	= sCast<u32>(_dynamicStates.size());
-		dynamicState.pDynamicStates		= _dynamicStates.data();
+		
 	}
 
-	void create(VkGraphicsPipelineCreateInfo& out)
+	void create(VkGraphicsPipelineCreateInfo& out, const RenderState& rdState)
 	{
-		out.pInputAssemblyState	= &inputAssembly;
-		out.pViewportState		= &viewportState;
-		out.pRasterizationState	= &rasterizer;
-		out.pMultisampleState	= &multisampling;
-		out.pDepthStencilState	= &depthStencil;			// Optional
-		out.pColorBlendState	= &colorBlending;
-		out.pDynamicState		= &dynamicState;
+		_createViewportState			(viewportState,			rdState);
+		_createInputAssemblyState		(inputAssembly,			rdState);
+		_createRasterizerState			(rasterizer,			rdState);
+		_createMultiSampleState			(multisampling,			rdState);
+		_createDepthStencilState		(depthStencil,			rdState);
+		_createColorBlendAttachmentState(colorBlendAttachment,	rdState);
+		_createColorBlendState			(colorBlending,			rdState);
+		_createDynamicState				(dynamicState);
+
+		_create(out);
 	}
 
 	void createDefault(VkGraphicsPipelineCreateInfo& out)
 	{
+		_createDynamicState(dynamicState);
 		// viewport stage
 		//VkPipelineViewportStateCreateInfo viewportState = {};
 		{
@@ -220,7 +213,7 @@ public:
 			colorBlending.blendConstants[3] = 0.0f; // Optional
 		}
 
-		create(out);
+		_create(out);
 	}
 
 protected:
@@ -236,6 +229,137 @@ protected:
 		dynamicState			= {};
 	}
 
+	void _create(VkGraphicsPipelineCreateInfo& out)
+	{
+		out.pInputAssemblyState	= &inputAssembly;
+		out.pViewportState		= &viewportState;
+		out.pRasterizationState	= &rasterizer;
+		out.pMultisampleState	= &multisampling;
+		out.pDepthStencilState	= &depthStencil;			// Optional
+		out.pColorBlendState	= &colorBlending;
+		out.pDynamicState		= &dynamicState;
+	}
+
+	void _createViewportState(VkPipelineViewportStateCreateInfo& out, const RenderState& rdState)
+	{
+		_viewport	= {};
+		_scissor	= {};
+
+		_viewport.x			= 0.0f;
+		_viewport.y			= 0.0f;
+		_viewport.width		= Traits::s_kDefaultWindowWidth;
+		_viewport.height	= Traits::s_kDefaultWindowHeight;
+		_viewport.minDepth	= 0.0f;
+		_viewport.maxDepth	= 1.0f;
+
+		_scissor.offset = { 0, 0 };
+		_scissor.extent = VkExtent2D{ sCast<u32>(_viewport.width), sCast<u32>(_viewport.height) };
+
+		out.sType			= VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		out.viewportCount	= 1;
+		out.scissorCount	= 1;
+		out.pViewports		= &_viewport;
+		out.pScissors		= &_scissor;
+	}
+
+	void _createInputAssemblyState(VkPipelineInputAssemblyStateCreateInfo& out, const RenderState& rdState)
+	{
+		out = {};
+
+		out.sType					= VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		out.topology				= Util::toVkPrimitiveTopology(rdState.primitiveType);
+		out.primitiveRestartEnable	= VK_FALSE;
+	}
+
+	void _createRasterizerState(VkPipelineRasterizationStateCreateInfo& out, const RenderState& rdState)
+	{
+		out = {};
+
+		out.sType						= VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		out.depthClampEnable			= VK_FALSE; // true when no want to discard out bound pixel, useful for shawdow map
+		out.rasterizerDiscardEnable		= VK_FALSE;	// true then no gemotry pass through the rasterizer stage
+		out.polygonMode					= rdState.wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+		out.lineWidth					= 1.0f;		// check gpu features
+		out.cullMode					= Util::toVkCullMode(rdState.cull);
+		out.frontFace					= VK_FRONT_FACE_CLOCKWISE;	// VK_FRONT_FACE_CLOCKWISE VK_FRONT_FACE_COUNTER_CLOCKWISE
+		out.depthBiasEnable				= VK_FALSE;
+		out.depthBiasConstantFactor		= 0.0f; // Optional
+		out.depthBiasClamp				= 0.0f; // Optional
+		out.depthBiasSlopeFactor		= 0.0f; // Optional
+	}
+
+	void _createMultiSampleState(VkPipelineMultisampleStateCreateInfo& out, const RenderState& rdState)
+	{
+		out = {};
+
+		multisampling.sType					= VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampling.sampleShadingEnable	= VK_FALSE;
+		multisampling.rasterizationSamples	= VK_SAMPLE_COUNT_1_BIT;
+		multisampling.minSampleShading		= 1.0f;		// Optional
+		multisampling.pSampleMask			= nullptr;	// Optional
+		multisampling.alphaToCoverageEnable	= VK_FALSE; // Optional
+		multisampling.alphaToOneEnable		= VK_FALSE; // Optional
+	}
+
+	void _createDepthStencilState(VkPipelineDepthStencilStateCreateInfo& out, const RenderState& rdState)
+	{
+		out = {};
+
+		out.sType					= VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		out.depthTestEnable			= rdState.depthTest.isEnable() ? VK_TRUE : VK_FALSE;
+		out.depthWriteEnable		= rdState.depthTest.writeMask  ? VK_TRUE : VK_FALSE;
+		out.depthCompareOp			= Util::toVkCompareOp(rdState.depthTest.op);
+		out.depthBoundsTestEnable	= VK_FALSE;
+		out.minDepthBounds			= 0.0f; // Optional
+		out.maxDepthBounds			= 1.0f; // Optional
+		out.stencilTestEnable		= VK_FALSE;
+		out.front					= {}; // Optional
+		out.back					= {}; // Optional
+	}
+
+	void _createColorBlendAttachmentState(VkPipelineColorBlendAttachmentState& out, const RenderState& rdState)
+	{
+		out = {};
+		out.colorWriteMask			= VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		out.blendEnable				= rdState.blend.isEnable() ? VK_TRUE : VK_FALSE;
+
+		out.srcColorBlendFactor		= Util::toVkBlendFactor	(rdState.blend.rgb.srcFactor);
+		out.dstColorBlendFactor		= Util::toVkBlendFactor	(rdState.blend.rgb.dstFactor);
+		out.colorBlendOp			= Util::toVkBlendOp		(rdState.blend.rgb.op);			
+		out.srcAlphaBlendFactor		= Util::toVkBlendFactor	(rdState.blend.alpha.srcFactor);
+		out.dstAlphaBlendFactor		= Util::toVkBlendFactor	(rdState.blend.alpha.dstFactor);
+		out.alphaBlendOp			= Util::toVkBlendOp		(rdState.blend.alpha.op);			
+	}
+
+	void _createColorBlendState(VkPipelineColorBlendStateCreateInfo& out, const RenderState& rdState/*, Span<const VkPipelineColorBlendAttachmentState> colorBlendAttachments*/)
+	{
+		// colorBlendAttachments have life cycle problem
+
+		out = {};
+		out.sType				= VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		out.logicOpEnable		= VK_FALSE;
+		out.logicOp				= VK_LOGIC_OP_COPY; // Optional
+		/*out.attachmentCount		= sCast<u32>(colorBlendAttachments.size());
+		out.pAttachments		= colorBlendAttachments.data();*/
+		out.blendConstants[0]	= 0.0f; // Optional
+		out.blendConstants[1]	= 0.0f; // Optional
+		out.blendConstants[2]	= 0.0f; // Optional
+		out.blendConstants[3]	= 0.0f; // Optional
+
+		out.attachmentCount		= 1;
+		out.pAttachments		= &colorBlendAttachment;
+	}
+
+	void _createDynamicState(VkPipelineDynamicStateCreateInfo& out)
+	{
+		_dynamicStates.emplace_back(VK_DYNAMIC_STATE_VIEWPORT);
+		_dynamicStates.emplace_back(VK_DYNAMIC_STATE_SCISSOR);
+
+		dynamicState.sType				= VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.dynamicStateCount	= sCast<u32>(_dynamicStates.size());
+		dynamicState.pDynamicStates		= _dynamicStates.data();
+	}
+
 protected:
 	VkPipelineViewportStateCreateInfo		viewportState			= {};
 	VkPipelineInputAssemblyStateCreateInfo	inputAssembly			= {};
@@ -247,10 +371,13 @@ protected:
 	VkPipelineDynamicStateCreateInfo		dynamicState			= {};
 
 private:
-	Vector<VkDynamicState, 8> _dynamicStates;
+	Vector<VkDynamicState, 8>	_dynamicStates;
+	VkRect2D					_scissor	= {};
+	VkViewport					_viewport	= {};
+
 };
 
-struct Vk_VertexInputCDesc
+struct Vk_VertexInputCDesc : public Vk_CDesc_Base
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
@@ -593,7 +720,7 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", shader()->filename(), "vkPipelineLayout");
 
 	Vk_RenderStateCDesc vkRenderStateCDesc;
-	vkRenderStateCDesc.createDefault(pipelineCInfo);
+	vkRenderStateCDesc.create(pipelineCInfo, info().renderState);
 
 	Vk_VertexInputCDesc vkVtxInputCDesc;
 	vkVtxInputCDesc.create(pipelineCInfo, &_vkVertexStage, vtxLayout);

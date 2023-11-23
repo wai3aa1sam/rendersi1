@@ -33,7 +33,7 @@ protected:
 	void _parsePermutation();
 	void _parsePermutation_Value();
 
-	//void _parseBlendFunc(RenderState::BlendFunc& v);
+	void _readBlendFunc(RenderState::BlendFunc& v);
 
 	template<class E> void _parseEnum(E& v_);
 

@@ -2,6 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/vertex/rdsVertex.h"
+#include "rds_render_api_layer/shader/rdsRenderState.h"
 
 namespace rds
 {
@@ -360,7 +361,6 @@ struct ShaderPassInfo
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	// RenderState
 
 	String name;
 
@@ -368,6 +368,8 @@ public:
 
 	String vsFunc;
 	String psFunc;
+
+	RenderState renderState;
 
 public:
 	template<class JSON_SE>
@@ -377,6 +379,7 @@ public:
 		RDS_NAMED_FIXED_IO(se, queue);
 		RDS_NAMED_FIXED_IO(se, vsFunc);
 		RDS_NAMED_FIXED_IO(se, psFunc);
+		RDS_NAMED_FIXED_IO(se, renderState);
 	}
 };
 

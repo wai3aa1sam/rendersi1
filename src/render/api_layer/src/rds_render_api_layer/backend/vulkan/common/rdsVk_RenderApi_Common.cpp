@@ -5,6 +5,8 @@
 #include "rds_render_api_layer/backend/vulkan/rdsVk_Allocator.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 
+#include "rds_render_api_layer/shader/rdsRenderState.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -526,6 +528,94 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 	}
 
 	return out;
+}
+
+VkCullModeFlagBits 
+Vk_RenderApiUtil::toVkCullMode(RenderState_Cull v)
+{
+	using SRC = RenderState_Cull;
+	switch (v)
+	{
+		case SRC::None:		{ return VkCullModeFlagBits::VK_CULL_MODE_NONE; }		break;
+		case SRC::Back:		{ return VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT; }	break;
+		case SRC::Front:	{ return VkCullModeFlagBits::VK_CULL_MODE_FRONT_BIT; }	break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkCullModeFlagBits::VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+}
+
+VkPrimitiveTopology	
+Vk_RenderApiUtil::toVkPrimitiveTopology(RenderPrimitiveType v)
+{
+	using SRC = RenderPrimitiveType;
+	switch (v)
+	{
+		case SRC::Triangle: { return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; } break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+}
+
+VkCompareOp			
+Vk_RenderApiUtil::toVkCompareOp(RenderState_DepthTestOp v)
+{
+	using SRC = RenderState_DepthTestOp;
+	switch (v)
+	{
+		case SRC::Always:		{ return VkCompareOp::VK_COMPARE_OP_ALWAYS; }			break;
+		case SRC::Less:			{ return VkCompareOp::VK_COMPARE_OP_LESS; }				break;
+		case SRC::LessEqual:	{ return VkCompareOp::VK_COMPARE_OP_LESS_OR_EQUAL; }	break;
+		case SRC::Greater:		{ return VkCompareOp::VK_COMPARE_OP_GREATER; }			break;
+		case SRC::GreaterEqual: { return VkCompareOp::VK_COMPARE_OP_GREATER_OR_EQUAL; } break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkCompareOp::VK_COMPARE_OP_MAX_ENUM;
+}
+
+VkBlendFactor	
+Vk_RenderApiUtil::toVkBlendFactor(RenderState_BlendFactor v)
+{
+	using SRC = RenderState_BlendFactor;
+	switch (v)
+	{
+		case SRC::Zero:					{ return VkBlendFactor::VK_BLEND_FACTOR_ZERO; }						break;
+		case SRC::SrcColor:				{ return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR; }		break;
+		case SRC::DstColor:				{ return VkBlendFactor::VK_BLEND_FACTOR_DST_COLOR; }				break;
+		case SRC::SrcAlpha:				{ return VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA; }				break;
+		case SRC::ConstColor:			{ return VkBlendFactor::VK_BLEND_FACTOR_CONSTANT_COLOR; }			break;
+		case SRC::ConstAlpha:			{ return VkBlendFactor::VK_BLEND_FACTOR_CONSTANT_ALPHA; }			break;
+		case SRC::OneMinusSrcColor:		{ return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR; }		break;
+		case SRC::OneMinusDstColor:		{ return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR; }		break;
+		case SRC::OneMinusSrcAlpha:		{ return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; }		break;
+		case SRC::OneMinusDstAlpha:		{ return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA; }		break;
+		case SRC::OneMinusConstColor:	{ return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR; } break;
+		case SRC::OneMinusConstAlpha:	{ return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA; } break;
+		case SRC::SrcAlphaSaturate:		{ return VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA_SATURATE; }		break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkBlendFactor::VK_BLEND_FACTOR_MAX_ENUM;
+}
+
+VkBlendOp		
+Vk_RenderApiUtil::toVkBlendOp(RenderState_BlendOp v)
+{
+	using SRC = RenderState_BlendOp;
+	switch (v)
+	{
+		case SRC::Disable:	{ return VkBlendOp::VK_BLEND_OP_ADD; }				break;
+		case SRC::Add:		{ return VkBlendOp::VK_BLEND_OP_ADD; }				break;
+		case SRC::Sub:		{ return VkBlendOp::VK_BLEND_OP_SUBTRACT; }			break;
+		case SRC::RevSub:	{ return VkBlendOp::VK_BLEND_OP_REVERSE_SUBTRACT; }	break;
+		case SRC::Min:		{ return VkBlendOp::VK_BLEND_OP_MIN; }				break;
+		case SRC::Max:		{ return VkBlendOp::VK_BLEND_OP_MAX; }				break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkBlendOp::VK_BLEND_OP_MAX_ENUM;
 }
 
 u32

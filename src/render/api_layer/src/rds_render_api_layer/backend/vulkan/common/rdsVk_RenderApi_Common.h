@@ -24,6 +24,9 @@ class RenderGpuBuffer_Vk;
 
 struct RenderDevice_CreateDesc;
 
+struct Vk_RenderApiUtil;
+
+
 #if 1	
 
 struct QueueFamilyIndices 
@@ -119,6 +122,17 @@ struct Vk_SwapchainInfo
 
 #if 1
 
+struct Vk_CDesc_Base
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	using Util = Vk_RenderApiUtil;
+
+public:
+	Vk_CDesc_Base()		= default;
+	~Vk_CDesc_Base()	= default;
+};
+
 struct Vk_StageAccess
 {
 	VkPipelineStageFlags	srcStage	= {};
@@ -200,6 +214,12 @@ public:
 
 	static Vk_StageAccess toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout);
 
+	static VkCullModeFlagBits	toVkCullMode			(RenderState_Cull v);
+	static VkPrimitiveTopology	toVkPrimitiveTopology	(RenderPrimitiveType v);
+	static VkCompareOp			toVkCompareOp			(RenderState_DepthTestOp v);
+	static VkBlendFactor		toVkBlendFactor			(RenderState_BlendFactor v);
+	static VkBlendOp			toVkBlendOp				(RenderState_BlendOp v);
+	
 	/*template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);*/
 
