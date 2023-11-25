@@ -132,14 +132,12 @@ class VulkanLayer;
 class VulkanEditorMainWindow : public EditorMainWindow
 {
 public:
+	using Base = EditorMainWindow;
+
+public:
 	~VulkanEditorMainWindow()
 	{
 		destroy();
-	}
-
-	void destroy()
-	{
-		_renderContext.reset(nullptr);
 	}
 
 protected:
@@ -147,11 +145,6 @@ protected:
 	{
 		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 		Base::onCreate(thisCDesc);
-
-		auto* rdDev = Renderer::rdDev();
-		auto renderContextCDesc = RenderContext::makeCDesc();
-		renderContextCDesc.window = this;
-		_renderContext = rdDev->createContext(renderContextCDesc);
 	}
 
 private:
@@ -205,11 +198,6 @@ protected:
 	virtual void onDestroy() override
 	{
 		mainWin()->destroy();
-	}
-
-	virtual void willQuit() override
-	{
-		Base::willQuit();
 	}
 
 protected:
@@ -426,7 +414,7 @@ public:
 			{
 				auto data			= makeRndColorTriangleData(z);
 
-				auto bufCDesc		= RenderGpuMultiBuffer::makeCDesc();
+				auto bufCDesc		= RenderGpuBuffer_CreateDesc { RDS_SRCLOC };
 				bufCDesc.bufSize	= data.size();
 				bufCDesc.stride		= getVertexLayout_RndColorTriangle()->stride();
 				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
@@ -452,7 +440,7 @@ public:
 
 		{
 			{
-				auto bufCDesc		= RenderGpuBuffer::makeCDesc();
+				auto bufCDesc = RenderGpuBuffer_CreateDesc { RDS_SRCLOC };
 				//Vector<u16, 6> indices = { 0, 1, 2, 2, 3, 0 };
 				Vector<u16, 6> indices = { 0, 2, 1, 2, 0, 3 };
 
@@ -465,7 +453,7 @@ public:
 			{
 				auto data			= makeRndColorTriangleData();
 
-				auto bufCDesc		= RenderGpuBuffer::makeCDesc();
+				auto bufCDesc = RenderGpuBuffer_CreateDesc { RDS_SRCLOC };
 				bufCDesc.bufSize	= data.size();
 				bufCDesc.stride		= getVertexLayout_RndColorTriangle()->stride();
 				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;

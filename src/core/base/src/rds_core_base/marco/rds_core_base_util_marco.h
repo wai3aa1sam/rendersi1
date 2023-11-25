@@ -52,15 +52,32 @@
 	#define RDS_ASSERT(X, ...)	
 #endif // RDS_ENABLE_ASSERT
 
+
 #if RDS_DEBUG || RDS_DEVELOPMENT
 	#define RDS_SRCLOC	::rds::SrcLoc(RDS_FILE, RDS_LINE, RDS_FUNC_NAME_SZ)
 
 	#define RDS_DEBUG_CALL(FUNC) FUNC
 
+	#define RDS_DEBUG_SRCLOC			_debugSrcLoc
+	#define RDS_DEBUG_SRCLOC_DECL		::rds::SrcLoc RDS_DEBUG_SRCLOC
+	#define RDS_DEBUG_SRCLOC_ARG		debugSrcLoc_
+	#define RDS_DEBUG_SRCLOC_PARAM		const ::rds::SrcLoc& RDS_DEBUG_SRCLOC_ARG
+	#define RDS_DEBUG_SRCLOC_ASSIGN()	RDS_DEBUG_SRCLOC = RDS_DEBUG_SRCLOC_ARG
+	// can use default value marco 
+	// https://stackoverflow.com/questions/3046889/optional-parameters-with-c-macros
+	// RDS_DEBUG_SRCLOC_ASSIGN() + RDS_DEBUG_SRCLOC_ASSIGN(cDesc)
+
 #else
 	#define RDS_SRCLOC	::rds::SrcLoc()
 
 	#define RDS_DEBUG_CALL(FUNC)
+
+	#define RDS_DEBUG_SRCLOC			
+	#define RDS_DEBUG_SRCLOC_DECL			
+	#define RDS_DEBUG_SRCLOC_ARG			
+	#define RDS_DEBUG_SRCLOC_PARAM			
+	#define RDS_DEBUG_SRCLOC_ASSIGN()	
+
 #endif
 
 #define RDS_REP_0(X)

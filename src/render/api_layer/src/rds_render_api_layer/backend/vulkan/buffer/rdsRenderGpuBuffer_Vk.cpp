@@ -57,7 +57,7 @@ RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 				, usageFlags
 				, QueueTypeFlags::Graphics);
 
-	RDS_VK_SET_DEBUG_NAME(_vkBuf);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkBuf, RDS_DEBUG_SRCLOC);
 }
 
 void

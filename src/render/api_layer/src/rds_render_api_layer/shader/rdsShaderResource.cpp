@@ -115,7 +115,7 @@ ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass)
 	_info = info;
 	_cpuBuf.resize(bufSize);
 
-	auto bufCDesc = RenderGpuBuffer::makeCDesc();
+	auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
 	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Const;
 	bufCDesc.bufSize	= bufSize;
 	_gpuBuffer = rdDev->createRenderGpuBuffer(bufCDesc);

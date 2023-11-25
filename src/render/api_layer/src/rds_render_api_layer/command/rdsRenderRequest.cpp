@@ -48,7 +48,7 @@ RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
 	throwIf(true, "store rdCtx");
 	auto* drawCalls = Renderer::rdDev()->renderFrame().renderQueue().drawRenderables(settings);
-	auto* cmd = renderCommandBuffer().addCommand<RenderCommand_DrawRenderables>();
+	auto* cmd = renderCommandBuffer().newCommand<RenderCommand_DrawRenderables>();
 	cmd->hashedDrawCallCmds = drawCalls;
 }
 
@@ -75,9 +75,7 @@ void RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* 
 
 	auto& e = rdSubMesh;
 
-	#if RDS_DEBUG
-	p->_debugLoc = RDS_RD_CMD_DEBUG_PARAM_NAME;
-	#endif // RDS_DEBUG
+	RDS_RD_CMD_DEBUG_ASSIGN(p);
 
 	p->indexType			= e.indexType();
 	p->renderPrimitiveType	= e.renderPrimitiveType();

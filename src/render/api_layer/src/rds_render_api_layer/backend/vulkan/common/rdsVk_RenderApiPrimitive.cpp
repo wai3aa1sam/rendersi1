@@ -498,7 +498,8 @@ Vk_PipelineLayout::create(const VkPipelineLayoutCreateInfo* pCreateInfo, RenderD
 void 
 Vk_PipelineLayout::destroy(RenderDevice_Vk* rdDevVk)
 {
-	RDS_CORE_ASSERT(hnd(), "");
+	//RDS_CORE_ASSERT(hnd(), "");
+	if (!hnd()) return;
 
 	auto* vkDev			= rdDevVk->vkDevice();
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();

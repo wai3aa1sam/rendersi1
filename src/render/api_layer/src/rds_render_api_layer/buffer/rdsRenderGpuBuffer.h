@@ -40,13 +40,15 @@ public:
 	SizeType					offset		= 0;
 
 public:
-	RenderGpuBuffer_CreateDesc() = default;
+	RDS_RenderResource_COMMON_BODY(RenderGpuBuffer_CreateDesc);
+
 	RenderGpuBuffer_CreateDesc(const RenderGpuBuffer_Desc& desc)
 	{
 		create(desc);
 	}
 	void operator=(const RenderGpuBuffer_Desc& desc) { create(desc); }
 	
+public:
 	void create(const RenderGpuBuffer_Desc& desc);
 };
 
@@ -87,7 +89,6 @@ RenderGpuBuffer_CreateDesc::create(const RenderGpuBuffer_Desc& desc)
 	stride		= desc.stride;
 }
 
-
 class RenderGpuBuffer : public RenderResource
 {
 	friend class RenderDevice;
@@ -102,7 +103,7 @@ public:
 	static constexpr SizeType s_kAlign = CreateDesc::s_kAlign;
 
 public:
-	static CreateDesc				makeCDesc();
+	static CreateDesc				makeCDesc(RDS_DEBUG_SRCLOC_PARAM = {});
 	static SPtr<RenderGpuBuffer>	make(CreateDesc& cDesc);
 
 public:

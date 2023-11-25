@@ -10,35 +10,29 @@ namespace rds
 class RenderMesh;
 class RenderSubMesh;
 
-
-
-
 #if 0
 #pragma mark --- rdsRenderCommand-Impl ---
 #endif // 0
 #if 1
 
-#if RDS_DEBUG
-	#define RDS_RD_CMD_DEBUG_PARAM_NAME   debugLoc
-	#define RDS_RD_CMD_DEBUG_PARAM		const SrcLoc& RDS_RD_CMD_DEBUG_PARAM_NAME
-	#define RDS_RD_CMD_DEBUG_ARG		RDS_SRCLOC
+#if RDS_DEVELOPMENT 
+	#define RDS_RD_CMD_DEBUG_PARAM_NAME		debugSrcLoc_
+	#define RDS_RD_CMD_DEBUG_PARAM			const SrcLoc& RDS_RD_CMD_DEBUG_PARAM_NAME
+	#define RDS_RD_CMD_DEBUG_ARG			RDS_SRCLOC
+	#define RDS_RD_CMD_DEBUG_ASSIGN(PTR)	(*PTR).RDS_DEBUG_SRCLOC = RDS_RD_CMD_DEBUG_PARAM_NAME
+
 #else
 	#define RDS_RD_CMD_DEBUG_PARAM_NAME 0
 	#define RDS_RD_CMD_DEBUG_PARAM int
 	#define RDS_RD_CMD_DEBUG_ARG 0
+	#define RDS_RD_CMD_DEBUG_ASSIGN()
+
 #endif // RDS_DEBUG
 
 
 class RenderRequest : public NonCopyable
 {
-public:
-	using Traits	= RenderApiLayerTraits;
-	using SizeType	= Traits::SizeType;
-
-public:
-	static constexpr SizeType s_kThreadCount		= Traits::s_kThreadCount;
-	static constexpr SizeType s_kFrameInFlightCount	= Traits::s_kFrameInFlightCount;
-
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	RenderRequest();
 	~RenderRequest();
@@ -60,6 +54,9 @@ public:
 	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
 	static void drawSubMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, const Mat4f& transform = Mat4f::s_identity());
 
+	RDS_NODISCARD	RenderScissorRectScope	scissorRectScope();
+	RDS_INLINE		void					setScissorRect	(const math::Rect2f& rect);
+
 public:
 	RenderCommand_SwapBuffers*	swapBuffers();
 	RenderCommand_DrawCall*		addDrawCall();
@@ -74,6 +71,10 @@ inline RenderCommandBuffer& RenderRequest::renderCommandBuffer() { return _rende
 inline RenderCommand_ClearFramebuffers* RenderRequest::clearFramebuffers()	{ return renderCommandBuffer().clearFramebuffers(); }
 inline RenderCommand_SwapBuffers*		RenderRequest::swapBuffers()		{ return renderCommandBuffer().swapBuffers(); }
 inline RenderCommand_DrawCall*			RenderRequest::addDrawCall()		{ return renderCommandBuffer().addDrawCall(); }
+
+
+inline RenderScissorRectScope	RenderRequest::scissorRectScope()						{ return RenderScissorRectScope(&_renderCmdBuf); }
+inline void						RenderRequest::setScissorRect(const math::Rect2f& rect)	{ _renderCmdBuf.setScissorRect(rect); }
 
 
 // inline

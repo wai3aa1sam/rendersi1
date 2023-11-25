@@ -40,6 +40,15 @@ RenderCommandBuffer::alloc(SizeType n, SizeType align)
 	//return RenderFrameContext::instance()->renderFrame().renderCommandAllocator().alloc(n, align);
 }
 
+
+void 
+RenderCommandBuffer::setScissorRect(const math::Rect2f& rect) 
+{
+	_scissorRect = rect;
+	auto* cmd = newCommand<RenderCommand_SetScissorRect>();
+	cmd->rect = rect;
+}
+
 #endif
 
 void 

@@ -34,6 +34,7 @@ protected:
 		opt.isToSpirv	= true;
 		opt.enableLog	= false;
 
+		compile("asset/shader/ui/imgui.shader",				opt);
 		compile("asset/shader/terrain/my_terrain.shader",	opt);
 		compile("asset/shader/test.shader",					opt);
 		compile("asset/shader/test_texture.shader",			opt);

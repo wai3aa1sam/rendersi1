@@ -588,6 +588,7 @@ using DefaultBinormalType	= DefaultNormalType;
 
 using Vertex_Pos2f	= VertexT_Pos<Tuple2f>;
 using Vertex_Pos	= VertexT_Pos<DefaultPosType>;
+using Vertex_ImGui	= VertexT_Color<Color4b, 1, VertexT_Uv<Tuple2f, 1, Vertex_Pos2f> >;
 
 template<class COLOR_TYPE, size_t COLOR_COUNT>		using VertexT_PosColor	= VertexT_Color<COLOR_TYPE, COLOR_COUNT, Vertex_Pos>;
 template<size_t COLOR_COUNT>						using Vertex_PosColor	= VertexT_PosColor<DefaultColorType, COLOR_COUNT>;

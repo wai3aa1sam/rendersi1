@@ -21,7 +21,7 @@ RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 #endif // 0
 #if 1
 
-RenderGpuBuffer::CreateDesc RenderGpuBuffer::makeCDesc() { return CreateDesc{}; }
+RenderGpuBuffer::CreateDesc RenderGpuBuffer::makeCDesc(RDS_DEBUG_SRCLOC_PARAM) { return CreateDesc { RDS_DEBUG_SRCLOC_ARG }; }
 
 SPtr<RenderGpuBuffer> 
 RenderGpuBuffer::make(CreateDesc& cDesc)

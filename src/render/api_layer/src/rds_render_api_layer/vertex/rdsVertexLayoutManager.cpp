@@ -33,6 +33,8 @@ VertexLayoutManager::VertexLayoutManager()
 	REGISTER_VERTEX_4(Vertex_PosColor);
 
 	#undef REGISTER_VERTEX_4
+
+	registerLayout<Vertex_ImGui>();
 }
 
 VertexLayoutManager::~VertexLayoutManager()

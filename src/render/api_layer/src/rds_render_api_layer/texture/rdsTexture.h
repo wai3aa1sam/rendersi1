@@ -149,6 +149,14 @@ public:
 		_uploadImage = rds::move(uploadImage);
 	}
 
+	void create(const u8* data, ColorType format_, u32 width, u32 height)
+	{
+		format = format_;
+		_size.set(width, height);
+		_uploadImage.create(format, width, height);
+		_uploadImage.copyToPixelData(ByteSpan(data, width * height));
+	}
+
 	const Image& uploadImage() const { return _uploadImage; }
 
 protected:

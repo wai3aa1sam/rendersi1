@@ -29,6 +29,7 @@ using DrawingSettings = u64;
 	E(ClearFramebuffers,) \
 	E(SwapBuffers,) \
 	E(DrawCall,) \
+	E(SetScissorRect, ) \
 	\
 	E(DrawRenderables,) \
 	\
@@ -47,14 +48,13 @@ public:
 	using SizeType = Traits::SizeType;
 
 public:
+	RDS_DEBUG_SRCLOC_DECL;
+
+public:
 	RenderCommand(Type type) : _type(type) {}
 	virtual ~RenderCommand() {};
 
 	Type type() const { return _type; }
-
-	#if RDS_DEBUG
-	SrcLoc _debugLoc;
-	#endif // RDS_DEBUG
 
 protected:
 	RenderCommandType _type;
@@ -126,6 +126,19 @@ public:
 public:
 	RenderCommand_DrawCall() : Base(Type::DrawCall) {}
 	virtual ~RenderCommand_DrawCall() {};
+};
+
+class RenderCommand_SetScissorRect : public RenderCommand 
+{
+public:
+	using Base = RenderCommand;
+	using This = RenderCommand_SetScissorRect;
+
+public:
+	math::Rect2f rect;
+
+public:
+	RenderCommand_SetScissorRect() : Base(Type::SetScissorRect) {}
 };
 
 class RenderCommand_DrawRenderables : public RenderCommand
@@ -218,23 +231,29 @@ public:
 	RenderCommand_SwapBuffers*			swapBuffers();
 	RenderCommand_DrawCall*				addDrawCall();
 
+	void setScissorRect(const math::Rect2f& rect);
+
 	Span<RenderCommand*> commands();
+
+	const math::Rect2f& scissorRect() const;
 
 	const RenderCommand_ClearFramebuffers* getClearFramebuffersCmd() const;
 
 private:
-	template<class CMD> CMD* addCommand();
+	template<class CMD> CMD* newCommand();
 	void* alloc(SizeType n, SizeType align);
 
 private:
 	LinearAllocator							_alloc;
 	Vector<RenderCommand*, s_kLocalSize>	_commands;
 	RenderCommand_ClearFramebuffers*		_clearFramebuffersCmd = nullptr;
+	
+	math::Rect2f _scissorRect;
 };
 
 template<class CMD> inline
 CMD* 
-RenderCommandBuffer::addCommand()
+RenderCommandBuffer::newCommand()
 {
 	void* buf = alloc(sizeof(CMD), s_kAlign);
 	auto* cmd = new(buf) CMD();
@@ -242,11 +261,13 @@ RenderCommandBuffer::addCommand()
 	return cmd;
 }
 
-inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ _clearFramebuffersCmd = addCommand<RenderCommand_ClearFramebuffers>(); return _clearFramebuffersCmd; }
-inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()			{ return addCommand<RenderCommand_SwapBuffers>(); }
-inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()			{ return addCommand<RenderCommand_DrawCall>(); }
+inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ _clearFramebuffersCmd = newCommand<RenderCommand_ClearFramebuffers>(); return _clearFramebuffersCmd; }
+inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()			{ return newCommand<RenderCommand_SwapBuffers>(); }
+inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()			{ return newCommand<RenderCommand_DrawCall>(); }
 
 inline Span<RenderCommand*> RenderCommandBuffer::commands() { return _commands.span(); }
+
+inline const math::Rect2f&	RenderCommandBuffer::scissorRect() const { return _scissorRect; }
 
 inline const RenderCommand_ClearFramebuffers* RenderCommandBuffer::getClearFramebuffersCmd() const { return _clearFramebuffersCmd; }
 
@@ -298,6 +319,44 @@ protected:
 
 #endif
 
+#if 0
+#pragma mark --- rdsRenderScissorRectScope-Impl ---
+#endif // 0
+#if 1
+
+class RenderScissorRectScope : public NonCopyable 
+{
+public:
+	RenderScissorRectScope() = default;
+
+	RenderScissorRectScope(RenderScissorRectScope && r) 
+	{
+		_cmdBuf = r._cmdBuf;
+		_rect	= r._rect;
+		r._cmdBuf = nullptr;
+	}
+
+	RenderScissorRectScope(RenderCommandBuffer* cmdBuf) 
+	{
+		if (!cmdBuf) return;
+		_rect	= cmdBuf->scissorRect();
+		_cmdBuf = cmdBuf;
+	}
+
+	~RenderScissorRectScope() { detach(); }
+
+	void detach() 
+	{
+		if (!_cmdBuf) return;
+		_cmdBuf->setScissorRect(_rect);
+		_cmdBuf = nullptr;
+	}
+
+private:
+	RenderCommandBuffer* _cmdBuf = nullptr;
+	math::Rect2f _rect;
+};
+#endif // 1
 
 
 }
