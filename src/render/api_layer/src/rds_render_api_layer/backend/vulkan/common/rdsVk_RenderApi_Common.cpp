@@ -213,11 +213,13 @@ Vk_RenderApiUtil::toVkFormat(ColorType v)
 	using SRC = ColorType;
 	switch (v) 
 	{
-		case SRC::RGBAb:	{ return VK_FORMAT_R8G8B8A8_UINT;		} break;
-		case SRC::RGBAs:	{ return VK_FORMAT_R16G16B16A16_UINT;	} break;
+		case SRC::Rb:		{ return VK_FORMAT_R8_UNORM;			} break;
+
+		case SRC::RGBAb:	{ return VK_FORMAT_R8G8B8A8_UNORM;		} break;
+		case SRC::RGBAs:	{ return VK_FORMAT_R16G16B16A16_UNORM;	} break;
 		case SRC::RGBAh:	{ return VK_FORMAT_R16G16B16A16_SFLOAT;	} break;
 		case SRC::RGBAf:	{ return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
-		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
+		default: { RDS_THROW("unsupport type {}", v); }	break;
 	}
 	//return VkFormat::VK_FORMAT_MAX_ENUM;
 }
@@ -228,6 +230,9 @@ Vk_RenderApiUtil::toVkFormat_ShaderTexture(VkFormat v)
 	using SRC = VkFormat;
 	switch (v) 
 	{
+		case SRC::VK_FORMAT_R8_UNORM				:
+		case SRC::VK_FORMAT_R8_UINT					: { return VK_FORMAT_R8_UNORM;	} break;
+
 		case SRC::VK_FORMAT_R8G8B8A8_UNORM			:
 		case SRC::VK_FORMAT_R8G8B8A8_USCALED		:
 		case SRC::VK_FORMAT_R8G8B8A8_UINT			:
@@ -242,7 +247,7 @@ Vk_RenderApiUtil::toVkFormat_ShaderTexture(VkFormat v)
 			//case SRC::VK_FORMAT_R32G32B32A32_SINT		:
 			//case SRC::VK_FORMAT_R32G32B32A32_SFLOAT		: { return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
 
-		default: { RDS_THROW("unsupport type, {}", RDS_SRCLOC); }	break;
+		default: { RDS_THROW("unsupport type"); }	break;
 	}
 }
 
@@ -252,6 +257,9 @@ Vk_RenderApiUtil::toVkFormat_srgb	(VkFormat v)
 	using SRC = VkFormat;
 	switch (v) 
 	{
+		case SRC::VK_FORMAT_R8_UNORM				:
+		case SRC::VK_FORMAT_R8_UINT					: { return VK_FORMAT_R8_SRGB;	} break;
+
 		case SRC::VK_FORMAT_R8G8B8A8_UNORM			:
 		case SRC::VK_FORMAT_R8G8B8A8_SNORM			:
 		case SRC::VK_FORMAT_R8G8B8A8_USCALED		:
@@ -582,6 +590,7 @@ Vk_RenderApiUtil::toVkBlendFactor(RenderState_BlendFactor v)
 	switch (v)
 	{
 		case SRC::Zero:					{ return VkBlendFactor::VK_BLEND_FACTOR_ZERO; }						break;
+		case SRC::One:					{ return VkBlendFactor::VK_BLEND_FACTOR_ONE; }						break;
 		case SRC::SrcColor:				{ return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR; }		break;
 		case SRC::DstColor:				{ return VkBlendFactor::VK_BLEND_FACTOR_DST_COLOR; }				break;
 		case SRC::SrcAlpha:				{ return VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA; }				break;
@@ -1184,6 +1193,8 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	//o.emplace_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME); // deprecated, but only in 1.3?
 	emplaceIfExist(o, VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,		availablePhyDeviceExts());
 	emplaceIfExist(o, VK_GOOGLE_HLSL_FUNCTIONALITY_1_EXTENSION_NAME,	availablePhyDeviceExts());
+	emplaceIfExist(o, VK_KHR_MAINTENANCE1_EXTENSION_NAME,				availablePhyDeviceExts());
+	
 	if (rdDevCDesc.isPresent)
 	{
 		o.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);

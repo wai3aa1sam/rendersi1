@@ -1,13 +1,12 @@
 #include "rds_editor-pch.h"
 #include "rdsEditorMainWindow.h"
-
 #include "rdsEditorApp.h"
 
-namespace rds
+namespace rds 
 {
 
 #if 0
-#pragma mark --- rdsEditorMainWindow-Decl ---
+#pragma mark --- rdsEditorMainWindow-Impl ---
 #endif // 0
 #if 1
 
@@ -18,30 +17,52 @@ EditorMainWindow::EditorMainWindow()
 
 EditorMainWindow::~EditorMainWindow()
 {
-
+	RDS_CORE_ASSERT(!_rdCtx, "forgot to call destroy() on Derived class ?");
 }
 
-void EditorMainWindow::onCreate(const CreateDesc& desc)
+void 
+EditorMainWindow::onCreate(const CreateDesc_Base& cDesc) 
 {
-	Base::onCreate(desc);
+	auto thisCDesc = sCast<const CreateDesc&>(cDesc);
+	Base::onCreate(thisCDesc);
 
+	auto* rdDev = Renderer::rdDev();
+	//auto* editor = EditorContext::instance();
 
+	{
+		RenderContext::CreateDesc rdCtxCDesc;
+		rdCtxCDesc.window = this;
+		_rdCtx = rdDev->createContext(rdCtxCDesc);
+	}
 }
 
-void EditorMainWindow::onCloseButton()
+void 
+EditorMainWindow::onDestroy()
+{
+	Base::onDestroy();
+
+	_rdCtx.reset(nullptr);
+}
+
+void 
+EditorMainWindow::onCloseButton()
 {
 	EditorApp::instance()->quit(0);
 }
 
-void EditorMainWindow::onUIMouseEvent(UIMouseEvent& ev)
+void 
+EditorMainWindow::onUIMouseEvent(UIMouseEvent& ev) 
 {
+	if (_rdCtx->onUIMouseEvent(ev))
+		return;
 }
 
-void EditorMainWindow::onActive(bool isActive)
+void 
+EditorMainWindow::onActive(bool isActive)
 {
+
 }
 
 #endif
-
 
 }

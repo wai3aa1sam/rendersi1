@@ -30,6 +30,8 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	bool isInvalidSize = math::equals0(framebufferRect2f.size.x) || math::equals0(framebufferRect2f.size.y);
 	if (isInvalidSize || !cDesc.rdCtx)
 		return;
+	
+	//bool isInvalidate = !cDesc.wnd || !cDesc.rdCtx;
 
 	destroy(cDesc.wnd);
 
@@ -37,6 +39,7 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	auto* rdDevVk = renderDeviceVk();
 
 	_vkSurface.create(cDesc.wnd, rdDevVk);
+	
 
 	if (_vkSurface.hnd())
 	{

@@ -61,12 +61,16 @@ RenderContext::destroy()
 
 	onDestroy();
 	Base::destroy();
+
+	_rdUiCtx.destroy();
 }
 
 void
 RenderContext::beginRender()
 {
 	RDS_PROFILE_SCOPED();
+
+	_rdUiCtx.onBeginRender(this);
 	onBeginRender();
 }
 
@@ -74,13 +78,25 @@ void
 RenderContext::endRender()
 {
 	RDS_PROFILE_SCOPED();
+	
 	onEndRender();
+	_rdUiCtx.onEndRender(this);
 }
 
 void 
 RenderContext::commit(RenderCommandBuffer& renderBuf)
 {
 	onCommit(renderBuf);
+}
+
+void RenderContext::drawUI(RenderRequest& req)
+{
+	_rdUiCtx.onDrawUI(req);
+}
+
+bool RenderContext::onUIMouseEvent(UIMouseEvent& ev)
+{
+	return _rdUiCtx.onUIMouseEvent(ev);
 }
 
 void
@@ -107,7 +123,7 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 void
 RenderContext::onPostCreate(const CreateDesc& cDesc)
 {
-
+	_rdUiCtx.create(this);
 }
 
 void

@@ -124,7 +124,10 @@ TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
 
 	RDS_TODO("put the logic to Texture.h");
 
-	RDS_CORE_ASSERT(!cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr(), "Create Texture2D should use either filename or imageUpload, not both");
+	RDS_CORE_ASSERT( !(
+					 !(cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr()) 
+					 && (!cDesc._filename.is_empty() && cDesc._uploadImage.dataPtr())
+					 ), "Create Texture2D should use either filename or imageUpload, not both");
 	RDS_CORE_ASSERT(_uploadTexCmds, "");
 
 	cDesc._internal_create(_tsfCtx->renderDevice(), true);

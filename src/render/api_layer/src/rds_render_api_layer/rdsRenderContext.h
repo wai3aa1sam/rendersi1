@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-
+#include "rdsRenderUiContext.h"
 
 namespace rds
 {
@@ -45,7 +45,13 @@ public:
 
 	void commit(RenderCommandBuffer& renderCmdBuf);
 
-	void			setFramebufferSize(const Vec2f& newSize);
+public:
+	void drawUI(RenderRequest& req);
+	bool onUIMouseEvent(UIMouseEvent& ev);
+
+	void setFramebufferSize(const Vec2f& newSize);
+
+public:
 	const Vec2f&	framebufferSize() const;
 	float			aspectRatio() const;
 
@@ -67,11 +73,12 @@ protected:
 	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd);
 
 protected:
-	//RenderContext(const CreateDesc&)
 	NativeUIWindow* _nativeUIWindow = nullptr;
-	Vec2f			_framebufferSize {0,0};
 
-	u32 _curFrameIdx = 0;
+	Vec2f	_framebufferSize {0,0};
+	u32		_curFrameIdx = 0;
+
+	RenderUiContext _rdUiCtx;
 
 private:
 
@@ -92,6 +99,7 @@ RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd)
 	{
 		_DISPACH_CMD_CASE(ClearFramebuffers);
 		_DISPACH_CMD_CASE(SwapBuffers);
+		_DISPACH_CMD_CASE(SetScissorRect);
 		_DISPACH_CMD_CASE(DrawCall);
 		_DISPACH_CMD_CASE(DrawRenderables);
 		default: { throwError("undefined render command"); } break;

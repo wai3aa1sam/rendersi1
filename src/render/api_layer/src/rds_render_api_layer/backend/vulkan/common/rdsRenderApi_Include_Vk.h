@@ -34,8 +34,12 @@ RDS_DISABLE_ALL_WARNINGS();
 
 		#define VMA_DEBUG_MARGIN 16
 		#define VMA_DEBUG_DETECT_CORRUPTION 1
-		//#define VMA_DEBUG_LOG
+
+		// enable debug log
 		//#define VMA_DEBUG_LOG_FORMAT
+
+		// useless
+		//#define VMA_DEBUG_LOG
 
 	#endif // RDS_DEBUG
 

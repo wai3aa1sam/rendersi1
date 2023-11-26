@@ -38,7 +38,18 @@ struct Vk_Swapchain_CreateDesc
 	math::Rect2f		framebufferRect2f;
 	Vk_RenderPass*		vkRdPass;
 
-	VkFormat			colorFormat	= VK_FORMAT_B8G8R8A8_SRGB;
+	/*
+	
+	use VK_COLOR_SPACE_SRGB_NONLINEAR_KHR with _NORM, vulkan assume the shader output color is already SRGB.
+	when create VkImage is SRGB format, when write to it, it will convert to SRGB (or Linear, idk), UNORM just write as it is.
+	when create VkImageView is SRGB format, it will convert to Linear when sample it
+
+	reference:
+	~ [https://stackoverflow.com/questions/65241749/what-is-vulkan-color-space]
+	
+	*/
+
+	VkFormat			colorFormat	= VK_FORMAT_B8G8R8A8_UNORM;			//VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 	VkColorSpaceKHR		colorSpace	= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	VkFormat			depthFormat	= VK_FORMAT_D32_SFLOAT_S8_UINT;
 };

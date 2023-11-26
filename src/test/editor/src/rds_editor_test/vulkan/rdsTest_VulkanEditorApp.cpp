@@ -79,7 +79,7 @@ void testEditMesh()
 
 const VertexLayout* getVertexLayout_RndColorTriangle() { return Vertex_PosColorUv<1>::vertexLayout(); }
 
-EditMesh makeRndColorTriangleMesh(float z = 0.0f)
+EditMesh makeRndColorTriangleMesh(float z = 0.0f, bool isRnd = true)
 {
 	static size_t s_kVtxCount = 4;
 	EditMesh editMesh;
@@ -87,7 +87,7 @@ EditMesh makeRndColorTriangleMesh(float z = 0.0f)
 	{
 		auto& e = editMesh.pos;
 		e.reserve(s_kVtxCount);
-		auto v = rnd.range(0.0, 1.0);
+		auto v = isRnd ? rnd.range(0.0, 1.0) : 0.5;
 		//v = 0.5f;
 
 		e.emplace_back(-0.5f, -v,	 z);
@@ -255,7 +255,7 @@ public:
 			_testRenderGraph.dump();
 		}
 
-		//JobSystem::instance()->setSingleThreadMode(true);
+		JobSystem::instance()->setSingleThreadMode(true);
 
 		#if 1
 		{
@@ -305,13 +305,11 @@ public:
 
 		auto& tsfCtx	= rdDev->transferContext();
 		auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
-		tsfReq.commit();
 
 		rdCtx.setFramebufferSize(mainWin->clientRect().size);
 		rdCtx.beginRender();
 
-		auto& rdCmdBuf = _rdReq.renderCommandBuffer();
-		rdCmdBuf.clear();
+		_rdReq.reset(&rdCtx);
 		_rdReq.clearFramebuffers(Color4f{0.7f, 0.5f, 1.0f, 1.0f}, 1.0f);
 
 		#if 1
@@ -349,9 +347,10 @@ public:
 			Mat4f model		= Mat4f::s_rotateZ(math::radians(90.0f) * time);
 			Mat4f view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
 			Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), rdCtx.aspectRatio(), 0.1f, 10.0f);
-			proj[1][1]		*= -1;
+			//proj[1][1]		*= -1;		// no need this line as enabled VK_KHR_Maintenance1 
 			Mat4f mvp		= proj * view * model;
-			
+			mvp = Mat4f::s_rotateZ(math::radians(180.0f));
+
 			// later should use this line to get the material cpu buffer of constBuf
 			#if 0
 			{
@@ -397,9 +396,19 @@ public:
 
 		#endif // 0
 
+		{
+			static bool isShowDemoWnd = true;
+			ImGui::ShowDemoWindow();
+		}
+
+		rdCtx.drawUI(_rdReq);
+
 		_rdReq.swapBuffers();
 
-		rdCtx.commit(rdCmdBuf);
+		RDS_TODO("drawUI will upload vertex, maybe defer the upload");
+		tsfReq.commit();
+
+		rdCtx.commit(_rdReq.renderCommandBuffer());
 		rdCtx.endRender();
 
 		Renderer::rdDev()->nextFrame();
@@ -433,7 +442,7 @@ public:
 			_testMultiBuffer->uploadToGpu(data.byteSpan());
 			_testMultiBuffer2->uploadToGpu(data2.byteSpan());
 
-			_rdMesh1.upload(makeRndColorTriangleMesh());
+			_rdMesh1.upload(makeRndColorTriangleMesh(0.0f, false));
 			_rdMesh2.upload(makeRndColorTriangleMesh(0.5));
 		}
 		#endif // 0

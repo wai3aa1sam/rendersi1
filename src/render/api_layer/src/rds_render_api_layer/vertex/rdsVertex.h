@@ -269,21 +269,36 @@ class VertexLayout
 public:
 	using SizeType	= RenderApiLayerTraits::SizeType;
 	using Element	= VertexLayoutElement;
+
+public:
+	static bool	isPositionSemantic(VertexSemantic smt) { return smt == VertexSemantic::POSITION || smt == VertexSemantic::SV_Position; }
+
 public:
 	Span<const VertexLayoutElement>	elements()				const { return _elements.span(); }
 	const VertexLayoutElement&		elements(SizeType i)	const { return _elements[i]; }
 
-	VertexType						vertexType()	const { return _vertexType; };
-	SizeType						stride()		const { return _stride; };
+	VertexType						vertexType()			const { return _vertexType; };
+	SizeType						stride()				const { return _stride; };
 
 	const Element* find(VertexSemantic semantic) const
 	{
+		if (isPositionSemantic(semantic))
+		{
+			for (const auto& e : elements())
+			{
+				if (isPositionSemantic(e.semantic))
+				{
+					return &e;
+				}
+			}
+		}
 		for (const auto& e : elements())
 		{
 			if (e.semantic == semantic)
 			{
 				return &e;
 			}
+			
 		}
 		return nullptr;
 	}

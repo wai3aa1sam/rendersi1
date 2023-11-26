@@ -248,7 +248,7 @@ private:
 	Vector<RenderCommand*, s_kLocalSize>	_commands;
 	RenderCommand_ClearFramebuffers*		_clearFramebuffersCmd = nullptr;
 	
-	math::Rect2f _scissorRect;
+	math::Rect2f	_scissorRect	= {};
 };
 
 template<class CMD> inline

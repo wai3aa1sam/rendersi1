@@ -61,7 +61,7 @@ public:
 	VkResult swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachain, u32 imageIdx, Vk_Semaphore* vkWaitSmp);
 
 	void setViewport(const math::Rect2f& rect, float minDepth = 0.0f, float maxDepth = 1.0f);
-	void setScissor(const math::Rect2f& rect);
+	void setScissor (const math::Rect2f& rect);
 	
 	void beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents);
 	void endRenderPass();

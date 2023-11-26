@@ -3,6 +3,7 @@
 #include "rds_render_api_layer/mesh/rdsRenderMesh.h"
 #include "rds_render_api_layer/rdsRenderFrame.h"
 #include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/rdsRenderContext.h"
 
 namespace rds
 {
@@ -18,9 +19,11 @@ RenderRequest::~RenderRequest()
 }
 
  void 
- RenderRequest::clear()
+ RenderRequest::reset(RenderContext* rdCtx)
  {
 	 _renderCmdBuf.clear();
+	 _rdCtx = rdCtx;
+	 _renderCmdBuf.setScissorRect(math::Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
  }
 
 void 

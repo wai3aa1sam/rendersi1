@@ -70,20 +70,13 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 
 	transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, srcImage.data());
 
-	/*{
-		auto		bytes		= sCast<VkDeviceSize>(srcImage.totalByteSize());
-		auto*		stagingBuf	= vkTransferFrame().requestStagingBuffer(cmd->_stagingIdx, bytes, rdDevVk);
-
-		{
-			auto memmap = Vk_ScopedMemMapBuf{ stagingBuf };
-			memory_copy(memmap.data<u8*>(), srcImage.dataPtr(), bytes);
-		}
-	}*/
-
 	_vkSampler.create(cDesc.samplerState, rdDevVk);
 
 	{
-		VkFormat vkFormat = Util::toVkFormat_srgb(Util::toVkFormat(cDesc.format));
+		bool isStoreAsSrgb = false;
+		VkFormat vkFormat = Util::toVkFormat(cDesc.format);
+		if (isStoreAsSrgb)
+			vkFormat = Util::toVkFormat_srgb(vkFormat);
 
 		Vk_AllocInfo allocInfo = {};
 		allocInfo.usage = RenderMemoryUsage::GpuOnly;
@@ -91,7 +84,7 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 		_vkImage.create(rdDevVk, vkAlloc, &allocInfo
 			, imageSize.x, imageSize.y
 			, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-			, QueueTypeFlags::Transfer);
+			, QueueTypeFlags::Graphics);
 	}
 
 	_vkImageView.create(this, rdDevVk);
@@ -162,12 +155,17 @@ Vk_ImageView::create(Texture2D_Vk* tex2DVk, RenderDevice_Vk* rdDevVk)
 		aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
 	}
 
+	// when the format is SRGB, vulkan will convert it to linear when sampling
 	VkImageViewCreateInfo cInfo = {};
 	cInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	cInfo.image								= tex2DVk->vkImageHnd();
 	cInfo.viewType							= Util::toVkImageViewType(tex2DVk->type());
-	cInfo.format							= Util::toVkFormat_ShaderTexture(Util::toVkFormat(tex2DVk->format()));
-	
+	cInfo.format							= Util::toVkFormat(tex2DVk->format());
+
+	bool isSampleAsLinear = false;
+	if (isSampleAsLinear)
+		cInfo.format = Util::toVkFormat_srgb(cInfo.format);
+
 	cInfo.components.r						= VK_COMPONENT_SWIZZLE_IDENTITY;
 	cInfo.components.g						= VK_COMPONENT_SWIZZLE_IDENTITY;
 	cInfo.components.b						= VK_COMPONENT_SWIZZLE_IDENTITY;

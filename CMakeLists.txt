@@ -20,6 +20,7 @@ my_set_opt(${project_namespace_marco}_ENABLE_SANITIZER          0)
 
 find_package(fmt                    CONFIG REQUIRED)
 find_package(benchmark              CONFIG REQUIRED)
+find_package(imgui                  CONFIG REQUIRED)
 
 # --- vulkan
 find_package(Vulkan)

@@ -9,6 +9,7 @@ namespace rds
 
 class RenderMesh;
 class RenderSubMesh;
+class RenderContext;
 
 #if 0
 #pragma mark --- rdsRenderCommand-Impl ---
@@ -37,7 +38,7 @@ public:
 	RenderRequest();
 	~RenderRequest();
 
-	void clear();
+	void reset(RenderContext* rdCtx);
 
 	RenderCommandBuffer& renderCommandBuffer();
 
@@ -62,6 +63,7 @@ public:
 	RenderCommand_DrawCall*		addDrawCall();
 
 private:
+	RenderContext*		_rdCtx = nullptr;
 	RenderCommandBuffer _renderCmdBuf;		// render frame
 	//Vector<RenderCommandBuffer, s_kThreadCount>	_RenderCommandBuffers;
 };

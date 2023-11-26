@@ -2,37 +2,36 @@
 
 #include "rds_editor/common/rds_editor_common.h"
 
-#include "../ui/rdsEditorWindow.h"
-
 namespace rds
 {
 #if 0
-#pragma mark --- rdsEditorMainWindow-Decl ---
+#pragma mark --- rdsEditorWindow-Decl ---
 #endif // 0
 #if 1
 
-class EditorMainWindow : public EditorWindow
+class EditorMainWindow : public NativeUIWindow 
 {
-public:
-	using Base = EditorWindow;
-
+	using Base = NativeUIWindow;
 public:
 	EditorMainWindow();
 	virtual ~EditorMainWindow();
 
-	virtual void onCreate(const CreateDesc& desc) override;
+	RenderContext& renderContext();
+
+protected:
+	virtual void onCreate (const CreateDesc_Base& desc) override;
+	virtual void onDestroy() override;
 	virtual void onCloseButton() override;
 	virtual void onUIMouseEvent(UIMouseEvent& ev) override;
 
 	virtual void onActive(bool isActive) override;
 
-	RenderContext& renderContext();
 
 protected:
-	SPtr<RenderContext>	_renderContext;
+	SPtr<RenderContext>	_rdCtx;
 };
 
-inline RenderContext& EditorMainWindow::renderContext() { return *_renderContext; }
+inline RenderContext& EditorMainWindow::renderContext() { return *_rdCtx; }
 
 
 #endif

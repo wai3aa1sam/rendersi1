@@ -154,7 +154,7 @@ public:
 		format = format_;
 		_size.set(width, height);
 		_uploadImage.create(format, width, height);
-		_uploadImage.copyToPixelData(ByteSpan(data, width * height));
+		_uploadImage.copyToPixelData(ByteSpan(data, width * height * ColorUtil::pixelByteSize(format_)));
 	}
 
 	const Image& uploadImage() const { return _uploadImage; }
@@ -162,7 +162,10 @@ public:
 protected:
 	void loadImage()
 	{
-		RDS_CORE_ASSERT(!_filename.is_empty() && !_uploadImage.dataPtr(), "loadImage fail, forgot to call ::create() ?");
+		RDS_CORE_ASSERT( !(
+						!(_filename.is_empty() && !_uploadImage.dataPtr()) 
+						&& (!_filename.is_empty() && _uploadImage.dataPtr())
+			), "Create Texture2D should use either filename or imageUpload, not both");
 		if (!_filename.is_empty())
 		{
 			_uploadImage.load(_filename);

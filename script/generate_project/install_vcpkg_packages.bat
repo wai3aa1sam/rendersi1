@@ -33,6 +33,7 @@ vcpkg install spirv-cross:x64-windows 	            --recurse
 vcpkg install shaderc:x64-windows 	                --recurse
 vcpkg install directx-dxc:x64-windows 	            --recurse
 vcpkg install directx-headers:x64-windows 	        --recurse
+vcpkg install imgui:x64-windows 					--recurse
 
 POPD
 

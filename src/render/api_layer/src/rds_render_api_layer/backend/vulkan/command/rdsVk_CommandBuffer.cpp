@@ -228,9 +228,9 @@ Vk_CommandBuffer::setViewport(const math::Rect2f& rect, float minDepth, float ma
 {
 	VkViewport viewport = {};
 	viewport.x			= rect.x;
-	viewport.y			= rect.y;
+	viewport.y			= rect.y + rect.h;	// VK_KHR_Maintenance1 
 	viewport.width		= rect.w;
-	viewport.height		= rect.h;
+	viewport.height		= -rect.h;			// VK_KHR_Maintenance1 
 	viewport.minDepth	= minDepth;
 	viewport.maxDepth	= maxDepth;
 	vkCmdSetViewport(hnd(), 0, 1, &viewport);

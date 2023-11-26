@@ -19,6 +19,8 @@
 namespace rds
 {
 
+static VkFormat g_testSwapchainVkFormat = VK_FORMAT_B8G8R8A8_UNORM; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
+
 SPtr<RenderContext> 
 RenderDevice_Vk::onCreateContext(const RenderContext_CreateDesc& cDesc)
 {
@@ -66,7 +68,7 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	vkSwapchainCDesc.wnd				= cDesc.window;
 	vkSwapchainCDesc.framebufferRect2f	= math::toRect2_wh(framebufferSize());
 	//vkSwapchainCDesc.vkRdPass			= &_testVkRenderPass;
-	vkSwapchainCDesc.colorFormat		= VK_FORMAT_B8G8R8A8_SRGB;
+	vkSwapchainCDesc.colorFormat		= g_testSwapchainVkFormat; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 	vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	vkSwapchainCDesc.depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
@@ -374,9 +376,12 @@ RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
 		vkSwapchainCDesc.wnd				= nativeUIWindow();
 		vkSwapchainCDesc.framebufferRect2f	= math::toRect2_wh(newSize);
 		vkSwapchainCDesc.vkRdPass			= &_testVkRenderPass;
-		vkSwapchainCDesc.colorFormat		= VK_FORMAT_B8G8R8A8_SRGB;
+		vkSwapchainCDesc.colorFormat		= g_testSwapchainVkFormat; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 		vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 		vkSwapchainCDesc.depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+		// the render pass should have same format after invalidate
+		RDS_TODO("if it is invalidate, those ptr is not changed, only size is changed, the RenderPass should store the color format to match with the swapchain");
 
 		_vkSwapchain.create(vkSwapchainCDesc);
 
@@ -496,6 +501,14 @@ RenderContext_Vk::onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd)
 {
 	_shdSwapBuffers = true;
 	//_curGraphicsVkCmdBuf->swapBuffers(&_vkPresentQueue, _vkSwapchain, _curImageIdx, vkRdFrame().renderCompletedSmp());
+}
+
+void 
+RenderContext_Vk::onRenderCommand_SetScissorRect(RenderCommand_SetScissorRect* cmd)
+{
+	auto* vkCmdBuf = _curGraphicsVkCmdBuf;
+	
+	vkCmdBuf->setScissor(cmd->rect);
 }
 
 void
