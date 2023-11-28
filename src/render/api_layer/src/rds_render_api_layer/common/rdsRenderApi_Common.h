@@ -35,6 +35,10 @@ RDS_ENUM_ALL_OPERATOR(QueueTypeFlags);
 #define RenderMemoryUsage_ENUM_LIST(E) \
 	E(None, = 0) \
 	\
+	E(Auto,) \
+	E(AutoPreferCpu,) \
+	E(AutoPreferGpu,) \
+	\
 	E(CpuToGpu,) \
 	E(CpuOnly,) \
 	\
@@ -48,8 +52,8 @@ RDS_ENUM_CLASS(RenderMemoryUsage, u8);
 #define RenderAllocFlags_ENUM_LIST(E) \
 	E(None, = 0) \
 	\
-	E(HostWrite,	= BitUtil::bit(0)) \
-	E(CreateMapped, = BitUtil::bit(1)) \
+	E(HostWrite,		= BitUtil::bit(0)) \
+	E(PersistentMapped,	= BitUtil::bit(1)) \
 	\
 	E(_kCount,) \
 //---

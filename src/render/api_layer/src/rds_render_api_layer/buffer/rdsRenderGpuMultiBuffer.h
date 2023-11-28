@@ -52,6 +52,8 @@ protected:
 
 	SPtr<RenderGpuBuffer>& nextBuffer(SizeType bufSize);
 
+	SPtr<RenderGpuBuffer> _makeNewBuffer(SizeType bufSize);
+
 protected:
 	Atm<u32> iFrame = 0;
 	Vector<SPtr<RenderGpuBuffer>, s_kFrameInFlightCount> _renderGpuBuffers;

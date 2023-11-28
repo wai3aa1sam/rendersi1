@@ -79,7 +79,7 @@ public:
 	void cmd_copyBuffer(Vk_Buffer*		dst, Vk_Buffer*		src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
 	void cmd_copyBuffer(Vk_Buffer_T*	dst, Vk_Buffer_T*	src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
 
-	void cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height);
+	void cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height, u32 srcOffset);
 
 	void cmd_addImageMemBarrier(Vk_Image*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
 

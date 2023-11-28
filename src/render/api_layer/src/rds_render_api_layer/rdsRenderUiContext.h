@@ -60,8 +60,8 @@ protected:
 
 	const VertexLayout*		_vertexLayout = nullptr;
 
-	SPtr<RenderGpuBuffer>	_vertexBuffer;
-	SPtr<RenderGpuBuffer>	_indexBuffer;
+	SPtr<RenderGpuMultiBuffer>	_vtxBuf;
+	SPtr<RenderGpuMultiBuffer>	_idxBuf;
 
 	Vector<u8>	_vertexData;
 	Vector<u8>	_indexData;

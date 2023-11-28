@@ -299,12 +299,12 @@ Vk_CommandBuffer::cmd_copyBuffer(Vk_Buffer_T* dst, Vk_Buffer_T* src, VkDeviceSiz
 }
 
 void 
-Vk_CommandBuffer::cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height)
+Vk_CommandBuffer::cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height, u32 srcOffset)
 {
 	RDS_CORE_ASSERT(width != 0 || height != 0, "");
 
 	VkBufferImageCopy region = {};
-	region.bufferOffset			= 0;
+	region.bufferOffset			= srcOffset;
 	region.bufferRowLength		= 0;
 	region.bufferImageHeight	= 0;
 

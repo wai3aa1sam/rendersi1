@@ -55,6 +55,20 @@ public:
 	QueueTypeFlags			queueTypeflags;
 };
 
+struct StagingHandle
+{
+	using SizeType = RenderApiLayerTraits::SizeType;
+public:
+	static constexpr SizeType s_kInvalid = NumLimit<u32>::max();
+
+	bool isValid()		const { return chunkId != s_kInvalid && offset != s_kInvalid; }
+	void checkValid()	const { RDS_CORE_ASSERT(isValid(), "Invalid StagingHandle"); }
+
+public:
+	u32 chunkId = s_kInvalid;
+	u32 offset	= s_kInvalid;
+};
+
 class TransferCommand_UploadBuffer : public TransferCommand
 {
 	friend class TransferContext;
@@ -80,6 +94,8 @@ public:
 	//Vector<u8>					data;
 
 	u32 _stagingIdx = s_kInvalid;
+
+	StagingHandle _stagingHnd;
 };
 
 class TransferCommand_UploadTexture : public TransferCommand
@@ -101,6 +117,8 @@ public:
 
 	//void* _stagingHnd = nullptr;
 	u32 _stagingIdx = s_kInvalid;
+
+	StagingHandle _stagingHnd;
 };
 
 #endif

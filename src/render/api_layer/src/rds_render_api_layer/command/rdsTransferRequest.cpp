@@ -151,7 +151,17 @@ TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType of
 
 	RDS_TODO("put the logic to RenderGpuBuffer.h");
 
-	auto* cmd = uploadBufCmds().uploadBuffer();
+	TransferCommand_UploadBuffer temp;
+	TransferCommand_UploadBuffer* cmd = nullptr;
+	if (!BitUtil::has(rdBuf->typeFlags(), RenderGpuBufferTypeFlags::Const))
+	{
+		cmd = uploadBufCmds().uploadBuffer();
+	}
+	else
+	{
+		cmd = &temp;
+	}
+
 	cmd->dst	= rdBuf;
 	cmd->data	= data;
 	cmd->offset = offset;

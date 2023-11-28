@@ -60,7 +60,7 @@ Vk_Allocator::destroy()
 }
 
 VkResult
-Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
+Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	RDS_CORE_ASSERT(outBuf || allocHnd, "");
 
@@ -76,7 +76,10 @@ Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBuff
 	vmaCreateBuffer(allocator, &bufCreateInfo, &allocCreateInfo, &buffer, &allocation, nullptr);
 	*/
 	
-	auto ret = vmaCreateBuffer(_allocator, bufferInfo, &vmaAllocCInfo, outBuf, allocHnd, nullptr);
+	VmaAllocationInfo outInfo;
+	auto ret = vmaCreateBuffer(_allocator, bufferInfo, &vmaAllocCInfo, outBuf, allocHnd, &outInfo);
+	allocInfo->outMappedData = outInfo.pMappedData;
+	
 	Util::throwIfError(ret);
 	
 	return ret;
@@ -89,7 +92,7 @@ Vk_Allocator::freeBuf(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd)
 }
 
 VkResult	
-Vk_Allocator::allocImage(Vk_Image_T** outImg, Vk_AllocHnd* allocHnd, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
+Vk_Allocator::allocImage(Vk_Image_T** outImg, Vk_AllocHnd* allocHnd, const VkImageCreateInfo* imageInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	RDS_CORE_ASSERT(outImg || allocHnd, "");
 
@@ -145,11 +148,15 @@ Vk_Allocator::toMemoryUsage(RenderMemoryUsage v)
 	using SRC = RenderMemoryUsage;
 	switch (v)
 	{
-		case SRC::CpuToGpu:	{ return VMA_MEMORY_USAGE_CPU_TO_GPU;  }	break;
-		case SRC::CpuOnly:	{ return VMA_MEMORY_USAGE_CPU_ONLY;  }		break;
+		case SRC::Auto:				{ return VMA_MEMORY_USAGE_AUTO;  }					break;
+		case SRC::AutoPreferCpu:	{ return VMA_MEMORY_USAGE_AUTO_PREFER_HOST;  }		break;
+		case SRC::AutoPreferGpu:	{ return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;  }	break;
 
-		case SRC::GpuToCpu:	{ return VMA_MEMORY_USAGE_GPU_TO_CPU;  }	break;
-		case SRC::GpuOnly:	{ return VMA_MEMORY_USAGE_GPU_ONLY;  }		break;
+		case SRC::CpuToGpu:			{ return VMA_MEMORY_USAGE_CPU_TO_GPU;  }	break;
+		case SRC::CpuOnly:			{ return VMA_MEMORY_USAGE_CPU_ONLY;  }		break;
+
+		case SRC::GpuToCpu:			{ return VMA_MEMORY_USAGE_GPU_TO_CPU;  }	break;
+		case SRC::GpuOnly:			{ return VMA_MEMORY_USAGE_GPU_ONLY;  }		break;
 	}
 	RDS_CORE_ASSERT(false, "unsupported memory usage");
 	return VmaMemoryUsage::VMA_MEMORY_USAGE_UNKNOWN;
@@ -162,8 +169,8 @@ Vk_Allocator::toAllocFlags(RenderAllocFlags v)
 	using DST = VmaAllocationCreateFlagBits;
 	VmaAllocationCreateFlags flags = {};
 
-	if (BitUtil::has(v, SRC::HostWrite))	{ flags |= DST::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT; }
-	if (BitUtil::has(v, SRC::CreateMapped))	{ flags |= DST::VMA_ALLOCATION_CREATE_MAPPED_BIT; }
+	if (BitUtil::has(v, SRC::HostWrite))		{ flags |= DST::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT; }
+	if (BitUtil::has(v, SRC::PersistentMapped))	{ flags |= DST::VMA_ALLOCATION_CREATE_MAPPED_BIT; }
 
 	return flags;
 }

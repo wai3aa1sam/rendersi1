@@ -255,7 +255,7 @@ public:
 			_testRenderGraph.dump();
 		}
 
-		JobSystem::instance()->setSingleThreadMode(true);
+		JobSystem::instance()->setSingleThreadMode(false);
 
 		#if 1
 		{
@@ -287,7 +287,7 @@ public:
 	virtual void onUpdate() override
 	{
 		//_testMultiThreadDrawCalls.execute();
-		//uploadTestMultiBuf();
+		uploadTestMultiBuf();
 	}
 
 	virtual void onRender() override
@@ -318,7 +318,7 @@ public:
 			
 			#if 1
 
-			drawCall->setSubMesh(&_rdMesh1.subMesh());
+			drawCall->setSubMesh(&_rdMesh2.subMesh());
 
 			#else
 
@@ -396,10 +396,7 @@ public:
 
 		#endif // 0
 
-		{
-			static bool isShowDemoWnd = true;
-			ImGui::ShowDemoWindow();
-		}
+		ImGui::ShowDemoWindow();
 
 		rdCtx.drawUI(_rdReq);
 

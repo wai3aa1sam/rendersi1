@@ -207,6 +207,13 @@ TransferContext_Vk::uploadToStagingBuf(u32& outStagingIdx, ByteSpan data, SizeTy
 }
 
 void 
+TransferContext_Vk::uploadToStagingBuf(StagingHandle& outHnd, ByteSpan data, SizeType offset)
+{
+	RDS_CORE_ASSERT(offset == 0, "not yet supported");
+	vkTransferFrame().uploadToStagingBuf(outHnd, data, offset);
+}
+
+void 
 TransferContext_Vk::_setDebugName()
 {
 	RDS_VK_SET_DEBUG_NAME(_vkGraphicsQueue);
@@ -232,21 +239,25 @@ TransferContext_Vk::onTransferCommand_UploadBuffer	(TransferCommand_UploadBuffer
 {
 	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::UploadBuffer, "");
 	RDS_CORE_ASSERT(cmd->dst, "RenderGpuBuffer_vk is nullptr");
+	RDS_CORE_ASSERT(cmd->offset == 0, "not yet supported");
 
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");
 	vkTransferFrame()._hasTransferedGraphicsResoures = true;
 
+	cmd->_stagingHnd.checkValid();
+
 	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
 	auto* dstBufHnd		= dstBuf->vkBufHnd();
-	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
+	//auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
+	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingHnd);
 
 	RDS_CORE_ASSERT(dstBuf && dstBufHnd && statingBufHnd, "buffer is nullptr");
 
 	const auto size = Util::toVkDeviceSize(cmd->data.size());
 	RDS_CORE_ASSERT(size > 0 && size <= cmd->dst->bufSize(), "overflow");
 
-	auto* vkCmdBuf		= _curVkCmdBuf;
-	vkCmdBuf->cmd_copyBuffer(dstBufHnd, statingBufHnd, size, 0, 0);
+	auto* vkCmdBuf = _curVkCmdBuf;
+	vkCmdBuf->cmd_copyBuffer(dstBufHnd, statingBufHnd, size, 0, cmd->_stagingHnd.offset);
 }
 
 void 
@@ -259,15 +270,18 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");
 	vkTransferFrame()._hasTransferedGraphicsResoures = true;
 
+	cmd->_stagingHnd.checkValid();
+
 	auto* vkCmdBuf		= _curVkCmdBuf;
-	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
+	//auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
+	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingHnd);
 
 	auto*			dst			= Vk_Texture::getImageHnd(cmd->dst);
 	const auto&		size		= cmd->dst->size();
 	auto			vkFormat	= Util::toVkFormat(cmd->dst->format());
 
 	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	vkCmdBuf->cmd_copyBufferToImage		(dst, statingBufHnd,	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, size.x, size.y);
+	vkCmdBuf->cmd_copyBufferToImage		(dst, statingBufHnd,	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, size.x, size.y, cmd->_stagingHnd.offset);
 	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), graphicsQueueFamilyIdx(), true);
 }
 

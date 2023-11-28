@@ -14,9 +14,11 @@ namespace rds
 
 struct Vk_AllocInfo
 {
-	RenderMemoryUsage		usage			= RenderMemoryUsage::None;
+	RenderMemoryUsage		usage			= RenderMemoryUsage::Auto;
 	RenderAllocFlags		flags			= RenderAllocFlags::None;
 	VkMemoryPropertyFlags	vkMemPropFlags	= {};
+
+	void* outMappedData = nullptr;
 };
 
 class Vk_Allocator : public NonCopyable
@@ -32,10 +34,10 @@ public:
 	void create(Vk_Device_T* vkDev, Vk_PhysicalDevice_T* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks);
 	void destroy();
 
-	VkResult	allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	VkResult	allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void		freeBuf	(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd);
 
-	VkResult	allocImage	(Vk_Image_T** outImg, Vk_AllocHnd* allocHnd, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	VkResult	allocImage	(Vk_Image_T** outImg, Vk_AllocHnd* allocHnd, const VkImageCreateInfo* imageInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void		freeImage	(Vk_Image_T* vkImg, Vk_AllocHnd* allocHnd);
 
 

@@ -45,14 +45,18 @@ RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 
 	RDS_TODO("if it is const buf, no need staging");
 
+	Vk_AllocInfo allocInfo = {};
+
 	VkBufferUsageFlags usageFlags = Util::toVkBufferUsage(cDesc.typeFlags);
 	if (cDesc.typeFlags != RenderGpuBufferTypeFlags::Const)
 	{
 		usageFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	}
+	else
+	{
+		allocInfo.flags |= RenderAllocFlags::HostWrite;
+	}
 	
-	Vk_AllocInfo allocInfo = {};
-	allocInfo.usage  = RenderMemoryUsage::GpuOnly;
 	_vkBuf.create(rdDevVk, vkAlloc, &allocInfo, targetSize
 				, usageFlags
 				, QueueTypeFlags::Graphics);
@@ -90,7 +94,8 @@ RenderGpuBuffer_Vk::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 	}
 	else
 	{
-		transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, cmd->data);
+		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, cmd->data);
+		//transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, cmd->data);
 	}
 }
 

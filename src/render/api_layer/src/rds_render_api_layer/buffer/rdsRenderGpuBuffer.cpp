@@ -74,7 +74,7 @@ RenderGpuBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 void 
 RenderGpuBuffer::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 {
-	RDS_CORE_ASSERT(cmd->data.size() > 0 && cmd->data.size() <= bufSize(), "");
+	RDS_CORE_ASSERT(!cmd || cmd->data.size() > 0 && cmd->data.size() <= bufSize(), "");
 
 	//ByteSpan bs = ByteSpan{data.data() + offset, data.size() - offset};
 	//QueueTypeFlags typeFlags = QueueTypeFlags::Graphics | QueueTypeFlags::Transfer;

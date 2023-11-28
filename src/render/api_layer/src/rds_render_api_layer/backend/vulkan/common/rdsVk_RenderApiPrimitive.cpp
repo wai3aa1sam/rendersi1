@@ -222,7 +222,7 @@ Vk_Queue::destroy()
 #if 1
 
 void 
-Vk_Image::create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
+Vk_Image::create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	_internal_setAlloc(vkAlloc);
 	auto ret = vkAlloc->allocImage(hndForInit(), &_allocHnd, imageInfo, allocInfo, vkMemPropFlags);
@@ -708,7 +708,7 @@ void Vk_ScopedMemMapBuf::unmap()
 #if 1
 
 void 
-Vk_Buffer::create(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
+Vk_Buffer::create(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	_internal_setAlloc(alloc);
 	auto ret = alloc->allocBuf(hndForInit(), &_allocHnd, bufferInfo, allocInfo, vkMemPropFlags);

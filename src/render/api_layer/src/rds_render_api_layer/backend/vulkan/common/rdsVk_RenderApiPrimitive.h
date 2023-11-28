@@ -402,7 +402,7 @@ public:
 	Vk_Image		(Vk_Image&& rhs) noexcept { move(rds::move(rhs)); }
 	void operator=	(Vk_Image&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
-	void create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create(Vk_Image_T* vkImage);
 
@@ -709,7 +709,7 @@ public:
 	Vk_Buffer		(Vk_Buffer&& rhs) noexcept { move(rds::move(rhs)); }
 	void operator=	(Vk_Buffer&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
-	void create	(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, const Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create	(Vk_Allocator* alloc, const VkBufferCreateInfo* bufferInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create	(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkDeviceSize size, VkBufferUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void destroy();
 

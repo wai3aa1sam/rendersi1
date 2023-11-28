@@ -62,7 +62,7 @@ void
 RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 {
 	RDS_TODO("upload to first buffer instead of create a new");
-
+	
 	transferRequest().uploadBuffer(nextBuffer(data.size() - offset), data, offset, this);
 	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
 	//onUploadToGpu(data, offset);
@@ -104,16 +104,24 @@ RenderGpuMultiBuffer::nextBuffer(SizeType bufSize)
 	auto nextIdx = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
 	if (_renderGpuBuffers.size() < s_kFrameInFlightCount)
 	{
-		auto newCDesc = makeCDesc();
-		newCDesc.typeFlags	= desc().typeFlags;
-		newCDesc.stride		= desc().stride;
-		newCDesc.bufSize	= bufSize;
-		_renderGpuBuffers.emplace_back(RenderGpuBuffer::make(newCDesc));
+		_renderGpuBuffers.emplace_back(_makeNewBuffer(bufSize));
+	}
+	else if (_renderGpuBuffers[nextIdx]->bufSize() < bufSize)
+	{
+		_renderGpuBuffers[nextIdx] = _makeNewBuffer(bufSize);
 	}
 	return _renderGpuBuffers[nextIdx];
 }
 
-
+SPtr<RenderGpuBuffer> 
+RenderGpuMultiBuffer::_makeNewBuffer(SizeType bufSize)
+{
+	auto newCDesc = makeCDesc();
+	newCDesc.typeFlags	= desc().typeFlags;
+	newCDesc.stride		= desc().stride;
+	newCDesc.bufSize	= bufSize;
+	return RenderGpuBuffer::make(newCDesc);
+}
 
 #endif
 

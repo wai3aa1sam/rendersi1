@@ -68,7 +68,8 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 	const auto& srcImage	= cDesc.uploadImage();
 	const auto& imageSize	= size();
 
-	transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, srcImage.data());
+	//transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, srcImage.data());
+	transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
 
 	_vkSampler.create(cDesc.samplerState, rdDevVk);
 

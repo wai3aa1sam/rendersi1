@@ -53,8 +53,8 @@ RenderUiContext::destroy()
 	ImGui::DestroyContext(_ctx);
 	_ctx = nullptr;
 
-	_vertexBuffer.reset(nullptr);
-	 _indexBuffer.reset(nullptr);
+	_vtxBuf.reset(nullptr);
+	_idxBuf.reset(nullptr);
 	_material.reset(nullptr);
 	_shader.reset(nullptr);
 
@@ -127,20 +127,20 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 	auto totalVertexDataSize = data->TotalVtxCount * vertexSize;
 	auto totalIndexDataSize  = data->TotalIdxCount * indexSize;
 
-	if (!_vertexBuffer || _vertexBuffer->bufSize() < totalVertexDataSize) 
+	if (!_vtxBuf || _vtxBuf->bufSize() < totalVertexDataSize) 
 	{
 		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 		desc.bufSize	= totalVertexDataSize;
-		_vertexBuffer = rdDev->createRenderGpuBuffer(desc);
+		_vtxBuf = rdDev->createRenderGpuMultiBuffer(desc);
 	}
 
-	if (!_indexBuffer || _indexBuffer->bufSize() < totalIndexDataSize) 
+	if (!_idxBuf || _idxBuf->bufSize() < totalIndexDataSize) 
 	{
 		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
 		desc.bufSize	= totalIndexDataSize;
-		_indexBuffer = rdDev->createRenderGpuBuffer(desc);
+		_idxBuf = rdDev->createRenderGpuMultiBuffer(desc);
 	}
 
 	auto scissorRectScope = req.scissorRectScope();
@@ -186,12 +186,12 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 				cmd->renderPrimitiveType	= RenderPrimitiveType::Triangle;
 
 				cmd->vertexLayout			= _vertexLayout;
-				cmd->vertexBuffer			= _vertexBuffer;
+				cmd->vertexBuffer			= _vtxBuf->renderGpuBuffer();
 				cmd->vertexOffset			= (vertexStart + srcBuf.VtxOffset) * vertexSize;
 				cmd->vertexCount			= 0;
 
 				cmd->indexType				= RenderDataTypeUtil::get<ImDrawIdx>();
-				cmd->indexBuffer			= _indexBuffer;
+				cmd->indexBuffer			= _idxBuf->renderGpuBuffer();
 				cmd->indexOffset			= (indexStart + srcBuf.IdxOffset) * indexSize;
 				cmd->indexCount				= srcBuf.ElemCount;
 			}
@@ -200,11 +200,11 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 			indexStart  += srcCmd->IdxBuffer.Size;
 
 			_vertexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->VtxBuffer.Data), srcCmd->VtxBuffer.Size * vertexSize));
-			 _indexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->IdxBuffer.Data), srcCmd->IdxBuffer.Size * indexSize ));
+			_indexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->IdxBuffer.Data), srcCmd->IdxBuffer.Size * indexSize ));
 		}
 
-		_vertexBuffer->uploadToGpu(_vertexData);
-		_indexBuffer->uploadToGpu(_indexData);
+		_vtxBuf->uploadToGpu(_vertexData);
+		_idxBuf->uploadToGpu(_indexData);
 	}
 }
 

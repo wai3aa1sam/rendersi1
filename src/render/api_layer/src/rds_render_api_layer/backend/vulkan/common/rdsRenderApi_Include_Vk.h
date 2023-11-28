@@ -35,7 +35,7 @@ RDS_DISABLE_ALL_WARNINGS();
 		#define VMA_DEBUG_MARGIN 16
 		#define VMA_DEBUG_DETECT_CORRUPTION 1
 
-		// enable debug log
+		// enable debug log, but need modify src code, maybe pull request
 		//#define VMA_DEBUG_LOG_FORMAT
 
 		// useless

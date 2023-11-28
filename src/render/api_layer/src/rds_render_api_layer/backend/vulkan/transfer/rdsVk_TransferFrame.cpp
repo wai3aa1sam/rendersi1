@@ -42,6 +42,7 @@ Vk_TransferFrame::create(TransferContext_Vk* tsfCtxVk)
 
 	// thread-safe
 	_stagingAlloc.create(rdDevVk);
+	_linearStagingBuf.create(rdDevVk);
 
 	_setDebugName();
 }
@@ -58,10 +59,10 @@ Vk_TransferFrame::destroy()
 
 	_stagingAlloc.destroy();
 
-	 _inFlightVkFnc.destroy(rdDevVk);
+	_inFlightVkFnc.destroy(rdDevVk);
 	_completedVkSmp.destroy(rdDevVk);
 
-	 _graphicsInFlightVkFnc.destroy(rdDevVk);
+	_graphicsInFlightVkFnc.destroy(rdDevVk);
 	_graphicsCompletedVkSmp.destroy(rdDevVk);
 }
 
@@ -73,8 +74,14 @@ Vk_TransferFrame::clear()
 		lockedData->clear();
 	}
 
+	_linearStagingBuf.reset();
+
 	_hasTransferedGraphicsResoures	= false;
 	_hasTransferedComputeResoures	= false;
+
+	auto* rdDevVk = renderDeviceVk();
+	_graphicsVkCmdPool.reset(rdDevVk);
+	_transferVkCmdPool.reset(rdDevVk);
 }
 
 Vk_Buffer* 
@@ -99,6 +106,21 @@ Vk_TransferFrame::requestStagingBuffer(u32& outIdx, VkDeviceSize size, RenderDev
 	return staging;
 }
 
+void
+Vk_TransferFrame::requestStagingHandle(StagingHandle& out, VkDeviceSize size)
+{
+	out = _linearStagingBuf.alloc(size);
+}
+
+void 
+Vk_TransferFrame::uploadToStagingBuf(StagingHandle& out, ByteSpan data, SizeType offset)
+{
+	VkDeviceSize bytes = sCast<VkDeviceSize>(data.size());
+	requestStagingHandle(out, bytes);
+	auto* dst = _linearStagingBuf.mappedData<u8*>(out);
+	memory_copy(dst, data.data(), bytes);
+}
+
 Vk_Buffer_T* 
 Vk_TransferFrame::getVkStagingBufHnd(u32 idx)
 {
@@ -107,6 +129,12 @@ Vk_TransferFrame::getVkStagingBufHnd(u32 idx)
 
 	RDS_CORE_ASSERT(idx < stagingBufs.size(), "invalid vk staging buffer index");
 	return stagingBufs[idx]->hnd();
+}
+
+Vk_Buffer_T* 
+Vk_TransferFrame::getVkStagingBufHnd(StagingHandle hnd)
+{
+	return _linearStagingBuf.vkStagingBufHnd(hnd);
 }
 
 void 
