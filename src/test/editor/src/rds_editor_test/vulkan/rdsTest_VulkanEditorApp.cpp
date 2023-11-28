@@ -366,8 +366,9 @@ public:
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
 			_testMaterial->setParam("texture0", _uvCheckerTex);
 
-			//u32 iFrame = Renderer::rdDev()->iFrame();
-			//iFrame % 2 == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
+			u32 iFrame = Renderer::rdDev()->iFrame(); RDS_UNUSED(iFrame); // iFrame % RenderApiLayerTraits::s_kFrameInFlightCount == 0 
+			iFrame % RenderApiLayerTraits::s_kFrameInFlightCount == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
+			
 			#if 0
 			static int i = 0;
 			if (/*Renderer::rdDev()->iFrame() != 0 && */i >= 0 /*&& i < 100*/ /*&& i % 50 == 0*/)

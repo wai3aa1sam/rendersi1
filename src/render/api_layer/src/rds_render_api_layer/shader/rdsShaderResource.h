@@ -92,6 +92,8 @@ public:
 
 	void clear();
 
+	bool isDirty() const { return _isDirty; }
+
 	struct ConstBuffer : public ShaderResource<ShaderStageInfo::ConstBuffer>
 	{
 	public:
@@ -149,7 +151,8 @@ public:
 	public:
 		void create(const Info* info, ShaderPass* pass);
 
-		template<class TEX> void setTexure(TEX* v);
+		/* if set success, return true, means it is dirty */
+		template<class TEX> bool setTexure(TEX* v);
 
 								Texture*	getUpdatedTexture (RenderDevice* rdDev);
 		template<class TEX_T>	TEX_T*		getUpdatedTextureT(RenderDevice* rdDev);
@@ -202,6 +205,8 @@ protected:
 	Vector<ConstBuffer,		s_kLocalConstBufSize>	_constBufs;
 	Vector<TexParam,		s_kLocalTextureSize>	_texParams;
 	Vector<SamplerParam,	s_kLocalTextureSize>	_samplerParams;
+
+	bool _isDirty = false;
 };
 
 template<class T> inline
@@ -223,13 +228,14 @@ ShaderResources::setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
 		bool isSame = name.compare(e.info().name) == 0;
 		if (!isSame)
 			continue;
-		e.setTexure(v);
+		_isDirty |= e.setTexure(v);
 		if (isAutoSetSampler)
 		{
 			TempString temp;
 			_getAutoSetSamplerNameTo(temp, name);
 			setSamplerParam(temp, v->samplerState());
 		}
+
 	}
 }
 
@@ -310,7 +316,7 @@ inline const	u8*	ShaderResources::ConstBuffer::data() const	{ return _cpuBuf.dat
 #if 1
 
 template<class TEX> inline
-void 
+bool 
 ShaderResources::TexParam::setTexure(TEX* v)
 {
 	if (!v) RDS_CORE_ASSERT(false, "texure == nullptr");
@@ -321,7 +327,15 @@ ShaderResources::TexParam::setTexure(TEX* v)
 		_tex.reset(nullptr);
 		RDS_THROW("shader texture type not match");
 	}
-	_tex.reset(v);
+
+	bool isSame = _tex == v;
+	if (!isSame)
+	{
+		_tex.reset(v);
+	}
+
+	bool isDirty = !isSame || !isValid;
+	return isDirty;
 }
 
 template<class TEX_T> inline

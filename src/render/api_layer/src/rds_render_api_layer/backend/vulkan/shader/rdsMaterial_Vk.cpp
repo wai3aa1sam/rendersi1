@@ -495,7 +495,10 @@ public:
 		shaderRsc.uploadToGpu();
 
 		auto& vkDescSet = vkDescriptorSet(stage, mtl);
-		if (!vkDescSet)
+
+		RDS_TODO("temporary solution for binding, also, DescriptorAllocator is leaking memory since the Vk_DescriptorSet (it's debugName) has not destroy?");
+
+		if (!vkDescSet || shaderRsc.isDirty())
 		{
 			auto&	descriptorAlloc	= ctx->vkRdFrame().descriptorAllocator();
 			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);

@@ -55,6 +55,8 @@ Vk_Allocator::create(Vk_Device_T* vkDev, Vk_PhysicalDevice_T* vkPhyDev, Vk_Insta
 void 
 Vk_Allocator::destroy()
 {
+	if (!_allocator)
+		return;
 	vmaDestroyAllocator(_allocator);
 	_allocator = nullptr;
 }
