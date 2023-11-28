@@ -74,11 +74,17 @@ void*
 DefaultAllocator::alloc(SizeType n, SizeType align, SizeType offset) 
 {
 	#if RDS_TEMPORARY_ALLOC_MODE
+	
+	#if !RDS_OVERRIDE_NEW_OP
+
 	NMSP_TODO("--- error");
 	NMSP_TODO("currently will crash when using nmsp_alloc in ShaderResources::ConstBuffer::_setValue");
 	NMSP_TODO("there is two temp solution to fix 1. use new u8[n], but those use NMSP_NEW eg. ::nmsp::Singleton will need to change too");
 	NMSP_TODO("2. use memory_copy instead of dereference the buf");
 	NMSP_TODO("--- end warning");
+
+	#endif // !RDS_OVERRIDE_NEW_OP
+
 	auto* p = ::nmsp::nmsp_alloc(n, align, offset);
 	RDS_PROFILE_ALLOC(p, rds::_alignTo(n, align));
 	return p;

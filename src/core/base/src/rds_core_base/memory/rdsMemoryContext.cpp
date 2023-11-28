@@ -83,3 +83,51 @@ MemoryContext::popAllocator()
 
 #endif
 }
+
+#if RDS_OVERRIDE_NEW_OP
+
+void*	operator new  (size_t size)
+{
+	void* p = RDS_ALLOC(size);
+	return p;
+}
+
+void*	operator new[](size_t size)
+{
+	void* p = RDS_ALLOC(size);
+	return p;
+}
+
+void*	operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
+{
+	void* p = RDS_ALLOC(size);
+	return p;
+}
+
+void*	operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
+{
+	void* p = RDS_ALLOC_ALIGNED(size, alignment);
+	return p;
+}
+
+void	operator delete  (void* ptr)					RDS_NOEXCEPT
+{
+	RDS_FREE(ptr);
+}
+
+void	operator delete  (void* ptr, std::size_t size)	RDS_NOEXCEPT
+{
+	RDS_FREE(ptr, size);
+}
+
+void	operator delete[](void* ptr)					RDS_NOEXCEPT
+{
+	RDS_FREE(ptr);
+}
+
+void	operator delete[](void* ptr, std::size_t size)	RDS_NOEXCEPT
+{
+	RDS_FREE(ptr, size);
+}
+
+#endif

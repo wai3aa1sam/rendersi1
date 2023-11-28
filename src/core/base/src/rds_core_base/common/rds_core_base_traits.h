@@ -44,3 +44,19 @@ using CoreBaseTraits = CoreBaseDefaultTraits_T;
 
 }
 
+#define RDS_OVERRIDE_NEW_OP 0
+#if RDS_OVERRIDE_NEW_OP
+
+#error("RDS_OVERRIDE_NEW_OP is not support right now")
+
+RDS_NODISCARD void*	operator new  (size_t size);
+RDS_NODISCARD void*	operator new[](size_t size);
+RDS_NODISCARD void*	operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
+RDS_NODISCARD void*	operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
+
+void	operator delete  (void* ptr)					NMSP_NOEXCEPT;
+void	operator delete  (void* ptr, std::size_t size)	NMSP_NOEXCEPT;
+void	operator delete[](void* ptr)					NMSP_NOEXCEPT;
+void	operator delete[](void* ptr, std::size_t size)	NMSP_NOEXCEPT;
+
+#endif // NMSP_OVERRIDE_NEW

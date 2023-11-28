@@ -105,7 +105,7 @@ public:
 	void destroy() 
 	{  
 		_hnd = VK_NULL_HANDLE;
-		#if RDS_DEVELOPMENT
+		#if RDS_VK_ENABLE_DEBUG_NAME
 		_debugName.clear();
 		#endif
 	}
@@ -113,7 +113,7 @@ public:
 	void setDebugName(StrView name, RenderDevice_Vk* rdDevVk)
 	{
 		RDS_CORE_ASSERT(hnd(), "VkObjectType: {}, setDebugName, hnd == nullptr", enumInt(VK_OBJ_T));
-		#if RDS_DEVELOPMENT
+		#if RDS_VK_ENABLE_DEBUG_NAME
 		_debugName = name;
 		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), vkObjectType(), _debugName, hnd());
 		#endif // RDS_DEVELOPMENT
@@ -131,7 +131,7 @@ public:
 
 	const char* debugName() const
 	{
-		#if RDS_DEBUG || RDS_DEVELOPMENT
+		#if RDS_VK_ENABLE_DEBUG_NAME
 		return _debugName.c_str();
 		#else
 		return nullptr;
@@ -144,7 +144,7 @@ protected:
 		_hnd = rhs._hnd; 
 		rhs._hnd = VK_NULL_HANDLE;
 
-		#if RDS_DEVELOPMENT
+		#if RDS_VK_ENABLE_DEBUG_NAME
 		_debugName = rds::move(rhs._debugName);
 		#endif
 	}
@@ -152,7 +152,7 @@ protected:
 protected:
 	T*		_hnd = VK_NULL_HANDLE;
 
-	#if RDS_DEVELOPMENT
+	#if RDS_VK_ENABLE_DEBUG_NAME
 	String	_debugName;
 	#endif
 };

@@ -318,7 +318,7 @@ public:
 			
 			#if 1
 
-			drawCall->setSubMesh(&_rdMesh2.subMesh());
+			drawCall->setSubMesh(&_rdMesh1.subMesh());
 
 			#else
 
@@ -366,8 +366,8 @@ public:
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
 			_testMaterial->setParam("texture0", _uvCheckerTex);
 
-			u32 iFrame = Renderer::rdDev()->iFrame(); RDS_UNUSED(iFrame); // iFrame % RenderApiLayerTraits::s_kFrameInFlightCount == 0 
-			iFrame % RenderApiLayerTraits::s_kFrameInFlightCount == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
+			//u32 iFrame = Renderer::rdDev()->iFrame(); RDS_UNUSED(iFrame); // iFrame % RenderApiLayerTraits::s_kFrameInFlightCount == 0 
+			//iFrame % RenderApiLayerTraits::s_kFrameInFlightCount == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
 			
 			#if 0
 			static int i = 0;

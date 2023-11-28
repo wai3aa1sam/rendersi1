@@ -18,22 +18,22 @@ git pull
 
 call bootstrap-vcpkg.bat
 
-vcpkg install fmt:x64-windows                       --recurse
-vcpkg install benchmark:x64-windows                 --recurse
-vcpkg install tracy:x64-windows                     --recurse
-vcpkg install eastl:x64-windows                     --recurse
-vcpkg install concurrentqueue:x64-windows           --recurse 
-vcpkg install spdlog:x64-windows                    --recurse
-vcpkg install glm:x64-windows                       --recurse
-vcpkg install libpng:x64-windows 			        --recurse
-vcpkg install stb:x64-windows 				        --recurse
-vcpkg install nlohmann-json:x64-windows 	        --recurse
-vcpkg install vulkan-memory-allocator:x64-windows 	--recurse
-vcpkg install spirv-cross:x64-windows 	            --recurse
-vcpkg install shaderc:x64-windows 	                --recurse
-vcpkg install directx-dxc:x64-windows 	            --recurse
-vcpkg install directx-headers:x64-windows 	        --recurse
-vcpkg install imgui:x64-windows 					--recurse
+vcpkg install fmt:x64-windows                       	--recurse
+vcpkg install benchmark:x64-windows                 	--recurse
+vcpkg install tracy:x64-windows                     	--recurse
+vcpkg install eastl:x64-windows                     	--recurse
+vcpkg install concurrentqueue:x64-windows           	--recurse 
+vcpkg install spdlog:x64-windows                    	--recurse
+vcpkg install glm:x64-windows                       	--recurse
+vcpkg install libpng:x64-windows 			        	--recurse
+vcpkg install stb:x64-windows 				        	--recurse
+vcpkg install nlohmann-json:x64-windows 	        	--recurse
+vcpkg install vulkan-memory-allocator:x64-windows 		--recurse
+vcpkg install spirv-cross:x64-windows 	            	--recurse
+vcpkg install shaderc:x64-windows 	                	--recurse
+vcpkg install directx-dxc:x64-windows 	            	--recurse
+vcpkg install directx-headers:x64-windows 	        	--recurse
+vcpkg install imgui[docking-experimental]:x64-windows 	--recurse
 
 POPD
 

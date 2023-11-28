@@ -31,6 +31,8 @@ RenderUiContext::create(RenderContext* renderContext)
 	io.BackendRendererName		 = "RenderUiContext";
 	io.BackendFlags				|= ImGuiBackendFlags_RendererHasVtxOffset;
 	io.ConfigFlags				|= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags				|= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+	io.ConfigFlags				|= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
 
 	//_setDarkTheme();
 
@@ -98,8 +100,6 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 	if (data->TotalVtxCount <= 0 || data->TotalIdxCount <= 0)
 		return;
 
-	auto* rdDev = renderDevice();
-
 	{
 		float L = data->DisplayPos.x;
 		float R = data->DisplayPos.x + data->DisplaySize.x;
@@ -123,6 +123,8 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 	RDS_CORE_ASSERT(vertexSize == _vertexLayout->stride());
 	RDS_CORE_ASSERT(indexSize  == sizeof(u16));
+
+	auto* rdDev = renderDevice();
 
 	auto totalVertexDataSize = data->TotalVtxCount * vertexSize;
 	auto totalIndexDataSize  = data->TotalIdxCount * indexSize;
