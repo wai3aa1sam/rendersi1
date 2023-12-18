@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_traits.h"
+#include "rdsRenderDataType.h"
 
 namespace rds
 {
@@ -12,6 +13,7 @@ namespace rds
 
 struct RenderApiUtil
 {
+	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	static void createTempWindow(NativeUIWindow& out);
 
@@ -68,6 +70,14 @@ RDS_ENUM_ALL_OPERATOR(RenderAllocFlags);
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(RenderPrimitiveType, u8);
+
+#define RenderAccess_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(Read,) \
+	E(Write,) \
+	E(_kCount,) \
+//---
+RDS_ENUM_CLASS(RenderAccess, u8);
 
 }
 

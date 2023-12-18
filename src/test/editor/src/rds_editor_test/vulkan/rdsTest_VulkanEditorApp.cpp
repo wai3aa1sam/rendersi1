@@ -6,6 +6,8 @@
 #include "rdsTest_CRenderableSystem.h"
 #include "rdsTest_RenderGraph.h"
 
+#define RDS_TEST_RENDER_GRAPH 1
+
 namespace rds 
 {
 
@@ -248,12 +250,14 @@ public:
 		_testMultiThreadDrawCalls.createFixed(2);
 		#endif // 0
 
+		#if RDS_TEST_RENDER_GRAPH
 		{
-			_testRenderGraph._rdGraph.create("Test Render Graph", Renderer::rdDev(), &VulkanEditorApp::instance()->mainWin()->renderContext());
-			_testRenderGraph.setup();
-			_testRenderGraph.compile();
-			_testRenderGraph.dump();
+			_testRenderGraph.setup(&VulkanEditorApp::instance()->mainWin()->renderContext());
+			/*_testRenderGraph.compile();
+			_testRenderGraph.execute();
+			_testRenderGraph.dump();*/
 		}
+		#endif
 
 		JobSystem::instance()->setSingleThreadMode(false);
 
@@ -267,7 +271,7 @@ public:
 			_testMaterial->setShader(_testShader);
 
 			auto texCDesc = Texture2D::makeCDesc();
-			
+
 			texCDesc.create("asset/texture/uvChecker.png");
 			_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
 
@@ -288,6 +292,18 @@ public:
 	{
 		//_testMultiThreadDrawCalls.execute();
 		uploadTestMultiBuf();
+
+		#if RDS_TEST_RENDER_GRAPH
+		{
+			_testRenderGraph.compile();
+			_testRenderGraph.execute();
+			//_testRenderGraph.dump();
+
+			//RDS_CALL_ONCE(_testRenderGraph.compile());
+			//RDS_CALL_ONCE(_testRenderGraph.execute());
+		}
+		#endif
+
 	}
 
 	virtual void onRender() override
@@ -308,6 +324,7 @@ public:
 
 		rdCtx.setFramebufferSize(mainWin->clientRect().size);
 		rdCtx.beginRender();
+
 
 		_rdReq.reset(&rdCtx);
 		_rdReq.clearFramebuffers(Color4f{0.7f, 0.5f, 1.0f, 1.0f}, 1.0f);
@@ -397,7 +414,12 @@ public:
 
 		#endif // 0
 
-		ImGui::ShowDemoWindow();
+		{
+			RDS_TODO("wrap imgui instead of directly using it");
+			#if RDS_RENDER_ENABLE_UI
+			ImGui::ShowDemoWindow();
+			#endif // RDS_RENDER_ENABLE_UI
+		}
 
 		rdCtx.drawUI(_rdReq);
 
@@ -405,6 +427,11 @@ public:
 
 		RDS_TODO("drawUI will upload vertex, maybe defer the upload");
 		tsfReq.commit();
+
+		#if RDS_TEST_RENDER_GRAPH
+		//RDS_CALL_ONCE(_testRenderGraph.commit());
+		_testRenderGraph.commit();
+		#endif // RDS_TEST_RENDER_GRAPH
 
 		rdCtx.commit(_rdReq.renderCommandBuffer());
 		rdCtx.endRender();

@@ -2,7 +2,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rdsVk_RenderFrame.h"
-
+#include "pass/rdsVk_FramebufferPool.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -35,7 +35,7 @@ struct Vk_Swapchain_CreateDesc
 {
 	RenderContext_Vk*	rdCtx	= nullptr;
 	NativeUIWindow*		wnd		= nullptr;
-	math::Rect2f		framebufferRect2f;
+	Rect2f				framebufferRect2f;
 	Vk_RenderPass*		vkRdPass;
 
 	/*
@@ -67,7 +67,7 @@ public:
 	Vk_Swapchain();
 	~Vk_Swapchain();
 
-	void create	(const CreateDesc& cDesc); // RenderContext_Vk* rdCtx, const math::Rect2f& framebufferSize, Vk_RenderPass* vkRdPass, NativeUIWindow* wnd
+	void create	(const CreateDesc& cDesc); // RenderContext_Vk* rdCtx, const Rect2f& framebufferSize, Vk_RenderPass* vkRdPass, NativeUIWindow* wnd
 	void destroy(NativeUIWindow* wnd);
 
 	VkResult acquireNextImage(Vk_Semaphore* signalSmp);
@@ -82,15 +82,15 @@ public:
 	VkFormat colorFormat() const;
 	VkFormat depthFormat() const;
 	
-	const math::Rect2f&	framebufferRect2f()		const;
-	Vec2f				framebufferSize()		const;
-	VkExtent2D			framebufferVkExtent2D() const;
+	const Rect2f&	framebufferRect2f()		const;
+	Vec2f			framebufferSize()		const;
+	VkExtent2D		framebufferVkExtent2D() const;
 
 protected:
-	void createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvailableInfo& info, const math::Rect2f& framebufferSize
+	void createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvailableInfo& info, const Rect2f& framebufferSize
 								, VkFormat colorFormat, VkColorSpaceKHR colorSpace, VkFormat depthFormat);
 
-	void createSwapchain(const math::Rect2f& framebufferSize, Vk_RenderPass* vkRdPass);
+	void createSwapchain(const Rect2f& framebufferSize, Vk_RenderPass* vkRdPass);
 	void destroySwapchain();
 
 	void createSwapchainFramebuffers(Vk_RenderPass* vkRdPass);
@@ -134,7 +134,7 @@ inline VkFormat Vk_Swapchain::colorFormat() const { return _swapchainInfo.surfac
 inline VkFormat Vk_Swapchain::depthFormat() const { return _swapchainInfo.depthFormat; }
 
 
-inline const math::Rect2f&	Vk_Swapchain::framebufferRect2f()		const { return info().rect2f; }
+inline const Rect2f&		Vk_Swapchain::framebufferRect2f()		const { return info().rect2f; }
 inline Vec2f				Vk_Swapchain::framebufferSize()			const { return Vec2f{ info().rect2f.w, info().rect2f.h }; }
 
 inline VkExtent2D			Vk_Swapchain::framebufferVkExtent2D()	const { return Util::toVkExtent2D(framebufferRect2f()); }

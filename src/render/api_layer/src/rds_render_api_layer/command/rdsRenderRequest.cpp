@@ -21,9 +21,9 @@ RenderRequest::~RenderRequest()
  void 
  RenderRequest::reset(RenderContext* rdCtx)
  {
-	 _renderCmdBuf.clear();
+	 _rdCmdBuf.reset();
 	 _rdCtx = rdCtx;
-	 _renderCmdBuf.setScissorRect(math::Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
+	 _rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
  }
 
 void 
@@ -59,7 +59,7 @@ RenderCommand_ClearFramebuffers*
 RenderRequest::clearFramebuffers(const Color4f& color)
 {
 	auto* p = clearFramebuffers();
-	p->clearColor = color;
+	p->color = color;
 	return p;
 }
 
@@ -67,7 +67,7 @@ RenderCommand_ClearFramebuffers*
 RenderRequest::clearFramebuffers(const Color4f& color, float depth, u32 stencil)
 {
 	auto* p = clearFramebuffers(color);
-	p->clearDepthStencil = makePair(depth, stencil);
+	p->depthStencil = makePair(depth, stencil);
 	return p;
 }
 

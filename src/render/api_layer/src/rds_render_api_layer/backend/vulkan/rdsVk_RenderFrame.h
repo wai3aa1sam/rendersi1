@@ -37,7 +37,7 @@ public:
 	void create	(RenderContext_Vk* rdCtxVk);
 	void destroy();
 
-	void clear();
+	void reset();
 
 						Vk_CommandBuffer*	requestCommandBuffer	(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 	template<size_t N>	void				requestCommandBuffersTo	(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
@@ -73,14 +73,14 @@ protected:
 	Vector<Vk_CommandPool, s_kThreadCount> _computeCommandPools;
 	Vector<Vk_CommandPool, s_kThreadCount> _transferCommandPools;
 
-	Vk_DescriptorAllocator _descriptorAlloc;
-
-	//Vector<Vk_DescriptorPool, s_kThreadCount> // use VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, only reset the pool
-
 	// maybe put back on RenderContext_Vk
 	Vk_Semaphore	_imageAvailableVkSmp;
 	Vk_Semaphore	_renderCompletedVkSmp;
 	Vk_Fence		_inFlightVkFence;
+
+
+	Vk_DescriptorAllocator _descriptorAlloc;
+	//Vector<Vk_DescriptorPool, s_kThreadCount> // use VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, only reset the pool
 };
 
 template<size_t N> inline

@@ -102,8 +102,8 @@ RenderDevice::nextFrame()
 {
 	_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
 
-	renderFrame().clear();
-	transferFrame().clear();
+	renderFrame().reset();
+	transferFrame().reset();
 	_tsfReq.reset(_tsfCtx);
 
 	onNextFrame();

@@ -18,11 +18,11 @@ RenderCommandBuffer::RenderCommandBuffer()
 
 RenderCommandBuffer::~RenderCommandBuffer()
 {
-	clear();
+	reset();
 }
 
 void 
-RenderCommandBuffer::clear()
+RenderCommandBuffer::reset()
 {
 	for (auto& cmd : _commands)
 	{
@@ -30,6 +30,8 @@ RenderCommandBuffer::clear()
 	}
 	_commands.clear();
 	_alloc.clear();
+
+	_clearFramebufCmd.reset();
 }
 
 void* 
@@ -42,7 +44,7 @@ RenderCommandBuffer::alloc(SizeType n, SizeType align)
 
 
 void 
-RenderCommandBuffer::setScissorRect(const math::Rect2f& rect) 
+RenderCommandBuffer::setScissorRect(const Rect2f& rect) 
 {
 	_scissorRect = rect;
 	auto* cmd = newCommand<RenderCommand_SetScissorRect>();

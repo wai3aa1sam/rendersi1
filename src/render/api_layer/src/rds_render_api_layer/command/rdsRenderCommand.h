@@ -67,19 +67,23 @@ public:
 	using This = RenderCommand_ClearFramebuffers;
 
 public:
-	Opt<Color4f>				clearColor;
-	Opt<Pair<float, u32> >		clearDepthStencil;
+	Opt<Color4f>				color;
+	Opt<Pair<float, u32> >		depthStencil;
 
 public:
 	RenderCommand_ClearFramebuffers() : Base(Type::ClearFramebuffers) {}
 	virtual ~RenderCommand_ClearFramebuffers() {};
 
-	This& setClearColor			(const Color4f& color)			{ clearColor = color; return *this; }
-	This& setClearDepth			(float depth)					{ clearDepthStencil.value() = {};  clearDepthStencil.value().first	= depth;	return *this; }
-	This& setClearDepthStencil	(float depth, u32 stencil)		{ auto& ret = setClearDepth(depth);clearDepthStencil.value().second = stencil;	return ret; }
+	This& setClearColor			(const Color4f& color_)			{ color.emplace(color_);	return *this; }
+	This& setClearDepth			(float depth)					{ depthStencil.emplace();	depthStencil.value().first	= depth;			return *this; }
+	This& setClearDepthStencil	(float depth, u32 stencil)		{ auto& ret = setClearDepth(depth);	depthStencil.value().second = stencil;	return ret; }
 
-	This& dontClearColor() { clearColor.reset(); }
-	This& dontClearDepth() { clearDepthStencil.reset(); }
+	This& dontClearColor() { color.reset(); }
+	This& dontClearDepth() { depthStencil.reset(); }
+
+	void reset() { color.reset(); depthStencil.reset(); }
+
+	bool isValid() const { return color.has_value() || depthStencil.has_value(); }
 };
 
 class RenderCommand_SwapBuffers : public RenderCommand
@@ -135,7 +139,7 @@ public:
 	using This = RenderCommand_SetScissorRect;
 
 public:
-	math::Rect2f rect;
+	Rect2f rect;
 
 public:
 	RenderCommand_SetScissorRect() : Base(Type::SetScissorRect) {}
@@ -225,19 +229,19 @@ public:
 	RenderCommandBuffer(RenderCommandBuffer&&)	{ throwIf(true, ""); };
 	void operator=(RenderCommandBuffer&&)		{ throwIf(true, ""); };
 
-	void clear();
+	void reset();
 
 	RenderCommand_ClearFramebuffers*	clearFramebuffers();
 	RenderCommand_SwapBuffers*			swapBuffers();
 	RenderCommand_DrawCall*				addDrawCall();
 
-	void setScissorRect(const math::Rect2f& rect);
+	void setScissorRect(const Rect2f& rect);
 
 	Span<RenderCommand*> commands();
 
-	const math::Rect2f& scissorRect() const;
+	const Rect2f& scissorRect() const;
 
-	const RenderCommand_ClearFramebuffers* getClearFramebuffersCmd() const;
+	const RenderCommand_ClearFramebuffers* getClearValue() const;
 
 private:
 	template<class CMD> CMD* newCommand();
@@ -246,9 +250,9 @@ private:
 private:
 	LinearAllocator							_alloc;
 	Vector<RenderCommand*, s_kLocalSize>	_commands;
-	RenderCommand_ClearFramebuffers*		_clearFramebuffersCmd = nullptr;
+	RenderCommand_ClearFramebuffers			_clearFramebufCmd;
 	
-	math::Rect2f	_scissorRect	= {};
+	Rect2f	_scissorRect	= {};
 };
 
 template<class CMD> inline
@@ -261,15 +265,15 @@ RenderCommandBuffer::newCommand()
 	return cmd;
 }
 
-inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ _clearFramebuffersCmd = newCommand<RenderCommand_ClearFramebuffers>(); return _clearFramebuffersCmd; }
+inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
 inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()			{ return newCommand<RenderCommand_SwapBuffers>(); }
 inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()			{ return newCommand<RenderCommand_DrawCall>(); }
 
 inline Span<RenderCommand*> RenderCommandBuffer::commands() { return _commands.span(); }
 
-inline const math::Rect2f&	RenderCommandBuffer::scissorRect() const { return _scissorRect; }
+inline const Rect2f&	RenderCommandBuffer::scissorRect() const { return _scissorRect; }
 
-inline const RenderCommand_ClearFramebuffers* RenderCommandBuffer::getClearFramebuffersCmd() const { return _clearFramebuffersCmd; }
+inline const RenderCommand_ClearFramebuffers* RenderCommandBuffer::getClearValue() const { return _clearFramebufCmd.isValid() ? &_clearFramebufCmd : nullptr; }
 
 
 #endif
@@ -297,7 +301,7 @@ public:
 	{
 		for (auto& e : _renderCmdBufs)
 		{
-			e->clear();
+			e->reset();
 		}
 		_activeRenderCmdBufCoumt = 0;
 	}
@@ -354,7 +358,7 @@ public:
 
 private:
 	RenderCommandBuffer* _cmdBuf = nullptr;
-	math::Rect2f _rect;
+	Rect2f _rect;
 };
 #endif // 1
 

@@ -29,5 +29,7 @@ using f32	= ::nmsp::f32;
 using f64	= ::nmsp::f64;
 using f128	= ::nmsp::f128;
 
+using iptr	= ::nmsp::iptr;
+
 }
 #endif

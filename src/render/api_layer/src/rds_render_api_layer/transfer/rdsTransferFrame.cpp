@@ -28,11 +28,11 @@ TransferFrame::create()
 void 
 TransferFrame::destroy()
 {
-	clear();
+	reset();
 }
 
 void 
-TransferFrame::clear()
+TransferFrame::reset()
 {
 	_cmdBuf.clear();
 	_uploadBufCmds.clear();

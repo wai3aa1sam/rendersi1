@@ -26,13 +26,13 @@ namespace rds
 #endif
 #if 1
 
-using ::nmsp::Less		;
-using ::nmsp::EqualTo	;
-using ::nmsp::StrLess	;
+template<class T> struct Less			: public ::nmsp::Less<T> {};
+template<class T> struct EqualTo		: public ::nmsp::EqualTo<T> {};
+template<class T> struct StrLess		: public ::nmsp::StrLess<T> {};
 
-using ::nmsp::Plus;
+template<class T = void> struct Plus	: public ::nmsp::Plus<T> {};
 
-using ::nmsp::Hash;
+template<class T> struct Hash			: public ::nmsp::Hash<T> {};
 
 using ::nmsp::invoke;
 
@@ -55,6 +55,7 @@ using ::nmsp::memory_set;
 #if 1
 
 using ::nmsp::find_if;
+using ::nmsp::reverse;
 
 #endif
 
@@ -96,12 +97,13 @@ using TempStringW	= TempStringW_T<DefaultAllocator>;
 #pragma mark --- rds_stl_set_and_map-Impl ---
 #endif // 0
 #if 1
-template<class KEY, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>	using Set = ::nmsp::Set_T<KEY, PRED, ALLOC>;
+template<class KEY, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>								using Set		= ::nmsp::Set_T<KEY, PRED, ALLOC>;
+template<class KEY, class HASH = Hash<KEY>, class PRED = EqualTo<KEY>, class ALLOC = DefaultAllocator>	using UnordSet	= ::nmsp::UnorderedSet_T<KEY, HASH, PRED, ALLOC>;
 
-template<class KEY, class VALUE, class PRED = Less<KEY>, class ALLOC = DefaultAllocator> using Map			= ::nmsp::Map_T<KEY, VALUE, PRED, ALLOC>;
-template<class KEY, class VALUE, class PRED = Less<KEY>, class ALLOC = DefaultAllocator> using UnorderedMap = ::nmsp::UnorderedMap_T<KEY, VALUE, PRED, ALLOC>;
-template<class KEY, class VALUE, class PRED = Less<KEY>, class ALLOC = DefaultAllocator> using VectorMap	= ::nmsp::VectorMap_T<KEY, VALUE, PRED, ALLOC>;
-template<class VALUE, class PRED = StrLess<const char*>, class ALLOC = DefaultAllocator> using StringMap	= ::nmsp::StringMap_Impl<VALUE, PRED, ALLOC>;
+template<class KEY, class VALUE, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>								using Map		= ::nmsp::Map_T<KEY, VALUE, PRED, ALLOC>;
+template<class KEY, class VALUE, class HASH = Hash<KEY>, class PRED  = EqualTo<KEY>, class ALLOC = DefaultAllocator>	using UnordMap	= ::nmsp::UnorderedMap_T<KEY, VALUE, HASH, PRED, ALLOC>;
+template<class KEY, class VALUE, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>								using VectorMap	= ::nmsp::VectorMap_T<KEY, VALUE, PRED, ALLOC>;
+template<class VALUE, class PRED = StrLess<const char*>, class ALLOC = DefaultAllocator>								using StringMap	= ::nmsp::StringMap_T<VALUE, PRED, ALLOC>;
 
 #endif
 

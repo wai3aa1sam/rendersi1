@@ -80,7 +80,7 @@ class	Texture2D_Vk;
 class	Vk_Buffer;
 
 #if 0
-#pragma mark --- rdsRenderApiPrmivitive_Vk-Decl ---
+#pragma mark --- rdsVk_RenderApiPrimitive-Decl ---
 #endif // 0
 #if 1
 
@@ -160,7 +160,7 @@ protected:
 #endif
 
 #if 0
-
+#pragma mark --- rdsVk_AllocableRenderApiPrimitive-Decl ---
 #endif // 0
 #if 1
 
@@ -223,7 +223,6 @@ template<class T, VkObjectType VK_OBJ_T> inline Vk_Allocator*	Vk_AllocableRender
 
 #endif // 1
 
-
 #if 0
 #pragma mark --- rdsVk_RenderApiPrimitive-Decl ---
 #endif // 0
@@ -248,7 +247,6 @@ public:
 
 	void create(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
-
 };
 
 #endif
@@ -464,29 +462,6 @@ public:
 #endif
 
 #if 0
-#pragma mark --- rdsVk_Framebuffer-Decl ---
-#endif // 0
-#if 1
-
-class Vk_Framebuffer : public Vk_RenderApiPrimitive<Vk_Framebuffer_T, VK_OBJECT_TYPE_FRAMEBUFFER>
-{
-public:
-	using Base = Vk_RenderApiPrimitive<Vk_Framebuffer_T, VK_OBJECT_TYPE_FRAMEBUFFER>;
-
-public:
-	Vk_Framebuffer()	= default;
-	~Vk_Framebuffer()	= default;
-
-	Vk_Framebuffer(Vk_Framebuffer&&)	{ throwIf(true, ""); }
-	void operator=(Vk_Framebuffer&&)	{ throwIf(true, ""); }
-
-	void create	(const VkFramebufferCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
-	void destroy(RenderDevice_Vk* rdDevVk);
-};
-
-#endif
-
-#if 0
 #pragma mark --- rdsVk_ShaderModule-Decl ---
 #endif // 0
 #if 1
@@ -506,30 +481,6 @@ public:
 	void create	(StrView filename, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 };
-
-#endif
-
-#if 0
-#pragma mark --- rdsVk_RenderPass-Decl ---
-#endif // 0
-#if 1
-
-class Vk_RenderPass : public Vk_RenderApiPrimitive<Vk_RenderPass_T, VK_OBJECT_TYPE_RENDER_PASS>
-{
-public:
-	using Base = Vk_RenderApiPrimitive<Vk_RenderPass_T, VK_OBJECT_TYPE_RENDER_PASS>;
-
-public:
-	Vk_RenderPass()		= default;
-	~Vk_RenderPass()	= default;
-
-	Vk_RenderPass	(Vk_RenderPass&&) { throwIf(true, ""); }
-	void operator=	(Vk_RenderPass&&) { throwIf(true, ""); }
-
-	void create	(const VkRenderPassCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
-	void destroy(RenderDevice_Vk* rdDevVk);
-};
-
 
 #endif
 

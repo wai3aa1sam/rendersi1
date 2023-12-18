@@ -19,6 +19,9 @@ struct Vk_PixelShaderStage;
 
 class RenderContext_Vk;
 
+class Vk_RenderPass;
+class Vk_Framebuffer;
+
 using Vk_FramedDescSets = Vector<Vk_DescriptorSet, RenderApiLayerTraits::s_kFrameInFlightCount>;
 
 struct MaterialStage_Helper;

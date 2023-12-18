@@ -72,7 +72,8 @@ public:
 #endif // 0
 #if 1
 
-#define TextureUsage_ENUM_LIST(E) \
+// TextureUsageFlags
+#define TextureFlags_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(ShaderResource,) \
 	E(UnorderedAccess,) \
@@ -80,22 +81,46 @@ public:
 	E(DepthStencil,) \
 	E(_kCount,) \
 //---
-RDS_ENUM_CLASS(TextureUsage, u8);
+RDS_ENUM_CLASS(TextureFlags, u8);
+RDS_ENUM_ALL_OPERATOR(TextureFlags);
 
+//struct Texture_DescData
+//{
+//	TextureFlags	flag			= TextureFlags::ShaderResource;
+//	ColorType		format			= ColorType::RGBAb;
+//	SamplerState	samplerState;
+//	Tuple3u			size			= {};
+//	u8				mipCount		= 1;
+//	u8				sampleCount		= 1;
+//};
+//
 
+//struct Texture_Desc_Base : public RenderResource_CreateDesc
+
+struct Texture_Desc;
 struct Texture_CreateDesc : public RenderResource_CreateDesc
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	TextureUsage	usage			= TextureUsage::ShaderResource;
+	TextureFlags	flag			= TextureFlags::ShaderResource;
 	ColorType		format			= ColorType::RGBAb;
 	SamplerState	samplerState;
+	Tuple3u			size			= {};
 	u8				mipCount		= 1;
+	u8				sampleCount		= 1;
+
+public:
+	Texture_CreateDesc() = default;
+	Texture_CreateDesc(const Texture_Desc& desc);
 
 protected:
 	void loadImage(const Image& uploadImage)
 	{
-		format = uploadImage.colorType();
+		if (uploadImage.isValidSize())
+		{
+			format	= uploadImage.colorType();
+			size.set(sCast<u32>(uploadImage.width()), sCast<u32>(uploadImage.height()), sCast<u32>(1));
+		}
 	}
 
 	void move(Texture_CreateDesc&& rhs)
@@ -108,19 +133,30 @@ struct Texture_Desc
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	TextureUsage	usage			= TextureUsage::ShaderResource;
+	TextureFlags	flag			= TextureFlags::ShaderResource;
 	ColorType		format			= ColorType::RGBAb;
 	SamplerState	samplerState;
+	Tuple3u			size			= {};
 	u8				mipCount		= 1;
+	u8				sampleCount		= 1;
 
 public:
 	Texture_Desc() = default;
 	Texture_Desc(const Texture_CreateDesc& cDesc)
-		: usage(cDesc.usage), format(cDesc.format), samplerState(cDesc.samplerState), mipCount(cDesc.mipCount)
+		: flag(cDesc.flag), format(cDesc.format), samplerState(cDesc.samplerState)
+		, size(cDesc.size), mipCount(cDesc.mipCount), sampleCount(cDesc.sampleCount)
 	{
 
 	}
 };
+
+inline
+Texture_CreateDesc::Texture_CreateDesc(const Texture_Desc& desc)
+	: flag(desc.flag), format(desc.format), samplerState(desc.samplerState)
+	, size(desc.size), mipCount(desc.mipCount), sampleCount(desc.sampleCount)
+{
+
+}
 
 struct Texture2D_CreateDesc : public Texture_CreateDesc
 {
@@ -136,61 +172,102 @@ public:
 public:
 	Texture2D_CreateDesc() = default;
 
+	Texture2D_CreateDesc(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
+	{
+		create(width, height, format_, mipCount_, flag_, sampleCount_);
+	}
+
+	Texture2D_CreateDesc(Tuple2u size, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
+		: Texture2D_CreateDesc(size.x, size.y, format_, mipCount_, flag_, sampleCount_)
+	{
+	}
+
+	Texture2D_CreateDesc(const Texture_Desc& desc)
+		: Base(desc)
+	{
+		_hasDataToUpload = false;
+	}
+
 	Texture2D_CreateDesc(Texture2D_CreateDesc&& rhs) { move(rds::move(rhs)); }
 	void operator=		(Texture2D_CreateDesc&& rhs) { RDS_CORE_ASSERT(this != &rhs, ""); move(rds::move(rhs)); }
 
 	void create(StrView filename)
 	{
 		_filename = filename;
+		_hasDataToUpload = true;
 	}
 
 	void create(Image&& uploadImage)
 	{
 		_uploadImage = rds::move(uploadImage);
+		_hasDataToUpload = true;
 	}
 
 	void create(const u8* data, ColorType format_, u32 width, u32 height)
 	{
 		format = format_;
-		_size.set(width, height);
+		size.set(width, height, sCast<u32>(1));
 		_uploadImage.create(format, width, height);
 		_uploadImage.copyToPixelData(ByteSpan(data, width * height * ColorUtil::pixelByteSize(format_)));
+
+		_hasDataToUpload = true;
 	}
 
-	const Image& uploadImage() const { return _uploadImage; }
+	void create(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
+	{
+		size.set(width, height, sCast<u32>(1));
+		format		= format_;
+		flag		= flag_;
+		mipCount	= sCast<u8>(mipCount_);
+		sampleCount = sCast<u8>(sampleCount_);
+
+		_hasDataToUpload = false;
+	}
+
+	const Image&	uploadImage()		const	{ return _uploadImage; }
+	bool			hasDataToUpload()	const	{ return _hasDataToUpload; }
 
 protected:
 	void loadImage()
 	{
-		RDS_CORE_ASSERT( !(
-						!(_filename.is_empty() && !_uploadImage.dataPtr()) 
-						&& (!_filename.is_empty() && _uploadImage.dataPtr())
-			), "Create Texture2D should use either filename or imageUpload, not both");
+		if (!hasDataToUpload())
+		{
+			//RDS_CORE_LOG("_uploadImage: {}, size: {}, filename: {}", _uploadImage.info().size, size, _filename);
+			return;
+		}
+		/*RDS_CORE_ASSERT( !(
+		!(_filename.is_empty() && !_uploadImage.dataPtr()) 
+		&& (!_filename.is_empty() && _uploadImage.dataPtr())
+		), "Create Texture2D should use either filename or imageUpload, not both");*/
+
 		if (!_filename.is_empty())
 		{
 			_uploadImage.load(_filename);
 		}
 		else if(_uploadImage.dataPtr())
 		{
+
 		}
+		//RDS_CORE_LOG("_uploadImage: {}, size: {}", _uploadImage.info().size, size);
 
 		Base::loadImage(_uploadImage);
-		_size = Vec2u::s_cast(_uploadImage.info().size).toTuple2();
 	}
 
 protected:
 	void move(Texture2D_CreateDesc&& rhs)
 	{
 		Base::move(rds::move(rhs));
-		_size			= rhs._size;
-		_uploadImage	= rds::move(rhs._uploadImage);
-		_filename		= rds::move(rhs._filename);
+		//_size				= rhs._size;
+		_uploadImage		= rds::move(rhs._uploadImage);
+		_filename			= rds::move(rhs._filename);
+		_hasDataToUpload	= rhs._hasDataToUpload;
 	}
 
 protected:
-	Tuple2u	_size = {0, 0};
+	//Tuple2u	_size = {0, 0};
 	Image	_uploadImage;
 	String	_filename;
+	bool	_hasDataToUpload : 1;
 };
 
 #endif
@@ -216,9 +293,9 @@ public:
 
 public:
 	RenderDataType		type()			const;
-	const Desc&			textureDesc()	const;
+	const Desc&			desc()			const;
 
-	TextureUsage		usage()			const;
+	TextureFlags		flag()			const;
 	ColorType			format()		const;
 	const SamplerState&	samplerState()	const;
 	u8					mipCount()		const;
@@ -233,12 +310,14 @@ protected:
 };
 
 inline RenderDataType				Texture::type()			const { return _type; }
-inline const Texture::Desc&			Texture::textureDesc()	const { return _desc; }
+inline const Texture::Desc&			Texture::desc()			const { return _desc; }
 
-inline TextureUsage					Texture::usage()		const { return textureDesc().usage; }
-inline ColorType					Texture::format()		const { return textureDesc().format; }
-inline const SamplerState&			Texture::samplerState()	const { return textureDesc().samplerState; }
-inline u8							Texture::mipCount()		const { return textureDesc().mipCount; }
+inline TextureFlags					Texture::flag()		const { return desc().flag; }
+inline ColorType					Texture::format()		const { return desc().format; }
+inline const SamplerState&			Texture::samplerState()	const { return desc().samplerState; }
+inline u8							Texture::mipCount()		const { return desc().mipCount; }
+
+inline Vec3u						Texture::size()			const { return desc().size; }
 
 #endif
 
@@ -260,7 +339,9 @@ public:
 	using This			= Texture2D;
 	using CreateDesc	= Texture2D_CreateDesc;
 	using TextureDesc	= Base::CreateDesc;
-	using Desc			= CreateDesc;
+	using Desc			= Base::Desc;
+
+	using Size			= Tuple2u;
 
 public:
 	static CreateDesc		makeCDesc();
@@ -275,7 +356,7 @@ public:
 
 	void _internal_uploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
 
-	const Vec2u& size() const;
+	Size size() const;
 
 protected:
 	virtual void onCreate		(CreateDesc& cDesc);
@@ -288,10 +369,10 @@ private:
 	void _create(CreateDesc& cDesc);
 
 protected:
-	Vec2u		_size;
+	//Size _size;
 };
 
-inline const Vec2u& Texture2D::size() const { return _size; }
+inline Texture2D::Size Texture2D::size() const { return Tuple2u{Base::size().x, Base::size().y}; }
 
 #endif
 

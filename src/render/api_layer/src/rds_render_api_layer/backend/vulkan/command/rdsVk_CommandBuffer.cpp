@@ -4,6 +4,9 @@
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/rdsVk_Swapchain.h"
 
+#include "rds_render_api_layer/backend/vulkan/pass/rdsVk_RenderPassPool.h"
+#include "rds_render_api_layer/backend/vulkan/pass/rdsVk_FramebufferPool.h"
+
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
@@ -54,9 +57,9 @@ Vk_CommandBuffer::destroy(RenderDevice_Vk* rdDevVk)
 }
 
 void 
-Vk_CommandBuffer::reset()
+Vk_CommandBuffer::reset(Vk_Queue* vkQueue)
 {
-	_vkQueue = nullptr;
+	_vkQueue = vkQueue;
 }
 
 void 
@@ -76,6 +79,13 @@ Vk_CommandBuffer::beginRecord(Vk_Queue* vkQueue, VkCommandBufferUsageFlags usage
 
 	auto ret = vkBeginCommandBuffer(hnd(), &beginInfo);
 	Util::throwIfError(ret);
+}
+
+void 
+Vk_CommandBuffer::beginRecord(VkCommandBufferUsageFlags usageFlags, const VkCommandBufferInheritanceInfo* inheriInfo)
+{
+	RDS_CORE_ASSERT(_vkQueue, "Vk_CommandBuffer has not reset to valid Vk_Queue yet");
+	beginRecord(_vkQueue, usageFlags, inheriInfo);
 }
 
 void 
@@ -224,7 +234,7 @@ Vk_CommandBuffer::swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachai
 }
 
 void 
-Vk_CommandBuffer::setViewport(const math::Rect2f& rect, float minDepth, float maxDepth)
+Vk_CommandBuffer::setViewport(const Rect2f& rect, float minDepth, float maxDepth)
 {
 	VkViewport viewport = {};
 	viewport.x			= rect.x;
@@ -237,7 +247,7 @@ Vk_CommandBuffer::setViewport(const math::Rect2f& rect, float minDepth, float ma
 }
 
 void 
-Vk_CommandBuffer::setScissor(const math::Rect2f& rect)
+Vk_CommandBuffer::setScissor(const Rect2f& rect)
 {
 	VkRect2D scissor = {};
 	scissor.offset = { sCast<int>(rect.x), sCast<int>(rect.y)};
@@ -245,16 +255,36 @@ Vk_CommandBuffer::setScissor(const math::Rect2f& rect)
 	vkCmdSetScissor(hnd(), 0, 1, &scissor);
 }
 
+//void 
+//Vk_CommandBuffer::beginRenderPass(Vk_RenderPass_T* vkRdPassHnd, Vk_Framebuffer_T* vkFramebufHnd, const Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents)
+//{
+//	throwIf(_vkRdPassHnd, "render pass already begin");
+//	_vkRdPassHnd = vkRdPassHnd;
+//
+//	VkRenderPassBeginInfo renderPassInfo = {};
+//	renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+//	renderPassInfo.renderPass			= vkRdPassHnd;
+//	renderPassInfo.framebuffer			= vkFramebufHnd;
+//	renderPassInfo.renderArea.offset	= Util::toVkOffset2D(rect2);
+//	renderPassInfo.renderArea.extent	= Util::toVkExtent2D(rect2);
+//	renderPassInfo.clearValueCount		= sCast<u32>(vkClearValues.size());
+//	renderPassInfo.pClearValues			= vkClearValues.data();	// for VK_ATTACHMENT_LOAD_OP_CLEAR flag
+//
+//	//VkSubpassContents subpassContents = _level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
+//	vkCmdBeginRenderPass(hnd(), &renderPassInfo, subpassContents);
+//}
+
 void 
-Vk_CommandBuffer::beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents)
+Vk_CommandBuffer::beginRenderPass(Vk_RenderPass* vkRdPass, Vk_Framebuffer* vkFramebuf, const Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents)
 {
+	RDS_CORE_ASSERT(vkRdPass && vkFramebuf, "");
 	throwIf(_vkRdPass, "render pass already begin");
-	_vkRdPass = vkRenderPass;
+	_vkRdPass = vkRdPass;
 
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass			= vkRenderPass->hnd();
-	renderPassInfo.framebuffer			= vkFramebuffer->hnd();
+	renderPassInfo.renderPass			= vkRdPass->hnd();
+	renderPassInfo.framebuffer			= vkFramebuf->hnd();
 	renderPassInfo.renderArea.offset	= Util::toVkOffset2D(rect2);
 	renderPassInfo.renderArea.extent	= Util::toVkExtent2D(rect2);
 	renderPassInfo.clearValueCount		= sCast<u32>(vkClearValues.size());
@@ -262,6 +292,8 @@ Vk_CommandBuffer::beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* v
 
 	//VkSubpassContents subpassContents = _level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 	vkCmdBeginRenderPass(hnd(), &renderPassInfo, subpassContents);
+
+	//beginRenderPass(vkRenderPass->hnd(), vkFramebuf->hnd(), rect2, vkClearValues, subpassContents);
 }
 
 void 
@@ -364,18 +396,23 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& de
 {
 	auto vkStageAcess = Util::toVkStageAccess(desc.srcLayout, desc.dstLayout);
 
-	if (desc.isSrcQueueOwner)
+	bool isTransferOwnership = desc.srcQueueFamilyIdx != VK_QUEUE_FAMILY_IGNORED || desc.dstQueueFamilyIdx != VK_QUEUE_FAMILY_IGNORED;
+	if (isTransferOwnership)
 	{
-		vkStageAcess.dstStage	= VkPipelineStageFlagBits::VK_PIPELINE_STAGE_NONE;
-		vkStageAcess.dstAccess	= VkAccessFlagBits::VK_ACCESS_NONE;
-	}
-	else
-	{
-		vkStageAcess.srcStage	= VkPipelineStageFlagBits::VK_PIPELINE_STAGE_NONE;
-		vkStageAcess.srcAccess	= VkAccessFlagBits::VK_ACCESS_NONE;
+		if (desc.isSrcQueueOwner)
+		{
+			vkStageAcess.dstStage	= VkPipelineStageFlagBits::VK_PIPELINE_STAGE_NONE;
+			vkStageAcess.dstAccess	= VkAccessFlagBits::VK_ACCESS_NONE;
+		}
+		else
+		{
+			vkStageAcess.srcStage	= VkPipelineStageFlagBits::VK_PIPELINE_STAGE_NONE;
+			vkStageAcess.srcAccess	= VkAccessFlagBits::VK_ACCESS_NONE;
+		}
 	}
 
-	VkImageAspectFlags aspectMask = desc.dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	
+	VkImageAspectFlags aspectMask = Util::isDepthFormat(desc.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 	if (Util::hasStencilComponent(desc.format)) 
 		aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
 

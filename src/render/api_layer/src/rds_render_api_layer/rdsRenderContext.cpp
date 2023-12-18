@@ -89,6 +89,12 @@ RenderContext::commit(RenderCommandBuffer& renderBuf)
 	onCommit(renderBuf);
 }
 
+void 
+RenderContext::commit(RenderGraph& rdGraph)
+{
+	onCommit(rdGraph);
+}
+
 void RenderContext::drawUI(RenderRequest& req)
 {
 	_rdUiCtx.onDrawUI(req);
@@ -134,6 +140,12 @@ RenderContext::onDestroy()
 
 void 
 RenderContext::onCommit(RenderCommandBuffer& renderBuf)
+{
+
+}
+
+void 
+RenderContext::onCommit(RenderGraph& rdGraph)
 {
 
 }

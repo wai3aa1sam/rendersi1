@@ -16,6 +16,7 @@ class	RenderCommandBuffer;
 class	RenderRequest;
 class	TransferCommandBuffer;
 class	TransferRequest;
+class	RenderGraph;
 
 struct RenderContext_CreateDesc : public RenderResource_CreateDesc
 {
@@ -44,6 +45,7 @@ public:
 	void endRender();
 
 	void commit(RenderCommandBuffer& renderCmdBuf);
+	void commit(RenderGraph& rdGraph);
 
 public:
 	void drawUI(RenderRequest& req);
@@ -67,7 +69,8 @@ protected:
 
 	virtual void onSetFramebufferSize(const Vec2f& newSize) {};
 
-	virtual void onCommit(RenderCommandBuffer& renderBuf);
+	virtual void onCommit(RenderCommandBuffer&	renderBuf);
+	virtual void onCommit(RenderGraph&			rdGraph);
 
 protected:
 	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd);

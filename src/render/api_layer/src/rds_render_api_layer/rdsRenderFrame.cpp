@@ -41,11 +41,11 @@ void RenderFrame::create()
 
 void RenderFrame::destroy()
 {
-	clear();
+	reset();
 }
 
 void 
-RenderFrame::clear()
+RenderFrame::reset()
 {
 	renderQueue().clear();
 
@@ -56,7 +56,7 @@ RenderFrame::clear()
 	}
 	for (auto& e : _renderCommandPool)
 	{
-		e->clear();
+		e->reset();
 		//e.clear();
 	}
 }
@@ -105,7 +105,7 @@ RenderFrameContext::rotate()
 	RDS_TODO("RenderFrameContext should belong to Renderer");
 
 	iFrame = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
-	renderFrame().clear();
+	renderFrame().reset();
 }
 
 #endif

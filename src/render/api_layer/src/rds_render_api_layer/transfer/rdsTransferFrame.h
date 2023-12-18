@@ -28,7 +28,7 @@ public:
 	void create();
 	void destroy();
 
-	void clear();
+	void reset();
 
 	TransferCommandBuffer* requestCommandBuffer();
 

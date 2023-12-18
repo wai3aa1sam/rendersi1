@@ -9,29 +9,35 @@ namespace rds
 #endif // 0
 #if 1
 
-RdgPass::RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlag typeFlag, RdgPassFlag flag)
+RdgPass::RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlag flag)
 {
 	_rdGraph	= rdGraph;
 	_name		= name;
 	_id			= id;
-	_typeFlag	= typeFlag;
+	_typeFlags	= typeFlag;
 	_flag		= _flag;
 
-	_isCulled	= false;
+	_isCulled		= false;
+	_isExecuted		= false;
+	_isCommitted	= false;
 }
 
 RdgPass::~RdgPass()
 {
 }
 
-void RdgPass::execute()
+void 
+RdgPass::execute()
 {
 	//RDS_ASSERT(_executeFunc, "setExecuteFunc");
 	if (!_executeFunc)
 	{
 		RDS_THROW("RenderGraphPass has not call setExecuteFunc()");
 	}
-	_executeFunc();
+	if (_isExecuted)
+		return;
+	_executeFunc(_rdReq);
+	_isExecuted = true;
 }
 
 void 
@@ -41,66 +47,100 @@ RdgPass::setExecuteFunc(ExecuteFunc&& func)
 }
 
 void 
-RdgPass::setRenderTarget(RdgTextureHnd hnd)
+RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp)
 {
-	RDS_CORE_ASSERT(BitUtil::has(_typeFlag, TypeFlag::Graphics));
-	accessResource(hnd, Access::Write);
+	RDS_CORE_ASSERT(BitUtil::has(_typeFlags, TypeFlag::Graphics));
+	//accessResource(hnd, Access::Write);
+	//RDS_CORE_ASSERT(!isDuplicatedHnd(_rdTargets[0].span(), hnd), "RenderPass: {} has repeated read resource {}", _name, hnd.name());
+	
+	RDS_TODO("check is unqiue");
+
+	auto& dst = _rdTargets.emplace_back();
+	dst.loadOp		= loadOp;
+	dst.storeOp		= storeOp;
+	dst.targetHnd	= hnd;
+
+	auto usage = Usage{ TextureFlags::RenderTarget };
+	accessResource(hnd, usage, Access::Write, true);
 }
 
-void 
-RdgPass::setRenderTarget(RdgTextureHndSpan hnds)
-{
-	accessResources(toHndSpan(hnds), Access::Write);
-}
+//void 
+//RdgPass::setRenderTarget(RdgTextureHndSpan hnds)
+//{
+//	//accessResources(toHndSpan(hnds), Access::Write);
+//
+//
+//}
 
 void 
-RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access)
+RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp)
 {
-	RDS_CORE_ASSERT(BitUtil::has(_typeFlag, TypeFlag::Graphics));
-	accessResource(hnd, access);
+	RDS_CORE_ASSERT(!_depthStencil, "depthStencil already set");
+	RDS_CORE_ASSERT(BitUtil::has(_typeFlags, TypeFlag::Graphics));
+	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureFlags::DepthStencil));
+
+	_depthStencil.loadOp		= depthLoadOp;
+	_depthStencil.stencilLoadOp = stencilLoadOp;
+	_depthStencil.targetHnd		= hnd;
+	_depthStencil.access		= access;
+	
+	auto usage = Usage{ TextureFlags::DepthStencil };
+	accessResource(hnd, usage, access, true);
 }
 
 void 
 RdgPass::readTexture(RdgTextureHnd	hnd)
 {
-	accessResource(hnd, Access::Read);
+	auto usage = Usage{ TextureFlags::ShaderResource };
+	accessResource(hnd, usage, Access::Read);
 }
 void 
 RdgPass::readTextures(RdgTextureHndSpan hnds)
 {
-	accessResources(toHndSpan(hnds), Access::Read);
+	auto usage = Usage{ TextureFlags::ShaderResource };
+	accessResources(toHndSpan(hnds), usage, Access::Read);
 }
 
 void RdgPass::writeTexture(RdgTextureHnd hnd)
 {
-	accessResource(hnd, Access::Write);
+	auto usage = Usage{ TextureFlags::UnorderedAccess };
+	accessResource(hnd, usage, Access::Write);
 }
 
 void RdgPass::writeTextures(RdgTextureHndSpan hnds)
 {
-	accessResources(toHndSpan(hnds), Access::Write);
+	auto usage = Usage{ TextureFlags::UnorderedAccess };
+	accessResources(toHndSpan(hnds), usage, Access::Write);
 }
 
 void 
-RdgPass::accessResources(RdgResourceHndSpan hnds, Access access)
+RdgPass::accessResources(RdgResourceHndSpan hnds, Usage usage, Access access, bool isRenderTarget)
 {
 	for (auto& e : hnds)
 	{
-		accessResource(e, access);
+		accessResource(e, usage, access, isRenderTarget);
 	}
 }
 
-void RdgPass::accessResource(RdgResourceHnd hnd, Access access)
+void 
+RdgPass::accessResource(RdgResourceHnd hnd, Usage usage, Access access, bool isRenderTarget)
 {
 	using SRC = Access;
 
-	auto* resource = hnd._p;
+	RDS_TODO("check unique resource");
 
-	auto doIfNotduplicatedPass = [resource, this](auto passes)
+	auto* rdgRsc = hnd._rdgRsc;
+
+	auto& rscAccess = _rscAccesses.emplace_back();
+	rscAccess.rsc				= rdgRsc;
+	rscAccess.state.dstUsage	= usage;
+	rscAccess.state.dstAccess	= access;
+
+	auto appendUniqueProducerTo = [this](auto& passes, RdgResource* rdgRsc)
 		{
-			for (auto& e : resource->producers())
+			for (auto& e : rdgRsc->producers())
 			{
-				if (!isDuplicatedPass(passes, e))
+				if (!isDuplicatedPass(passes, e) && e != this)
 				{
 					passes.emplace_back(e);
 				}
@@ -112,18 +152,33 @@ void RdgPass::accessResource(RdgResourceHnd hnd, Access access)
 		case SRC::Read:
 		{
 			RDS_CORE_ASSERT(!isDuplicatedHnd(_reads.span(), hnd), "RenderPass: {} has repeated read resource {}", _name, hnd.name());
-			//RDS_CORE_ASSERT(), "RenderPass: {} has repeated read resource {}", _name, hnd.name());
-			_reads.emplace_back(resource);
-			doIfNotduplicatedPass(_runBefore);
+
+			appendUniqueProducerTo(_runBefore, rdgRsc);
+			for (auto& e : rdgRsc->producers())
+			{
+				if (!isDuplicatedPass(e->runAfterThis(), this))
+				{
+					e->_runAfter.emplace_back(this);
+				}
+			}
+
+			_reads.emplace_back(rdgRsc);
 		} break;
 
 		case SRC::Write:
 		{
 			RDS_CORE_ASSERT(!isDuplicatedHnd(_writes.span(), hnd), "RenderPass: {} has repeated write resource {}", _name, hnd.name());
 
-			resource->addProducer(this);
-			_writes.emplace_back(resource);
-			doIfNotduplicatedPass(_runAfter);
+			for (auto& e : rdgRsc->producers())
+			{
+				if (!isDuplicatedPass(e->_runBefore, this))
+				{
+					e->_runBefore.emplace_back(this);
+				}
+			}
+
+			rdgRsc->addProducer(this);
+			_writes.emplace_back(rdgRsc);
 		} break;
 
 		default:
@@ -151,7 +206,8 @@ RdgPass::isDuplicatedHnd(Span<RdgResource*> dst, RdgResourceHnd src)
 	return it != dst.end();
 }
 
-bool RdgPass::isDuplicatedPass(Span<Pass*> dst, Pass* src)
+bool
+RdgPass::isDuplicatedPass(Span<Pass*> dst, Pass* src)
 {
 	auto it = find_if(dst.begin(), dst.end()
 		, [=](Pass* e)
@@ -161,7 +217,8 @@ bool RdgPass::isDuplicatedPass(Span<Pass*> dst, Pass* src)
 	return it != dst.end();
 }
 
-bool RdgPass::isDuplicatedPasses(Span<Pass*> dst, Span<Pass*> src)
+bool 
+RdgPass::isDuplicatedPasses(Span<Pass*> dst, Span<Pass*> src)
 {
 	for (auto& e : src)
 	{
@@ -171,6 +228,12 @@ bool RdgPass::isDuplicatedPasses(Span<Pass*> dst, Span<Pass*> src)
 		}
 	}
 	return false;
+}
+
+void 
+RdgPass::_internal_commit()
+{
+	_isCommitted = true;
 }
 
 

@@ -56,7 +56,10 @@ public:
 	static void drawSubMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, const Mat4f& transform = Mat4f::s_identity());
 
 	RDS_NODISCARD	RenderScissorRectScope	scissorRectScope();
-	RDS_INLINE		void					setScissorRect	(const math::Rect2f& rect);
+	RDS_INLINE		void					setScissorRect	(const Rect2f& rect);
+
+	Span<RenderCommand*>		commands();
+	const RenderCommandBuffer&	commandBuffer() const;
 
 public:
 	RenderCommand_SwapBuffers*	swapBuffers();
@@ -64,19 +67,21 @@ public:
 
 private:
 	RenderContext*		_rdCtx = nullptr;
-	RenderCommandBuffer _renderCmdBuf;		// render frame
+	RenderCommandBuffer _rdCmdBuf;		// render frame
 	//Vector<RenderCommandBuffer, s_kThreadCount>	_RenderCommandBuffers;
 };
 
-inline RenderCommandBuffer& RenderRequest::renderCommandBuffer() { return _renderCmdBuf; }
+inline RenderCommandBuffer& RenderRequest::renderCommandBuffer() { return _rdCmdBuf; }
 
 inline RenderCommand_ClearFramebuffers* RenderRequest::clearFramebuffers()	{ return renderCommandBuffer().clearFramebuffers(); }
 inline RenderCommand_SwapBuffers*		RenderRequest::swapBuffers()		{ return renderCommandBuffer().swapBuffers(); }
 inline RenderCommand_DrawCall*			RenderRequest::addDrawCall()		{ return renderCommandBuffer().addDrawCall(); }
 
 
-inline RenderScissorRectScope	RenderRequest::scissorRectScope()						{ return RenderScissorRectScope(&_renderCmdBuf); }
-inline void						RenderRequest::setScissorRect(const math::Rect2f& rect)	{ _renderCmdBuf.setScissorRect(rect); }
+inline RenderScissorRectScope		RenderRequest::scissorRectScope()						{ return RenderScissorRectScope(&_rdCmdBuf); }
+inline void							RenderRequest::setScissorRect(const Rect2f& rect)		{ _rdCmdBuf.setScissorRect(rect); }
+inline Span<RenderCommand*>			RenderRequest::commands()								{ return _rdCmdBuf.commands(); }
+inline const RenderCommandBuffer&	RenderRequest::commandBuffer() const					{ return _rdCmdBuf; }
 
 
 // inline

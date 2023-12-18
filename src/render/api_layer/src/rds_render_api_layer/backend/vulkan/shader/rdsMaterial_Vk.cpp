@@ -7,6 +7,8 @@
 #include "rds_render_api_layer/backend/vulkan/rdsRenderContext_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/command/rdsVk_CommandBuffer.h"
 
+#include "rds_render_api_layer/backend/vulkan/pass/rdsVk_RenderPassPool.h"
+
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
@@ -673,7 +675,7 @@ MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout)
 {
 	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
 	auto* vkCmdBuf	= vkCtx->graphicsVkCmdBuf();
-	auto* vkRdPass	= vkCmdBuf->getRenderPass();
+	auto* vkRdPass	= vkCmdBuf->getVkRenderPass();
 
 	throwIf(!vkRdPass, "no render pass");
 

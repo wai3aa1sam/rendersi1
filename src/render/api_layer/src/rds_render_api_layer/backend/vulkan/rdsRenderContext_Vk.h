@@ -4,22 +4,23 @@
 #include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
 
-#include "rdsVk_Swapchain.h"
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
 
 #include "rdsGpuProfilerContext_Vk.h"
 
 #include "rdsVk_Allocator.h"
-#include "rds_render_api_layer/mesh/rdsEditMesh.h"
-
-#include "command/rdsVk_CommandPool.h"
 #include "rdsVk_RenderFrame.h"
 
+#include "rdsVk_Swapchain.h"
+#include "pass/rdsVk_RenderPassPool.h"
+#include "pass/rdsVk_FramebufferPool.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
 {
+
+class Vk_RenderGraph;
 
 #if 0
 #pragma mark --- rdsRenderContext_Vk-Decl ---
@@ -28,6 +29,7 @@ namespace rds
 
 class RenderContext_Vk : public RenderResource_Vk<RenderContext>
 {
+	friend class Vk_RenderGraph;
 public:
 	using Base				= RenderResource_Vk<RenderContext>;
 	using Vk_RenderFrames	= Vector<Vk_RenderFrame, s_kFrameInFlightCount>;
@@ -66,6 +68,7 @@ protected:
 	virtual void onSetFramebufferSize(const Vec2f& newSize) override;
 
 	virtual void onCommit(RenderCommandBuffer& renderBuf) override;
+	virtual void onCommit(RenderGraph&			rdGraph)  override;
 
 	void test_extraDrawCall(RenderCommandBuffer& renderCmdBuf);
 
@@ -78,6 +81,8 @@ protected:
 	void endRenderPass	(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
 
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
+
+	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 
 	void _setDebugName();
 
@@ -98,6 +103,9 @@ protected:
 	Vk_CommandBuffer*	_curGraphicsVkCmdBuf = nullptr;
 
 	bool _shdSwapBuffers = false;
+
+	Vk_RenderPassPool	_vkRdPassPool;		// persistent
+	Vk_FramebufferPool	_vkFramebufPool;	// clear when invalidate swapchain
 };
 
 inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return &_vkGraphicsQueue; }

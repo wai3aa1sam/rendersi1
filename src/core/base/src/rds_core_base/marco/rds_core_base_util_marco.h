@@ -45,8 +45,8 @@
 #define RDS_CALL_ONCE(...) do { static RDS_UNIQUE_VAR(bool) = false; if (!RDS_UNIQUE_VAR_NAME(bool)) { __VA_ARGS__; RDS_UNIQUE_VAR_NAME(bool) = true; } } while(false)
 
 #if RDS_DEBUG || RDS_ENABLE_ASSERT
-	#define RDS_CORE_ASSERT(X, ...)	do{ if(!(X)) { _log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
-	#define RDS_ASSERT(X, ...)		do{ if(!(X)) { _log(__VA_ARGS__); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
+	#define RDS_CORE_ASSERT(X, ...)	do{ if(!(X)) { ::rds::_log("{} - [{}]", ::rds::SrcLoc(RDS_FILE, RDS_LINE, RDS_FUNC_NAME_SZ), ::rds::fmtAs_T<std::string>(__VA_ARGS__)); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
+	#define RDS_ASSERT(X, ...)		do{ if(!(X)) { ::rds::_log("{} - [{}]", ::rds::SrcLoc(RDS_FILE, RDS_LINE, RDS_FUNC_NAME_SZ), ::rds::fmtAs_T<std::string>(__VA_ARGS__)); RDS_DEBUG_BREAK(); assert(X);  } } while(false)
 #else
 	#define RDS_CORE_ASSERT(X, ...)
 	#define RDS_ASSERT(X, ...)	

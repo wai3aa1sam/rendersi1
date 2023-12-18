@@ -37,19 +37,6 @@ Texture::destroy()
 	Base::destroy();
 }
 
-
-Vec3u 
-Texture::size() const
-{
-	Vec3u o;
-	using SRC = RenderDataType;
-	switch (type())
-	{
-		case SRC::Texture2D: { o.set(sCast<const Texture2D*>(this)->size(), 1); return o; } break;
-		default: { RDS_THROW(""); } break;
-	}
-}
-
 #endif
 
 #if 0
@@ -84,7 +71,6 @@ Texture2D::create(CreateDesc& cDesc)
 {
 	destroy();
 
-	// _create(cDesc);
 	onCreate(cDesc);
 	onPostCreate(cDesc);
 }
@@ -114,7 +100,10 @@ void
 Texture2D::onCreate(CreateDesc& cDesc)
 {
 	_create(cDesc);
-	transferRequest().uploadTexture(this, rds::move(cDesc));
+	if (cDesc.hasDataToUpload())
+	{
+		transferRequest().uploadTexture(this, rds::move(cDesc));
+	}
 }
 
 void 
@@ -132,15 +121,19 @@ Texture2D::onDestroy()
 void 
 Texture2D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
+	RDS_CORE_ASSERT(cDesc.size.x > 0 && cDesc.size.y > 0, "cDesc.size.x > 0 && cDesc.size.y > 0 but cDesc.size=[{}], cDesc._filename: {}", cDesc.size, cDesc._filename);
 	_create(cDesc);
 }
 
 void 
 Texture2D::_create(CreateDesc& cDesc)
 {
-	//RDS_CORE_ASSERT(cDesc._size.x > 0 && cDesc._size.y > 0, "");
 	Base::create(cDesc);
-	_size = cDesc._size;
+
+	if (cDesc.hasDataToUpload())
+	{
+		//_desc.size.set(sCast<u32>(cDesc.uploadImage().width()), sCast<u32>(cDesc.uploadImage().height()), sCast<u32>(1));
+	}
 }
 
 #endif

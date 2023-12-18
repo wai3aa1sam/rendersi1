@@ -75,7 +75,7 @@ Vk_RenderFrame::destroy()
 }
 
 void 
-Vk_RenderFrame::clear()
+Vk_RenderFrame::reset()
 {
 	resetCommandPools();
 }

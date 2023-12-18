@@ -56,23 +56,22 @@ struct RenderAdapterInfo
 	Limit	limit;
 };
 
-
-#define RenderAttachmentLoadOp_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(Load,) \
-	E(Clear,) \
-	E(DontCare,) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(RenderAttachmentLoadOp, u8);
-
-#define RenderAttachmentStoreOp_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(Store,) \
-	E(DontCare,) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(RenderAttachmentStoreOp, u8);
+//#define RenderAttachmentLoadOp_ENUM_LIST(E) \
+//	E(None, = 0) \
+//	E(Load,) \
+//	E(Clear,) \
+//	E(DontCare,) \
+//	E(_kCount,) \
+////---
+//RDS_ENUM_CLASS(RenderAttachmentLoadOp, u8);
+//
+//#define RenderAttachmentStoreOp_ENUM_LIST(E) \
+//	E(None, = 0) \
+//	E(Store,) \
+//	E(DontCare,) \
+//	E(_kCount,) \
+////---
+//RDS_ENUM_CLASS(RenderAttachmentStoreOp, u8);
 
 
 #endif

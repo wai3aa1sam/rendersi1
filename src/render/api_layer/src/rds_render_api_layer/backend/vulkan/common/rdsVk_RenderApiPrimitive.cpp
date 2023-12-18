@@ -380,35 +380,6 @@ Vk_Sampler::destroy(RenderDevice_Vk* rdDevVk)
 #endif
 
 #if 0
-#pragma mark --- rdsVk_RenderApiPrimitive<Vk_Framebuffer>-Impl ---
-#endif // 0
-#if 1
-
-void 
-Vk_Framebuffer::create(const VkFramebufferCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
-{
-	auto* vkDev			= rdDevVk->vkDevice();
-	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
-
-	auto ret = vkCreateFramebuffer(vkDev, pCreateInfo, vkAllocCbs, hndForInit());
-	Util::throwIfError(ret);
-}
-
-void 
-Vk_Framebuffer::destroy(RenderDevice_Vk* rdDevVk)
-{
-	RDS_CORE_ASSERT(hnd(), "");
-
-	auto* vkDev			= rdDevVk->vkDevice();
-	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
-
-	vkDestroyFramebuffer(vkDev, hnd(), vkAllocCbs);
-	Base::destroy();
-}
-
-#endif
-
-#if 0
 #pragma mark --- rdsVk_ShaderModule-Impl ---
 #endif // 0
 #if 1
@@ -446,35 +417,6 @@ Vk_ShaderModule::destroy(RenderDevice_Vk* rdDevVk)
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	vkDestroyShaderModule(vkDev, hnd(), vkAllocCbs);
-	Base::destroy();
-}
-
-#endif
-
-#if 0
-#pragma mark --- rdsVk_RenderPass-Impl ---
-#endif // 0
-#if 1
-
-void 
-Vk_RenderPass::create(const VkRenderPassCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk)
-{
-	auto* vkDev			= rdDevVk->vkDevice();
-	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
-
-	auto ret = vkCreateRenderPass(vkDev, pCreateInfo, vkAllocCbs, hndForInit());
-	Util::throwIfError(ret);
-}
-
-void 
-Vk_RenderPass::destroy(RenderDevice_Vk* rdDevVk)
-{
-	RDS_CORE_ASSERT(hnd(), "");
-
-	auto* vkDev			= rdDevVk->vkDevice();
-	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
-
-	vkDestroyRenderPass(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
 }
 

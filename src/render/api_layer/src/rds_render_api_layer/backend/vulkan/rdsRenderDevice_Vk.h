@@ -7,6 +7,9 @@
 #include "rdsVk_RenderFrame.h" 
 #include "transfer/rdsTransferContext_Vk.h"
 
+#include "pass/rdsVk_RenderPassPool.h"
+#include "pass/rdsVk_FramebufferPool.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -91,6 +94,9 @@ private:
 	Vk_Device				_vkDevice;
 
 	TransferContext_Vk		_transferCtxVk;
+
+	Vk_FramebufferPool	_vkFramebufPool;
+	Vk_RenderPassPool	_vkRdPassPool;
 };
 
 #endif

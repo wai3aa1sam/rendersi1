@@ -30,6 +30,7 @@ protected:
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 
 protected:
+	void _createVkResource(const CreateDesc& cDesc);
 	void _setDebugName();
 
 protected:

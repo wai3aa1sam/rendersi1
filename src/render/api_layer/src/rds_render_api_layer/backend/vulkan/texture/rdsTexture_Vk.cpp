@@ -33,6 +33,10 @@ void
 Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
+	if (!cDesc.hasDataToUpload())
+	{
+		_createVkResource(cDesc);
+	}
 }
 
 void 
@@ -59,17 +63,29 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 {
 	RDS_TODO("defer destroy and create new, or multi buffer if if upload frequently, but texture should not upload frequently,");
 	destroy();
+	RDS_WARN_ONCE("destroy();");
 
 	Base::onUploadToGpu(cDesc, cmd);
 
-	auto* rdDevVk	= renderDeviceVk();
-	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
+	RDS_WARN_ONCE("Base::onUploadToGpu(cDesc, cmd);");
 
 	const auto& srcImage	= cDesc.uploadImage();
-	const auto& imageSize	= size();
+	if (!srcImage.data().is_empty())
+	{
+		//transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, srcImage.data());
+		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
+		RDS_WARN_ONCE("transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());");
+	}
 
-	//transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, srcImage.data());
-	transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
+	_createVkResource(cDesc);
+	RDS_WARN_ONCE("_createVkResource(cDesc);");
+}
+
+void 
+Texture2D_Vk::_createVkResource(const CreateDesc& cDesc)
+{
+	auto* rdDevVk	= renderDeviceVk();
+	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
 
 	_vkSampler.create(cDesc.samplerState, rdDevVk);
 
@@ -82,15 +98,24 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 		Vk_AllocInfo allocInfo = {};
 		allocInfo.usage = RenderMemoryUsage::GpuOnly;
 
+		VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+		if (BitUtil::has(flag(), TextureFlags::ShaderResource)) { usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT; }
+		if (BitUtil::has(flag(), TextureFlags::UnorderedAccess)){ usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT; }
+		if (BitUtil::has(flag(), TextureFlags::RenderTarget))	{ usageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; }
+		if (BitUtil::has(flag(), TextureFlags::DepthStencil))	{ usageFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT; }
+	
 		_vkImage.create(rdDevVk, vkAlloc, &allocInfo
-			, imageSize.x, imageSize.y
-			, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+			, size().x, size().y
+			, vkFormat, VK_IMAGE_TILING_OPTIMAL, usageFlags
 			, QueueTypeFlags::Graphics);
 	}
 
 	_vkImageView.create(this, rdDevVk);
+	RDS_WARN_ONCE("_vkImageView.create(this, rdDevVk);");
 
 	_setDebugName();
+	RDS_WARN_ONCE("_setDebugName();");
 }
 
 void 
@@ -100,6 +125,7 @@ Texture2D_Vk::_setDebugName()
 	RDS_VK_SET_DEBUG_NAME(_vkImage);
 	RDS_VK_SET_DEBUG_NAME(_vkImageView);
 }
+
 
 #endif
 
@@ -151,10 +177,7 @@ Vk_ImageView::create(Texture2D_Vk* tex2DVk, RenderDevice_Vk* rdDevVk)
 	throwIf(!tex2DVk->vkImageHnd(), "no VkImage while creating image view");
 
 	VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-	if (tex2DVk->usage() == TextureUsage::DepthStencil)
-	{
-		aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
-	}
+	if (BitUtil::has(tex2DVk->flag(), TextureFlags::DepthStencil)) { aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT; }
 
 	// when the format is SRGB, vulkan will convert it to linear when sampling
 	VkImageViewCreateInfo cInfo = {};

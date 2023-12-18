@@ -84,13 +84,15 @@ using Quat4u = Quat4<u32>;
 namespace math
 {
 
+
+
+}
+
 template<class T> using Rect2 = ::nmsp::math::Rect2_T<T>;
 using Rect2f = Rect2<f32>;
 using Rect2d = Rect2<f64>;
 using Rect2i = Rect2<int>;
 using Rect2u = Rect2<u32>;
-
-}
 
 
 #endif

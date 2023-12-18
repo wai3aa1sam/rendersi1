@@ -51,8 +51,10 @@ TransferContext::destroy()
 void 
 TransferContext::commit(TransferRequest& tsfReq)
 {
+	RDS_WARN_ONCE("Before waitUploadTextureCompleted()");
 	tsfReq.waitUploadTextureCompleted();
-	// tsfReq.waitUploadBufferCompleted();
+	RDS_WARN_ONCE("================");
+	//tsfReq.waitUploadBufferCompleted();
 	onCommit(tsfReq);
 }
 

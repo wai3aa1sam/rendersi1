@@ -107,6 +107,7 @@ void
 TransferRequest::commit()
 {
 	_tsfCtx->commit(*this);
+	RDS_WARN_ONCE("TransferRequest commit success");
 }
 
 void 
@@ -123,6 +124,7 @@ TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
 	throwIf(!OsTraits::isMainThread(), "transferFrame() is not thread safe");
 
 	RDS_TODO("put the logic to Texture.h");
+	RDS_TODO("all check funtion should have a dedicated function");
 
 	RDS_CORE_ASSERT( !(
 					 !(cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr()) 

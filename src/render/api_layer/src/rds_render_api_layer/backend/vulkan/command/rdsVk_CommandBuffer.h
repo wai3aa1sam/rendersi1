@@ -7,6 +7,7 @@ namespace rds
 {
 
 class RenderDevice_Vk;
+class Vk_Framebuffer;
 
 struct Vk_Cmd_AddImageMemBarrierDesc;
 
@@ -17,6 +18,7 @@ struct Vk_Cmd_AddImageMemBarrierDesc;
 
 class Vk_CommandPool;
 class Vk_Swapchain;
+class Vk_RenderPass;
 
 struct Vk_SmpSubmitInfo : public VkSemaphoreSubmitInfoKHR
 {
@@ -44,9 +46,10 @@ public:
 	void create	(Vk_CommandPool* vkCommandPool, VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 
-	void reset();
+	void reset(Vk_Queue* vkQueue = nullptr);
 
 	void beginRecord(Vk_Queue* vkQueue, VkCommandBufferUsageFlags usageFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, const VkCommandBufferInheritanceInfo* inheriInfo = nullptr);
+	void beginRecord(VkCommandBufferUsageFlags usageFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, const VkCommandBufferInheritanceInfo* inheriInfo = nullptr);
 	void beginSecondaryRecord(Vk_Queue* vkQueue, Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer
 							, u32 subpassIdx = 0, VkCommandBufferUsageFlags usageFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT);
 	void endRecord();
@@ -55,22 +58,27 @@ public:
 	void submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
 	void submit(Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
 	void submit();
+
+	static void submit(Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
+	static void submit(Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
+
 	void executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs);
 	void waitIdle();
 
 	VkResult swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachain, u32 imageIdx, Vk_Semaphore* vkWaitSmp);
 
-	void setViewport(const math::Rect2f& rect, float minDepth = 0.0f, float maxDepth = 1.0f);
-	void setScissor (const math::Rect2f& rect);
+	void setViewport(const Rect2f& rect, float minDepth = 0.0f, float maxDepth = 1.0f);
+	void setScissor (const Rect2f& rect);
 	
-	void beginRenderPass(Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents);
+	//void beginRenderPass(Vk_RenderPass_T* vkRdPassHnd, Vk_Framebuffer_T* vkFramebufHnd, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents);
+	void beginRenderPass(Vk_RenderPass*		 vkRdPass, Vk_Framebuffer*		vkFramebuf, const Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents);
 	void endRenderPass();
-
 
 	bool isPrimiary() const;
 	bool isSecondary() const;
-
-	Vk_RenderPass* getRenderPass();
+	
+	//Vk_RenderPass_T* getVkRenderPassHnd();
+	Vk_RenderPass* getVkRenderPass();
 
 public:
 	//RenderDevice_Vk*	renderDeviceVk();
@@ -103,7 +111,7 @@ inline bool Vk_CommandBuffer::isSecondary()	const { return _level == VK_COMMAND_
 
 
 
-inline Vk_RenderPass* Vk_CommandBuffer::getRenderPass() { return _vkRdPass; }
+inline Vk_RenderPass* Vk_CommandBuffer::getVkRenderPass() { return _vkRdPass; }
 
 #endif
 

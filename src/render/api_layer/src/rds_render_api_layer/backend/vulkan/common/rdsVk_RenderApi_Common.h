@@ -9,6 +9,9 @@
 #include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
 
+#include "rds_render_api_layer/pass/rdsRenderTarget.h"
+#include "rds_render_api_layer/command/rdsRenderCommand.h"
+
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -114,7 +117,7 @@ struct Vk_SwapchainInfo
 	VkFormat					depthFormat;
 	VkPresentModeKHR			presentMode;
 	//VkExtent2D					extent;
-	math::Rect2f				rect2f;
+	Rect2f						rect2f;
 };
 
 #endif
@@ -154,8 +157,6 @@ struct Vk_RenderApiUtil : public RenderApiUtil
 {
 public:
 	friend class RenderDevice_Vk;
-
-	using Rect2f = math::Rect2f;
 
 public:
 	using Base					= RenderApiUtil;
@@ -197,8 +198,10 @@ public:
 	static bool hasStencilComponent(VkFormat format);
 	static bool isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features, RenderDevice_Vk* rdDevVk);
 
-	static VkAttachmentLoadOp	toVkAttachmentLoadOp (RenderAttachmentLoadOp	v);
-	static VkAttachmentStoreOp	toVkAttachmentStoreOp(RenderAttachmentStoreOp	v);
+	static VkAttachmentLoadOp	toVkAttachmentLoadOp (RenderTargetLoadOp	v);
+	static VkAttachmentLoadOp	toVkAttachmentLoadOp (RenderTargetOp		v);
+	static VkAttachmentStoreOp	toVkAttachmentStoreOp(RenderTargetStoreOp	v);
+	static VkAttachmentStoreOp	toVkAttachmentStoreOp(RenderTargetOp		v);
 
 	static VkClearValue toVkClearValue(const Color4f& color);
 	static VkClearValue toVkClearValue(float depth, u32 stencil);
@@ -219,6 +222,11 @@ public:
 	static VkCompareOp			toVkCompareOp			(RenderState_DepthTestOp v);
 	static VkBlendFactor		toVkBlendFactor			(RenderState_BlendFactor v);
 	static VkBlendOp			toVkBlendOp				(RenderState_BlendOp v);
+
+	static VkImageLayout		toVkImageLayout(TextureFlags v);
+	static VkImageLayout		toVkImageLayout(TextureFlags v, RenderAccess access);
+
+	template<size_t N> static void getVkClearValuesTo(Vector<VkClearValue, N>& out, const RenderCommand_ClearFramebuffers* value, SizeType colorCount, bool hasDepth);
 	
 	/*template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n);
 	template<class T, size_t N> static void convertToVkPtrs(Vector<VkPtr<T>, N>& dst, const Vector<T*, N>& src);*/
@@ -236,9 +244,7 @@ public:
 	static Vk_Buffer*	toVkBuf		(const	RenderGpuBuffer* rdGpuBuf);
 
 	static Vk_Buffer_T*	toVkBufHnd	(		RenderGpuBuffer* rdGpuBuf);
-	static Vk_Buffer_T*	toVkBufHnd	(const RenderGpuBuffer* rdGpuBuf);
-
-
+	static Vk_Buffer_T*	toVkBufHnd	(const  RenderGpuBuffer* rdGpuBuf);
 
 	// for create vk objects
 public:
@@ -401,6 +407,33 @@ inline const Vector<VkExtensionProperties,	Vk_ExtensionInfo::s_kLocalSize>& Vk_E
 #endif // 0
 #if 1
 
+template<size_t N> inline
+void 
+Vk_RenderApiUtil::getVkClearValuesTo(Vector<VkClearValue, N>& out, const RenderCommand_ClearFramebuffers* value, SizeType colorCount, bool hasDepth)
+{
+	RDS_TODO("default clear values");
+	RenderCommand_ClearFramebuffers defaultValue;
+	defaultValue.color			= Color4f{ 0.1f, 0.1f, 0.1f, 1.0f };
+	defaultValue.depthStencil	= Pair<float, u32>{ { 1.0f }, { 0 } };
+
+	auto* clearValue = value ? value : &defaultValue;
+	RDS_CORE_ASSERT(clearValue, "");
+
+	out.clear();
+
+	for (SizeType i = 0; i < colorCount; i++)
+	{
+		auto& e = out.emplace_back();
+		e = toVkClearValue(clearValue->color.value());
+	}
+
+	if (hasDepth)
+	{
+		auto& e = out.emplace_back();
+		const auto& v = clearValue->depthStencil.value();
+		e = toVkClearValue(v.first, v.second);
+	}
+}
 //template<class T, size_t N> inline
 //void
 //Vk_RenderApiUtil::convertToVkPtrs(Vector<VkPtr<T>, N>& out, T** vkData, u32 n)
@@ -453,6 +486,7 @@ Vk_RenderApiUtil::convertToHnds(Vector<typename T::HndType, N>& dst, const Vecto
 {
 	convertToHnds(dst, src.span());
 }
+
 
 //template<size_t N> inline
 //void 

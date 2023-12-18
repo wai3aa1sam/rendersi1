@@ -117,7 +117,7 @@ Vk_RenderApiUtil::toVkExtent2D(const Vec2f& vec2)
 	return vkExtent;
 }
 
-Vk_RenderApiUtil::Rect2f
+Rect2f
 Vk_RenderApiUtil::toRect2f(const VkExtent2D& ext2d)
 {
 	return Rect2f{ 0, 0, sCast<float>(ext2d.width), sCast<float>(ext2d.height) };
@@ -219,6 +219,9 @@ Vk_RenderApiUtil::toVkFormat(ColorType v)
 		case SRC::RGBAs:	{ return VK_FORMAT_R16G16B16A16_UNORM;	} break;
 		case SRC::RGBAh:	{ return VK_FORMAT_R16G16B16A16_SFLOAT;	} break;
 		case SRC::RGBAf:	{ return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
+
+		case SRC::Depth:	{ return VK_FORMAT_D32_SFLOAT_S8_UINT;	} break;
+
 		default: { RDS_THROW("unsupport type {}", v); }	break;
 	}
 	//return VkFormat::VK_FORMAT_MAX_ENUM;
@@ -343,31 +346,61 @@ Vk_RenderApiUtil::isVkFormatSupport(VkFormat format, VkImageTiling tiling, VkFor
 }
 
 VkAttachmentLoadOp	
-Vk_RenderApiUtil::toVkAttachmentLoadOp (RenderAttachmentLoadOp loadOp)
+Vk_RenderApiUtil::toVkAttachmentLoadOp (RenderTargetLoadOp v)
 {
-	using SRC = RenderAttachmentLoadOp;
-	switch (loadOp)
+	using SRC = RenderTargetLoadOp;
+	switch (v)
 	{
 		case SRC::Load:		{ return VK_ATTACHMENT_LOAD_OP_LOAD; }		break;
 		case SRC::Clear:	{ return VK_ATTACHMENT_LOAD_OP_CLEAR; }		break;
 		case SRC::DontCare: { return VK_ATTACHMENT_LOAD_OP_DONT_CARE; } break;
-		//default:			{ throwError(""); } break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
-	return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
+	//return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
 }
 
 VkAttachmentStoreOp	
-Vk_RenderApiUtil::toVkAttachmentStoreOp(RenderAttachmentStoreOp storeOp)
+Vk_RenderApiUtil::toVkAttachmentStoreOp(RenderTargetStoreOp v)
 {
-	using SRC = RenderAttachmentStoreOp;
-	switch (storeOp)
+	using SRC = RenderTargetStoreOp;
+	switch (v)
 	{
-		case SRC::Store:	{ return VK_ATTACHMENT_STORE_OP_STORE; }	break;
-		case SRC::DontCare: { return VK_ATTACHMENT_STORE_OP_DONT_CARE; } break;
-		//default:			{ throwError(""); } break;
+		case SRC::None:		{ return VK_ATTACHMENT_STORE_OP_NONE; }		break;
+		case SRC::Store:	{ return VK_ATTACHMENT_STORE_OP_STORE; }		break;
+		case SRC::DontCare: { return VK_ATTACHMENT_STORE_OP_DONT_CARE; }	break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
-	return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
+	//return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
 }
+
+#if 0
+VkAttachmentStoreOp	
+Vk_RenderApiUtil::toVkAttachmentStoreOp(RenderTargetOp v)
+{
+	using SRC = RenderTargetOp;
+	switch (v)
+	{
+		/*case SRC::Store:	{ return VK_ATTACHMENT_STORE_OP_STORE; }		break;
+		case SRC::DontCare: { return VK_ATTACHMENT_STORE_OP_DONT_CARE; }	break;*/
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
+}
+
+VkAttachmentStoreOp	
+Vk_RenderApiUtil::toVkAttachmentStoreOp(RenderTargetOp v)
+{
+	using SRC = RenderTargetOp;
+	switch (v)
+	{
+		/*case SRC::Store:	{ return VK_ATTACHMENT_STORE_OP_STORE; }		break;
+		case SRC::DontCare: { return VK_ATTACHMENT_STORE_OP_DONT_CARE; }	break;*/
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
+}
+#endif // 0
+
 
 VkClearValue 
 Vk_RenderApiUtil::toVkClearValue(const Color4f& color)
@@ -400,7 +433,7 @@ Vk_RenderApiUtil::toVkShaderStageBit(ShaderStageFlag v)
 		case SRC::Vertex:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT; }	break;
 		case SRC::Pixel:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT; } break;
 		case SRC::Compute:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT; }	break;
-		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 
 	//return VkShaderStageFlagBits::VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
@@ -431,7 +464,7 @@ Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag v)
 		case SRC::Vertex:		{ return "vs_1.1"; } break;
 		case SRC::Pixel:		{ return "ps_1.1"; } break;
 		case SRC::Compute:		{ return "cs_1.1"; } break;
-		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); } break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 }
 
@@ -447,7 +480,7 @@ Vk_RenderApiUtil::toVkDescriptorType(ShaderResourceType v)
 		case SRC::Sampler:			{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLER; }		break;
 		case SRC::StorageBuffer:	{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; } break;
 		case SRC::StorageImage:		{ return VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; }	break;
-		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); } break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 	//return VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
 }
@@ -462,7 +495,7 @@ Vk_RenderApiUtil::toVkFilter(SamplerFilter v)
 		case SRC::Linear:		{ return VkFilter::VK_FILTER_LINEAR; }		break;
 		case SRC::Bilinear:		{ return VkFilter::VK_FILTER_LINEAR; }		break;
 		case SRC::Trilinear:	{ return VkFilter::VK_FILTER_CUBIC_IMG; }	break;
-		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }		break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 	//return VkFilter::VK_FILTER_MAX_ENUM;
 }
@@ -477,7 +510,7 @@ Vk_RenderApiUtil::toVkSamplerAddressMode(SamplerWrap v)
 		case SRC::Mirrored:			{ return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT; }	break;
 		case SRC::ClampToEdge:		{ return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; }		break;
 		case SRC::ClampToBorder:	{ return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER; }	break;
-		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 	//return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
 }
@@ -495,7 +528,7 @@ Vk_RenderApiUtil::toVkImageViewType(RenderDataType v)
 		case SRC::Texture1DArray:		{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_1D_ARRAY; }	break;
 		case SRC::Texture2DArray:		{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_2D_ARRAY; }	break;
 		case SRC::TextureCubeArray:		{ return VkImageViewType::VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; }	break;
-		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 	//return VkImageViewType::VK_IMAGE_VIEW_TYPE_MAX_ENUM;
 }
@@ -513,7 +546,7 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 	{
 		srcStage	= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;		// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
 		dstStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
-		srcAccess	= 0;
+		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
 		dstAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
@@ -523,12 +556,61 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
 		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
 	}
-	else if (dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && srcLayout == VK_IMAGE_LAYOUT_UNDEFINED) 
+	else if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)						// write renderTarget
 	{
-		srcStage	= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;			// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
-		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		srcAccess	= 0;
+		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
+		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)				// write depthStencil
+	{
+		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
 		dstAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) // write depthStencil
+	{
+		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+		dstAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) // read depthStencil in shader
+	{
+		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;		// pass a texture usage here could help
+		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) // read depthStencil in shader
+	{
+		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;		// pass a texture usage here could help
+		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) // read depthStencil in attachment
+	{
+		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) // read render target
+	{
+		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) // present
+	{
+		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dstStage	= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_PIPELINE_STAGE_NONE_KHR;
 	}
 	else 
 	{
@@ -621,6 +703,40 @@ Vk_RenderApiUtil::toVkBlendOp(RenderState_BlendOp v)
 		case SRC::RevSub:	{ return VkBlendOp::VK_BLEND_OP_REVERSE_SUBTRACT; }	break;
 		case SRC::Min:		{ return VkBlendOp::VK_BLEND_OP_MIN; }				break;
 		case SRC::Max:		{ return VkBlendOp::VK_BLEND_OP_MAX; }				break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkBlendOp::VK_BLEND_OP_MAX_ENUM;
+}
+
+VkImageLayout		
+Vk_RenderApiUtil::toVkImageLayout(TextureFlags v)
+{
+	using SRC = TextureFlags;
+	switch (v)
+	{
+		case SRC::None:				{ return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED; }						break;
+		case SRC::ShaderResource:	{ return VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; }			break;
+		case SRC::UnorderedAccess:	{ return VkImageLayout::VK_IMAGE_LAYOUT_GENERAL; }							break;
+		case SRC::RenderTarget:		{ return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; }			break;
+		case SRC::DepthStencil:		{ return VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; }	break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkBlendOp::VK_BLEND_OP_MAX_ENUM;
+}
+
+VkImageLayout		
+Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access)
+{
+	using SRC = TextureFlags;
+	switch (v)
+	{
+		case SRC::None:				{ RDS_CORE_ASSERT(access == RenderAccess::None); return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED; }		break;
+		case SRC::ShaderResource:	{ return VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; }										break;
+		case SRC::UnorderedAccess:	{ return VkImageLayout::VK_IMAGE_LAYOUT_GENERAL; }														break;
+		case SRC::RenderTarget:		{ return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;}										break;
+		case SRC::DepthStencil:		{ return access == RenderAccess::Write ? VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL	: VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL; }	break;
 
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}

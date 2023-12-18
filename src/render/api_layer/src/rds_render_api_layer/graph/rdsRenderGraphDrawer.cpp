@@ -2,8 +2,8 @@
 #include "rdsRenderGraphDrawer.h"
 #include "rdsRenderGraph.h"
 
-#define scopedBracket()  RDS_UNIQUE_VAR(ScopedBracket)(this)
-#define scopedLine()  RDS_UNIQUE_VAR(ScopedLine)(this)
+#define scopedBracket()		RDS_UNIQUE_VAR(ScopedBracket)(this)
+#define scopedLine()		RDS_UNIQUE_VAR(ScopedLine)(this)
 
 namespace rds
 {
@@ -125,7 +125,7 @@ RdgDrawer::_dumpPasses()
 
 	headerComment("dump passes");
 
-	for (const auto& e : _rdgGraph->_passes) 
+	for (const auto& e : _rdgGraph->passes()) 
 	{
 		auto id					= e->id();
 		const char* passColor	= e->isCulled() ? style().color.pass.culled : style().color.pass.executed;
@@ -144,7 +144,7 @@ void RdgDrawer::_dumpResources()
 {
 	headerComment("dump resources");
 
-	for (const auto& e : _rdgGraph->_resources)
+	for (const auto& e : _rdgGraph->resources())
 	{
 		auto id				= e->id();
 		const auto& name	= e->name();
@@ -166,7 +166,7 @@ void RdgDrawer::_dumpWriteEdge()
 {
 	headerComment("dump write edge");
 
-	for (const auto& e : _rdgGraph->_passes) 
+	for (const auto& e : _rdgGraph->passes()) 
 	{
 		auto id	= e->id();
 
@@ -190,7 +190,7 @@ void RdgDrawer::_dumpReadEdge()
 {
 	headerComment("dump read edge");
 
-	for (const auto& e : _rdgGraph->_resources) 
+	for (const auto& e : _rdgGraph->resources()) 
 	{
 		auto id	= e->id();
 
@@ -199,7 +199,7 @@ void RdgDrawer::_dumpReadEdge()
 		write("->");
 		{
 			scopedBracket();
-			for (const auto& pass : _rdgGraph->_passes)
+			for (const auto& pass : _rdgGraph->passes())
 			{
 				// read if same
 				for (auto& read : pass->_reads)
@@ -218,8 +218,8 @@ void RdgDrawer::_dumpReadEdge()
 void RdgDrawer::_dumpCluster()
 {
 
-	const auto& passes		= _rdgGraph->_passes;
-	const auto& resources	= _rdgGraph->_resources;
+	const auto& passes		= _rdgGraph->renderGraphFrame().passes;
+	const auto& resources	= _rdgGraph->renderGraphFrame().resources;
 
 	if (style().useClusters)
 	{

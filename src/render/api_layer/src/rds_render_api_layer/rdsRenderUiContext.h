@@ -13,6 +13,8 @@ references:
 ~ src/render/ImGui_SGE.h in [https://github.com/SimpleTalkCpp/SimpleGameEngine]
 */
 
+#define RDS_RENDER_ENABLE_UI 1
+
 namespace rds
 {
 
@@ -33,6 +35,7 @@ public:
 	RenderUiContext();
 	~RenderUiContext();
 
+	#if RDS_RENDER_ENABLE_UI
 	void create (RenderContext* renderContext);
 	void destroy();
 
@@ -41,6 +44,17 @@ public:
 
 	void onDrawUI		(RenderRequest& req);
 	bool onUIMouseEvent	(UIMouseEvent& ev);
+	#else
+	void create (RenderContext* renderContext) {};
+	void destroy() {};
+
+	void onBeginRender	(RenderContext* renderContext) {};
+	void onEndRender	(RenderContext* renderContext) {};
+
+	void onDrawUI		(RenderRequest& req) {};
+	bool onUIMouseEvent	(UIMouseEvent& ev) {return true;};
+	#endif // 0
+
 
 protected:
 	void _createFontTexture();

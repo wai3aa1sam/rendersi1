@@ -15,6 +15,7 @@ class TransferCommand_UploadBuffer;
 #endif // 0
 #if 1
 
+// should change to RenderGpuBufferUsageFlags
 #define RenderGpuBufferTypeFlags_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(Vertex,		= BitUtil::bit(0)) \
@@ -28,13 +29,13 @@ class TransferCommand_UploadBuffer;
 RDS_ENUM_CLASS(RenderGpuBufferTypeFlags, u8);
 RDS_ENUM_ALL_OPERATOR(RenderGpuBufferTypeFlags);
 
-#define RenderGpuBufferUsage_ENUM_LIST(E) \
+#define RenderGpuBufferFlags_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(CpuPrefer,) \
 	E(GpuPrefer, ) \
 	E(_kCount,) \
 //---
-RDS_ENUM_CLASS(RenderGpuBufferUsage, u8);
+RDS_ENUM_CLASS(RenderGpuBufferFlags, u8);
 
 struct RenderGpuBuffer_CreateDesc : public RenderResource_CreateDesc
 {

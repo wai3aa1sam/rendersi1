@@ -8,8 +8,11 @@
 #include "rds_render_api_layer/rdsRenderFrame.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/shader/rdsMaterial_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+
+#include "rds_render_api_layer/graph/rdsRenderGraph.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -81,6 +84,9 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
 
 	_setDebugName();
+
+	  _vkRdPassPool.create(renderDeviceVk());
+	_vkFramebufPool.create(renderDeviceVk());
 }
 
 void
@@ -99,6 +105,10 @@ RenderContext_Vk::onDestroy()
 
 	_vkRdFrames.clear();
 	_vkSwapchain.destroy(nullptr);
+
+	_vkFramebufPool.destroy();
+	  _vkRdPassPool.destroy();
+
 	Base::onDestroy();
 }
 
@@ -128,7 +138,7 @@ RenderContext_Vk::onBeginRender()
 	}
 
 	{
-		vkRdFrame().clear();
+		vkRdFrame().reset();
 
 		_curGraphicsVkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "RenderContext_Vk::_curGraphicsVkCmdBuf-Prim");
 
@@ -195,7 +205,7 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	// begin render pass
 	{
 		Vector<VkClearValue, 4> clearValues;
-		auto* p = renderCmdBuf.getClearFramebuffersCmd();
+		auto* clearValue = renderCmdBuf.getClearValue();
 		auto attachmentCount = 2; // TODO: revise
 
 		RDS_WARN_ONCE("TODO: RenderCommand_ClearFrambuffers, shd handele properly");
@@ -204,14 +214,14 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 			auto& e = clearValues.emplace_back();
 			bool isColorAttachment = i == 0;	// TODO: revise
 
-			if (isColorAttachment && p->clearColor.has_value())
+			if (isColorAttachment && clearValue->color.has_value())
 			{
-				e = Util::toVkClearValue(p->clearColor.value());
+				e = Util::toVkClearValue(clearValue->color.value());
 			}
 
-			if (!isColorAttachment && p->clearDepthStencil.has_value())
+			if (!isColorAttachment && clearValue->depthStencil.has_value())
 			{
-				const auto& v = p->clearDepthStencil.value();
+				const auto& v = clearValue->depthStencil.value();
 				e = Util::toVkClearValue(v.first, v.second);
 			}
 		}
@@ -250,6 +260,272 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	endRecord(_curGraphicsVkCmdBuf->hnd(), _vkSwapchain.curImageIdx());
 
 	#endif // !RDS_TEST_DRAW_CALL
+}
+
+void 
+RenderContext_Vk::onCommit(RenderGraph& rdGraph)
+{
+	if (rdGraph.resultPasses().is_empty())
+		return;
+	
+	Base::onCommit(rdGraph);
+
+	class Vk_RenderGraph
+	{
+	public:
+		void commit(RenderGraph& rdGraph, RenderContext_Vk* rdCtxVk)
+		{
+			_rdCtxVk = rdCtxVk;
+
+			for (RdgPass* pass : rdGraph.resultPasses())
+			{
+				//auto* entryPass = *rdGraph.passes().begin();
+				_commitPass(pass);
+			}
+
+			//Vk_CommandBuffer::submit(_graphicsVkCmdBufsHnds, );
+		}
+
+		void _commitPass(RdgPass* pass)
+		{
+			if (pass->isCommitted())
+				return;
+
+			pass->checkValidRenderTargetExtent();
+
+			//RdgPassTypeFlags	typeFlags		= pass->typeFlags();
+			//bool				isGraphicsQueue	= BitUtil::hasAny(typeFlags, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+
+			Vk_CommandBuffer*	vkCmdBuf	= nullptr;
+			Vk_RenderPass*		vkRdPass	= nullptr;
+			Vk_Framebuffer*		vkFramebuf	= nullptr;
+
+			bool isSuccess = _getVkResources(pass, &vkCmdBuf, &vkRdPass, &vkFramebuf);
+			if (!isSuccess)
+				return;
+
+			_recordCommands(pass, vkCmdBuf, vkRdPass, vkFramebuf);
+
+			// submit
+			if (isGraphicsQueue(pass))
+			{
+				_graphicsVkCmdBufsHnds.emplace_back(vkCmdBuf->hnd());
+			}
+			else
+			{
+				_notYetSupported(RDS_SRCLOC);
+			}
+
+			pass->_internal_commit();
+		}
+
+		bool _getVkResources(RdgPass* pass, Vk_CommandBuffer** outVkCmdBuf, Vk_RenderPass** outVkRdPass, Vk_Framebuffer** outVkFramebuf)
+		{
+			RdgPassTypeFlags	typeFlags		= pass->typeFlags();
+			Vk_RenderPassPool&	vkRdPassPool	= _rdCtxVk->_vkRdPassPool;
+			Vk_FramebufferPool& vkFramebufPool	= _rdCtxVk->_vkFramebufPool;
+
+			bool hasRenderPass	= pass->hasRenderPass();
+
+			if		(BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::Transfer))		
+			{ 
+				*outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY, pass->name());
+			}
+			else if	(BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::AsyncCompute))	
+			{ 
+				*outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Compute, VK_COMMAND_BUFFER_LEVEL_PRIMARY, pass->name()); 
+			}
+			else
+			{
+				*outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, pass->name());
+			}
+			RDS_CORE_ASSERT(*outVkCmdBuf, "");
+
+			if (hasRenderPass)
+			{
+				Vk_RenderPass*	vkRdPass	= vkRdPassPool.request(pass);
+				Vk_Framebuffer* vkFramebuf	= vkFramebufPool.request(pass, vkRdPass->hnd());
+
+				*outVkRdPass	= vkRdPass;
+				*outVkFramebuf	= vkFramebuf;
+
+				RDS_CORE_ASSERT(vkRdPass && vkFramebuf, "");
+				if (!vkRdPass || !vkFramebuf)
+					return false;
+			}
+
+			return true;
+		}
+
+		void _recordCommands(RdgPass* pass, Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, Vk_Framebuffer* vkFramebuf)
+		{
+			bool hasRenderPass	= pass->hasRenderPass();
+
+			Opt<Rect2f> rdTargetExtent = pass->renderTargetExtent();
+			if (!rdTargetExtent && hasRenderPass)
+				return;
+
+			Vector<VkClearValue, 16> clearValues;
+			if (hasRenderPass)	// && pass->has clear operation
+			{
+				auto* clearValue = pass->commandBuffer().getClearValue();
+				Util::getVkClearValuesTo(clearValues, clearValue, pass->renderTargets().size(), pass->depthStencil());
+			}
+
+			vkCmdBuf->beginRecord();
+
+			_recordBarriers(pass, vkCmdBuf);
+
+			RDS_TODO("Vk_RenderPassScope");
+			if (hasRenderPass)
+			{
+				const auto& framebufRect2f = rdTargetExtent.value();
+				vkCmdBuf->beginRenderPass(vkRdPass, vkFramebuf, framebufRect2f, clearValues, VK_SUBPASS_CONTENTS_INLINE);
+				vkCmdBuf->setViewport(framebufRect2f);
+				vkCmdBuf->setScissor (framebufRect2f);
+			}
+			for (auto* cmd : pass->commnads())
+			{
+				_rdCtxVk->_dispatchCommand(_rdCtxVk, cmd);
+			}
+			if (hasRenderPass)
+				vkCmdBuf->endRenderPass();
+
+			vkCmdBuf->endRecord();
+
+			/*
+			maybe use sync pt level as each prim buffer, then submit between sync pt
+			*/
+		}
+
+		void _recordBarriers(RdgPass* pass, Vk_CommandBuffer* vkCmdBuf)
+		{
+			for (const auto& rscAccess : pass->resourceAccesses())
+			{
+				using SRC = RdgResourceType;
+
+				auto* rsc = rscAccess.rsc;
+				auto type = rsc->type();
+
+				if (rscAccess.state.isSameTransition())
+					continue;
+
+				switch (type)
+				{
+					case SRC::Buffer:	
+					{
+						_notYetSupported(RDS_SRCLOC);
+					} break;
+					case SRC::Texture:	
+					{
+						auto* rdgTex	= sCast<RdgTexture*>(rsc);
+						auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdgTex));
+
+						VkFormat		vkFormat	= Util::toVkFormat(texVk->format());
+						//bool			isDepth		= Util::isDepthFormat(vkFormat);
+
+						//RDS_TODO("a last resouce layout hint and texture usage hint and RdgAcesss to determine the from and to layout");
+						//VkImageLayout	srcLayout	= isDepth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL	: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+						//VkImageLayout	dstLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+						VkImageLayout	srcLayout	= Util::toVkImageLayout(rscAccess.state.srcUsage.tex, sCast<RenderAccess>(rscAccess.state.srcAccess));
+						VkImageLayout	dstLayout	= Util::toVkImageLayout(rscAccess.state.dstUsage.tex, sCast<RenderAccess>(rscAccess.state.dstAccess));
+
+						vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), vkFormat, srcLayout, dstLayout);
+						// && BitUtil::has(texVk->flag(), TextureFlags::DepthStencil) 
+
+					} break;
+
+					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
+				}
+			}
+
+			#if 0
+			for (RdgResource* input : pass->reads())
+			{
+				using SRC = RdgResourceType;
+				auto type = input->type();
+				switch (type)
+				{
+					case SRC::Buffer:	
+					{
+						_notYetSupported(RDS_SRCLOC);
+					} break;
+					case SRC::Texture:	
+					{
+						auto* rdgTex	= sCast<RdgTexture*>(input);
+						auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdgTex));
+
+						VkFormat		vkFormat	= Util::toVkFormat(texVk->format());
+						bool			isDepth		= Util::isDepthFormat(vkFormat);
+
+						RDS_TODO("a last resouce layout hint and texture usage hint and RdgAcesss to determine the from and to layout");
+						VkImageLayout	srcLayout	= isDepth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL	: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+						VkImageLayout	dstLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+						// && BitUtil::has(texVk->flag(), TextureFlags::DepthStencil) 
+						vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), vkFormat, srcLayout, dstLayout);
+
+					} break;
+
+					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
+				}
+			}
+
+			for (RdgResource* output : pass->writes())
+			{
+				using SRC = RdgResourceType;
+				auto type = output->type();
+
+				_notYetSupported(RDS_SRCLOC);
+
+				switch (type)
+				{
+					case SRC::Buffer:	
+					{
+						_notYetSupported(RDS_SRCLOC);
+					} break;
+					case SRC::Texture:	
+					{
+
+					} break;
+
+					default: { RDS_THROW("{}", type); } break;
+				}
+			}
+
+			for (RdgRenderTarget& rdTarget : pass->renderTargets())
+			{
+				RDS_CORE_ASSERT(rdTarget.targetHnd.type() == RdgResourceType::Texture, "");
+				//auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdTarget.targetHnd));
+				auto* texVk	= RdgResourceAccessor::access<Texture2D_Vk*>(rdTarget.targetHnd);
+				vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), Util::toVkFormat(texVk->format()), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+			}
+
+			if (RdgDepthStencil* depthStencil = pass->depthStencil())
+			{
+				RDS_CORE_ASSERT(depthStencil->targetHnd.type() == RdgResourceType::Texture, "");
+				//auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(depthStencil->targetHnd));
+				auto* texVk	= RdgResourceAccessor::access<Texture2D_Vk*>(depthStencil->targetHnd);
+
+				vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), Util::toVkFormat(texVk->format()), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+			}
+			#endif // 0
+		}
+
+		static bool isGraphicsQueue(RdgPass* pass)
+		{
+			RdgPassTypeFlags	typeFlags		= pass->typeFlags();
+			bool				isGraphicsQueue	= BitUtil::hasAny(typeFlags, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute | RdgPassTypeFlags::Transfer);
+			return isGraphicsQueue;
+		}
+
+	private:
+		RenderContext_Vk*				_rdCtxVk = nullptr;
+		Vector<Vk_CommandBuffer_T*, 64> _graphicsVkCmdBufsHnds;
+	};
+
+	Vk_RenderGraph vkRdGraph;
+	vkRdGraph.commit(rdGraph, this);
 }
 
 void 
@@ -393,6 +669,18 @@ RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
 	}
 }
 
+Vk_CommandBuffer* 
+RenderContext_Vk::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName)
+{
+	using SRC = rds::QueueTypeFlags;
+	switch (queueType)
+	{
+		case SRC::Graphics: { auto* o = vkRdFrame().requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkGraphicsQueue);	return o; } break;
+	//	case SRC::Compute:	{ auto* o = vkRdFrame().requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkComputeQueue);	return o; } break;
+		case SRC::Transfer:	{ auto* o = vkRdFrame().requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkTransferQueue);	return o; } break;
+		default: { RDS_THROW("invalid vk queue type"); } break;
+	}
+}
 
 #if 0
 #pragma mark --- rdsRenderContext_Vk-createResource
@@ -709,7 +997,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 	public:
 		ParRecordDrawCall(RenderContext_Vk* rdCtx, HashedDrawCallCommands* drawCallCmds
 			, Span<Vk_CommandBuffer*> outVkCmdBufs, Vk_Queue* graphicsQueue
-			, Vk_RenderPass* renderPass, Vk_Framebuffer* vkFrameBuf, u32 subpassIdx, const math::Rect2f& framebufferRect2f)
+			, Vk_RenderPass* renderPass, Vk_Framebuffer* vkFrameBuf, u32 subpassIdx, const Rect2f& framebufferRect2f)
 		{
 			_rdCtx				= rdCtx;
 			_drawCallCmds		= drawCallCmds;
@@ -758,7 +1046,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 		Vk_Framebuffer*			_vkFrameBuf		= nullptr;
 		u32						_subpassIdx		= 0;
 		Vk_SwapchainInfo*		_swapchainInfo	= nullptr;
-		math::Rect2f			_framebufferRect2f;
+		Rect2f					_framebufferRect2f;
 
 		Vk_CommandBuffer*		_vkCmdBuf		= nullptr;
 	};

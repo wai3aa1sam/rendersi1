@@ -84,7 +84,7 @@ using Vk_Allocation = VmaAllocation;
 
 }
 
-#define RDS_VK_ENABLE_DEBUG_NAME 0
+#define RDS_VK_ENABLE_DEBUG_NAME 1
 
 
 #endif

@@ -16,6 +16,7 @@ RenderUiContext::~RenderUiContext()
 	destroy();
 }
 
+#if RDS_RENDER_ENABLE_UI
 void
 RenderUiContext::create(RenderContext* renderContext)
 {
@@ -100,6 +101,11 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 	if (data->TotalVtxCount <= 0 || data->TotalIdxCount <= 0)
 		return;
 
+	int fb_width	= sCast<int>((data->DisplaySize.x * data->FramebufferScale.x));
+	int fb_height	= sCast<int>((data->DisplaySize.y * data->FramebufferScale.y));
+	if (fb_width <= 0 || fb_height <= 0)
+		return;
+
 	{
 		float L = data->DisplayPos.x;
 		float R = data->DisplayPos.x + data->DisplaySize.x;
@@ -145,11 +151,16 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		_idxBuf = rdDev->createRenderGpuMultiBuffer(desc);
 	}
 
+	// need set set viewport too
+	// vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 	auto scissorRectScope = req.scissorRectScope();
 
 	{
 		_vertexData.clear();
 		_indexData.clear();
+
+		ImVec2 clip_off		= data->DisplayPos;
+		ImVec2 clip_scale	= data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
 		int vertexStart = 0;
 		int indexStart  = 0;
@@ -164,10 +175,13 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 				// Project scissor/clipping rectangles into frame buffer space
 
-				ImVec2 clip_off = data->DisplayPos;
-				ImVec2 clip_min(srcBuf.ClipRect.x - clip_off.x, srcBuf.ClipRect.y - clip_off.y);
-				ImVec2 clip_max(srcBuf.ClipRect.z - clip_off.x, srcBuf.ClipRect.w - clip_off.y);
+				ImVec2 clip_min((srcBuf.ClipRect.x - clip_off.x) * clip_scale.x, (srcBuf.ClipRect.y - clip_off.y) * clip_scale.y);
+				ImVec2 clip_max((srcBuf.ClipRect.z - clip_off.x) * clip_scale.x, (srcBuf.ClipRect.w - clip_off.y) * clip_scale.y);
 
+				if (clip_min.x < 0.0f)		{ clip_min.x = 0.0f; }
+				if (clip_min.y < 0.0f)		{ clip_min.y = 0.0f; }
+				if (clip_max.x > fb_width)	{ clip_max.x = sCast<float>(fb_width); }
+				if (clip_max.y > fb_height) { clip_max.y = sCast<float>(fb_height); }
 				if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
 					continue;
 
@@ -175,7 +189,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 				auto a = Vec2f_make(clip_min);
 				auto b = Vec2f_make(clip_max);
 
-				req.setScissorRect(math::Rect2f{a, b - a});
+				req.setScissorRect(Rect2f{a, b - a});
 
 				auto* cmd = req.renderCommandBuffer().addDrawCall();
 
@@ -243,6 +257,8 @@ RenderUiContext::onUIMouseEvent(UIMouseEvent& ev)
 
 	return io.WantCaptureMouse;
 }
+#endif // RDS_RENDER_ENABLE_UI
+
 
 void
 RenderUiContext::_createFontTexture()

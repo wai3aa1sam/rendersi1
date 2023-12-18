@@ -97,7 +97,7 @@ Vk_Swapchain::swapBuffers(Vk_Queue* presentQueue, Vk_CommandBuffer* vkCmdBuf, Vk
 }
 
 void
-Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvailableInfo& info, const math::Rect2f& framebufferRect2f
+Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvailableInfo& info, const Rect2f& framebufferRect2f
 									, VkFormat colorFormat, VkColorSpaceKHR colorSpace, VkFormat depthFormat)
 {
 	out.depthFormat = depthFormat;
@@ -117,6 +117,10 @@ Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvail
 	{
 		for (const auto& availablePresentMode : info.presentModes) 
 		{
+			if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+			{
+				//out.presentMode = availablePresentMode;
+			}
 			if (availablePresentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
 			{
 				out.presentMode = availablePresentMode;
@@ -141,7 +145,7 @@ Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvail
 }
 
 void
-Vk_Swapchain::createSwapchain(const math::Rect2f& framebufferRect2f, Vk_RenderPass* vkRdPass)
+Vk_Swapchain::createSwapchain(const Rect2f& framebufferRect2f, Vk_RenderPass* vkRdPass)
 {
 	RDS_PROFILE_SCOPED();
 
