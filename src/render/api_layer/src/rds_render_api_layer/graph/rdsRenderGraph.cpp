@@ -336,8 +336,6 @@ void RenderGraph::rotateFrame()
 		auto& back = _rdgFrames.emplace_back();
 		back.create(this);
 	}
-
-	renderGraphFrame().reset();
 }
 
 void 

@@ -173,6 +173,11 @@ public:
 		return out;
 	}
 
+	SizeType renderTargetCount() const
+	{
+		RDS_CORE_ASSERT(BitUtil::hasOnly(stageFlag, ShaderStageFlag::Pixel), "only pixel shader has render targets");
+		return outputs.size();
+	}
 
 public:
 	// Info Type

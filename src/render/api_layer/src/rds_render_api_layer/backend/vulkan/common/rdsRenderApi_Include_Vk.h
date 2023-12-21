@@ -84,7 +84,23 @@ using Vk_Allocation = VmaAllocation;
 
 }
 
+#if 0
+#pragma mark --- rdsVk_DebugMarco-Decl ---
+#endif // 0
+#if 1
+
 #define RDS_VK_ENABLE_DEBUG_NAME 1
+
+#endif // 1
+
+#if 0
+#pragma mark --- rdsVk_DebugMarco-Decl ---
+#endif // 0
+#if 1
+
+#define RDS_VK_MAX_RENDER_TARGET_COUNT 8
+
+#endif // 1
 
 
 #endif

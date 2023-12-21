@@ -117,6 +117,13 @@ RenderContext::setFramebufferSize(const Vec2f& newSize)
 	onSetFramebufferSize(newSize);
 }
 
+bool 
+RenderContext::isFirstFrameCompleted() 
+{ 
+	throwIf(true, "should not call this");
+	return false;
+}
+
 void
 RenderContext::onCreate(const CreateDesc& cDesc)
 {

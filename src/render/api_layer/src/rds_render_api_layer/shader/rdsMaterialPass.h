@@ -141,7 +141,7 @@ public:
 	void create(Material* material, ShaderPass* shaderPass);
 	void destroy();
 
-	void bind(RenderContext* ctx, const VertexLayout* vtxLayout);
+	//void bind(RenderContext* ctx, const VertexLayout* vtxLayout);
 
 	template<class TEX> void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
 	template<class T>	void setParam		(StrView name, const T& v);
@@ -159,7 +159,7 @@ protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass);
 	virtual void onDestroy();
 
-	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout) = 0;
+	//virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout) = 0;
 
 protected:
 	Material*		_material		= nullptr;

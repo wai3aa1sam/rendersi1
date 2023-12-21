@@ -594,6 +594,27 @@ Vk_Fence::reset(RenderDevice_Vk* rdDev)
 	return ret;
 }
 
+VkResult 
+Vk_Fence::status(RenderDevice_Vk* rdDev) const
+{
+	RDS_CORE_ASSERT(rdDev && hnd(), "rdDev && hnd()");
+	return vkGetFenceStatus(rdDev->vkDevice(), hnd());
+}
+
+bool 
+Vk_Fence::isSignaled(RenderDevice_Vk* rdDev) const
+{
+	auto ret = status(rdDev);
+	
+	if (ret == VkResult::VK_SUCCESS || ret == VkResult::VK_NOT_READY)
+	{
+		return ret == VkResult::VK_SUCCESS;
+	}
+
+	Util::throwIfError(ret);
+	return false;
+}
+
 
 #endif
 

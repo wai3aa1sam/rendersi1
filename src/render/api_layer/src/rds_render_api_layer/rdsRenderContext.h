@@ -53,6 +53,9 @@ public:
 
 	void setFramebufferSize(const Vec2f& newSize);
 
+	virtual bool isFirstFrameCompleted();
+	void waitFirstFrame();
+
 public:
 	const Vec2f&	framebufferSize() const;
 	float			aspectRatio() const;
@@ -73,7 +76,7 @@ protected:
 	virtual void onCommit(RenderGraph&			rdGraph);
 
 protected:
-	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd);
+	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData = nullptr);
 
 protected:
 	NativeUIWindow* _nativeUIWindow = nullptr;
@@ -92,18 +95,18 @@ inline NativeUIWindow*	RenderContext::nativeUIWindow()			{ return _nativeUIWindo
 
 template<class CTX> inline
 void 
-RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd)
+RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData)
 {
 	using SRC = RenderCommandType;
 
-	#define _DISPACH_CMD_CASE(TYPE) case SRC::TYPE: { auto* __p = sCast<RDS_CONCAT(RenderCommand_, TYPE)*>(cmd); RDS_CONCAT(ctx->onRenderCommand_, TYPE)(__p); } break
+	#define _DISPACH_CMD_CASE(TYPE, ...) case SRC::TYPE: { auto* __p = sCast<RDS_CONCAT(RenderCommand_, TYPE)*>(cmd); RDS_CONCAT(ctx->onRenderCommand_, TYPE)(__p, __VA_ARGS__); } break
 
 	switch (cmd->type())
 	{
 		_DISPACH_CMD_CASE(ClearFramebuffers);
 		_DISPACH_CMD_CASE(SwapBuffers);
 		_DISPACH_CMD_CASE(SetScissorRect);
-		_DISPACH_CMD_CASE(DrawCall);
+		_DISPACH_CMD_CASE(DrawCall, userData);
 		_DISPACH_CMD_CASE(DrawRenderables);
 		default: { throwError("undefined render command"); } break;
 	}

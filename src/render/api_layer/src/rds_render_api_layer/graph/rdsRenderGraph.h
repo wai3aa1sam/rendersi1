@@ -145,6 +145,8 @@ public:
 	void create(StrView name, RenderContext* rdCtx, IAllocator* alloc = nullptr);
 	void destroy();
 
+	void reset() { RDS_TODO("temporary solution"); renderGraphFrame().reset(); }
+
 	void compile();
 	void execute();
 	void commit();

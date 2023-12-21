@@ -38,6 +38,11 @@ public:
 	RenderContext_Vk();
 	virtual ~RenderContext_Vk();
 
+	void addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd);
+	
+	virtual bool isFirstFrameCompleted() override;
+
+public:
 	Vk_Queue* vkGraphicsQueue();
 	Vk_Queue* vkTransferQueue();
 	Vk_Queue* vkPresentQueue();
@@ -52,8 +57,9 @@ public:
 	void onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd);
 	void onRenderCommand_SetScissorRect(RenderCommand_SetScissorRect* cmd);
 
-	void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd);
 	void _onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd);
+	void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd);
+	void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, void* userData);
 
 	void onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd);
 
@@ -84,6 +90,8 @@ protected:
 
 	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 
+	bool recordPresent(Vk_CommandBuffer* vkCmdBuf, Vk_Swapchain* vkSwapchain);
+
 	void _setDebugName();
 
 protected:
@@ -105,7 +113,10 @@ protected:
 	bool _shdSwapBuffers = false;
 
 	Vk_RenderPassPool	_vkRdPassPool;		// persistent
-	Vk_FramebufferPool	_vkFramebufPool;	// clear when invalidate swapchain
+	//Vk_FramebufferPool	_vkFramebufPool;	// clear when invalidate swapchain
+
+	Vector<Vk_CommandBuffer_T*, 32> _pendingGfxVkCmdbufHnds;
+	Vk_CommandBuffer*				_presentVkCmdBuf = nullptr;
 };
 
 inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return &_vkGraphicsQueue; }
@@ -116,8 +127,7 @@ inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; 
 inline Vk_CommandBuffer_T*	RenderContext_Vk::vkCommandBuffer()		{ return _curGraphicsVkCmdBuf->hnd(); }
 inline Vk_CommandBuffer*	RenderContext_Vk::graphicsVkCmdBuf()	{ return _curGraphicsVkCmdBuf; }
 
-inline Vk_RenderFrame& RenderContext_Vk::vkRdFrame() { return _vkRdFrames[_curFrameIdx]; }
-
+inline Vk_RenderFrame& RenderContext_Vk::vkRdFrame()		{ return _vkRdFrames[_curFrameIdx]; }
 
 #endif
 }

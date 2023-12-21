@@ -71,7 +71,7 @@ public:
 	void destroy(NativeUIWindow* wnd);
 
 	VkResult acquireNextImage(Vk_Semaphore* signalSmp);
-	VkResult swapBuffers(Vk_Queue* presentQueue, Vk_CommandBuffer* vkCmdBuf, Vk_Semaphore* waitSmp);
+	VkResult swapBuffers(Vk_Queue* presentQueue, Vk_Semaphore* waitSmp);
 
 	const Vk_SwapchainInfo& info() const;
 	Vk_Framebuffer*			framebuffer();

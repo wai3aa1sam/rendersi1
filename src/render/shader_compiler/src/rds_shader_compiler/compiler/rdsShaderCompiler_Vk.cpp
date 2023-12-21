@@ -225,7 +225,7 @@ ShaderCompiler_Vk::_reflect_textures(ShaderStageInfo& outInfo, SpirvCompiler& co
 	outInfo.textures.reserve(res.sampled_images.size());
 
 	log("--- Texture");
-
+	
 	for (const Resource& resource : res.separate_images)
 	{
 		Texture& dst = outInfo.textures.emplace_back();

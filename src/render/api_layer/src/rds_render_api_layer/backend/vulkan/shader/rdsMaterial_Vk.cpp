@@ -95,22 +95,23 @@ private:
 
 struct Vk_RenderStateCDesc : public Vk_CDesc_Base
 {
+	using Vk_PipelineColorBlendAttachmentStates = Vector<VkPipelineColorBlendAttachmentState, RDS_VK_MAX_RENDER_TARGET_COUNT>;
 public:
 	Vk_RenderStateCDesc()
 	{
 		
 	}
 
-	void create(VkGraphicsPipelineCreateInfo& out, const RenderState& rdState)
+	void create(VkGraphicsPipelineCreateInfo& out, const RenderState& rdState, const ShaderStageInfo& psStageInfo)
 	{
-		_createViewportState			(viewportState,			rdState);
-		_createInputAssemblyState		(inputAssembly,			rdState);
-		_createRasterizerState			(rasterizer,			rdState);
-		_createMultiSampleState			(multisampling,			rdState);
-		_createDepthStencilState		(depthStencil,			rdState);
-		_createColorBlendAttachmentState(colorBlendAttachment,	rdState);
-		_createColorBlendState			(colorBlending,			rdState);
-		_createDynamicState				(dynamicState);
+		_createViewportState				(viewportState,			rdState);
+		_createInputAssemblyState			(inputAssembly,			rdState);
+		_createRasterizerState				(rasterizer,			rdState);
+		_createMultiSampleState				(multisampling,			rdState);
+		_createDepthStencilState			(depthStencil,			rdState);
+		_createColorBlendAttachmentStates	(colorBlendAttachments,	rdState, psStageInfo);
+		_createColorBlendState				(colorBlending,			rdState, colorBlendAttachments);
+		_createDynamicState					(dynamicState);
 
 		_create(out);
 	}
@@ -195,6 +196,7 @@ public:
 		//VkPipelineColorBlendAttachmentState colorBlendAttachment = {};	// for per attached framebuffer
 		//VkPipelineColorBlendStateCreateInfo colorBlending = {};			// is global color blending setting (for all framebuffer)
 		{
+			auto& colorBlendAttachment = colorBlendAttachments.emplace_back();
 			colorBlendAttachment.colorWriteMask			= VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			colorBlendAttachment.blendEnable			= VK_TRUE;
 			colorBlendAttachment.srcColorBlendFactor	= VK_BLEND_FACTOR_SRC_ALPHA;				// Optional
@@ -226,9 +228,10 @@ protected:
 		rasterizer				= {};
 		multisampling			= {};
 		depthStencil			= {};
-		colorBlendAttachment	= {};
 		colorBlending			= {};
 		dynamicState			= {};
+
+		colorBlendAttachments.clear();
 	}
 
 	void _create(VkGraphicsPipelineCreateInfo& out)
@@ -319,6 +322,20 @@ protected:
 		out.back					= {}; // Optional
 	}
 
+	void _createColorBlendAttachmentStates(Vk_PipelineColorBlendAttachmentStates& out, const RenderState& rdState, const ShaderStageInfo& psStageInfo)
+	{
+		auto n = psStageInfo.renderTargetCount();
+
+		out.clear();
+		out.reserve(n);
+
+		for (size_t i = 0; i < n; i++)
+		{
+			auto& blendState = out.emplace_back();
+			_createColorBlendAttachmentState(blendState, rdState);
+		}
+	}
+
 	void _createColorBlendAttachmentState(VkPipelineColorBlendAttachmentState& out, const RenderState& rdState)
 	{
 		out = {};
@@ -333,7 +350,7 @@ protected:
 		out.alphaBlendOp			= Util::toVkBlendOp		(rdState.blend.alpha.op);			
 	}
 
-	void _createColorBlendState(VkPipelineColorBlendStateCreateInfo& out, const RenderState& rdState/*, Span<const VkPipelineColorBlendAttachmentState> colorBlendAttachments*/)
+	void _createColorBlendState(VkPipelineColorBlendStateCreateInfo& out, const RenderState& rdState, Span<VkPipelineColorBlendAttachmentState> colorBlendAttachments_)
 	{
 		// colorBlendAttachments have life cycle problem
 
@@ -348,8 +365,8 @@ protected:
 		out.blendConstants[2]	= 0.0f; // Optional
 		out.blendConstants[3]	= 0.0f; // Optional
 
-		out.attachmentCount		= 1;
-		out.pAttachments		= &colorBlendAttachment;
+		out.attachmentCount		= sCast<u32>(colorBlendAttachments_.size());
+		out.pAttachments		= colorBlendAttachments_.data();
 	}
 
 	void _createDynamicState(VkPipelineDynamicStateCreateInfo& out)
@@ -368,7 +385,7 @@ protected:
 	VkPipelineRasterizationStateCreateInfo	rasterizer				= {};
 	VkPipelineMultisampleStateCreateInfo	multisampling			= {};
 	VkPipelineDepthStencilStateCreateInfo	depthStencil			= {};
-	VkPipelineColorBlendAttachmentState		colorBlendAttachment	= {};	
+	Vk_PipelineColorBlendAttachmentStates	colorBlendAttachments;
 	VkPipelineColorBlendStateCreateInfo		colorBlending			= {};
 	VkPipelineDynamicStateCreateInfo		dynamicState			= {};
 
@@ -671,10 +688,10 @@ MaterialPass_Vk::onDestroy()
 }
 
 void 
-MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout)
+MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf)
 {
 	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
-	auto* vkCmdBuf	= vkCtx->graphicsVkCmdBuf();
+	//auto* vkCmdBuf	= vkCtx->graphicsVkCmdBuf();
 	auto* vkRdPass	= vkCmdBuf->getVkRenderPass();
 
 	throwIf(!vkRdPass, "no render pass");
@@ -725,7 +742,7 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", shader()->filename(), "vkPipelineLayout");
 
 	Vk_RenderStateCDesc vkRenderStateCDesc;
-	vkRenderStateCDesc.create(pipelineCInfo, info().renderState);
+	vkRenderStateCDesc.create(pipelineCInfo, info().renderState, pixelStage()->info());
 
 	Vk_VertexInputCDesc vkVtxInputCDesc;
 	vkVtxInputCDesc.create(pipelineCInfo, &_vkVertexStage, vtxLayout);

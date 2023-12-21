@@ -79,49 +79,6 @@ void testEditMesh()
 	}
 }
 
-const VertexLayout* getVertexLayout_RndColorTriangle() { return Vertex_PosColorUv<1>::vertexLayout(); }
-
-EditMesh makeRndColorTriangleMesh(float z = 0.0f, bool isRnd = true)
-{
-	static size_t s_kVtxCount = 4;
-	EditMesh editMesh;
-	auto rnd = Random{};
-	{
-		auto& e = editMesh.pos;
-		e.reserve(s_kVtxCount);
-		auto v = isRnd ? rnd.range(0.0, 1.0) : 0.5;
-		//v = 0.5f;
-
-		e.emplace_back(-0.5f, -v,	 z);
-		e.emplace_back( 0.5f, -0.5f, z);
-		e.emplace_back( 0.5f,  0.5f, z);
-		e.emplace_back(-0.5f,  v,	 z);
-	}
-	{
-		auto& e = editMesh.color;
-		e.reserve(s_kVtxCount);
-		auto r0 = sCast<u8>(rnd.range(0, 255));
-		//auto r1 = sCast<u8>(rnd.range(0, 255));
-		e.emplace_back(r0,	  0,	 0,	255);
-		e.emplace_back( 0,	 r0,	 0,	255);
-		e.emplace_back( 0,	  0,	r0,	255);
-		e.emplace_back(255,	 255,	255,	255);
-	}
-	{
-		auto& e = editMesh.uvs[0];
-		e.reserve(s_kVtxCount);
-		e.emplace_back(1.0f, 0.0f);
-		e.emplace_back(0.0f, 0.0f);
-		e.emplace_back(0.0f, 1.0f);
-		e.emplace_back(1.0f, 1.0f);
-	}
-
-	editMesh.indices = { 0, 2, 1, 2, 0, 3 };
-
-	RDS_ASSERT(editMesh.getVertexLayout() == getVertexLayout_RndColorTriangle(), "");
-	return editMesh;
-}
-
 Vector<u8, 1024>	makeRndColorTriangleData(float z = 0.0f)
 {
 	auto mesh = makeRndColorTriangleMesh(z);
@@ -290,13 +247,29 @@ public:
 
 	virtual void onUpdate() override
 	{
+		RDS_PROFILE_SCOPED();
+
+		#if 0
+		{
+			RDS_PROFILE_SECTION("wait first frame");
+			RDS_TODO("temp, remove");
+
+			auto* mainWin	= VulkanEditorApp::instance()->mainWin();
+			auto& rdCtx = mainWin->renderContext(); 
+			while (!rdCtx.isFirstFrameCompleted())
+			{
+				OsUtil::sleep_ms(1);
+			}
+		}
+		#endif // 0
+
+
 		//_testMultiThreadDrawCalls.execute();
 		uploadTestMultiBuf();
 
 		#if RDS_TEST_RENDER_GRAPH
 		{
-			_testRenderGraph.compile();
-			_testRenderGraph.execute();
+			_testRenderGraph.update();
 			//_testRenderGraph.dump();
 
 			//RDS_CALL_ONCE(_testRenderGraph.compile());
@@ -426,14 +399,14 @@ public:
 		_rdReq.swapBuffers();
 
 		RDS_TODO("drawUI will upload vertex, maybe defer the upload");
-		tsfReq.commit();
+		tsfReq.commit();	// this must call only after wait its second gen frame
 
 		#if RDS_TEST_RENDER_GRAPH
 		//RDS_CALL_ONCE(_testRenderGraph.commit());
 		_testRenderGraph.commit();
 		#endif // RDS_TEST_RENDER_GRAPH
 
-		rdCtx.commit(_rdReq.renderCommandBuffer());
+		//rdCtx.commit(_rdReq.renderCommandBuffer());
 		rdCtx.endRender();
 
 		Renderer::rdDev()->nextFrame();

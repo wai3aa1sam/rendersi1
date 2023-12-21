@@ -81,7 +81,7 @@ Vk_Swapchain::acquireNextImage(Vk_Semaphore* signalSmp)
 	auto* rdDevVk	= renderDeviceVk();
 	auto* vkDev		= rdDevVk->vkDevice();
 
-	RDS_TODO("vkAcquireNextImageKHR timeout should be 0, but need handle");
+	//RDS_TODO("vkAcquireNextImageKHR timeout should be 0, but need handle");
 
 	u32 imageIdx = 0;
 	auto ret = vkAcquireNextImageKHR(vkDev, hnd(), NumLimit<u64>::max(), signalSmp->hnd(), VK_NULL_HANDLE, &imageIdx);
@@ -91,9 +91,30 @@ Vk_Swapchain::acquireNextImage(Vk_Semaphore* signalSmp)
 }
 
 VkResult
-Vk_Swapchain::swapBuffers(Vk_Queue* presentQueue, Vk_CommandBuffer* vkCmdBuf, Vk_Semaphore* waitSmp)
+Vk_Swapchain::swapBuffers(Vk_Queue* presentVkQueue, Vk_Semaphore* vkWaitSmp)
 {
-	return vkCmdBuf->swapBuffers(presentQueue, this, curImageIdx(), waitSmp);
+	VkPresentInfoKHR presentInfo = {};
+
+	Vk_Semaphore_T*	waitVkSmps[]   = { vkWaitSmp->hnd()};
+	Vk_Swapchain_T*	vkSwapChains[] = { hnd()};
+	u32				imageIndices[] = { curImageIdx() };
+
+	presentInfo.sType				= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount	= ArraySize<decltype(waitVkSmps)>;
+	presentInfo.swapchainCount		= ArraySize<decltype(vkSwapChains)>;
+	presentInfo.pWaitSemaphores		= waitVkSmps;
+	presentInfo.pSwapchains			= vkSwapChains;
+	presentInfo.pImageIndices		= imageIndices;
+	presentInfo.pResults			= nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
+
+	auto ret = vkQueuePresentKHR(presentVkQueue->hnd(), &presentInfo);
+	return ret;
+
+	/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
+	{
+	createSwapchain();
+	} */
+	//Util::throwIfError(ret);
 }
 
 void
@@ -119,7 +140,8 @@ Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvail
 		{
 			if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
 			{
-				//out.presentMode = availablePresentMode;
+				out.presentMode = availablePresentMode;
+				break;
 			}
 			if (availablePresentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
 			{

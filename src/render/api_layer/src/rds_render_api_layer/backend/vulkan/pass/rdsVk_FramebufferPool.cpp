@@ -134,6 +134,8 @@ Vk_FramebufferPool::request(RdgPass* pass, Vk_RenderPass_T* vkRdPassHnd)
 		auto it = _vkFramebufMap.find(hash);
 		if (it == _vkFramebufMap.end())
 		{
+			RDS_TODO("current impl for RenderPass Pool and FramebufferPool will always increase only");
+			//throwIf(true, "current impl for RenderPass Pool and FramebufferPool will always increase only");
 			auto& dst = _vkFramebufMap[hash];
 			dst = makeUPtr<Vk_Framebuffer>();
 			dst->create(vkRdPassHnd, vkImageViewHnds.span(), pass->renderTargetExtent()->size, _rdDevVk);

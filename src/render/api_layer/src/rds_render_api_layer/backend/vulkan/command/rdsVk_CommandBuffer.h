@@ -40,6 +40,11 @@ class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T, VK_OBJ
 {
 	using Base = Vk_RenderApiPrimitive<Vk_CommandBuffer_T, VK_OBJECT_TYPE_COMMAND_BUFFER>;
 public:
+
+	static void submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
+	static void submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
+
+public:
 	Vk_CommandBuffer();
 	~Vk_CommandBuffer();
 
@@ -59,13 +64,8 @@ public:
 	void submit(Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
 	void submit();
 
-	static void submit(Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
-	static void submit(Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
-
 	void executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs);
 	void waitIdle();
-
-	VkResult swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachain, u32 imageIdx, Vk_Semaphore* vkWaitSmp);
 
 	void setViewport(const Rect2f& rect, float minDepth = 0.0f, float maxDepth = 1.0f);
 	void setScissor (const Rect2f& rect);

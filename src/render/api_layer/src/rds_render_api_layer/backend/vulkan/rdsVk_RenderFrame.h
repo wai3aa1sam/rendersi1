@@ -5,6 +5,8 @@
 #include "rds_render_api_layer/backend/vulkan/command/rdsVk_CommandBuffer.h"
 #include "rds_render_api_layer/backend/vulkan/shader/rdsVk_DescriptorAllocator.h"
 
+#include "rds_render_api_layer/backend/vulkan/pass/rdsVk_FramebufferPool.h"
+
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
@@ -26,6 +28,9 @@ public:
 public:
 	static constexpr SizeType s_kThreadCount		= RenderApiLayerTraits::s_kThreadCount;
 	static constexpr SizeType s_kFrameInFlightCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
+
+public:
+	Vk_FramebufferPool	_vkFramebufPool;	// TODO: remove
 
 public:
 	Vk_RenderFrame();

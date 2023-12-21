@@ -102,6 +102,9 @@ RenderDevice::nextFrame()
 {
 	_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
 
+
+	// throwIf(true, "all reset should after beginRender, as it will wait that frame to finish");
+
 	renderFrame().reset();
 	transferFrame().reset();
 	_tsfReq.reset(_tsfCtx);

@@ -208,12 +208,12 @@ public:
 	E(SV_Position,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Position, 0)) \
 	E(SV_VertexID,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_VertexID, 0)) \
 	\
-	E(SV_Target0,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 0)) \
-	E(SV_Target1,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 1)) \
-	E(SV_Target2,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 2)) \
-	E(SV_Target3,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 3)) \
-	E(SV_Target4,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 4)) \
-	E(SV_Target5,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 5)) \
+	E(SV_TARGET0,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 0)) \
+	E(SV_TARGET1,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 1)) \
+	E(SV_TARGET2,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 2)) \
+	E(SV_TARGET3,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 3)) \
+	E(SV_TARGET4,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 4)) \
+	E(SV_TARGET5,	= VertexSemanticUtil::makeInt(VertexSemanticType::SV_Target, 5)) \
 	\
 	E(_kCount,) \
 //---
@@ -233,9 +233,8 @@ VertexSemanticUtil::parse(StrView v)
 	if (StrUtil::ignoreCaseCompare(v, "BINORMAL")		== 0)	{ return VertexSemantic::BINORMAL0; }
 
 	if (StrUtil::ignoreCaseCompare(v, "SV_Position")	== 0)	{ return VertexSemantic::SV_Position; }
-	if (StrUtil::ignoreCaseCompare(v, "SV_Target")		== 0)	{ return VertexSemantic::SV_Target0; }
+	if (StrUtil::ignoreCaseCompare(v, "SV_Target")		== 0)	{ return VertexSemantic::SV_TARGET0; }
 	if (StrUtil::ignoreCaseCompare(v, "SV_VertexID")	== 0)	{ return VertexSemantic::SV_VertexID; }
-
 
 	VertexSemantic o;
 	throwIf(!enumTryParse(o, v), "VertexSemantic parse failed");

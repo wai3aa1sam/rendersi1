@@ -25,6 +25,7 @@ public:
 	virtual ~RenderResource_Vk() = default;
 
 	RenderDevice_Vk* renderDeviceVk();
+	RenderDevice_Vk* renderDeviceVk() const;
 
 	u32 queueFamilyIdx			(QueueTypeFlags type);
 	u32 graphicsQueueFamilyIdx	();
@@ -38,7 +39,8 @@ protected:
 
 };
 
-template<class BASE> inline RenderDevice_Vk*	RenderResource_Vk<BASE>::renderDeviceVk() { return sCast<RenderDevice_Vk*>(Base::renderDevice()); }
+template<class BASE> inline RenderDevice_Vk*	RenderResource_Vk<BASE>::renderDeviceVk()		{ return sCast<RenderDevice_Vk*>(Base::renderDevice()); }
+template<class BASE> inline RenderDevice_Vk*	RenderResource_Vk<BASE>::renderDeviceVk() const { return sCast<RenderDevice_Vk*>(Base::renderDevice()); }
 
 template<class BASE> inline u32					RenderResource_Vk<BASE>::queueFamilyIdx			(QueueTypeFlags type)	{ return renderDeviceVk()->queueFamilyIndices().getFamilyIdx(type); }
 template<class BASE> inline u32					RenderResource_Vk<BASE>::graphicsQueueFamilyIdx	()						{ return renderDeviceVk()->queueFamilyIndices().graphics.value(); }

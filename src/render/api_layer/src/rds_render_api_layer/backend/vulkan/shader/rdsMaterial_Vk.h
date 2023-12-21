@@ -109,6 +109,8 @@ public:
 	MaterialPass_Vk();
 	virtual ~MaterialPass_Vk();
 
+	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf);
+
 	Material_Vk*	material	();
 	Shader_Vk*		shader		();
 	ShaderPass_Vk*	shaderPass	();
@@ -126,7 +128,6 @@ public:
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass) override;
 	virtual void onDestroy() override;
-	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout) override;
 
 	void bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout);
 

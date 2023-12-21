@@ -54,6 +54,8 @@ Vk_RenderFrame::create(RenderContext_Vk* rdCtxVk)
 	_descriptorAlloc.create(renderDeviceVk());
 
 	_setDebugName();
+
+	_vkFramebufPool.create(renderDeviceVk());
 }
 
 void 
@@ -70,6 +72,8 @@ Vk_RenderFrame::destroy()
 	_imageAvailableVkSmp.destroy(renderDeviceVk());
 	_renderCompletedVkSmp.destroy(renderDeviceVk());
 	_inFlightVkFence.destroy(renderDeviceVk());
+
+	_vkFramebufPool.destroy();
 
 	_rdCtxVk = nullptr;
 }

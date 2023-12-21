@@ -599,6 +599,9 @@ public:
 
 	VkResult wait	(RenderDevice_Vk* rdDev, u64 timeout = NumLimit<u64>::max());
 	VkResult reset	(RenderDevice_Vk* rdDev);
+	VkResult status (RenderDevice_Vk* rdDev) const;
+
+	bool isSignaled(RenderDevice_Vk* rdDev) const;
 };
 
 #endif

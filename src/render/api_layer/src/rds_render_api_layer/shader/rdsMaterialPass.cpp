@@ -81,11 +81,11 @@ MaterialPass::destroy()
 	onDestroy();
 }
 
-void 
-MaterialPass::bind(RenderContext* ctx, const VertexLayout* vtxLayout) 
-{ 
-	onBind(ctx, vtxLayout); 
-}
+//void 
+//MaterialPass::bind(RenderContext* ctx, const VertexLayout* vtxLayout) 
+//{ 
+//	onBind(ctx, vtxLayout); 
+//}
 
 void 
 MaterialPass::onCreate(Material* material, ShaderPass* shaderPass)

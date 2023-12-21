@@ -12,10 +12,54 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsVk_CommandBuffer-Impl ---
+#pragma mark --- rdsVk_CommandBuffer_static-Impl ---
 #endif // 0
 #if 1
 
+void 
+Vk_CommandBuffer::submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps)
+{
+	_notYetSupported(RDS_SRCLOC);
+}
+
+void 
+Vk_CommandBuffer::submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps)
+{
+	auto n = sCast<VkDeviceSize>(vkCmdBudHnds.size());
+	if (n == 0)
+		return;
+
+	RDS_CORE_ASSERT(vkQueue && signalFence, "vkQueue && signalFence");
+
+	Vector<VkCommandBufferSubmitInfoKHR, 64> cmdBufSubmitInfos;
+	cmdBufSubmitInfos.reserve(n);
+	for (auto* hnd : vkCmdBudHnds)
+	{
+		auto& info = cmdBufSubmitInfos.emplace_back();
+		info.sType			= VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		info.commandBuffer	= hnd;
+	}
+
+	VkSubmitInfo2KHR submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+	submitInfo.waitSemaphoreInfoCount	= sCast<u32>(waitSmps.size());
+	submitInfo.signalSemaphoreInfoCount = sCast<u32>(signalSmps.size());
+	submitInfo.commandBufferInfoCount	= sCast<u32>(n);
+	submitInfo.pWaitSemaphoreInfos		= waitSmps.data();
+	submitInfo.pSignalSemaphoreInfos	= signalSmps.data();;
+	submitInfo.pCommandBufferInfos		= cmdBufSubmitInfos.data();
+
+	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
+	auto ret = vkQueueSubmit2(vkQueue->hnd(), 1, &submitInfo, signalFence->hnd());
+	Util::throwIfError(ret);
+}
+
+#endif
+
+#if 0
+#pragma mark --- rdsVk_CommandBuffer-Impl ---
+#endif // 0
+#if 1
 
 Vk_CommandBuffer::Vk_CommandBuffer()
 {
@@ -205,32 +249,6 @@ Vk_CommandBuffer::waitIdle()
 {
 	RDS_CORE_ASSERT(_vkQueue, "{}", RDS_SRCLOC);
 	vkQueueWaitIdle(_vkQueue->hnd());
-}
-
-VkResult
-Vk_CommandBuffer::swapBuffers(Vk_Queue* vkPresentQueue, Vk_Swapchain* vkSwpachain, u32 imageIdx, Vk_Semaphore* vkWaitSmp)
-{
-	VkPresentInfoKHR presentInfo = {};
-
-	Vk_Semaphore_T*	waitVkSmps[]   = { vkWaitSmp->hnd()};
-	Vk_Swapchain_T*	vkSwapChains[] = { vkSwpachain->hnd()};
-	u32				imageIndices[] = { imageIdx };
-
-	presentInfo.sType				= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount	= ArraySize<decltype(waitVkSmps)>;
-	presentInfo.swapchainCount		= ArraySize<decltype(vkSwapChains)>;
-	presentInfo.pWaitSemaphores		= waitVkSmps;
-	presentInfo.pSwapchains			= vkSwapChains;
-	presentInfo.pImageIndices		= imageIndices;
-	presentInfo.pResults			= nullptr; // Optional, allows to check for every individual swap chain if presentation was successful
-
-	auto ret = vkQueuePresentKHR(vkPresentQueue->hnd(), &presentInfo);
-	return ret;
-	/*if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
-	{
-	createSwapchain();
-	} */
-	//Util::throwIfError(ret);
 }
 
 void 
