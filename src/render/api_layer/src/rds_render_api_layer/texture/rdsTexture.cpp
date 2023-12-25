@@ -45,9 +45,9 @@ Texture::destroy()
 #if 1
 
 Texture2D::CreateDesc	
-Texture2D::makeCDesc()
+Texture2D::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 {
-	return CreateDesc{};
+	return CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
 }
 
 SPtr<Texture2D>

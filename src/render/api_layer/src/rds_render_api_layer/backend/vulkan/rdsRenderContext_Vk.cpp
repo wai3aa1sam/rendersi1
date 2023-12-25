@@ -144,7 +144,7 @@ RenderContext_Vk::onBeginRender()
 	if (!Util::isSuccess(ret))
 	{
 		invalidateSwapchain(ret, _vkSwapchain.framebufferSize());
-		return;
+		//return;
 	}
 
 	{
@@ -540,7 +540,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 	vkRdGraph.commit(rdGraph, this);
 	_shdSwapBuffers = true;
 
-	#if 1
+	#if 0
 	// present no need to record
 	// update: need to transition to present layout, temporary solution
 	{

@@ -18,6 +18,21 @@ class TransferFrame;
 class TransferContext;
 
 
+#define RDS_ENABLE_RenderResouce_DEBUG_NAME 1
+
+#define RDS_RenderResouce_SET_DEBUG_NAME(RSC, NAME) (RSC)->setDebugName(NAME)
+
+#if RDS_DEVELOPMENT
+
+#define RDS_RenderResouce_DEBUG_PARAMS const SrcLoc& debugSrcLoc_, StrView debugName
+
+#else
+
+#define RDS_RenderResouce_DEBUG_PARAMS int, StrView
+
+#endif // RDS_DEVELOPMENT
+
+
 #if 0
 #pragma mark --- rdsRenderResource-Decl ---
 #endif // 0
@@ -80,8 +95,11 @@ public:
 	void create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_);
 	void destroy();
 
+	virtual void	setDebugName(StrView name);
+
 public:
-	bool hasCreated() const;
+	bool			hasCreated()	const;
+	const char*		debugName()		const;
 
 public:
 	Renderer*		renderer();
@@ -94,9 +112,24 @@ public:
 
 protected:
 	RDS_DEBUG_SRCLOC_DECL;
+	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
+	String _debugName;
+	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
+
+
 	RenderDevice* _rdDev = nullptr;
 };
 
+inline
+const char* 
+RenderResource::debugName() const
+{
+	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
+	return _debugName.c_str();
+	#else
+	return "";
+	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
+}
 
 #endif
 

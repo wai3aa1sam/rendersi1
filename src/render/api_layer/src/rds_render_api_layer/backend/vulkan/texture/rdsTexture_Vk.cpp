@@ -30,6 +30,13 @@ Texture2D_Vk::~Texture2D_Vk()
 }
 
 void 
+Texture2D_Vk::setDebugName(StrView name)
+{
+	Base::setDebugName(name);
+	_setDebugName(name);
+}
+
+void 
 Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
@@ -63,22 +70,17 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 {
 	RDS_TODO("defer destroy and create new, or multi buffer if if upload frequently, but texture should not upload frequently,");
 	destroy();
-	RDS_WARN_ONCE("destroy();");
 
 	Base::onUploadToGpu(cDesc, cmd);
-
-	RDS_WARN_ONCE("Base::onUploadToGpu(cDesc, cmd);");
 
 	const auto& srcImage	= cDesc.uploadImage();
 	if (!srcImage.data().is_empty())
 	{
 		//transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, srcImage.data());
 		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
-		RDS_WARN_ONCE("transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());");
 	}
 
 	_createVkResource(cDesc);
-	RDS_WARN_ONCE("_createVkResource(cDesc);");
 }
 
 void 
@@ -112,19 +114,33 @@ Texture2D_Vk::_createVkResource(const CreateDesc& cDesc)
 	}
 
 	_vkImageView.create(this, rdDevVk);
-	RDS_WARN_ONCE("_vkImageView.create(this, rdDevVk);");
 
-	_setDebugName();
-	RDS_WARN_ONCE("_setDebugName();");
+	setDebugName(_debugName);
 }
+
+#if RDS_ENABLE_RenderResouce_DEBUG_NAME
+void 
+Texture2D_Vk::_setDebugName(StrView name)
+{
+	if (!_vkSampler)
+		return;
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkSampler,	"{}-{}:{}", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-{}:{}", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-{}:{}", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+}
+
+#else
 
 void 
-Texture2D_Vk::_setDebugName()
+Texture2D_Vk::_setDebugName(StrView name)
 {
-	RDS_VK_SET_DEBUG_NAME(_vkSampler);
-	RDS_VK_SET_DEBUG_NAME(_vkImage);
-	RDS_VK_SET_DEBUG_NAME(_vkImageView);
+
 }
+
+#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
+
+
+
 
 // only use  for swapchain
 void 

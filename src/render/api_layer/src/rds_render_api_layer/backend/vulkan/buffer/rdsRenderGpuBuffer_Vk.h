@@ -22,6 +22,8 @@ public:
 	RenderGpuBuffer_Vk();
 	virtual ~RenderGpuBuffer_Vk();
 
+	virtual void setDebugName(StrView name) override;
+
 	Vk_Buffer*		vkBuf();
 	Vk_Buffer_T*	vkBufHnd();
 

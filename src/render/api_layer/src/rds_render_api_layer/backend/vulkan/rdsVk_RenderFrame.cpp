@@ -180,9 +180,9 @@ Vk_RenderFrame::_setDebugName()
 		RDS_VK_SET_DEBUG_NAME_FMT(_computeCommandPools[i], "vk{}CommandPool-threadId: {}", QueueTypeFlags::Compute, i);
 		RDS_VK_SET_DEBUG_NAME_FMT(_transferCommandPools[i], "vk{}CommandPool-threadId: {}", QueueTypeFlags::Transfer, i);
 	}
-	RDS_VK_SET_DEBUG_NAME(_imageAvailableVkSmp);
-	RDS_VK_SET_DEBUG_NAME(_renderCompletedVkSmp);
-	RDS_VK_SET_DEBUG_NAME(_inFlightVkFence);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_imageAvailableVkSmp);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_renderCompletedVkSmp);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_inFlightVkFence);
 }
 
 

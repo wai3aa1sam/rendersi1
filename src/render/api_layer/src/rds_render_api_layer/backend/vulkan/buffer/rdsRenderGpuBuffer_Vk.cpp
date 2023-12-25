@@ -33,6 +33,13 @@ RenderGpuBuffer_Vk::~RenderGpuBuffer_Vk()
 	destroy();
 }
 
+void 
+RenderGpuBuffer_Vk::setDebugName(StrView name)
+{
+	Base::setDebugName(name);
+	RDS_VK_SET_DEBUG_NAME(_vkBuf, name);
+}
+
 void
 RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 {
@@ -61,7 +68,7 @@ RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 				, usageFlags
 				, QueueTypeFlags::Graphics);
 
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkBuf, RDS_DEBUG_SRCLOC);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkBuf);
 }
 
 void

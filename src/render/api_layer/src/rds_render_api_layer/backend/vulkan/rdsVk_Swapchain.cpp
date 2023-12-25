@@ -194,6 +194,12 @@ Vk_Swapchain::createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebu
 	createSwapchainImages(_vkSwapchainImages, outBackbuffers, hnd(), vkDev);
 	createSwapchainImageViews(_vkSwapchainImageViews, outBackbuffers, _vkSwapchainImages, rdDevVk, info().surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	createSwapchainFramebuffers(vkRdPass);
+
+	for (size_t i = 0; i < outBackbuffers.imageCount(); i++)
+	{
+		auto* backbuffer = outBackbuffers.backbuffer(i);
+		backbuffer->setDebugName(backbuffer->debugName());
+	}
 }
 
 void
@@ -297,21 +303,21 @@ Vk_Swapchain::destroyDepthResources()
 void 
 Vk_Swapchain::_setDebugName()
 {
-	RDS_VK_SET_DEBUG_NAME(_vkSurface);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSurface);
 
 	for (size_t i = 0; i < _vkSwapchainImages.size(); i++)
 	{
-		RDS_VK_SET_DEBUG_NAME(_vkSwapchainImages[i]);
-		RDS_VK_SET_DEBUG_NAME(_vkSwapchainImageViews[i]);
+		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainImages[i]);
+		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainImageViews[i]);
 	}
 
 	for (size_t i = 0; i < _vkSwapchainFramebuffers.size(); i++)
 	{
-		RDS_VK_SET_DEBUG_NAME(_vkSwapchainFramebuffers[i]);
+		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainFramebuffers[i]);
 	}
 
-	RDS_VK_SET_DEBUG_NAME(_vkDepthImage);
-	RDS_VK_SET_DEBUG_NAME(_vkDepthImageView);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImage);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImageView);
 }
 
 RenderDevice_Vk* 

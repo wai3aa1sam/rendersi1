@@ -150,7 +150,6 @@ public:
 
 	}
 };
-
 inline
 Texture_CreateDesc::Texture_CreateDesc(const Texture_Desc& desc)
 	: flag(desc.flag), format(desc.format), samplerState(desc.samplerState)
@@ -174,7 +173,7 @@ public:
 	bool isBackbuffer = false;
 
 public:
-	Texture2D_CreateDesc() = default;
+	RDS_RenderResource_COMMON_BODY(Texture2D_CreateDesc)
 
 	Texture2D_CreateDesc(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
 	{
@@ -226,6 +225,11 @@ public:
 		sampleCount = sCast<u8>(sampleCount_);
 
 		_hasDataToUpload = false;
+	}
+
+	void create(const Texture_Desc& desc)
+	{
+		create(desc.size.x, desc.size.y, desc.format, desc.mipCount, desc.flag, desc.sampleCount);
 	}
 
 	const Image&	uploadImage()		const	{ return _uploadImage; }
@@ -353,7 +357,7 @@ public:
 	using Size			= Tuple2u;
 
 public:
-	static CreateDesc		makeCDesc();
+	static CreateDesc		makeCDesc(RDS_DEBUG_SRCLOC_PARAM = {});
 	static SPtr<Texture2D>	make(CreateDesc& cDesc);
 
 public:

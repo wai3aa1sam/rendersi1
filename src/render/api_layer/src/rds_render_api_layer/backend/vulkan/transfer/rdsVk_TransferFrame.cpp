@@ -140,13 +140,13 @@ Vk_TransferFrame::getVkStagingBufHnd(StagingHandle hnd)
 void 
 Vk_TransferFrame::_setDebugName()
 {
-	RDS_VK_SET_DEBUG_NAME(_inFlightVkFnc);
-	RDS_VK_SET_DEBUG_NAME(_completedVkSmp);
-	RDS_VK_SET_DEBUG_NAME(_transferVkCmdPool);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_inFlightVkFnc);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_completedVkSmp);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_transferVkCmdPool);
 
-	RDS_VK_SET_DEBUG_NAME(_graphicsInFlightVkFnc);
-	RDS_VK_SET_DEBUG_NAME(_graphicsCompletedVkSmp);
-	RDS_VK_SET_DEBUG_NAME(_graphicsVkCmdPool);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_graphicsInFlightVkFnc);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_graphicsCompletedVkSmp);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_graphicsVkCmdPool);
 }
 
 RenderDevice_Vk* Vk_TransferFrame::renderDeviceVk() { return _tsfCtxVk->renderDeviceVk(); }

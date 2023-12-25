@@ -339,10 +339,10 @@ RenderDevice_Vk::_setDebugName()
 
 	if (adapterInfo().isDebug)
 	{
-		RDS_VK_SET_DEBUG_NAME(_vkDebugMessenger);
+		RDS_VK_SET_DEBUG_NAME(_vkDebugMessenger, debugName());
 	}
-	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice);
-	RDS_VK_SET_DEBUG_NAME(_vkDevice);
+	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice, debugName());
+	RDS_VK_SET_DEBUG_NAME(_vkDevice, debugName());
 
 
 }

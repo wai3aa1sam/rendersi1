@@ -29,7 +29,8 @@ public:
 	Texture2D*	backbuffer();
 	Texture2D*	backbuffer(SizeType i)	{ return _images[i]; }
 
-	bool		isEmpty() const { return _images.is_empty(); }
+	bool		isEmpty()		const { return _images.is_empty(); }
+	SizeType	imageCount()	const { return _images.size(); }
 
 private:
 	RenderContext*	_rdCtx = nullptr;

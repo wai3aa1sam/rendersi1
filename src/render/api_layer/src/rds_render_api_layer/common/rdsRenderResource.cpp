@@ -65,6 +65,14 @@ RenderResource::destroy()
 	_rdDev = nullptr;
 }
 
+void 
+RenderResource::setDebugName(StrView name)
+{
+	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
+	_debugName = name;
+	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
+}
+
 bool 
 RenderResource::hasCreated() const
 {

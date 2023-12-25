@@ -283,7 +283,10 @@ public:
 		{
 			_rdReq.reset(_rdCtx);
 			_rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
+
+			ImGui::ShowDemoWindow();
 			_rdCtx->drawUI(_rdReq);
+
 			_rdReq.swapBuffers();
 
 			_rdCtx->commit(constCast(_rdReq.commandBuffer()));

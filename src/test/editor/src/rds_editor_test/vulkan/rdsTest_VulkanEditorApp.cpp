@@ -279,14 +279,14 @@ public:
 		auto* mainWnd = VulkanEditorApp::instance()->mainWin();
 		mainWnd->camera().setViewport(mainWnd->clientRect());
 
-		#if 0
+		#if 1
 		{
 			RDS_PROFILE_SECTION("wait first frame");
 			RDS_TODO("temp, remove");
 
 			auto* mainWin	= VulkanEditorApp::instance()->mainWin();
 			auto& rdCtx = mainWin->renderContext(); 
-			while (!rdCtx.isFirstFrameCompleted())
+			while (!rdCtx.isFrameCompleted())
 			{
 				OsUtil::sleep_ms(1);
 			}
@@ -294,7 +294,7 @@ public:
 		#endif // 0
 
 		//_testMultiThreadDrawCalls.execute();
-		uploadTestMultiBuf();
+		//uploadTestMultiBuf();
 
 		#if RDS_TEST_RENDER_GRAPH
 		{
@@ -331,25 +331,7 @@ public:
 		{
 			auto drawCall = _rdReq.addDrawCall();
 			
-			#if 1
-
 			drawCall->setSubMesh(&_rdMesh1.subMesh());
-
-			#else
-
-			drawCall->vertexOffset	= 0;
-			drawCall->vertexCount	= _testVtxBuf->elementCount();
-			drawCall->vertexBuffer	= _testVtxBuf;
-
-			drawCall->indexOffset	= 0;
-			drawCall->indexCount	= _testIdxBuf->elementCount();
-			drawCall->indexBuffer	= _testIdxBuf;
-
-			drawCall->vertexLayout			= getVertexLayout_RndColorTriangle();
-			drawCall->indexType				= RenderDataType::UInt16;
-			drawCall->renderPrimitiveType	= RenderPrimitiveType::Triangle;
-
-			#endif // 0
 
 			drawCall->material			= _testMaterial;
 			drawCall->materialPassIdx	= 0;
@@ -366,72 +348,19 @@ public:
 			Mat4f mvp		= proj * view * model;
 			mvp = Mat4f::s_rotateZ(math::radians(180.0f));
 
-			// later should use this line to get the material cpu buffer of constBuf
-			#if 0
-			{
-				Vector<u8> buf;
-				buf.resize(256);
-				auto* dst = reinCast<Mat4f*>(buf.data() + 192);
-				*dst = mvp;
-
-				RDS_LOG("~~~ success");
-			}
-			#endif // 0
-
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
 			_testMaterial->setParam("texture0", _uvCheckerTex);
-
-			//u32 iFrame = Renderer::rdDev()->iFrame(); RDS_UNUSED(iFrame); // iFrame % RenderApiLayerTraits::s_kFrameInFlightCount == 0 
-			//iFrame % RenderApiLayerTraits::s_kFrameInFlightCount == 0 ? _testMaterial->setParam("texture0", _uvCheckerTex) : _testMaterial->setParam("texture0", _uvChecker2Tex);
-			
-			#if 0
-			static int i = 0;
-			if (/*Renderer::rdDev()->iFrame() != 0 && */i >= 0 /*&& i < 100*/ /*&& i % 50 == 0*/)
-			{
-				auto texCDesc = Texture2D::makeCDesc();
-				texCDesc.create(iFrame % 2 == 0 ? "asset/texture/uvChecker2.png" : "asset/texture/uvChecker.png");
-				_textures.emplace_back(Renderer::rdDev()->createTexture2D(texCDesc));
-
-				_testMaterial->setParam("texture0", _textures[i]);
-
-				++i;
-			}
-			#endif // 0
 		}
 		#endif // 0
-
-		#if 0
-
-		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh1);
-		_rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, _rdMesh2);
-		//_rdReq.drawRenderables(DrawingSettings{});
-		
-		#else
-
-		//OsUtil::sleep_ms(50);
-
-		#endif // 0
-
-		{
-			RDS_TODO("wrap imgui instead of directly using it");
-			#if RDS_RENDER_ENABLE_UI
-			ImGui::ShowDemoWindow();
-			#endif // RDS_RENDER_ENABLE_UI
-		}
-
-		//rdCtx.drawUI(_rdReq);
-
-		_rdReq.swapBuffers();
-
-		RDS_TODO("drawUI will upload vertex, maybe defer the upload");
-		tsfReq.commit();	// this must call only after wait its second gen frame
 
 		#if RDS_TEST_RENDER_GRAPH
 		//RDS_CALL_ONCE(_testRenderGraph.commit());
 		_testRenderGraph.commit();
 		#endif // RDS_TEST_RENDER_GRAPH
 
-		//rdCtx.commit(_rdReq);
+		RDS_TODO("drawUI will upload vertex, maybe defer the upload");
+		tsfReq.commit();	// this must call only after wait its second gen frame
+
 		rdCtx.endRender();
 
 		Renderer::rdDev()->nextFrame();

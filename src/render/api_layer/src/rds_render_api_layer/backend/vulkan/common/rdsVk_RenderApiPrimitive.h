@@ -5,15 +5,33 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
+#if RDS_ENABLE_RenderResouce_DEBUG_NAME
+
 #define RDS_VK_SET_DEBUG_NAME_IMPL(VK_OBJ, NAME, RD_DEV_VK)						(VK_OBJ).setDebugName(NAME, RD_DEV_VK)
 #define RDS_VK_SET_DEBUG_NAME_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_)			RDS_VK_SET_DEBUG_NAME_IMPL		 (VK_OBJ,	::rds::fmtAs_T<::rds::TempString>("{}:{}-{}", SRCLOC_.func, SRCLOC_.line, RDS_STRINGIFY(VK_OBJ) ), renderDeviceVk() )
-#define RDS_VK_SET_DEBUG_NAME_SRCLOC(VK_OBJ, SRCLOC_)							RDS_VK_SET_DEBUG_NAME_SRCLOC_IMPL(VK_OBJ, renderDeviceVk(), SRCLOC_)
-#define RDS_VK_SET_DEBUG_NAME(VK_OBJ)											RDS_VK_SET_DEBUG_NAME_SRCLOC	 (VK_OBJ, RDS_SRCLOC)
+#define RDS_VK_SET_DEBUG_NAME_SRCLOC(VK_OBJ)									RDS_VK_SET_DEBUG_NAME_SRCLOC_IMPL(VK_OBJ, renderDeviceVk(), RDS_SRCLOC)
+#define RDS_VK_SET_DEBUG_NAME(VK_OBJ, NAME)										RDS_VK_SET_DEBUG_NAME_IMPL		 (VK_OBJ, NAME, renderDeviceVk())
 
 #define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_, ...)	RDS_VK_SET_DEBUG_NAME_IMPL				(VK_OBJ, ::rds::fmtAs_T<::rds::TempString>("{}:{}-{}", SRCLOC_.func, SRCLOC_.line, ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__) ), RD_DEV_VK )
 #define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(VK_OBJ, SRCLOC_, ...)					RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL	(VK_OBJ, renderDeviceVk(), SRCLOC_, __VA_ARGS__)
 #define RDS_VK_SET_DEBUG_NAME_FMT_IMPL(VK_OBJ, RD_DEV_VK, ...)					RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL	(VK_OBJ, RD_DEV_VK, RDS_SRCLOC, __VA_ARGS__ )
-#define RDS_VK_SET_DEBUG_NAME_FMT(VK_OBJ, ...)									RDS_VK_SET_DEBUG_NAME_FMT_IMPL			(VK_OBJ, renderDeviceVk(), __VA_ARGS__ )
+#define RDS_VK_SET_DEBUG_NAME_FMT(VK_OBJ, ...)									RDS_VK_SET_DEBUG_NAME_IMPL				(VK_OBJ, ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__), renderDeviceVk() )
+
+#else
+
+#define RDS_VK_SET_DEBUG_NAME_IMPL(VK_OBJ, NAME, RD_DEV_VK)						
+#define RDS_VK_SET_DEBUG_NAME_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_)			
+#define RDS_VK_SET_DEBUG_NAME_SRCLOC(VK_OBJ)									
+#define RDS_VK_SET_DEBUG_NAME(VK_OBJ, NAME)										
+
+#define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_, ...)	
+#define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(VK_OBJ, SRCLOC_, ...)					
+#define RDS_VK_SET_DEBUG_NAME_FMT_IMPL(VK_OBJ, RD_DEV_VK, ...)					
+#define RDS_VK_SET_DEBUG_NAME_FMT(VK_OBJ, ...)									
+
+
+#endif // RDS_DEVELOPMENT
+
 
 namespace rds
 {
@@ -105,7 +123,7 @@ public:
 	void destroy() 
 	{  
 		_hnd = VK_NULL_HANDLE;
-		#if RDS_VK_ENABLE_DEBUG_NAME
+		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 		_debugName.clear();
 		#endif
 	}
@@ -113,7 +131,7 @@ public:
 	void setDebugName(StrView name, RenderDevice_Vk* rdDevVk)
 	{
 		RDS_CORE_ASSERT(hnd(), "VkObjectType: {}, setDebugName, hnd == nullptr", enumInt(VK_OBJ_T));
-		#if RDS_VK_ENABLE_DEBUG_NAME
+		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 		_debugName = name;
 		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), vkObjectType(), _debugName, hnd());
 		#endif // RDS_DEVELOPMENT
@@ -131,7 +149,7 @@ public:
 
 	const char* debugName() const
 	{
-		#if RDS_VK_ENABLE_DEBUG_NAME
+		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 		return _debugName.c_str();
 		#else
 		return nullptr;
@@ -144,7 +162,7 @@ protected:
 		_hnd = rhs._hnd; 
 		rhs._hnd = VK_NULL_HANDLE;
 
-		#if RDS_VK_ENABLE_DEBUG_NAME
+		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 		_debugName = rds::move(rhs._debugName);
 		#endif
 	}
@@ -152,7 +170,7 @@ protected:
 protected:
 	T*		_hnd = VK_NULL_HANDLE;
 
-	#if RDS_VK_ENABLE_DEBUG_NAME
+	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 	String	_debugName;
 	#endif
 };

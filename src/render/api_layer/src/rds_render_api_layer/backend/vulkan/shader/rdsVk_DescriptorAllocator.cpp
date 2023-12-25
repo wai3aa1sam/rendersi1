@@ -92,7 +92,7 @@ Vk_DescriptorAllocator::alloc(const Vk_DescriptorSetLayout* layout)
 	}
 
 	RDS_TODO("allocation debug name");
-	RDS_VK_SET_DEBUG_NAME(out);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(out);
 
 	RDS_ASSERT(out.hnd(), "");
 
@@ -111,7 +111,7 @@ Vk_DescriptorAllocator::requestPool()
 	else
 	{
 		createPool(out, _cDesc.poolSizes, _cDesc.setReservedSize, _cDesc.cFlag, _rdDevVk);
-		RDS_VK_SET_DEBUG_NAME(out);
+		RDS_VK_SET_DEBUG_NAME_SRCLOC(out);
 	}
 
 	return out;

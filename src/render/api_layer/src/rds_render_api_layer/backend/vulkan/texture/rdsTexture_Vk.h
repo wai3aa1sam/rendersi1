@@ -24,6 +24,8 @@ public:
 	Texture2D_Vk();
 	virtual ~Texture2D_Vk();
 
+	virtual void setDebugName(StrView name) override;
+
 	Vk_Image_T*		vkImageHnd();
 	Vk_ImageView_T* vkImageViewHnd();
 	Vk_Sampler_T*	vkSamplerHnd();
@@ -37,7 +39,7 @@ protected:
 
 protected:
 	void _createVkResource(const CreateDesc& cDesc);
-	void _setDebugName();
+	void _setDebugName(StrView name);
 
 	virtual void setNull() override;
 

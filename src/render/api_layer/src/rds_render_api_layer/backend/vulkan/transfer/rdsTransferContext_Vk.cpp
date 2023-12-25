@@ -216,9 +216,9 @@ TransferContext_Vk::uploadToStagingBuf(StagingHandle& outHnd, ByteSpan data, Siz
 void 
 TransferContext_Vk::_setDebugName()
 {
-	RDS_VK_SET_DEBUG_NAME(_vkGraphicsQueue);
-	RDS_VK_SET_DEBUG_NAME(_vkTransferQueue);
-	RDS_VK_SET_DEBUG_NAME(_vkComputeQueue);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkGraphicsQueue);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkTransferQueue);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkComputeQueue);
 
 }
 

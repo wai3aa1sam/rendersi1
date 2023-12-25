@@ -182,21 +182,28 @@ RenderGraph::compile()
 	// could loop pass for rdTarget, depthStencil, writes...
 	for (auto& e : resources)
 	{
+		if (e->_pRdRsc || e->_spRdRsc)
+			continue;
+
 		switch (e->type())
 		{
 			case RdgResourceType::Texture:
 			{
 				auto* rsc = sCast<RdgTexture*>(e);
-				auto cDesc = Texture2D_CreateDesc{rsc->desc()};
+				auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+				cDesc.create(rsc->desc());
 				auto* rdRsc = resourcePool().createTexture(cDesc, renderDevice());
+				rdRsc->setDebugName(rsc->name());
 				rsc->commitRenderResouce(rdRsc);
 			} break;
 
 			case RdgResourceType::Buffer:
 			{
 				auto* rsc = sCast<RdgBuffer*>(e);
-				auto cDesc = RenderGpuBuffer_CreateDesc{rsc->desc()};
+				auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+				cDesc.create(rsc->desc());
 				auto* rdRsc = resourcePool().createBuffer(cDesc, renderDevice());
+				rdRsc->setDebugName(rsc->name());
 				rsc->commitRenderResouce(rdRsc);
 			} break;
 
