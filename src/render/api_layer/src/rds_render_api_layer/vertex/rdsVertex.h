@@ -608,10 +608,10 @@ template<class COLOR_TYPE, size_t COLOR_COUNT>		using VertexT_PosColor	= VertexT
 template<size_t COLOR_COUNT>						using Vertex_PosColor	= VertexT_PosColor<DefaultColorType, COLOR_COUNT>;
 
 template<class UV_TYPE, size_t UV_COUNT>			using VertexT_PosUv		= VertexT_Uv<UV_TYPE, UV_COUNT, Vertex_Pos>;
-template<size_t UV_COUNT>							using Vertex_PosUv		= VertexT_PosColor<DefaultUvType, UV_COUNT>;
+template<size_t UV_COUNT>							using Vertex_PosUv		= VertexT_PosUv<DefaultUvType, UV_COUNT>;
 
 template<class NORMAL_TYPE, size_t NORMAL_COUNT>	using VertexT_PosNormal	= VertexT_Normal<NORMAL_TYPE, NORMAL_COUNT, Vertex_Pos>;
-template<size_t NORMAL_COUNT>						using Vertex_PosNormal	= VertexT_PosColor<DefaultNormalType, NORMAL_COUNT>;
+template<size_t NORMAL_COUNT>						using Vertex_PosNormal	= VertexT_PosNormal<DefaultNormalType, NORMAL_COUNT>;
 
 template<class UV_TYPE, size_t UV_COUNT, size_t COLOR_COUNT = 1>	using VertexT_PosColorUv	= VertexT_Uv<UV_TYPE, UV_COUNT, Vertex_PosColor<COLOR_COUNT> >;
 template<size_t UV_COUNT, size_t COLOR_COUNT = 1>					using Vertex_PosColorUv		= VertexT_Uv<DefaultUvType, UV_COUNT, Vertex_PosColor<COLOR_COUNT> >;

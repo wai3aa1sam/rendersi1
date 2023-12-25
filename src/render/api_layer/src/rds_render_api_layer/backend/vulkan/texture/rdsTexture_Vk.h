@@ -7,6 +7,10 @@
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
+
+class RenderContext_Vk;
+class Vk_Swapchain;
+
 #if 0
 #pragma mark --- rdsTexture2D_Vk-Decl ---
 #endif // 0
@@ -14,6 +18,8 @@ namespace rds
 
 class Texture2D_Vk : public RenderResource_Vk<Texture2D>
 {
+	friend class RenderContext_Vk;
+	friend class Vk_Swapchain;
 public:
 	Texture2D_Vk();
 	virtual ~Texture2D_Vk();
@@ -32,6 +38,8 @@ protected:
 protected:
 	void _createVkResource(const CreateDesc& cDesc);
 	void _setDebugName();
+
+	virtual void setNull() override;
 
 protected:
 	Vk_Image		_vkImage;

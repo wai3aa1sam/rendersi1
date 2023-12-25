@@ -55,6 +55,31 @@ EditMesh makeRndColorTriangleMesh(float z = 0.0f, bool isRnd = true)
 	return editMesh;
 }
 
+EditMesh getFullScreenTriangleMesh()
+{
+	static size_t s_kVtxCount = 3;
+	EditMesh editMesh;
+	{
+		auto& e = editMesh.pos;
+		e.reserve(s_kVtxCount);
+		e.emplace_back(-1.0f, -1.0f, 0.0f);
+		e.emplace_back(3.0f,  -1.0f, 0.0f);
+		e.emplace_back(-1.0f, 3.0f, 0.0f);
+	}
+	{
+		auto& e = editMesh.uvs[0];
+		e.reserve(s_kVtxCount);
+		e.emplace_back(0.0f, 0.0f);
+		e.emplace_back(2.0f, 0.0f);
+		e.emplace_back(0.0f, 2.0f);
+	}
+
+	editMesh.indices = { 0, 1, 2 };
+
+	RDS_ASSERT(editMesh.getVertexLayout() == Vertex_PosUv<1>::vertexLayout(), "");
+	return editMesh;
+}
+
 #endif // 0
 
 class TestScene
@@ -69,6 +94,11 @@ public:
 		_rdMeshes.emplace_back(&_rdMesh2);
 	}
 
+	void create(math::Camera3f* camera)
+	{
+		_camera = camera;
+	}
+
 	void update(float dt, float aspectRatio)
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
@@ -77,13 +107,13 @@ public:
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 		Mat4f model		= Mat4f::s_rotateZ(math::radians(90.0f) * time);
-		Mat4f view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
-		Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), aspectRatio, 0.1f, 10.0f);
+		//Mat4f view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
+		//Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), aspectRatio, 0.1f, 10.0f);
 		//proj[1][1]		*= -1;		// no need this line as enabled VK_KHR_Maintenance1 
-		Mat4f mvp		= proj * view * model;
+		Mat4f mvp		= _camera->viewProjMatrix() * model;
 
-		//mvp = Mat4f::s_identity();
-
+		mvp = Mat4f::s_identity();
+		
 		_mvp = mvp;
 	}
 
@@ -108,6 +138,7 @@ private:
 	RenderMesh _rdMesh2;
 
 	Mat4f _mvp;
+	math::Camera3f* _camera = nullptr;
 };
 
 class Test_RenderGraph : public NonCopyable
@@ -118,6 +149,12 @@ public:
 	{
 	}
 
+	void setCamera(math::Camera3f* camera)
+	{
+		_camera = camera;
+		_scene.create(camera);
+	}
+
 	void setup(RenderContext* rdCtx, bool create = true)
 	{
 		if (create)
@@ -126,13 +163,17 @@ public:
 			_rdGraph.create("Test Render Graph", rdCtx);
 			//return;
 
+			auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
+			_fullScreenTriangle.create(fullScreenTriangleMesh);
+
 			_preDepthShader = Renderer::rdDev()->createShader("asset/shader/preDepth.shader");
-			_preDepthMtl	= Renderer::rdDev()->createMaterial();
-			_preDepthMtl->setShader(_preDepthShader);
+			_preDepthMtl	= Renderer::rdDev()->createMaterial(_preDepthShader);
 
 			_gBufferShader	= Renderer::rdDev()->createShader("asset/shader/gBuffer.shader");
-			_gBufferMtl		= Renderer::rdDev()->createMaterial();
-			_gBufferMtl->setShader(_gBufferShader);
+			_gBufferMtl		= Renderer::rdDev()->createMaterial(_gBufferShader);
+
+			_presentShader	= Renderer::rdDev()->createShader("asset/shader/present.shader");
+			_presentMtl		= Renderer::rdDev()->createMaterial(_presentShader);
 		}
 
 		SPtr<Texture2D> backBuffer;
@@ -141,8 +182,8 @@ public:
 
 		auto screenSize = Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
-		auto testColorTex = _rdGraph.createTexture("testColorTex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
-		auto depthTex = _rdGraph.createTexture("depth_tex", Texture2D_CreateDesc{ screenSize, ColorType::Depth, 1, TextureFlags::DepthStencil | TextureFlags::ShaderResource});
+		RdgTextureHnd testColorTex	= _rdGraph.createTexture("testColorTex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
+		RdgTextureHnd depthTex		= _rdGraph.createTexture("depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, 1, TextureFlags::DepthStencil | TextureFlags::ShaderResource});
 
 		auto& depthPrePass = _rdGraph.addPass("depth_pre_pass", RdgPassTypeFlags::Graphics);
 		depthPrePass.setRenderTarget(testColorTex,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
@@ -159,9 +200,9 @@ public:
 
 		
 		#if 1
-		auto albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
-		auto normalTex		= _rdGraph.createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
-		auto positionTex	= _rdGraph.createTexture("position_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
+		RdgTextureHnd albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
+		RdgTextureHnd normalTex		= _rdGraph.createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
+		RdgTextureHnd positionTex	= _rdGraph.createTexture("position_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
 
 		auto& gBufferPass = _rdGraph.addPass("g_buffer_pass", RdgPassTypeFlags::Graphics);
 		//gBufferPass.setRenderTarget({albedoTex, normalTex, positionTex});
@@ -197,23 +238,28 @@ public:
 			}
 		);
 
-		auto backBufferRt = _rdGraph.importTexture("back_buffer", backBuffer);
+		#endif // 0
+
+		#if 1
+		auto backBufferRt = _rdGraph.importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
 
 		auto& finalComposePass = _rdGraph.addPass("final_compose", RdgPassTypeFlags::Graphics);
-		finalComposePass.readTexture(colorTex);
-		finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		finalComposePass.readTexture(albedoTex);
+		finalComposePass.setRenderTarget(testColorTex, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		finalComposePass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-
+				_presentMtl->setParam("texture0",			albedoTex.renderResource());
+				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, -1.0f, 1.0f}));
+				//_presentMtl->setParam("texture0", albedoTex.renderResource());
+				//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle);
+				//rdReq.swapBuffers();
 			}
 		);
-
-
-		_rdGraph.exportTexture(outColor, colorTex);
-		_rdGraph.exportTexture(out1, albedoTex);
 		#endif // 0
 
+		//_rdGraph.exportTexture(outColor, colorTex);
+		//_rdGraph.exportTexture(out1, albedoTex);
 
 	}
 
@@ -233,6 +279,15 @@ public:
 	void commit()
 	{
 		_rdGraph.commit();
+
+		{
+			_rdReq.reset(_rdCtx);
+			_rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
+			_rdCtx->drawUI(_rdReq);
+			_rdReq.swapBuffers();
+
+			_rdCtx->commit(constCast(_rdReq.commandBuffer()));
+		}
 	}
 
 	void dump(StrView filename = "debug/render_graph")
@@ -249,15 +304,23 @@ public:
 	TestScene* scene() { return &_scene; }
 
 public:
-	RenderContext*	_rdCtx = nullptr;
+	RenderContext*	_rdCtx	= nullptr;
+	math::Camera3f* _camera = nullptr;
+
 	RenderGraph		_rdGraph;
 	TestScene		_scene;
 
 	SPtr<Material> _preDepthMtl;
 	SPtr<Material> _gBufferMtl;
+	SPtr<Material> _presentMtl;
 
 	SPtr<Shader> _preDepthShader;
 	SPtr<Shader> _gBufferShader;;
+	SPtr<Shader> _presentShader;;
+
+	RenderMesh	_fullScreenTriangle;
+
+	RenderRequest _rdReq;
 };
 
 }

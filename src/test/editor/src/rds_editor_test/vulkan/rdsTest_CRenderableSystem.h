@@ -84,6 +84,8 @@ public:
 				_outCmds		= outCmds;
 				_rdQueue		= rdQueue;
 				_mtx			= mtx;
+
+				_notYetSupported(RDS_SRCLOC);		// added mtl, but not yet update
 			}
 
 			virtual void execute() override
@@ -98,7 +100,7 @@ public:
 				{
 					auto id = _batchOffset + i;
 					auto& cRenderables = _cRenderables[id];
-					_rdQueue->recordDrawCall(cmds, cRenderables->_rdMesh, Mat4f::s_identity());
+					_rdQueue->recordDrawCall(cmds, cRenderables->_rdMesh, nullptr, Mat4f::s_identity());
 				}
 
 				// end
@@ -171,6 +173,7 @@ public:
 
 	JobHandle recordDrawCallCommands2(RenderQueue& rdQueue, HashedDrawCallCommands& out)
 	{
+		_notYetSupported(RDS_SRCLOC);		// added mtl, but not yet update
 		//auto& outDrawCmds = out._interal_drawCallCmds();
 		using DrawCallCmds = RenderCommandBuffer::DrawCallCmds;
 
@@ -211,7 +214,7 @@ public:
 				{
 					auto id = clusterArgs().clusterOffset + i;
 					auto& cRenderables = _cRenderables[id];
-					_rdQueue->recordDrawCall(_cmds, cRenderables->_rdMesh, Mat4f::s_identity());
+					_rdQueue->recordDrawCall(_cmds, cRenderables->_rdMesh, nullptr, Mat4f::s_identity());
 				}
 			}
 

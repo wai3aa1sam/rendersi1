@@ -188,14 +188,16 @@ RenderGraph::compile()
 			{
 				auto* rsc = sCast<RdgTexture*>(e);
 				auto cDesc = Texture2D_CreateDesc{rsc->desc()};
-				rsc->commitResouce(resourcePool().createTexture(cDesc, renderDevice()));
+				auto* rdRsc = resourcePool().createTexture(cDesc, renderDevice());
+				rsc->commitRenderResouce(rdRsc);
 			} break;
 
 			case RdgResourceType::Buffer:
 			{
 				auto* rsc = sCast<RdgBuffer*>(e);
 				auto cDesc = RenderGpuBuffer_CreateDesc{rsc->desc()};
-				rsc->commitResouce(resourcePool().createBuffer(cDesc, renderDevice()));
+				auto* rdRsc = resourcePool().createBuffer(cDesc, renderDevice());
+				rsc->commitRenderResouce(rdRsc);
 			} break;
 
 			default: { RDS_THROW("unknow Render Graph Resource"); } break;
@@ -253,22 +255,24 @@ RdgTextureHnd
 RenderGraph::importTexture(StrView name, Texture* tex)
 {
 	RdgTexture_CreateDesc cDesc;
-	//cDesc
+	cDesc = tex->desc();
 	auto hnd = createTexture(name, cDesc);
 	hnd._rdgRsc->setImport(true);
-
+	hnd._rdgRsc->commitRenderResouce(tex);
 	return hnd;
 }
 
 void 
 RenderGraph::exportTexture(Texture* out, RdgTextureHnd hnd)
 {
+	_notYetSupported(RDS_SRCLOC);
 	hnd._rdgRsc->setExport(true);
 }
 
 RdgBufferHnd 
 RenderGraph::importBuffer(StrView name, Buffer* buf)
 {
+	_notYetSupported(RDS_SRCLOC);
 	RdgBuffer_CreateDesc cDesc;
 	cDesc = buf->desc();
 	cDesc.typeFlags |= RenderGpuBufferTypeFlags::Compute;

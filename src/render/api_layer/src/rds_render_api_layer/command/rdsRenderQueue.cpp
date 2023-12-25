@@ -137,7 +137,7 @@ RenderQueue::alloc(SizeType n, SizeType align)
 }
 
 void 
-RenderQueue::recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMesh& rdMesh /*, const SPtr<Material>& */, const Mat4f& transform)
+RenderQueue::recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)
 {
 	auto materialPassCount = 1;
 	auto nDrawCalls = rdMesh.subMeshCount() * materialPassCount;
@@ -147,7 +147,7 @@ RenderQueue::recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMe
 	{
 		//for (auto& pass : passes)
 		{
-			RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_ARG, it, e, transform);
+			RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_ARG, it, e, mtl, transform);
 			++it;
 		}
 	}

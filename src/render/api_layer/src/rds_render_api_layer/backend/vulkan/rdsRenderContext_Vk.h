@@ -40,28 +40,25 @@ public:
 
 	void addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd);
 	
-	virtual bool isFirstFrameCompleted() override;
+	virtual bool isFrameCompleted() override;
 
 public:
 	Vk_Queue* vkGraphicsQueue();
 	Vk_Queue* vkTransferQueue();
 	Vk_Queue* vkPresentQueue();
 
-	Vk_CommandBuffer_T* vkCommandBuffer();
-	Vk_CommandBuffer*	graphicsVkCmdBuf();
-
 	Vk_RenderFrame& vkRdFrame();
 
 public:
 	void onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd);
-	void onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd);
-	void onRenderCommand_SetScissorRect(RenderCommand_SetScissorRect* cmd);
+	void onRenderCommand_SwapBuffers		(RenderCommand_SwapBuffers*		cmd);
+	void onRenderCommand_SetScissorRect		(RenderCommand_SetScissorRect*	cmd, void* userData);
 
 	void _onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd);
-	void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd);
+	//void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd);
 	void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, void* userData);
 
-	void onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd);
+	void onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd, void* userData);
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -76,16 +73,7 @@ protected:
 	virtual void onCommit(RenderCommandBuffer& renderBuf) override;
 	virtual void onCommit(RenderGraph&			rdGraph)  override;
 
-	void test_extraDrawCall(RenderCommandBuffer& renderCmdBuf);
-
 protected:
-	void beginRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
-	void endRecord(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
-	void bindPipeline(Vk_CommandBuffer_T* vkCmdBuf, Vk_Pipeline* vkPipeline);
-
-	void beginRenderPass(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
-	void endRenderPass	(Vk_CommandBuffer_T* vkCmdBuf, u32 imageIdx);
-
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
 
 	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
@@ -108,7 +96,7 @@ protected:
 	Vk_Queue _vkTransferQueue;
 
 	Vk_RenderFrames		_vkRdFrames;
-	Vk_CommandBuffer*	_curGraphicsVkCmdBuf = nullptr;
+	//Vk_CommandBuffer*	_curGraphicsVkCmdBuf = nullptr;
 
 	bool _shdSwapBuffers = false;
 
@@ -124,8 +112,8 @@ inline Vk_Queue* RenderContext_Vk::vkTransferQueue()	{ return &_vkTransferQueue;
 inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; }
 
 
-inline Vk_CommandBuffer_T*	RenderContext_Vk::vkCommandBuffer()		{ return _curGraphicsVkCmdBuf->hnd(); }
-inline Vk_CommandBuffer*	RenderContext_Vk::graphicsVkCmdBuf()	{ return _curGraphicsVkCmdBuf; }
+//inline Vk_CommandBuffer_T*	RenderContext_Vk::vkCommandBuffer()		{ return _curGraphicsVkCmdBuf->hnd(); }
+//inline Vk_CommandBuffer*	RenderContext_Vk::graphicsVkCmdBuf()	{ return _curGraphicsVkCmdBuf; }
 
 inline Vk_RenderFrame& RenderContext_Vk::vkRdFrame()		{ return _vkRdFrames[_curFrameIdx]; }
 

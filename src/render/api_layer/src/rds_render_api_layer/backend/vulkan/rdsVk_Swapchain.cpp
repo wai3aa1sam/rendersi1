@@ -26,6 +26,8 @@ Vk_Swapchain::~Vk_Swapchain()
 void 
 Vk_Swapchain::create(const CreateDesc& cDesc)
 {
+	RDS_CORE_ASSERT(cDesc.outBackbuffers, "no backbuffers");
+
 	const auto& framebufferRect2f = cDesc.framebufferRect2f;
 	bool isInvalidSize = math::equals0(framebufferRect2f.size.x) || math::equals0(framebufferRect2f.size.y);
 	if (isInvalidSize || !cDesc.rdCtx)
@@ -53,8 +55,8 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 			return;*/
 	}
 
-	createSwapchainInfo(_swapchainInfo, rdDevVk->swapchainAvailableInfo(), framebufferRect2f, cDesc.colorFormat, cDesc.colorSpace, cDesc.depthFormat);
-	createSwapchain(info().rect2f, cDesc.vkRdPass);
+	createSwapchainInfo(_swapchainInfo, cDesc.imageCount, rdDevVk->swapchainAvailableInfo(), framebufferRect2f, cDesc.colorFormat, cDesc.colorSpace, cDesc.depthFormat);
+	createSwapchain(*cDesc.outBackbuffers, info().rect2f, cDesc.vkRdPass);
 }
 
 void 
@@ -71,7 +73,7 @@ Vk_Swapchain::destroy(NativeUIWindow* wnd)
 }
 
 VkResult 
-Vk_Swapchain::acquireNextImage(Vk_Semaphore* signalSmp)
+Vk_Swapchain::acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp)
 {
 	RDS_PROFILE_SCOPED();
 
@@ -86,6 +88,7 @@ Vk_Swapchain::acquireNextImage(Vk_Semaphore* signalSmp)
 	u32 imageIdx = 0;
 	auto ret = vkAcquireNextImageKHR(vkDev, hnd(), NumLimit<u64>::max(), signalSmp->hnd(), VK_NULL_HANDLE, &imageIdx);
 	_curImageIdx = Util::isSuccess(ret) ? imageIdx : _curImageIdx;
+	outImageIdx = _curImageIdx;
 
 	return ret;
 }
@@ -95,8 +98,8 @@ Vk_Swapchain::swapBuffers(Vk_Queue* presentVkQueue, Vk_Semaphore* vkWaitSmp)
 {
 	VkPresentInfoKHR presentInfo = {};
 
-	Vk_Semaphore_T*	waitVkSmps[]   = { vkWaitSmp->hnd()};
-	Vk_Swapchain_T*	vkSwapChains[] = { hnd()};
+	Vk_Semaphore_T*	waitVkSmps[]   = { vkWaitSmp->hnd() };
+	Vk_Swapchain_T*	vkSwapChains[] = { hnd() };
 	u32				imageIndices[] = { curImageIdx() };
 
 	presentInfo.sType				= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -118,10 +121,12 @@ Vk_Swapchain::swapBuffers(Vk_Queue* presentVkQueue, Vk_Semaphore* vkWaitSmp)
 }
 
 void
-Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvailableInfo& info, const Rect2f& framebufferRect2f
+Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, u32 imageCount, const Vk_SwapchainAvailableInfo& info, const Rect2f& framebufferRect2f
 									, VkFormat colorFormat, VkColorSpaceKHR colorSpace, VkFormat depthFormat)
 {
+	RDS_CORE_ASSERT(imageCount > 0, "imageCount > 0");
 	out.depthFormat = depthFormat;
+	out.imageCount  = math::min(imageCount, info.capabilities.maxImageCount);
 
 	RDS_CORE_ASSERT(!info.formats.is_empty() || !info.presentModes.is_empty(), "info is not yet init");
 	{
@@ -167,7 +172,7 @@ Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvail
 }
 
 void
-Vk_Swapchain::createSwapchain(const Rect2f& framebufferRect2f, Vk_RenderPass* vkRdPass)
+Vk_Swapchain::createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebufferRect2f, Vk_RenderPass* vkRdPass)
 {
 	RDS_PROFILE_SCOPED();
 
@@ -182,10 +187,12 @@ Vk_Swapchain::createSwapchain(const Rect2f& framebufferRect2f, Vk_RenderPass* vk
 
 	Util::createSwapchain(hndForInit(), _vkSurface.hnd(), vkDev, info(), rdDevVk->swapchainAvailableInfo(), rdDevVk);
 
+	outBackbuffers.create(_rdCtx, info().imageCount);
+
 	createDepthResources();
 
-	createSwapchainImages(_vkSwapchainImages, hnd(), vkDev);
-	createSwapchainImageViews(_vkSwapchainImageViews, _vkSwapchainImages, rdDevVk, info().surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+	createSwapchainImages(_vkSwapchainImages, outBackbuffers, hnd(), vkDev);
+	createSwapchainImageViews(_vkSwapchainImageViews, outBackbuffers, _vkSwapchainImages, rdDevVk, info().surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	createSwapchainFramebuffers(vkRdPass);
 }
 

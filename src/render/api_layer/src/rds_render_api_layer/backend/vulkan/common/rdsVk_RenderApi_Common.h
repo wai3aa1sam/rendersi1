@@ -118,6 +118,7 @@ struct Vk_SwapchainInfo
 	VkPresentModeKHR			presentMode;
 	//VkExtent2D					extent;
 	Rect2f						rect2f;
+	u32							imageCount = 0;
 };
 
 #endif

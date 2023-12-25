@@ -654,6 +654,7 @@ Vk_RenderApiUtil::toVkCompareOp(RenderState_DepthTestOp v)
 	using SRC = RenderState_DepthTestOp;
 	switch (v)
 	{
+		case SRC::Never:		{ return VkCompareOp::VK_COMPARE_OP_NEVER; }			break;
 		case SRC::Always:		{ return VkCompareOp::VK_COMPARE_OP_ALWAYS; }			break;
 		case SRC::Less:			{ return VkCompareOp::VK_COMPARE_OP_LESS; }				break;
 		case SRC::LessEqual:	{ return VkCompareOp::VK_COMPARE_OP_LESS_OR_EQUAL; }	break;

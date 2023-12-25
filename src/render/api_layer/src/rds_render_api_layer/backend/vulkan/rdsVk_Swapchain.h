@@ -4,6 +4,10 @@
 #include "rdsVk_RenderFrame.h"
 #include "pass/rdsVk_FramebufferPool.h"
 
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
+
+#include "rds_render_api_layer/rdsRenderContext.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -33,8 +37,9 @@ template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<Vk_Framebuffer, N>;
 
 struct Vk_Swapchain_CreateDesc
 {
-	RenderContext_Vk*	rdCtx	= nullptr;
-	NativeUIWindow*		wnd		= nullptr;
+	RenderContext_Vk*	rdCtx			= nullptr;
+	NativeUIWindow*		wnd				= nullptr;
+	Backbuffers*		outBackbuffers	= nullptr;
 	Rect2f				framebufferRect2f;
 	Vk_RenderPass*		vkRdPass;
 
@@ -52,6 +57,8 @@ struct Vk_Swapchain_CreateDesc
 	VkFormat			colorFormat	= VK_FORMAT_B8G8R8A8_UNORM;			//VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 	VkColorSpaceKHR		colorSpace	= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	VkFormat			depthFormat	= VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+	u32					imageCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
 };
 
 class Vk_Swapchain : public Vk_RenderApiPrimitive<Vk_Swapchain_T, VK_OBJECT_TYPE_SWAPCHAIN_KHR>
@@ -70,7 +77,7 @@ public:
 	void create	(const CreateDesc& cDesc); // RenderContext_Vk* rdCtx, const Rect2f& framebufferSize, Vk_RenderPass* vkRdPass, NativeUIWindow* wnd
 	void destroy(NativeUIWindow* wnd);
 
-	VkResult acquireNextImage(Vk_Semaphore* signalSmp);
+	VkResult acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp);
 	VkResult swapBuffers(Vk_Queue* presentQueue, Vk_Semaphore* waitSmp);
 
 	const Vk_SwapchainInfo& info() const;
@@ -87,18 +94,18 @@ public:
 	VkExtent2D		framebufferVkExtent2D() const;
 
 protected:
-	void createSwapchainInfo(Vk_SwapchainInfo& out, const Vk_SwapchainAvailableInfo& info, const Rect2f& framebufferSize
+	void createSwapchainInfo(Vk_SwapchainInfo& out, u32 imageCount, const Vk_SwapchainAvailableInfo& info, const Rect2f& framebufferSize
 								, VkFormat colorFormat, VkColorSpaceKHR colorSpace, VkFormat depthFormat);
 
-	void createSwapchain(const Rect2f& framebufferSize, Vk_RenderPass* vkRdPass);
+	void createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebufferSize, Vk_RenderPass* vkRdPass);
 	void destroySwapchain();
 
 	void createSwapchainFramebuffers(Vk_RenderPass* vkRdPass);
 	void createDepthResources();
 	void destroyDepthResources();
 
-	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice);
-	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk
+	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out,		Backbuffers& outBackbuffers, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice);
+	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out,	Backbuffers& outBackbuffers, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk
 		, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 	void _setDebugName();
@@ -142,7 +149,7 @@ inline VkExtent2D			Vk_Swapchain::framebufferVkExtent2D()	const { return Util::t
 
 template<size_t N> inline
 u32 
-Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice)
+Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Backbuffers& outBackbuffers, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice)
 {
 	u32 imageCount = 0;
 	vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
@@ -157,6 +164,8 @@ Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T
 	for (size_t i = 0; i < imageCount; i++)
 	{
 		out[i].create(vkImages[i]);
+		
+		*sCast<Texture2D_Vk*>(outBackbuffers.backbuffer(i))->_vkImage.hndForInit() = vkImages[i];
 	}
 
 	return imageCount;
@@ -164,7 +173,7 @@ Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Vk_Swapchain_T
 
 template<size_t N> inline 
 void 
-Vk_Swapchain::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk, 
+Vk_Swapchain::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, Backbuffers& outBackbuffers, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk, 
 	VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
 {
 	out.clear();
@@ -172,6 +181,7 @@ Vk_Swapchain::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, const 
 	for (size_t i = 0; i < vkImages.size(); ++i)
 	{
 		out[i].create(vkImages[i].hnd(), format, aspectFlags, mipLevels, rdDevVk);
+		*sCast<Texture2D_Vk*>(outBackbuffers.backbuffer(i))->_vkImageView.hndForInit() = out[i].hnd();
 	}
 }
 

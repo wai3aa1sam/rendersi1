@@ -7,6 +7,7 @@ namespace rds
 
 class Texture;
 class Texture2D;
+class Backbuffers;
 
 class TransferCommand_UploadTexture;
 
@@ -170,6 +171,9 @@ public:
 	using Base = Texture_CreateDesc;
 
 public:
+	bool isBackbuffer = false;
+
+public:
 	Texture2D_CreateDesc() = default;
 
 	Texture2D_CreateDesc(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
@@ -279,6 +283,7 @@ protected:
 
 class Texture : public RenderResource
 {
+	friend class Backbuffers;
 public:
 	using Base			= RenderResource;
 	using This			= Texture;
@@ -290,6 +295,7 @@ public:
 
 	void create	(CreateDesc& cDesc);
 	void destroy();
+
 
 public:
 	RenderDataType		type()			const;
@@ -305,6 +311,9 @@ public:
 protected:
 	Texture(RenderDataType type);
 
+	virtual void setNull() = 0;	// only use  for swapchain
+
+protected:
 	RenderDataType	_type;
 	Desc			_desc;
 };

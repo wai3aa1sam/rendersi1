@@ -46,14 +46,14 @@ public:
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color);
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color, float depth, u32 stencil = 0);
 
-	void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
-	void drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, const Mat4f& transform = Mat4f::s_identity());
+	void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const Mat4f& transform = Mat4f::s_identity());
+	void drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const Mat4f& transform = Mat4f::s_identity());
 
 	RenderCmdIter<RenderCommand_DrawCall> addDrawCalls(SizeType n);
 	void drawRenderables(const DrawingSettings& settings);
 
 	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
-	static void drawSubMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, const Mat4f& transform = Mat4f::s_identity());
+	static void drawSubMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform = Mat4f::s_identity());
 
 	RDS_NODISCARD	RenderScissorRectScope	scissorRectScope();
 	RDS_INLINE		void					setScissorRect	(const Rect2f& rect);

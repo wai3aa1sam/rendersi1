@@ -100,7 +100,7 @@ public:
 	HashedDrawCallCommands* drawRenderables(const DrawingSettings& drawingSettings);
 
 	
-	void recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMesh& rdMesh /*, const SPtr<Material>& */, const Mat4f& transform);
+	void recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform);
 
 protected:
 	void* alloc(SizeType n, SizeType align);

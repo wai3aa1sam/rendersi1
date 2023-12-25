@@ -17,6 +17,47 @@ RenderDevice::createContext(const RenderContext_CreateDesc& cDesc)
 	return p;
 }
 
+
+#if 0
+#pragma mark --- rdsBackbuffers-Impl ---
+#endif // 0
+#if 1
+
+
+void 
+Backbuffers::create(RenderContext* rdCtx, SizeType imageCount)
+{
+	destroy();
+	_rdCtx = rdCtx;
+
+	auto texCDesc = Texture2D::makeCDesc();
+	const auto& framebufferSize = rdCtx->framebufferSize();
+	texCDesc.size.set(sCast<u32>(framebufferSize.x), sCast<u32>(framebufferSize.y), sCast<u32>(1));
+	texCDesc.isBackbuffer = true;
+
+	_images.resize(imageCount);
+	for (size_t i = 0; i < imageCount; i++)
+	{
+		_images[i] = rdCtx->renderDevice()->createTexture2D(texCDesc);
+	}
+}
+
+void 
+Backbuffers::destroy()
+{
+	for (auto& e : _images)
+	{
+		e->setNull();
+	}
+	_images.clear();
+	_rdCtx = nullptr;
+}
+
+Texture2D*	Backbuffers::backbuffer()			{ return _images[_rdCtx->_curImageIdx]; }
+
+
+#endif
+
 #if 0
 #pragma mark --- rdsRenderContext-Impl ---
 #endif // 0
@@ -118,7 +159,7 @@ RenderContext::setFramebufferSize(const Vec2f& newSize)
 }
 
 bool 
-RenderContext::isFirstFrameCompleted() 
+RenderContext::isFrameCompleted() 
 { 
 	throwIf(true, "should not call this");
 	return false;
@@ -131,6 +172,7 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 	_framebufferSize.y = cDesc.window->clientRect().h;
 
 	_nativeUIWindow = cDesc.window;
+	_backbuffers.create(this, s_kFrameInFlightCount);
 }
 
 void
@@ -142,7 +184,7 @@ RenderContext::onPostCreate(const CreateDesc& cDesc)
 void
 RenderContext::onDestroy()
 {
-
+	RDS_CORE_ASSERT(_backbuffers.isEmpty(), "must clear in backend");
 }
 
 void 
@@ -163,7 +205,6 @@ RenderContext::aspectRatio() const
 	auto y = framebufferSize().y != 0 ? framebufferSize().y : 1;
 	return framebufferSize().x / y;
 }
-
 
 #endif
 }

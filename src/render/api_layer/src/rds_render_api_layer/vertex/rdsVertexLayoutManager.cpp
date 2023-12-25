@@ -31,6 +31,7 @@ VertexLayoutManager::VertexLayoutManager()
 	REGISTER_VERTEX_4(Vertex_PosColorUvNormal);
 	REGISTER_VERTEX_4(Vertex_PosColorUv);
 	REGISTER_VERTEX_4(Vertex_PosColor);
+	REGISTER_VERTEX_4(Vertex_PosUv);
 
 	#undef REGISTER_VERTEX_4
 

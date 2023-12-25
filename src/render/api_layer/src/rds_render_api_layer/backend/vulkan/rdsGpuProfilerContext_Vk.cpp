@@ -24,19 +24,19 @@ GpuProfilerContext_Vk::onCreate(const CreateDesc& cDesc)
 	auto vkFuncExtCtd	= (rdDeviceVk->extInfo().getInstanceExtFunction<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
 	auto vkFuncExtCt	= (rdDeviceVk->extInfo().getInstanceExtFunction<PFN_vkGetCalibratedTimestampsEXT>					("vkGetCalibratedTimestampsEXT"));
 
-	auto* vkPhyDev			= rdDeviceVk->vkPhysicalDevice();		RDS_UNUSED(vkPhyDev			);
-	auto* vkDev				= rdDeviceVk->vkDevice();				RDS_UNUSED(vkDev			);
-	auto* vkGraphicsQueue	= rdCtxVk()->vkGraphicsQueue();			RDS_UNUSED(vkGraphicsQueue	);
-	auto* vkCmdBuf			= rdCtxVk()->vkCommandBuffer();			RDS_UNUSED(vkCmdBuf			);
-
+	auto* vkPhyDev			= rdDeviceVk->vkPhysicalDevice();																				RDS_UNUSED(vkPhyDev			);
+	auto* vkDev				= rdDeviceVk->vkDevice();																						RDS_UNUSED(vkDev			);
+	auto* vkGraphicsQueue	= rdCtxVk()->vkGraphicsQueue();																					RDS_UNUSED(vkGraphicsQueue	);
+	auto* vkCmdBuf			= rdCtxVk()->vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "");	RDS_UNUSED(vkCmdBuf			);
+	;
 	RDS_ASSERT(vkFuncExtCtd && vkFuncExtCt || !vkFuncExtCtd && !vkFuncExtCt, "must be both exist or both not exist");
 	if (!vkFuncExtCtd && !vkFuncExtCt)
 	{
-		_ctx = RDS_PROFILE_GPU_CREATE_CTX_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue->hnd(), vkCmdBuf);
+		_ctx = RDS_PROFILE_GPU_CREATE_CTX_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue->hnd(), vkCmdBuf->hnd());
 	}
 	else
 	{
-		_ctx = RDS_PROFILE_GPU_CREATE_CTX_CALIBRATED_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue->hnd(), vkCmdBuf, vkFuncExtCtd, vkFuncExtCt);
+		_ctx = RDS_PROFILE_GPU_CREATE_CTX_CALIBRATED_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue->hnd(), vkCmdBuf->hnd(), vkFuncExtCtd, vkFuncExtCt);
 	}
 
 	setName(cDesc.name);

@@ -27,23 +27,23 @@ RenderRequest::~RenderRequest()
  }
 
 void 
-RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, const Mat4f& transform)
+RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)
 {
 	for (auto& e : rdMesh.subMeshes())
 	{
-		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, e, transform);
+		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, e, mtl, transform);
 	}
 }
 
 void 
-RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, const Mat4f& transform)
+RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform)
 {
 	//if (!rdSubMesh.vertexBuffer() || !rdSubMesh.indexBuffer())
 	//	return;
 	RDS_CORE_ASSERT(rdSubMesh.vertexBuffer() || rdSubMesh.indexBuffer(), "");
 
 	auto* p = addDrawCall();
-	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, transform);
+	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl, transform);
 }
 
 void 
@@ -71,7 +71,7 @@ RenderRequest::clearFramebuffers(const Color4f& color, float depth, u32 stencil)
 	return p;
 }
 
-void RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, const Mat4f& transform)
+void RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform)
 {
 	if (!rdSubMesh.vertexBuffer() || !rdSubMesh.indexBuffer())
 		return;
@@ -91,6 +91,8 @@ void RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* 
 	p->indexBuffer	= e.indexBuffer();
 	p->indexCount	= e.indexCount();
 	p->indexOffset	= 0;
+
+	p->material = mtl;
 }
 
 

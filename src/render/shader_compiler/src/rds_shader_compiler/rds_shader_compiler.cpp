@@ -40,6 +40,7 @@ protected:
 		compile("asset/shader/test_texture.shader",			opt);
 		compile("asset/shader/test_texture_set0.shader",	opt);
 
+		compile("asset/shader/present.shader",	opt);
 		compile("asset/shader/preDepth.shader",	opt);
 		compile("asset/shader/gBuffer.shader",	opt);
 	}

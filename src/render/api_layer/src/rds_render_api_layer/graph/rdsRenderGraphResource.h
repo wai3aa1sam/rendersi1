@@ -32,6 +32,8 @@ using RdgId = int;
 
 template<class T> struct RdgResourceTraits;
 
+template<class T> class RdgResourceHndT;
+
 #if 0
 #pragma mark --- rdsRdgResource-Decl ---
 #endif // 0
@@ -309,6 +311,7 @@ class RdgResource
 	friend class RenderGraph;
 	friend class RdgPass;
 	friend class RdgResourcePool;
+	template<class T> friend class RdgResourceHndT;
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Type = RdgResourceType;
@@ -363,6 +366,8 @@ protected:
 	void setImport(bool v);
 	void setExport(bool v);
 	//void setState(const RdgResourceState& state);
+
+	void commitRenderResouce(RenderResource* rdRsc);
 
 	RenderResource* renderResource();
 
@@ -422,6 +427,13 @@ RdgResource::isUniqueProducer(RdgPass* producer) const
 inline void RdgResource::setImport(bool v) { _isImported = v; }
 inline void RdgResource::setExport(bool v) { _isExported = v; }
 
+inline 
+void 
+RdgResource::commitRenderResouce(RenderResource* rdRsc)
+{
+	_pRdRsc		= rdRsc;
+	_spRdRsc	= rdRsc;
+}
 //inline void	RdgResource::commitState() { state().commit(); }
 
 inline RdgResource::StateTrack& RdgResource::stateTrack() { return _stateTrack; }
@@ -481,7 +493,7 @@ protected:
 			RenderResourceT*	access()		{ return sCast<		 RenderResourceT*>(_pRdRsc); }
 	const	RenderResourceT*	access() const	{ return sCast<const RenderResourceT*>(_pRdRsc); }
 
-	void commitResouce(SPtr<RenderResourceT>&& rsc);
+	//void commitResouce(RenderResourceT* rsc);
 
 protected:
 	Desc					_desc;
@@ -489,13 +501,13 @@ protected:
 
 template<class T> inline const typename RdgResourceT<T>::Desc& RdgResourceT<T>::desc() const { return _desc; }
 
-template<class T> inline 
-void 
-RdgResourceT<T>::commitResouce(SPtr<RenderResourceT>&& rsc)
-{
-	_pRdRsc		= rsc.ptr();
-	_spRdRsc	= rds::move(rsc);
-}
+//template<class T> inline 
+//void 
+//RdgResourceT<T>::commitResouce(RenderResourceT* rsc)
+//{
+//	_pRdRsc		= rsc;
+//	_spRdRsc	= rsc;
+//}
 
 class RdgResourceHnd
 {
@@ -542,7 +554,10 @@ public:
 	const	RdgResourceT<T>* resource() const	{ return sCast<const	RdgResourceT<T>*>(_rdgRsc); }
 	*/
 
-	const Desc& desc() const { return resource()->desc(); }
+	const Desc& desc() const			{ return resource()->desc(); }
+
+	RenderResourceT* renderResource()		{ return sCast<RenderResourceT*>(resource()->renderResource()); }
+	RenderResourceT* renderResource() const	{ return sCast<RenderResourceT*>(_rdgRsc->renderResource()); }
 
 protected:
 			ResourceT* resource()		{ return sCast<			ResourceT*>(_rdgRsc); }
@@ -576,17 +591,6 @@ public:
 	ColorType		format()	const { return desc().format; }
 };
 
-class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>
-{
-	friend class RenderGraph;
-	friend class RdgPass;
-	friend class RdgBufferHnd;
-	friend class RdgResourceAccessor;
-public:
-	RdgBufferHnd() = default;
-
-	RenderGpuBufferTypeFlags usageFlags()	const { return desc().typeFlags; }
-};
 
 class RdgBuffer : public RdgResourceT<RdgResource_BufferT>
 {
@@ -602,19 +606,33 @@ public:
 
 };
 
+class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>
+{
+	friend class RenderGraph;
+	friend class RdgPass;
+	friend class RdgBufferHnd;
+	friend class RdgResourceAccessor;
+public:
+	using RenderResource	= RdgResource_BufferT;
+
+public:
+	RdgBufferHnd() = default;
+
+	RenderGpuBufferTypeFlags	usageFlags()		const	{ return desc().typeFlags; }
+};
 
 class RdgTextureHnd : public RdgResourceHndT<RdgResource_TextureT>
 {
 public:
-	using Size = RdgResource_TextureT::Size;
+	using RenderResource	= RdgResource_TextureT;
+	using Size				= RenderResource::Size;
 
 public:
 	RdgTextureHnd() = default;
 
-	Size		size()			const { return resource()->access()->size(); }
-	ColorType	format()		const { return resource()->desc().format; }
-
-	TextureFlags usageFlags()	const { return desc().flag; }
+	Size			size()				const	{ return resource()->access()->size(); }
+	ColorType		format()			const	{ return resource()->desc().format; }
+	TextureFlags	usageFlags()		const	{ return desc().flag; }
 };
 
 class RdgResourceAccessor

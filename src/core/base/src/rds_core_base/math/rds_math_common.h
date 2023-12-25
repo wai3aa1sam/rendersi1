@@ -84,7 +84,9 @@ using Quat4u = Quat4<u32>;
 namespace math
 {
 
-
+template<class T> using Camera3 = ::nmsp::math::Camera3_T<T>;
+using Camera3f = Camera3<f32>;
+using Camera3d = Camera3<f64>;
 
 }
 
@@ -94,6 +96,9 @@ using Rect2d = Rect2<f64>;
 using Rect2i = Rect2<int>;
 using Rect2u = Rect2<u32>;
 
+template<class T> using Ray3 = ::nmsp::math::Ray3_T<T>;
+using Ray3f = Ray3<f32>;
+using Ray3d = Ray3<f64>;
 
 #endif
 

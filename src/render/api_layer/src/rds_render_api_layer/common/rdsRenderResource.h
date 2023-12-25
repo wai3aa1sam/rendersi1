@@ -76,6 +76,7 @@ public:
 public:
 	void create(const RenderResource_CreateDesc& cDesc);
 	void create(RenderDevice* rdDev);
+	void create(RenderDevice* rdDev, bool isBypassChecking);
 	void create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_);
 	void destroy();
 

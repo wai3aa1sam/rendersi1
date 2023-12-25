@@ -19,7 +19,6 @@ SPtr<Material>
 RenderDevice::createMaterial(Shader* shader)
 {
 	auto cDesc = Material::makeCDesc();
-	cDesc._internal_create(this);
 	cDesc.shader = shader;
 
 	return createMaterial(cDesc);
@@ -94,7 +93,8 @@ Material::setShader(Shader* shader)
 		return;
 	}
 
-	Base::create(shader->renderDevice());
+	RDS_CORE_ASSERT(!renderDevice() || renderDevice() == shader->renderDevice(), "renderDevice() == shader->renderDevice()");
+	Base::create(shader->renderDevice(), true);
 	_shader = shader;
 
 	SizeType passCount = info().passes.size();

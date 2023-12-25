@@ -273,10 +273,10 @@ Vk_Image::create(Vk_Image_T* vkImage)
 void 
 Vk_Image::destroy()
 {
-	if (!_hnd || !_alloc)
-		return;
-
-	_alloc->freeImage(_hnd, &_allocHnd);
+	if (_hnd && _alloc)
+	{
+		_alloc->freeImage(_hnd, &_allocHnd);
+	}
 	Base::destroy();
 }
 
@@ -336,13 +336,14 @@ Vk_ImageView::create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags 
 void 
 Vk_ImageView::destroy(RenderDevice_Vk* rdDev)
 {
-	if (!_hnd)
-		return;
+	if (_hnd && rdDev)
+	{
+		auto* vkDev				= rdDev->vkDevice();
+		auto* vkAllocCallBacks	= rdDev->allocCallbacks();
 
-	auto* vkDev				= rdDev->vkDevice();
-	auto* vkAllocCallBacks	= rdDev->allocCallbacks();
+		vkDestroyImageView(vkDev, _hnd, vkAllocCallBacks);
+	}
 
-	vkDestroyImageView(vkDev, _hnd, vkAllocCallBacks);
 	Base::destroy();
 }
 
@@ -367,13 +368,13 @@ Vk_Sampler::create(VkSamplerCreateInfo* samplerInfo, RenderDevice_Vk* rdDevVk)
 void 
 Vk_Sampler::destroy(RenderDevice_Vk* rdDevVk)
 {
-	if (!_hnd)
-		return;
+	if (_hnd && rdDevVk)
+	{
+		auto* vkDev				= rdDevVk->vkDevice();
+		auto* vkAllocCallBacks	= rdDevVk->allocCallbacks();
 
-	auto* vkDev				= rdDevVk->vkDevice();
-	auto* vkAllocCallBacks	= rdDevVk->allocCallbacks();
-
-	vkDestroySampler(vkDev, _hnd, vkAllocCallBacks);
+		vkDestroySampler(vkDev, _hnd, vkAllocCallBacks);
+	}
 	Base::destroy();
 }
 

@@ -91,12 +91,14 @@ RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp de
 void 
 RdgPass::readTexture(RdgTextureHnd	hnd)
 {
+	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureFlags::ShaderResource), "must have ShaderResource flag");
 	auto usage = Usage{ TextureFlags::ShaderResource };
 	accessResource(hnd, usage, Access::Read);
 }
 void 
 RdgPass::readTextures(RdgTextureHndSpan hnds)
 {
+	RDS_CORE_ASSERT(BitUtil::has(hnds[0].usageFlags(), TextureFlags::ShaderResource), "must have ShaderResource flag");
 	auto usage = Usage{ TextureFlags::ShaderResource };
 	accessResources(toHndSpan(hnds), usage, Access::Read);
 }

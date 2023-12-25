@@ -44,6 +44,14 @@ RenderResource::create(RenderDevice* rdDev)
 }
 
 void 
+RenderResource::create(RenderDevice* rdDev, bool isBypassChecking)
+{
+	CreateDesc cDesc;
+	cDesc._internal_create(rdDev, isBypassChecking);
+	create(cDesc);
+}
+
+void 
 RenderResource::create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_)
 {
 	CreateDesc cDesc;

@@ -33,7 +33,7 @@ void
 Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
-	if (!cDesc.hasDataToUpload())
+	if (!cDesc.hasDataToUpload() && !cDesc.isBackbuffer)
 	{
 		_createVkResource(cDesc);
 	}
@@ -124,6 +124,15 @@ Texture2D_Vk::_setDebugName()
 	RDS_VK_SET_DEBUG_NAME(_vkSampler);
 	RDS_VK_SET_DEBUG_NAME(_vkImage);
 	RDS_VK_SET_DEBUG_NAME(_vkImageView);
+}
+
+// only use  for swapchain
+void 
+Texture2D_Vk::setNull()
+{
+	_vkSampler.destroy(nullptr);
+	_vkImage.destroy();
+	_vkImageView.destroy(nullptr);
 }
 
 

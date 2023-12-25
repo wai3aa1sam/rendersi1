@@ -6,6 +6,38 @@
 namespace rds
 {
 
+
+
+#if 0
+#pragma mark --- rdsBackbuffers-Decl ---
+#endif // 0
+#if 1
+
+class Backbuffers
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	using Images = Vector<SPtr<Texture2D>, s_kFrameInFlightCount>;
+
+public:
+	Backbuffers()	{ }
+	~Backbuffers()	{ destroy(); }
+
+	void create(RenderContext* rdCtx, SizeType imageCount = s_kFrameInFlightCount);
+	void destroy();
+
+	Texture2D*	backbuffer();
+	Texture2D*	backbuffer(SizeType i)	{ return _images[i]; }
+
+	bool		isEmpty() const { return _images.is_empty(); }
+
+private:
+	RenderContext*	_rdCtx = nullptr;
+	Images			_images;
+};
+
+#endif
+
 #if 0
 #pragma mark --- rdsRenderContext-Decl ---
 #endif // 0
@@ -18,14 +50,18 @@ class	TransferCommandBuffer;
 class	TransferRequest;
 class	RenderGraph;
 
+class Texture2D;
+
 struct RenderContext_CreateDesc : public RenderResource_CreateDesc
 {
 	NativeUIWindow* window = nullptr;
 };
 
+
 class RenderContext : public RenderResource
 {
 	friend class RenderDevice;
+	friend class Backbuffers;
 public:
 	using Base			= RenderResource;
 	using CreateDesc	= RenderContext_CreateDesc;
@@ -53,8 +89,9 @@ public:
 
 	void setFramebufferSize(const Vec2f& newSize);
 
-	virtual bool isFirstFrameCompleted();
-	void waitFirstFrame();
+	virtual bool isFrameCompleted();	// maybe can cache too
+
+	Texture2D* backBuffer();
 
 public:
 	const Vec2f&	framebufferSize() const;
@@ -76,15 +113,17 @@ protected:
 	virtual void onCommit(RenderGraph&			rdGraph);
 
 protected:
-	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData = nullptr);
+	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData);
 
 protected:
 	NativeUIWindow* _nativeUIWindow = nullptr;
 
 	Vec2f	_framebufferSize {0,0};
 	u32		_curFrameIdx = 0;
+	u32		_curImageIdx = 0;	// cache the current image index for backend
 
 	RenderUiContext _rdUiCtx;
+	Backbuffers		_backbuffers;
 
 private:
 
@@ -92,6 +131,8 @@ private:
 
 inline const Vec2f&		RenderContext::framebufferSize() const	{ return _framebufferSize; }
 inline NativeUIWindow*	RenderContext::nativeUIWindow()			{ return _nativeUIWindow; }
+
+inline Texture2D*		RenderContext::backBuffer()				{ return _backbuffers.backbuffer(); }
 
 template<class CTX> inline
 void 
@@ -105,9 +146,9 @@ RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData)
 	{
 		_DISPACH_CMD_CASE(ClearFramebuffers);
 		_DISPACH_CMD_CASE(SwapBuffers);
-		_DISPACH_CMD_CASE(SetScissorRect);
-		_DISPACH_CMD_CASE(DrawCall, userData);
-		_DISPACH_CMD_CASE(DrawRenderables);
+		_DISPACH_CMD_CASE(SetScissorRect,	userData);
+		_DISPACH_CMD_CASE(DrawCall,			userData);
+		_DISPACH_CMD_CASE(DrawRenderables,	userData);
 		default: { throwError("undefined render command"); } break;
 	}
 

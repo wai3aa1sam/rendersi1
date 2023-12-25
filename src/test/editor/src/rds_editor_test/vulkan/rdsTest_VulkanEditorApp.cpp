@@ -99,14 +99,51 @@ public:
 		destroy();
 	}
 
+	math::Camera3f& camera() { return _camera; }
+
 protected:
 	virtual void onCreate(const CreateDesc_Base& cDesc) override
 	{
 		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 		Base::onCreate(thisCDesc);
+
+		_camera.setPos(0, 10, 10);
+		_camera.setAim(0, 0, 0);
+	}
+
+	virtual void onUIMouseEvent(UIMouseEvent& ev) override 
+	{
+		if (renderContext().onUIMouseEvent(ev))
+			return;
+
+		if (ev.isDragging()) 
+		{
+			using Button = UIMouseEventButton;
+			switch (ev.pressedButtons) 
+			{
+				case Button::Left: 
+				{
+					auto d = ev.deltaPos * 0.01f;
+					_camera.orbit(d.x, d.y);
+				} break;
+
+				case Button::Middle: 
+				{
+					auto d = ev.deltaPos * 0.1f;
+					_camera.move(d.x, d.y, 0);
+				} break;
+
+				case Button::Right: 
+				{
+					auto d = ev.deltaPos * -0.1f;
+					_camera.dolly(d.x + d.y);
+				} break;
+			}
+		}
 	}
 
 private:
+	math::Camera3f _camera;
 };
 
 class VulkanEditorApp : public EditorApp
@@ -209,10 +246,8 @@ public:
 
 		#if RDS_TEST_RENDER_GRAPH
 		{
+			_testRenderGraph.setCamera(&VulkanEditorApp::instance()->mainWin()->camera());
 			_testRenderGraph.setup(&VulkanEditorApp::instance()->mainWin()->renderContext());
-			/*_testRenderGraph.compile();
-			_testRenderGraph.execute();
-			_testRenderGraph.dump();*/
 		}
 		#endif
 
@@ -220,7 +255,6 @@ public:
 
 		#if 1
 		{
-			//_testShader = Renderer::rdDev()->createShader("asset/shader/test.shader"); RDS_UNUSED(_testShader);
 			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
@@ -234,13 +268,6 @@ public:
 
 			texCDesc.create("asset/texture/uvChecker2.png");
 			_uvChecker2Tex = Renderer::rdDev()->createTexture2D(texCDesc);
-
-			// for testing vma print name when somethings are not freed
-			//static auto a = _uvChecker2Tex;
-
-			//auto* rdDev		= Renderer::rdDev();
-			//auto& tsfReq	= rdDev->transferRequest();
-			//tsfReq.uploadTexture(_uvChecker2Tex, "asset/texture/uvChecker2.png");
 		}
 		#endif // 0
 	}
@@ -248,6 +275,9 @@ public:
 	virtual void onUpdate() override
 	{
 		RDS_PROFILE_SCOPED();
+
+		auto* mainWnd = VulkanEditorApp::instance()->mainWin();
+		mainWnd->camera().setViewport(mainWnd->clientRect());
 
 		#if 0
 		{
@@ -263,7 +293,6 @@ public:
 		}
 		#endif // 0
 
-
 		//_testMultiThreadDrawCalls.execute();
 		uploadTestMultiBuf();
 
@@ -271,12 +300,8 @@ public:
 		{
 			_testRenderGraph.update();
 			//_testRenderGraph.dump();
-
-			//RDS_CALL_ONCE(_testRenderGraph.compile());
-			//RDS_CALL_ONCE(_testRenderGraph.execute());
 		}
 		#endif
-
 	}
 
 	virtual void onRender() override
@@ -394,7 +419,7 @@ public:
 			#endif // RDS_RENDER_ENABLE_UI
 		}
 
-		rdCtx.drawUI(_rdReq);
+		//rdCtx.drawUI(_rdReq);
 
 		_rdReq.swapBuffers();
 
@@ -406,7 +431,7 @@ public:
 		_testRenderGraph.commit();
 		#endif // RDS_TEST_RENDER_GRAPH
 
-		//rdCtx.commit(_rdReq.renderCommandBuffer());
+		//rdCtx.commit(_rdReq);
 		rdCtx.endRender();
 
 		Renderer::rdDev()->nextFrame();
@@ -474,7 +499,7 @@ public:
 	}
 
 protected:
-	RenderRequest _rdReq;
+	RenderRequest	_rdReq;
 
 	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
 	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer2;
