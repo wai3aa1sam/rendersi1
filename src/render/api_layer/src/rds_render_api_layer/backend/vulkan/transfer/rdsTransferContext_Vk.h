@@ -38,12 +38,12 @@ protected:
 	virtual void onCreate	(const CreateDesc& cDesc)	override;
 	virtual void onDestroy	()							override;
 
-	virtual void onCommit(TransferRequest& tsfReq) override;
+	virtual void onCommit(TransferRequest& tsfReq, bool isWaitImmediate) override;
 
 	Vk_Queue* requestVkQueue(QueueTypeFlags type);
 
 protected:
-	void _commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType);
+	void _commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType, bool isWaitImmediate);
 
 	void _setDebugName();
 

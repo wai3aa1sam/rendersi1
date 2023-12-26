@@ -171,17 +171,20 @@ Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_Pipe
 	}
 
 	VkSemaphoreSubmitInfoKHR signalVkSmpInfo = {};
-	signalVkSmpInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	signalVkSmpInfo.semaphore	= signalVkSmp->hnd();
-	signalVkSmpInfo.stageMask	= signalStage;
-
+	if (signalVkSmp)
+	{
+		signalVkSmpInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+		signalVkSmpInfo.semaphore	= signalVkSmp->hnd();
+		signalVkSmpInfo.stageMask	= signalStage;
+	}
+	
 	VkCommandBufferSubmitInfoKHR cmdBufSubmitInfo = {};
 	cmdBufSubmitInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
 	cmdBufSubmitInfo.commandBuffer	= hnd();
 
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-	submitInfo.waitSemaphoreInfoCount	= waitVkSmp ? 1 : 0;
-	submitInfo.signalSemaphoreInfoCount = 1;
+	submitInfo.waitSemaphoreInfoCount	= waitVkSmp		? 1 : 0;
+	submitInfo.signalSemaphoreInfoCount = signalVkSmp	? 1 : 0;
 	submitInfo.commandBufferInfoCount	= 1;
 	submitInfo.pWaitSemaphoreInfos		= &waitSmpInfo;
 	submitInfo.pSignalSemaphoreInfos	= &signalVkSmpInfo;
@@ -212,6 +215,12 @@ Vk_CommandBuffer::submit(Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps,
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
 	auto ret = vkQueueSubmit2(_vkQueue->hnd(), 1, &submitInfo, signalFence->hnd());
 	Util::throwIfError(ret);
+}
+
+void 
+Vk_CommandBuffer::submit(Vk_Fence* signalFence)
+{
+	return submit(signalFence, nullptr, VK_PIPELINE_STAGE_2_NONE, nullptr, VK_PIPELINE_STAGE_2_NONE);
 }
 
 void 

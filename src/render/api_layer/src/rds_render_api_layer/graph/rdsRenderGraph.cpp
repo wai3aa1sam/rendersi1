@@ -72,6 +72,9 @@ void RenderGraph::destroy()
 void 
 RenderGraph::compile()
 {
+	if (!_rdCtx->isValidFramebufferSize())
+		return;
+
 	/*
 	since we have multi frame, all the RdgPass and RdgResource can not reuse (after hash and confirm same as last frame)
 	, only the order (orderedPassId) can be reuse
@@ -263,9 +266,11 @@ RenderGraph::importTexture(StrView name, Texture* tex)
 {
 	RdgTexture_CreateDesc cDesc;
 	cDesc = tex->desc();
-	auto hnd = createTexture(name, cDesc);
-	hnd._rdgRsc->setImport(true);
-	hnd._rdgRsc->commitRenderResouce(tex);
+	auto	hnd		= createTexture(name, cDesc);
+	auto*	rdgTex	= sCast<RdgTexture*>(hnd._rdgRsc);
+	rdgTex->_desc = tex->desc();
+	rdgTex->setImport(true);
+	rdgTex->commitRenderResouce(tex);
 	return hnd;
 }
 

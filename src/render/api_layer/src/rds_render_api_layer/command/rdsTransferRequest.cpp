@@ -104,9 +104,9 @@ TransferRequest::reset(TransferContext* tsfCtx)
 }
 
 void 
-TransferRequest::commit()
+TransferRequest::commit(bool isWaitImmediate)
 {
-	_tsfCtx->commit(*this);
+	_tsfCtx->commit(*this, isWaitImmediate);
 	RDS_WARN_ONCE("TransferRequest commit success");
 }
 

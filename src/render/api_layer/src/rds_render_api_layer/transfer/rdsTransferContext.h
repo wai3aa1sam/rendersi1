@@ -37,14 +37,14 @@ public:
 	void destroy();
 
 	//void commit(TransferCommandBuffer& cmdBuf);
-	void commit(TransferRequest& tsfReq);
+	void commit(TransferRequest& tsfReq, bool isWaitImmediate);
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
 	virtual void onDestroy	();
 
 	template<class CTX> void _dispatchCommand(CTX* ctx, TransferCommand* cmd);
-	virtual void onCommit(TransferRequest& tsfReq);
+	virtual void onCommit(TransferRequest& tsfReq, bool isWaitImmediate);
 
 protected:
 };

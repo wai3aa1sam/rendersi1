@@ -251,7 +251,7 @@ public:
 		}
 		#endif
 
-		JobSystem::instance()->setSingleThreadMode(false);
+		JobSystem::instance()->setSingleThreadMode(true);
 
 		#if 1
 		{
@@ -270,27 +270,30 @@ public:
 			_uvChecker2Tex = Renderer::rdDev()->createTexture2D(texCDesc);
 		}
 		#endif // 0
+
+		Renderer::rdDev()->transferContext().transferRequest().commit(true);
 	}
 
 	virtual void onUpdate() override
 	{
 		RDS_PROFILE_SCOPED();
-
 		auto* mainWnd = VulkanEditorApp::instance()->mainWin();
+		auto& rdCtx		= mainWnd->renderContext();
+		rdCtx.setFramebufferSize(mainWnd->clientRect().size);		// this will invalidate the swapchain
 		mainWnd->camera().setViewport(mainWnd->clientRect());
 
 		#if 1
 		{
 			RDS_PROFILE_SECTION("wait first frame");
 			RDS_TODO("temp, remove");
-
-			auto* mainWin	= VulkanEditorApp::instance()->mainWin();
-			auto& rdCtx = mainWin->renderContext(); 
 			while (!rdCtx.isFrameCompleted())
 			{
 				OsUtil::sleep_ms(1);
 			}
 		}
+		//OsUtil::sleep_ms(100);
+		Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
+
 		#endif // 0
 
 		//_testMultiThreadDrawCalls.execute();
@@ -320,14 +323,13 @@ public:
 		auto& tsfCtx	= rdDev->transferContext();
 		auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
 
-		rdCtx.setFramebufferSize(mainWin->clientRect().size);
 		rdCtx.beginRender();
 
+		#if !RDS_TEST_RENDER_GRAPH
 
 		_rdReq.reset(&rdCtx);
 		_rdReq.clearFramebuffers(Color4f{0.7f, 0.5f, 1.0f, 1.0f}, 1.0f);
 
-		#if 1
 		{
 			auto drawCall = _rdReq.addDrawCall();
 			
@@ -350,20 +352,32 @@ public:
 
 			_testMaterial->setParam("rds_matrix_mvp", mvp);
 			_testMaterial->setParam("texture0", _uvCheckerTex);
+
+			_rdReq.swapBuffers();
 		}
+
+		ImGui::ShowDemoWindow();
+
 		#endif // 0
 
 		#if RDS_TEST_RENDER_GRAPH
 		//RDS_CALL_ONCE(_testRenderGraph.commit());
+		//_testRenderGraph.update();		// move to here first, since beginRender will invalidate the swapchain, but 
 		_testRenderGraph.commit();
 		#endif // RDS_TEST_RENDER_GRAPH
+
+		rdCtx.drawUI(_rdReq);
 
 		RDS_TODO("drawUI will upload vertex, maybe defer the upload");
 		tsfReq.commit();	// this must call only after wait its second gen frame
 
-		rdCtx.endRender();
+		#if !RDS_TEST_RENDER_GRAPH
+		rdCtx.commit(constCast(_rdReq.commandBuffer()));
+		#endif // !RDS_TEST_RENDER_GRAPH
+		//rdCtx.commit(constCast(_rdReq.commandBuffer()));
 
-		Renderer::rdDev()->nextFrame();
+		rdCtx.endRender();
+		//Renderer::rdDev()->nextFrame();
 	}
 
 	void uploadTestMultiBuf()

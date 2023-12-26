@@ -7,6 +7,8 @@
 
 #include "rds_editor.h"
 
+#define RDS_RENDER_GRAPH_PRESENT 0
+
 namespace rds
 {
 
@@ -112,7 +114,7 @@ public:
 		//proj[1][1]		*= -1;		// no need this line as enabled VK_KHR_Maintenance1 
 		Mat4f mvp		= _camera->viewProjMatrix() * model;
 
-		mvp = Mat4f::s_identity();
+		mvp = Mat4f::s_identity() * model;
 		
 		_mvp = mvp;
 	}
@@ -162,6 +164,19 @@ public:
 			_rdCtx = rdCtx;
 			_rdGraph.create("Test Render Graph", rdCtx);
 			//return;
+
+			{
+				_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+				_testShader->makeCDesc();
+
+				_testMtl = Renderer::rdDev()->createMaterial();
+				_testMtl->setShader(_testShader);
+
+				auto texCDesc = Texture2D::makeCDesc();
+
+				texCDesc.create("asset/texture/uvChecker.png");
+				_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
+			}
 
 			auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
 			_fullScreenTriangle.create(fullScreenTriangleMesh);
@@ -245,15 +260,34 @@ public:
 
 		auto& finalComposePass = _rdGraph.addPass("final_compose", RdgPassTypeFlags::Graphics);
 		finalComposePass.readTexture(albedoTex);
+		#if !RDS_RENDER_GRAPH_PRESENT
 		finalComposePass.setRenderTarget(testColorTex, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		#else
+		finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		#endif
 		finalComposePass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				_presentMtl->setParam("texture0",			albedoTex.renderResource());
-				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, -1.0f, 1.0f}));
-				//_presentMtl->setParam("texture0", albedoTex.renderResource());
-				//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle);
-				//rdReq.swapBuffers();
+				#if !RDS_RENDER_GRAPH_PRESENT
+
+				{
+					_presentMtl->setParam("texture0",			albedoTex.renderResource());
+					_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, -1.0f, 1.0f}));
+					_rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
+				}
+
+				#else
+
+				Mat4f mvp = Mat4f::s_identity();
+
+				_testMtl->setParam("rds_matrix_mvp",	mvp);
+				_testMtl->setParam("texture0",			_uvCheckerTex);
+
+				scene()->drawScene(rdReq, _testMtl);
+
+				rdReq.swapBuffers();
+
+				#endif // 0
 			}
 		);
 		#endif // 0
@@ -280,28 +314,25 @@ public:
 	{
 		_rdGraph.commit();
 
+		#if !RDS_RENDER_GRAPH_PRESENT
 		{
 			_rdReq.reset(_rdCtx);
 			_rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
 
-			ImGui::ShowDemoWindow();
-			_rdCtx->drawUI(_rdReq);
+			//ImGui::ShowDemoWindow();
+			//_rdCtx->drawUI(_rdReq);
 
 			_rdReq.swapBuffers();
 
 			_rdCtx->commit(constCast(_rdReq.commandBuffer()));
-		}
+	}
+		#endif // 0
+
 	}
 
 	void dump(StrView filename = "debug/render_graph")
 	{
 		_rdGraph.dumpGraphviz(filename);
-	}
-
-
-	void test()
-	{
-
 	}
 
 	TestScene* scene() { return &_scene; }
@@ -318,8 +349,13 @@ public:
 	SPtr<Material> _presentMtl;
 
 	SPtr<Shader> _preDepthShader;
-	SPtr<Shader> _gBufferShader;;
-	SPtr<Shader> _presentShader;;
+	SPtr<Shader> _gBufferShader;
+	SPtr<Shader> _presentShader;
+
+
+	SPtr<Shader>		_testShader;
+	SPtr<Material>		_testMtl;
+	SPtr<Texture2D>		_uvCheckerTex;
 
 	RenderMesh	_fullScreenTriangle;
 

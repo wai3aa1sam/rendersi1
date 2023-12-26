@@ -54,9 +54,9 @@ TransferContext_Vk::onDestroy()
 }
 
 void 
-TransferContext_Vk::onCommit(TransferRequest& tsfReq)
+TransferContext_Vk::onCommit(TransferRequest& tsfReq, bool isWaitImmediate)
 {
-	Base::onCommit(tsfReq);
+	Base::onCommit(tsfReq, isWaitImmediate);
 
 	Span<TransferCommand*> tsfCmds			= tsfReq.transferCommandBuffer().commands();
 	Span<TransferCommand*> uploadBufCmds	= tsfReq.uploadBufCmds().commands();
@@ -123,16 +123,25 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq)
 	inFlighVkFence.wait(rdDevVk);
 	inFlighVkFence.reset(rdDevVk);
 
-	vkCmdBuf->submit(&inFlighVkFence, 
-					//&frame._completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
-					&completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+	if (!isWaitImmediate)
+	{
+		vkCmdBuf->submit(&inFlighVkFence, 
+			//&frame._completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
+			&completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+	}
+	else
+	{
+		vkCmdBuf->submit(&inFlighVkFence);
+		inFlighVkFence.wait(rdDevVk);
+		//inFlighVkFence.reset(rdDevVk);
+	}
 
 	//frame._inFlightVkFence.wait(device());
-	_commitUploadCmdsToDstQueue(tsfReq.uploadBufCmds(), tsfReq.uploadTexCmds(), QueueTypeFlags::Graphics);
+	_commitUploadCmdsToDstQueue(tsfReq.uploadBufCmds(), tsfReq.uploadTexCmds(), QueueTypeFlags::Graphics, isWaitImmediate);
 }
 
 void 
-TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType)
+TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType, bool isWaitImmediate)
 {
 	if (queueType == QueueTypeFlags::Graphics	&& !vkTransferFrame().hasTransferedGraphicsResoures())	{ return; }
 	if (queueType == QueueTypeFlags::Compute	&& !vkTransferFrame().hasTransferedComputeResoures())	{ return; }
@@ -170,10 +179,16 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 
 	dstInFlighVkFnc.reset(rdDevVk);
 
-	vkCmdBuf->submit(&dstInFlighVkFnc, 
-		&srcCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
-		&dstCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
-
+	if (!isWaitImmediate)
+	{
+		vkCmdBuf->submit(&dstInFlighVkFnc, 
+			&srcCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
+			&dstCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+	}
+	else
+	{
+		vkCmdBuf->submit(&dstInFlighVkFnc);
+	}
 
 	#if 1
 	RDS_TODO("delay rotate, another vector for should rotate parents? maybe not too, upload request should be less");

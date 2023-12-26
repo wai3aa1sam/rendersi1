@@ -55,18 +55,19 @@ protected:
 	SPtr<RenderGpuBuffer> _makeNewBuffer(SizeType bufSize);
 
 protected:
-	Atm<u32> iFrame = 0;
+	Atm<u32>	_iFrame = 0;
+	Desc		_desc;
 	Vector<SPtr<RenderGpuBuffer>, s_kFrameInFlightCount> _renderGpuBuffers;
 };
 
-inline const RenderGpuMultiBuffer::Desc& RenderGpuMultiBuffer::desc()		const { return _renderGpuBuffers[iFrame]->desc(); }
+inline const RenderGpuMultiBuffer::Desc& RenderGpuMultiBuffer::desc()		const { return _renderGpuBuffers[_iFrame]->desc(); }
 
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::stride()		const { return _renderGpuBuffers[iFrame]->stride(); }
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::bufSize()		const { return _renderGpuBuffers[iFrame]->bufSize(); }
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const { return _renderGpuBuffers[iFrame]->elementCount(); }
+inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::stride()		const { return _renderGpuBuffers[_iFrame]->stride(); }
+inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::bufSize()		const { return _renderGpuBuffers[_iFrame]->bufSize(); }
+inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const { return _renderGpuBuffers[_iFrame]->elementCount(); }
 
-inline			SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[iFrame]; }
-inline const	SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer() const	{ return _renderGpuBuffers[iFrame]; }
+inline			SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[_iFrame]; }
+inline const	SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer() const	{ return _renderGpuBuffers[_iFrame]; }
 
 #endif
 }

@@ -55,7 +55,9 @@ class Texture2D;
 
 struct RenderContext_CreateDesc : public RenderResource_CreateDesc
 {
-	NativeUIWindow* window = nullptr;
+	NativeUIWindow* window				= nullptr;
+	ColorType		backbufferFormat	= ColorType::RGBAb;
+	ColorType		depthFormat			= ColorType::Depth;
 };
 
 
@@ -93,6 +95,8 @@ public:
 	virtual bool isFrameCompleted();	// maybe can cache too
 
 	Texture2D* backBuffer();
+
+	bool isValidFramebufferSize() const;
 
 public:
 	const Vec2f&	framebufferSize() const;
@@ -134,6 +138,8 @@ inline const Vec2f&		RenderContext::framebufferSize() const	{ return _framebuffe
 inline NativeUIWindow*	RenderContext::nativeUIWindow()			{ return _nativeUIWindow; }
 
 inline Texture2D*		RenderContext::backBuffer()				{ return _backbuffers.backbuffer(); }
+
+inline bool				RenderContext::isValidFramebufferSize() const { return framebufferSize().x > 0.0f && framebufferSize().y > 0.0f; }
 
 template<class CTX> inline
 void 

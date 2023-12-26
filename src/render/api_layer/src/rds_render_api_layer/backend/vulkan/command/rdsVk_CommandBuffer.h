@@ -62,6 +62,7 @@ public:
 	void submit(Vk_Fence* signalFence, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
 	void submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
 	void submit(Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
+	void submit(Vk_Fence* signalFence);
 	void submit();
 
 	void executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs);

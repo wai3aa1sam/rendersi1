@@ -31,7 +31,7 @@ public:
 	~TransferRequest();
 
 	void reset(TransferContext* tsfCtx);
-	void commit();
+	void commit(bool isWaitImmediate = false);
 
 	void uploadTexture(Texture2D* tex, StrView filename);
 	void uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc);

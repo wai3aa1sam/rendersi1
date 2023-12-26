@@ -35,7 +35,7 @@ RenderGpuMultiBuffer::make(CreateDesc& cDesc)
 
 RenderGpuMultiBuffer::RenderGpuMultiBuffer()
 {
-	iFrame = 0;
+	_iFrame = 0;
 }
 
 RenderGpuMultiBuffer::~RenderGpuMultiBuffer()
@@ -72,7 +72,8 @@ void
 RenderGpuMultiBuffer::onCreate(CreateDesc& cDesc)
 {
 	_renderGpuBuffers.reserve(s_kFrameInFlightCount);
-	auto e = _renderGpuBuffers.emplace_back(RenderGpuBuffer::make(cDesc));
+	_desc = cDesc;
+	auto& e = _renderGpuBuffers.emplace_back(RenderGpuBuffer::make(cDesc)); RDS_UNUSED(e);
 }
 
 void 
@@ -95,16 +96,17 @@ RenderGpuMultiBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
 
 void RenderGpuMultiBuffer::rotate()
 {
-	iFrame = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
+	_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
 }
 
 SPtr<RenderGpuBuffer>& 
 RenderGpuMultiBuffer::nextBuffer(SizeType bufSize)
 {
-	auto nextIdx = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
+	// do acutal rotate in this function, then tsfFrame / ctx no need to update the frame separately
+	auto nextIdx = (_iFrame + 1) % s_kFrameInFlightCount;
 	if (_renderGpuBuffers.size() < s_kFrameInFlightCount)
 	{
-		_renderGpuBuffers.emplace_back(_makeNewBuffer(bufSize));
+		return _renderGpuBuffers.emplace_back(_makeNewBuffer(bufSize));
 	}
 	else if (_renderGpuBuffers[nextIdx]->bufSize() < bufSize)
 	{
@@ -117,8 +119,8 @@ SPtr<RenderGpuBuffer>
 RenderGpuMultiBuffer::_makeNewBuffer(SizeType bufSize)
 {
 	auto newCDesc = makeCDesc();
-	newCDesc.typeFlags	= desc().typeFlags;
-	newCDesc.stride		= desc().stride;
+	newCDesc.typeFlags	= _desc.typeFlags;
+	newCDesc.stride		= _desc.stride;
 	newCDesc.bufSize	= bufSize;
 	return RenderGpuBuffer::make(newCDesc);
 }

@@ -21,7 +21,8 @@
 namespace rds
 {
 
-static VkFormat g_testSwapchainVkFormat = VK_FORMAT_B8G8R8A8_UNORM; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
+//static VkFormat g_testSwapchainVkFormat = VK_FORMAT_B8G8R8A8_UNORM; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
+static VkFormat g_testSwapchainVkFormat = VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 
 SPtr<RenderContext> 
 RenderDevice_Vk::onCreateContext(const RenderContext_CreateDesc& cDesc)
@@ -71,9 +72,9 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	vkSwapchainCDesc.outBackbuffers		= &_backbuffers;
 	vkSwapchainCDesc.framebufferRect2f	= math::toRect2_wh(framebufferSize());
 	//vkSwapchainCDesc.vkRdPass			= &_testVkRenderPass;
-	vkSwapchainCDesc.colorFormat		= g_testSwapchainVkFormat; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
+	vkSwapchainCDesc.colorFormat		= Util::toVkFormat(cDesc.backbufferFormat); //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 	vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	vkSwapchainCDesc.depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
+	vkSwapchainCDesc.depthFormat		= Util::toVkFormat(cDesc.depthFormat);
 
 	createTestRenderPass(vkSwapchainCDesc);
 	_vkSwapchain.create(vkSwapchainCDesc);
@@ -121,7 +122,7 @@ RenderContext_Vk::addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd)
 bool 
 RenderContext_Vk::isFrameCompleted()
 {
-	return this->vkRdFrame().inFlightFence()->isSignaled(renderDeviceVk());
+	return vkRdFrame().inFlightFence()->isSignaled(renderDeviceVk());
 }
 
 void
@@ -140,11 +141,11 @@ RenderContext_Vk::onBeginRender()
 	}
 
 	//vkResetFences(vkDevice, vkFenceCount, vkFences);		// reset too early will cause deadlock, since the invalidate wii cause no work submitted (returned) and then no one will signal it
-	ret = _vkSwapchain.acquireNextImage(_curImageIdx, vkRdFrame().imageAvaliableSmp());
+	ret = _vkSwapchain.acquireNextImage(_curImageIdx, vkRdFrame().imageAvaliableSmp()); RDS_UNUSED(ret);
 	if (!Util::isSuccess(ret))
 	{
-		invalidateSwapchain(ret, _vkSwapchain.framebufferSize());
-		//return;
+		//invalidateSwapchain(ret, framebufferSize());
+		////return;
 	}
 
 	{
@@ -186,8 +187,8 @@ RenderContext_Vk::onEndRender()
 		if (_shdSwapBuffers)
 		{
 			RDS_TODO("handle do not get next image idx if no swap buffers in the next frame");
-			auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, vkRdFrame().renderCompletedSmp());
-			invalidateSwapchain(ret, _vkSwapchain.framebufferSize());
+			auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, vkRdFrame().renderCompletedSmp()); RDS_UNUSED(ret);
+			//invalidateSwapchain(ret, _vkSwapchain.framebufferSize());
 			_shdSwapBuffers = false;
 		}
 	}
@@ -538,7 +539,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 	Vk_RenderGraph vkRdGraph;
 	vkRdGraph.commit(rdGraph, this);
-	_shdSwapBuffers = true;
+	//_shdSwapBuffers = true;
 
 	#if 0
 	// present no need to record
@@ -574,9 +575,9 @@ RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
 		vkSwapchainCDesc.outBackbuffers		= &_backbuffers;
 		vkSwapchainCDesc.framebufferRect2f	= math::toRect2_wh(newSize);
 		vkSwapchainCDesc.vkRdPass			= &_testVkRenderPass;
-		vkSwapchainCDesc.colorFormat		= g_testSwapchainVkFormat; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
+		vkSwapchainCDesc.colorFormat		= _vkSwapchain.colorFormat(); //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 		vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-		vkSwapchainCDesc.depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
+		vkSwapchainCDesc.depthFormat		= _vkSwapchain.depthFormat();
 
 		// the render pass should have same format after invalidate
 		RDS_TODO("if it is invalidate, those ptr is not changed, only size is changed, the RenderPass should store the color format to match with the swapchain");
@@ -602,39 +603,6 @@ RenderContext_Vk::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBuffer
 		case SRC::Transfer:	{ auto* o = vkRdFrame().requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkTransferQueue);	return o; } break;
 		default: { RDS_THROW("invalid vk queue type"); } break;
 	}
-}
-
-bool 
-RenderContext_Vk::recordPresent(Vk_CommandBuffer* vkCmdBuf, Vk_Swapchain* vkSwapchain)
-{
-	bool isSuccess = false;
-	if (!_vkSwapchain.isValid())
-	{
-		return isSuccess;
-	}
-
-	//auto curImageIdx = vkSwapchain->curImageIdx();
-
-	auto attachmentCount = 2; // TODO: revise
-
-	Vector<VkClearValue, 16> vkClearValues;
-	Util::getVkClearValuesTo(vkClearValues, nullptr, attachmentCount, true);
-
-	auto frameBufRect2f = vkSwapchain->framebufferRect2f();
-	vkCmdBuf->beginRecord();
-	{
-		vkCmdBuf->beginRenderPass(&_testVkRenderPass, vkSwapchain->framebuffer(), frameBufRect2f, vkClearValues.span(), VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBuf->setViewport(frameBufRect2f);
-		vkCmdBuf->setScissor (frameBufRect2f);
-
-		// draw scene rect
-
-		vkCmdBuf->endRenderPass();
-	}
-	vkCmdBuf->endRecord();
-
-	isSuccess = true;
-	return isSuccess;
 }
 
 #if 0

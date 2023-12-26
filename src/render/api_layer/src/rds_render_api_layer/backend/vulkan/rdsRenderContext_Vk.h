@@ -78,8 +78,6 @@ protected:
 
 	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 
-	bool recordPresent(Vk_CommandBuffer* vkCmdBuf, Vk_Swapchain* vkSwapchain);
-
 	void _setDebugName();
 
 protected:

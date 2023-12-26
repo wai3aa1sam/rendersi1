@@ -124,9 +124,9 @@ Texture2D_Vk::_setDebugName(StrView name)
 {
 	if (!_vkSampler)
 		return;
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkSampler,	"{}-{}:{}", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-{}:{}", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-{}:{}", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkSampler,	"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 }
 
 #else
