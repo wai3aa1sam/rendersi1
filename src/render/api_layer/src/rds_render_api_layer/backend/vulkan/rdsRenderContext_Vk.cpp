@@ -539,21 +539,6 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 	Vk_RenderGraph vkRdGraph;
 	vkRdGraph.commit(rdGraph, this);
-	//_shdSwapBuffers = true;
-
-	#if 0
-	// present no need to record
-	// update: need to transition to present layout, temporary solution
-	{
-		_presentVkCmdBuf = requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "PresentVkCmdBuf");
-		bool isSuccess = recordPresent(_presentVkCmdBuf, &_vkSwapchain);
-		if (isSuccess)
-		{
-			vkRdGraph.addGraphicsVkCommandBufHnd(_presentVkCmdBuf->hnd());
-			_shdSwapBuffers = true;
-		}
-	}
-	#endif // 0
 }
 
 void 
@@ -579,12 +564,9 @@ RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
 		vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 		vkSwapchainCDesc.depthFormat		= _vkSwapchain.depthFormat();
 
-		// the render pass should have same format after invalidate
-		RDS_TODO("if it is invalidate, those ptr is not changed, only size is changed, the RenderPass should store the color format to match with the swapchain");
-
 		_vkSwapchain.create(vkSwapchainCDesc);
 
-		return; // should not record if size is changed
+		return;
 	}
 	else
 	{

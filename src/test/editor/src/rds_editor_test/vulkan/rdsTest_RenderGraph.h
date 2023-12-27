@@ -37,9 +37,9 @@ EditMesh makeRndColorTriangleMesh(float z = 0.0f, bool isRnd = true)
 		e.reserve(s_kVtxCount);
 		auto r0 = sCast<u8>(rnd.range(0, 255));
 		//auto r1 = sCast<u8>(rnd.range(0, 255));
-		e.emplace_back(r0,	  0,	 0,	255);
-		e.emplace_back( 0,	 r0,	 0,	255);
-		e.emplace_back( 0,	  0,	r0,	255);
+		e.emplace_back(r0,	  0,	 0,		255);
+		e.emplace_back( 0,	 r0,	 0,		255);
+		e.emplace_back( 0,	  0,	r0,		255);
 		e.emplace_back(255,	 255,	255,	255);
 	}
 	{
@@ -65,8 +65,8 @@ EditMesh getFullScreenTriangleMesh()
 		auto& e = editMesh.pos;
 		e.reserve(s_kVtxCount);
 		e.emplace_back(-1.0f, -1.0f, 0.0f);
-		e.emplace_back(3.0f,  -1.0f, 0.0f);
-		e.emplace_back(-1.0f, 3.0f, 0.0f);
+		e.emplace_back( 3.0f, -1.0f, 0.0f);
+		e.emplace_back(-1.0f,  3.0f, 0.0f);
 	}
 	{
 		auto& e = editMesh.uvs[0];
@@ -114,8 +114,9 @@ public:
 		//proj[1][1]		*= -1;		// no need this line as enabled VK_KHR_Maintenance1 
 		Mat4f mvp		= _camera->viewProjMatrix() * model;
 
-		mvp = Mat4f::s_identity() * model;
-		
+		mvp = model;
+		//mvp = Mat4f::s_identity();
+
 		_mvp = mvp;
 	}
 
@@ -201,8 +202,8 @@ public:
 		RdgTextureHnd depthTex		= _rdGraph.createTexture("depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, 1, TextureFlags::DepthStencil | TextureFlags::ShaderResource});
 
 		auto& depthPrePass = _rdGraph.addPass("depth_pre_pass", RdgPassTypeFlags::Graphics);
-		depthPrePass.setRenderTarget(testColorTex,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		depthPrePass.setDepthStencil(depthTex, RdgAccess::Write, RenderTargetLoadOp::DontCare, RenderTargetLoadOp::DontCare);
+		depthPrePass.setRenderTarget(testColorTex,						RenderTargetLoadOp::Clear,		RenderTargetStoreOp::Store);
+		depthPrePass.setDepthStencil(depthTex,		RdgAccess::Write,	RenderTargetLoadOp::DontCare,	RenderTargetLoadOp::DontCare);
 		depthPrePass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
@@ -212,7 +213,6 @@ public:
 
 				scene()->drawScene(rdReq, _preDepthMtl);
 			});
-
 		
 		#if 1
 		RdgTextureHnd albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
@@ -224,7 +224,7 @@ public:
 		gBufferPass.setRenderTarget(albedoTex,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		gBufferPass.setRenderTarget(normalTex,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		gBufferPass.setRenderTarget(positionTex,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		gBufferPass.setDepthStencil(depthTex,		RdgAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+		//gBufferPass.setDepthStencil(depthTex,		RdgAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);	// currently use the pre-pass will cause z-flight
 		gBufferPass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
@@ -294,12 +294,11 @@ public:
 
 		//_rdGraph.exportTexture(outColor, colorTex);
 		//_rdGraph.exportTexture(out1, albedoTex);
-
 	}
 
 	void update()
 	{
-		if (_rdCtx->framebufferSize().x <= 0 || _rdCtx->framebufferSize().y <= 0)
+		if (!_rdCtx->isValidFramebufferSize())
 			return;
 
 		scene()->update(1.0f / 60.0f, _rdCtx->aspectRatio());

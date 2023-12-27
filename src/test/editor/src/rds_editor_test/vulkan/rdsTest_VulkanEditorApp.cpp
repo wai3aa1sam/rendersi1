@@ -6,8 +6,6 @@
 #include "rdsTest_CRenderableSystem.h"
 #include "rdsTest_RenderGraph.h"
 
-#define RDS_TEST_RENDER_GRAPH 1
-
 namespace rds 
 {
 
@@ -244,14 +242,12 @@ public:
 		_testMultiThreadDrawCalls.createFixed(2);
 		#endif // 0
 
-		#if RDS_TEST_RENDER_GRAPH
 		{
 			_testRenderGraph.setCamera(&VulkanEditorApp::instance()->mainWin()->camera());
 			_testRenderGraph.setup(&VulkanEditorApp::instance()->mainWin()->renderContext());
 		}
-		#endif
 
-		JobSystem::instance()->setSingleThreadMode(true);
+		JobSystem::instance()->setSingleThreadMode(false);
 
 		#if 1
 		{
@@ -277,11 +273,9 @@ public:
 	virtual void onUpdate() override
 	{
 		RDS_PROFILE_SCOPED();
-		auto* mainWnd = VulkanEditorApp::instance()->mainWin();
+		auto* mainWnd	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWnd->renderContext();
-		rdCtx.setFramebufferSize(mainWnd->clientRect().size);		// this will invalidate the swapchain
-		mainWnd->camera().setViewport(mainWnd->clientRect());
-
+		
 		#if 1
 		{
 			RDS_PROFILE_SECTION("wait first frame");
@@ -296,15 +290,16 @@ public:
 
 		#endif // 0
 
+		rdCtx.setFramebufferSize(mainWnd->clientRect().size);		// this will invalidate the swapchain
+		mainWnd->camera().setViewport(mainWnd->clientRect());
+
 		//_testMultiThreadDrawCalls.execute();
 		//uploadTestMultiBuf();
 
-		#if RDS_TEST_RENDER_GRAPH
 		{
 			_testRenderGraph.update();
 			//_testRenderGraph.dump();
 		}
-		#endif
 	}
 
 	virtual void onRender() override
@@ -325,59 +320,15 @@ public:
 
 		rdCtx.beginRender();
 
-		#if !RDS_TEST_RENDER_GRAPH
-
-		_rdReq.reset(&rdCtx);
-		_rdReq.clearFramebuffers(Color4f{0.7f, 0.5f, 1.0f, 1.0f}, 1.0f);
-
-		{
-			auto drawCall = _rdReq.addDrawCall();
-			
-			drawCall->setSubMesh(&_rdMesh1.subMesh());
-
-			drawCall->material			= _testMaterial;
-			drawCall->materialPassIdx	= 0;
-
-			static auto startTime = std::chrono::high_resolution_clock::now();
-
-			auto currentTime = std::chrono::high_resolution_clock::now();
-			float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-			Mat4f model		= Mat4f::s_rotateZ(math::radians(90.0f) * time);
-			Mat4f view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
-			Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), rdCtx.aspectRatio(), 0.1f, 10.0f);
-			//proj[1][1]		*= -1;		// no need this line as enabled VK_KHR_Maintenance1 
-			Mat4f mvp		= proj * view * model;
-			mvp = Mat4f::s_rotateZ(math::radians(180.0f));
-
-			_testMaterial->setParam("rds_matrix_mvp", mvp);
-			_testMaterial->setParam("texture0", _uvCheckerTex);
-
-			_rdReq.swapBuffers();
-		}
-
-		ImGui::ShowDemoWindow();
-
-		#endif // 0
-
-		#if RDS_TEST_RENDER_GRAPH
-		//RDS_CALL_ONCE(_testRenderGraph.commit());
-		//_testRenderGraph.update();		// move to here first, since beginRender will invalidate the swapchain, but 
 		_testRenderGraph.commit();
-		#endif // RDS_TEST_RENDER_GRAPH
 
 		rdCtx.drawUI(_rdReq);
+		// rdCtx.commit(constCast(_rdReq.commandBuffer()));
 
 		RDS_TODO("drawUI will upload vertex, maybe defer the upload");
 		tsfReq.commit();	// this must call only after wait its second gen frame
 
-		#if !RDS_TEST_RENDER_GRAPH
-		rdCtx.commit(constCast(_rdReq.commandBuffer()));
-		#endif // !RDS_TEST_RENDER_GRAPH
-		//rdCtx.commit(constCast(_rdReq.commandBuffer()));
-
 		rdCtx.endRender();
-		//Renderer::rdDev()->nextFrame();
 	}
 
 	void uploadTestMultiBuf()
