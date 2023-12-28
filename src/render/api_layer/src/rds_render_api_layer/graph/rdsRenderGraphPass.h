@@ -251,7 +251,8 @@ inline Span<RdgPass*>			RdgPass::runAfterThis() { return _runAfter; }
 
 
 inline RdgPass::SizeType	RdgPass::dependencyCount()	const	{ return _runBefore.size(); }
-inline bool					RdgPass::hasRenderPass()	const	{ return BitUtil::hasAny(typeFlags(), RdgPassTypeFlags::Graphics); }
+//inline bool					RdgPass::hasRenderPass()	const	{ return BitUtil::hasAny(typeFlags(), RdgPassTypeFlags::Graphics); }
+inline bool					RdgPass::hasRenderPass()	const	{ return !_rdTargets.is_empty() || _depthStencil; }
 
 inline 
 bool 

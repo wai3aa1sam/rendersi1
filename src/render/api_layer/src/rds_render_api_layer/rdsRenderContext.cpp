@@ -5,6 +5,8 @@
 #include "rdsRenderer.h"
 #include "rdsRenderFrame.h"
 
+#include "command/rdsRenderRequest.h"
+
 namespace rds
 {
 
@@ -127,9 +129,15 @@ RenderContext::endRender()
 }
 
 void 
-RenderContext::commit(RenderCommandBuffer& renderBuf)
+RenderContext::commit(RenderCommandBuffer& rdCmdBuf)
 {
-	onCommit(renderBuf);
+	onCommit(rdCmdBuf);
+}
+
+void 
+RenderContext::commit(RenderRequest& rdReq)
+{
+	commit(rdReq.renderCommandBuffer());
 }
 
 void 

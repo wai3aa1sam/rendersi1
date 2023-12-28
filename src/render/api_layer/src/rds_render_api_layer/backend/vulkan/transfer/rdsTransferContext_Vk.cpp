@@ -188,11 +188,11 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 	else
 	{
 		vkCmdBuf->submit(&dstInFlighVkFnc);
+		dstInFlighVkFnc.wait(rdDevVk);
 	}
 
-	#if 1
+	#if 0
 	RDS_TODO("delay rotate, another vector for should rotate parents? maybe not too, upload request should be less");
-	dstInFlighVkFnc.wait(rdDevVk);
 	for (auto& e : bufCmds.commands())
 	{
 		auto* cmd = sCast<TransferCommand_UploadBuffer*>(e);

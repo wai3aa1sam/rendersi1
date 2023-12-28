@@ -83,8 +83,9 @@ public:
 	void beginRender();
 	void endRender();
 
-	void commit(RenderCommandBuffer& renderCmdBuf);
-	void commit(RenderGraph& rdGraph);
+	void commit(RenderCommandBuffer&	rdCmdBuf);
+	void commit(RenderRequest&			rdReq);
+	void commit(RenderGraph&			rdGraph);
 
 public:
 	void drawUI(RenderRequest& req);

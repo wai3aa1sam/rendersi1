@@ -115,10 +115,11 @@ Texture2D_Vk::_createVkResource(const CreateDesc& cDesc)
 
 	_vkImageView.create(this, rdDevVk);
 
+	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 	setDebugName(_debugName);
+	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 }
 
-#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 void 
 Texture2D_Vk::_setDebugName(StrView name)
 {
@@ -128,19 +129,6 @@ Texture2D_Vk::_setDebugName(StrView name)
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 }
-
-#else
-
-void 
-Texture2D_Vk::_setDebugName(StrView name)
-{
-
-}
-
-#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
-
-
-
 
 // only use  for swapchain
 void 

@@ -89,8 +89,6 @@ using Vk_Allocation = VmaAllocation;
 #endif // 0
 #if 1
 
-#define RDS_ENABLE_RenderResouce_DEBUG_NAME 1
-
 #endif // 1
 
 #if 0

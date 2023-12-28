@@ -322,11 +322,13 @@ public:
 
 		_testRenderGraph.commit();
 
-		rdCtx.drawUI(_rdReq);
-		// rdCtx.commit(constCast(_rdReq.commandBuffer()));
+		// draw ui
+		{
+			ImGui::ShowDemoWindow();
+		}
 
-		RDS_TODO("drawUI will upload vertex, maybe defer the upload");
-		tsfReq.commit();	// this must call only after wait its second gen frame
+		// drawUI() will upload vertex, therefore must before tsfReq.commit(), _rdReq must be framed, as ui buffer may be in use 
+		_testRenderGraph.present(&rdCtx, _rdReq, tsfReq);
 
 		rdCtx.endRender();
 	}

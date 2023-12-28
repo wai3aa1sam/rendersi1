@@ -97,5 +97,15 @@ void RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* 
 
 
 
+void RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform)
+{
+	_notYetSupported(RDS_SRCLOC);
+	drawMesh(RDS_RD_CMD_DEBUG_ARG, fullScreenTriangle, presentMtl, transform);
+}
+
+void RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY)
+{
+	_notYetSupported(RDS_SRCLOC);
+}
 
 }

@@ -260,34 +260,11 @@ public:
 
 		auto& finalComposePass = _rdGraph.addPass("final_compose", RdgPassTypeFlags::Graphics);
 		finalComposePass.readTexture(albedoTex);
-		#if !RDS_RENDER_GRAPH_PRESENT
-		finalComposePass.setRenderTarget(testColorTex, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		#else
-		finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		#endif
 		finalComposePass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				#if !RDS_RENDER_GRAPH_PRESENT
-
-				{
-					_presentMtl->setParam("texture0",			albedoTex.renderResource());
-					_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, -1.0f, 1.0f}));
-					_rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
-				}
-
-				#else
-
-				Mat4f mvp = Mat4f::s_identity();
-
-				_testMtl->setParam("rds_matrix_mvp",	mvp);
-				_testMtl->setParam("texture0",			_uvCheckerTex);
-
-				scene()->drawScene(rdReq, _testMtl);
-
-				rdReq.swapBuffers();
-
-				#endif // 0
+				_presentMtl->setParam("texture0",			albedoTex.renderResource());
+				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, -1.0f, 1.0f}));
 			}
 		);
 		#endif // 0
@@ -312,21 +289,18 @@ public:
 	void commit()
 	{
 		_rdGraph.commit();
-
-		#if !RDS_RENDER_GRAPH_PRESENT
-		{
-			_rdReq.reset(_rdCtx);
-			_rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
-
-			//ImGui::ShowDemoWindow();
-			//_rdCtx->drawUI(_rdReq);
-
-			_rdReq.swapBuffers();
-
-			_rdCtx->commit(constCast(_rdReq.commandBuffer()));
 	}
-		#endif // 0
 
+	void present(RenderContext* rdCtx, RenderRequest& rdReq, TransferRequest& tsfReq)
+	{
+		// _rdReq should be per frame, but all the present resources are higher lifetime scope
+		rdReq.reset(rdCtx);
+		rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
+		rdCtx->drawUI(rdReq);
+		tsfReq.commit();
+		rdReq.swapBuffers();
+
+		rdCtx->commit(rdReq);
 	}
 
 	void dump(StrView filename = "debug/render_graph")

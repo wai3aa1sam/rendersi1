@@ -58,6 +58,9 @@ public:
 	RDS_NODISCARD	RenderScissorRectScope	scissorRectScope();
 	RDS_INLINE		void					setScissorRect	(const Rect2f& rect);
 
+	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform = Mat4f::s_identity());
+	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY);
+
 	Span<RenderCommand*>		commands();
 	const RenderCommandBuffer&	commandBuffer() const;
 
