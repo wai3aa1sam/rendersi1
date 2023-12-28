@@ -70,6 +70,16 @@ void RenderGraph::destroy()
 }
 
 void 
+RenderGraph::reset() 
+{ 
+	RDS_TODO("temporary solution"); 
+	renderGraphFrame().reset();
+
+	_exportedTexs.clear();
+	_exportedBufs.clear();
+}
+
+void 
 RenderGraph::compile()
 {
 	if (!_rdCtx->isValidFramebufferSize())
@@ -275,30 +285,39 @@ RenderGraph::importTexture(StrView name, Texture* tex)
 }
 
 void 
-RenderGraph::exportTexture(Texture* out, RdgTextureHnd hnd)
+RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureFlags usageFlag, Access access)
 {
-	_notYetSupported(RDS_SRCLOC);
-	hnd._rdgRsc->setExport(true);
+	auto& exportRsc = _exportedTexs.emplace_back();
+	exportRsc.rdgRsc = hnd.resource();
+	exportRsc.rdgRsc->setExport(true);
+
+	exportRsc.outRdRsc	= out;
+	exportRsc.usage.tex = usageFlag;
+	exportRsc.access	= access;
 }
 
 RdgBufferHnd 
 RenderGraph::importBuffer(StrView name, Buffer* buf)
 {
-	_notYetSupported(RDS_SRCLOC);
 	RdgBuffer_CreateDesc cDesc;
 	cDesc = buf->desc();
-	cDesc.typeFlags |= RenderGpuBufferTypeFlags::Compute;
-	
-	auto hnd = createBuffer(name, cDesc);
-	hnd._rdgRsc->setImport(true);
-
+	auto	hnd		= createBuffer(name, cDesc);
+	auto*	rdgBuf	= sCast<RdgBuffer*>(hnd._rdgRsc);
+	rdgBuf->_desc = buf->desc();
+	rdgBuf->setImport(true);
+	rdgBuf->commitRenderResouce(buf);
 	return hnd;
 }
 
 void 
-RenderGraph::exportBuffer(Buffer* out, RdgBufferHnd hnd)
+RenderGraph::exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlag, Access access)
 {
-	hnd._rdgRsc->setExport(true);
+	auto& exportRsc = _exportedBufs.emplace_back();
+	exportRsc.rdgRsc = hnd.resource();
+	exportRsc.rdgRsc->setExport(true);
+	exportRsc.outRdRsc	= out;
+	exportRsc.usage.buf = usageFlag;
+	exportRsc.access	= access;
 }
 
 RdgTextureHnd RenderGraph::findTexture(StrView name)

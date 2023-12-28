@@ -279,6 +279,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				_commitPass(pass);
 			}
 			//_submit(_graphicsVkCmdBufsHnds, QueueTypeFlags::Graphics);
+
+			
 		}
 
 		void addGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd)
@@ -513,6 +515,42 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			#endif // 0
 		}
 
+		// only transition final
+		void transitExportedResources(RenderGraph& rdGraph)
+		{
+			// use Transfer Queue should be better as all exported are only avaliable in next frame, but need modify code
+			//auto* vkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Transit Exported Resources");
+			auto* vkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Transit Exported Resources");
+
+			vkCmdBuf->beginRecord();
+
+			for (auto& expTex : rdGraph.exportedTextures())
+			{
+				using SRC = RdgResourceType;
+
+				auto* rsc				= expTex.rdgRsc;
+				const auto& stateTrack	= sCast<const RdgResource*>(rsc)->stateTrack();
+
+				if (stateTrack.currentUsage() == expTex.usage && stateTrack.currentAccess() == expTex.access)
+					continue;
+
+				auto* rdgTex	= sCast<RdgTexture*>(rsc);
+				auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdgTex));
+
+				VkFormat		vkFormat	= Util::toVkFormat(texVk->format());
+				VkImageLayout	srcLayout	= Util::toVkImageLayout(stateTrack.currentUsage().tex,	sCast<RenderAccess>(stateTrack.currentAccess()));
+				VkImageLayout	dstLayout	= Util::toVkImageLayout(expTex.usage.tex,				sCast<RenderAccess>(expTex.access));
+
+				vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), vkFormat, srcLayout, dstLayout);
+			}
+			vkCmdBuf->endRecord();
+
+			/*for (auto& expBuf : rdGraph.exportedBuffers())
+			{
+
+			}*/
+		}
+
 		Span<Vk_CommandBuffer_T*> graphicsVkCmdBufsHnds() { return _graphicsVkCmdBufsHnds; }
 
 		static bool isGraphicsQueue(RdgPass* pass)
@@ -539,6 +577,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 	Vk_RenderGraph vkRdGraph;
 	vkRdGraph.commit(rdGraph, this);
+	vkRdGraph.transitExportedResources(rdGraph);
 }
 
 void 

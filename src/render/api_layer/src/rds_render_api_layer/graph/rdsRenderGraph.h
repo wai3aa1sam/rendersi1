@@ -138,6 +138,20 @@ public:
 	};
 	using RenderGraphFrames = Vector<RenderGraphFrame, s_kFrameInFlightCount>;
 
+	template<class T>
+	struct ExportedResourceT
+	{
+		using Usage		= RdgResourceUsage;
+		using Access	= RdgAccess;
+
+		RdgResource*	rdgRsc		= nullptr;
+		SPtr<T>*		outRdRsc	= nullptr;
+		Usage			usage		= {};
+		Access			access		= {};
+	};
+	using ExportedTexture	= ExportedResourceT<Texture>;
+	using ExportedBuffer	= ExportedResourceT<Buffer >;
+
 public:
 	RenderGraph();
 	~RenderGraph();
@@ -145,7 +159,7 @@ public:
 	void create(StrView name, RenderContext* rdCtx, IAllocator* alloc = nullptr);
 	void destroy();
 
-	void reset() { RDS_TODO("temporary solution"); renderGraphFrame().reset(); }
+	void reset();
 
 	void compile();
 	void execute();
@@ -158,16 +172,19 @@ public:
 	RdgBufferHnd	createBuffer	(StrView name, const BufferCreateDesc&	cDesc);
 
 	RdgTextureHnd	importTexture(StrView name, Texture* tex);
-	void			exportTexture(Texture* out, RdgTextureHnd hnd);
+	void			exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureFlags usageFlags, Access access = Access::Read);
 
 	RdgBufferHnd	importBuffer(StrView name, Buffer* buf);
-	void			exportBuffer(Buffer* out, RdgBufferHnd hnd);
+	void			exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlags, Access access = Access::Read);
 
 	RdgTextureHnd	findTexture(StrView name);
 	RdgBufferHnd	findBuffer (StrView name);
 
 	Span<Pass*>		resultPasses();
 	Span<Pass*>		allPasses();
+
+	Span<ExportedTexture> exportedTextures();
+	Span<ExportedBuffer > exportedBuffers();
 
 protected:
 	template<class T> typename RdgResourceTraits<T>::Hnd createRdgResource(StrView name, const RdgResource_CreateDescT<T>& cDesc);
@@ -201,10 +218,31 @@ protected:
 	IAllocator*		_alloc = nullptr;
 
 	RenderGraphFrames _rdgFrames;
+
+	#if 1
+	
+	Vector<ExportedTexture> _exportedTexs;
+	Vector<ExportedBuffer > _exportedBufs;
+
+	/*
+	
+	struct ExportedResource
+	{
+	RdgResource*			rdgRsc		= nullptr;
+	SPtr<RenderResource>*	outRdRsc	= nullptr;
+	};
+	Vector<ExportedResource> _exportedRscs;
+	
+	*/
+	
+	#endif // 1
 };
 
 inline Span<RenderGraph::Pass*>	RenderGraph::allPasses()	{ return renderGraphFrame().passes; }
 inline Span<RenderGraph::Pass*> RenderGraph::resultPasses() { return renderGraphFrame().resultPasses; }
+
+inline Span<RenderGraph::ExportedTexture> RenderGraph::exportedTextures()	{ return _exportedTexs; }
+inline Span<RenderGraph::ExportedBuffer > RenderGraph::exportedBuffers()	{ return _exportedBufs; }
 
 template<class T> inline
 typename RdgResourceTraits<T>::Hnd

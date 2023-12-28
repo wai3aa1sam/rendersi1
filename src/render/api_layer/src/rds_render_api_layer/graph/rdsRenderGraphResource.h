@@ -288,6 +288,8 @@ struct RdgResourceTraits<RdgResource_TextureT>
 	using ResourceT			= RdgTexture;
 	using RenderResourceT	= RdgResource_TextureT;
 
+	using Usage				= TextureFlags;
+
 public:
 	static constexpr RdgResourceType s_kType = RdgResourceType::Texture;
 };
@@ -301,6 +303,8 @@ struct RdgResourceTraits<RdgResource_BufferT>
 	using Hnd				= RdgBufferHnd;
 	using ResourceT			= RdgBuffer;
 	using RenderResourceT	= RdgResource_BufferT;
+
+	using Usage				= RenderGpuBufferTypeFlags;
 
 public:
 	static constexpr RdgResourceType s_kType = RdgResourceType::Buffer;
@@ -359,6 +363,8 @@ public:
 
 	Span<		Pass*> producers();
 	Span<const	Pass*> producers() const;
+
+	const StateTrack&	stateTrack() const;
 
 protected:
 	void addProducer(RdgPass* producer);
@@ -436,8 +442,9 @@ RdgResource::commitRenderResouce(RenderResource* rdRsc)
 }
 //inline void	RdgResource::commitState() { state().commit(); }
 
-inline RdgResource::StateTrack& RdgResource::stateTrack() { return _stateTrack; }
-\
+inline const	RdgResource::StateTrack& RdgResource::stateTrack() const	{ return _stateTrack; }
+inline			RdgResource::StateTrack& RdgResource::stateTrack()			{ return _stateTrack; }
+
 //inline void RdgResource::setState(const RdgResourceState& state) { _state = state; }
 
 //inline RdgResource::PendingState		RdgResource::pendingState()		 { return _pendingState; }
@@ -606,6 +613,24 @@ public:
 
 };
 
+class RdgTextureHnd : public RdgResourceHndT<RdgResource_TextureT>
+{
+	friend class RenderGraph;
+	friend class RdgPass;
+	friend class RdgBufferHnd;
+	friend class RdgResourceAccessor;
+public:
+	using RenderResource	= RdgResource_TextureT;
+	using Size				= RenderResource::Size;
+
+public:
+	RdgTextureHnd() = default;
+
+	Size			size()				const	{ return resource()->access()->size(); }
+	ColorType		format()			const	{ return resource()->desc().format; }
+	TextureFlags	usageFlags()		const	{ return desc().flag; }
+};
+
 class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>
 {
 	friend class RenderGraph;
@@ -619,20 +644,6 @@ public:
 	RdgBufferHnd() = default;
 
 	RenderGpuBufferTypeFlags	usageFlags()		const	{ return desc().typeFlags; }
-};
-
-class RdgTextureHnd : public RdgResourceHndT<RdgResource_TextureT>
-{
-public:
-	using RenderResource	= RdgResource_TextureT;
-	using Size				= RenderResource::Size;
-
-public:
-	RdgTextureHnd() = default;
-
-	Size			size()				const	{ return resource()->access()->size(); }
-	ColorType		format()			const	{ return resource()->desc().format; }
-	TextureFlags	usageFlags()		const	{ return desc().flag; }
 };
 
 class RdgResourceAccessor

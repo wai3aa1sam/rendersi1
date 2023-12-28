@@ -257,6 +257,8 @@ public:
 
 		#if 1
 		auto backBufferRt = _rdGraph.importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
+		SPtr<Texture2D> outAlbedo;
+		_rdGraph.exportTexture(&outAlbedo, albedoTex, TextureFlags::RenderTarget);
 
 		auto& finalComposePass = _rdGraph.addPass("final_compose", RdgPassTypeFlags::Graphics);
 		finalComposePass.readTexture(albedoTex);

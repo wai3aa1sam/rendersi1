@@ -605,6 +605,13 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
 	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ) // shader rsc -> rt
+	{
+		srcStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		srcAccess	= VK_ACCESS_NONE;
+		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) // present
 	{
 		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
