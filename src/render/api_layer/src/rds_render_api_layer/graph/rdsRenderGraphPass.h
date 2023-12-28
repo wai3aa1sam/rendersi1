@@ -38,6 +38,7 @@ struct RdgRenderTarget
 	RdgTextureHnd		targetHnd;
 	RenderTargetLoadOp	loadOp;
 	RenderTargetStoreOp	storeOp;
+	int					_localId = -1;
 };
 
 struct RdgDepthStencil
@@ -49,6 +50,7 @@ struct RdgDepthStencil
 	RenderTargetLoadOp	loadOp;
 	RenderTargetLoadOp	stencilLoadOp;
 	RdgAccess			access = RdgAccess::None;
+	int					_localId = -1;
 };
 
 struct RdgResourceAccess

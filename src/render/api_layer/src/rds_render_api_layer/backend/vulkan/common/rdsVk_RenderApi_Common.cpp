@@ -751,6 +751,54 @@ Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access)
 	//return VkBlendOp::VK_BLEND_OP_MAX_ENUM;
 }
 
+VkImageLayout		
+Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access, RenderTargetLoadOp op)
+{
+	using SRC = TextureFlags;
+	RDS_CORE_ASSERT(op != RenderTargetLoadOp::None, "op != RenderTargetLoadOp::None");
+
+	if (op == RenderTargetLoadOp::DontCare || op == RenderTargetLoadOp::Clear)
+	{
+		return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
+	}
+
+	switch (v)
+	{
+		case SRC::None:				{ return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED; }						break;
+		case SRC::ShaderResource:	{ return VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; }			break;
+		case SRC::UnorderedAccess:	{ return VkImageLayout::VK_IMAGE_LAYOUT_GENERAL; }							break;
+		case SRC::RenderTarget:		{ return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;}			break;
+		case SRC::DepthStencil:		{ return access == RenderAccess::Write ? VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL; }	break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkBlendOp::VK_BLEND_OP_MAX_ENUM;
+}
+
+VkImageLayout		
+Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access, RenderTargetStoreOp op)
+{
+	using SRC = TextureFlags;
+	RDS_CORE_ASSERT(op != RenderTargetStoreOp::None, "op != RenderTargetStoreOp::None");
+
+	if (op == RenderTargetStoreOp::DontCare)
+	{
+		return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
+	}
+
+	switch (v)
+	{
+		case SRC::None:				{ return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED; }						break;
+		//case SRC::ShaderResource:	{ return VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; }			break;
+		case SRC::UnorderedAccess:	{ return VkImageLayout::VK_IMAGE_LAYOUT_GENERAL; }							break;
+		case SRC::RenderTarget:		{ return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;}			break;
+		case SRC::DepthStencil:		{ return access == RenderAccess::Write ? VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL; }	break;
+
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkBlendOp::VK_BLEND_OP_MAX_ENUM;
+}
+
 u32
 Vk_RenderApiUtil::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties, RenderDevice_Vk* rdDevVk)
 {

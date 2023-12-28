@@ -59,6 +59,7 @@ RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTar
 	dst.loadOp		= loadOp;
 	dst.storeOp		= storeOp;
 	dst.targetHnd	= hnd;
+	dst._localId	= sCast<int>(_rscAccesses.size());
 
 	auto usage = Usage{ TextureFlags::RenderTarget };
 	accessResource(hnd, usage, Access::Write, true);
@@ -83,7 +84,8 @@ RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp de
 	_depthStencil.stencilLoadOp = stencilLoadOp;
 	_depthStencil.targetHnd		= hnd;
 	_depthStencil.access		= access;
-	
+	_depthStencil._localId		= sCast<int>(_rscAccesses.size());
+
 	auto usage = Usage{ TextureFlags::DepthStencil };
 	accessResource(hnd, usage, access, true);
 }

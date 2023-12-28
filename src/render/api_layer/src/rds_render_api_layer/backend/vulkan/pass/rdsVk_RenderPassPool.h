@@ -60,14 +60,15 @@ public:
 		for (size_t i = 0; i < colorAtchCount; i++)
 		{
 			auto& rdTarget = rdTargets[i];
+			auto& rdgAccess = rdgPass->resourceAccesses()[rdTarget._localId];
 
 			auto& vkDesc = vkAttacmentDescs.emplace_back();
 			vkDesc.format			= Util::toVkFormat(rdTarget.format());
 			vkDesc.samples			= VK_SAMPLE_COUNT_1_BIT;
 			vkDesc.loadOp			= Util::toVkAttachmentLoadOp (rdTarget.loadOp);
 			vkDesc.storeOp			= Util::toVkAttachmentStoreOp(rdTarget.storeOp);
-			vkDesc.initialLayout	= rdTarget.loadOp == RenderTargetLoadOp::Load ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
-			vkDesc.finalLayout		= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;	// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, rdTarget.loadOp);
+			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, rdTarget.storeOp);	// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 
 			auto& attRef = vkAttacmentRefs.emplace_back();
 			attRef.attachment	= sCast<u32>(vkAttacmentRefs.size()) - 1;
@@ -76,18 +77,7 @@ public:
 
 		if (auto* depthStencil = rdgPass->depthStencil())
 		{
-			VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			VkImageLayout finalLayout	= VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-			if (depthStencil->loadOp == RenderTargetLoadOp::Load && depthStencil->access == RenderAccess::Read)
-			{
-				initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL; // VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-			}
-
-			if (depthStencil->access == RenderAccess::Read)
-			{
-				finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-			}
+			auto& rdgAccess = rdgPass->resourceAccesses()[depthStencil->_localId];
 
 			auto& vkDesc = vkAttacmentDescs.emplace_back();
 			vkDesc.format			= Util::toVkFormat(depthStencil->format());
@@ -96,8 +86,8 @@ public:
 			vkDesc.stencilLoadOp	= Util::toVkAttachmentLoadOp(depthStencil->stencilLoadOp);
 			vkDesc.storeOp			= VK_ATTACHMENT_STORE_OP_STORE;
 			vkDesc.stencilStoreOp	= VK_ATTACHMENT_STORE_OP_STORE;
-			vkDesc.initialLayout	= initialLayout;
-			vkDesc.finalLayout		= finalLayout; // VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, depthStencil->loadOp);
+			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, RenderTargetStoreOp::Store);
 
 			auto& attRef = vkAttacmentRefs.emplace_back();
 			attRef.attachment	= sCast<u32>(vkAttacmentRefs.size()) - 1;

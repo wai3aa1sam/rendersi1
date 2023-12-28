@@ -226,6 +226,8 @@ public:
 
 	static VkImageLayout		toVkImageLayout(TextureFlags v);
 	static VkImageLayout		toVkImageLayout(TextureFlags v, RenderAccess access);
+	static VkImageLayout		toVkImageLayout(TextureFlags v, RenderAccess access, RenderTargetLoadOp  op);
+	static VkImageLayout		toVkImageLayout(TextureFlags v, RenderAccess access, RenderTargetStoreOp op);
 
 	template<size_t N> static void getVkClearValuesTo(Vector<VkClearValue, N>& out, const RenderCommand_ClearFramebuffers* value, SizeType colorCount, bool hasDepth);
 	
