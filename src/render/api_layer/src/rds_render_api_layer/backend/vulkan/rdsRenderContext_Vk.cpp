@@ -79,12 +79,25 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	createTestRenderPass(vkSwapchainCDesc);
 	_vkSwapchain.create(vkSwapchainCDesc);
 	
-	RDS_TODO("recitfy");
-	RDS_PROFILE_GPU_CTX_CREATE(_gpuProfilerCtx, "Main Window");
+	#if RDS_DEVELOPMENT
+
+	{
+		Vk_GpuProfilerContext_CreateDesc gpuProfilercDesc = {};
+		gpuProfilercDesc.rdCtx		= this;
+		gpuProfilercDesc.name		= "gfx";
+		gpuProfilercDesc.queueType	= QueueTypeFlags::Graphics;
+		gpuProfilercDesc.vkQueue	= this->vkGraphicsQueue();
+		_gfxProfiler.create(gpuProfilercDesc);
+
+		//_computeProfiler.create(cDesc);
+	}
+
+	#endif // RDS_DEVELOPMENT
+
 
 	_setDebugName();
 
-	  _vkRdPassPool.create(renderDeviceVk());
+	_vkRdPassPool.create(renderDeviceVk());
 	//_vkFramebufPool.create(renderDeviceVk());
 }
 
@@ -133,7 +146,7 @@ RenderContext_Vk::onBeginRender()
 	auto*		rdDevVk = renderDeviceVk();
 	VkResult	ret		= {};
 
-	RDS_TODO("i tihnk no need to wait too early, since it will block the cpu to record RenderCommands, query the fence and reset the frame if it is signaled");
+	//RDS_TODO("i tihnk no need to wait too early, since it will block the cpu to record RenderCommands, query the fence and reset the frame if it is signaled");
 	// 2023.12.19: but the cmd buf is still executing, must wait before reset, must wait here
 	{
 		RDS_PROFILE_SECTION("vkWaitForFences()");
@@ -149,14 +162,12 @@ RenderContext_Vk::onBeginRender()
 	}
 
 	{
-
 		{
 			RDS_TODO("remove temporary test");
 			vkRdFrame()._vkFramebufPool.destroy();
 			vkRdFrame()._vkFramebufPool.create(rdDevVk);
 			vkRdFrame().reset();
 		}
-
 	}
 }
 
@@ -225,7 +236,7 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Prim");
 
 	vkCmdBuf->beginRecord(vkGraphicsQueue(), VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	RDS_PROFILE_GPU_ZONET_VK(_gpuProfilerCtx, vkCmdBuf->hnd(), "RenderContext_Vk::onCommit(RenderCommandBuffer)");
+	_gfxProfiler.beginProfile(vkCmdBuf->hnd(), "RenderContext_Vk::onCommit(RenderCommandBuffer)");
 
 	#if !RDS_TEST_DRAW_CALL
 
@@ -255,7 +266,10 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 
 	// end render pass
 	vkCmdBuf->endRenderPass();
-	RDS_PROFILE_GPU_COLLECT_VK(_gpuProfilerCtx, vkCmdBuf->hnd());
+
+	_gfxProfiler.endProfile(vkCmdBuf->hnd());
+	//RDS_PROFILE_GPU_COLLECT_VK(_gfxProfiler, vkCmdBuf->hnd());
+
 	vkCmdBuf->endRecord();
 
 	addPendingGraphicsVkCommandBufHnd(vkCmdBuf->hnd());
@@ -375,7 +389,15 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				Util::getVkClearValuesTo(clearValues, clearValue, pass->renderTargets().size(), pass->depthStencil());
 			}
 
+			const char* passName = pass->name().c_str();
+
+			GpuProfilerContext_Vk* queueProfiler = nullptr;
+			queueProfiler = pass->isAsyncCompute() ? _rdCtxVk->computeQueueProfiler() : _rdCtxVk->graphicsQueueProfiler();
+			RDS_CORE_ASSERT(queueProfiler, "queueProfiler");
+
+			vkCmdBuf->setDebugName(passName, _rdCtxVk->renderDeviceVk());
 			vkCmdBuf->beginRecord();
+			queueProfiler->beginProfile(vkCmdBuf->hnd(), pass->name().c_str());
 
 			_recordBarriers(pass, vkCmdBuf);
 
@@ -394,6 +416,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			if (hasRenderPass)
 				vkCmdBuf->endRenderPass();
 
+			queueProfiler->endProfile(vkCmdBuf->hnd());
 			vkCmdBuf->endRecord();
 
 			/*
@@ -787,6 +810,8 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 	Vk_Buffer_T* vertexBuffers[]	= { vtxBufHndVk };
 	VkDeviceSize offsets[]			= { Util::toVkDeviceSize(cmd->vertexOffset) };
 	vkCmdBindVertexBuffers(vkCmdBuf, 0, 1, vertexBuffers, offsets);
+
+	RDS_VK_INSERT_DEBUG_LABEL(cmdBuf, cmd);
 
 	if (idxCount > 0)
 	{

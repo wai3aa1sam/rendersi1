@@ -49,6 +49,9 @@ public:
 
 	Vk_RenderFrame& vkRdFrame();
 
+	GpuProfilerContext_Vk* graphicsQueueProfiler();
+	GpuProfilerContext_Vk* computeQueueProfiler();
+
 public:
 	void onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd);
 	void onRenderCommand_SwapBuffers		(RenderCommand_SwapBuffers*		cmd);
@@ -84,7 +87,10 @@ protected:
 	void createTestRenderPass(Vk_Swapchain_CreateDesc& vkSwapchainCDesc);
 
 protected:
-	RDS_PROFILE_GPU_CTX_VK(_gpuProfilerCtx);
+	//RDS_PROFILE_GPU_CTX_VK(_gfxProfiler);
+	//RDS_PROFILE_GPU_CTX_VK(_computeProfiler);
+	GpuProfilerContext_Vk _gfxProfiler;
+	GpuProfilerContext_Vk _computeProfiler;
 
 	Vk_Swapchain	_vkSwapchain;
 	Vk_RenderPass	_testVkRenderPass;
@@ -114,6 +120,9 @@ inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; 
 //inline Vk_CommandBuffer*	RenderContext_Vk::graphicsVkCmdBuf()	{ return _curGraphicsVkCmdBuf; }
 
 inline Vk_RenderFrame& RenderContext_Vk::vkRdFrame()		{ return _vkRdFrames[_curFrameIdx]; }
+
+inline GpuProfilerContext_Vk* RenderContext_Vk::graphicsQueueProfiler()		{ return &_gfxProfiler; }
+inline GpuProfilerContext_Vk* RenderContext_Vk::computeQueueProfiler()		{ _notYetSupported(RDS_SRCLOC); return &_computeProfiler; }
 
 #endif
 }

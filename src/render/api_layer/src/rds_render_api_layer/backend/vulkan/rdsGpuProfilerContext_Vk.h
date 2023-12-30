@@ -4,10 +4,11 @@
 #include "rds_render_api_layer/backend/vulkan/common/rdsRenderApi_Include_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApiPrimitive.h"
 
-#if RDS_RENDER_HAS_VULKAN && RDS_ENABLE_PROFILER
+#if RDS_RENDER_HAS_VULKAN && RDS_ENABLE_PROFILER && false
 
 #include <tracy/TracyVulkan.hpp>
 
+#error("not yet support, seems misuse now")
 // ---
 #define RDS_PROFILE_GPU_CREATE_CTX_VK_IMPL(PHY_DEV, DEV, QUEUE, CMDBUF)											TracyVkContext(PHY_DEV, DEV, QUEUE, CMDBUF)
 #define RDS_PROFILE_GPU_CREATE_CTX_CALIBRATED_VK_IMPL(PHY_DEV, DEV, QUEUE, CMDBUF, FUNC_EXT_CTD, FUNC_EXT_CT)	TracyVkContextCalibrated(PHY_DEV, DEV, QUEUE, CMDBUF, FUNC_EXT_CTD, FUNC_EXT_CT)
@@ -92,22 +93,24 @@ class RenderContext;
 class RenderContext_Vk;
 class RenderDevice_Vk;
 
-struct GpuProfilerContext_CreateDesc
+struct Vk_GpuProfilerContext_CreateDesc
 {
-	GpuProfilerContext_CreateDesc() = default;
-	GpuProfilerContext_CreateDesc(const char* name_, RenderContext* rdCtx_)
+	Vk_GpuProfilerContext_CreateDesc() = default;
+	Vk_GpuProfilerContext_CreateDesc(const char* name_, RenderContext* rdCtx_)
 	{
 		name  = name_;
 		rdCtx = rdCtx_;
 	}
-	const char*		name;
-	RenderContext*	rdCtx = nullptr;
+	const char*		name		= nullptr;
+	RenderContext*	rdCtx		= nullptr;
+	Vk_Queue*		vkQueue		= nullptr;
+	QueueTypeFlags	queueType	= QueueTypeFlags::Graphics;
 };
 
 class GpuProfilerContext_Vk
 {
 public:
-	using CreateDesc  = GpuProfilerContext_CreateDesc;
+	using CreateDesc  = Vk_GpuProfilerContext_CreateDesc;
 	using ProfilerCtx = TracyVkCtx;
 
 public:
@@ -122,8 +125,8 @@ public:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onDestroy();
 
-	virtual void zone(Vk_CommandBuffer_T* vkCmdBuf, const char* name);
-	virtual void collect(Vk_CommandBuffer_T* vkCmdBuf);
+	virtual void beginProfile	(Vk_CommandBuffer_T* vkCmdBuf, const char* name);
+	virtual void endProfile		(Vk_CommandBuffer_T* vkCmdBuf);
 
 	virtual void setName(const char* name);
 
@@ -134,8 +137,9 @@ protected:
 	RenderDevice_Vk*	rdDevVk();
 
 private:
-	ProfilerCtx		_ctx	= nullptr;
-	RenderContext*	_rdCtx	= nullptr;
+	ProfilerCtx		_ctx		= nullptr;
+	RenderContext*	_rdCtx		= nullptr;
+	Vk_Queue*		_vkQueue	= nullptr;
 };
 
 inline

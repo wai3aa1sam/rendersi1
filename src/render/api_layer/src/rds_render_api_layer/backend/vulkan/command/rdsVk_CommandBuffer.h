@@ -3,6 +3,19 @@
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 
 #if RDS_RENDER_HAS_VULKAN
+
+
+#if RDS_DEVELOPMENT
+
+#define RDS_VK_INSERT_DEBUG_LABEL(vkCmdBuf, cmd) if (::rds::StrUtil::len((cmd)->debugName()) > 0) (vkCmdBuf)->insertDebugLabel((cmd)->debugName())
+
+#else
+
+#define RDS_VK_INSERT_DEBUG_LABEL(vkCmdBuf, cmd) 
+
+#endif // RDS_DEVELOPMENT
+
+
 namespace rds
 {
 
@@ -98,11 +111,11 @@ public:
 	void cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc);
 
 public:
+	void insertDebugLabel(const char* name, const Color4f& color = Color4f{ 0.4f, 0.5f, 0.6f, 1.0f });
 
 protected:
 	void beginDebugLabel(const char* name, const Color4f& color = Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
 	void endDebugLabel	();
-	void insertLabel	(const char* name, const Color4f& color = Color4f{ 0.4f, 0.5f, 0.6f, 1.0f });
 
 protected:
 	Vk_CommandPool*			_vkCommandPool	= nullptr;

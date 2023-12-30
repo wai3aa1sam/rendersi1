@@ -532,7 +532,7 @@ Vk_CommandBuffer::endDebugLabel	()
 }
 
 void 
-Vk_CommandBuffer::insertLabel	(const char* name, const Color4f& color)
+Vk_CommandBuffer::insertDebugLabel(const char* name, const Color4f& color)
 {
 	#if RDS_DEVELOPMENT
 

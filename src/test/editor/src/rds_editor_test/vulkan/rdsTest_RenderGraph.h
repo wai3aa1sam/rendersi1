@@ -231,8 +231,11 @@ public:
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
-
-				scene()->drawScene(rdReq, _gBufferMtl);
+				
+				for (size_t i = 0; i < 1000; i++)
+				{
+					scene()->drawScene(rdReq, _gBufferMtl);
+				}
 			}
 		);
 		#endif // 0

@@ -123,13 +123,14 @@ public:
 	void writeBuffer	(RdgBufferHnd		hnd);
 	void writeBuffers	(RdgBufferHndSpan	hnds);
 
-	RdgPassTypeFlags	typeFlags()		const;
-	RdgId				id()			const;
-	StrView				name()			const;
-	bool				isCulled()		const;
-	bool				isExecuted()	const;
-	bool				isCommitted()	const;
-	
+	RdgPassTypeFlags	typeFlags()			const;
+	RdgId				id()				const;
+	const String&		name()				const;
+	bool				isCulled()			const;
+	bool				isExecuted()		const;
+	bool				isCommitted()		const;
+	bool				isAsyncCompute()	const;
+
 	Span<RdgRenderTarget>		renderTargets();
 	RdgDepthStencil*			depthStencil();
 
@@ -208,12 +209,13 @@ RdgPass::toHndSpan(HND_SPAN hndTs)
 	return RdgResourceHndSpan{reinCast<ElementT*>(hndTs.data()), hndTs.size()};
 }
 
-inline RdgPassTypeFlags	RdgPass::typeFlags()	const	{ return _typeFlags; }
-inline RdgId			RdgPass::id()			const	{ return _id; }
-inline StrView			RdgPass::name()			const	{ return _name; }
-inline bool				RdgPass::isCulled()		const	{ return _isCulled; }
-inline bool				RdgPass::isExecuted()	const	{ return _isExecuted; }
-inline bool				RdgPass::isCommitted()	const	{ return _isCommitted; }
+inline RdgPassTypeFlags	RdgPass::typeFlags()		const	{ return _typeFlags; }
+inline RdgId			RdgPass::id()				const	{ return _id; }
+inline const String&	RdgPass::name()				const	{ return _name; }
+inline bool				RdgPass::isCulled()			const	{ return _isCulled; }
+inline bool				RdgPass::isExecuted()		const	{ return _isExecuted; }
+inline bool				RdgPass::isCommitted()		const	{ return _isCommitted; }
+inline bool				RdgPass::isAsyncCompute()	const	{ return BitUtil::has(typeFlags(), RdgPassTypeFlags::AsyncCompute); }
 
 inline Span<RdgRenderTarget>		RdgPass::renderTargets()			{ return _rdTargets; }
 inline RdgDepthStencil*				RdgPass::depthStencil()				{ return _depthStencil ? &_depthStencil : nullptr; }

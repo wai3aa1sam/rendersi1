@@ -57,16 +57,27 @@ public:
 	#if RDS_DEVELOPMENT
 	void setDebugSrcLoc(const SrcLoc& srcLoc)	{ _debugSrcLoc	= srcLoc; }
 	void setDebugName  (StrView name)			{ _debugName	= name; }
+	void setDebugColor (const Color4f& color)	{ _debugColor	= color; }
+
+	const char*		debugName()		const { return _debugName.c_str(); }
+	const Color4f&	debugColor()	const { return _debugColor; }
+
 	#else
 	void setDebugSrcLoc(const SrcLoc& srcLoc)	{  }
 	void setDebugName  (StrView name)			{  }
+	void setDebugColor (const Color4f& color)	{  }
+
+	const char*		debugName()		const { return ""; }
+	const Color4f&	debugColor()	const { return Color4f { 0.1f, 0.2f, 0.3f, 1.0f }; }
+
 	#endif
 protected:
 	RenderCommandType _type;
 
 	#if RDS_DEVELOPMENT
 	RDS_DEBUG_SRCLOC_DECL;
-	TempString _debugName;
+	TempString	_debugName;
+	Color4f		_debugColor = Color4f { 0.1f, 0.2f, 0.3f, 1.0f };
 	#endif // RDS_DEVELOPMENT
 };
 

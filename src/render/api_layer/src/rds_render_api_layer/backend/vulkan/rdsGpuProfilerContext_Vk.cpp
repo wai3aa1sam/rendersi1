@@ -17,7 +17,11 @@ namespace rds
 void 
 GpuProfilerContext_Vk::onCreate(const CreateDesc& cDesc)
 {
-	_rdCtx = cDesc.rdCtx;
+	#if RDS_DEVELOPMENT
+	throwIf(BitUtil::hasOnly(cDesc.queueType, QueueTypeFlags::Transfer), "queue must support gfx or compute");
+
+	_rdCtx		= cDesc.rdCtx;
+	_vkQueue	= cDesc.vkQueue;
 
 	auto* rdDeviceVk = rdDevVk();
 
@@ -26,41 +30,45 @@ GpuProfilerContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	auto* vkPhyDev			= rdDeviceVk->vkPhysicalDevice();																				RDS_UNUSED(vkPhyDev			);
 	auto* vkDev				= rdDeviceVk->vkDevice();																						RDS_UNUSED(vkDev			);
-	auto* vkGraphicsQueue	= rdCtxVk()->vkGraphicsQueue();																					RDS_UNUSED(vkGraphicsQueue	);
-	auto* vkCmdBuf			= rdCtxVk()->vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "");	RDS_UNUSED(vkCmdBuf			);
+	auto* vkQueue			= cDesc.vkQueue;																								RDS_UNUSED(vkQueue			);
+	auto* vkCmdBuf			= rdCtxVk()->vkRdFrame().requestCommandBuffer(cDesc.queueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "");			RDS_UNUSED(vkCmdBuf			);
 	;
 	RDS_ASSERT(vkFuncExtCtd && vkFuncExtCt || !vkFuncExtCtd && !vkFuncExtCt, "must be both exist or both not exist");
 	if (!vkFuncExtCtd && !vkFuncExtCt)
 	{
-		_ctx = RDS_PROFILE_GPU_CREATE_CTX_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue->hnd(), vkCmdBuf->hnd());
+		_ctx = RDS_PROFILE_GPU_CREATE_CTX_VK_IMPL(vkPhyDev, vkDev, vkQueue->hnd(), vkCmdBuf->hnd());
 	}
 	else
 	{
-		_ctx = RDS_PROFILE_GPU_CREATE_CTX_CALIBRATED_VK_IMPL(vkPhyDev, vkDev, vkGraphicsQueue->hnd(), vkCmdBuf->hnd(), vkFuncExtCtd, vkFuncExtCt);
+		_ctx = RDS_PROFILE_GPU_CREATE_CTX_CALIBRATED_VK_IMPL(vkPhyDev, vkDev, vkQueue->hnd(), vkCmdBuf->hnd(), vkFuncExtCtd, vkFuncExtCt);
 	}
 
 	setName(cDesc.name);
+	#endif // RDS_DEVELOPMENT
+
 }
 
 void 
 GpuProfilerContext_Vk::onDestroy()
 {
+	#if RDS_DEVELOPMENT
 	if (_ctx)
 	{
 		RDS_PROFILE_GPU_DESTROY_CTX_VK_IMPL(_ctx);
 		_ctx = nullptr;
 	}
 	_rdCtx = nullptr;
+	#endif
 }
 
 void 
-GpuProfilerContext_Vk::zone(Vk_CommandBuffer_T* vkCmdBuf, const char* name)
+GpuProfilerContext_Vk::beginProfile(Vk_CommandBuffer_T* vkCmdBuf, const char* name)
 {
 	RDS_PROFILE_GPU_ZONET_VK_IMPL(_ctx, vkCmdBuf, name);
 }
 
 void 
-GpuProfilerContext_Vk::collect(Vk_CommandBuffer_T* vkCmdBuf)
+GpuProfilerContext_Vk::endProfile(Vk_CommandBuffer_T* vkCmdBuf)
 {
 	RDS_PROFILE_GPU_COLLECT_VK_IMPL(_ctx, vkCmdBuf);
 }
