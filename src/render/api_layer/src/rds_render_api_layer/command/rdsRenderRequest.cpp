@@ -77,7 +77,7 @@ void RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* 
 		return;
 
 	auto& e = rdSubMesh;
-
+	
 	RDS_RD_CMD_DEBUG_ASSIGN(p);
 
 	p->indexType			= e.indexType();

@@ -123,6 +123,7 @@ Vk_CommandBuffer::beginRecord(Vk_Queue* vkQueue, VkCommandBufferUsageFlags usage
 
 	auto ret = vkBeginCommandBuffer(hnd(), &beginInfo);
 	Util::throwIfError(ret);
+	beginDebugLabel(debugName());
 }
 
 void 
@@ -147,6 +148,7 @@ Vk_CommandBuffer::beginSecondaryRecord(Vk_Queue* vkQueue, Vk_RenderPass* vkRende
 void 
 Vk_CommandBuffer::endRecord()
 {
+	endDebugLabel();
 	auto ret = vkEndCommandBuffer(hnd());
 	Util::throwIfError(ret);
 }
@@ -506,6 +508,42 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& de
 
 #endif // 1
 
+void 
+Vk_CommandBuffer::beginDebugLabel(const char* name, const Color4f& color)
+{
+	#if RDS_DEVELOPMENT
+
+	VkDebugUtilsLabelEXT debugLabel = {};
+	debugLabel.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	memory_copy(debugLabel.color, color.data, color.s_kElementCount);	RDS_CORE_ASSERT(arraySize(debugLabel.color) == color.s_kElementCount, "arraySize(debugLabel.color) == color.s_kElementCount");
+	debugLabel.pLabelName = name;
+
+	vkCmdBeginDebugUtilsLabel(hnd(), &debugLabel);
+
+	#endif // RDS_DEVELOP
+}
+
+void 
+Vk_CommandBuffer::endDebugLabel	()
+{
+	#if RDS_DEVELOPMENT
+	vkCmdEndDebugUtilsLabel(hnd());
+	#endif
+}
+
+void 
+Vk_CommandBuffer::insertLabel	(const char* name, const Color4f& color)
+{
+	#if RDS_DEVELOPMENT
+
+	VkDebugUtilsLabelEXT debugLabel = {};
+	debugLabel.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	memory_copy(debugLabel.color, color.data, color.s_kElementCount);	RDS_CORE_ASSERT(arraySize(debugLabel.color) == color.s_kElementCount, "arraySize(debugLabel.color) == color.s_kElementCount");
+	debugLabel.pLabelName = name;
+
+	vkCmdInsertDebugUtilsLabel(hnd(), &debugLabel);
+	#endif
+}
 
 //Renderer_Vk*		Vk_CommandBuffer::renderer()	{ return _vkCommandPool-> }
 //RenderDevice_Vk*	Vk_CommandBuffer::device()		{ return _vkC }

@@ -70,6 +70,7 @@ inline PFN_vkQueueSubmit2KHR vkQueueSubmit2;
 #if 1
 
 inline PFN_vkSetDebugUtilsObjectNameEXT		vkSetDebugUtilsObjectName;
+inline PFN_vkDebugMarkerSetObjectTagEXT		vkDebugMarkerSetObjectTag;
 inline PFN_vkCmdBeginDebugUtilsLabelEXT		vkCmdBeginDebugUtilsLabel;
 inline PFN_vkCmdEndDebugUtilsLabelEXT		vkCmdEndDebugUtilsLabel;
 inline PFN_vkCmdInsertDebugUtilsLabelEXT	vkCmdInsertDebugUtilsLabel;

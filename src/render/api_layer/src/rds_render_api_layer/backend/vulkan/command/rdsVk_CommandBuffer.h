@@ -100,6 +100,11 @@ public:
 public:
 
 protected:
+	void beginDebugLabel(const char* name, const Color4f& color = Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
+	void endDebugLabel	();
+	void insertLabel	(const char* name, const Color4f& color = Color4f{ 0.4f, 0.5f, 0.6f, 1.0f });
+
+protected:
 	Vk_CommandPool*			_vkCommandPool	= nullptr;
 	Vk_Queue*				_vkQueue		= nullptr;
 	Vk_RenderPass*			_vkRdPass		= nullptr;

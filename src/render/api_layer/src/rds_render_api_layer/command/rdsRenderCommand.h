@@ -47,8 +47,6 @@ public:
 
 	using SizeType = Traits::SizeType;
 
-public:
-	RDS_DEBUG_SRCLOC_DECL;
 
 public:
 	RenderCommand(Type type) : _type(type) {}
@@ -56,8 +54,20 @@ public:
 
 	Type type() const { return _type; }
 
+	#if RDS_DEVELOPMENT
+	void setDebugSrcLoc(const SrcLoc& srcLoc)	{ _debugSrcLoc	= srcLoc; }
+	void setDebugName  (StrView name)			{ _debugName	= name; }
+	#else
+	void setDebugSrcLoc(const SrcLoc& srcLoc)	{  }
+	void setDebugName  (StrView name)			{  }
+	#endif
 protected:
 	RenderCommandType _type;
+
+	#if RDS_DEVELOPMENT
+	RDS_DEBUG_SRCLOC_DECL;
+	TempString _debugName;
+	#endif // RDS_DEVELOPMENT
 };
 
 class RenderCommand_ClearFramebuffers : public RenderCommand

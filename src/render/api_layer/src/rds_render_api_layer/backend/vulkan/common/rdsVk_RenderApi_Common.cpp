@@ -1366,7 +1366,10 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	emplaceIfExist(o, VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,		availablePhyDeviceExts());
 	emplaceIfExist(o, VK_GOOGLE_HLSL_FUNCTIONALITY_1_EXTENSION_NAME,	availablePhyDeviceExts());
 	emplaceIfExist(o, VK_KHR_MAINTENANCE1_EXTENSION_NAME,				availablePhyDeviceExts());
-	
+	if (adapterInfo.isDebug)
+	{
+		emplaceIfExist(o, VK_EXT_DEBUG_MARKER_EXTENSION_NAME,			availablePhyDeviceExts());
+	}
 	if (rdDevCDesc.isPresent)
 	{
 		o.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);

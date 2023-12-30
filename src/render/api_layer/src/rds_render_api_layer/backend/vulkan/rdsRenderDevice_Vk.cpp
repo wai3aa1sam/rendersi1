@@ -302,11 +302,13 @@ RenderDevice_Vk::loadVkInstFn(Vk_ExtensionInfo& vkExtInfo)
 	VAR = vkExtInfo.getInstanceExtFunction<RDS_CONCAT(RDS_CONCAT(PFN_, VAR), EXT)>(RDS_CONCAT_TO_STR(VAR, EXT)); \
 	if (VAR == nullptr) \
 	{ \
+		RDS_CORE_LOG_WARN("cannot load" #VAR); \
 		VAR = FALLBACK_FN; \
 	} \
 	// ---
-
+	
 	RDS_VK_LOAD_INST_FN(vkSetDebugUtilsObjectName,	[](VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) { return VK_SUCCESS; });
+	RDS_VK_LOAD_INST_FN(vkDebugMarkerSetObjectTag,	[](VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo)	{ return VK_SUCCESS; });
 	RDS_VK_LOAD_INST_FN(vkCmdBeginDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
 	RDS_VK_LOAD_INST_FN(vkCmdEndDebugUtilsLabel,	[](VkCommandBuffer commandBuffer) {});
 	RDS_VK_LOAD_INST_FN(vkCmdInsertDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});

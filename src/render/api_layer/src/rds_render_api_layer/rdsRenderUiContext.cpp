@@ -194,7 +194,8 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 				auto* cmd = req.renderCommandBuffer().addDrawCall();
 
 				#if RDS_DEVELOPMENT
-				cmd->_debugSrcLoc = RDS_SRCLOC;
+				cmd->setDebugSrcLoc(RDS_SRCLOC);
+				cmd->setDebugName("draw imgui");
 				#endif
 
 				cmd->material				= _material;
@@ -210,6 +211,9 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 				cmd->indexBuffer			= _idxBuf->renderGpuBuffer();
 				cmd->indexOffset			= (indexStart + srcBuf.IdxOffset) * indexSize;
 				cmd->indexCount				= srcBuf.ElemCount;
+
+				cmd->vertexBuffer->setDebugName("imgui vtx buf");
+				cmd->indexBuffer ->setDebugName("imgui idx buf");
 			}
 
 			vertexStart += srcCmd->VtxBuffer.Size;
