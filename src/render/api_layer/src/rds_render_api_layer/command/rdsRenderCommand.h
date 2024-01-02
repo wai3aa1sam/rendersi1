@@ -33,6 +33,8 @@ using DrawingSettings = u64;
 	\
 	E(DrawRenderables,) \
 	\
+	E(Dispatch,) \
+	\
 	E(CopyBuffer,) \
 	E(_kCount,) \
 //---
@@ -80,6 +82,13 @@ protected:
 	Color4f		_debugColor = Color4f { 0.1f, 0.2f, 0.3f, 1.0f };
 	#endif // RDS_DEVELOPMENT
 };
+
+#endif
+
+#if 0
+#pragma mark --- rdsGraphics-RenderCommand-Impl ---
+#endif // 0
+#if 1
 
 class RenderCommand_ClearFramebuffers : public RenderCommand
 {
@@ -180,8 +189,34 @@ public:
 	virtual ~RenderCommand_DrawRenderables() {};
 };
 
-
 #endif
+
+
+#if 0
+#pragma mark --- rdsCompute-RenderCommand-Impl ---
+#endif // 0
+#if 1
+
+class RenderCommand_Dispatch : public RenderCommand
+{
+public:
+	using Base = RenderCommand;
+	using This = RenderCommand_Dispatch;
+
+public:
+	Tuple3u			threadGroups	= Tuple3u{1, 1, 1};
+	SizeType		materialPassIdx	= 0;
+	SPtr<Material>	material;
+
+public:
+	RenderCommand_Dispatch() : Base(Type::Dispatch) {}
+	virtual ~RenderCommand_Dispatch() {};
+
+	Material::Pass* getMaterialPass() { return material ? material->getPass(materialPassIdx) : nullptr; }
+};
+
+#endif // 0
+
 
 #if 0
 #pragma mark --- rdsRenderCmdIter-Impl ---
@@ -252,6 +287,8 @@ public:
 
 	void reset();
 
+	RenderCommand_Dispatch*				dispatch();
+
 	RenderCommand_ClearFramebuffers*	clearFramebuffers();
 	RenderCommand_SwapBuffers*			swapBuffers();
 	RenderCommand_DrawCall*				addDrawCall();
@@ -285,6 +322,8 @@ RenderCommandBuffer::newCommand()
 	_commands.emplace_back(cmd);
 	return cmd;
 }
+
+inline RenderCommand_Dispatch*			RenderCommandBuffer::dispatch()				{ return newCommand<RenderCommand_Dispatch>(); }
 
 inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
 inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()			{ return newCommand<RenderCommand_SwapBuffers>(); }

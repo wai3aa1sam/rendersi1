@@ -34,7 +34,7 @@ public:
 	static constexpr SizeType s_kLocalSize = 8;
 
 public:
-	void create(VkGraphicsPipelineCreateInfo& out, ShaderPass_Vk* shaderPass)
+	void createGraphics(VkGraphicsPipelineCreateInfo& out, ShaderPass_Vk* shaderPass)
 	{
 		destroy();
 		_shaderStageCInfos.reserve(enumInt(ShaderStageFlag::_kCount));
@@ -48,6 +48,15 @@ public:
 		out.pStages		= _shaderStageCInfos.data();
 	}
 
+	void createCompute(VkComputePipelineCreateInfo& out, ShaderPass_Vk* shaderPass)
+	{
+		destroy();
+
+		const auto& info = shaderPass->info();
+
+		throwIf(info.csFunc.is_empty(), "cs don't have an entry func");
+		if (!info.csFunc.is_empty()) { out.stage = VkPipelineShaderStageCreateInfo{shaderPass->vkComputeStage()->createVkStageInfo(info.csFunc.c_str())}; }
+	}
 
 protected:
 	void destroy()
@@ -63,13 +72,33 @@ struct Vk_PipelineLayoutCDesc : public Vk_CDesc_Base
 {
 	static constexpr SizeType s_kLocalSize = 8;
 public:
-	void create(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDev)
+	void createGraphics(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDev)
 	{
 		destroy();
 
 		if (pass->vertexStage())	_hnds.emplace_back(pass->vkVertexStage_NoCheck()._vkDescriptorSetLayout.hnd());
-		if (pass->pixelStage())		_hnds.emplace_back( pass->vkPixelStage_NoCheck()._vkDescriptorSetLayout.hnd());
-		
+		if (pass->pixelStage())		_hnds.emplace_back(pass->vkPixelStage_NoCheck()._vkDescriptorSetLayout.hnd());
+		if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
+
+		RDS_CORE_ASSERT(!_hnds.is_empty(), "no descriptor set layout");
+
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+		{
+			pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_hnds.size());			// Optional
+			pipelineLayoutInfo.pSetLayouts				= _hnds.data();						// set0, set1, set2, ...
+			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
+			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
+		}
+		out.create(&pipelineLayoutInfo, rdDev);
+	}
+
+	void createCompute(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDev)
+	{
+		destroy();
+
+		if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
+
 		RDS_CORE_ASSERT(!_hnds.is_empty(), "no descriptor set layout");
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -93,11 +122,11 @@ private:
 	Vector<Vk_DescriptorSetLayout_T*, s_kLocalSize> _hnds;
 };
 
-struct Vk_RenderStateCDesc : public Vk_CDesc_Base
+struct Vk_GraphicsPipelineCDesc : public Vk_CDesc_Base
 {
 	using Vk_PipelineColorBlendAttachmentStates = Vector<VkPipelineColorBlendAttachmentState, RDS_VK_MAX_RENDER_TARGET_COUNT>;
 public:
-	Vk_RenderStateCDesc()
+	Vk_GraphicsPipelineCDesc()
 	{
 		
 	}
@@ -502,7 +531,7 @@ public:
 
 	template<class STAGE> static 
 	void 
-	bind(STAGE* stage, u32 set, RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
+	bind(STAGE* stage, VkPipelineBindPoint vkBindPt, u32 set, Vk_PipelineLayout_T* vkPipelineLayout, RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
 	{
 		if (!stage->shaderStage())
 			return;
@@ -524,8 +553,7 @@ public:
 			builder.build(vkDescSet, stage->_vkDescriptorSetLayout, shaderRsc);
 		}
 
-		VkPipelineBindPoint vkBindPt = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, pass->vkPipelineLayout().hnd(), set, 1, vkDescSet.hndArray(), 0, nullptr);
+		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayout, set, 1, vkDescSet.hndArray(), 0, nullptr);
 	}
 
 	template<class STAGE>
@@ -562,7 +590,7 @@ Vk_MaterialPass_VertexStage::destroy(MaterialPass_Vk* pass)
 void 
 Vk_MaterialPass_VertexStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
 {
-	Helper::bind(this, 0, ctx, vkCmdBuf, vtxLayout, pass);
+	Helper::bind(this, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, pass->vkPipelineLayout().hnd(), ctx, vkCmdBuf, vtxLayout, pass);
 }
 
 const Vk_MaterialPass_VertexStage::Vk_VertexInputAttrs& 
@@ -619,7 +647,27 @@ Vk_MaterialPass_PixelStage::destroy(MaterialPass_Vk* pass)
 void 
 Vk_MaterialPass_PixelStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
 {
-	Helper::bind(this, 1, ctx, vkCmdBuf, vtxLayout, pass);
+	Helper::bind(this, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, pass->vkPipelineLayout().hnd(), ctx, vkCmdBuf, vtxLayout, pass);
+}
+
+void 
+Vk_MaterialPass_ComputeStage::create	(MaterialPass_Vk* pass, ShaderStage* shaderStage)
+{
+	Base::create(pass, shaderStage);
+	using Helper = MaterialStage_Helper;
+	Helper::createVkDescriptorSet(this, pass->renderDeviceVk());
+}
+
+void 
+Vk_MaterialPass_ComputeStage::destroy(MaterialPass_Vk* pass)
+{
+	_vkDescriptorSetLayout.destroy(pass->renderDeviceVk());
+}
+
+void 
+Vk_MaterialPass_ComputeStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, MaterialPass_Vk* pass)
+{
+	Helper::bind(this, VK_PIPELINE_BIND_POINT_COMPUTE, 0, pass->computeVkPipelineLayout().hnd(), ctx, vkCmdBuf, nullptr, pass);
 }
 
 #endif
@@ -655,6 +703,13 @@ MaterialPass_Vk::onCreate(Material* material, ShaderPass* shaderPass)
 		_vkPixelStage.create(this, shaderPass->pixelStage());
 		_pixelStage	= &_vkPixelStage;
 	}
+
+	if (shaderPass->computeStage())
+	{
+		_vkComputeStage.create(this, shaderPass->computeStage());
+		_computeStage = &_vkComputeStage;
+		createComputeVkPipeline(_computeVkPipeline);
+	}
 }
 
 void 
@@ -672,6 +727,15 @@ MaterialPass_Vk::onDestroy()
 	{
 		_vkPixelStage.destroy(this);
 		_pixelStage	= nullptr;
+	}
+
+	if (_computeStage)
+	{
+		_vkComputeStage.destroy(this);
+		_computeStage	= nullptr;
+
+		_computeVkPipelineLayout.destroy(rdDevVk);
+		_computeVkPipeline.destroy(rdDevVk);
 	}
 
 	for (auto& e : _vkPipelineMap)
@@ -703,6 +767,17 @@ MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_Co
 }
 
 void 
+MaterialPass_Vk::onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf)
+{
+	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
+	VkPipelineBindPoint vkBindPt	= VK_PIPELINE_BIND_POINT_COMPUTE;
+
+	vkCmdBindPipeline(vkCmdBuf->hnd(), vkBindPt, _computeVkPipeline.hnd());
+
+	_vkComputeStage.bind(vkCtx, vkCmdBuf, this);
+}
+
+void 
 MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout)
 {
 	RDS_CORE_ASSERT(vkCmdBuf, "");
@@ -723,7 +798,7 @@ MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPas
 			RDS_VK_SET_DEBUG_NAME_FMT(*vkPipeline, "{}-{}", shader()->filename(), "vkPipeline");
 		}
 	}
-	
+
 	vkCmdBindPipeline(vkCmdBuf->hnd(), vkBindPt, vkPipeline->hnd());
 }
 
@@ -735,13 +810,13 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 	VkGraphicsPipelineCreateInfo pipelineCInfo = {};
 
 	Vk_ShaderStagesCDesc vkShaderStagesCDesc;
-	vkShaderStagesCDesc.create(pipelineCInfo, shaderPass());
+	vkShaderStagesCDesc.createGraphics(pipelineCInfo, shaderPass());
 
 	Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
-	vkPipelineLayoutCDesc.create(_vkPipelineLayout, this, rdDevVk);
+	vkPipelineLayoutCDesc.createGraphics(_vkPipelineLayout, this, rdDevVk);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", shader()->filename(), "vkPipelineLayout");
 
-	Vk_RenderStateCDesc vkRenderStateCDesc;
+	Vk_GraphicsPipelineCDesc vkRenderStateCDesc;
 	vkRenderStateCDesc.create(pipelineCInfo, info().renderState, pixelStage()->info());
 
 	Vk_VertexInputCDesc vkVtxInputCDesc;
@@ -755,7 +830,27 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 	pipelineCInfo.basePipelineIndex		= -1;				// Optional
 
 	Vk_PipelineCache* vkPipelineCache = VK_NULL_HANDLE;
-	out.create(&pipelineCInfo, 1, vkPipelineCache, rdDevVk);
+	out.create(&pipelineCInfo, vkPipelineCache, rdDevVk);
+}
+
+void 
+MaterialPass_Vk::createComputeVkPipeline(Vk_Pipeline& out)
+{
+	auto* rdDevVk = material()->renderDeviceVk();
+
+	VkComputePipelineCreateInfo pipelineCInfo = {};
+
+	Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
+	vkPipelineLayoutCDesc.createCompute(_computeVkPipelineLayout, this, rdDevVk);
+
+	Vk_ShaderStagesCDesc vkShaderStagesCDesc;
+	vkShaderStagesCDesc.createCompute(pipelineCInfo, shaderPass());
+
+	pipelineCInfo.sType		= VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	pipelineCInfo.layout	= _computeVkPipelineLayout.hnd();
+
+	Vk_PipelineCache* vkPipelineCache = VK_NULL_HANDLE;
+	out.create(&pipelineCInfo, vkPipelineCache, rdDevVk);
 }
 
 #endif

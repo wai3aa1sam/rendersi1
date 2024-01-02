@@ -42,6 +42,11 @@ public:
 
 	RenderCommandBuffer& renderCommandBuffer();
 
+	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32		materialPassIdx,	u32		threadGrpsX, u32 threadGrpsY, u32 threadGrpsZ);
+	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32		materialPassIdx,	Tuple3u	threadGrps);
+	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32		threadGrpsX,		u32		threadGrpsY, u32 threadGrpsZ);
+	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u	threadGrps);
+
 	RenderCommand_ClearFramebuffers* clearFramebuffers();
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color);
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color, float depth, u32 stencil = 0);

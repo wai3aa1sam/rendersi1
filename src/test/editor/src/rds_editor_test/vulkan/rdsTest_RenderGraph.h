@@ -190,7 +190,12 @@ public:
 
 			_presentShader	= Renderer::rdDev()->createShader("asset/shader/present.shader");
 			_presentMtl		= Renderer::rdDev()->createMaterial(_presentShader);
+
+			_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test_compute.shader");
+			_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
 		}
+
+		testCompute(_rdGraph, create);
 
 		SPtr<Texture2D> backBuffer;
 		SPtr<Texture2D> outColor;
@@ -232,7 +237,7 @@ public:
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 				
-				for (size_t i = 0; i < 1000; i++)
+				for (size_t i = 0; i < 1; i++)
 				{
 					scene()->drawScene(rdReq, _gBufferMtl);
 				}
@@ -313,6 +318,59 @@ public:
 		_rdGraph.dumpGraphviz(filename);
 	}
 
+	void testCompute(RenderGraph& outRdGraph, bool isCreate = false)
+	{
+		static constexpr int s_kMaxParticleCount = 256 * 1000;
+		struct Particle
+		{
+			Tuple2f position;
+			Tuple2f velocity;
+			Tuple4f color;
+		};
+
+		if (isCreate)
+		{
+			std::default_random_engine rndEngine((unsigned)time(nullptr));
+			std::uniform_real_distribution<float> rndDist(0.0f, 1.0f);
+			
+			// Initial particle positions on a circle
+			Vector<Particle> particles(s_kMaxParticleCount);
+			for (auto& particle : particles) 
+			{
+				float r = 0.25f * sqrt(rndDist(rndEngine));
+				float theta = (float)(rndDist(rndEngine) * 2 * 3.14159265358979323846);
+				float x = r * cos(theta) * _rdCtx->aspectRatio();
+				float y = r * sin(theta);
+				particle.position	= Tuple2f(x, y);
+				particle.velocity	= Vec2f{Vec2f(x, y) / Vec2f(x, y).magnitude() * 0.00025f}.toTuple2();
+				particle.color		= Tuple4f(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
+			}
+			auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+			cDesc.bufSize	= sizeof(Particle) * s_kMaxParticleCount;
+			cDesc.stride	= sizeof(Particle);
+			cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex;
+			_testComputeBuffer0 = Renderer::rdDev()->createRenderGpuMultiBuffer(cDesc);
+
+			_testComputeBuffer0->uploadToGpu(particles.byteSpan());
+			_testComputeBuffer0->uploadToGpu(particles.byteSpan());
+		}
+
+		auto& rdGraph = outRdGraph;
+
+		//RdgBufferHnd particles0		= rdGraph.createBuffer("particles0",		RenderGpuBuffer_CreateDesc{ 1, sizeof(int), RenderGpuBufferTypeFlags::Compute });
+		//RdgBufferHnd particles1		= rdGraph.createBuffer("particles1",		RenderGpuBuffer_CreateDesc{ 1, sizeof(int), RenderGpuBufferTypeFlags::Compute });
+
+		auto& gBufferPass = rdGraph.addPass("test_compute", RdgPassTypeFlags::Compute);
+		gBufferPass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				_testComputeMtl->setParam("in_particle_buffer",		_testComputeBuffer0->previousBuffer());
+				_testComputeMtl->setParam("out_particle_buffer",	_testComputeBuffer0->renderGpuBuffer());
+				rdReq.dispatch(RDS_SRCLOC, _testComputeMtl, s_kMaxParticleCount / 256, 1, 1);
+			}
+		);
+	}
+
 	TestScene* scene() { return &_scene; }
 
 public:
@@ -330,10 +388,14 @@ public:
 	SPtr<Shader> _gBufferShader;
 	SPtr<Shader> _presentShader;
 
-
 	SPtr<Shader>		_testShader;
 	SPtr<Material>		_testMtl;
 	SPtr<Texture2D>		_uvCheckerTex;
+
+	SPtr<Shader>				_testComputeShader;
+	SPtr<Material>				_testComputeMtl;
+	SPtr<RenderGpuMultiBuffer>	_testComputeBuffer0;
+	SPtr<RenderGpuMultiBuffer>	_testComputeBuffer1;
 
 	RenderMesh	_fullScreenTriangle;
 

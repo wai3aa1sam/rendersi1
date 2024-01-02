@@ -55,6 +55,15 @@ public:
 	{
 		create(desc);
 	}
+
+	RenderGpuBuffer_CreateDesc(SizeType	bufSize_, SizeType stride_, RenderGpuBufferTypeFlags usageFlags_, SizeType offset_ = 0)
+	{
+		bufSize		= bufSize_;
+		stride		= stride_;
+		typeFlags	= usageFlags_;
+		offset		= offset_;
+	}
+
 	void operator=(const RenderGpuBuffer_Desc& desc) { create(desc); }
 	
 public:

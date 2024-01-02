@@ -188,7 +188,8 @@ public:
 	static VkFormat	toVkFormat_ShaderTexture(VkFormat v);		// to UNORM
 	static VkFormat	toVkFormat_srgb			(VkFormat v);
 
-	static VkBufferUsageFlagBits toVkBufferUsage(RenderGpuBufferTypeFlags type);
+	static VkBufferUsageFlagBits toVkBufferUsage (RenderGpuBufferTypeFlags v);
+	static VkBufferUsageFlagBits toVkBufferUsages(RenderGpuBufferTypeFlags v);
 
 	static VkMemoryPropertyFlags toVkMemoryPropFlags(RenderMemoryUsage memUsage);
 

@@ -26,8 +26,9 @@ using Vk_FramedDescSets = Vector<Vk_DescriptorSet, RenderApiLayerTraits::s_kFram
 
 struct MaterialStage_Helper;
 
+
 #if 0
-#pragma mark --- rdsMaterialPass_Vk-Decl ---
+#pragma mark --- rdsVk_MaterialPassStage-Decl ---
 #endif // 0
 #if 1
 
@@ -94,22 +95,60 @@ protected:
 
 inline Vk_PixelShaderStage* Vk_MaterialPass_PixelStage::vkShaderStage() { return sCast<Vk_PixelShaderStage*>(shaderStage()); }
 
+struct Vk_MaterialPass_ComputeStage : public MaterialPass_ComputeStage
+{
+	friend struct	Vk_PipelineLayoutCDesc;
+	friend struct	MaterialStage_Helper;
+	friend class	MaterialPass_Vk;
+public:
+	using Base		= MaterialPass_ComputeStage;
+	using Util		= Vk_RenderApiUtil;
+	using Helper	= MaterialStage_Helper;
+
+public:
+	void create	(MaterialPass_Vk* pass, ShaderStage* shaderStage);
+	void destroy(MaterialPass_Vk* pass);
+
+	void bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, MaterialPass_Vk* pass);
+
+	Vk_ComputeShaderStage*	vkShaderStage();
+
+protected:
+	Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
+	Vk_FramedDescSets		_vkFramedDescSets;
+};
+
+inline Vk_ComputeShaderStage* Vk_MaterialPass_ComputeStage::vkShaderStage() { return sCast<Vk_ComputeShaderStage*>(shaderStage()); }
+
+
+#endif
+
+#if 0
+#pragma mark --- rdsMaterialPass_Vk-Decl ---
+#endif // 0
+#if 1
+
 class MaterialPass_Vk : public MaterialPass
 {
 	friend struct Vk_MaterialPass_VertexStage;
 	friend struct Vk_MaterialPass_PixelStage;
+	friend struct Vk_MaterialPass_ComputeStage;
 public:
 	using Base = MaterialPass;
 	using Util = Vk_RenderApiUtil;
 
 	using VertexStage	= Vk_MaterialPass_VertexStage;
 	using PixelStage	= Vk_MaterialPass_PixelStage;
+	using ComputeStage	= Vk_MaterialPass_ComputeStage;
+
+	using Vk_PipelineMap = VectorMap<Vk_RenderPass*, Vk_Pipeline>;
 
 public:
 	MaterialPass_Vk();
 	virtual ~MaterialPass_Vk();
 
 	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf);
+	virtual void onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf);
 
 	Material_Vk*	material	();
 	Shader_Vk*		shader		();
@@ -117,11 +156,14 @@ public:
 
 	VertexStage*	vkVertexStage();
 	PixelStage*		vkPixelStage();
+	ComputeStage*	vkComputeStage();
 
 	VertexStage&	vkVertexStage_NoCheck();
 	PixelStage&		vkPixelStage_NoCheck();
+	ComputeStage&	vkComputeStage_NoCheck();
 
 	Vk_PipelineLayout& vkPipelineLayout();
+	Vk_PipelineLayout& computeVkPipelineLayout();
 
 	RenderDevice_Vk* renderDeviceVk();
 
@@ -132,16 +174,20 @@ protected:
 	void bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout);
 
 protected:
-	void createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout);
+	void createVkPipeline		(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout);
+	void createComputeVkPipeline(Vk_Pipeline& out);
 
 protected:
-	VertexStage _vkVertexStage;
-	PixelStage	_vkPixelStage;
+	VertexStage		_vkVertexStage;
+	PixelStage		_vkPixelStage;
+	ComputeStage	_vkComputeStage;
 
 	Vk_PipelineLayout	_vkPipelineLayout;		// maybe should in shader, since it does not need to recreate if no push_constant
-	VectorMap<Vk_RenderPass*, Vk_Pipeline> _vkPipelineMap;
+	Vk_PipelineLayout	_computeVkPipelineLayout;		// maybe should in shader, since it does not need to recreate if no push_constant
+	Vk_PipelineMap		_vkPipelineMap;
+	Vk_Pipeline			_computeVkPipeline;
 
-	// TODO: use a union reflection
+	// TODO: use a union reflection, no, use bindless then only the Material_Vk has it
 	Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
 	Vk_FramedDescSets		_vkFramedDescSets;
 	
@@ -149,7 +195,8 @@ protected:
 	// after submit add to _vkPipelineMap
 };
 
-inline Vk_PipelineLayout&				MaterialPass_Vk::vkPipelineLayout()		{ return _vkPipelineLayout; }
+inline Vk_PipelineLayout&				MaterialPass_Vk::vkPipelineLayout()				{ return _vkPipelineLayout; }
+inline Vk_PipelineLayout&				MaterialPass_Vk::computeVkPipelineLayout()		{ return _computeVkPipelineLayout; }
 
 inline Material_Vk*						MaterialPass_Vk::material()				{ return sCast<Material_Vk*>(_material); }
 inline Shader_Vk*						MaterialPass_Vk::shader()				{ return reinCast<Shader_Vk*>(_material->shader()); }
@@ -157,9 +204,11 @@ inline ShaderPass_Vk*					MaterialPass_Vk::shaderPass()			{ return reinCast<Shad
 
 inline MaterialPass_Vk::VertexStage*	MaterialPass_Vk::vkVertexStage()		{ return vertexStage()	? &_vkVertexStage	: nullptr; }
 inline MaterialPass_Vk::PixelStage*		MaterialPass_Vk::vkPixelStage()			{ return pixelStage()	? &_vkPixelStage	: nullptr; }
+inline MaterialPass_Vk::ComputeStage*	MaterialPass_Vk::vkComputeStage()		{ return computeStage()	? &_vkComputeStage	: nullptr; }
 
-inline MaterialPass_Vk::VertexStage&	MaterialPass_Vk::vkVertexStage_NoCheck(){ return _vkVertexStage; }
-inline MaterialPass_Vk::PixelStage&		MaterialPass_Vk::vkPixelStage_NoCheck()	{ return _vkPixelStage; }
+inline MaterialPass_Vk::VertexStage&	MaterialPass_Vk::vkVertexStage_NoCheck()	{ return _vkVertexStage; }
+inline MaterialPass_Vk::PixelStage&		MaterialPass_Vk::vkPixelStage_NoCheck()		{ return _vkPixelStage; }
+inline MaterialPass_Vk::ComputeStage&	MaterialPass_Vk::vkComputeStage_NoCheck()	{ return _vkComputeStage; }
 
 #endif
 

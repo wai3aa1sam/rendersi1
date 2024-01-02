@@ -743,6 +743,24 @@ RenderContext_Vk::createTestRenderPass(Vk_Swapchain_CreateDesc& vkSwapchainCDesc
 #if 1
 
 void 
+RenderContext_Vk::onRenderCommand_Dispatch(RenderCommand_Dispatch* cmd, void* userData)
+{
+	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
+
+	if (auto* pass = cmd->getMaterialPass())
+	{
+		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
+		vkMtlPass->onBind(this, vkCmdBuf);
+	}
+	else
+	{
+		RDS_THROW("onRenderCommand_Dispatch no passes");
+	}
+
+	vkCmdBuf->cmd_dispatch(cmd->threadGroups.x, cmd->threadGroups.y, cmd->threadGroups.z);
+}
+
+void 
 RenderContext_Vk::onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd)
 {
 	// vkCmdClearAttachments

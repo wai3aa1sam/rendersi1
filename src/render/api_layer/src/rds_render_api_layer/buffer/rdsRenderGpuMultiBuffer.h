@@ -43,6 +43,10 @@ public:
 			SPtr<RenderGpuBuffer>& renderGpuBuffer();
 	const	SPtr<RenderGpuBuffer>& renderGpuBuffer() const;
 
+			SPtr<RenderGpuBuffer>& previousBuffer();
+	const	SPtr<RenderGpuBuffer>& previousBuffer() const;
+
+
 protected:
 	virtual void onCreate		(CreateDesc& cDesc);
 	virtual void onPostCreate	(CreateDesc& cDesc);
@@ -50,7 +54,7 @@ protected:
 
 	virtual void onUploadToGpu(ByteSpan data, SizeType offset);
 
-	SPtr<RenderGpuBuffer>& nextBuffer(SizeType bufSize);
+	SPtr<RenderGpuBuffer>& makeNextBuffer(SizeType bufSize);
 
 	SPtr<RenderGpuBuffer> _makeNewBuffer(SizeType bufSize);
 
@@ -68,6 +72,10 @@ inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const
 
 inline			SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[_iFrame]; }
 inline const	SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer() const	{ return _renderGpuBuffers[_iFrame]; }
+
+inline			SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::previousBuffer()			{ return _renderGpuBuffers[(_iFrame - 1) % s_kFrameInFlightCount]; }
+inline const	SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::previousBuffer() const		{ return _renderGpuBuffers[(_iFrame - 1) % s_kFrameInFlightCount]; }
+
 
 #endif
 }

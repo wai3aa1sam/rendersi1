@@ -56,6 +56,12 @@ ShaderPass_Vk::onCreate(Shader* shader, const Info* info, StrView passPath)
 		_pixelStage		= &_vkPixelStage;
 		_vkPixelStage.create(this, passPath);
 	}
+
+	if (!info->csFunc.is_empty())
+	{
+		_computeStage	= &_vkComputeStage;
+		_vkComputeStage.create(this, passPath);
+	}
 }
 
 void 
@@ -73,13 +79,19 @@ ShaderPass_Vk::onDestroy()
 		_pixelStage = nullptr;
 	}
 
+	if (!_info->csFunc.is_empty())
+	{
+		_vkComputeStage.destroy(this);
+		_computeStage = nullptr;
+	}
+
 	Base::onDestroy();
 }
 
 void 
-ShaderPass_Vk::onCreateRenderPass()
+ShaderPass_Vk::createComputeVkShaderStageCInfo(VkPipelineShaderStageCreateInfo& out)
 {
-
+	if (!info().csFunc.is_empty()) {out = _vkComputeStage.createVkStageInfo(info().csFunc.c_str()); }
 }
 
 #endif

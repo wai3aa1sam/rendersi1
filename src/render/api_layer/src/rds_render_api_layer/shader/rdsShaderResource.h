@@ -33,6 +33,8 @@ public:
 public:
 	void create(const Info* info);
 
+	bool find(StrView name) const;
+
 	bool isValid() const;
 
 	const Info&			info		() const;
@@ -51,6 +53,15 @@ void
 ShaderResource<INFO>::create(const Info* info)
 {
 	_info = info;
+}
+
+template<class INFO> inline 
+bool 
+ShaderResource<INFO>::find(StrView name) const
+{
+	bool hasFound = name.compare(info().name) == 0;
+	return hasFound;
+
 }
 
 template<class INFO> inline bool ShaderResource<INFO>::isValid() const { return _info; }
@@ -74,6 +85,8 @@ struct ShaderResources
 public:
 	static constexpr SizeType s_kLocalConstBufSize	= 2;
 	static constexpr SizeType s_kLocalTextureSize	= 4;
+	static constexpr SizeType s_kLocalBufferSize	= 4;
+	//static constexpr SizeType s_kLocalImageSize		= 4;
 
 	static constexpr const char* s_kAutoSamplerNamePrefix = "_rds_";
 	static constexpr const char* s_kAutoSamplerNameSuffix = "_sampler";
@@ -82,6 +95,8 @@ public:
 	template<class T>	void setParam		(StrView name, const T& v);
 	template<class TEX>	void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
 						void setSamplerParam(StrView name, const SamplerState& v);
+						void setBufferParam	(StrView name, RenderGpuBuffer*		v);
+						//void setImageParam	(StrView name, Texture*				v);
 
 	void create	(ShaderStage* shaderStage, ShaderPass* pass);
 	void destroy();
@@ -179,6 +194,36 @@ public:
 		SamplerState _samplerState;
 	};
 
+	struct BufferParam : public ShaderResource<ShaderStageInfo::StorageBuffer>
+	{
+	public:
+		using Base = ShaderResource<ShaderStageInfo::StorageBuffer>;
+
+	public:
+		void create(const Info* info, ShaderPass* pass);
+
+		bool setBufferParam(RenderGpuBuffer* v);
+		RenderGpuBuffer* buffer();
+
+	public:
+		SPtr<RenderGpuBuffer> _buffer;
+	};
+
+	struct ImageParam : public ShaderResource<ShaderStageInfo::StorageImage>
+	{
+	public:
+		using Base = ShaderResource<ShaderStageInfo::StorageImage>;
+
+	public:
+		void create(const Info* info, ShaderPass* pass);
+
+		void setImageParam(Texture* v);
+		Texture* image();
+
+	public:
+		Texture* _image;
+	};
+
 	const SamplerParam* findSamplerParam(StrView name) const;
 
 	const ShaderStageInfo& info() const;
@@ -195,6 +240,10 @@ public:
 	Span<SamplerParam>			samplerParams();
 	Span<const SamplerParam>	samplerParams() const;
 
+	BufferParam&				bufferParams(SizeType i);
+	Span<BufferParam>			bufferParams();
+	Span<const BufferParam>		bufferParams() const;
+
 public:
 	void _getAutoSetSamplerNameTo(TempString& out, StrView name) const;
 
@@ -205,6 +254,7 @@ protected:
 	Vector<ConstBuffer,		s_kLocalConstBufSize>	_constBufs;
 	Vector<TexParam,		s_kLocalTextureSize>	_texParams;
 	Vector<SamplerParam,	s_kLocalTextureSize>	_samplerParams;
+	Vector<BufferParam,		s_kLocalBufferSize>		_bufferParams;
 
 	bool _isDirty = false;
 };
@@ -235,7 +285,6 @@ ShaderResources::setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
 			_getAutoSetSamplerNameTo(temp, name);
 			setSamplerParam(temp, v->samplerState());
 		}
-
 	}
 }
 
@@ -250,6 +299,10 @@ inline Span<const	ShaderResources::TexParam>		ShaderResources::texParams() const
 inline				ShaderResources::SamplerParam&	ShaderResources::samplerParams(SizeType i)	{ return _samplerParams[i]; }
 inline Span<		ShaderResources::SamplerParam>	ShaderResources::samplerParams()			{ return _samplerParams; }
 inline Span<const	ShaderResources::SamplerParam>	ShaderResources::samplerParams() const		{ return spanCast<const SamplerParam>(_samplerParams.span()); }
+
+inline				ShaderResources::BufferParam&	ShaderResources::bufferParams(SizeType i)	{ return _bufferParams[i]; }
+inline Span<		ShaderResources::BufferParam>	ShaderResources::bufferParams()				{ return _bufferParams; }
+inline Span<const	ShaderResources::BufferParam>	ShaderResources::bufferParams() const		{ return spanCast<const BufferParam>(_bufferParams.span()); }
 
 inline
 void 
@@ -360,6 +413,15 @@ template<class TEX_T>	inline TEX_T*	ShaderResources::TexParam::getUpdatedTexture
 inline const SamplerState& ShaderResources::SamplerParam::samplerState() const { return _samplerState; }
 
 
+
+#endif
+
+#if 0
+#pragma mark --- rdsShaderResources::BufferParam-Impl ---
+#endif // 0
+#if 1
+
+inline RenderGpuBuffer* ShaderResources::BufferParam::buffer()  { return _buffer; }
 
 #endif
 

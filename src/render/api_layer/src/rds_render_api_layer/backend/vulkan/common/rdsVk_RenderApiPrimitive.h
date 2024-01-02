@@ -14,8 +14,8 @@
 
 #define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_, ...)	RDS_VK_SET_DEBUG_NAME_IMPL				(VK_OBJ, ::rds::fmtAs_T<::rds::TempString>("{}:{}-{}", SRCLOC_.func, SRCLOC_.line, ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__) ), RD_DEV_VK )
 #define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(VK_OBJ, SRCLOC_, ...)					RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL	(VK_OBJ, renderDeviceVk(), SRCLOC_, __VA_ARGS__)
-#define RDS_VK_SET_DEBUG_NAME_FMT_IMPL(VK_OBJ, RD_DEV_VK, ...)					RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL	(VK_OBJ, RD_DEV_VK, RDS_SRCLOC, __VA_ARGS__ )
-#define RDS_VK_SET_DEBUG_NAME_FMT(VK_OBJ, ...)									RDS_VK_SET_DEBUG_NAME_IMPL				(VK_OBJ, ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__), renderDeviceVk() )
+#define RDS_VK_SET_DEBUG_NAME_FMT_IMPL(VK_OBJ, RD_DEV_VK, ...)					RDS_VK_SET_DEBUG_NAME_IMPL				(VK_OBJ, ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__), RD_DEV_VK )
+#define RDS_VK_SET_DEBUG_NAME_FMT(VK_OBJ, ...)									RDS_VK_SET_DEBUG_NAME_FMT_IMPL			(VK_OBJ, renderDeviceVk(), __VA_ARGS__ )
 
 #else
 
@@ -564,7 +564,8 @@ public:
 	Vk_Pipeline		(Vk_Pipeline&& rhs)	noexcept : Base(rds::move(rhs)) {}
 	void operator=	(Vk_Pipeline&& rhs)	noexcept { return Base::operator=(rds::move(rhs)); }
 
-	void create	(const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache, RenderDevice_Vk* rdDevVk);
+	void create	(const VkGraphicsPipelineCreateInfo* pCreateInfo, Vk_PipelineCache* vkPipelineCache, RenderDevice_Vk* rdDevVk);
+	void create	(const VkComputePipelineCreateInfo * pCreateInfo, Vk_PipelineCache* vkPipelineCache, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 };
 

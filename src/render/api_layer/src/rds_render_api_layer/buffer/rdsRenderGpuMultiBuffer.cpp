@@ -63,7 +63,7 @@ RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 {
 	RDS_TODO("upload to first buffer instead of create a new");
 	
-	transferRequest().uploadBuffer(nextBuffer(data.size() - offset), data, offset, this);
+	transferRequest().uploadBuffer(makeNextBuffer(data.size() - offset), data, offset, this);
 	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
 	//onUploadToGpu(data, offset);
 
@@ -102,7 +102,7 @@ void RenderGpuMultiBuffer::rotate()
 }
 
 SPtr<RenderGpuBuffer>& 
-RenderGpuMultiBuffer::nextBuffer(SizeType bufSize)
+RenderGpuMultiBuffer::makeNextBuffer(SizeType bufSize)
 {
 	// do acutal rotate in this function, then tsfFrame / ctx no need to update the frame separately
 	auto nextIdx = (_iFrame + 1) % s_kFrameInFlightCount;

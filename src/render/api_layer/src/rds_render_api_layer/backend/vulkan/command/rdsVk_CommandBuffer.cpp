@@ -338,6 +338,12 @@ Vk_CommandBuffer::endRenderPass()
 #if 1
 
 void 
+Vk_CommandBuffer::cmd_dispatch(u32 threadGrpX, u32 threadGrpY, u32 threadGrpZ)
+{
+	vkCmdDispatch(hnd(), threadGrpX, threadGrpY, threadGrpZ);
+}
+
+void 
 Vk_CommandBuffer::cmd_copyBuffer(Vk_Buffer* dst, Vk_Buffer* src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
 {
 	RDS_CORE_ASSERT(dst, "dst == nullptr");

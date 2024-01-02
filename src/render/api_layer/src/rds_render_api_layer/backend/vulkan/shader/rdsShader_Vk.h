@@ -55,7 +55,6 @@ public:
 
 	VkPipelineShaderStageCreateInfo createVkStageInfo(const char* entry)
 	{
-
 		VkPipelineShaderStageCreateInfo	stageInfo = {};
 		stageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		stageInfo.stage					= Util::toVkShaderStageBit(stageFlag());
@@ -88,7 +87,16 @@ public:
 	using Base = Vk_ShaderStage<PixelShaderStage>;
 
 public:
-	
+
+};
+
+struct Vk_ComputeShaderStage : public Vk_ShaderStage<ComputeShaderStage>
+{
+public:
+	using Base = Vk_ShaderStage<ComputeShaderStage>;
+
+public:
+
 };
 
 class ShaderPass_Vk : public ShaderPass
@@ -99,6 +107,7 @@ public:
 
 	using VertexStage	= Vk_VertexShaderStage;
 	using PixelStage	= Vk_PixelShaderStage;
+	using ComputeStage	= Vk_ComputeShaderStage;
 
 public:
 	ShaderPass_Vk();
@@ -106,21 +115,21 @@ public:
 
 	Shader_Vk* shader();
 
-	VertexStage* vkVertexStage();
-	PixelStage*	 vkPixelStage();
+	VertexStage*	vkVertexStage();
+	PixelStage*		vkPixelStage();
+	ComputeStage*	vkComputeStage();
 
 protected:
 	virtual void onCreate(Shader* shader, const Info* info, StrView passPath) override;
 	virtual void onDestroy() override;
 
-	template<size_t N> void createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos);
+	template<size_t N>	void createVkShaderStageCInfos			(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos);
+						void createComputeVkShaderStageCInfo	(VkPipelineShaderStageCreateInfo& out);
 
 protected:
-	void onCreateRenderPass();
-
-protected:
-	VertexStage _vkVertexStage;
-	PixelStage	_vkPixelStage;
+	VertexStage		_vkVertexStage;
+	PixelStage		_vkPixelStage;
+	ComputeStage	_vkComputeStage;
 };
 
 template<size_t N> inline 
@@ -129,15 +138,16 @@ ShaderPass_Vk::createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo,
 {
 	outCInfos.clear();
 	outCInfos.reserve(enumInt(ShaderStageFlag::_kCount));
-	if (!info().vsFunc.is_empty()) { outCInfos.emplace_back(_vkVertexStage.createVkStageInfo(info().vsFunc.c_str())); }
-	if (!info().psFunc.is_empty()) { outCInfos.emplace_back( _vkPixelStage.createVkStageInfo(info().psFunc.c_str())); }
+	if (!info().vsFunc.is_empty()) { outCInfos.emplace_back(_vkVertexStage  .createVkStageInfo(info().vsFunc.c_str())); }
+	if (!info().psFunc.is_empty()) { outCInfos.emplace_back( _vkPixelStage  .createVkStageInfo(info().psFunc.c_str())); }
 }
 
 inline Shader_Vk* ShaderPass_Vk::shader() { return sCast<Shader_Vk*>(_shader); }
 
 
-inline ShaderPass_Vk::VertexStage*	ShaderPass_Vk::vkVertexStage() { return &_vkVertexStage; }
-inline ShaderPass_Vk::PixelStage*	ShaderPass_Vk::vkPixelStage	() { return &_vkPixelStage; }
+inline ShaderPass_Vk::VertexStage*	ShaderPass_Vk::vkVertexStage	() { return &_vkVertexStage; }
+inline ShaderPass_Vk::PixelStage*	ShaderPass_Vk::vkPixelStage		() { return &_vkPixelStage; }
+inline ShaderPass_Vk::ComputeStage*	ShaderPass_Vk::vkComputeStage	() { return &_vkComputeStage; }
 
 #endif
 

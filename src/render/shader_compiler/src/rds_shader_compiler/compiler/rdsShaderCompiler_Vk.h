@@ -45,6 +45,7 @@ protected:
 	void _reflect_storageBufs	(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
 	void _reflect_storageImages	(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
 
+	void _reflect_threadGroups	(ShaderStageInfo& outInfo, SpirvCompiler& compiler);
 };
 
 

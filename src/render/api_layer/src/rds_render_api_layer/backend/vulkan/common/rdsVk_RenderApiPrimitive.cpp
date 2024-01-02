@@ -472,14 +472,26 @@ Vk_PipelineCache::destroy()
 #if 1
 
 void 
-Vk_Pipeline::create(const VkGraphicsPipelineCreateInfo* pCreateInfo, u32 infoCount, Vk_PipelineCache* vkPipelineCache, RenderDevice_Vk* rdDevVk)
+Vk_Pipeline::create(const VkGraphicsPipelineCreateInfo* pCreateInfo, Vk_PipelineCache* vkPipelineCache, RenderDevice_Vk* rdDevVk)
 {
 	auto* vkDev			= rdDevVk->vkDevice();
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
 	auto cacheHnd = vkPipelineCache ? vkPipelineCache->hnd() : VK_NULL_HANDLE;
 
-	auto ret = vkCreateGraphicsPipelines(vkDev, cacheHnd, infoCount, pCreateInfo, vkAllocCbs, hndForInit());
+	auto ret = vkCreateGraphicsPipelines(vkDev, cacheHnd, 1, pCreateInfo, vkAllocCbs, hndForInit());
+	Util::throwIfError(ret);
+}
+
+void 
+Vk_Pipeline::create(const VkComputePipelineCreateInfo* pCreateInfo, Vk_PipelineCache* vkPipelineCache, RenderDevice_Vk* rdDevVk)
+{
+	auto* vkDev			= rdDevVk->vkDevice();
+	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
+
+	auto cacheHnd = vkPipelineCache ? vkPipelineCache->hnd() : VK_NULL_HANDLE;
+
+	auto ret = vkCreateComputePipelines(vkDev, cacheHnd, 1, pCreateInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);
 }
 

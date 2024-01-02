@@ -278,16 +278,14 @@ public:
 		
 		#if 1
 		{
-			RDS_PROFILE_SECTION("wait first frame");
-			RDS_TODO("temp, remove");
+			RDS_PROFILE_SECTION("wait frame");
+			RDS_TODO("temp, recitfy");
 			while (!rdCtx.isFrameCompleted())
 			{
 				OsUtil::sleep_ms(1);
 			}
 		}
-		//OsUtil::sleep_ms(100);
 		Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
-
 		#endif // 0
 
 		rdCtx.setFramebufferSize(mainWnd->clientRect().size);		// this will invalidate the swapchain

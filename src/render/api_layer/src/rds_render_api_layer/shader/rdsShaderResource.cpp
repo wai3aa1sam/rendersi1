@@ -45,6 +45,14 @@ ShaderResources::create(ShaderStage* shaderStage, ShaderPass* pass)
 		auto& samplerParam = _samplerParams.emplace_back();
 		samplerParam.create(&e, pass);
 	}
+
+	const auto& bufferInfos = info().storageBufs;
+	_bufferParams.reserve(bufferInfos.size());
+	for (const auto& e : bufferInfos)
+	{
+		auto& bufferParam = _bufferParams.emplace_back();
+		bufferParam.create(&e, pass);
+	}
 }
 
 void 
@@ -68,6 +76,7 @@ ShaderResources::clear()
 	_constBufs.clear();
 	_texParams.clear();
 	_samplerParams.clear();
+	_bufferParams.clear();
 }
 
 const ShaderResources::SamplerParam* 
@@ -88,10 +97,22 @@ ShaderResources::setSamplerParam(StrView name, const SamplerState& v)
 {
 	for (auto& e : samplerParams())
 	{
-		bool isSame = name.compare(e.info().name) == 0;
-		if (!isSame)
+		bool hasFound = e.find(name);
+		if (!hasFound)
 			continue;
 		e.setSamplerParam(v);
+	}
+}
+
+void 
+ShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
+{
+	for (auto& e : bufferParams())
+	{
+		bool hasFound = e.find(name);
+		if (!hasFound)
+			continue;
+		_isDirty |= e.setBufferParam(v);
 	}
 }
 
@@ -211,5 +232,32 @@ ShaderResources::SamplerParam::setSamplerParam(const SamplerState& v)
 
 #endif
 
+#if 0
+#pragma mark --- rdsShaderResources::BufferParam-Impl ---
+#endif // 0
+#if 1
+
+void 
+ShaderResources::BufferParam::create(const Info* info, ShaderPass* pass)
+{
+	Base::create(info);
+}
+
+bool 
+ShaderResources::BufferParam::setBufferParam(RenderGpuBuffer* v)
+{
+	if (!v) RDS_CORE_ASSERT(false, "buffer == nullptr");
+
+	bool isSame = _buffer == v;
+	if (!isSame)
+	{
+		_buffer.reset(v);
+	}
+
+	bool isDirty = !isSame;
+	return isDirty;
+}
+
+#endif
 
 }

@@ -98,6 +98,8 @@ public:
 	//RenderDevice_Vk*	renderDeviceVk();
 
 public:
+	void cmd_dispatch(u32 threadGrpX, u32 threadGrpY, u32 threadGrpZ);
+
 	void cmd_copyBuffer(Vk_Buffer*		dst, Vk_Buffer*		src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
 	void cmd_copyBuffer(Vk_Buffer_T*	dst, Vk_Buffer_T*	src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
 

@@ -49,11 +49,12 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	//u32 uboStartIdx = 0; u32 texStartIdx = 4; u32 ssboStartIdx = 10; u32 imageStartIdx = 13; u32 samplerStartIdx = 16;
 
 	RDS_TODO("check vulkan extension whether existed then add the compile option, eg. -fhlsl-functionality1");
+	RDS_TODO("cbuffer only for hlsl, use ubo for glsl, same for uav, use ssbo");
 
 	TempString args;
 	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
 	fmtTo(args, " -fauto-bind-uniforms");	// auto bind all uniform variable
-	fmtTo(args, " -fubo-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fssbo-binding-base {} -fimage-binding-base {}", 0, 4, 8, 12 ,14); // 16 is minimum spec in vulkan
+	fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}", 0, 4, 8, 12 ,14); // 16 is minimum spec in vulkan
 
 	//fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 100 -fresource-set-binding b1 1 2");
 	//fmtTo(args, " -fresource-set-binding b1 1 2");
@@ -91,12 +92,19 @@ ShaderCompiler_Vk::reflect(StrView outpath, ByteSpan spvBytes, ShaderStageFlag s
 	_reflect_constBufs		(outInfo, compiler, res);
 	_reflect_textures		(outInfo, compiler, res);
 	_reflect_samplers		(outInfo, compiler, res);
-	//_reflect_storageBufs	(outInfo, compiler, res);
-	//_reflect_storageImages	(outInfo, compiler, res);
+	_reflect_storageBufs	(outInfo, compiler, res);
+	_reflect_storageImages	(outInfo, compiler, res);
+
+	_reflect_threadGroups	(outInfo, compiler);
 
 	TempString dstpath;
 	fmtTo(dstpath, "{}.json", outpath);
 	JsonUtil::writeFileIfChanged(dstpath, outInfo, true);
+
+	if (true)
+	{
+
+	}
 }
 
 void 
@@ -274,6 +282,85 @@ ShaderCompiler_Vk::_reflect_samplers(ShaderStageInfo& outInfo, SpirvCompiler& co
 	}
 
 	log("");
+}
+
+void 
+ShaderCompiler_Vk::_reflect_storageBufs	(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res)
+{
+	using StorageBuffer = ShaderStageInfo::StorageBuffer;
+	outInfo.storageBufs.reserve(res.storage_buffers.size());
+
+	log("--- StorageBuffer");
+
+	for (const Resource& resource : res.storage_buffers)
+	{
+		StorageBuffer& dst		= outInfo.storageBufs.emplace_back();
+		const SPIRType& type	= compiler.get_type(resource.base_type_id);
+		//size_t size = compiler.get_declared_struct_size(type);
+
+		const std::string& name = compiler.get_name(resource.id);
+
+		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
+		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
+
+		dst.name		= name.c_str();
+		dst.bindPoint	= sCast<u16>(binding);
+		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
+
+		log("StorageBuffer name: {}, set: {}, binding: {}", name, set, binding);
+	}
+
+	log("");
+}
+
+void 
+ShaderCompiler_Vk::_reflect_storageImages	(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res)
+{
+	using StorageImage = ShaderStageInfo::StorageImage;
+	outInfo.storageBufs.reserve(res.storage_images.size());
+
+	log("--- StorageImage");
+
+	for (const Resource& resource : res.storage_images)
+	{
+		StorageImage& dst		= outInfo.storageImages.emplace_back();
+		const SPIRType& type	= compiler.get_type(resource.base_type_id);
+		//size_t size = compiler.get_declared_struct_size(type);
+
+		const std::string& name = compiler.get_name(resource.id);
+
+		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
+		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
+
+		dst.name		= name.c_str();
+		dst.bindPoint	= sCast<u16>(binding);
+		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
+
+		log("StorageImage name: {}, set: {}, binding: {}", name, set, binding);
+	}
+
+	log("");
+}
+
+void 
+ShaderCompiler_Vk::_reflect_threadGroups(ShaderStageInfo& outInfo, SpirvCompiler& compiler)
+{
+	if (!BitUtil::has(outInfo.stageFlag, ShaderStageFlag::Compute))
+		return;
+
+	auto ex = compiler.get_execution_model();
+	ex = ex;
+
+	//compiler();
+
+	auto constants = compiler.get_specialization_constants();
+	for (auto& e : constants)
+	{
+		e.constant_id;
+	}
+	SpecializationConstant a[3];
+	compiler.get_work_group_size_specialization_constants(a[0], a[1], a[2]);		// ??????????????
+	a[0];
 }
 
 

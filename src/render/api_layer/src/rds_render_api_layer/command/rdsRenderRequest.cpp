@@ -18,13 +18,42 @@ RenderRequest::~RenderRequest()
 
 }
 
- void 
- RenderRequest::reset(RenderContext* rdCtx)
- {
-	 _rdCmdBuf.reset();
-	 _rdCtx = rdCtx;
-	 _rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
- }
+void 
+RenderRequest::reset(RenderContext* rdCtx)
+{
+	_rdCmdBuf.reset();
+	_rdCtx = rdCtx;
+	_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
+}
+
+void 
+	RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u threadGrps)
+{
+	auto* cmd = _rdCmdBuf.dispatch();
+	cmd->material			= mtl;
+	cmd->materialPassIdx	= materialPassIdx;
+	cmd->threadGroups		= threadGrps;
+
+	RDS_RD_CMD_DEBUG_ASSIGN(cmd);
+}
+
+void 
+RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, u32 threadGrpsX, u32 threadGrpsY, u32 threadGrpsZ)
+{
+	dispatch(RDS_RD_CMD_DEBUG_ARG, mtl, materialPassIdx, Tuple3u{ threadGrpsX, threadGrpsY, threadGrpsZ });
+}
+
+void 
+RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 threadGrpsX, u32 threadGrpsY, u32 threadGrpsZ)
+{
+	dispatch(RDS_RD_CMD_DEBUG_ARG, mtl, 0, threadGrpsX, threadGrpsY, threadGrpsZ);
+}
+
+void 
+RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u	threadGrps)
+{
+	dispatch(RDS_RD_CMD_DEBUG_ARG, mtl, 0, threadGrps);
+}
 
 void 
 RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)

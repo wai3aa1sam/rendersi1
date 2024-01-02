@@ -373,6 +373,7 @@ public:
 
 	String vsFunc;
 	String psFunc;
+	String csFunc;
 
 	RenderState renderState;
 
@@ -384,6 +385,7 @@ public:
 		RDS_NAMED_FIXED_IO(se, queue);
 		RDS_NAMED_FIXED_IO(se, vsFunc);
 		RDS_NAMED_FIXED_IO(se, psFunc);
+		RDS_NAMED_FIXED_IO(se, csFunc);
 		RDS_NAMED_FIXED_IO(se, renderState);
 	}
 };

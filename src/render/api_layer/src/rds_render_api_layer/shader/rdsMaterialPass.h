@@ -33,6 +33,8 @@ public:
 	using ConstBuffer	= ShaderResources::ConstBuffer;
 	using TexParam		= ShaderResources::TexParam;
 	using SamplerParam	= ShaderResources::SamplerParam;
+	using BufferParam	= ShaderResources::BufferParam;
+	using ImageParam	= ShaderResources::ImageParam;
 
 public:
 	static constexpr SizeType s_kLocalConstBufSize = 2;
@@ -46,7 +48,8 @@ public:
 
 	template<class TEX> void setTexParam	(Material* mtl, StrView name, TEX* v, bool isAutoSampler);
 	template<class T>	void setParam		(Material* mtl, StrView name, const T& v);
-						void setSamplerParam(Material* mtl, StrView name, const SamplerState& v);
+						void setSamplerParam(Material* mtl, StrView name, const SamplerState&	v);
+						void setBufferParam	(Material* mtl, StrView name, RenderGpuBuffer*		v);
 
 	const ShaderStageInfo&	info() const;
 	ShaderResources&		shaderResources(Material* mtl);
@@ -88,6 +91,15 @@ MaterialPass_Stage::setSamplerParam(Material* mtl, StrView name, const SamplerSt
 	shaderResources(mtl).setSamplerParam(name, samplerState);
 }
 
+inline
+void 
+MaterialPass_Stage::setBufferParam(Material* mtl, StrView name, RenderGpuBuffer* v)
+{
+	/*if (!_shaderStage)
+	return;*/
+	shaderResources(mtl).setBufferParam(name, v);
+}
+
 inline const ShaderStageInfo& MaterialPass_Stage::info() const { return _shaderStage->info(); }
 
 #endif // 1
@@ -116,6 +128,18 @@ protected:
 inline			PixelShaderStage* MaterialPass_PixelStage::shaderStage()		{ return sCast<PixelShaderStage*>(_shaderStage); }
 inline const	PixelShaderStage* MaterialPass_PixelStage::shaderStage() const	{ return sCast<PixelShaderStage*>(_shaderStage); }
 
+struct MaterialPass_ComputeStage : public MaterialPass_Stage
+{
+public:
+			ComputeShaderStage* shaderStage();
+	const	ComputeShaderStage* shaderStage() const;
+
+protected:
+};
+
+inline			ComputeShaderStage* MaterialPass_ComputeStage::shaderStage()		{ return sCast<ComputeShaderStage*>(_shaderStage); }
+inline const	ComputeShaderStage* MaterialPass_ComputeStage::shaderStage() const	{ return sCast<ComputeShaderStage*>(_shaderStage); }
+
 #endif
 
 #if 0
@@ -131,6 +155,7 @@ public:
 	using Stage			= MaterialPass_Stage;
 	using VertexStage	= MaterialPass_VertexStage;
 	using PixelStage	= MaterialPass_PixelStage;
+	using ComputeStage	= MaterialPass_ComputeStage;
 
 	using Info = ShaderInfo::Pass;
 
@@ -146,11 +171,13 @@ public:
 	template<class TEX> void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
 	template<class T>	void setParam		(StrView name, const T& v);
 						void setSamplerParam(StrView name, const SamplerState& samplerState);
+						void setBufferParam	(StrView name, RenderGpuBuffer* v);
 
 	const Info& info() const;
 
 	VertexStage*	vertexStage();
 	PixelStage*		pixelStage();
+	ComputeStage*	computeStage();
 
 	Material&		material();
 	ShaderPass&		shaderPass();
@@ -166,6 +193,7 @@ protected:
 	ShaderPass*		_shaderPass		= nullptr;
 	VertexStage*	_vertexStage	= nullptr;
 	PixelStage*		_pixelStage		= nullptr;
+	ComputeStage*	_computeStage	= nullptr;
 };
 
 template<class TEX> inline 
@@ -173,8 +201,9 @@ void
 MaterialPass::setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
 {
 	auto* mtl = _material;
-	if (_vertexStage)	_vertexStage->setTexParam(mtl, name, v, isAutoSetSampler);
-	if (_pixelStage)	 _pixelStage->setTexParam(mtl, name, v, isAutoSetSampler);
+	if (_vertexStage)	_vertexStage ->setTexParam(mtl, name, v, isAutoSetSampler);
+	if (_pixelStage)	_pixelStage  ->setTexParam(mtl, name, v, isAutoSetSampler);
+	if (_computeStage)	_computeStage->setTexParam(mtl, name, v, isAutoSetSampler);
 }
 
 template<class T> inline 
@@ -182,8 +211,9 @@ void
 MaterialPass::setParam(StrView name, const T& v)
 {
 	auto* mtl = _material;
-	if (_vertexStage)	_vertexStage->setParam(mtl, name, v);
-	if (_pixelStage)	 _pixelStage->setParam(mtl, name, v);
+	if (_vertexStage)	_vertexStage ->setParam(mtl, name, v);
+	if (_pixelStage)	_pixelStage	 ->setParam(mtl, name, v);
+	if (_computeStage)	_computeStage->setParam(mtl, name, v);
 }
 
 inline
@@ -191,14 +221,25 @@ void
 MaterialPass::setSamplerParam(StrView name, const SamplerState& samplerState)
 {
 	auto* mtl = _material;
-	if (_vertexStage)	_vertexStage->setSamplerParam(mtl, name, samplerState);
-	if (_pixelStage)	 _pixelStage->setSamplerParam(mtl, name, samplerState);
+	if (_vertexStage)	_vertexStage ->setSamplerParam(mtl, name, samplerState);
+	if (_pixelStage)	_pixelStage  ->setSamplerParam(mtl, name, samplerState);
+	if (_computeStage)	_computeStage->setSamplerParam(mtl, name, samplerState);
 }
+
+inline
+void 
+MaterialPass::setBufferParam(StrView name, RenderGpuBuffer* v)
+{
+	auto* mtl = _material;
+	if (_computeStage)	_computeStage->setBufferParam(mtl, name, v);
+}
+
 
 inline const MaterialPass::Info& MaterialPass::info() const { return _shaderPass->info(); }
 
-inline MaterialPass::VertexStage*	MaterialPass::vertexStage() { return _vertexStage; }
-inline MaterialPass::PixelStage*	MaterialPass::pixelStage()	{ return _pixelStage; }
+inline MaterialPass::VertexStage*	MaterialPass::vertexStage()		{ return _vertexStage; }
+inline MaterialPass::PixelStage*	MaterialPass::pixelStage()		{ return _pixelStage; }
+inline MaterialPass::ComputeStage*	MaterialPass::computeStage()	{ return _computeStage; }
 
 inline Material&					MaterialPass::material()	{ return *_material; }
 inline ShaderPass&					MaterialPass::shaderPass()	{ return *_shaderPass; }

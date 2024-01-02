@@ -46,6 +46,14 @@ public:
 protected:
 };
 
+struct ComputeShaderStage : public ShaderStage
+{
+public:
+	static constexpr ShaderStageFlag stageFlag() { return ShaderStageFlag::Compute; }
+
+protected:
+};
+
 #endif
 
 #if 0
@@ -60,6 +68,7 @@ public:
 	using Stage			= ShaderStage;
 	using VertexStage	= VertexShaderStage;
 	using PixelStage	= PixelShaderStage;
+	using ComputeStage	= ComputeShaderStage;
 
 	using Info = ShaderInfo::Pass;
 
@@ -72,6 +81,7 @@ public:
 
 	VertexStage*	vertexStage();
 	PixelStage*		pixelStage();
+	ComputeStage*	computeStage();
 
 	const Info& info() const;
 
@@ -86,12 +96,13 @@ protected:
 	const Info*		_info			= nullptr;
 	VertexStage*	_vertexStage	= nullptr;
 	PixelStage*		_pixelStage		= nullptr;
+	ComputeStage*	_computeStage	= nullptr;
 };
 
 
-inline ShaderPass::VertexStage*	ShaderPass::vertexStage()	{ return _vertexStage; }
-inline ShaderPass::PixelStage*	ShaderPass::pixelStage()	{ return _pixelStage; }
-
+inline ShaderPass::VertexStage*		ShaderPass::vertexStage()	{ return _vertexStage; }
+inline ShaderPass::PixelStage*		ShaderPass::pixelStage()	{ return _pixelStage; }
+inline ShaderPass::ComputeStage*	ShaderPass::computeStage()	{ return _computeStage; }
 
 inline const	ShaderPass::Info&	ShaderPass::info() const	{ return *_info; }
 

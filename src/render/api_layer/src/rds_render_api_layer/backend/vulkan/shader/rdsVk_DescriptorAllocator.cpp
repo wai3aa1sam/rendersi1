@@ -191,7 +191,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 	
 	auto shaderStageFlag = Util::toVkShaderStageBit(shaderRscs.info().stageFlag);
 
-	for (const auto& e : shaderRscs.constBufs())		bindBuffer	(dstSet, e, shaderStageFlag);
+	for (const auto& e : shaderRscs.constBufs())		bindConstantBuffer	(dstSet, e, shaderStageFlag);
 
 	#if !RDS_TEMP_BIND_TEX_WITH_SAMPLER
 
@@ -204,6 +204,9 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 
 	#endif // 0
 
+	for (const auto& e : shaderRscs.bufferParams())		bindBuffer	(dstSet, e, shaderStageFlag);
+
+
 	if (!_writeDescs.is_empty())
 		vkUpdateDescriptorSets(_alloc->vkDevHnd(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
 
@@ -211,7 +214,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 }
 
 void 
-Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, const ConstBuffer& constBuf, VkShaderStageFlags stageFlag)
+Vk_DescriptorBuilder::bindConstantBuffer(Vk_DescriptorSet& dstSet, const ConstBuffer& constBuf, VkShaderStageFlags stageFlag)
 {
 	const auto& info = constBuf.info();
 
@@ -263,6 +266,30 @@ Vk_DescriptorBuilder::bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam& 
 {
 	throwIf(true, "need a global cache sampler");
 	_bindSampler(dstSet, samplerParam, nullptr, stageFlag);
+}
+
+void 
+Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, const BufferParam& bufParam, VkShaderStageFlags stageFlag)
+{
+	const auto& info = bufParam.info();
+
+	auto& bufInfo	= _bufInfos.emplace_back();
+	bufInfo.buffer	= Util::toVkBufHnd(bufParam._buffer.ptr());
+	bufInfo.offset	= 0;
+	bufInfo.range	= bufParam._buffer->bufSize();
+
+	auto& out = _writeDescs.emplace_back();
+	out = {};
+
+	out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	out.dstSet				= dstSet.hnd();
+	out.dstBinding			= info.bindPoint;
+	out.dstArrayElement		= 0;
+	out.descriptorType		= Util::toVkDescriptorType(info.paramType());
+	out.descriptorCount		= 1;
+	out.pBufferInfo			= &bufInfo;
+	out.pImageInfo			= nullptr; // Optional
+	out.pTexelBufferView	= nullptr; // Optional
 }
 
 void 

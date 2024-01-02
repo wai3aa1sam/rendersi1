@@ -281,6 +281,7 @@ Vk_RenderApiUtil::toVkBufferUsage(RenderGpuBufferTypeFlags v)
 	using SRC = RenderGpuBufferTypeFlags;
 	switch (v)
 	{
+		case SRC::Compute:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; }	break;
 		case SRC::Vertex:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; }	break;
 		case SRC::Index:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_INDEX_BUFFER_BIT; }		break;
 		case SRC::Const:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; }	break;
@@ -289,6 +290,23 @@ Vk_RenderApiUtil::toVkBufferUsage(RenderGpuBufferTypeFlags v)
 		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
 	}
 	//return VkBufferUsageFlagBits::VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+}
+
+VkBufferUsageFlagBits 
+Vk_RenderApiUtil::toVkBufferUsages(RenderGpuBufferTypeFlags v)
+{
+	using SRC = RenderGpuBufferTypeFlags;
+
+	VkBufferUsageFlags o = {};
+
+	if (BitUtil::has(v, SRC::Compute))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	if (BitUtil::has(v, SRC::Vertex))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	if (BitUtil::has(v, SRC::Index))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+	if (BitUtil::has(v, SRC::Const))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	if (BitUtil::has(v, SRC::TransferSrc))	o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	if (BitUtil::has(v, SRC::TransferDst))	o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	return sCast<VkBufferUsageFlagBits>(o);
 }
 
 VkMemoryPropertyFlags 

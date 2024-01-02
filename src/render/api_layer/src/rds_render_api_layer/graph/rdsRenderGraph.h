@@ -164,7 +164,8 @@ public:
 	void compile();
 	void execute();
 	void commit();
-	void dumpGraphviz(StrView filename = "debug/render_graph");	// visualization in https://dreampuf.github.io/GraphvizOnline/
+	void dumpGraphviz			(StrView filename = "debug/render_graph");				// visualization in https://dreampuf.github.io/GraphvizOnline/
+	void dumpResourceStateGraph	(StrView filename = "debug/render_graph_rsc_state");	// visualization in https://dreampuf.github.io/GraphvizOnline/
 
 	RdgPass& addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlag flag = RdgPassFlag::None);
 

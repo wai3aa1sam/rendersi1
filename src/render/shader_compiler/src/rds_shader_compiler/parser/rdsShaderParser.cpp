@@ -163,6 +163,7 @@ void ShaderParser::_parsePass()
 
 		if (token.isIdentifier("VsFunc"))		{ nextToken(); readIdentifier(o.vsFunc); continue; }
 		if (token.isIdentifier("PsFunc"))		{ nextToken(); readIdentifier(o.psFunc); continue; }
+		if (token.isIdentifier("CsFunc"))		{ nextToken(); readIdentifier(o.csFunc); continue; }
 
 		if (token.isIdentifier("Cull"))			{ nextToken(); readEnum(o.renderState.cull); continue; }
 

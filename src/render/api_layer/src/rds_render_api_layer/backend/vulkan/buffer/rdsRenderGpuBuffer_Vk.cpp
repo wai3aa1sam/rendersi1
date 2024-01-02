@@ -54,7 +54,7 @@ RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 
 	Vk_AllocInfo allocInfo = {};
 
-	VkBufferUsageFlags usageFlags = Util::toVkBufferUsage(cDesc.typeFlags);
+	VkBufferUsageFlags usageFlags = Util::toVkBufferUsages(cDesc.typeFlags);
 	if (cDesc.typeFlags != RenderGpuBufferTypeFlags::Const)
 	{
 		usageFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;

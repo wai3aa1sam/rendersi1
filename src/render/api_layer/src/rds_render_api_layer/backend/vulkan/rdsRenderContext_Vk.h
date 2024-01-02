@@ -53,6 +53,8 @@ public:
 	GpuProfilerContext_Vk* computeQueueProfiler();
 
 public:
+	void onRenderCommand_Dispatch(RenderCommand_Dispatch*	cmd, void* userData);
+
 	void onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd);
 	void onRenderCommand_SwapBuffers		(RenderCommand_SwapBuffers*		cmd);
 	void onRenderCommand_SetScissorRect		(RenderCommand_SetScissorRect*	cmd, void* userData);
