@@ -105,15 +105,49 @@ RdgPass::readTextures(RdgTextureHndSpan hnds)
 	accessResources(toHndSpan(hnds), usage, Access::Read);
 }
 
-void RdgPass::writeTexture(RdgTextureHnd hnd)
+void
+RdgPass::writeTexture(RdgTextureHnd hnd)
 {
 	auto usage = Usage{ TextureFlags::UnorderedAccess };
 	accessResource(hnd, usage, Access::Write);
 }
 
-void RdgPass::writeTextures(RdgTextureHndSpan hnds)
+void 
+RdgPass::writeTextures(RdgTextureHndSpan hnds)
 {
 	auto usage = Usage{ TextureFlags::UnorderedAccess };
+	accessResources(toHndSpan(hnds), usage, Access::Write);
+}
+
+void 
+RdgPass::readBuffer(RdgBufferHnd hnd, ShaderStageFlag useStages)
+{
+	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
+	if		(BitUtil::has(useStages, ShaderStageFlag::Vertex))	usage.buf = RenderGpuBufferTypeFlags::Vertex;
+	else if (BitUtil::has(useStages, ShaderStageFlag::Pixel))	usage.buf = RenderGpuBufferTypeFlags::Const;
+	accessResource(hnd, usage, Access::Read);
+}
+
+void 
+RdgPass::readBuffers(RdgBufferHndSpan hnds, ShaderStageFlag useStages)
+{
+	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
+	if		(BitUtil::has(useStages, ShaderStageFlag::Vertex))	usage.buf = RenderGpuBufferTypeFlags::Vertex;
+	else if (BitUtil::has(useStages, ShaderStageFlag::Pixel))	usage.buf = RenderGpuBufferTypeFlags::Const;
+	accessResources(toHndSpan(hnds), usage, Access::Read);
+}
+
+void 
+RdgPass::writeBuffer(RdgBufferHnd hnd)
+{
+	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
+	accessResource(hnd, usage, Access::Write);
+}
+
+void 
+RdgPass::writeBuffers(RdgBufferHndSpan hnds)
+{
+	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
 	accessResources(toHndSpan(hnds), usage, Access::Write);
 }
 

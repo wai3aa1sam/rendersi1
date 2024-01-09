@@ -551,6 +551,7 @@ Vk_RenderApiUtil::toVkImageViewType(RenderDataType v)
 	//return VkImageViewType::VK_IMAGE_VIEW_TYPE_MAX_ENUM;
 }
 
+
 Vk_StageAccess
 Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout)
 {
@@ -645,6 +646,104 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 	return out;
 }
 
+Vk_StageAccess 
+Vk_RenderApiUtil::toVkStageAccess(RenderGpuBufferTypeFlags srcUsage, RenderGpuBufferTypeFlags dstUsage, RenderAccess srcAccess, RenderAccess dstAccess)
+{
+	Vk_StageAccess o = {};
+	o.srcStage	= toVkPipelineStageFlag(srcUsage);
+	o.dstStage	= toVkPipelineStageFlag(dstUsage);
+	o.srcAccess	= toVkAccessFlag(srcUsage, srcAccess);
+	o.dstAccess = toVkAccessFlag(dstUsage, dstAccess);
+
+	return o;
+}
+
+Vk_AccessFlags 
+Vk_RenderApiUtil::toVkAccessFlag(RenderAccess v)
+{
+	using SRC = rds::RenderAccess;
+	switch (v)
+	{
+		case SRC::None:			{ return VK_ACCESS_2_NONE; }				break;
+		case SRC::Read:			{ return VK_ACCESS_2_MEMORY_READ_BIT; }		break;
+		case SRC::Write:		{ return VK_ACCESS_2_MEMORY_WRITE_BIT; }	break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
+}
+
+VkPipelineStageFlags 
+Vk_RenderApiUtil::toVkPipelineStageFlag(RenderGpuBufferTypeFlags usage)
+{
+	using SRC = RenderGpuBufferTypeFlags;
+	switch (usage)
+	{
+		case SRC::Compute:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT; }	break;
+		case SRC::Vertex:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_VERTEX_INPUT_BIT; }		break;
+		case SRC::Index:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_VERTEX_INPUT_BIT; }		break;
+		case SRC::Const:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; }	break;
+		case SRC::TransferSrc:	{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT; }			break;
+		case SRC::TransferDst:	{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT; }			break;
+		default: { RDS_THROW("unsupport type {}", usage); }	break;
+	}
+}
+
+VkAccessFlags 
+Vk_RenderApiUtil::toVkAccessFlag(RenderGpuBufferTypeFlags usage, RenderAccess access)
+{
+	//VkAccessFlags o = {};
+	if (access == RenderAccess::None)
+	{
+		return VK_ACCESS_NONE;
+	}
+
+	if (usage == RenderGpuBufferTypeFlags::Vertex)
+	{
+		RDS_CORE_ASSERT(access == RenderAccess::Read, "buf usage access invalid");
+		return VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+	}
+
+	if (usage == RenderGpuBufferTypeFlags::Index)
+	{
+		RDS_CORE_ASSERT(access == RenderAccess::Read, "buf usage access invalid");
+		return VK_ACCESS_INDEX_READ_BIT;
+	}
+
+	if (usage == RenderGpuBufferTypeFlags::Const)
+	{
+		RDS_CORE_ASSERT(access == RenderAccess::Read, "buf usage access invalid");
+		return VK_ACCESS_UNIFORM_READ_BIT;
+	}
+
+	if (usage == RenderGpuBufferTypeFlags::Compute)
+	{
+		return access == RenderAccess::Read ? VK_ACCESS_SHADER_READ_BIT : VK_ACCESS_SHADER_WRITE_BIT;
+	}
+
+	throwIf(true, "invalid");
+	return VK_ACCESS_NONE;
+}
+
+#if 0
+Vk_PipelineStageFlags 
+Vk_RenderApiUtil::toVkPipelineStageFlag(RenderGpuBufferTypeFlags v)
+{
+	using SRC = RenderGpuBufferTypeFlags;
+	switch (v)
+	{
+		case SRC::Compute:		{ return VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT; }	break;
+		case SRC::Vertex:		{ return VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT; }	break;
+		case SRC::Index:		{ return VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT; }	break;
+			//case SRC::Const:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; }	break;
+		case SRC::TransferSrc:	{ return VK_PIPELINE_STAGE_2_TRANSFER_BIT; }		break;
+		case SRC::TransferDst:	{ return VK_PIPELINE_STAGE_2_TRANSFER_BIT; }		break;
+		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
+	}
+	//return VkBufferUsageFlagBits::VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+}
+#endif // 0
+
+
 VkCullModeFlagBits 
 Vk_RenderApiUtil::toVkCullMode(RenderState_Cull v)
 {
@@ -666,7 +765,8 @@ Vk_RenderApiUtil::toVkPrimitiveTopology(RenderPrimitiveType v)
 	using SRC = RenderPrimitiveType;
 	switch (v)
 	{
-		case SRC::Triangle: { return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; } break;
+		case SRC::Triangle: { return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; }	break;
+		case SRC::Point:	{ return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST; }		break;
 
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}

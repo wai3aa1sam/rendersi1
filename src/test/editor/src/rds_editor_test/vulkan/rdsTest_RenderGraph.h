@@ -8,6 +8,7 @@
 #include "rds_editor.h"
 
 #define RDS_RENDER_GRAPH_PRESENT 0
+#define RDS_TEST_COMPUTE_GROUP_THREAD 256
 
 namespace rds
 {
@@ -158,44 +159,69 @@ public:
 		_scene.create(camera);
 	}
 
-	void setup(RenderContext* rdCtx, bool create = true)
+	void setup(RenderContext* rdCtx)
 	{
-		if (create)
+		_rdCtx = rdCtx;
+		_rdGraph.create("Test Render Graph", rdCtx);
+		//return;
+
 		{
-			_rdCtx = rdCtx;
-			_rdGraph.create("Test Render Graph", rdCtx);
-			//return;
+			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+			_testShader->makeCDesc();
 
-			{
-				_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
-				_testShader->makeCDesc();
+			_testMtl = Renderer::rdDev()->createMaterial();
+			_testMtl->setShader(_testShader);
 
-				_testMtl = Renderer::rdDev()->createMaterial();
-				_testMtl->setShader(_testShader);
+			auto texCDesc = Texture2D::makeCDesc();
 
-				auto texCDesc = Texture2D::makeCDesc();
-
-				texCDesc.create("asset/texture/uvChecker.png");
-				_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
-			}
-
-			auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
-			_fullScreenTriangle.create(fullScreenTriangleMesh);
-
-			_preDepthShader = Renderer::rdDev()->createShader("asset/shader/preDepth.shader");
-			_preDepthMtl	= Renderer::rdDev()->createMaterial(_preDepthShader);
-
-			_gBufferShader	= Renderer::rdDev()->createShader("asset/shader/gBuffer.shader");
-			_gBufferMtl		= Renderer::rdDev()->createMaterial(_gBufferShader);
-
-			_presentShader	= Renderer::rdDev()->createShader("asset/shader/present.shader");
-			_presentMtl		= Renderer::rdDev()->createMaterial(_presentShader);
-
-			_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test_compute.shader");
-			_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
+			texCDesc.create("asset/texture/uvChecker.png");
+			_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
 		}
 
-		testCompute(_rdGraph, create);
+		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
+		_fullScreenTriangle.create(fullScreenTriangleMesh);
+
+		_preDepthShader = Renderer::rdDev()->createShader("asset/shader/preDepth.shader");
+		_preDepthMtl	= Renderer::rdDev()->createMaterial(_preDepthShader);
+
+		_gBufferShader	= Renderer::rdDev()->createShader("asset/shader/gBuffer.shader");
+		_gBufferMtl		= Renderer::rdDev()->createMaterial(_gBufferShader);
+
+		_presentShader	= Renderer::rdDev()->createShader("asset/shader/present.shader");
+		_presentMtl		= Renderer::rdDev()->createMaterial(_presentShader);
+
+		_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test_compute.shader");
+		_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
+
+		testCompute(_rdGraph, true);
+	}
+
+	void update()
+	{
+		if (!_rdCtx->isValidFramebufferSize())
+			return;
+
+		scene()->update(1.0f / 60.0f, _rdCtx->aspectRatio());
+
+		_rdGraph.reset();
+
+		RdgTextureHnd oTex;
+		oTex = testDeferred(_rdGraph);
+		oTex = testCompute(_rdGraph, false);
+		finalComposite(_rdGraph, oTex);
+
+		_rdGraph.compile();
+		_rdGraph.execute();
+	}
+
+	void commit()
+	{
+		_rdGraph.commit();
+	}
+
+	RdgTextureHnd testDeferred(RenderGraph& outRdGraph)
+	{
+		auto* rdCtx = _rdCtx;
 
 		SPtr<Texture2D> backBuffer;
 		SPtr<Texture2D> outColor;
@@ -218,8 +244,7 @@ public:
 
 				scene()->drawScene(rdReq, _preDepthMtl);
 			});
-		
-		#if 1
+
 		RdgTextureHnd albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
 		RdgTextureHnd normalTex		= _rdGraph.createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
 		RdgTextureHnd positionTex	= _rdGraph.createTexture("position_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
@@ -236,14 +261,13 @@ public:
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
-				
+
 				for (size_t i = 0; i < 1; i++)
 				{
 					scene()->drawScene(rdReq, _gBufferMtl);
 				}
 			}
 		);
-		#endif // 0
 
 		#if 0
 
@@ -263,69 +287,23 @@ public:
 
 		#endif // 0
 
-		#if 1
-		auto backBufferRt = _rdGraph.importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
-		SPtr<Texture2D> outAlbedo;
-		_rdGraph.exportTexture(&outAlbedo, albedoTex, TextureFlags::RenderTarget);
-
-		auto& finalComposePass = _rdGraph.addPass("final_compose", RdgPassTypeFlags::Graphics);
-		finalComposePass.readTexture(albedoTex);
-		finalComposePass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				_presentMtl->setParam("texture0",			albedoTex.renderResource());
-				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, -1.0f, 1.0f}));
-			}
-		);
-		#endif // 0
 
 		//_rdGraph.exportTexture(outColor, colorTex);
 		//_rdGraph.exportTexture(out1, albedoTex);
+
+		return albedoTex;
 	}
 
-	void update()
+	RdgTextureHnd testCompute(RenderGraph& outRdGraph, bool isCreate = false)
 	{
-		if (!_rdCtx->isValidFramebufferSize())
-			return;
+		static constexpr int s_kMaxParticleCount = RDS_TEST_COMPUTE_GROUP_THREAD * 10;
 
-		scene()->update(1.0f / 60.0f, _rdCtx->aspectRatio());
-
-		_rdGraph.reset();
-		setup(_rdCtx, false);
-		_rdGraph.compile();
-		_rdGraph.execute();
-	}
-
-	void commit()
-	{
-		_rdGraph.commit();
-	}
-
-	void present(RenderContext* rdCtx, RenderRequest& rdReq, TransferRequest& tsfReq)
-	{
-		// _rdReq should be per frame, but all the present resources are higher lifetime scope
-		rdReq.reset(rdCtx);
-		rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
-		rdCtx->drawUI(rdReq);
-		tsfReq.commit();
-		rdReq.swapBuffers();
-
-		rdCtx->commit(rdReq);
-	}
-
-	void dump(StrView filename = "debug/render_graph")
-	{
-		_rdGraph.dumpGraphviz(filename);
-	}
-
-	void testCompute(RenderGraph& outRdGraph, bool isCreate = false)
-	{
-		static constexpr int s_kMaxParticleCount = 256 * 1000;
+		// align 16
 		struct Particle
 		{
 			Tuple2f position;
 			Tuple2f velocity;
-			Tuple4f color;
+			Color4f color;
 		};
 
 		if (isCreate)
@@ -342,33 +320,101 @@ public:
 				float x = r * cos(theta) * _rdCtx->aspectRatio();
 				float y = r * sin(theta);
 				particle.position	= Tuple2f(x, y);
-				particle.velocity	= Vec2f{Vec2f(x, y) / Vec2f(x, y).magnitude() * 0.00025f}.toTuple2();
-				particle.color		= Tuple4f(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
+				particle.velocity	= Vec2f{Vec2f(x, y) / Vec2f(x, y).magnitude()}.toTuple2();
+				//particle.color		= Color4f(1.0f, 1.0f, 1.0f, 1.0f);
+				//particle.color		= Color4b(sCast<u8>(rndDist(rndEngine)) * 255, sCast<u8>(rndDist(rndEngine)) * 255, sCast<u8>(rndDist(rndEngine)) * 255, 255);
+				particle.color		= Color4f(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
 			}
 			auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
 			cDesc.bufSize	= sizeof(Particle) * s_kMaxParticleCount;
 			cDesc.stride	= sizeof(Particle);
 			cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex;
-			_testComputeBuffer0 = Renderer::rdDev()->createRenderGpuMultiBuffer(cDesc);
-
-			_testComputeBuffer0->uploadToGpu(particles.byteSpan());
-			_testComputeBuffer0->uploadToGpu(particles.byteSpan());
+			_testComputeLastFrameParticles = Renderer::rdDev()->createRenderGpuBuffer(cDesc);
+			_testComputeLastFrameParticles->uploadToGpu(particles.byteSpan());
+			return {};
 		}
 
 		auto& rdGraph = outRdGraph;
+		RdgBufferHnd particlesRead	= rdGraph.importBuffer("particlesRead",		_testComputeLastFrameParticles, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
+		RdgBufferHnd particlesWrite	= rdGraph.createBuffer("particlesWrite",	RenderGpuBuffer_CreateDesc{ sizeof(Particle) * s_kMaxParticleCount, sizeof(Particle), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex });
 
-		//RdgBufferHnd particles0		= rdGraph.createBuffer("particles0",		RenderGpuBuffer_CreateDesc{ 1, sizeof(int), RenderGpuBufferTypeFlags::Compute });
-		//RdgBufferHnd particles1		= rdGraph.createBuffer("particles1",		RenderGpuBuffer_CreateDesc{ 1, sizeof(int), RenderGpuBufferTypeFlags::Compute });
-
-		auto& gBufferPass = rdGraph.addPass("test_compute", RdgPassTypeFlags::Compute);
-		gBufferPass.setExecuteFunc(
+		auto& test_compute = rdGraph.addPass("test_compute", RdgPassTypeFlags::Compute);
+		test_compute.writeBuffer(particlesWrite);
+		test_compute.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				_testComputeMtl->setParam("in_particle_buffer",		_testComputeBuffer0->previousBuffer());
-				_testComputeMtl->setParam("out_particle_buffer",	_testComputeBuffer0->renderGpuBuffer());
-				rdReq.dispatch(RDS_SRCLOC, _testComputeMtl, s_kMaxParticleCount / 256, 1, 1);
+				_testComputeMtl->setParam("rds_dt", 1 / 600.0f);
+				_testComputeMtl->setParam("in_particle_buffer",		particlesRead.renderResource());
+				_testComputeMtl->setParam("out_particle_buffer",	particlesWrite.renderResource());
+				rdReq.dispatch(RDS_SRCLOC, _testComputeMtl, s_kMaxParticleCount / RDS_TEST_COMPUTE_GROUP_THREAD, 1, 1);
 			}
 		);
+		
+		rdGraph.exportBuffer(&_testComputeLastFrameParticles, particlesWrite, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
+
+		auto screenSize = Vec2u::s_cast(_rdCtx->framebufferSize()).toTuple2();
+		RdgTextureHnd test_compute_depth_tex	= _rdGraph.createTexture("test_compute_depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, 1, TextureFlags::DepthStencil });
+		RdgTextureHnd test_compute_present_tex	= _rdGraph.createTexture("test_compute_present_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
+
+		auto& test_compute_result = rdGraph.addPass("test_compute_result", RdgPassTypeFlags::Graphics);
+		test_compute_result.readBuffer(particlesWrite, ShaderStageFlag::Vertex);
+		test_compute_result.setRenderTarget(test_compute_present_tex, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		test_compute_result.setDepthStencil(test_compute_depth_tex, RdgAccess::Write,	RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);
+		test_compute_result.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+				clearValue->setClearDepth(1.0f);
+
+				auto* drawCall = rdReq.addDrawCall();
+				drawCall->vertexLayout			= Vectex_Pos2fUvColor4f<1>::vertexLayout();
+				drawCall->vertexBuffer			= particlesWrite.renderResource();
+				drawCall->vertexCount			= s_kMaxParticleCount;
+				drawCall->material				= _testComputeMtl;
+				drawCall->renderPrimitiveType	= RenderPrimitiveType::Point;	// current set in shader
+			}
+		);
+
+		return test_compute_present_tex;
+	}
+
+	void finalComposite(RenderGraph& outRdGraph, RdgTextureHnd presentTex)
+	{
+		auto backBufferRt = outRdGraph.importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
+
+		auto& finalComposePass = _rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
+		finalComposePass.readTexture(presentTex);
+		finalComposePass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				_presentMtl->setParam("texture0",			presentTex.renderResource());
+				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, -1.0f, 1.0f}));
+			}
+		);
+	}
+
+	void present(RenderContext* rdCtx, RenderRequest& rdReq, TransferRequest& tsfReq)
+	{
+		RDS_TODO("the rdReq here must be framed, otherwise some rsc will be deleted while executing");
+
+		// _rdReq should be per frame, but all the present resources are higher lifetime scope
+		rdReq.reset(rdCtx);
+		auto* clearValue = rdReq.clearFramebuffers();
+		clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+		clearValue->setClearDepth(1.0f);
+
+		rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
+		rdCtx->drawUI(rdReq);
+		tsfReq.commit();
+		rdReq.swapBuffers();
+
+		rdCtx->commit(rdReq);
+	}
+
+	void dump(StrView filename = "debug/render_graph")
+	{
+		_rdGraph.dumpGraphviz(filename);
 	}
 
 	TestScene* scene() { return &_scene; }
@@ -394,8 +440,7 @@ public:
 
 	SPtr<Shader>				_testComputeShader;
 	SPtr<Material>				_testComputeMtl;
-	SPtr<RenderGpuMultiBuffer>	_testComputeBuffer0;
-	SPtr<RenderGpuMultiBuffer>	_testComputeBuffer1;
+	SPtr<RenderGpuBuffer>		_testComputeLastFrameParticles;
 
 	RenderMesh	_fullScreenTriangle;
 

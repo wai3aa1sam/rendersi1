@@ -223,6 +223,19 @@ RenderGraph::compile()
 			default: { RDS_THROW("unknow Render Graph Resource"); } break;
 		}
 	}
+
+	// export resources
+	{
+		for (auto& expBuf : exportedBuffers())
+		{
+			(*expBuf.outRdRsc).reset(sCast<RenderGpuBuffer*>(expBuf.rdgRsc->renderResource()));
+		}
+
+		for (auto& expTex : exportedTextures())
+		{
+			(*expTex.outRdRsc).reset(sCast<Texture2D*>(expTex.rdgRsc->renderResource()));
+		}
+	}
 }
 
 void 
@@ -297,7 +310,7 @@ RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureFlags u
 }
 
 RdgBufferHnd 
-RenderGraph::importBuffer(StrView name, Buffer* buf)
+RenderGraph::importBuffer(StrView name, Buffer* buf, RenderGpuBufferTypeFlags lastUsage, Access lastAccess)
 {
 	RdgBuffer_CreateDesc cDesc;
 	cDesc = buf->desc();
@@ -306,6 +319,9 @@ RenderGraph::importBuffer(StrView name, Buffer* buf)
 	rdgBuf->_desc = buf->desc();
 	rdgBuf->setImport(true);
 	rdgBuf->commitRenderResouce(buf);
+
+	rdgBuf->_stateTrack.setCurrentUsageAccess(lastUsage, lastAccess);
+
 	return hnd;
 }
 
@@ -315,6 +331,7 @@ RenderGraph::exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTy
 	auto& exportRsc = _exportedBufs.emplace_back();
 	exportRsc.rdgRsc = hnd.resource();
 	exportRsc.rdgRsc->setExport(true);
+
 	exportRsc.outRdRsc	= out;
 	exportRsc.usage.buf = usageFlag;
 	exportRsc.access	= access;
@@ -322,14 +339,28 @@ RenderGraph::exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTy
 
 RdgTextureHnd RenderGraph::findTexture(StrView name)
 {
-	RDS_NOT_YET_SUPPORT();
-	return RdgTextureHnd();
+	RdgTextureHnd o = {};
+	for (auto* rsc : resources())
+	{
+		if (StrUtil::isSame(rsc->name().data(), name.data()))
+		{
+			o._rdgRsc = rsc;
+		}
+	}
+	return o;
 }
 
 RdgBufferHnd RenderGraph::findBuffer(StrView name)
 {
-	RDS_NOT_YET_SUPPORT();
-	return RdgBufferHnd();
+	RdgBufferHnd o = {};
+	for (auto* rsc : resources())
+	{
+		if (StrUtil::isSame(rsc->name().data(), name.data()))
+		{
+			o._rdgRsc = rsc;
+		}
+	}
+	return o;
 }
 
 void* RenderGraph::alloc(SizeType n, SizeType align)
@@ -409,6 +440,8 @@ RenderGraph::_setResourcesState(const Passes& sortedPasses, const PassDepths& pa
 			//RdgResourceAccess& rscAccess = rscAccesses.emplace_back();		
 			rscAccess.state.srcAccess	= stateTrack.currentAccess();
 			rscAccess.state.srcUsage	= stateTrack.currentUsage();
+
+			RDS_TODO("check valid usage");
 
 			/*
 			currently, this solution only works work non-async queue, later study async compute to rework this.

@@ -440,8 +440,15 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				{
 					case SRC::Buffer:	
 					{
-						_notYetSupported(RDS_SRCLOC);
+						//auto* rdgBuf	= sCast<RdgTexture*>(rsc);
+						//auto* bufVk		= sCast<RenderGpuBuffer_Vk*>(RdgResourceAccessor::access(rdgBuf));
+						if (rscAccess.state.srcUsage.buf != RenderGpuBufferTypeFlags::None)
+						{
+							vkCmdBuf->cmd_addMemoryBarrier(rscAccess.state.srcUsage.buf,	rscAccess.state.dstUsage.buf
+														 , rscAccess.state.srcAccess,		rscAccess.state.dstAccess);
+						}
 					} break;
+
 					case SRC::Texture:	
 					{
 						auto* rdgTex	= sCast<RdgTexture*>(rsc);
@@ -454,8 +461,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 						//VkImageLayout	srcLayout	= isDepth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL	: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 						//VkImageLayout	dstLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-						VkImageLayout	srcLayout	= Util::toVkImageLayout(rscAccess.state.srcUsage.tex, sCast<RenderAccess>(rscAccess.state.srcAccess));
-						VkImageLayout	dstLayout	= Util::toVkImageLayout(rscAccess.state.dstUsage.tex, sCast<RenderAccess>(rscAccess.state.dstAccess));
+						VkImageLayout	srcLayout	= Util::toVkImageLayout(rscAccess.state.srcUsage.tex, rscAccess.state.srcAccess);
+						VkImageLayout	dstLayout	= Util::toVkImageLayout(rscAccess.state.dstUsage.tex, rscAccess.state.dstAccess);
 
 						vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), vkFormat, srcLayout, dstLayout);
 						// && BitUtil::has(texVk->flag(), TextureFlags::DepthStencil) 
@@ -465,77 +472,6 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
 				}
 			}
-
-			#if 0
-			for (RdgResource* input : pass->reads())
-			{
-				using SRC = RdgResourceType;
-				auto type = input->type();
-				switch (type)
-				{
-					case SRC::Buffer:	
-					{
-						_notYetSupported(RDS_SRCLOC);
-					} break;
-					case SRC::Texture:	
-					{
-						auto* rdgTex	= sCast<RdgTexture*>(input);
-						auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdgTex));
-
-						VkFormat		vkFormat	= Util::toVkFormat(texVk->format());
-						bool			isDepth		= Util::isDepthFormat(vkFormat);
-
-						RDS_TODO("a last resouce layout hint and texture usage hint and RdgAcesss to determine the from and to layout");
-						VkImageLayout	srcLayout	= isDepth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL	: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-						VkImageLayout	dstLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-						// && BitUtil::has(texVk->flag(), TextureFlags::DepthStencil) 
-						vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), vkFormat, srcLayout, dstLayout);
-
-					} break;
-
-					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
-				}
-			}
-
-			for (RdgResource* output : pass->writes())
-			{
-				using SRC = RdgResourceType;
-				auto type = output->type();
-
-				_notYetSupported(RDS_SRCLOC);
-
-				switch (type)
-				{
-					case SRC::Buffer:	
-					{
-						_notYetSupported(RDS_SRCLOC);
-					} break;
-					case SRC::Texture:	
-					{
-
-					} break;
-
-					default: { RDS_THROW("{}", type); } break;
-				}
-			}
-
-			for (RdgRenderTarget& rdTarget : pass->renderTargets())
-			{
-				RDS_CORE_ASSERT(rdTarget.targetHnd.type() == RdgResourceType::Texture, "");
-				//auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdTarget.targetHnd));
-				auto* texVk	= RdgResourceAccessor::access<Texture2D_Vk*>(rdTarget.targetHnd);
-				vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), Util::toVkFormat(texVk->format()), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-			}
-
-			if (RdgDepthStencil* depthStencil = pass->depthStencil())
-			{
-				RDS_CORE_ASSERT(depthStencil->targetHnd.type() == RdgResourceType::Texture, "");
-				//auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(depthStencil->targetHnd));
-				auto* texVk	= RdgResourceAccessor::access<Texture2D_Vk*>(depthStencil->targetHnd);
-
-				vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), Util::toVkFormat(texVk->format()), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-			}
-			#endif // 0
 		}
 
 		// only transition final
@@ -546,6 +482,20 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			auto* vkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Transit Exported Resources");
 
 			vkCmdBuf->beginRecord();
+			
+			for (auto& expBuf : rdGraph.exportedBuffers())
+			{
+				using SRC = RdgResourceType;
+
+				auto* rsc				= expBuf.rdgRsc;
+				const auto& stateTrack	= sCast<const RdgResource*>(rsc)->stateTrack();
+
+				if (stateTrack.currentUsage() == expBuf.usage && stateTrack.currentAccess() == expBuf.access)
+					continue;
+
+				vkCmdBuf->cmd_addMemoryBarrier(stateTrack.currentUsage().buf,	expBuf.usage.buf
+											 , stateTrack.currentAccess(),		expBuf.access);
+			}
 
 			for (auto& expTex : rdGraph.exportedTextures())
 			{
@@ -566,12 +516,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 				vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), vkFormat, srcLayout, dstLayout);
 			}
+
 			vkCmdBuf->endRecord();
-
-			/*for (auto& expBuf : rdGraph.exportedBuffers())
-			{
-
-			}*/
 		}
 
 		Span<Vk_CommandBuffer_T*> graphicsVkCmdBufsHnds() { return _graphicsVkCmdBufsHnds; }

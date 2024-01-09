@@ -217,7 +217,16 @@ public:
 	static VkSamplerAddressMode toVkSamplerAddressMode	(SamplerWrap v);
 	static VkImageViewType		toVkImageViewType		(RenderDataType v);
 
+	static Vk_AccessFlags toVkAccessFlag(RenderAccess v);
+
 	static Vk_StageAccess toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout);
+	static Vk_StageAccess toVkStageAccess(RenderGpuBufferTypeFlags srcUsage, RenderGpuBufferTypeFlags dstUsage, RenderAccess srcAccess, RenderAccess dstAccess);
+
+	static VkPipelineStageFlags toVkPipelineStageFlag(RenderGpuBufferTypeFlags usage);
+	static VkAccessFlags		toVkAccessFlag(RenderGpuBufferTypeFlags usage, RenderAccess access);
+
+
+	//static Vk_PipelineStageFlags toVkPipelineStageFlag	(RenderGpuBufferTypeFlags v/*, ShaderStageFlag stage = ShaderStageFlag::All*/);
 
 	static VkCullModeFlagBits	toVkCullMode			(RenderState_Cull v);
 	static VkPrimitiveTopology	toVkPrimitiveTopology	(RenderPrimitiveType v);

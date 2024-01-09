@@ -224,7 +224,6 @@ inline
 VertexSemantic 
 VertexSemanticUtil::parse(StrView v)
 {
-	
 	if (StrUtil::ignoreCaseCompare(v, "POSITION")		== 0)	{ return VertexSemantic::POSITION; }
 	if (StrUtil::ignoreCaseCompare(v, "COLOR")			== 0)	{ return VertexSemantic::COLOR0; }
 	if (StrUtil::ignoreCaseCompare(v, "TEXTURE")		== 0)	{ return VertexSemantic::TEXCOORD0; }
@@ -603,6 +602,13 @@ using DefaultBinormalType	= DefaultNormalType;
 using Vertex_Pos2f	= VertexT_Pos<Tuple2f>;
 using Vertex_Pos	= VertexT_Pos<DefaultPosType>;
 using Vertex_ImGui	= VertexT_Color<Color4b, 1, VertexT_Uv<Tuple2f, 1, Vertex_Pos2f> >;
+
+template<size_t UV_COUNT> using Vectex_Pos2fColor4fUv = VertexT_Uv<DefaultUvType, UV_COUNT, VertexT_Color<Color4f, 1, Vertex_Pos2f> >;
+template<size_t UV_COUNT> using Vectex_Pos2fUvColor4f = VertexT_Color<Color4f, 1, VertexT_Uv<DefaultUvType, UV_COUNT, Vertex_Pos2f> >;
+
+
+template<class UV_TYPE, size_t UV_COUNT, size_t COLOR_COUNT = 1>	using VertexT_Pos2fColorUv	= VertexT_Color<DefaultUvType, 1, VertexT_Uv<Tuple2f, UV_COUNT, Vertex_Pos2f> >;
+template<size_t UV_COUNT, size_t COLOR_COUNT = 1>					using Vertex_Pos2fColorUv	= VertexT_Pos2fColorUv<DefaultUvType, UV_COUNT, COLOR_COUNT>;
 
 template<class COLOR_TYPE, size_t COLOR_COUNT>		using VertexT_PosColor	= VertexT_Color<COLOR_TYPE, COLOR_COUNT, Vertex_Pos>;
 template<size_t COLOR_COUNT>						using Vertex_PosColor	= VertexT_PosColor<DefaultColorType, COLOR_COUNT>;

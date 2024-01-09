@@ -105,12 +105,20 @@ public:
 
 	void cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height, u32 srcOffset);
 
-	void cmd_addImageMemBarrier(Vk_Image*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
+	/*
+	// other than layout transitions or queue family transfers, no implementation actually looks at the resource to implement buffer or image barriers.
+	*/
+	void cmd_addMemoryBarrier(Vk_StageAccess vkStageAccess);
+	void cmd_addMemoryBarrier(VkPipelineStageFlags srcVkStage, VkPipelineStageFlags dstVkStage, VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess);
+	void cmd_addMemoryBarrier(RenderGpuBufferTypeFlags srcVkStage, RenderGpuBufferTypeFlags dstVkStage, RenderAccess srcAccess, RenderAccess dstAccess);
 
+	void cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc);
+	void cmd_addImageMemBarrier(Vk_Image*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
 	void cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
-	void cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc);
+
+	void cmd_addBufferMemoryBarrier(); // use for queue family tansfer
 
 public:
 	void insertDebugLabel(const char* name, const Color4f& color = Color4f{ 0.4f, 0.5f, 0.6f, 1.0f });

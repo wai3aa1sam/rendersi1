@@ -394,36 +394,52 @@ Vk_CommandBuffer::cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkIma
 }
 
 void 
-Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout)
+Vk_CommandBuffer::cmd_addMemoryBarrier(Vk_StageAccess vkStageAccess)
 {
-	cmd_addImageMemBarrier(image->hnd(), vkFormat, srcLayout, dstLayout);
+	
+	#if 0
+	VkMemoryBarrier2KHR memoryBarrier = {};
+	memoryBarrier.sType			= VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
+	memoryBarrier.srcStageMask	= vkStageAccess.srcStage;
+	memoryBarrier.dstStageMask	= vkStageAccess.dstStage;
+	memoryBarrier.srcAccessMask	= vkStageAccess.srcAccess;
+	memoryBarrier.dstAccessMask	= vkStageAccess.dstAccess; 
+
+	VkDependencyInfoKHR dependencyInfo = {};
+	dependencyInfo.memoryBarrierCount	= 1;
+	dependencyInfo.pMemoryBarriers		= &memoryBarrier;
+
+	vkCmdPipelineBarrier2KHR(hnd(), &dependencyInfo);
+
+	#else
+
+	VkMemoryBarrier memoryBarrier = {};
+	memoryBarrier.sType			= VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	memoryBarrier.srcAccessMask = vkStageAccess.srcAccess;
+	memoryBarrier.dstAccessMask = vkStageAccess.dstAccess;
+
+	//vkCmdPipelineBarrier(hnd(), vkStageAccess.srcStage, vkStageAccess.dstStage, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+	//vkCmdPipelineBarrier(hnd(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, vkStageAccess.dstStage, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+
+	#endif // 0
 }
 
 void 
-Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout)
+Vk_CommandBuffer::cmd_addMemoryBarrier(VkPipelineStageFlags srcVkStage, VkPipelineStageFlags dstVkStage, VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess)
 {
-	Vk_Cmd_AddImageMemBarrierDesc desc = {};
-	desc.image		= image;
-	desc.format		= vkFormat;
-	desc.srcLayout	= srcLayout;
-	desc.dstLayout	= dstLayout;
+	Vk_StageAccess vkStageAccess = {};
+	vkStageAccess.srcStage	= srcVkStage;
+	vkStageAccess.dstStage	= dstVkStage;
+	vkStageAccess.srcAccess = srcAccess;
+	vkStageAccess.dstAccess = dstAccess;
 
-	cmd_addImageMemBarrier(desc);
+	cmd_addMemoryBarrier(vkStageAccess);
 }
 
 void 
-Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner)
+Vk_CommandBuffer::cmd_addMemoryBarrier(RenderGpuBufferTypeFlags srcVkStage, RenderGpuBufferTypeFlags dstVkStage, RenderAccess srcAccess, RenderAccess dstAccess)
 {
-	Vk_Cmd_AddImageMemBarrierDesc desc = {};
-	desc.image				= image;
-	desc.format				= vkFormat;
-	desc.srcLayout			= srcLayout;
-	desc.dstLayout			= dstLayout;
-	desc.srcQueueFamilyIdx	= srcQueueFamilyIdx;
-	desc.dstQueueFamilyIdx	= dstQueueFamilyIdx;
-	desc.isSrcQueueOwner	= isSrcQueueOwner;
-
-	cmd_addImageMemBarrier(desc);
+	cmd_addMemoryBarrier(Util::toVkStageAccess(srcVkStage, dstVkStage, srcAccess, dstAccess));
 }
 
 void 
@@ -446,7 +462,7 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& de
 		}
 	}
 
-	
+
 	VkImageAspectFlags aspectMask = Util::isDepthFormat(desc.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 	if (Util::hasStencilComponent(desc.format)) 
 		aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -509,6 +525,39 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& de
 	vkCmdPipelineBarrier23(vkCmdBuf->hnd(), &depInfo);
 
 	#endif // 0
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout)
+{
+	cmd_addImageMemBarrier(image->hnd(), vkFormat, srcLayout, dstLayout);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout)
+{
+	Vk_Cmd_AddImageMemBarrierDesc desc = {};
+	desc.image		= image;
+	desc.format		= vkFormat;
+	desc.srcLayout	= srcLayout;
+	desc.dstLayout	= dstLayout;
+
+	cmd_addImageMemBarrier(desc);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner)
+{
+	Vk_Cmd_AddImageMemBarrierDesc desc = {};
+	desc.image				= image;
+	desc.format				= vkFormat;
+	desc.srcLayout			= srcLayout;
+	desc.dstLayout			= dstLayout;
+	desc.srcQueueFamilyIdx	= srcQueueFamilyIdx;
+	desc.dstQueueFamilyIdx	= dstQueueFamilyIdx;
+	desc.isSrcQueueOwner	= isSrcQueueOwner;
+
+	cmd_addImageMemBarrier(desc);
 }
 
 

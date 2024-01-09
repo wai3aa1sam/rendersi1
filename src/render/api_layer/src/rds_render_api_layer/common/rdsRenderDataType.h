@@ -100,6 +100,7 @@ template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tup
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Mat4f>()		{ return Type::Float32_4x4; };
 
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Color4b>()	{ return Type::UNorm8x4; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Color4f>()	{ return Type::Float32x4; };
 
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture1D>()		{ return Type::Texture1D; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture2D>()		{ return Type::Texture2D; };

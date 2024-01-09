@@ -71,7 +71,8 @@ using Vk_DebugUtilsMessenger_T	= VkDebugUtilsMessengerEXT_T;
 #if		RDS_VK_VER_1_3
 
 using Vk_PipelineStageFlags		= VkPipelineStageFlags2;
-using Vk_PipelineStageFlagBit	= VkPipelineStageFlagBits2;
+using Vk_PipelineStageFlagBits	= VkPipelineStageFlagBits2;
+using Vk_AccessFlags			= VkAccessFlags2;
 
 //enum class Vk_PipelineStageFlag : u64
 //{

@@ -117,8 +117,8 @@ public:
 	void writeTexture	(RdgTextureHnd		hnd);
 	void writeTextures	(RdgTextureHndSpan	hnds);
 
-	void readBuffer		(RdgBufferHnd		hnd);
-	void readBuffers	(RdgBufferHndSpan	hnds);
+	void readBuffer		(RdgBufferHnd		hnd,	ShaderStageFlag useStages = ShaderStageFlag::Compute);
+	void readBuffers	(RdgBufferHndSpan	hnds,	ShaderStageFlag useStages = ShaderStageFlag::Compute);
 
 	void writeBuffer	(RdgBufferHnd		hnd);
 	void writeBuffers	(RdgBufferHndSpan	hnds);

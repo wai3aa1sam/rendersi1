@@ -15,6 +15,9 @@ Shader {
 		// Queue	"Transparent"
 		//Cull		None
 
+		RenderPrimitiveType Point	// TODO: remove
+		//RenderPrimitiveType Triangle	// TODO: remove
+
 		DepthTest	LessEqual
 
 //		DepthTest	Always
@@ -31,11 +34,15 @@ Shader {
 	}
 }
 #endif
+
+#define RDS_DECLARE_PT_SIZE(var) 	[[vk::builtin("PointSize")]] float var : PSIZE
+#define RDS_SET_PT_SIZE(var, v) 	var = v
+
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
+    float2 positionOS   : SV_POSITION;
     float4 color        : COLOR;
-    float2 uv           : TEXCOORD0;
+    float2 velocity     : TEXCOORD0;
 
     uint vertexId       : SV_VertexID;
 };
@@ -44,7 +51,8 @@ struct PixelIn
 {
 	float4 positionHCS  : SV_POSITION;
     float4 color        : COLOR;
-    float2 uv           : TEXCOORD0;
+    float2 velocity     : TEXCOORD0;
+	RDS_DECLARE_PT_SIZE(ptSize);
 };
 
 struct Particle 
@@ -63,9 +71,6 @@ float4x4	rds_matrix_mvp;
 
 float		rds_dt;
 
-Texture2D       texture0 				: register(t1, space1);       // texture is a reserved word
-SamplerState    _rds_texture0_sampler 	: register(s1, space1);
-
 float3 Color_Linear_to_sRGB(float3 x) { return x < 0.0031308 ? 12.92 * x : 1.13005 * sqrt(x - 0.00228) - 0.13448 * x + 0.005719; }
 float3 Color_sRGB_to_Linear(float3 x) { return x < 0.04045 ? x / 12.92 : -7.43605 * x - 31.24297 * sqrt(-0.53792 * x + 1.279924) + 35.34864; }
 
@@ -73,11 +78,13 @@ float3 Color_sRGB_to_Linear(float3 x) { return x < 0.04045 ? x / 12.92 : -7.4360
 void cs_main (uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint index = dispatchThreadId.x;  
-
 	Particle particleIn = in_particle_buffer[index];
+
+	#if 1
 
 	out_particle_buffer[index].position = particleIn.position + particleIn.velocity.xy * rds_dt;
 	out_particle_buffer[index].velocity = particleIn.velocity;
+	out_particle_buffer[index].color 	= particleIn.color;
 
 	// Flip movement at window border
 	if ((out_particle_buffer[index].position.x <= -1.0) || (out_particle_buffer[index].position.x >= 1.0)) 
@@ -88,6 +95,13 @@ void cs_main (uint3 dispatchThreadId : SV_DispatchThreadID)
 	{
 		out_particle_buffer[index].velocity.y = -out_particle_buffer[index].velocity.y;
 	}
+	#else
+
+	out_particle_buffer[index].position = particleIn.position;
+	out_particle_buffer[index].velocity = particleIn.velocity;
+	out_particle_buffer[index].color 	= particleIn.color;
+	
+	#endif
 }
 
 PixelIn vs_main(VertexIn i)
@@ -96,21 +110,21 @@ PixelIn vs_main(VertexIn i)
     
     //o.positionOS    = positions[i.vertexId];
     //o.color         = colors[i.vertexId];
-    o.positionHCS = mul(rds_matrix_mvp, i.positionOS);
+    o.positionHCS = float4(i.positionOS.xy, 0.5, 1.0);
     //o.positionHCS = i.positionOS;
     o.color       = i.color;
-    o.uv          = i.uv;
+    o.velocity    = i.velocity;
+
+	RDS_SET_PT_SIZE(o.ptSize, 3.0);
     
     return o;
 }
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    //float2 pos2f = i.positionOS;
-	float4 o = texture0.Sample(_rds_texture0_sampler, i.uv);
+    float2 pos2f 	= i.positionHCS.xy;
+	float4 o 		= float4(i.color.rgb, 1);
 	//o += i.color * texture2.Sample(texture2_Sampler, i.uv);
 
-    o.a = 1;
     return o;
-	//return float4(Color_Linear_to_sRGB(o), o.a); // use this if VkImageView is SRGB
 }

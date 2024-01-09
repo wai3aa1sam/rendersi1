@@ -295,10 +295,12 @@ i64 RenderDevice_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
 	return score;
 }
 
+
+
 void 
 RenderDevice_Vk::loadVkInstFn(Vk_ExtensionInfo& vkExtInfo)
 {
-	#define RDS_VK_LOAD_INST_FN(VAR, FALLBACK_FN) \
+	#define RDS_VK_LOAD_INST_FN_EXT(VAR, FALLBACK_FN) \
 	VAR = vkExtInfo.getInstanceExtFunction<RDS_CONCAT(RDS_CONCAT(PFN_, VAR), EXT)>(RDS_CONCAT_TO_STR(VAR, EXT)); \
 	if (VAR == nullptr) \
 	{ \
@@ -306,14 +308,21 @@ RenderDevice_Vk::loadVkInstFn(Vk_ExtensionInfo& vkExtInfo)
 		VAR = FALLBACK_FN; \
 	} \
 	// ---
-	
-	RDS_VK_LOAD_INST_FN(vkSetDebugUtilsObjectName,	[](VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) { return VK_SUCCESS; });
-	RDS_VK_LOAD_INST_FN(vkDebugMarkerSetObjectTag,	[](VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo)	{ return VK_SUCCESS; });
-	RDS_VK_LOAD_INST_FN(vkCmdBeginDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
-	RDS_VK_LOAD_INST_FN(vkCmdEndDebugUtilsLabel,	[](VkCommandBuffer commandBuffer) {});
-	RDS_VK_LOAD_INST_FN(vkCmdInsertDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
 
-	#undef RDS_VK_LOAD_INST_FN
+	#define RDS_VK_LOAD_INST_FN_KHR(var, fn) \
+	var = vkExtInfo.getDeviceExtFunction<fn>(RDS_STRINGIFY(fn)); throwIf(!var, "cannot load vk fn: {}", RDS_STRINGIFY(fn)) \
+	// ---
+	
+	RDS_VK_LOAD_INST_FN_EXT(vkSetDebugUtilsObjectName,	[](VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) { return VK_SUCCESS; });
+	RDS_VK_LOAD_INST_FN_EXT(vkDebugMarkerSetObjectTag,	[](VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo)	{ return VK_SUCCESS; });
+	RDS_VK_LOAD_INST_FN_EXT(vkCmdBeginDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
+	RDS_VK_LOAD_INST_FN_EXT(vkCmdEndDebugUtilsLabel,	[](VkCommandBuffer commandBuffer) {});
+	RDS_VK_LOAD_INST_FN_EXT(vkCmdInsertDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
+
+	//RDS_VK_LOAD_INST_FN_KHR(vkCmdPipelineBarrier2_khr, PFN_vkCmdPipelineBarrier2KHR);
+
+	#undef RDS_VK_LOAD_INST_FN_EXT
+	#undef RDS_VK_LOAD_INST_FN_KHR
 }
 
 void 

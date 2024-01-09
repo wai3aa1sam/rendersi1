@@ -175,7 +175,7 @@ public:
 	RdgTextureHnd	importTexture(StrView name, Texture* tex);
 	void			exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureFlags usageFlags, Access access = Access::Read);
 
-	RdgBufferHnd	importBuffer(StrView name, Buffer* buf);
+	RdgBufferHnd	importBuffer(StrView name, Buffer* buf, RenderGpuBufferTypeFlags lastUsage, Access lastAccess);
 	void			exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlags, Access access = Access::Read);
 
 	RdgTextureHnd	findTexture(StrView name);

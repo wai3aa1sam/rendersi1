@@ -77,6 +77,14 @@ inline PFN_vkCmdInsertDebugUtilsLabelEXT	vkCmdInsertDebugUtilsLabel;
 
 #endif // 1
 
+#if 0
+#pragma mark --- rdsVkSync2Fn-Decl ---
+#endif // 0
+#if 1
+
+inline PFN_vkCmdPipelineBarrier2KHR vkCmdPipelineBarrier2_khr;
+
+#endif
 
 namespace rds
 {

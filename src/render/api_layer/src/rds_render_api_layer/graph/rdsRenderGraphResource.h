@@ -89,7 +89,7 @@ public:
 
 	bool operator!=(const RdgResourceUsage& rhs) const
 	{
-		return operator==(rhs);
+		return !operator==(rhs);
 	}
 
 	bool hasValue() const { return buf != BufUsage::None || tex != TexUsage::None; }
