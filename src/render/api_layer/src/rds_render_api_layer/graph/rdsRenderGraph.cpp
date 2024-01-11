@@ -377,9 +377,9 @@ void RenderGraph::free(void* p, SizeType align)
 {
 	if (_alloc)
 	{
-		return _alloc->free(p, align);
+		return _alloc->free(p);
 	}
-	return DefaultAllocator::free(p, align);
+	return DefaultAllocator::free(p);
 }
 
 //void RenderGraph::resetFrame()

@@ -153,7 +153,7 @@ public:
 		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 		return _debugName.c_str();
 		#else
-		return nullptr;
+		return "";
 		#endif // 1
 	}
 

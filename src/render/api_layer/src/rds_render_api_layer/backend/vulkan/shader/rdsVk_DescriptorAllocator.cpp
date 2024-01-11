@@ -70,7 +70,7 @@ Vk_DescriptorAllocator::reset()
 		_freePools.emplace_back(rds::move(e));
 	}
 	_usedPools.clear();
-	_curPool = requestPool();
+	//_curPool = requestPool();
 
 	RDS_TODO("handle reset or use different approach to handle [free] desc set, since reset and update in each frame would have great overhead");
 }

@@ -82,6 +82,7 @@ void
 Vk_RenderFrame::reset()
 {
 	resetCommandPools();
+	descriptorAllocator().reset();
 }
 
 void 

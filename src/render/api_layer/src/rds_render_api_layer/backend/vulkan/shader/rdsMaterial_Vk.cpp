@@ -546,7 +546,7 @@ public:
 
 		RDS_TODO("temporary solution for binding, also, DescriptorAllocator is leaking memory since the Vk_DescriptorSet (it's debugName) has not destroy?");
 
-		if (!vkDescSet || shaderRsc.isDirty())
+		if (!vkDescSet || shaderRsc.isDirty() || true)
 		{
 			auto&	descriptorAlloc	= ctx->vkRdFrame().descriptorAllocator();
 			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);

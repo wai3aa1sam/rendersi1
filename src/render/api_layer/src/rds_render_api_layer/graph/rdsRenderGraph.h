@@ -92,25 +92,27 @@ public:
 			resultPasses.clear();
 			resultPassDepths.clear();
 
-			RDS_TODO("change to linear allocator instead");
-
 			for (RdgPass* pass : passes)
 			{
-				RDS_DELETE(pass);
+				deleteT(pass);
 			}
 			for (RdgResource* rsc : resources)
 			{
-				RDS_DELETE(rsc);
+				deleteT(rsc);
 			}
+
 			passes.clear();
 			resources.clear();
+
 			rscPool.reset();
+			_alloc.clear();
 		}
 
 		Pass* addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlag flag)
 		{
 			auto id = sCast<RdgId>(passes.size());
-			Pass*& pass = passes.emplace_back(RDS_NEW(RdgPass)(rdGraph, name, id, typeFlag, flag));
+			//Pass*& pass = passes.emplace_back(RDS_NEW(RdgPass)(rdGraph, name, id, typeFlag, flag));
+			Pass*& pass = passes.emplace_back(newT<RdgPass>(rdGraph, name, id, typeFlag, flag));
 			return pass;
 		}
 
@@ -122,7 +124,7 @@ public:
 
 			auto id		= sCast<RdgId>(resources.size());
 			//auto* rdgRsc = newT<RdgResourceT<T> >(cDesc, name, id, false, false);
-			auto* rdgRsc = sCast<ResourceT*>(resources.emplace_back(RDS_NEW(ResourceT)));
+			auto* rdgRsc = sCast<ResourceT*>(resources.emplace_back(newT<ResourceT>()));
 			rdgRsc->create(cDesc, name, id, false, false);
 			return rdgRsc;
 		}
@@ -135,6 +137,25 @@ public:
 		Passes			passes;
 		Resources		resources;
 		RdgResourcePool rscPool;
+
+	private:
+		template<class T, class... ARGS>
+		T* newT(ARGS&&... args)
+		{
+			void*	buf = _alloc.allocate(sizeof(T));
+			T*		p	= new(buf) T(rds::forward<ARGS>(args)...);
+			return p;
+		}
+
+		template<class T>
+		void deleteT(T* p)
+		{
+			p->~T();
+			_alloc.free(p);
+		}
+
+	private:
+		LinearAllocator _alloc;
 	};
 	using RenderGraphFrames = Vector<RenderGraphFrame, s_kFrameInFlightCount>;
 

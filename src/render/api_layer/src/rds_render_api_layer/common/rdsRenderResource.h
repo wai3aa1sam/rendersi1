@@ -18,7 +18,7 @@ class TransferFrame;
 class TransferContext;
 
 
-#define RDS_ENABLE_RenderResouce_DEBUG_NAME 1
+#define RDS_ENABLE_RenderResouce_DEBUG_NAME 0
 
 #define RDS_RenderResouce_SET_DEBUG_NAME(RSC, NAME) (RSC)->setDebugName(NAME)
 
