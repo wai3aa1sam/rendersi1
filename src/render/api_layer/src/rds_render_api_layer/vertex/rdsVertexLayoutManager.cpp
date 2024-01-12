@@ -32,6 +32,7 @@ VertexLayoutManager::VertexLayoutManager()
 	REGISTER_VERTEX_4(Vertex_PosColorUv);
 	REGISTER_VERTEX_4(Vertex_PosColor);
 	REGISTER_VERTEX_4(Vertex_PosUv);
+	REGISTER_VERTEX_4(Vertex_PosUvNormal);
 
 	//REGISTER_VERTEX_4(Vectex_Pos2fColor4fUv);		// this will collide with Vectex_Pos2fUvColor4f, later need account with member offset/index too
 

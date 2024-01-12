@@ -52,8 +52,6 @@ protected:
 	virtual void onPostCreate	(CreateDesc& cDesc);
 	virtual void onDestroy		();
 
-	virtual void onUploadToGpu(ByteSpan data, SizeType offset);
-
 	SPtr<RenderGpuBuffer>& makeNextBuffer(SizeType bufSize);
 
 	SPtr<RenderGpuBuffer> _makeNewBuffer(SizeType bufSize);

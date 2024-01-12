@@ -206,6 +206,7 @@ public:
 	virtual ~VulkanLayer()
 	{
 		Renderer::rdDev()->waitIdle();
+		meshAssets.destroy();
 	}
 
 	virtual void onCreate() override
@@ -266,6 +267,10 @@ public:
 			_uvChecker2Tex = Renderer::rdDev()->createTexture2D(texCDesc);
 		}
 		#endif // 0
+
+		{
+			meshAssets.create();
+		}
 
 		Renderer::rdDev()->transferContext().transferRequest().commit(true);
 	}
@@ -414,6 +419,8 @@ protected:
 	SPtr<Texture2D>				_uvChecker2Tex;
 
 	Vector<SPtr<Texture2D> >	_textures;
+
+	RenderMesh _box;
 };
 
 class Test_VulkanEditorApp : public UnitTest

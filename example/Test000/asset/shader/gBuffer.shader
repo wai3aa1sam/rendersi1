@@ -13,7 +13,7 @@ Shader {
 	
 	Pass {
 		// Queue	"Transparent"
-		Cull		None
+		//Cull		None
 
 		DepthTest	LessEqual
 
@@ -34,8 +34,8 @@ Shader {
 struct VertexIn
 {
     float4 positionOS   : SV_POSITION;
-    float4 color        : COLOR;
     float2 uv           : TEXCOORD0;
+    float3 normal       : NORMAL0;
 
     uint vertexId       : SV_VertexID;
 };
@@ -43,8 +43,8 @@ struct VertexIn
 struct PixelIn 
 {
 	float4 positionHCS  : SV_POSITION;
-    float4 color        : COLOR;
     float2 uv           : TEXCOORD0;
+    float3 normal       : NORMAL0;
 };
 
 struct PixelOut
@@ -66,8 +66,8 @@ PixelIn vs_main(VertexIn i)
     //o.positionOS    = positions[i.vertexId];
     //o.color         = colors[i.vertexId];
     o.positionHCS = mul(rds_matrix_mvp, i.positionOS);
-    o.color       = i.color;
     o.uv          = i.uv;
+	o.normal      = i.normal;
     
     return o;
 }
@@ -77,9 +77,12 @@ PixelOut ps_main(PixelIn i)
 	PixelOut o;
     //float2 pos2f = i.positionOS;
 
-	o.albedo   = i.color;
-	o.normal   = i.positionHCS;
+	o.albedo   = float4(1.0, 1.0, 1.0, 1.0);
+	o.normal   = float4(i.normal, 1.0);
 	o.position = i.positionHCS;
+
+
+	o.normal = (o.normal + float4(1.0)) / 2.0;
 
     return o;
 }

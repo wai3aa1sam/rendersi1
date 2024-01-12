@@ -15,7 +15,25 @@ namespace rds
 
 #if 1
 
-const VertexLayout* getVertexLayout_RndColorTriangle() { return Vertex_PosColorUv<1>::vertexLayout(); }
+struct MeshAssets
+{
+	void create()
+	{
+		EditMesh mesh;
+		WavefrontObjLoader::loadFile(mesh, "asset/mesh/box.obj");
+		box.create(mesh);
+	}
+
+	void destroy()
+	{
+		box.clear();
+	}
+
+	RenderMesh box;
+};
+MeshAssets meshAssets;
+
+const VertexLayout* getVertexLayout_RndColorTriangle() { return Vertex_PosColorUvNormal<1>::vertexLayout(); }
 
 EditMesh makeRndColorTriangleMesh(float z = 0.0f, bool isRnd = true)
 {
@@ -50,6 +68,14 @@ EditMesh makeRndColorTriangleMesh(float z = 0.0f, bool isRnd = true)
 		e.emplace_back(0.0f, 0.0f);
 		e.emplace_back(0.0f, 1.0f);
 		e.emplace_back(1.0f, 1.0f);
+	}
+	{
+		auto& e = editMesh.normal;
+		e.reserve(s_kVtxCount);
+		e.emplace_back(1.0f, 0.0f, 1.0f);
+		e.emplace_back(0.0f, 0.0f, 1.0f);
+		e.emplace_back(0.0f, 1.0f, 1.0f);
+		e.emplace_back(1.0f, 1.0f, 1.0f);
 	}
 
 	editMesh.indices = { 0, 2, 1, 2, 0, 3 };
@@ -113,9 +139,12 @@ public:
 		//Mat4f view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
 		//Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), aspectRatio, 0.1f, 10.0f);
 		//proj[1][1]		*= -1;		// no need this line as enabled VK_KHR_Maintenance1 
+
+		model		= Mat4f::s_identity();
+
 		Mat4f mvp		= _camera->viewProjMatrix() * model;
 
-		mvp = model;
+		//mvp = model;
 		//mvp = Mat4f::s_identity();
 
 		_mvp = mvp;
@@ -123,14 +152,23 @@ public:
 
 	void drawScene(RenderRequest& rdReq, Material* mtl)
 	{
+		#if 0
 		for (size_t i = 0; i < _rdMeshes.size(); i++)
 		{
 			auto drawCall = rdReq.addDrawCall();
 
-			drawCall->setSubMesh(&_rdMeshes[i]->subMesh());
+			drawCall->setSubMesh(_rdMeshes[i]->subMesh());
 			drawCall->material			= mtl;
 			drawCall->materialPassIdx	= 0;
 		}
+		#endif // 0
+
+
+		auto drawCall = rdReq.addDrawCall();
+
+		drawCall->setSubMesh(meshAssets.box.subMesh());
+		drawCall->material			= mtl;
+		drawCall->materialPassIdx	= 0;
 
 		mtl->setParam("rds_matrix_mvp", _mvp);
 	}
@@ -207,7 +245,7 @@ public:
 
 		RdgTextureHnd oTex;
 		oTex = testDeferred(_rdGraph);
-		oTex = testCompute(_rdGraph, false);
+		//oTex = testCompute(_rdGraph, false);
 		finalComposite(_rdGraph, oTex);
 
 		_rdGraph.compile();
@@ -291,7 +329,7 @@ public:
 		//_rdGraph.exportTexture(outColor, colorTex);
 		//_rdGraph.exportTexture(out1, albedoTex);
 
-		return albedoTex;
+		return normalTex;
 	}
 
 	RdgTextureHnd testCompute(RenderGraph& outRdGraph, bool isCreate = false)

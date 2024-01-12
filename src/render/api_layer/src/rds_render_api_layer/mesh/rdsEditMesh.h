@@ -34,13 +34,8 @@ public:
 	static constexpr u8 s_kBinormalCount	= 1;
 
 public:
-	template<size_t N>	const VertexLayout*	createPackedVtxData(Vector<u8, N>& out) const;
-	template<size_t N>	void				createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout) const;
-						Vector<u8>			makePackedVtxData() const;
+	RenderPrimitiveType	primitive = RenderPrimitiveType::Triangle;
 
-	const VertexLayout* getVertexLayout() const;
-
-public:
 	Vector<Tuple3f>	pos;
 	Vector<Color4b>	color;
 	Vector<Tuple2f>	uvs[s_kUvCount];
@@ -49,6 +44,17 @@ public:
 	Vector<Tuple3f>	binormal;
 
 	Vector<u32> indices;
+
+public:
+	template<size_t N>	const VertexLayout*	createPackedVtxData(Vector<u8, N>& out) const;
+	template<size_t N>	void				createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout) const;
+						Vector<u8>			makePackedVtxData() const;
+
+	const VertexLayout* getVertexLayout() const;
+
+	void addColors(const Color4b& c);
+
+	void clear();
 };
 
 template<size_t N> inline

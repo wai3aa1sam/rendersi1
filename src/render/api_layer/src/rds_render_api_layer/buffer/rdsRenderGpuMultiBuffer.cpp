@@ -89,13 +89,6 @@ void RenderGpuMultiBuffer::onDestroy()
 	_renderGpuBuffers.clear();
 }
 
-void 
-RenderGpuMultiBuffer::onUploadToGpu(ByteSpan data, SizeType offset)
-{
-	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
-	//renderFrame().addUploadBufferParent(this);
-}
-
 void RenderGpuMultiBuffer::rotate()
 {
 	_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;

@@ -173,7 +173,7 @@ public:
 	bool isBackbuffer = false;
 
 public:
-	RDS_RenderResource_COMMON_BODY(Texture2D_CreateDesc)
+	RDS_RenderResource_COMMON_BODY(Texture2D_CreateDesc);
 
 	Texture2D_CreateDesc(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
 	{

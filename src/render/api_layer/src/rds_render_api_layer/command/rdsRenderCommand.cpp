@@ -59,13 +59,13 @@ RenderCommand_DrawCall::setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset, S
 	if (!subMesh)
 		return;
 
-	vertexOffset	= vtxOffset;
-	vertexCount		= subMesh->vertexCount();
-	vertexBuffer	= subMesh->vertexBuffer();
+	vertexOffset		= vtxOffset;
+	vertexCount			= subMesh->vertexCount();
+	vertexBuffer		= subMesh->vertexBuffer();
 
-	indexOffset		= idxOffset;
-	indexCount		= subMesh->indexCount();
-	indexBuffer		= subMesh->indexBuffer();
+	indexOffset			= idxOffset;
+	indexCount			= subMesh->indexCount();
+	indexBuffer			= subMesh->indexBuffer();
 
 	vertexLayout		= subMesh->vertexLayout();
 	indexType			= subMesh->indexType();

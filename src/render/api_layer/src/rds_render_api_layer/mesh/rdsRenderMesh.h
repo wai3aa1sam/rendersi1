@@ -80,8 +80,8 @@ public:
 	void setSubMeshCount(SizeType n);
 	void setRenderPrimitiveType(RenderPrimitiveType v);
 
-			RenderSubMesh&		subMesh();
-	const	RenderSubMesh&		subMesh()	const;
+			RenderSubMesh*		subMesh();
+	const	RenderSubMesh*		subMesh()	const;
 
 	Span<		RenderSubMesh>	subMeshes();
 	Span<const	RenderSubMesh>	subMeshes() const;
@@ -98,8 +98,8 @@ protected:
 };
 
 
-inline 			RenderSubMesh&	RenderMesh::subMesh()			{ return _subMeshes[0]; }
-inline const	RenderSubMesh&	RenderMesh::subMesh()	const	{ return _subMeshes[0]; }
+inline 			RenderSubMesh*	RenderMesh::subMesh()			{ return !_subMeshes.is_empty() ? &_subMeshes[0] : nullptr; }
+inline const	RenderSubMesh*	RenderMesh::subMesh()	const	{ return !_subMeshes.is_empty() ? &_subMeshes[0] : nullptr; }
 
 inline Span<		RenderSubMesh>	RenderMesh::subMeshes()			{ return _subMeshes.span(); }
 inline Span<const	RenderSubMesh>	RenderMesh::subMeshes() const	{ return _subMeshes.span(); }
