@@ -46,8 +46,10 @@ class	RenderGpuMultiBuffer;
 
 class	Texture;
 class	Texture2D;
+class	TextureCube;
 struct	Texture_CreateDesc;
 struct	Texture2D_CreateDesc;
+struct	TextureCube_CreateDesc;
 
 class	Shader;
 struct	Shader_CreateDesc;
@@ -90,6 +92,7 @@ public:
 	SPtr<RenderGpuBuffer>		createRenderGpuBuffer		(		RenderGpuBuffer_CreateDesc&		cDesc);
 	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer	(		RenderGpuBuffer_CreateDesc&		cDesc);
 	SPtr<Texture2D>				createTexture2D				(		Texture2D_CreateDesc&			cDesc);
+	SPtr<TextureCube>			createTextureCube			(		TextureCube_CreateDesc&			cDesc);
 	SPtr<Shader>				createShader				(const	Shader_CreateDesc&				cDesc);
 	SPtr<Shader>				createShader				(StrView								filename);
 	SPtr<Material>				createMaterial				(const	Material_CreateDesc&			cDesc);
@@ -118,6 +121,7 @@ protected:
 	virtual SPtr<RenderContext>			onCreateContext				(const	RenderContext_CreateDesc&	cDesc)	= 0;
 	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(		RenderGpuBuffer_CreateDesc&	cDesc)	= 0;
 	virtual SPtr<Texture2D>				onCreateTexture2D			(		Texture2D_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<TextureCube>			onCreateTextureCube			(		TextureCube_CreateDesc&		cDesc)	= 0;
 	virtual SPtr<Shader>				onCreateShader				(const	Shader_CreateDesc&			cDesc)	= 0;
 	virtual SPtr<Material>				onCreateMaterial			(const	Material_CreateDesc&		cDesc)	= 0;
 

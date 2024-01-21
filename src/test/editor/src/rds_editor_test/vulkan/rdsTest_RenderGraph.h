@@ -227,6 +227,7 @@ public:
 
 		_presentShader	= Renderer::rdDev()->createShader("asset/shader/present.shader");
 		_presentMtl		= Renderer::rdDev()->createMaterial(_presentShader);
+		_presentMtl->setParam("texture0", _uvCheckerTex);
 
 		_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test_compute.shader");
 		_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
@@ -245,7 +246,7 @@ public:
 
 		RdgTextureHnd oTex;
 		oTex = testDeferred(_rdGraph);
-		//oTex = testCompute(_rdGraph, false);
+		oTex = testCompute(_rdGraph, false);
 		finalComposite(_rdGraph, oTex);
 
 		_rdGraph.compile();
@@ -267,8 +268,8 @@ public:
 
 		auto screenSize = Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
-		RdgTextureHnd testColorTex	= _rdGraph.createTexture("testColorTex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
-		RdgTextureHnd depthTex		= _rdGraph.createTexture("depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, 1, TextureFlags::DepthStencil | TextureFlags::ShaderResource});
+		RdgTextureHnd testColorTex	= _rdGraph.createTexture("testColorTex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget });
+		RdgTextureHnd depthTex		= _rdGraph.createTexture("depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
 		auto& depthPrePass = _rdGraph.addPass("depth_pre_pass", RdgPassTypeFlags::Graphics);
 		depthPrePass.setRenderTarget(testColorTex,						RenderTargetLoadOp::Clear,		RenderTargetStoreOp::Store);
@@ -283,9 +284,9 @@ public:
 				scene()->drawScene(rdReq, _preDepthMtl);
 			});
 
-		RdgTextureHnd albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
-		RdgTextureHnd normalTex		= _rdGraph.createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
-		RdgTextureHnd positionTex	= _rdGraph.createTexture("position_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
+		RdgTextureHnd albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget });
+		RdgTextureHnd normalTex		= _rdGraph.createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget });
+		RdgTextureHnd positionTex	= _rdGraph.createTexture("position_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget });
 
 		auto& gBufferPass = _rdGraph.addPass("g_buffer_pass", RdgPassTypeFlags::Graphics);
 		//gBufferPass.setRenderTarget({albedoTex, normalTex, positionTex});
@@ -309,7 +310,7 @@ public:
 
 		#if 0
 
-		auto colorTex = _rdGraph.createTexture("color_tex", { screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
+		auto colorTex = _rdGraph.createTexture("color_tex", { screenSize, ColorType::RGBAb, 1, TextureUsageFlags::RenderTarget });
 
 		auto& deferredLightingPass = _rdGraph.addPass("deferred_lighting_pass", RdgPassTypeFlags::Graphics);
 		deferredLightingPass.readTextures({albedoTex, normalTex, positionTex, depthTex});
@@ -391,8 +392,8 @@ public:
 		rdGraph.exportBuffer(&_testComputeLastFrameParticles, particlesWrite, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
 
 		auto screenSize = Vec2u::s_cast(_rdCtx->framebufferSize()).toTuple2();
-		RdgTextureHnd test_compute_depth_tex	= _rdGraph.createTexture("test_compute_depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, 1, TextureFlags::DepthStencil });
-		RdgTextureHnd test_compute_present_tex	= _rdGraph.createTexture("test_compute_present_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, 1, TextureFlags::RenderTarget });
+		RdgTextureHnd test_compute_depth_tex	= _rdGraph.createTexture("test_compute_depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil });
+		RdgTextureHnd test_compute_present_tex	= _rdGraph.createTexture("test_compute_present_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 
 		auto& test_compute_result = rdGraph.addPass("test_compute_result", RdgPassTypeFlags::Graphics);
 		test_compute_result.readBuffer(particlesWrite, ShaderStageFlag::Vertex);

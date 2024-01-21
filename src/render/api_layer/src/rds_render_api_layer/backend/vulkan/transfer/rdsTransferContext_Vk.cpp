@@ -170,7 +170,7 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 		RDS_CORE_ASSERT(e->type() == TransferCommandType::UploadTexture, "");
 		auto*	cmd			= sCast<TransferCommand_UploadTexture*>(e);
 		auto	vkFormat	= Util::toVkFormat(cmd->dst->format());
-		auto*	dst			= Vk_Texture::getImageHnd(cmd->dst);
+		auto*	dst			= Vk_Texture::getVkImageHnd(cmd->dst);
 
 		vkCmdBuf->cmd_addImageMemBarrier(dst, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), queueFamilyIdx(queueType), false);
 	}
@@ -291,7 +291,7 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	//auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
 	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingHnd);
 
-	auto*			dst			= Vk_Texture::getImageHnd(cmd->dst);
+	auto*			dst			= Vk_Texture::getVkImageHnd(cmd->dst);
 	const auto&		size		= cmd->dst->size();
 	auto			vkFormat	= Util::toVkFormat(cmd->dst->format());
 

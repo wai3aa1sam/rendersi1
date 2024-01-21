@@ -58,6 +58,7 @@ protected:
 	virtual SPtr<RenderContext>			onCreateContext				(const	RenderContext_CreateDesc&	cDesc)	override;
 	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(		RenderGpuBuffer_CreateDesc&	cDesc)	override;
 	virtual SPtr<Texture2D>				onCreateTexture2D			(		Texture2D_CreateDesc&		cDesc)	override;
+	virtual SPtr<TextureCube>			onCreateTextureCube			(		TextureCube_CreateDesc&		cDesc)	override;
 	virtual SPtr<Shader>				onCreateShader				(const	Shader_CreateDesc&			cDesc)	override;
 	virtual SPtr<Material>				onCreateMaterial			(const	Material_CreateDesc&		cDesc)	override;
 

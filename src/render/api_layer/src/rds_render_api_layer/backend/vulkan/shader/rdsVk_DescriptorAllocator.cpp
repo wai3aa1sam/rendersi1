@@ -244,7 +244,7 @@ Vk_DescriptorBuilder::bindTexture(Vk_DescriptorSet& dstSet, const TexParam& texP
 
 	auto& imageInfo	= _imageInfos.emplace_back();
 	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView		= Vk_Texture::getImageViewHnd(texParam.getUpdatedTexture(renderDeviceVk()));
+	imageInfo.imageView		= Vk_Texture::getVkImageViewHnd(texParam.getUpdatedTexture(renderDeviceVk()));
 	//imageInfo.sampler		= _testVkTextureSampler.hnd();
 
 	auto& out = _writeDescs.emplace_back();
@@ -300,7 +300,7 @@ Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, const Tex
 	shaderRscs._getAutoSetSamplerNameTo(temp, texParam.name());
 	if (auto* samplerParam = shaderRscs.findSamplerParam(temp))
 	{
-		_bindSampler(dstSet, *samplerParam, Vk_Texture::getSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk())), stageFlag);
+		_bindSampler(dstSet, *samplerParam, Vk_Texture::getVkSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk())), stageFlag);
 	}
 }
 

@@ -61,7 +61,7 @@ RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTar
 	dst.targetHnd	= hnd;
 	dst._localId	= sCast<int>(_rscAccesses.size());
 
-	auto usage = Usage{ TextureFlags::RenderTarget };
+	auto usage = Usage{ TextureUsageFlags::RenderTarget };
 	accessResource(hnd, usage, Access::Write, true);
 }
 
@@ -78,7 +78,7 @@ RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp de
 {
 	RDS_CORE_ASSERT(!_depthStencil, "depthStencil already set");
 	RDS_CORE_ASSERT(BitUtil::has(_typeFlags, TypeFlag::Graphics));
-	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureFlags::DepthStencil));
+	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureUsageFlags::DepthStencil));
 
 	_depthStencil.loadOp		= depthLoadOp;
 	_depthStencil.stencilLoadOp = stencilLoadOp;
@@ -86,36 +86,36 @@ RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp de
 	_depthStencil.access		= access;
 	_depthStencil._localId		= sCast<int>(_rscAccesses.size());
 
-	auto usage = Usage{ TextureFlags::DepthStencil };
+	auto usage = Usage{ TextureUsageFlags::DepthStencil };
 	accessResource(hnd, usage, access, true);
 }
 
 void 
 RdgPass::readTexture(RdgTextureHnd	hnd)
 {
-	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureFlags::ShaderResource), "must have ShaderResource flag");
-	auto usage = Usage{ TextureFlags::ShaderResource };
+	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureUsageFlags::ShaderResource), "must have ShaderResource flag");
+	auto usage = Usage{ TextureUsageFlags::ShaderResource };
 	accessResource(hnd, usage, Access::Read);
 }
 void 
 RdgPass::readTextures(RdgTextureHndSpan hnds)
 {
-	RDS_CORE_ASSERT(BitUtil::has(hnds[0].usageFlags(), TextureFlags::ShaderResource), "must have ShaderResource flag");
-	auto usage = Usage{ TextureFlags::ShaderResource };
+	RDS_CORE_ASSERT(BitUtil::has(hnds[0].usageFlags(), TextureUsageFlags::ShaderResource), "must have ShaderResource flag");
+	auto usage = Usage{ TextureUsageFlags::ShaderResource };
 	accessResources(toHndSpan(hnds), usage, Access::Read);
 }
 
 void
 RdgPass::writeTexture(RdgTextureHnd hnd)
 {
-	auto usage = Usage{ TextureFlags::UnorderedAccess };
+	auto usage = Usage{ TextureUsageFlags::UnorderedAccess };
 	accessResource(hnd, usage, Access::Write);
 }
 
 void 
 RdgPass::writeTextures(RdgTextureHndSpan hnds)
 {
-	auto usage = Usage{ TextureFlags::UnorderedAccess };
+	auto usage = Usage{ TextureUsageFlags::UnorderedAccess };
 	accessResources(toHndSpan(hnds), usage, Access::Write);
 }
 

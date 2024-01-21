@@ -68,47 +68,38 @@ public:
 
 #endif // 1
 
+
+
+#define TextureUsageFlags_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(ShaderResource,	= BitUtil::bit(0)) \
+	E(UnorderedAccess,	= BitUtil::bit(1)) \
+	E(RenderTarget,		= BitUtil::bit(2)) \
+	E(DepthStencil,		= BitUtil::bit(3)) \
+	E(BackBuffer,		= BitUtil::bit(4)) \
+	E(_kCount,) \
+//---
+RDS_ENUM_CLASS(TextureUsageFlags, u8);
+RDS_ENUM_ALL_OPERATOR(TextureUsageFlags);
+
 #if 0
 #pragma mark --- rdsTexture_CreateDesc-Impl ---
 #endif // 0
-#if 1
-
-// TextureUsageFlags
-#define TextureFlags_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(ShaderResource,) \
-	E(UnorderedAccess,) \
-	E(RenderTarget,) \
-	E(DepthStencil,) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(TextureFlags, u8);
-RDS_ENUM_ALL_OPERATOR(TextureFlags);
-
-//struct Texture_DescData
-//{
-//	TextureFlags	flag			= TextureFlags::ShaderResource;
-//	ColorType		format			= ColorType::RGBAb;
-//	SamplerState	samplerState;
-//	Tuple3u			size			= {};
-//	u8				mipCount		= 1;
-//	u8				sampleCount		= 1;
-//};
-//
-
-//struct Texture_Desc_Base : public RenderResource_CreateDesc
+#if 0
 
 struct Texture_Desc;
 struct Texture_CreateDesc : public RenderResource_CreateDesc
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	TextureFlags	flag			= TextureFlags::ShaderResource;
+	RenderDataType  type			= RenderDataType::None;
+	TextureUsageFlags	flag			= TextureUsageFlags::ShaderResource;
 	ColorType		format			= ColorType::RGBAb;
 	SamplerState	samplerState;
 	Tuple3u			size			= {};
 	u8				mipCount		= 1;
 	u8				sampleCount		= 1;
+	u8				layerCount		= 1;
 
 public:
 	Texture_CreateDesc() = default;
@@ -134,25 +125,29 @@ struct Texture_Desc
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	TextureFlags	flag			= TextureFlags::ShaderResource;
+	RenderDataType  type			= RenderDataType::None;
+	TextureUsageFlags	flag			= TextureUsageFlags::ShaderResource;
 	ColorType		format			= ColorType::RGBAb;
 	SamplerState	samplerState;
 	Tuple3u			size			= {};
 	u8				mipCount		= 1;
 	u8				sampleCount		= 1;
+	u8				layerCount		= 1;
+	bool			isSrgb			= false;
 
 public:
 	Texture_Desc() = default;
 	Texture_Desc(const Texture_CreateDesc& cDesc)
-		: flag(cDesc.flag), format(cDesc.format), samplerState(cDesc.samplerState)
+		: type(cDesc.type), flag(cDesc.flag), format(cDesc.format), samplerState(cDesc.samplerState)
 		, size(cDesc.size), mipCount(cDesc.mipCount), sampleCount(cDesc.sampleCount)
 	{
 
 	}
 };
+
 inline
 Texture_CreateDesc::Texture_CreateDesc(const Texture_Desc& desc)
-	: flag(desc.flag), format(desc.format), samplerState(desc.samplerState)
+	: type(desc.type), flag(desc.flag), format(desc.format), samplerState(desc.samplerState)
 	, size(desc.size), mipCount(desc.mipCount), sampleCount(desc.sampleCount)
 {
 
@@ -173,14 +168,14 @@ public:
 	bool isBackbuffer = false;
 
 public:
-	RDS_RenderResource_COMMON_BODY(Texture2D_CreateDesc);
+	RDS_RenderResource_CreateDesc_COMMON_BODY(Texture2D_CreateDesc);
 
-	Texture2D_CreateDesc(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
+	Texture2D_CreateDesc(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureUsageFlags flag_, u32 sampleCount_ = 1)
 	{
 		create(width, height, format_, mipCount_, flag_, sampleCount_);
 	}
 
-	Texture2D_CreateDesc(Tuple2u size, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
+	Texture2D_CreateDesc(Tuple2u size, ColorType format_, u32 mipCount_, TextureUsageFlags flag_, u32 sampleCount_ = 1)
 		: Texture2D_CreateDesc(size.x, size.y, format_, mipCount_, flag_, sampleCount_)
 	{
 	}
@@ -216,7 +211,7 @@ public:
 		_hasDataToUpload = true;
 	}
 
-	void create(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureFlags flag_, u32 sampleCount_ = 1)
+	void create(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureUsageFlags flag_, u32 sampleCount_ = 1)
 	{
 		size.set(width, height, sCast<u32>(1));
 		format		= format_;
@@ -281,6 +276,135 @@ protected:
 #endif
 
 #if 0
+#pragma mark --- rdsTexture_CreateDesc-Impl ---
+#endif // 0
+#if 1
+
+struct Texture_CreateDesc;
+
+struct Texture_Desc
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	RenderDataType		type			= RenderDataType::None;
+	Tuple3u				size			= {};
+	ColorType			format			= ColorType::RGBAb;
+	TextureUsageFlags	usageFlags		= TextureUsageFlags::ShaderResource;
+	SamplerState		samplerState;
+	u8					mipCount		= 1;
+	u8					sampleCount		= 1;
+	u8					layerCount		= 1;
+	bool				isSrgb			= false;
+
+public:
+	Texture_Desc()
+		: type(RenderDataType::None)
+	{
+
+	}
+
+protected:
+	void move(Texture_Desc&& rhs)
+	{
+		*this = rhs;
+	}
+};
+
+struct Texture_CreateDesc : public RenderResource_CreateDescT<Texture_Desc>
+{
+	friend class Texture2D;
+	friend class Renderer;
+	friend class TransferContext;
+	friend class TransferRequest;
+public:
+	using Base = RenderResource_CreateDescT<Texture_Desc>;
+
+public:
+	RDS_RenderResource_CreateDesc_COMMON_BODY(Texture_CreateDesc);
+	//Texture_CreateDesc(RenderDataType type_, u32 width_, u32 height_, u32 depth_, ColorType format_, TextureUsageFlags usageFlags_
+	//	, u32 mipCount_, u32 layerCount_, u32 sampleCount_, const SamplerState& samplerState_)
+	//	//: type(type_), format(format), flags(usageFlags_), samplerState(samplerState_)
+	//	//, size(Tuple3u{width_, height_, depth_}), layerCount(layerCount_), mipCount(mipCount_), sampleCount(sampleCount_)
+	//{
+
+	//}
+
+	void create(RenderDataType type_, u32 width_, u32 height_, u32 depth_, ColorType format_, TextureUsageFlags usageFlags_
+		, u32 mipCount_, u32 layerCount_, u32 sampleCount_, const SamplerState& samplerState_)
+	{
+		type			= type_;
+		format			= format_;
+		usageFlags		= usageFlags_;
+		samplerState	= samplerState_;
+		size			= Tuple3u{width_, height_, depth_};
+		mipCount		= sCast<u8>(mipCount_);
+		layerCount		= sCast<u8>(layerCount_);
+		sampleCount		= sCast<u8>(sampleCount_);
+	}
+
+	void create(const Texture_Desc& desc)
+	{
+		sCast<Texture_Desc&>(*this) = desc;
+	}
+};
+
+struct Texture2D_CreateDesc : public Texture_CreateDesc
+{
+	friend class Texture2D;
+	friend class Renderer;
+	friend class TransferContext;
+	friend class TransferRequest;
+public:
+	using Base = Texture_CreateDesc;
+	using Base::create;
+
+public:
+	Image uploadImage;
+
+public:
+	RDS_RenderResource_CreateDesc_COMMON_BODY(Texture2D_CreateDesc);
+	Texture2D_CreateDesc(u32 width_, u32 height_, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
+	{
+		Base::create(RenderDataType::Texture2D, width_, height_, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
+	}
+
+	Texture2D_CreateDesc(Tuple2u size, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
+	{
+		Base::create(RenderDataType::Texture2D, size.x, size.y, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
+	}
+
+	void create(StrView filename, TextureUsageFlags usageFlags_ = TextureUsageFlags::ShaderResource)
+	{
+		uploadImage.load(filename);
+		Base::create(RenderDataType::Texture2D
+					, sCast<u32>(uploadImage.width()), sCast<u32>(uploadImage.height()), 1
+					, uploadImage.info().colorType, usageFlags_
+					, 1, 1, 1, {});
+	}
+
+	void create(const u8* data, u32 width, u32 height, ColorType format_, TextureUsageFlags usageFlags_= TextureUsageFlags::ShaderResource)
+	{
+		format = format_;
+		size.set(width, height, sCast<u32>(1));
+		uploadImage.create(format, width, height);
+		uploadImage.copyToPixelData(ByteSpan(data, width * height * ColorUtil::pixelByteSize(format_)));
+		Base::create(RenderDataType::Texture2D
+			, sCast<u32>(uploadImage.width()), sCast<u32>(uploadImage.height()), 1
+			, uploadImage.info().colorType, usageFlags_
+			, 1, 1, 1, {});
+	}
+
+protected:
+	void move(Texture2D_CreateDesc&& rhs)
+	{
+		Base::move(rds::move(rhs));
+		uploadImage	= rds::move(rhs.uploadImage);
+	}
+};
+
+#endif // 0
+
+#if 0
 #pragma mark --- rdsTexture-Decl ---
 #endif // 0
 #if 1
@@ -289,27 +413,27 @@ class Texture : public RenderResource
 {
 	friend class Backbuffers;
 public:
-	using Base			= RenderResource;
-	using This			= Texture;
-	using CreateDesc	= Texture_CreateDesc;
-	using Desc			= Texture_Desc;
+	using Base				= RenderResource;
+	using This				= Texture;
+	using CreateDesc		= Texture_CreateDesc;
+	using Desc				= Texture_Desc;
+	using TextureCreateDesc	= Texture_CreateDesc;
 
 public:
-	virtual ~Texture()				= default;
+	virtual ~Texture();
 
-	void create	(CreateDesc& cDesc);
 	void destroy();
-
 
 public:
 	RenderDataType		type()			const;
 	const Desc&			desc()			const;
 
-	TextureFlags		flag()			const;
+	TextureUsageFlags	usageFlags()	const;
 	ColorType			format()		const;
 	const SamplerState&	samplerState()	const;
 	u8					mipCount()		const;
-
+	u8					layerCount()	const;
+	u8					sampleCount()	const;
 	Vec3u				size()			const;
 
 protected:
@@ -317,18 +441,26 @@ protected:
 
 	virtual void setNull() = 0;	// only use  for swapchain
 
+	bool isValid	(TextureCreateDesc& cDesc);
+	void checkValid	(TextureCreateDesc& cDesc);
+
 protected:
-	RenderDataType	_type;
+	void onCreate		(TextureCreateDesc& cDesc);
+	virtual void onDestroy		();
+
+protected:
 	Desc			_desc;
 };
 
-inline RenderDataType				Texture::type()			const { return _type; }
+inline RenderDataType				Texture::type()			const { return _desc.type; }
 inline const Texture::Desc&			Texture::desc()			const { return _desc; }
 
-inline TextureFlags					Texture::flag()		const { return desc().flag; }
+inline TextureUsageFlags			Texture::usageFlags()	const { return desc().usageFlags; }
 inline ColorType					Texture::format()		const { return desc().format; }
 inline const SamplerState&			Texture::samplerState()	const { return desc().samplerState; }
 inline u8							Texture::mipCount()		const { return desc().mipCount; }
+inline u8							Texture::layerCount()	const { return desc().layerCount; }
+inline u8							Texture::sampleCount()	const { return desc().sampleCount; }
 
 inline Vec3u						Texture::size()			const { return desc().size; }
 
@@ -365,9 +497,8 @@ public:
 	virtual ~Texture2D();
 
 	void create	(CreateDesc& cDesc);
-	void destroy();
 
-	void _internal_uploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
+	void uploadToGpu(CreateDesc& cDesc);
 
 	Size size() const;
 
@@ -390,11 +521,6 @@ inline Texture2D::Size Texture2D::size() const { return Tuple2u{Base::size().x, 
 #endif
 
 class Texture3D : public Texture
-{
-
-};
-
-class TextureCube : public Texture
 {
 
 };

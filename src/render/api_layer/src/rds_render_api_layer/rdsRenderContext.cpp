@@ -35,7 +35,7 @@ Backbuffers::create(RenderContext* rdCtx, SizeType imageCount)
 	auto texCDesc = Texture2D::makeCDesc();
 	const auto& framebufferSize = rdCtx->framebufferSize();
 	texCDesc.size.set(sCast<u32>(framebufferSize.x), sCast<u32>(framebufferSize.y), sCast<u32>(1));
-	texCDesc.isBackbuffer = true;
+	texCDesc.usageFlags = TextureUsageFlags::BackBuffer;
 
 	_images.resize(imageCount);
 	for (size_t i = 0; i < imageCount; i++)

@@ -267,7 +267,7 @@ Vk_Swapchain::createDepthResources()
 	destroyDepthResources();
 
 	auto* rdDevVk			= renderDeviceVk();
-	auto* vkAllocCallbacks	= rdDevVk->memoryContext()->vkAlloc();
+	auto* vkAlloc			= rdDevVk->memoryContext()->vkAlloc();
 	auto* vkGraphicsQueue	= _rdCtx->vkGraphicsQueue();
 	auto& vkRdFrame			= _rdCtx->vkRdFrame();
 
@@ -277,8 +277,8 @@ Vk_Swapchain::createDepthResources()
 
 	Vk_AllocInfo allocInfo = {};
 	allocInfo.usage = RenderMemoryUsage::GpuOnly;
-	_vkDepthImage.create(rdDevVk, vkAllocCallbacks, &allocInfo, sCast<u32>(info().rect2f.w), sCast<u32>(info().rect2f.h)
-		, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, QueueTypeFlags::Graphics);
+	_vkDepthImage.create(rdDevVk, vkAlloc, &allocInfo, sCast<u32>(info().rect2f.w), sCast<u32>(info().rect2f.h)
+		, depthFormat, VK_IMAGE_TILING_OPTIMAL, 1, 1, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, QueueTypeFlags::Graphics);
 	_vkDepthImageView.create(_vkDepthImage.hnd(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, rdDevVk);
 
 	{

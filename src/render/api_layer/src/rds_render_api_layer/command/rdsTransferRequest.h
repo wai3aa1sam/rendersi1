@@ -16,9 +16,14 @@ class TransferContext;
 class TransferRequest_UploadTextureJob;
 class TransferRequest_UploadBufferJob;
 
+class Texture2D;
+class RenderGpuBuffer;
+
 class TransferRequest : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
+	friend class Texture2D;
+	friend class RenderGpuBuffer;
 public:
 	using UploadTextureJob	= TransferRequest_UploadTextureJob;
 	using UploadTextureJobs = MutexProtected<Vector<UPtr<UploadTextureJob>, 32 > >;
@@ -85,5 +90,29 @@ inline bool TransferRequest::isUploadTextureCompleted() const { return _uploadTe
 
 
 #endif
+
+
+class TransferRequest_UploadTextureJob : public Job_Base
+{
+public:
+	TransferRequest_UploadTextureJob(Texture2D* tex, Texture2D_CreateDesc&& cDesc, TransferCommand_UploadTexture* cmd)
+	{
+		_tex	= tex;
+		_cDesc	= rds::move(cDesc);
+		_cmd = cmd;
+	}
+
+	virtual void execute() override
+	{
+		_notYetSupported(RDS_SRCLOC);
+		//throwIf(true, "not ")
+		//_tex->uploadToGpu(_cDesc, _cmd);
+	}
+
+public:
+	TransferCommand_UploadTexture*	_cmd = nullptr;
+	SPtr<Texture2D>					_tex;
+	Texture2D_CreateDesc			_cDesc;
+};
 
 }

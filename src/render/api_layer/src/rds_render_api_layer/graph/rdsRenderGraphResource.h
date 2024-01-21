@@ -64,7 +64,7 @@ struct RdgResourceUsage
 {
 	using Type = RdgResourceType;
 	using BufUsage = RenderGpuBufferTypeFlags;
-	using TexUsage = TextureFlags;
+	using TexUsage = TextureUsageFlags;
 public:
 	//static bool checkValid(Type type)
 
@@ -288,7 +288,7 @@ struct RdgResourceTraits<RdgResource_TextureT>
 	using ResourceT			= RdgTexture;
 	using RenderResourceT	= RdgResource_TextureT;
 
-	using Usage				= TextureFlags;
+	using Usage				= TextureUsageFlags;
 
 public:
 	static constexpr RdgResourceType s_kType = RdgResourceType::Texture;
@@ -626,9 +626,9 @@ public:
 public:
 	RdgTextureHnd() = default;
 
-	Size			size()				const	{ return resource()->access()->size(); }
-	ColorType		format()			const	{ return resource()->desc().format; }
-	TextureFlags	usageFlags()		const	{ return desc().flag; }
+	Size				size()				const	{ return resource()->access()->size(); }
+	ColorType			format()			const	{ return resource()->desc().format; }
+	TextureUsageFlags	usageFlags()		const	{ return desc().usageFlags; }
 };
 
 class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>

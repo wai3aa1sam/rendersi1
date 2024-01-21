@@ -37,6 +37,14 @@ RDS_ENUM_ALL_OPERATOR(RenderGpuBufferTypeFlags);
 //---
 RDS_ENUM_CLASS(RenderGpuBufferFlags, u8);
 
+
+#if 0
+#pragma mark --- rdsRenderGpuBuffer_CreateDesc-Decl ---
+#endif // 0
+#if 1
+
+#if 0
+
 struct RenderGpuBuffer_CreateDesc : public RenderResource_CreateDesc
 {
 public:
@@ -49,7 +57,7 @@ public:
 	SizeType					offset		= 0;
 
 public:
-	RDS_RenderResource_COMMON_BODY(RenderGpuBuffer_CreateDesc);
+	RDS_RenderResource_CreateDesc_COMMON_BODY(RenderGpuBuffer_CreateDesc);
 
 	RenderGpuBuffer_CreateDesc(const RenderGpuBuffer_Desc& desc)
 	{
@@ -65,7 +73,7 @@ public:
 	}
 
 	void operator=(const RenderGpuBuffer_Desc& desc) { create(desc); }
-	
+
 public:
 	void create(const RenderGpuBuffer_Desc& desc);
 };
@@ -106,6 +114,55 @@ RenderGpuBuffer_CreateDesc::create(const RenderGpuBuffer_Desc& desc)
 	bufSize		= desc.bufSize;
 	stride		= desc.stride;
 }
+
+#endif // 0
+
+struct RenderGpuBuffer_Desc
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	using Type		= RenderGpuBufferTypeFlags;
+
+public:
+	static constexpr SizeType s_kAlign = 16;
+
+public:
+	RenderGpuBufferTypeFlags	typeFlags	= {};
+	SizeType					bufSize		= 0;
+	SizeType					stride		= s_kAlign;
+
+public:
+	RenderGpuBuffer_Desc() = default;
+	RenderGpuBuffer_Desc(const RenderGpuBuffer_Desc& desc)
+		: typeFlags(desc.typeFlags), bufSize(desc.bufSize), stride(desc.stride)
+	{
+
+	}
+};
+
+struct RenderGpuBuffer_CreateDesc : public RenderResource_CreateDescT<RenderGpuBuffer_Desc>
+{
+public:
+	RDS_RenderResource_CreateDesc_COMMON_BODY(RenderGpuBuffer_CreateDesc);
+
+public:
+	SizeType offset	= 0;
+
+	void create(const RenderGpuBuffer_Desc& desc)
+	{
+		sCast<RenderGpuBuffer_Desc&>(*this) = desc;
+	}
+
+	RenderGpuBuffer_CreateDesc(SizeType	bufSize_, SizeType stride_, RenderGpuBufferTypeFlags usageFlags_, SizeType offset_ = 0)
+	{
+		bufSize		= bufSize_;
+		stride		= stride_;
+		typeFlags	= usageFlags_;
+		offset		= offset_;
+	}
+};
+
+#endif
 
 class RenderGpuBuffer : public RenderResource
 {

@@ -7,27 +7,6 @@
 namespace rds
 {
 
-class TransferRequest_UploadTextureJob : public Job_Base
-{
-public:
-	TransferRequest_UploadTextureJob(Texture2D* tex, Texture2D_CreateDesc&& cDesc, TransferCommand_UploadTexture* cmd)
-	{
-		_tex	= tex;
-		_cDesc	= rds::move(cDesc);
-		_cmd = cmd;
-	}
-
-	virtual void execute() override
-	{
-		_tex->_internal_uploadToGpu(_cDesc, _cmd);
-	}
-
-public:
-	TransferCommand_UploadTexture*	_cmd = nullptr;
-	SPtr<Texture2D>					_tex;
-	Texture2D_CreateDesc			_cDesc;
-};
-
 class TransferRequest_UploadBufferJob : public Job_Base
 {
 public:
@@ -123,14 +102,17 @@ TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
 {
 	throwIf(!OsTraits::isMainThread(), "transferFrame() is not thread safe");
 
+	#if 0
 	RDS_TODO("put the logic to Texture.h");
 	RDS_TODO("all check funtion should have a dedicated function");
 
 	RDS_CORE_ASSERT( !(
-					 !(cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr()) 
-					 && (!cDesc._filename.is_empty() && cDesc._uploadImage.dataPtr())
-					 ), "Create Texture2D should use either filename or imageUpload, not both");
+		!(cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr()) 
+		&& (!cDesc._filename.is_empty() && cDesc._uploadImage.dataPtr())
+		), "Create Texture2D should use either filename or imageUpload, not both");
 	RDS_CORE_ASSERT(_uploadTexCmds, "");
+	#endif // 0
+
 
 	cDesc._internal_create(_tsfCtx->renderDevice(), true);
 

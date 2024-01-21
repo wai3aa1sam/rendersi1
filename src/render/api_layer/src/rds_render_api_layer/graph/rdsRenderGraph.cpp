@@ -287,8 +287,8 @@ RenderGraph::createBuffer(StrView name, const BufferCreateDesc& cDesc)
 RdgTextureHnd 
 RenderGraph::importTexture(StrView name, Texture* tex)
 {
-	RdgTexture_CreateDesc cDesc;
-	cDesc = tex->desc();
+	RdgTexture_CreateDesc cDesc = {};
+	cDesc.create(tex->desc());
 	auto	hnd		= createTexture(name, cDesc);
 	auto*	rdgTex	= sCast<RdgTexture*>(hnd._rdgRsc);
 	rdgTex->_desc = tex->desc();
@@ -298,7 +298,7 @@ RenderGraph::importTexture(StrView name, Texture* tex)
 }
 
 void 
-RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureFlags usageFlag, Access access)
+RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access)
 {
 	auto& exportRsc = _exportedTexs.emplace_back();
 	exportRsc.rdgRsc = hnd.resource();
@@ -313,7 +313,7 @@ RdgBufferHnd
 RenderGraph::importBuffer(StrView name, Buffer* buf, RenderGpuBufferTypeFlags lastUsage, Access lastAccess)
 {
 	RdgBuffer_CreateDesc cDesc;
-	cDesc = buf->desc();
+	cDesc.create(buf->desc());
 	auto	hnd		= createBuffer(name, cDesc);
 	auto*	rdgBuf	= sCast<RdgBuffer*>(hnd._rdgRsc);
 	rdgBuf->_desc = buf->desc();

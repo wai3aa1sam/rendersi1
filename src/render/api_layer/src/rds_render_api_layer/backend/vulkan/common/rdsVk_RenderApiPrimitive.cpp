@@ -229,8 +229,11 @@ Vk_Image::create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, Vk_A
 	Util::throwIfError(ret);
 }
 
+
 void 
-Vk_Image::create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags)
+Vk_Image::create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling
+				, u32 mipLevels, u32 layers
+				, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkImageCreateFlags createFlags, VkMemoryPropertyFlags vkMemPropFlags)
 {
 	RDS_CORE_ASSERT(width > 0 && height > 0, "");
 
@@ -242,15 +245,15 @@ Vk_Image::create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* 
 	imageInfo.extent.width	= width;
 	imageInfo.extent.height	= height;
 	imageInfo.extent.depth	= 1;
-	imageInfo.mipLevels		= 1;
-	imageInfo.arrayLayers	= 1;
+	imageInfo.mipLevels		= mipLevels;
+	imageInfo.arrayLayers	= layers;
 	imageInfo.format		= vkFormat;
 	imageInfo.tiling		= vkTiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage			= usage;
 	imageInfo.sharingMode	= VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.samples		= VK_SAMPLE_COUNT_1_BIT;
-	imageInfo.flags			= VkImageCreateFlagBits::VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT; // Optional
+	imageInfo.flags			= createFlags; // Optional
 
 	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;
 	auto queueCount = vkQueueIndices.get(queueIdices, queueTypeFlags);

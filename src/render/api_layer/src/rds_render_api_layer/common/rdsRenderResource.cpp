@@ -22,20 +22,6 @@ RenderResource::~RenderResource()
 }
 
 void 
-RenderResource::create(const RenderResource_CreateDesc& cDesc)
-{
-	RDS_CORE_ASSERT(!hasCreated() || cDesc._isBypassChecking, "!hasCreated() || cDesc._isBypassChecking");
-	RDS_CORE_ASSERT(cDesc._rdDev, "cDesc._rdDev");
-	RDS_CORE_ASSERT(!hasCreated() || (cDesc._rdDev && _rdDev && cDesc._rdDev == _rdDev), "RenderDevice is not the same as the original one");
-
-	_rdDev = cDesc._rdDev;
-
-	#if RDS_DEVELOPMENT
-	RDS_DEBUG_SRCLOC = cDesc._debugSrcLoc;
-	#endif // RDS_DEVELOPMENT
-}
-
-void 
 RenderResource::create(RenderDevice* rdDev)
 {
 	CreateDesc cDesc;

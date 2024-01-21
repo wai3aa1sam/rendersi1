@@ -533,6 +533,24 @@ Vk_RenderApiUtil::toVkSamplerAddressMode(SamplerWrap v)
 	//return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
 }
 
+VkImageType		
+Vk_RenderApiUtil::toVkImageType(RenderDataType v)
+{
+	using SRC = rds::RenderDataType;
+	switch (v)
+	{
+		case SRC::Texture1D:			{ return VkImageType::VK_IMAGE_TYPE_1D; }	break;
+		case SRC::Texture2D:			{ return VkImageType::VK_IMAGE_TYPE_2D; }	break;
+		case SRC::Texture3D:			{ return VkImageType::VK_IMAGE_TYPE_3D; }	break;
+		case SRC::TextureCube:			{ return VkImageType::VK_IMAGE_TYPE_2D; }	break;
+		case SRC::Texture1DArray:		{ return VkImageType::VK_IMAGE_TYPE_1D; }	break;
+		case SRC::Texture2DArray:		{ return VkImageType::VK_IMAGE_TYPE_2D; }	break;
+		case SRC::TextureCubeArray:		{ return VkImageType::VK_IMAGE_TYPE_2D; }	break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkImageType::VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+}
+
 VkImageViewType		
 Vk_RenderApiUtil::toVkImageViewType(RenderDataType v)
 {
@@ -551,6 +569,22 @@ Vk_RenderApiUtil::toVkImageViewType(RenderDataType v)
 	//return VkImageViewType::VK_IMAGE_VIEW_TYPE_MAX_ENUM;
 }
 
+VkSampleCountFlagBits		
+Vk_RenderApiUtil::toVkSampleCountFlagBits(u8 v)
+{
+	switch (v)
+	{
+		case 1:			{ return VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT; }	break;
+		case 2:			{ return VkSampleCountFlagBits::VK_SAMPLE_COUNT_2_BIT; }	break;
+		case 4:			{ return VkSampleCountFlagBits::VK_SAMPLE_COUNT_4_BIT; }	break;
+		case 8:			{ return VkSampleCountFlagBits::VK_SAMPLE_COUNT_8_BIT; }	break;
+		case 16:		{ return VkSampleCountFlagBits::VK_SAMPLE_COUNT_16_BIT; }	break;
+		case 32:		{ return VkSampleCountFlagBits::VK_SAMPLE_COUNT_32_BIT; }	break;
+		case 64:		{ return VkSampleCountFlagBits::VK_SAMPLE_COUNT_64_BIT; }	break;
+		default: { RDS_THROW("unsupport type {}", v); } break;
+	}
+	//return VkImageViewType::VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+}
 
 Vk_StageAccess
 Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout)
@@ -836,9 +870,9 @@ Vk_RenderApiUtil::toVkBlendOp(RenderState_BlendOp v)
 }
 
 VkImageLayout		
-Vk_RenderApiUtil::toVkImageLayout(TextureFlags v)
+Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v)
 {
-	using SRC = TextureFlags;
+	using SRC = TextureUsageFlags;
 	switch (v)
 	{
 		case SRC::None:				{ return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED; }						break;
@@ -853,9 +887,9 @@ Vk_RenderApiUtil::toVkImageLayout(TextureFlags v)
 }
 
 VkImageLayout		
-Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access)
+Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v, RenderAccess access)
 {
-	using SRC = TextureFlags;
+	using SRC = TextureUsageFlags;
 	switch (v)
 	{
 		case SRC::None:				{ RDS_CORE_ASSERT(access == RenderAccess::None); return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED; }		break;
@@ -870,9 +904,9 @@ Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access)
 }
 
 VkImageLayout		
-Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access, RenderTargetLoadOp op)
+Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v, RenderAccess access, RenderTargetLoadOp op)
 {
-	using SRC = TextureFlags;
+	using SRC = TextureUsageFlags;
 	RDS_CORE_ASSERT(op != RenderTargetLoadOp::None, "op != RenderTargetLoadOp::None");
 
 	if (op == RenderTargetLoadOp::DontCare || op == RenderTargetLoadOp::Clear)
@@ -894,9 +928,9 @@ Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access, RenderTar
 }
 
 VkImageLayout		
-Vk_RenderApiUtil::toVkImageLayout(TextureFlags v, RenderAccess access, RenderTargetStoreOp op)
+Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v, RenderAccess access, RenderTargetStoreOp op)
 {
-	using SRC = TextureFlags;
+	using SRC = TextureUsageFlags;
 	RDS_CORE_ASSERT(op != RenderTargetStoreOp::None, "op != RenderTargetStoreOp::None");
 
 	if (op == RenderTargetStoreOp::DontCare)

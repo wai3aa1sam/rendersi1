@@ -213,9 +213,11 @@ public:
 	static StrView					toShaderStageProfile(ShaderStageFlag v);
 	static VkDescriptorType			toVkDescriptorType	(ShaderResourceType v);
 
-	static VkFilter				toVkFilter				(SamplerFilter v);
-	static VkSamplerAddressMode toVkSamplerAddressMode	(SamplerWrap v);
-	static VkImageViewType		toVkImageViewType		(RenderDataType v);
+	static VkFilter					toVkFilter				(SamplerFilter v);
+	static VkSamplerAddressMode		toVkSamplerAddressMode	(SamplerWrap v);
+	static VkImageType				toVkImageType			(RenderDataType v);
+	static VkImageViewType			toVkImageViewType		(RenderDataType v);
+	static VkSampleCountFlagBits	toVkSampleCountFlagBits	(u8 v);
 
 	static Vk_AccessFlags toVkAccessFlag(RenderAccess v);
 
@@ -234,10 +236,10 @@ public:
 	static VkBlendFactor		toVkBlendFactor			(RenderState_BlendFactor v);
 	static VkBlendOp			toVkBlendOp				(RenderState_BlendOp v);
 
-	static VkImageLayout		toVkImageLayout(TextureFlags v);
-	static VkImageLayout		toVkImageLayout(TextureFlags v, RenderAccess access);
-	static VkImageLayout		toVkImageLayout(TextureFlags v, RenderAccess access, RenderTargetLoadOp  op);
-	static VkImageLayout		toVkImageLayout(TextureFlags v, RenderAccess access, RenderTargetStoreOp op);
+	static VkImageLayout		toVkImageLayout(TextureUsageFlags v);
+	static VkImageLayout		toVkImageLayout(TextureUsageFlags v, RenderAccess access);
+	static VkImageLayout		toVkImageLayout(TextureUsageFlags v, RenderAccess access, RenderTargetLoadOp  op);
+	static VkImageLayout		toVkImageLayout(TextureUsageFlags v, RenderAccess access, RenderTargetStoreOp op);
 
 	template<size_t N> static void getVkClearValuesTo(Vector<VkClearValue, N>& out, const RenderCommand_ClearFramebuffers* value, SizeType colorCount, bool hasDepth);
 	

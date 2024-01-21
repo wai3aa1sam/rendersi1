@@ -2,6 +2,9 @@
 #include "rdsTexture.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 
+#include "rds_render_api_layer/transfer/rdsTransferContext.h"
+#include "rds_render_api_layer/command/rdsTransferRequest.h"
+
 namespace rds
 {
 
@@ -19,22 +22,52 @@ RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
 #if 1
 
 Texture::Texture(RenderDataType type)
-	: _type(type)
 {
-
+	_desc.type = type;
 }
 
-void 
-Texture::create	(CreateDesc& cDesc)
+Texture::~Texture()
 {
-	Base::create(cDesc);
-	_desc = cDesc;
+	
 }
+
+//void 
+//Texture::create	(CreateDesc& cDesc)
+//{
+//	Base::create(cDesc);
+//	_desc = cDesc;
+//}
 
 void 
 Texture::destroy()
 {
+	onDestroy();
 	Base::destroy();
+}
+
+void 
+Texture::onCreate(TextureCreateDesc& cDesc)
+{
+	_desc = cDesc;
+}
+
+void 
+Texture::onDestroy()
+{
+
+}
+
+bool 
+Texture::isValid(TextureCreateDesc& cDesc)
+{
+	bool isValid = cDesc.size.x > 0 && cDesc.size.y > 0 && cDesc.size.z > 0;
+	return isValid;
+}
+
+void
+Texture::checkValid(TextureCreateDesc& cDesc)
+{
+	RDS_CORE_ASSERT(isValid(cDesc), "invalid cDesc");
 }
 
 #endif
@@ -47,7 +80,9 @@ Texture::destroy()
 Texture2D::CreateDesc	
 Texture2D::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 {
-	return CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
+	auto o = CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
+	o.type = RenderDataType::Texture2D;
+	return o;
 }
 
 SPtr<Texture2D>
@@ -66,44 +101,51 @@ Texture2D::~Texture2D()
 	RDS_PROFILE_SCOPED();
 }
 
+
 void 
 Texture2D::create(CreateDesc& cDesc)
 {
-	destroy();
-
+	Base::create(cDesc);
 	onCreate(cDesc);
 	onPostCreate(cDesc);
 }
 
 void 
-Texture2D::destroy()
+Texture2D::uploadToGpu(CreateDesc& cDesc)
 {
-	onDestroy();
-	Base::destroy();
+	throwIf(!OsTraits::isMainThread(), "uploadToGpu must in main thread, otherwise use uploadToGpuAsync instead");
+
+	auto* rdDev		= renderDevice();
+	auto& tsfCtx	= rdDev->transferContext();
+	auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
+
+	checkValid(cDesc);
+
+	using UploadTextureJob = TransferRequest_UploadTextureJob;
+	#if 0
+	TransferRequest_UploadTextureJob* job = nullptr;
+	{
+		RDS_TODO("revisit this part, is upload on every thread needed?");
+		auto lockedData = tsfReq._uploadTextureJobs.scopedULock();
+
+		RDS_TODO("allocator for UploadTextureJob");
+		job = lockedData->emplace_back(makeUPtr<UploadTextureJob>(this, rds::move(cDesc), uploadTexCmds().uploadTexture()));
 }
 
-void 
-Texture2D::_internal_uploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
-{
-	RDS_CORE_ASSERT(cmd, "");
+	auto hnd = job->dispatch(_uploadTextureJobParentHnd)->setName("up"); RDS_UNUSED(hnd);
+	#endif // 0
+	
+	destroy();
 
+	auto* cmd = tsfReq.uploadTexCmds().uploadTexture();
 	cmd->dst	= this;
-
-	cDesc.loadImage();
-	cDesc._isBypassChecking = true;
-	_create(cDesc);
-
 	onUploadToGpu(cDesc, cmd);
 }
 
 void 
 Texture2D::onCreate(CreateDesc& cDesc)
 {
-	_create(cDesc);
-	if (cDesc.hasDataToUpload())
-	{
-		transferRequest().uploadTexture(this, rds::move(cDesc));
-	}
+	Base::onCreate(cDesc);
 }
 
 void 
@@ -116,24 +158,15 @@ void
 Texture2D::onDestroy()
 {
 
+
+	Base::onDestroy();
 }
 
 void 
 Texture2D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
-	RDS_CORE_ASSERT(cDesc.size.x > 0 && cDesc.size.y > 0, "cDesc.size.x > 0 && cDesc.size.y > 0 but cDesc.size=[{}], cDesc._filename: {}", cDesc.size, cDesc._filename);
-	_create(cDesc);
-}
-
-void 
-Texture2D::_create(CreateDesc& cDesc)
-{
+	RDS_CORE_ASSERT(cmd, "");
 	Base::create(cDesc);
-
-	if (cDesc.hasDataToUpload())
-	{
-		//_desc.size.set(sCast<u32>(cDesc.uploadImage().width()), sCast<u32>(cDesc.uploadImage().height()), sCast<u32>(1));
-	}
 }
 
 #endif

@@ -281,7 +281,7 @@ RenderUiContext::_createFontTexture()
 	#endif // 0
 
 	Texture2D_CreateDesc cDesc;
-	cDesc.create(pixels, Color::s_kColorType, width, height);
+	cDesc.create(pixels, width, height, Color::s_kColorType);
 
 	auto* rdDev = renderDevice();
 	_fontTex = rdDev->createTexture2D(cDesc);

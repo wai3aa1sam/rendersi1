@@ -38,10 +38,11 @@ class TransferContext;
 #endif // 0
 #if 1
 
-#define RDS_RenderResource_COMMON_BODY(T) \
+#define RDS_RenderResource_CreateDesc_COMMON_BODY(T) \
 	T() {} \
 	T(const SrcLoc& RDS_DEBUG_SRCLOC_ARG) { RDS_DEBUG_SRCLOC_ASSIGN(); }
 
+#if 0
 struct RenderResource_CreateDesc
 {
 	friend class RenderResource;
@@ -67,12 +68,55 @@ public:
 	}
 
 protected:
-	
+
 protected:
 	mutable RenderDevice*	_rdDev				= nullptr;
 	mutable bool			_isBypassChecking	= false;
 	mutable RDS_DEBUG_SRCLOC_DECL;
 };
+
+#endif // 0
+
+#if 1
+
+struct Empty {};
+
+template<class BASE>
+struct RenderResource_CreateDescT : public BASE
+{
+	friend class RenderResource;
+	friend class RenderDevice;
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	void _internal_create(RenderDevice* rdDev) const
+	{
+		_rdDev = rdDev;
+	}
+
+	void _internal_create(RenderDevice* rdDev, bool isBypassChecking) const
+	{
+		_rdDev = rdDev;
+		_isBypassChecking = isBypassChecking;
+	}
+
+	void _internal_create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_) const
+	{
+		_rdDev = rdDev;
+		_isBypassChecking = isBypassChecking;
+		RDS_DEBUG_SRCLOC_ASSIGN();
+	}
+
+protected:
+
+protected:
+	mutable RenderDevice*	_rdDev				= nullptr;
+	mutable bool			_isBypassChecking	= false;
+	mutable RDS_DEBUG_SRCLOC_DECL;
+};
+
+using RenderResource_CreateDesc = RenderResource_CreateDescT<Empty>;
+
+#endif // 0
 
 class RenderResource : public RefCount_Base
 {
@@ -89,7 +133,7 @@ public:
 	virtual ~RenderResource();
 
 public:
-	void create(const RenderResource_CreateDesc& cDesc);
+	template<class T> void create(const RenderResource_CreateDescT<T>& cDesc);
 	void create(RenderDevice* rdDev);
 	void create(RenderDevice* rdDev, bool isBypassChecking);
 	void create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_);
@@ -119,6 +163,21 @@ protected:
 
 	RenderDevice* _rdDev = nullptr;
 };
+
+template<class T> inline
+void 
+RenderResource::create(const RenderResource_CreateDescT<T>& cDesc)
+{
+	RDS_CORE_ASSERT(!hasCreated() || cDesc._isBypassChecking, "!hasCreated() || cDesc._isBypassChecking");
+	RDS_CORE_ASSERT(cDesc._rdDev, "cDesc._rdDev");
+	RDS_CORE_ASSERT(!hasCreated() || (cDesc._rdDev && _rdDev && cDesc._rdDev == _rdDev), "RenderDevice is not the same as the original one");
+
+	_rdDev = cDesc._rdDev;
+
+	#if RDS_DEVELOPMENT
+	RDS_DEBUG_SRCLOC = cDesc._debugSrcLoc;
+	#endif // RDS_DEVELOPMENT
+}
 
 inline
 const char* 

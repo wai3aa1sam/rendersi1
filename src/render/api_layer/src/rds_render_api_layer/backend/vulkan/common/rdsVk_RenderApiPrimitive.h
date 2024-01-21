@@ -95,6 +95,9 @@ class	RenderDevice_Vk;
 
 struct	SamplerState;
 class	Texture2D_Vk;
+class	TextureCube_Vk;
+
+struct	Texture_Desc;
 
 class	Vk_Buffer;
 
@@ -420,7 +423,11 @@ public:
 	void operator=	(Vk_Image&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
 
 	void create(Vk_Allocator* vkAlloc, const VkImageCreateInfo* imageInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	void create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create(RenderDevice_Vk* rdDevVk, const Texture_Desc& texDesc, QueueTypeFlags queueTypeFlags
+				, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo* allocInfo, u32 width, u32 height, VkFormat vkFormat, VkImageTiling vkTiling
+				, u32 mipLevels, u32 layers
+				, VkImageUsageFlags usage, QueueTypeFlags queueTypeFlags, VkImageCreateFlags createFlags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void create(Vk_Image_T* vkImage);
 
 	void destroy();
@@ -448,7 +455,7 @@ public:
 	void create(VkImageViewCreateInfo* viewInfo, RenderDevice_Vk* rdDevVk);
 	void create(Vk_Image*	vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount, RenderDevice_Vk* rdDevVk);
 	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount, RenderDevice_Vk* rdDevVk);
-	void create(Texture2D_Vk* tex2DVk, RenderDevice_Vk* rdDevVk);
+	void create(Vk_Image_T*	vkImageHnd, const Texture_Desc&	desc,	RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 
 };
