@@ -7,6 +7,8 @@
 #include "rds_render_api_layer/backend/vulkan/pass/rdsVk_RenderPassPool.h"
 #include "rds_render_api_layer/backend/vulkan/pass/rdsVk_FramebufferPool.h"
 
+#include "rds_render_api_layer/texture/rdsTexture.h"
+
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
@@ -366,6 +368,19 @@ Vk_CommandBuffer::cmd_copyBuffer(Vk_Buffer_T* dst, Vk_Buffer_T* src, VkDeviceSiz
 }
 
 void 
+Vk_CommandBuffer::cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, Span<VkBufferImageCopy> copyDescs)
+{
+	vkCmdCopyBufferToImage(
+		hnd(),
+		src,
+		dst,
+		layout,
+		sCast<u32>(copyDescs.size()),
+		copyDescs.data()
+	);
+}
+
+void 
 Vk_CommandBuffer::cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height, u32 srcOffset)
 {
 	RDS_CORE_ASSERT(width != 0 || height != 0, "");
@@ -479,9 +494,9 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& de
 
 	barrier.subresourceRange.aspectMask		= aspectMask;
 	barrier.subresourceRange.baseMipLevel	= desc.baseMip;
-	barrier.subresourceRange.baseArrayLayer	= 0;
+	barrier.subresourceRange.baseArrayLayer	= desc.baseLayer;
 	barrier.subresourceRange.levelCount		= desc.mipCount;
-	barrier.subresourceRange.layerCount		= 1;
+	barrier.subresourceRange.layerCount		= desc.layerCount;
 
 	barrier.srcAccessMask = vkStageAcess.srcAccess;
 	barrier.dstAccessMask = vkStageAcess.dstAccess;
@@ -546,6 +561,23 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, V
 }
 
 void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 baseLayer, u32 layerCount)
+{
+	Vk_Cmd_AddImageMemBarrierDesc desc = {};
+	desc.image		= image;
+	desc.format		= vkFormat;
+	desc.srcLayout	= srcLayout;
+	desc.dstLayout	= dstLayout;
+
+	desc.baseMip	= sCast<u8>(baseMip);
+	desc.mipCount	= sCast<u8>(mipCount);
+	desc.baseLayer	= sCast<u8>(baseLayer);
+	desc.layerCount	= sCast<u8>(layerCount);
+
+	cmd_addImageMemBarrier(desc);
+}
+
+void 
 Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner)
 {
 	Vk_Cmd_AddImageMemBarrierDesc desc = {};
@@ -556,6 +588,47 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, V
 	desc.srcQueueFamilyIdx	= srcQueueFamilyIdx;
 	desc.dstQueueFamilyIdx	= dstQueueFamilyIdx;
 	desc.isSrcQueueOwner	= isSrcQueueOwner;
+
+	cmd_addImageMemBarrier(desc);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout
+										, const Texture_Desc& texDesc, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner)
+{
+	Vk_Cmd_AddImageMemBarrierDesc desc = {};
+	desc.image				= image;
+	desc.format				= vkFormat;
+	desc.srcLayout			= srcLayout;
+	desc.dstLayout			= dstLayout;
+	desc.srcQueueFamilyIdx	= srcQueueFamilyIdx;
+	desc.dstQueueFamilyIdx	= dstQueueFamilyIdx;
+	desc.isSrcQueueOwner	= isSrcQueueOwner;
+
+	desc.baseMip			= 0;
+	desc.mipCount			= texDesc.mipCount;
+	desc.baseLayer			= 0;
+	desc.layerCount			= texDesc.layerCount;
+
+	cmd_addImageMemBarrier(desc);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 baseLayer, u32 layerCount, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner)
+{
+	Vk_Cmd_AddImageMemBarrierDesc desc = {};
+	desc.image				= image;
+	desc.format				= vkFormat;
+	desc.srcLayout			= srcLayout;
+	desc.dstLayout			= dstLayout;
+	desc.srcQueueFamilyIdx	= srcQueueFamilyIdx;
+	desc.dstQueueFamilyIdx	= dstQueueFamilyIdx;
+	desc.isSrcQueueOwner	= isSrcQueueOwner;
+
+	desc.baseMip			= sCast<u8>(baseMip);
+	desc.mipCount			= sCast<u8>(mipCount);
+	desc.baseLayer			= sCast<u8>(baseLayer);
+	desc.layerCount			= sCast<u8>(layerCount);
 
 	cmd_addImageMemBarrier(desc);
 }

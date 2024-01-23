@@ -18,7 +18,7 @@ Shader {
 		DepthTest	LessEqual
 
 //		DepthTest	Always
-		DepthWrite	false
+//		DepthWrite	false
 
 		Wireframe false
 

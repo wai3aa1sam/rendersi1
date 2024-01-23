@@ -41,7 +41,7 @@ Vk_TransferFrame::create(TransferContext_Vk* tsfCtxVk)
 	_graphicsVkCmdPool.create(graphicsQueueFamilyIdx, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, rdDevVk);
 
 	// thread-safe
-	_stagingAlloc.create(rdDevVk);
+	//_stagingAlloc.create(rdDevVk);
 	_linearStagingBuf.create(rdDevVk);
 
 	_setDebugName();
@@ -57,8 +57,6 @@ Vk_TransferFrame::destroy()
 	_graphicsVkCmdPool.destroy(rdDevVk);
 	_transferVkCmdPool.destroy(rdDevVk);
 
-	_stagingAlloc.destroy();
-
 	_inFlightVkFnc.destroy(rdDevVk);
 	_completedVkSmp.destroy(rdDevVk);
 
@@ -69,11 +67,6 @@ Vk_TransferFrame::destroy()
 void 
 Vk_TransferFrame::clear()
 {
-	{
-		auto lockedData = _stagingBufs.scopedULock();
-		lockedData->clear();
-	}
-
 	_linearStagingBuf.reset();
 
 	_hasTransferedGraphicsResoures	= false;
@@ -82,28 +75,6 @@ Vk_TransferFrame::clear()
 	auto* rdDevVk = renderDeviceVk();
 	_graphicsVkCmdPool.reset(rdDevVk);
 	_transferVkCmdPool.reset(rdDevVk);
-}
-
-Vk_Buffer* 
-Vk_TransferFrame::requestStagingBuffer(u32& outIdx, VkDeviceSize size, RenderDevice_Vk* rdDevVk)
-{
-	RDS_CORE_ASSERT(size > 0, "request size must not be 0");
-	RDS_TODO("MutexProtected with a ptr element should be faster, but need a allocator (linear is ok), otherwise it need allocate everytime");
-
-	Vk_AllocInfo allocInfo = {};
-	allocInfo.usage = RenderMemoryUsage::CpuToGpu;
-
-	Vk_Buffer* staging = nullptr;
-	{
-		auto lockedData = _stagingBufs.scopedULock();
-		auto& stagingBufs = *lockedData;
-
-		outIdx = sCast<u32>(stagingBufs.size());
-		staging = stagingBufs.emplace_back(makeUPtr<Vk_Buffer>()).ptr();
-	}
-	staging->create(rdDevVk, &_stagingAlloc, &allocInfo, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, QueueTypeFlags::Transfer);
-
-	return staging;
 }
 
 void
@@ -121,14 +92,11 @@ Vk_TransferFrame::uploadToStagingBuf(StagingHandle& out, ByteSpan data, SizeType
 	memory_copy(dst, data.data(), bytes);
 }
 
-Vk_Buffer_T* 
-Vk_TransferFrame::getVkStagingBufHnd(u32 idx)
+void*	
+Vk_TransferFrame::mappedStagingBufData(StagingHandle hnd)
 {
-	auto lockedData = _stagingBufs.scopedULock();
-	auto& stagingBufs = *lockedData;
-
-	RDS_CORE_ASSERT(idx < stagingBufs.size(), "invalid vk staging buffer index");
-	return stagingBufs[idx]->hnd();
+	auto* dst = _linearStagingBuf.mappedData<u8*>(hnd);
+	return dst;
 }
 
 Vk_Buffer_T* 

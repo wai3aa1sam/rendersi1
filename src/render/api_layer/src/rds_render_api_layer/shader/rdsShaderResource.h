@@ -4,6 +4,7 @@
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
+#include "rds_render_api_layer/texture/rdsTextureCube.h"
 
 namespace rds
 {
@@ -94,7 +95,7 @@ public:
 public:
 	template<class T>	void setParam		(StrView name, const T& v);
 	template<class TEX>	void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
-						void setSamplerParam(StrView name, const SamplerState& v);
+						void setSamplerParam(StrView name, const SamplerState&	v);
 						void setBufferParam	(StrView name, RenderGpuBuffer*		v);
 						//void setImageParam	(StrView name, Texture*				v);
 

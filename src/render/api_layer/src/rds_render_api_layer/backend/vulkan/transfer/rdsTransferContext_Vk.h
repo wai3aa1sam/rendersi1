@@ -26,8 +26,9 @@ public:
 
 	Vk_TransferFrame& vkTransferFrame();
 
-	void uploadToStagingBuf(u32& outStagingIdx,		ByteSpan data, SizeType offset = 0);
-	void uploadToStagingBuf(StagingHandle& outHnd,	ByteSpan data, SizeType offset = 0);
+	void	requestStagingBuf	(StagingHandle& outHnd,	SizeType size);
+	void	uploadToStagingBuf	(StagingHandle& outHnd,	ByteSpan data, SizeType offset = 0);
+	void*	mappedStagingBufData(StagingHandle  hnd);
 
 public:
 	void onTransferCommand_CopyBuffer	(TransferCommand_CopyBuffer*	cmd);

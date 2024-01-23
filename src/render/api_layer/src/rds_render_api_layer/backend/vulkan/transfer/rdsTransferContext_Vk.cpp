@@ -4,6 +4,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTextureCube_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -172,7 +173,8 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 		auto	vkFormat	= Util::toVkFormat(cmd->dst->format());
 		auto*	dst			= Vk_Texture::getVkImageHnd(cmd->dst);
 
-		vkCmdBuf->cmd_addImageMemBarrier(dst, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), queueFamilyIdx(queueType), false);
+		vkCmdBuf->cmd_addImageMemBarrier(dst, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+										, cmd->dst->desc(), transferQueueFamilyIdx(), queueFamilyIdx(queueType), false);
 	}
 
 	vkCmdBuf->endRecord();
@@ -190,35 +192,13 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 		vkCmdBuf->submit(&dstInFlighVkFnc);
 		dstInFlighVkFnc.wait(rdDevVk);
 	}
-
-	#if 0
-	RDS_TODO("delay rotate, another vector for should rotate parents? maybe not too, upload request should be less");
-	for (auto& e : bufCmds.commands())
-	{
-		auto* cmd = sCast<TransferCommand_UploadBuffer*>(e);
-
-		RDS_CORE_ASSERT(e->type() == TransferCommandType::UploadBuffer, "");
-		RDS_CORE_ASSERT(BitUtil::has(cmd->queueTypeflags, queueType), "");
-
-		if (auto parent = cmd->parent)
-		{
-			parent->rotate();
-		}
-	}
-	#endif // 1
 }
 
 void 
-TransferContext_Vk::uploadToStagingBuf(u32& outStagingIdx, ByteSpan data, SizeType offset)
+TransferContext_Vk::requestStagingBuf(StagingHandle& outHnd, SizeType size)
 {
-	RDS_CORE_ASSERT(data.size() > 0, "");
-
-	auto*	rdDevVk		= renderDeviceVk();
-	auto	bytes		= sCast<VkDeviceSize>(data.size());
-	auto*	stagingBuf	= vkTransferFrame().requestStagingBuffer(outStagingIdx, bytes, rdDevVk);
-
-	auto memmap = Vk_ScopedMemMapBuf{ stagingBuf };
-	memory_copy(memmap.data<u8*>(), data.data(), bytes);
+	RDS_CORE_ASSERT(size > 0, "");
+	vkTransferFrame().requestStagingHandle(outHnd, size);
 }
 
 void 
@@ -228,13 +208,18 @@ TransferContext_Vk::uploadToStagingBuf(StagingHandle& outHnd, ByteSpan data, Siz
 	vkTransferFrame().uploadToStagingBuf(outHnd, data, offset);
 }
 
+void*	
+TransferContext_Vk::mappedStagingBufData(StagingHandle  hnd)
+{
+	return vkTransferFrame().mappedStagingBufData(hnd);
+}
+
 void 
 TransferContext_Vk::_setDebugName()
 {
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkGraphicsQueue);
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkTransferQueue);
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkComputeQueue);
-
 }
 
 #if 0
@@ -295,9 +280,47 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	const auto&		size		= cmd->dst->size();
 	auto			vkFormat	= Util::toVkFormat(cmd->dst->format());
 
-	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	vkCmdBuf->cmd_copyBufferToImage		(dst, statingBufHnd,	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, size.x, size.y, cmd->_stagingHnd.offset);
-	vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), graphicsQueueFamilyIdx(), true);
+	switch (cmd->dst->type())
+	{
+		case RenderDataType::Texture2D:
+		{
+			vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			vkCmdBuf->cmd_copyBufferToImage		(dst, statingBufHnd,	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, size.x, size.y, cmd->_stagingHnd.offset);
+			vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, transferQueueFamilyIdx(), graphicsQueueFamilyIdx(), true);
+		} break;
+
+		case RenderDataType::TextureCube:
+		{
+			using CopyToTextureCubeDesc = Vector<VkBufferImageCopy, TextureCube::s_kFaceCount>;
+			CopyToTextureCubeDesc cpyDescs;
+
+			auto& texDesc = cmd->dst->desc();
+
+			VkDeviceSize offset = cmd->_stagingHnd.offset;
+			for (u32 face = 0; face < TextureCube::s_kFaceCount; face++)
+			{
+				for (u32 mip = 0; mip < texDesc.mipCount; mip++)
+				{
+					auto& cpyDesc = cpyDescs.emplace_back();
+					cpyDesc.bufferOffset		= offset;
+					cpyDesc.bufferRowLength		= 0;
+					cpyDesc.bufferImageHeight	= 0;
+					cpyDesc.imageExtent			= VkExtent3D {cmd->dst->size().x, cmd->dst->size().y, cmd->dst->size().z};
+					cpyDesc.imageOffset			= VkOffset3D {0, 0, 0};
+
+					cpyDesc.imageSubresource = Util::toVkImageSubresourceLayers(texDesc, mip, face, 1);
+					offset += texDesc.totalByteSize();
+				}
+			}
+
+			vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, 1, 0, TextureCube::s_kFaceCount);
+			vkCmdBuf->cmd_copyBufferToImage		(dst, statingBufHnd,	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cpyDescs);
+			vkCmdBuf->cmd_addImageMemBarrier	(dst, vkFormat,			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+												, 0, 1, 0, TextureCube::s_kFaceCount, transferQueueFamilyIdx(), graphicsQueueFamilyIdx(), true);
+		} break;
+
+		default: { throwIf(true, "not yet supprot"); } break;
+	}
 }
 
 

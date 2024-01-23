@@ -113,6 +113,8 @@ Texture2D::create(CreateDesc& cDesc)
 void 
 Texture2D::uploadToGpu(CreateDesc& cDesc)
 {
+	using UploadTextureJob = TransferRequest_UploadTextureJob;
+
 	throwIf(!OsTraits::isMainThread(), "uploadToGpu must in main thread, otherwise use uploadToGpuAsync instead");
 
 	auto* rdDev		= renderDevice();
@@ -121,7 +123,6 @@ Texture2D::uploadToGpu(CreateDesc& cDesc)
 
 	checkValid(cDesc);
 
-	using UploadTextureJob = TransferRequest_UploadTextureJob;
 	#if 0
 	TransferRequest_UploadTextureJob* job = nullptr;
 	{

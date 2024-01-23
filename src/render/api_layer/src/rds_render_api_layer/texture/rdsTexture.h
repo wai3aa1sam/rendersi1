@@ -11,6 +11,18 @@ class Backbuffers;
 
 class TransferCommand_UploadTexture;
 
+#define TextureUsageFlags_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(ShaderResource,	= BitUtil::bit(0)) \
+	E(UnorderedAccess,	= BitUtil::bit(1)) \
+	E(RenderTarget,		= BitUtil::bit(2)) \
+	E(DepthStencil,		= BitUtil::bit(3)) \
+	E(BackBuffer,		= BitUtil::bit(4)) \
+	E(_kCount,) \
+//---
+RDS_ENUM_CLASS(TextureUsageFlags, u8);
+RDS_ENUM_ALL_OPERATOR(TextureUsageFlags);
+
 #if 0
 #pragma mark --- rdsSamplerState-Decl ---
 #endif // 0
@@ -68,219 +80,10 @@ public:
 
 #endif // 1
 
-
-
-#define TextureUsageFlags_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(ShaderResource,	= BitUtil::bit(0)) \
-	E(UnorderedAccess,	= BitUtil::bit(1)) \
-	E(RenderTarget,		= BitUtil::bit(2)) \
-	E(DepthStencil,		= BitUtil::bit(3)) \
-	E(BackBuffer,		= BitUtil::bit(4)) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(TextureUsageFlags, u8);
-RDS_ENUM_ALL_OPERATOR(TextureUsageFlags);
-
-#if 0
-#pragma mark --- rdsTexture_CreateDesc-Impl ---
-#endif // 0
-#if 0
-
-struct Texture_Desc;
-struct Texture_CreateDesc : public RenderResource_CreateDesc
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	RenderDataType  type			= RenderDataType::None;
-	TextureUsageFlags	flag			= TextureUsageFlags::ShaderResource;
-	ColorType		format			= ColorType::RGBAb;
-	SamplerState	samplerState;
-	Tuple3u			size			= {};
-	u8				mipCount		= 1;
-	u8				sampleCount		= 1;
-	u8				layerCount		= 1;
-
-public:
-	Texture_CreateDesc() = default;
-	Texture_CreateDesc(const Texture_Desc& desc);
-
-protected:
-	void loadImage(const Image& uploadImage)
-	{
-		if (uploadImage.isValidSize())
-		{
-			format	= uploadImage.colorType();
-			size.set(sCast<u32>(uploadImage.width()), sCast<u32>(uploadImage.height()), sCast<u32>(1));
-		}
-	}
-
-	void move(Texture_CreateDesc&& rhs)
-	{
-		*this = rhs;
-	}
-};
-
-struct Texture_Desc
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	RenderDataType  type			= RenderDataType::None;
-	TextureUsageFlags	flag			= TextureUsageFlags::ShaderResource;
-	ColorType		format			= ColorType::RGBAb;
-	SamplerState	samplerState;
-	Tuple3u			size			= {};
-	u8				mipCount		= 1;
-	u8				sampleCount		= 1;
-	u8				layerCount		= 1;
-	bool			isSrgb			= false;
-
-public:
-	Texture_Desc() = default;
-	Texture_Desc(const Texture_CreateDesc& cDesc)
-		: type(cDesc.type), flag(cDesc.flag), format(cDesc.format), samplerState(cDesc.samplerState)
-		, size(cDesc.size), mipCount(cDesc.mipCount), sampleCount(cDesc.sampleCount)
-	{
-
-	}
-};
-
-inline
-Texture_CreateDesc::Texture_CreateDesc(const Texture_Desc& desc)
-	: type(desc.type), flag(desc.flag), format(desc.format), samplerState(desc.samplerState)
-	, size(desc.size), mipCount(desc.mipCount), sampleCount(desc.sampleCount)
-{
-
-}
-
-struct Texture2D_CreateDesc : public Texture_CreateDesc
-{
-public:
-	friend class Texture2D;
-	friend class Renderer;
-	friend class TransferContext;
-	friend class TransferRequest;
-
-public:
-	using Base = Texture_CreateDesc;
-
-public:
-	bool isBackbuffer = false;
-
-public:
-	RDS_RenderResource_CreateDesc_COMMON_BODY(Texture2D_CreateDesc);
-
-	Texture2D_CreateDesc(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureUsageFlags flag_, u32 sampleCount_ = 1)
-	{
-		create(width, height, format_, mipCount_, flag_, sampleCount_);
-	}
-
-	Texture2D_CreateDesc(Tuple2u size, ColorType format_, u32 mipCount_, TextureUsageFlags flag_, u32 sampleCount_ = 1)
-		: Texture2D_CreateDesc(size.x, size.y, format_, mipCount_, flag_, sampleCount_)
-	{
-	}
-
-	Texture2D_CreateDesc(const Texture_Desc& desc)
-		: Base(desc)
-	{
-		_hasDataToUpload = false;
-	}
-
-	Texture2D_CreateDesc(Texture2D_CreateDesc&& rhs) { move(rds::move(rhs)); }
-	void operator=		(Texture2D_CreateDesc&& rhs) { RDS_CORE_ASSERT(this != &rhs, ""); move(rds::move(rhs)); }
-
-	void create(StrView filename)
-	{
-		_filename = filename;
-		_hasDataToUpload = true;
-	}
-
-	void create(Image&& uploadImage)
-	{
-		_uploadImage = rds::move(uploadImage);
-		_hasDataToUpload = true;
-	}
-
-	void create(const u8* data, ColorType format_, u32 width, u32 height)
-	{
-		format = format_;
-		size.set(width, height, sCast<u32>(1));
-		_uploadImage.create(format, width, height);
-		_uploadImage.copyToPixelData(ByteSpan(data, width * height * ColorUtil::pixelByteSize(format_)));
-
-		_hasDataToUpload = true;
-	}
-
-	void create(u32 width, u32 height, ColorType format_, u32 mipCount_, TextureUsageFlags flag_, u32 sampleCount_ = 1)
-	{
-		size.set(width, height, sCast<u32>(1));
-		format		= format_;
-		flag		= flag_;
-		mipCount	= sCast<u8>(mipCount_);
-		sampleCount = sCast<u8>(sampleCount_);
-
-		_hasDataToUpload = false;
-	}
-
-	void create(const Texture_Desc& desc)
-	{
-		create(desc.size.x, desc.size.y, desc.format, desc.mipCount, desc.flag, desc.sampleCount);
-	}
-
-	const Image&	uploadImage()		const	{ return _uploadImage; }
-	bool			hasDataToUpload()	const	{ return _hasDataToUpload; }
-
-protected:
-	void loadImage()
-	{
-		if (!hasDataToUpload())
-		{
-			//RDS_CORE_LOG("_uploadImage: {}, size: {}, filename: {}", _uploadImage.info().size, size, _filename);
-			return;
-		}
-		/*RDS_CORE_ASSERT( !(
-		!(_filename.is_empty() && !_uploadImage.dataPtr()) 
-		&& (!_filename.is_empty() && _uploadImage.dataPtr())
-		), "Create Texture2D should use either filename or imageUpload, not both");*/
-
-		if (!_filename.is_empty())
-		{
-			_uploadImage.load(_filename);
-		}
-		else if(_uploadImage.dataPtr())
-		{
-
-		}
-		//RDS_CORE_LOG("_uploadImage: {}, size: {}", _uploadImage.info().size, size);
-
-		Base::loadImage(_uploadImage);
-	}
-
-protected:
-	void move(Texture2D_CreateDesc&& rhs)
-	{
-		Base::move(rds::move(rhs));
-		//_size				= rhs._size;
-		_uploadImage		= rds::move(rhs._uploadImage);
-		_filename			= rds::move(rhs._filename);
-		_hasDataToUpload	= rhs._hasDataToUpload;
-	}
-
-protected:
-	//Tuple2u	_size = {0, 0};
-	Image	_uploadImage;
-	String	_filename;
-	bool	_hasDataToUpload : 1;
-};
-
-#endif
-
 #if 0
 #pragma mark --- rdsTexture_CreateDesc-Impl ---
 #endif // 0
 #if 1
-
-struct Texture_CreateDesc;
 
 struct Texture_Desc
 {
@@ -302,6 +105,8 @@ public:
 	{
 
 	}
+
+	SizeType totalByteSize() const { return ColorUtil::pixelByteSize(format) * size.x * size.y * size.z; }
 
 protected:
 	void move(Texture_Desc&& rhs)
@@ -436,6 +241,9 @@ public:
 	u8					sampleCount()	const;
 	Vec3u				size()			const;
 
+	SizeType			totalByteSize() const;
+
+
 protected:
 	Texture(RenderDataType type);
 
@@ -452,17 +260,19 @@ protected:
 	Desc			_desc;
 };
 
-inline RenderDataType				Texture::type()			const { return _desc.type; }
-inline const Texture::Desc&			Texture::desc()			const { return _desc; }
+inline RenderDataType				Texture::type()				const { return _desc.type; }
+inline const Texture::Desc&			Texture::desc()				const { return _desc; }
 
-inline TextureUsageFlags			Texture::usageFlags()	const { return desc().usageFlags; }
-inline ColorType					Texture::format()		const { return desc().format; }
-inline const SamplerState&			Texture::samplerState()	const { return desc().samplerState; }
-inline u8							Texture::mipCount()		const { return desc().mipCount; }
-inline u8							Texture::layerCount()	const { return desc().layerCount; }
-inline u8							Texture::sampleCount()	const { return desc().sampleCount; }
+inline TextureUsageFlags			Texture::usageFlags()		const { return desc().usageFlags; }
+inline ColorType					Texture::format()			const { return desc().format; }
+inline const SamplerState&			Texture::samplerState()		const { return desc().samplerState; }
+inline u8							Texture::mipCount()			const { return desc().mipCount; }
+inline u8							Texture::layerCount()		const { return desc().layerCount; }
+inline u8							Texture::sampleCount()		const { return desc().sampleCount; }
 
-inline Vec3u						Texture::size()			const { return desc().size; }
+inline Vec3u						Texture::size()				const { return desc().size; }
+
+inline Texture::SizeType			Texture::totalByteSize()	const { return desc().totalByteSize(); }
 
 #endif
 
@@ -496,8 +306,7 @@ public:
 	Texture2D();
 	virtual ~Texture2D();
 
-	void create	(CreateDesc& cDesc);
-
+	void create		(CreateDesc& cDesc);
 	void uploadToGpu(CreateDesc& cDesc);
 
 	Size size() const;

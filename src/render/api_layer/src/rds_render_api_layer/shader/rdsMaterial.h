@@ -54,6 +54,7 @@ public:
 	void setShader(Shader* shader);
 
 	void setParam(StrView name,			Texture2D*		v, bool isAutoSetSampler = true);
+	void setParam(StrView name,			TextureCube*	v, bool isAutoSetSampler = true);
 	void setParam(StrView name, const	SamplerState&	v);
 
 	void setParam(StrView name, const i32&		v);
@@ -96,6 +97,7 @@ protected:
 };
 
 inline void Material::setParam(StrView name,		Texture2D*		v, bool isAutoSetSampler)	{ return _setTexParam(name, v, isAutoSetSampler); }
+inline void Material::setParam(StrView name,		TextureCube*	v, bool isAutoSetSampler)	{ return _setTexParam(name, v, isAutoSetSampler); }
 inline void Material::setParam(StrView name, const	SamplerState&	v)							{ return _setSamplerParam(name, v); }
 
 inline void Material::setParam(StrView name, const i32&		v)		{ return _setParam(name, v); }

@@ -67,8 +67,16 @@ public:
 			vkDesc.samples			= VK_SAMPLE_COUNT_1_BIT;
 			vkDesc.loadOp			= Util::toVkAttachmentLoadOp (rdTarget.loadOp);
 			vkDesc.storeOp			= Util::toVkAttachmentStoreOp(rdTarget.storeOp);
+
+			#if 0
 			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, rdTarget.loadOp);
 			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, rdTarget.storeOp);	// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+			#else
+			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, rdTarget.loadOp);
+			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, rdTarget.storeOp);
+
+			vkDesc.initialLayout	= vkDesc.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED ? vkDesc.initialLayout : vkDesc.finalLayout;
+			#endif // 0
 
 			auto& attRef = vkAttacmentRefs.emplace_back();
 			attRef.attachment	= sCast<u32>(vkAttacmentRefs.size()) - 1;
@@ -86,8 +94,17 @@ public:
 			vkDesc.stencilLoadOp	= Util::toVkAttachmentLoadOp(depthStencil->stencilLoadOp);
 			vkDesc.storeOp			= VK_ATTACHMENT_STORE_OP_STORE;
 			vkDesc.stencilStoreOp	= VK_ATTACHMENT_STORE_OP_STORE;
+
+			// since we translate layout by barrier not subpass dependency
+			#if 0
 			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, depthStencil->loadOp);
 			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, RenderTargetStoreOp::Store);
+			#else
+			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, depthStencil->loadOp);
+			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, RenderTargetStoreOp::Store);
+
+			vkDesc.initialLayout	= vkDesc.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED ? vkDesc.initialLayout : vkDesc.finalLayout;
+			#endif // 0
 
 			auto& attRef = vkAttacmentRefs.emplace_back();
 			attRef.attachment	= sCast<u32>(vkAttacmentRefs.size()) - 1;

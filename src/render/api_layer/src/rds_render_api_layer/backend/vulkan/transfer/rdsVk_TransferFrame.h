@@ -239,10 +239,10 @@ public:
 
 	void clear();
 
-	Vk_Buffer*	requestStagingBuffer(u32& outIdx,			VkDeviceSize size, RenderDevice_Vk* rdDevVk);
+	void	requestStagingHandle	(StagingHandle& out, VkDeviceSize	size);
+	void	uploadToStagingBuf		(StagingHandle& out, ByteSpan		data, SizeType offset);
+	void*	mappedStagingBufData	(StagingHandle  hnd);
 
-	void requestStagingHandle	(StagingHandle& out, VkDeviceSize	size);
-	void uploadToStagingBuf		(StagingHandle& out, ByteSpan		data, SizeType offset);
 
 	// VK_COMMAND_BUFFER_LEVEL_PRIMARY
 	Vk_CommandBuffer* requestCommandBuffer			(QueueTypeFlags type, VkCommandBufferLevel level, StrView debugName);
@@ -277,36 +277,7 @@ protected:
 	bool _hasTransferedGraphicsResoures	= false;
 	bool _hasTransferedComputeResoures	= false;
 
-	// need thread-safe
-	Vk_Allocator								_stagingAlloc;
-	MutexProtected<Vector<UPtr<Vk_Buffer> > >	_stagingBufs;		// if use mutex, Vk_Buffer should be a ptr, otherwise will gg, when resize or assigned before unlock
-	
 	Vk_LinearStagingBuffer _linearStagingBuf;
-
-
-	// TODO: remove
-	#if 0
-
-	struct Vk_UploadBufferRequest
-	{
-		Vk_AllocHnd	 allocHnd	= nullptr;
-		Vk_Buffer_T* src		= nullptr;
-		Vk_Buffer_T* dst		= nullptr;
-		VkDeviceSize size		= 0;
-	};
-
-	struct Vk_UploadImageRequest
-	{
-		Vk_AllocHnd		allocHnd	= nullptr;
-		Vk_Buffer_T*	src			= nullptr;
-		Vk_Image_T*		dst			= nullptr;
-		Vec2u			size		= {};
-		VkFormat		format;
-	};
-
-	Vk_UploadBufferRequests	_uploadBufReqs;
-	Vk_UploadImageRequests	_uploadImgReqs;
-	#endif // 0
 };
 
 inline bool Vk_TransferFrame::hasTransferedGraphicsResoures() const { return _hasTransferedGraphicsResoures; }

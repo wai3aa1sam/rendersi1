@@ -44,6 +44,7 @@ protected:
 		compile("asset/shader/present.shader",	opt);
 		compile("asset/shader/preDepth.shader",	opt);
 		compile("asset/shader/gBuffer.shader",	opt);
+		compile("asset/shader/skybox.shader",	opt);
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)

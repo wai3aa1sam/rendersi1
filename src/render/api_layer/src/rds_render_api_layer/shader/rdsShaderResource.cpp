@@ -148,7 +148,7 @@ passTest(Vector<u8>& data, const ShaderResources::ConstBuffer::VarInfo& varInfo,
 	for (size_t i = 0; i < data.size(); i++)
 	{
 		//RDS_DUMP_VAR(i, data[i]);
-		data[i] = 0;
+		//data[i] = 0;
 	}
 	RDS_CALL_ONCE(RDS_LOG("sizeof(Mat4f) == {}, *reinCast<const Mat4f*>(value) = {}", sizeof(Mat4f), *reinCast<const Mat4f*>(value)));
 	RDS_CALL_ONCE(RDS_DUMP_VAR(reinCast<void*>(data.data()), *reinCast<Mat4f*>(&data[varInfo.offset])));

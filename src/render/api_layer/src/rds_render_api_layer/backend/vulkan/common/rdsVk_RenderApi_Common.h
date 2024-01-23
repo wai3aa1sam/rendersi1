@@ -29,6 +29,7 @@ struct RenderDevice_CreateDesc;
 
 struct Vk_RenderApiUtil;
 
+struct Texture_Desc;
 
 #if 1	
 
@@ -212,6 +213,11 @@ public:
 	static VkShaderStageFlagBits	toVkShaderStageBits	(ShaderStageFlag v);
 	static StrView					toShaderStageProfile(ShaderStageFlag v);
 	static VkDescriptorType			toVkDescriptorType	(ShaderResourceType v);
+
+	static VkImageSubresourceRange	toVkImageSubresourceRange(const Texture_Desc& desc, u32 baseMip, u32 baseLayer);
+	static VkImageSubresourceRange	toVkImageSubresourceRange(const Texture_Desc& desc);
+
+	static VkImageSubresourceLayers	toVkImageSubresourceLayers(const Texture_Desc& desc, u32 mipLevel, u32 baseLayer, u32 layerCount);
 
 	static VkFilter					toVkFilter				(SamplerFilter v);
 	static VkSamplerAddressMode		toVkSamplerAddressMode	(SamplerWrap v);

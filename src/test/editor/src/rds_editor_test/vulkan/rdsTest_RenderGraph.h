@@ -173,6 +173,10 @@ public:
 		mtl->setParam("rds_matrix_mvp", _mvp);
 	}
 
+	const Mat4f&			mvp()			const { return _mvp; }
+	Mat4f					projMatrix()	const { return _camera->projMatrix(); }
+	const math::Camera3f&	camera()		const { return *_camera; }
+
 private:
 	Vector<RenderMesh*> _rdMeshes;
 
@@ -205,7 +209,6 @@ public:
 
 		{
 			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
-			_testShader->makeCDesc();
 
 			_testMtl = Renderer::rdDev()->createMaterial();
 			_testMtl->setShader(_testShader);
@@ -214,6 +217,7 @@ public:
 
 			texCDesc.create("asset/texture/uvChecker.png");
 			_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
+			_uvCheckerTex->setDebugName("uvChecker");
 		}
 
 		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
@@ -231,8 +235,26 @@ public:
 
 		_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test_compute.shader");
 		_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
-
 		testCompute(_rdGraph, true);
+
+		{
+			_shaderSkybox	= Renderer::rdDev()->createShader("asset/shader/skybox.shader");
+			_mtlSkybox		= Renderer::rdDev()->createMaterial();
+			_mtlSkybox->setShader(_shaderSkybox);
+
+			auto texCDesc = TextureCube::makeCDesc();
+			Vector<StrView, TextureCube::s_kFaceCount> filenames;
+			filenames.emplace_back("asset/texture/skybox/default/right.png");
+			filenames.emplace_back("asset/texture/skybox/default/left.png");
+			filenames.emplace_back("asset/texture/skybox/default/top.png");
+			filenames.emplace_back("asset/texture/skybox/default/bottom.png");
+			filenames.emplace_back("asset/texture/skybox/default/front.png");
+			filenames.emplace_back("asset/texture/skybox/default/back.png");
+
+			texCDesc.create(filenames);
+			_texDefaultSkybox = Renderer::rdDev()->createTextureCube(texCDesc);
+			_texDefaultSkybox->setDebugName("default_skybox");
+		}
 	}
 
 	void update()
@@ -245,8 +267,11 @@ public:
 		_rdGraph.reset();
 
 		RdgTextureHnd oTex;
-		oTex = testDeferred(_rdGraph);
-		oTex = testCompute(_rdGraph, false);
+		RdgTextureHnd oTexDepth;
+
+		//oTex = testCompute(_rdGraph, false);
+		oTex = testDeferred(_rdGraph, &oTexDepth);
+		oTex = testSkybox(_rdGraph, oTex, oTexDepth);
 		finalComposite(_rdGraph, oTex);
 
 		_rdGraph.compile();
@@ -258,7 +283,7 @@ public:
 		_rdGraph.commit();
 	}
 
-	RdgTextureHnd testDeferred(RenderGraph& outRdGraph)
+	RdgTextureHnd testDeferred(RenderGraph& outRdGraph, RdgTextureHnd* outTexDepth)
 	{
 		auto* rdCtx = _rdCtx;
 
@@ -268,9 +293,10 @@ public:
 
 		auto screenSize = Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
-		RdgTextureHnd testColorTex	= _rdGraph.createTexture("testColorTex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget });
+		RdgTextureHnd testColorTex	= _rdGraph.createTexture("testColorTex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 		RdgTextureHnd depthTex		= _rdGraph.createTexture("depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
+		#if 0
 		auto& depthPrePass = _rdGraph.addPass("depth_pre_pass", RdgPassTypeFlags::Graphics);
 		depthPrePass.setRenderTarget(testColorTex,						RenderTargetLoadOp::Clear,		RenderTargetStoreOp::Store);
 		depthPrePass.setDepthStencil(depthTex,		RdgAccess::Write,	RenderTargetLoadOp::DontCare,	RenderTargetLoadOp::DontCare);
@@ -283,17 +309,18 @@ public:
 
 				scene()->drawScene(rdReq, _preDepthMtl);
 			});
+		#endif // 0
 
-		RdgTextureHnd albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget });
-		RdgTextureHnd normalTex		= _rdGraph.createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget });
-		RdgTextureHnd positionTex	= _rdGraph.createTexture("position_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget });
+		RdgTextureHnd albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+		RdgTextureHnd normalTex		= _rdGraph.createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+		RdgTextureHnd positionTex	= _rdGraph.createTexture("position_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 
 		auto& gBufferPass = _rdGraph.addPass("g_buffer_pass", RdgPassTypeFlags::Graphics);
 		//gBufferPass.setRenderTarget({albedoTex, normalTex, positionTex});
 		gBufferPass.setRenderTarget(albedoTex,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		gBufferPass.setRenderTarget(normalTex,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		gBufferPass.setRenderTarget(positionTex,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		//gBufferPass.setDepthStencil(depthTex,		RdgAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);	// currently use the pre-pass will cause z-flight
+		gBufferPass.setDepthStencil(depthTex,		RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
 		gBufferPass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
@@ -326,10 +353,9 @@ public:
 
 		#endif // 0
 
-
 		//_rdGraph.exportTexture(outColor, colorTex);
 		//_rdGraph.exportTexture(out1, albedoTex);
-
+		*outTexDepth = depthTex;
 		return normalTex;
 	}
 
@@ -418,6 +444,38 @@ public:
 		return test_compute_present_tex;
 	}
 
+	RdgTextureHnd testSkybox(RenderGraph& outRdGraph, RdgTextureHnd texColor, RdgTextureHnd texDepth)
+	{
+		auto screenSize		= Vec2u::s_cast(_rdCtx->framebufferSize()).toTuple2();
+		//auto skyboxTarget	= _rdGraph.createTexture("skyboxTarget", Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+
+		auto& skyboxPass = _rdGraph.addPass("test_skybox", RdgPassTypeFlags::Graphics);
+		//skyboxPass.readTexture(texColor);
+		skyboxPass.setRenderTarget(texColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+		skyboxPass.setDepthStencil(texDepth, RenderAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+		skyboxPass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+				clearValue->setClearDepth(1.0f);
+
+				auto& mtl = _mtlSkybox;
+
+				auto drawCall = rdReq.addDrawCall();
+				drawCall->setSubMesh(meshAssets.box.subMesh());
+				drawCall->material			= mtl;
+				drawCall->materialPassIdx	= 0;
+
+				mtl->setParam("skybox",				_texDefaultSkybox);
+				mtl->setParam("rds_matrix_view",	_scene.camera().viewMatrix());
+				mtl->setParam("rds_matrix_proj",	_scene.projMatrix());
+				mtl->setParam("rds_matrix_mvp",		_scene.mvp());
+			});
+
+		return texColor;
+	}
+
 	void finalComposite(RenderGraph& outRdGraph, RdgTextureHnd presentTex)
 	{
 		auto backBufferRt = outRdGraph.importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
@@ -476,6 +534,10 @@ public:
 	SPtr<Shader>		_testShader;
 	SPtr<Material>		_testMtl;
 	SPtr<Texture2D>		_uvCheckerTex;
+
+	SPtr<Shader>		_shaderSkybox;
+	SPtr<Material>		_mtlSkybox;
+	SPtr<TextureCube>	_texDefaultSkybox;
 
 	SPtr<Shader>				_testComputeShader;
 	SPtr<Material>				_testComputeMtl;

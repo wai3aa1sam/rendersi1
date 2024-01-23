@@ -22,6 +22,8 @@ namespace rds
 class RenderDevice_Vk;
 class Vk_Framebuffer;
 
+struct Texture_Desc;
+
 struct Vk_Cmd_AddImageMemBarrierDesc;
 
 #if 0
@@ -103,6 +105,7 @@ public:
 	void cmd_copyBuffer(Vk_Buffer*		dst, Vk_Buffer*		src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
 	void cmd_copyBuffer(Vk_Buffer_T*	dst, Vk_Buffer_T*	src, VkDeviceSize size, VkDeviceSize dstOffset, VkDeviceSize srcOffset);
 
+	void cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, Span<VkBufferImageCopy> copyDesc);
 	void cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height, u32 srcOffset);
 
 	/*
@@ -115,8 +118,11 @@ public:
 	void cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc);
 	void cmd_addImageMemBarrier(Vk_Image*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
+	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 baseLayer, u32 layerCount);
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
-	void cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
+	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout
+								, const Texture_Desc& texDesc, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
+	void cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 baseLayer, u32 layerCount, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
 
 	void cmd_addBufferMemoryBarrier(); // use for queue family tansfer
 
@@ -150,8 +156,10 @@ struct Vk_Cmd_AddImageMemBarrierDesc
 	VkFormat		format;
 	VkImageLayout	srcLayout; 
 	VkImageLayout	dstLayout;
-	u32				baseMip		= 0;
-	u32				mipCount	= 1;
+	u8				baseMip		= 0;
+	u8				mipCount	= 1;
+	u8				baseLayer	= 0;
+	u8				layerCount	= 1;
 
 	u32				srcQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
 	u32				dstQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
@@ -159,7 +167,6 @@ struct Vk_Cmd_AddImageMemBarrierDesc
 	//QueueTypeFlags	srcQueueType;
 	//QueueTypeFlags	dstQueueType;
 };
-
 
 }
 #endif

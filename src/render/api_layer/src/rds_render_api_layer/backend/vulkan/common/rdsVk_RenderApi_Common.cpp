@@ -6,6 +6,7 @@
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 
 #include "rds_render_api_layer/shader/rdsRenderState.h"
+#include "rds_render_api_layer/texture/rdsTexture.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -503,6 +504,39 @@ Vk_RenderApiUtil::toVkDescriptorType(ShaderResourceType v)
 	//return VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
 }
 
+VkImageSubresourceRange	
+Vk_RenderApiUtil::toVkImageSubresourceRange(const Texture_Desc& desc, u32 baseMip, u32 baseLayer)
+{
+	VkImageSubresourceRange o = {};
+	o.aspectMask		= BitUtil::has(desc.usageFlags, TextureUsageFlags::DepthStencil) ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	o.baseMipLevel		= baseMip;
+	o.levelCount		= desc.mipCount;
+	o.baseArrayLayer	= baseLayer;
+	o.layerCount		= desc.layerCount;
+
+	return o;
+}
+
+VkImageSubresourceRange	
+Vk_RenderApiUtil::toVkImageSubresourceRange(const Texture_Desc& desc)
+{
+	return toVkImageSubresourceRange(desc, 0, 0);
+}
+
+VkImageSubresourceLayers 
+Vk_RenderApiUtil::toVkImageSubresourceLayers(const Texture_Desc& desc, u32 mipLevel, u32 baseLayer, u32 layerCount)
+{
+	RDS_TODO("use desc to check valid mipLevel / layer...");
+
+	VkImageSubresourceLayers o = {};
+	o.aspectMask		= BitUtil::has(desc.usageFlags, TextureUsageFlags::DepthStencil) ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	o.mipLevel			= mipLevel;
+	o.baseArrayLayer	= baseLayer;
+	o.layerCount		= layerCount;
+
+	return o;
+}
+
 VkFilter
 Vk_RenderApiUtil::toVkFilter(SamplerFilter v)
 {
@@ -663,6 +697,13 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		srcAccess	= VK_ACCESS_NONE;
+		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ) // shader rsc -> rt
+	{
+		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) // present
