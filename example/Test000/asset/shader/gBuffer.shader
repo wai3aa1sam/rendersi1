@@ -31,6 +31,8 @@ Shader {
 }
 #endif
 
+#include "common/rdsCommon.hlsl"
+
 struct VertexIn
 {
     float4 positionOS   : SV_POSITION;
@@ -53,11 +55,6 @@ struct PixelOut
     float4 normal	: SV_Target1;
     float4 position	: SV_Target2;
 };
-
-float4x4	rds_matrix_model;
-float4x4	rds_matrix_view;
-float4x4	rds_matrix_proj;
-float4x4	rds_matrix_mvp;
 
 PixelIn vs_main(VertexIn i)
 {

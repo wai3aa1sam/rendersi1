@@ -34,17 +34,18 @@ protected:
 		opt.isToSpirv	= true;
 		opt.enableLog	= false;
 
-		compile("asset/shader/ui/imgui.shader",				opt);
 		compile("asset/shader/terrain/my_terrain.shader",	opt);
 		compile("asset/shader/test.shader",					opt);
 		compile("asset/shader/test_texture.shader",			opt);
 		compile("asset/shader/test_texture_set0.shader",	opt);
 		compile("asset/shader/test_compute.shader",			opt);
 
-		compile("asset/shader/present.shader",	opt);
-		compile("asset/shader/preDepth.shader",	opt);
-		compile("asset/shader/gBuffer.shader",	opt);
-		compile("asset/shader/skybox.shader",	opt);
+		compile("asset/shader/ui/imgui.shader",			opt);
+		compile("asset/shader/present.shader",			opt);
+		compile("asset/shader/preDepth.shader",			opt);
+		compile("asset/shader/gBuffer.shader",			opt);
+		compile("asset/shader/deferredLighting.shader",	opt);
+		compile("asset/shader/skybox.shader",			opt);
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)

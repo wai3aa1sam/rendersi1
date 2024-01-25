@@ -55,7 +55,8 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
 	fmtTo(args, " -fauto-bind-uniforms");	// auto bind all uniform variable
 	fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}", 0, 4, 8, 12 ,14); // 16 is minimum spec in vulkan
-
+	//fmtTo(args, " -I\"dir"");
+	
 	//fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 100 -fresource-set-binding b1 1 2");
 	//fmtTo(args, " -fresource-set-binding b1 1 2");
 

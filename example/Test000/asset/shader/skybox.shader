@@ -22,6 +22,8 @@ Shader {
 }
 #endif
 
+#include "common/rdsCommon.hlsl"
+
 struct VertexIn
 {
     float4 positionOS   : SV_POSITION;
@@ -33,23 +35,7 @@ struct PixelIn
     float3 uv           : TEXCOORD0;
 };
 
-float4x4	rds_matrix_model;
-float4x4	rds_matrix_view;
-float4x4	rds_matrix_proj;
-float4x4	rds_matrix_mvp;
-
-TextureCube     skybox 				    : register(t1, space1);
-SamplerState    _rds_skybox_sampler 	: register(s1, space1);
-
-#define RDS_GET_SAMPLER(NAME)   _rds_ ## NAME ## _sampler
-#define RDS_GET_TEXTURE_CUBE(NAME) NAME
-
-#define RDS_TEXTURE_CUBE(NAME) \
-TextureCube     RDS_GET_TEXTURE_CUBE(NAME) 	: register(t1, space1); \
-SamplerState    RDS_GET_SAMPLER(NAME) 	    : register(s1, space1) \
-// ---
-
-#define RDS_SAMPLE_TEXTURE_CUBE(TEX, UV) RDS_GET_TEXTURE_CUBE(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
+RDS_TEXTURE_CUBE(skybox);
 
 PixelIn vs_main(VertexIn i)
 {
