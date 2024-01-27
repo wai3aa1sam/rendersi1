@@ -1368,6 +1368,7 @@ Vk_RenderApiUtil::getPhyDeviceFeaturesTo(RenderAdapterInfo& outInfo, Vk_Physical
 	temp.shaderHasFloat64		= deviceFeatures.shaderFloat64;
 	temp.hasGeometryShader		= deviceFeatures.geometryShader;
 	temp.hasSamplerAnisotropy	= deviceFeatures.samplerAnisotropy;
+	temp.hasWireframe			= deviceFeatures.fillModeNonSolid;
 
 	outInfo.feature = temp;
 }
@@ -1376,10 +1377,10 @@ void Vk_RenderApiUtil::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, c
 {
 	out = {};
 
-	out.samplerAnisotropy = VK_TRUE;
+	out.samplerAnisotropy	= VK_TRUE;
+	out.fillModeNonSolid	= VK_TRUE;
 
-	RDS_CORE_LOG_WARN("TODO: getVkPhyDeviceFeaturesTo()");
-	//info.feature.
+	RDS_TODO("");
 }
 
 bool

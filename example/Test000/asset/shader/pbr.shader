@@ -42,6 +42,9 @@ struct PixelIn
     float3 normal       : NORMAL0;
 };
 
+RDS_TEXTURE_2D_1(texture0);
+RDS_TEXTURE_2D_2(texture1);
+
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
@@ -57,11 +60,16 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    //float2 pos2f = i.positionOS;
+    float4 o;
+    o = float4(1.0, 1.0, 1.0, 1.0);
+    if (i.uv.x > 0.5)
+    {
+	    o = RDS_SAMPLE_TEXTURE_2D(texture0, i.uv);
+    }
+    else
+    {
+	    o = RDS_SAMPLE_TEXTURE_2D(texture1, i.uv);
+    }
 
-    float4 color;
-    color = float4(1.0, 1.0, 1.0, 1.0);
-	//color.r = i.positionHCS.z;
-    //color.a = 1.0;
-    return color;
+    return o;
 }

@@ -86,7 +86,7 @@ public:
 	using Access	= RenderAccess;
 	using Usage		= RdgResourceUsage;
 
-	using ExecuteFunc		= Function_T<void(RenderRequest& rdReq), s_kFuncLocalSize>;
+	using ExecuteFunc		= Function<void(RenderRequest& rdReq), s_kFuncLocalSize>;
 
 	// const for std::initlist
 	using RdgTextureHndSpan							= Span<const RdgTextureHnd>;

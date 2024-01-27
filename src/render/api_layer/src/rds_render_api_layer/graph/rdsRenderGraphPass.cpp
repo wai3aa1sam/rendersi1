@@ -1,5 +1,6 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderGraphPass.h"
+#include "rdsRenderGraph.h"
 
 namespace rds
 {

@@ -22,14 +22,19 @@ struct MeshAssets
 		EditMesh mesh;
 		WavefrontObjLoader::loadFile(mesh, "asset/mesh/box.obj");
 		box.create(mesh);
+
+		WavefrontObjLoader::loadFile(mesh, "asset/mesh/sphere.obj");
+		sphere.create(mesh);
 	}
 
 	void destroy()
 	{
 		box.clear();
+		sphere.clear();
 	}
 
 	RenderMesh box;
+	RenderMesh sphere;
 };
 MeshAssets meshAssets;
 
@@ -113,6 +118,10 @@ EditMesh getFullScreenTriangleMesh()
 
 class TestScene
 {
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	static constexpr SizeType s_kObjectCount = 10;
+
 public:
 	TestScene()
 	{
@@ -121,6 +130,9 @@ public:
 
 		_rdMeshes.emplace_back(&_rdMesh1);
 		_rdMeshes.emplace_back(&_rdMesh2);
+
+		_mtls.reserve(s_kObjectCount);
+
 	}
 
 	void create(math::Camera3f* camera)
@@ -150,7 +162,7 @@ public:
 		_mvp = mvp;
 	}
 
-	void drawScene(RenderRequest& rdReq, Material* mtl)
+	void drawScene(RenderRequest& rdReq, Material* mtl, Function<void(Material* mtl)>* setMtlFn = nullptr)
 	{
 		#if 0
 		for (size_t i = 0; i < _rdMeshes.size(); i++)
@@ -162,8 +174,8 @@ public:
 			drawCall->materialPassIdx	= 0;
 		}
 		#endif // 0
-
-
+		
+		#if 0
 		auto drawCall = rdReq.addDrawCall();
 
 		drawCall->setSubMesh(meshAssets.box.subMesh());
@@ -171,6 +183,32 @@ public:
 		drawCall->materialPassIdx	= 0;
 
 		mtl->setParam("rds_matrix_mvp", _mvp);
+		#endif // 0
+
+		if (_mtls.is_empty() || _mtls[0]->shader() != mtl->shader())
+		{
+			_mtls.clear();
+			for (size_t i = 0; i < s_kObjectCount; i++)
+			{
+				auto& dst = _mtls.emplace_back();
+				dst	= Renderer::rdDev()->createMaterial(mtl->shader());
+			}
+		}
+
+		{
+			float startPosX = -25.0f;
+			float stepPosX	= 5.0f;
+			for (size_t i = 0; i < s_kObjectCount; i++)
+			{
+				auto& srcMtl = _mtls[i];
+				Mat4f matModel	= Mat4f::s_translate(Vec3f{startPosX + stepPosX * i, 0.0f, 10.0f});
+				if (setMtlFn)
+				{
+					(*setMtlFn)(srcMtl);
+				}
+				rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, matModel);
+			}
+		}
 	}
 
 	const Mat4f&			mvp()			const { return _mvp; }
@@ -182,6 +220,8 @@ private:
 
 	RenderMesh _rdMesh1;
 	RenderMesh _rdMesh2;
+
+	Vector<SPtr<Material> > _mtls;
 
 	Mat4f _mvp;
 	math::Camera3f* _camera = nullptr;
@@ -218,6 +258,10 @@ public:
 			texCDesc.create("asset/texture/uvChecker.png");
 			_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
 			_uvCheckerTex->setDebugName("uvChecker");
+
+			texCDesc.create("asset/texture/uvChecker2.png");
+			_uvCheckerTex2 = Renderer::rdDev()->createTexture2D(texCDesc);
+			_uvCheckerTex2->setDebugName("uvChecker2");
 		}
 
 		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
@@ -235,7 +279,7 @@ public:
 
 		_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test_compute.shader");
 		_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
-		testCompute(_rdGraph, true);
+		testCompute(&_rdGraph, true);
 
 		{
 			_shaderSkybox	= Renderer::rdDev()->createShader("asset/shader/skybox.shader");
@@ -255,6 +299,10 @@ public:
 			_texDefaultSkybox = Renderer::rdDev()->createTextureCube(texCDesc);
 			_texDefaultSkybox->setDebugName("default_skybox");
 		}
+
+		_shaderPbr	= Renderer::rdDev()->createShader("asset/shader/pbr.shader");
+		_mtlPbr		= Renderer::rdDev()->createMaterial(_shaderPbr);
+
 	}
 
 	void update()
@@ -270,9 +318,10 @@ public:
 		RdgTextureHnd oTexDepth;
 
 		//oTex = testCompute(_rdGraph, false);
-		oTex = testDeferred(_rdGraph, &oTexDepth);
-		oTex = testSkybox(_rdGraph, oTex, oTexDepth);
-		finalComposite(_rdGraph, oTex);
+		//oTex = testDeferred(&_rdGraph, &oTexDepth);
+		oTex = testPbr(&_rdGraph, &oTexDepth);
+		oTex = testSkybox(&_rdGraph, oTex, oTexDepth);
+		finalComposite(&_rdGraph, oTex);
 
 		_rdGraph.compile();
 		_rdGraph.execute();
@@ -283,9 +332,10 @@ public:
 		_rdGraph.commit();
 	}
 
-	RdgTextureHnd testDeferred(RenderGraph& outRdGraph, RdgTextureHnd* outTexDepth)
+	RdgTextureHnd testDeferred(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
 	{
-		auto* rdCtx = _rdCtx;
+		auto* rdGraph	= outRdGraph;
+		auto* rdCtx		= _rdCtx;
 
 		SPtr<Texture2D> backBuffer;
 		SPtr<Texture2D> outColor;
@@ -293,11 +343,11 @@ public:
 
 		auto screenSize = Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
-		RdgTextureHnd testColorTex	= _rdGraph.createTexture("testColorTex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
-		RdgTextureHnd depthTex		= _rdGraph.createTexture("depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
+		RdgTextureHnd testColorTex	= rdGraph->createTexture("testColorTex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+		RdgTextureHnd depthTex		= rdGraph->createTexture("depth_tex",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
 		#if 0
-		auto& depthPrePass = _rdGraph.addPass("depth_pre_pass", RdgPassTypeFlags::Graphics);
+		auto& depthPrePass = rdGraph->addPass("depth_pre_pass", RdgPassTypeFlags::Graphics);
 		depthPrePass.setRenderTarget(testColorTex,						RenderTargetLoadOp::Clear,		RenderTargetStoreOp::Store);
 		depthPrePass.setDepthStencil(depthTex,		RdgAccess::Write,	RenderTargetLoadOp::DontCare,	RenderTargetLoadOp::DontCare);
 		depthPrePass.setExecuteFunc(
@@ -311,11 +361,11 @@ public:
 			});
 		#endif // 0
 
-		RdgTextureHnd albedoTex		= _rdGraph.createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
-		RdgTextureHnd normalTex		= _rdGraph.createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
-		RdgTextureHnd positionTex	= _rdGraph.createTexture("position_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+		RdgTextureHnd albedoTex		= rdGraph->createTexture("albedo_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+		RdgTextureHnd normalTex		= rdGraph->createTexture("normal_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+		RdgTextureHnd positionTex	= rdGraph->createTexture("position_tex",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 
-		auto& gBufferPass = _rdGraph.addPass("g_buffer_pass", RdgPassTypeFlags::Graphics);
+		auto& gBufferPass = rdGraph->addPass("g_buffer_pass", RdgPassTypeFlags::Graphics);
 		//gBufferPass.setRenderTarget({albedoTex, normalTex, positionTex});
 		gBufferPass.setRenderTarget(albedoTex,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		gBufferPass.setRenderTarget(normalTex,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
@@ -324,22 +374,21 @@ public:
 		gBufferPass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
+				rdReq.reset(rdGraph->renderContext(), *_camera);
+
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 
-				for (size_t i = 0; i < 1; i++)
-				{
-					scene()->drawScene(rdReq, _gBufferMtl);
-				}
+				scene()->drawScene(rdReq, _gBufferMtl);
 			}
 		);
 
 		#if 0
 
-		auto colorTex = _rdGraph.createTexture("color_tex", { screenSize, ColorType::RGBAb, 1, TextureUsageFlags::RenderTarget });
+		auto colorTex = rdGraph->createTexture("color_tex", { screenSize, ColorType::RGBAb, 1, TextureUsageFlags::RenderTarget });
 
-		auto& deferredLightingPass = _rdGraph.addPass("deferred_lighting_pass", RdgPassTypeFlags::Graphics);
+		auto& deferredLightingPass = rdGraph->addPass("deferred_lighting_pass", RdgPassTypeFlags::Graphics);
 		deferredLightingPass.readTextures({albedoTex, normalTex, positionTex, depthTex});
 		//deferredLightingPass.setDepthStencil(depthTex, RdgAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
 		deferredLightingPass.setRenderTarget(colorTex, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
@@ -353,13 +402,13 @@ public:
 
 		#endif // 0
 
-		//_rdGraph.exportTexture(outColor, colorTex);
-		//_rdGraph.exportTexture(out1, albedoTex);
+		//rdGraph->exportTexture(outColor, colorTex);
+		//rdGraph->exportTexture(out1, albedoTex);
 		*outTexDepth = depthTex;
 		return normalTex;
 	}
 
-	RdgTextureHnd testCompute(RenderGraph& outRdGraph, bool isCreate = false)
+	RdgTextureHnd testCompute(RenderGraph* outRdGraph, bool isCreate = false)
 	{
 		static constexpr int s_kMaxParticleCount = RDS_TEST_COMPUTE_GROUP_THREAD * 10;
 
@@ -399,15 +448,17 @@ public:
 			return {};
 		}
 
-		auto& rdGraph = outRdGraph;
-		RdgBufferHnd particlesRead	= rdGraph.importBuffer("particlesRead",		_testComputeLastFrameParticles, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
-		RdgBufferHnd particlesWrite	= rdGraph.createBuffer("particlesWrite",	RenderGpuBuffer_CreateDesc{ sizeof(Particle) * s_kMaxParticleCount, sizeof(Particle), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex });
+		auto* rdGraph = outRdGraph;
+		RdgBufferHnd particlesRead	= rdGraph->importBuffer("particlesRead",		_testComputeLastFrameParticles, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
+		RdgBufferHnd particlesWrite	= rdGraph->createBuffer("particlesWrite",	RenderGpuBuffer_CreateDesc{ sizeof(Particle) * s_kMaxParticleCount, sizeof(Particle), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex });
 
-		auto& test_compute = rdGraph.addPass("test_compute", RdgPassTypeFlags::Compute);
+		auto& test_compute = rdGraph->addPass("test_compute", RdgPassTypeFlags::Compute);
 		test_compute.writeBuffer(particlesWrite);
 		test_compute.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
+				rdReq.reset(rdGraph->renderContext(), *_camera);
+
 				_testComputeMtl->setParam("rds_dt", 1 / 600.0f);
 				_testComputeMtl->setParam("in_particle_buffer",		particlesRead.renderResource());
 				_testComputeMtl->setParam("out_particle_buffer",	particlesWrite.renderResource());
@@ -415,19 +466,21 @@ public:
 			}
 		);
 		
-		rdGraph.exportBuffer(&_testComputeLastFrameParticles, particlesWrite, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
+		rdGraph->exportBuffer(&_testComputeLastFrameParticles, particlesWrite, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
 
 		auto screenSize = Vec2u::s_cast(_rdCtx->framebufferSize()).toTuple2();
-		RdgTextureHnd test_compute_depth_tex	= _rdGraph.createTexture("test_compute_depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil });
-		RdgTextureHnd test_compute_present_tex	= _rdGraph.createTexture("test_compute_present_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+		RdgTextureHnd test_compute_depth_tex	= rdGraph->createTexture("test_compute_depth_tex",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil });
+		RdgTextureHnd test_compute_present_tex	= rdGraph->createTexture("test_compute_present_tex",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 
-		auto& test_compute_result = rdGraph.addPass("test_compute_result", RdgPassTypeFlags::Graphics);
+		auto& test_compute_result = rdGraph->addPass("test_compute_result", RdgPassTypeFlags::Graphics);
 		test_compute_result.readBuffer(particlesWrite, ShaderStageFlag::Vertex);
 		test_compute_result.setRenderTarget(test_compute_present_tex, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		test_compute_result.setDepthStencil(test_compute_depth_tex, RdgAccess::Write,	RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);
 		test_compute_result.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
+				rdReq.reset(rdGraph->renderContext(), *_camera);
+
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
@@ -444,8 +497,10 @@ public:
 		return test_compute_present_tex;
 	}
 
-	RdgTextureHnd testSkybox(RenderGraph& outRdGraph, RdgTextureHnd texColor, RdgTextureHnd texDepth)
+	RdgTextureHnd testSkybox(RenderGraph* outRdGraph, RdgTextureHnd texColor, RdgTextureHnd texDepth)
 	{
+		auto* rdGraph	= outRdGraph;
+
 		auto screenSize		= Vec2u::s_cast(_rdCtx->framebufferSize()).toTuple2();
 		//auto skyboxTarget	= _rdGraph.createTexture("skyboxTarget", Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 
@@ -456,6 +511,8 @@ public:
 		skyboxPass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
+				rdReq.reset(rdGraph->renderContext(), *_camera);
+
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
@@ -476,9 +533,51 @@ public:
 		return texColor;
 	}
 
-	void finalComposite(RenderGraph& outRdGraph, RdgTextureHnd presentTex)
+	RdgTextureHnd testPbr(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
 	{
-		auto backBufferRt = outRdGraph.importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
+		auto*	rdGraph		= outRdGraph;
+		auto*	rdCtx		= _rdCtx;
+		auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
+
+		auto* mtl = _mtlPbr.ptr();
+
+		RdgTextureHnd texPbrColor	= rdGraph->createTexture("pbr_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+		RdgTextureHnd texPbrDepth	= rdGraph->createTexture("pbr_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
+
+		auto& gBufferPass = rdGraph->addPass("pbr", RdgPassTypeFlags::Graphics);
+		gBufferPass.setRenderTarget(texPbrColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		gBufferPass.setDepthStencil(texPbrDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
+		gBufferPass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), *_camera);
+
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+				clearValue->setClearDepth(1.0f);
+
+				Function<void(Material*)> fn 
+					= [&](Material* mtl)
+					{
+						mtl->setParam("texture0", _uvCheckerTex);
+						mtl->setParam("texture1", _uvCheckerTex2);
+					};
+				scene()->drawScene(rdReq, mtl, &fn);
+			}
+		);
+
+		if (outTexDepth)
+		{
+			*outTexDepth = texPbrDepth;
+		}
+
+		return texPbrColor;
+	}
+
+	void finalComposite(RenderGraph* outRdGraph, RdgTextureHnd presentTex)
+	{
+		auto*	rdGraph			= outRdGraph;
+		auto	backBufferRt	= rdGraph->importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
 
 		auto& finalComposePass = _rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
 		finalComposePass.readTexture(presentTex);
@@ -534,11 +633,15 @@ public:
 	SPtr<Shader>		_testShader;
 	SPtr<Material>		_testMtl;
 	SPtr<Texture2D>		_uvCheckerTex;
+	SPtr<Texture2D>		_uvCheckerTex2;
 
 	SPtr<Shader>		_shaderSkybox;
 	SPtr<Material>		_mtlSkybox;
 	SPtr<TextureCube>	_texDefaultSkybox;
 
+	SPtr<Shader>		_shaderPbr;
+	SPtr<Material>		_mtlPbr;
+	
 	SPtr<Shader>				_testComputeShader;
 	SPtr<Material>				_testComputeMtl;
 	SPtr<RenderGpuBuffer>		_testComputeLastFrameParticles;

@@ -1,21 +1,14 @@
 #if 0
 Shader {
 	Properties {
-		Float	test  = 0.5
-		Vec4f	test2 = {0,0,0,1}
 		
-		[DisplayName="Color Test"]
-		Color4f	color = {1,1,1,1}
-		
-		Texture2D mainTex
-		Texture2D heightTex
 	}
 	
 	Pass {
 		// Queue	"Transparent"
 		//Cull		None
 
-		DepthTest	LessEqual
+		DepthTest	Less
 
 //		DepthTest	Always
 //		DepthWrite	false
@@ -60,8 +53,6 @@ PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
     
-    //o.positionOS    = positions[i.vertexId];
-    //o.color         = colors[i.vertexId];
     o.positionHCS = mul(rds_matrix_mvp, i.positionOS);
     o.uv          = i.uv;
 	o.normal      = i.normal;
@@ -77,7 +68,6 @@ PixelOut ps_main(PixelIn i)
 	o.albedo   = float4(1.0, 1.0, 1.0, 1.0);
 	o.normal   = float4(i.normal, 1.0);
 	o.position = i.positionHCS;
-
 
 	o.normal = (o.normal + float4(1.0)) / 2.0;
 

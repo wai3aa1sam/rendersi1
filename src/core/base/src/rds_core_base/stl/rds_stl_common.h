@@ -141,7 +141,7 @@ template<class T1, class T2> using Pair				= ::nmsp::Pair_T<T1, T2>;
 using ::nmsp::makePair;
 
 template<class T, size_t LOCAL_SIZE = 32, size_t ALIGN = CoreBaseTraits::s_kDefaultAlign, class FALLBACK_ALLOCATOR = DefaultAllocator> 
-using Function_T = ::nmsp::Function_T<T, LOCAL_SIZE, ALIGN, FALLBACK_ALLOCATOR>;
+using Function = ::nmsp::Function_T<T, LOCAL_SIZE, ALIGN, FALLBACK_ALLOCATOR>;
 
 template<class T, T... VALS>	using IntSeq = ::nmsp::IntSeq_T<T, VALS...>;
 template<size_t N>				using IdxSeq = ::nmsp::IdxSeq_T<N>;

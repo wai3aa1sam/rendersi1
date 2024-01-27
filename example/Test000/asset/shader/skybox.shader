@@ -6,7 +6,7 @@ Shader {
 	
 	Pass {
 		// Queue	"Transparent"
-		Cull		None
+		Cull		Back
 
 		DepthTest	LessEqual
 

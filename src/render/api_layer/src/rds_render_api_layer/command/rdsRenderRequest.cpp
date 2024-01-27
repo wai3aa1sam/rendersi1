@@ -27,7 +27,39 @@ RenderRequest::reset(RenderContext* rdCtx)
 }
 
 void 
-	RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u threadGrps)
+RenderRequest::reset(RenderContext* rdCtx, math::Camera3f& camera)
+{
+	reset(rdCtx);
+	setCamera(camera);
+}
+
+void 
+RenderRequest::setCamera(math::Camera3f& camera)
+{
+	matrix_view   = camera.viewMatrix();
+	matrix_proj   = camera.projMatrix();
+	cameraPos     = camera.pos();
+}
+
+void 
+RenderRequest::setMaterialCommonParams(Material* mtl, const Mat4f& transform)
+{
+	RDS_TODO("//TODO: move to separate cbuffer");
+
+	if (!mtl) return;
+
+	mtl->setParam("rds_matrix_model",	transform);
+	mtl->setParam("rds_matrix_view",	matrix_view);
+	mtl->setParam("rds_matrix_proj",	matrix_proj);
+
+	auto mvp = matrix_proj * matrix_view * transform;
+	mtl->setParam("rds_matrix_mvp",		mvp);
+
+	mtl->setParam("rds_camera_pos",		cameraPos);
+}
+
+void 
+RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u threadGrps)
 {
 	auto* cmd = _rdCmdBuf.dispatch();
 	cmd->material			= mtl;
@@ -72,7 +104,8 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMes
 	RDS_CORE_ASSERT(rdSubMesh.vertexBuffer() || rdSubMesh.indexBuffer(), "");
 
 	auto* p = addDrawCall();
-	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl, transform);
+	setMaterialCommonParams(mtl, transform);
+	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl);
 }
 
 void 
@@ -100,7 +133,8 @@ RenderRequest::clearFramebuffers(const Color4f& color, float depth, u32 stencil)
 	return p;
 }
 
-void RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform)
+void 
+RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl)
 {
 	if (!rdSubMesh.vertexBuffer() || !rdSubMesh.indexBuffer())
 		return;
@@ -123,8 +157,6 @@ void RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* 
 
 	p->material = mtl;
 }
-
-
 
 void RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform)
 {

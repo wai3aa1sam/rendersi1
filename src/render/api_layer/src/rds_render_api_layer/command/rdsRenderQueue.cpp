@@ -139,6 +139,7 @@ RenderQueue::alloc(SizeType n, SizeType align)
 void 
 RenderQueue::recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)
 {
+	_notYetSupported(RDS_SRCLOC);
 	auto materialPassCount = 1;
 	auto nDrawCalls = rdMesh.subMeshCount() * materialPassCount;
 	auto it = allocCommands<RenderCommand_DrawCall>(out, nDrawCalls);
@@ -147,11 +148,10 @@ RenderQueue::recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMe
 	{
 		//for (auto& pass : passes)
 		{
-			RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_ARG, it, e, mtl, transform);
+			RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_ARG, it, e, mtl);
 			++it;
 		}
 	}
-
 }
 
 HashedDrawCallCommands*  

@@ -35,10 +35,21 @@ class RenderRequest : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
+	Mat4f matrix_view;
+	Mat4f matrix_proj;
+
+	Vec3f cameraPos;
+
+public:
 	RenderRequest();
 	~RenderRequest();
 
 	void reset(RenderContext* rdCtx);
+	void reset(RenderContext* rdCtx, math::Camera3f& camera);
+	void setCamera(math::Camera3f& camera);
+
+	//TODO: move to separate cbuffer
+	void setMaterialCommonParams(Material* mtl, const Mat4f& transform);
 
 	RenderCommandBuffer& renderCommandBuffer();
 
@@ -58,7 +69,7 @@ public:
 	void drawRenderables(const DrawingSettings& settings);
 
 	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
-	static void drawSubMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform = Mat4f::s_identity());
+	static void drawSubMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl);
 
 	RDS_NODISCARD	RenderScissorRectScope	scissorRectScope();
 	RDS_INLINE		void					setScissorRect	(const Rect2f& rect);

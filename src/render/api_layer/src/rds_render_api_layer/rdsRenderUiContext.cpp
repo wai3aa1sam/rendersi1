@@ -120,7 +120,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		);
 		//mat[1][1] *= -1;
 
-		_material->setParam("projectionMatrix", mat);
+		_material->setParam("rds_matrix_proj",	mat);
 		_material->setParam("texture0",			_fontTex);
 	}
 

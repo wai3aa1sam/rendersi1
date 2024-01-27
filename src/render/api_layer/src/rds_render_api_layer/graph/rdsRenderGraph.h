@@ -208,6 +208,8 @@ public:
 	Span<ExportedTexture> exportedTextures();
 	Span<ExportedBuffer > exportedBuffers();
 
+	RenderContext* renderContext();
+
 protected:
 	template<class T> typename RdgResourceTraits<T>::Hnd createRdgResource(StrView name, const RdgResource_CreateDescT<T>& cDesc);
 
@@ -295,6 +297,8 @@ RenderGraph::deleteT(T* p)
 	p->~T();
 	free(p, s_kAlign);
 }
+
+inline RenderContext* RenderGraph::renderContext() { return _rdCtx; }
 
 inline RdgResourcePool& RenderGraph::resourcePool()						{ return renderGraphFrame().rscPool; }
 inline RenderGraph::RenderGraphFrame& RenderGraph::renderGraphFrame()	{ return _rdgFrames[_frameIdx]; }
