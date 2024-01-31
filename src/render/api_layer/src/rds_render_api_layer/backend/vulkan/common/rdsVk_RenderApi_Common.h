@@ -290,9 +290,11 @@ public:
 	template<size_t N> static u32 getAvailableGPUDevicesTo	(Vector<Vk_PhysicalDevice_T*,	 N>& out, Vk_Instance_T* vkInstance);
 	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out, Vk_PhysicalDevice_T* vkPhyDevice);
 
-	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice);
-	static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice);
-	static void getVkPhyDeviceFeaturesTo	(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info);
+	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice, bool isLogResult = false);
+	//static void getPhyDeviceFeatures2To		(RenderAdapterInfo& outInfo, VkPhysicalDeviceFeatures2* oVkPhyDevFeats, VkPhysicalDeviceDescriptorIndexingFeatures* oDesIdxFeats, Vk_PhysicalDevice_T* phyDevice);
+	//static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice);
+	//static void getVkPhyDeviceFeatures2To	(VkPhysicalDeviceFeatures2& out,	const RenderAdapterInfo& info);
+	//static void getVkPhyDeviceFeaturesTo	(VkPhysicalDeviceFeatures& out,		const RenderAdapterInfo& info);
 	static bool getSwapchainAvailableInfoTo	(Vk_SwapchainAvailableInfo& out, Vk_PhysicalDevice_T* vkPhydevice, Vk_Surface_T* vkSurface);
 
 
@@ -305,6 +307,8 @@ private:
 		VkDebugUtilsMessageTypeFlagsEXT				messageType,
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void*										pUserData);
+
+	//static void _getPhyDeviceFeaturesTo(RenderAdapterInfo* outInfo, const VkPhysicalDeviceFeatures& devFeats);
 };
 
 template<class T> inline VkDeviceSize Vk_RenderApiUtil::toVkDeviceSize(T v) { RDS_S_ASSERT(IsIntegral<T>); return sCast<VkDeviceSize>(v); }
@@ -335,7 +339,7 @@ public:
 
 	void createInstanceExtensions	(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension = false);
 	void createValidationLayers		(const RenderAdapterInfo& adapterInfo);
-	void createPhyDeviceExtensions	(const RenderAdapterInfo& adapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice);
+	void createPhyDeviceExtensions	(const RenderAdapterInfo& adapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice, bool isLogResult = false);
 
 	template<class T> T getInstanceExtFunction(const char* funcName) const;
 	template<class T> T getDeviceExtFunction(const char* funcName) const;

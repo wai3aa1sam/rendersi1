@@ -27,8 +27,10 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
 	createVkInstance();
-	createVkPhyDevice(cDesc);
-	createVkDevice();
+
+	Vk_PhysicalDeviceFeatures phyDevFeats;
+	createVkPhyDevice(&phyDevFeats, cDesc);
+	createVkDevice(phyDevFeats);
 	
 	loadVkInstFn(_vkExtInfo);
 	loadVkDevFn(_vkExtInfo);
@@ -134,7 +136,7 @@ RenderDevice_Vk::createVkInstance()
 }
 
 void
-RenderDevice_Vk::createVkPhyDevice(const CreateDesc& cDesc)
+RenderDevice_Vk::createVkPhyDevice(Vk_PhysicalDeviceFeatures* vkPhyDevFeats, const CreateDesc& cDesc)
 {
 	static constexpr SizeType s_kLocalSize = 8;
 	Vector<Vk_PhysicalDevice_T*, s_kLocalSize> phyDevices;
@@ -156,9 +158,10 @@ RenderDevice_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 	i64 largestScoreIndex	= NumLimit<i64>::min();
 	for (u32 i = 0; i < phyDevices.size(); i++)
 	{
+		Vk_PhysicalDeviceFeatures tempVkPhyDevFeats;
+
 		auto* e = phyDevices[i];
-		Util::getPhyDevicePropertiesTo(_adapterInfo, e);
-		auto score = _rateAndInitVkPhyDevice(_adapterInfo, cDesc, e, tempSurface.hnd());
+		auto score = _rateAndInitVkPhyDevice(&tempVkPhyDevFeats, &_adapterInfo, cDesc, e, tempSurface.hnd());
 		if (score > largestScore)
 		{
 			largestScore = score;
@@ -167,12 +170,11 @@ RenderDevice_Vk::createVkPhyDevice(const CreateDesc& cDesc)
 	}
 
 	_vkPhysicalDevice.create(phyDevices[largestScoreIndex]);
-	_rateAndInitVkPhyDevice(_adapterInfo, cDesc, _vkPhysicalDevice.hnd(), tempSurface.hnd());
-	Util::getPhyDevicePropertiesTo(_adapterInfo, _vkPhysicalDevice.hnd());
+	_rateAndInitVkPhyDevice(vkPhyDevFeats, &_adapterInfo, cDesc, _vkPhysicalDevice.hnd(), tempSurface.hnd(), true);
 }
 
 void 
-RenderDevice_Vk::createVkDevice()
+RenderDevice_Vk::createVkDevice(const Vk_PhysicalDeviceFeatures& vkPhyDevFeats)
 {
 	Vector<VkDeviceQueueCreateInfo, QueueFamilyIndices::s_kQueueTypeCount>	queueCreateInfos;
 	float	queuePriority		= 1.0f;
@@ -201,21 +203,18 @@ RenderDevice_Vk::createVkDevice()
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
-	VkPhysicalDeviceFeatures phyDeviceFeatures = {};
-	Util::getVkPhyDeviceFeaturesTo(phyDeviceFeatures, _adapterInfo);
-
 	// vulkan core feature base on its version, otherwise it is a extension
 	#if RDS_VK_VER_1_3
 
-	VkPhysicalDeviceVulkan13Features phyDeviceFeature = {};
-	phyDeviceFeature.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	phyDeviceFeature.synchronization2	= true;
+	VkPhysicalDeviceVulkan13Features phyDevVkFeats = {};
+	phyDevVkFeats.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	phyDevVkFeats.synchronization2	= true;
 
 	#elif RDS_VK_VER_1_2
 
-	VkPhysicalDeviceVulkan12Features phyDeviceFeature = {};
-	phyDeviceFeature.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-	//phyDeviceFeature.synchronization2	= true;
+	VkPhysicalDeviceVulkan12Features phyDevVkFeats = {};
+	phyDevVkFeats.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	//phyDevVkFeats.synchronization2	= true;
 
 	#else
 	#error "unsupport vulkan version";
@@ -225,12 +224,12 @@ RenderDevice_Vk::createVkDevice()
 	createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.queueCreateInfoCount		= sCast<u32>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos		= queueCreateInfos.data();
-	createInfo.pEnabledFeatures			= &phyDeviceFeatures;
+	createInfo.pEnabledFeatures			= &vkPhyDevFeats.features;
 	createInfo.enabledExtensionCount	= sCast<u32>(_vkExtInfo.phyDeviceExts().size());
 	createInfo.ppEnabledExtensionNames	= _vkExtInfo.phyDeviceExts().data();
 	createInfo.enabledLayerCount		= _adapterInfo.isDebug ? sCast<u32>(_vkExtInfo.validationLayers().size()) : 0;	// ignored in new vk impl
 	createInfo.ppEnabledLayerNames		= _vkExtInfo.validationLayers().data();											// ignored in new vk impl
-	createInfo.pNext					= &phyDeviceFeature;
+	createInfo.pNext					= &phyDevVkFeats;
 
 	auto ret = vkCreateDevice(_vkPhysicalDevice.hnd(), &createInfo, allocCallbacks(), _vkDevice.hndForInit());
 	Util::throwIfError(ret);
@@ -239,11 +238,13 @@ RenderDevice_Vk::createVkDevice()
 	vkGetDeviceQueue(_vkDevice, _queueFamilyIndices.present.value(),	graphicsQueueIdx, _vkPresentQueue.ptrForInit());*/
 }
 
-i64	RenderDevice_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDesc& cDesc, Vk_PhysicalDevice_T* vkPhyDevHnd, Vk_Surface_T* vkSurfHnd)
+i64	RenderDevice_Vk::_rateAndInitVkPhyDevice(Vk_PhysicalDeviceFeatures* oVkPhyDevFeats, RenderAdapterInfo* out, const CreateDesc& cDesc, Vk_PhysicalDevice_T* vkPhyDevHnd, Vk_Surface_T* vkSurfHnd, bool isLogResult)
 {
 	_queueFamilyIndices.clear();
-	_vkExtInfo.createPhyDeviceExtensions(out, cDesc, vkPhyDevHnd);
-	Util::getPhyDeviceFeaturesTo(out, vkPhyDevHnd);
+
+	Util::getPhyDevicePropertiesTo(*out, vkPhyDevHnd, isLogResult);
+	_vkExtInfo.createPhyDeviceExtensions(*out, cDesc, vkPhyDevHnd);
+	oVkPhyDevFeats->create(out, vkPhyDevHnd);
 	Util::getQueueFaimlyPropertiesTo(_vkQueueFamilyProps, vkPhyDevHnd);
 	Util::getSwapchainAvailableInfoTo(_vkSwapchainAvaliableInfo, vkPhyDevHnd, vkSurfHnd);
 
@@ -279,7 +280,7 @@ i64	RenderDevice_Vk::_rateAndInitVkPhyDevice(RenderAdapterInfo& out, const Creat
 		curTryIdx++;
 	}
 
-	return _rateVkPhyDevice(out);
+	return _rateVkPhyDevice(*out);
 }
 
 i64 RenderDevice_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
@@ -294,8 +295,6 @@ i64 RenderDevice_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
 
 	return score;
 }
-
-
 
 void 
 RenderDevice_Vk::loadVkInstFn(Vk_ExtensionInfo& vkExtInfo)
@@ -360,6 +359,50 @@ RenderDevice_Vk::_setDebugName()
 
 #endif
 
+#if 0
+#pragma mark --- rdsVk_PhysicalDeviceFeatures-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_T* vkPhyDevHnd)
+{
+	auto& descriptorIndexingFeatures = _vkDescriptorIdxFeats;
+	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+	descriptorIndexingFeatures.pNext = nullptr;
+
+	auto& devFeats = *this;
+	devFeats.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	devFeats.pNext = &descriptorIndexingFeatures;
+
+	vkGetPhysicalDeviceFeatures2(vkPhyDevHnd, &devFeats);
+
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
+
+	outInfo->feature.bindless = true;
+	_getRenderApaterFeaturesTo(outInfo);
+}
+
+void 
+Vk_PhysicalDeviceFeatures::_getRenderApaterFeaturesTo(RenderAdapterInfo* outInfo)
+{
+	const auto& devFeats = this->features;
+
+	RenderAdapterInfo::Feature temp;
+	temp.shaderHasFloat64		= devFeats.shaderFloat64;
+	temp.hasGeometryShader		= devFeats.geometryShader;
+	temp.hasSamplerAnisotropy	= devFeats.samplerAnisotropy;
+	temp.hasWireframe			= devFeats.fillModeNonSolid;
+
+	outInfo->feature = temp;
+}
+
+#endif
 
 }
 

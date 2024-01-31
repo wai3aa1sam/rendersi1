@@ -1332,7 +1332,7 @@ Vk_RenderApiUtil::createBuffer(Vk_Buffer& outBuf, RenderDevice_Vk* rdDevVk, Vk_A
 }
 
 void
-Vk_RenderApiUtil::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice)
+Vk_RenderApiUtil::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice, bool isLogResult)
 {
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(phyDevice, &deviceProperties);
@@ -1345,32 +1345,72 @@ Vk_RenderApiUtil::getPhyDevicePropertiesTo(RenderAdapterInfo& outInfo, Vk_Physic
 
 	outInfo.memorySize = deviceMemProperties.memoryHeaps[0].size;
 
-	RDS_LOG("Vulkan:");
-	RDS_LOG("\t apiVersion: {}",		deviceProperties.apiVersion);
-	RDS_LOG("\t adapterName: {}",		outInfo.adapterName);
-
-	RDS_LOG("\t memoryHeapCount: {}",	deviceMemProperties.memoryHeapCount);
-	for (size_t i = 0; i < deviceMemProperties.memoryHeapCount; i++)
+	if (isLogResult)
 	{
-		RDS_LOG("\t memorySize: {}",		 deviceMemProperties.memoryHeaps[i].size);
+		RDS_CORE_LOG("Vulkan:");
+		RDS_CORE_LOG("\t apiVersion: {}",		deviceProperties.apiVersion);
+		RDS_CORE_LOG("\t adapterName: {}",		outInfo.adapterName);
+
+		RDS_CORE_LOG("\t memoryHeapCount: {}",	deviceMemProperties.memoryHeapCount);
+		for (size_t i = 0; i < deviceMemProperties.memoryHeapCount; i++)
+		{
+			RDS_CORE_LOG("\t memorySize: {}",		 deviceMemProperties.memoryHeaps[i].size);
+		}
 	}
 
 	outInfo.limit.maxSamplerAnisotropy = deviceProperties.limits.maxSamplerAnisotropy;
 }
 
+#if 0
+void 
+Vk_RenderApiUtil::getPhyDeviceFeatures2To(RenderAdapterInfo& outInfo, VkPhysicalDeviceFeatures2* oVkPhyDevFeats, VkPhysicalDeviceDescriptorIndexingFeatures* oDesIdxFeats, Vk_PhysicalDevice_T* phyDevice)
+{
+	auto& descriptorIndexingFeatures = *oDesIdxFeats;
+	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+	descriptorIndexingFeatures.pNext = nullptr;
+
+	auto& devFeats = *oVkPhyDevFeats;
+	devFeats.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	devFeats.pNext = &descriptorIndexingFeatures;
+
+	vkGetPhysicalDeviceFeatures2(phyDevice, &devFeats);
+
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
+
+	outInfo.feature.bindless = true;
+	_getPhyDeviceFeaturesTo(&outInfo, devFeats.features);
+}
+
 void
 Vk_RenderApiUtil::getPhyDeviceFeaturesTo(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice)
 {
-	VkPhysicalDeviceFeatures deviceFeatures;
-	vkGetPhysicalDeviceFeatures(phyDevice, &deviceFeatures);
+	VkPhysicalDeviceFeatures devFeats;
+	vkGetPhysicalDeviceFeatures(phyDevice, &devFeats);
+	_getPhyDeviceFeaturesTo(&outInfo, devFeats);
+}
 
+void 
+Vk_RenderApiUtil::_getPhyDeviceFeaturesTo(RenderAdapterInfo* outInfo, const VkPhysicalDeviceFeatures& devFeats)
+{
 	RenderAdapterInfo::Feature temp;
-	temp.shaderHasFloat64		= deviceFeatures.shaderFloat64;
-	temp.hasGeometryShader		= deviceFeatures.geometryShader;
-	temp.hasSamplerAnisotropy	= deviceFeatures.samplerAnisotropy;
-	temp.hasWireframe			= deviceFeatures.fillModeNonSolid;
 
-	outInfo.feature = temp;
+	temp.shaderHasFloat64		= devFeats.shaderFloat64;
+	temp.hasGeometryShader		= devFeats.geometryShader;
+	temp.hasSamplerAnisotropy	= devFeats.samplerAnisotropy;
+	temp.hasWireframe			= devFeats.fillModeNonSolid;
+
+	outInfo->feature = temp;
+}
+
+void
+Vk_RenderApiUtil::getVkPhyDeviceFeatures2To(VkPhysicalDeviceFeatures2& out, const RenderAdapterInfo& info)
+{
+	getVkPhyDeviceFeaturesTo(out.features, info);
 }
 
 void Vk_RenderApiUtil::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, const RenderAdapterInfo& info)
@@ -1382,6 +1422,8 @@ void Vk_RenderApiUtil::getVkPhyDeviceFeaturesTo(VkPhysicalDeviceFeatures& out, c
 
 	RDS_TODO("");
 }
+#endif // 0
+
 
 bool
 Vk_RenderApiUtil::getSwapchainAvailableInfoTo(Vk_SwapchainAvailableInfo& out, Vk_PhysicalDevice_T* vkPhyDevice, Vk_Surface_T* vkSurface)
@@ -1537,13 +1579,13 @@ Vk_ExtensionInfo::createValidationLayers(const RenderAdapterInfo& adapterInfo)
 }
 
 void
-Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice)
+Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice, bool isLogResult)
 {
 	getAvailablePhyDeviceExtensionsTo(_availablePhyDeviceExts, phyDevice, false);
 	auto& o = _phyDeviceExts;
 	o.clear();
 
-	auto emplaceIfExist = [adapterInfo](auto& dst, const char* ext, const auto& availPhyDevExts)
+	auto emplaceIfExist = [adapterInfo, isLogResult](auto& dst, const char* ext, const auto& availPhyDevExts)
 	{
 		if (availPhyDevExts.findIf([ext](const auto& v) { return StrUtil::isSame(v.extensionName, ext); }) != availPhyDevExts.end())
 		{
@@ -1551,7 +1593,10 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 		}
 		else
 		{
-			RDS_CORE_LOG("{} do not support vulkan extension: {}", adapterInfo.adapterName, ext);
+			if (isLogResult)
+			{
+				RDS_CORE_LOG("{} do not support vulkan extension: {}", adapterInfo.adapterName, ext);
+			}
 		}
 	};
 

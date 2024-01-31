@@ -323,7 +323,7 @@ public:
 
 		rdCtx.beginRender();
 
-		_testRenderGraph.update();	// temporary
+		_testRenderGraph.update();	// temporary, should move to Update() loop
 		_testRenderGraph.commit();
 
 		// drawUI() will upload vertex, therefore must before tsfReq.commit(), _rdReq must be framed, as ui buffer may be in use 

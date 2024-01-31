@@ -47,7 +47,7 @@ protected:
 		compile("asset/shader/deferredLighting.shader",	opt);
 		compile("asset/shader/skybox.shader",			opt);
 		
-		opt.enableLog = true; compile("asset/shader/pbr.shader", opt);
+		compile("asset/shader/pbr.shader", opt);
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)

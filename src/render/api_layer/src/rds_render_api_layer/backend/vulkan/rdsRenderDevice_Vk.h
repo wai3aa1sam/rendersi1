@@ -15,6 +15,8 @@
 namespace rds
 {
 
+struct Vk_PhysicalDeviceFeatures;
+
 #if 0
 #pragma mark --- rdsRenderDevice_Vk-Decl ---
 #endif // 0
@@ -69,10 +71,10 @@ protected:
 
 private:
 	void createVkInstance();
-	void createVkPhyDevice(const CreateDesc& cDesc);
-	void createVkDevice();
+	void createVkPhyDevice	(Vk_PhysicalDeviceFeatures* oVkPhyDevFeats, const CreateDesc& cDesc);
+	void createVkDevice		(const Vk_PhysicalDeviceFeatures& oVkPhyDevFeats);
 
-	i64	 _rateAndInitVkPhyDevice(RenderAdapterInfo& out, const CreateDesc& cDesc, Vk_PhysicalDevice_T* vkPhyDevHnd, Vk_Surface_T* vkSurfHnd);
+	i64	 _rateAndInitVkPhyDevice(Vk_PhysicalDeviceFeatures* oVkPhyDevFeats, RenderAdapterInfo* out, const CreateDesc& cDesc, Vk_PhysicalDevice_T* vkPhyDevHnd, Vk_Surface_T* vkSurfHnd, bool isLogResult = false);
 	i64	 _rateVkPhyDevice		(const RenderAdapterInfo& info);
 
 	void loadVkInstFn	(Vk_ExtensionInfo& vkExtInfo);
@@ -126,7 +128,24 @@ inline			QueueFamilyIndices&				RenderDevice_Vk::queueFamilyIndices()				{ retur
 
 
 
+#if 0
+#pragma mark --- rdsVk_PhysicalDeviceFeatures-Decl ---
+#endif // 0
+#if 1
 
+
+struct Vk_PhysicalDeviceFeatures : public VkPhysicalDeviceFeatures2
+{
+	void create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_T* vkPhyDevHnd);
+
+private:
+	void _getRenderApaterFeaturesTo(RenderAdapterInfo* outInfo);
+
+private:
+	VkPhysicalDeviceDescriptorIndexingFeatures _vkDescriptorIdxFeats;
+};
+
+#endif
 
 
 
