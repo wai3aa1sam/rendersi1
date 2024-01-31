@@ -318,8 +318,8 @@ public:
 		RdgTextureHnd oTexDepth;
 
 		//oTex = testCompute(_rdGraph, false);
-		//oTex = testDeferred(&_rdGraph, &oTexDepth);
-		oTex = testPbr(&_rdGraph, &oTexDepth);
+		oTex = testDeferred(&_rdGraph, &oTexDepth);
+		//oTex = testPbr(&_rdGraph, &oTexDepth);
 		oTex = testSkybox(&_rdGraph, oTex, oTexDepth);
 		finalComposite(&_rdGraph, oTex);
 
@@ -535,11 +535,49 @@ public:
 
 	RdgTextureHnd testPbr(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
 	{
+		static Tuple3f posLight		= {};
+		static Tuple3f colorLight	= {};
+		static float   roughness	= {};
+		static float   ao			= {};
+		static float   albedo		= {};
+		static float   metallic		= {};
+
+		auto* mtl = _mtlPbr.ptr();
+
+		{
+			ImGui::Begin("test pbr");
+
+			auto dragFloat3 = [&](Material* mtl, const char* name, float* v)
+				{
+					Tuple3f temp {v[0], v[1], v[2]};
+					ImGui::DragFloat3(name, v);
+					mtl->setParam(name, temp);
+					//reinCast<Tuple3f&>(*v) = temp;
+				};
+
+			auto dragFloat = [&](Material* mtl, const char* name, float* v)
+				{
+					float temp  = *v;
+					ImGui::DragFloat(name, v);
+					mtl->setParam(name, temp);
+					//reinCast<float&>(*v) = temp;
+				};
+
+			dragFloat3	(mtl, "posView",	&constCast(_camera->pos()).x);
+			dragFloat3	(mtl, "posLight",	posLight.data);
+			dragFloat3	(mtl, "colorLight",	colorLight.data);
+			dragFloat	(mtl, "roughness",	&roughness);
+			dragFloat	(mtl, "ao",			&ao);
+			dragFloat	(mtl, "albedo",		&albedo);
+			dragFloat	(mtl, "metallic",	&metallic);
+
+			ImGui::End();
+		}
+
 		auto*	rdGraph		= outRdGraph;
 		auto*	rdCtx		= _rdCtx;
 		auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
-		auto* mtl = _mtlPbr.ptr();
 
 		RdgTextureHnd texPbrColor	= rdGraph->createTexture("pbr_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 		RdgTextureHnd texPbrDepth	= rdGraph->createTexture("pbr_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});

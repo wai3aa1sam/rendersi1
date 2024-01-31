@@ -6,9 +6,9 @@ Shader {
 	
 	Pass {
 		// Queue	"Transparent"
-		Cull		None
+		//Cull		None
 
-		DepthTest	LessEqual
+		DepthTest	Less
 
 //		DepthTest	Always
 //		DepthWrite	false

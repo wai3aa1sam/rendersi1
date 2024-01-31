@@ -492,6 +492,9 @@ public:
 			e.descriptorCount		= paramInfo.bindCount;
 			e.pImmutableSamplers	= nullptr;
 
+			RDS_TODO("manual shader stage flag for optimize?");
+			e.stageFlags			= VK_SHADER_STAGE_ALL;
+
 			RDS_CORE_ASSERT(e.descriptorCount != 0, "");
 		}
 	}

@@ -98,11 +98,6 @@ RenderGpuBuffer_Vk::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 	{
 		auto memmap =_vkBuf.scopedMemMap();
 		memory_copy(memmap.data<u8*>(), cmd->data.data(), cmd->data.size());
-
-		if (cmd->parent)
-		{
-			RDS_THROW("has bug here, seems should rotate now");
-		}
 	}
 	else
 	{

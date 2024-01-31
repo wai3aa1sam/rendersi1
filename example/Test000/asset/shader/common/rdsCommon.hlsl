@@ -1,12 +1,12 @@
-
-
+#ifndef __rdsCommon_HLSL__
+#define __rdsCommon_HLSL__
 
 #if 0
 #pragma mark --- rds_global_variable-Impl ---
 #endif
 #if 1
 
-cbuffer rds_matrix
+cbuffer rds_CommonParam
 {
     float4x4	rds_matrix_model;
     float4x4	rds_matrix_view;
@@ -15,6 +15,22 @@ cbuffer rds_matrix
 
     float3      rds_camera_pos;
 };
+
+struct rds_Surface 
+{
+	float3 posWS;
+	float3 normal;	
+	float3 color;
+	float3 ambient;
+	float3 diffuse;
+	float3 specular;
+	float  shininess;
+
+    float  roughness;
+    float  metallic;
+};
+
+static const float rds_pi = 3.14159265359;
 
 #endif
 
@@ -74,5 +90,40 @@ SamplerState    RDS_GET_SAMPLER(NAME) 	    : register(S, space1) \
 
 float3 Color_Linear_to_sRGB(float3 x) { return x < 0.0031308 ? 12.92 * x : 1.13005 * sqrt(x - 0.00228) - 0.13448 * x + 0.005719; }
 float3 Color_sRGB_to_Linear(float3 x) { return x < 0.04045 ? x / 12.92 : -7.43605 * x - 31.24297 * sqrt(-0.53792 * x + 1.279924) + 35.34864; }
+
+#endif
+
+
+#if 0
+#pragma mark --- LightingUtil-Impl ---
+#endif
+#if 1
+
+float Lighting_attenuation(float3 posWs, float3 posLight)
+{
+    return 1.0;
+}
+
+#endif
+
+#if 0
+#pragma mark --- PostProcessingUtil-Impl ---
+#endif
+#if 1
+
+float3 PostProc_gammaEncoding(float3 v) { return pow(v, 1.0 / 2.2); }
+float3 PostProc_gammaDecoding(float3 v) { return pow(v, 2.2); }
+
+#if 0
+#pragma mark --- ToneMappingUtil-Impl ---
+#endif
+#if 1
+
+float3 ToneMapping_reinhard(float3 v) { return v / (v + float3(1.0)); }
+
+
+#endif
+
+#endif
 
 #endif

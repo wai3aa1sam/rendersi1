@@ -13,7 +13,7 @@ Shader {
 //		DepthTest	Always
 //		DepthWrite	false
 
-		Wireframe false
+		//Wireframe false
 
 		//BlendRGB 	Add One OneMinusSrcAlpha
 		//BlendAlpha	Add One OneMinusSrcAlpha
@@ -24,7 +24,8 @@ Shader {
 }
 #endif
 
-#include "common/rdsCommon.hlsl"
+//#include "common/rdsCommon.hlsl"
+#include "common/rdsPbrCommon.hlsl"
 
 struct VertexIn
 {
@@ -38,6 +39,7 @@ struct VertexIn
 struct PixelIn 
 {
 	float4 positionHCS  : SV_POSITION;
+	float4 positionWS   : POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal       : NORMAL0;
 };
@@ -45,13 +47,22 @@ struct PixelIn
 RDS_TEXTURE_2D_1(texture0);
 RDS_TEXTURE_2D_2(texture1);
 
+cbuffer PbrParam
+{
+    float   roughness;
+    float3  posLight;
+    float3  colorLight;
+    float   ao;
+    float   albedo;
+    float   metallic;
+};
+
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
     
-    //o.positionOS    = positions[i.vertexId];
-    //o.color         = colors[i.vertexId];
-    o.positionHCS = mul(rds_matrix_mvp, i.positionOS);
+    o.positionHCS = mul(rds_matrix_mvp,     i.positionOS);
+    o.positionWS  = mul(rds_matrix_model,   i.positionOS);
     o.normal      = i.normal;
     o.uv          = i.uv;
     
@@ -60,16 +71,28 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    float4 o;
-    o = float4(1.0, 1.0, 1.0, 1.0);
-    if (i.uv.x > 0.5)
-    {
-	    o = RDS_SAMPLE_TEXTURE_2D(texture0, i.uv);
-    }
-    else
-    {
-	    o = RDS_SAMPLE_TEXTURE_2D(texture1, i.uv);
-    }
+    float3 o;
+    o = float3(1.0, 1.0, 1.0);
 
-    return o;
+    rds_Surface surface;
+    surface.posWS       = i.positionWS;
+    surface.normal      = i.normal;
+    surface.roughness   = roughness;
+    surface.metallic    = metallic;
+
+    float3 posView = rds_camera_pos;    // rds_camera_pos
+
+    //float3 posLight     = float3(0.0, 10.0, 0.0);
+    //float3 colorLight   = float3(23.47, 21.31, 20.79);
+    o = Pbr_basic_lighting(surface, posView, posLight, colorLight);
+
+    float3 kAmbient = float3(0.03);
+    //float3 albedo   = float3(1.0);
+    //float  ao       = 0.2;
+    float3 ambient  = kAmbient * albedo * ao;
+
+    o = ToneMapping_reinhard(o);
+    o = PostProc_gammaEncoding(o);
+
+    return float4(o, 1.0);
 }

@@ -105,7 +105,7 @@ protected:
 		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 		Base::onCreate(thisCDesc);
 
-		_camera.setPos(0, 10, 10);
+		_camera.setPos(0, -20, 30);
 		_camera.setAim(0, 0, 0);
 	}
 
@@ -300,7 +300,7 @@ public:
 		//uploadTestMultiBuf();
 
 		{
-			_testRenderGraph.update();
+			//_testRenderGraph.update();
 			//_testRenderGraph.dump();
 		}
 	}
@@ -323,12 +323,8 @@ public:
 
 		rdCtx.beginRender();
 
+		_testRenderGraph.update();	// temporary
 		_testRenderGraph.commit();
-
-		// draw ui
-		{
-			ImGui::ShowDemoWindow();
-		}
 
 		// drawUI() will upload vertex, therefore must before tsfReq.commit(), _rdReq must be framed, as ui buffer may be in use 
 		_testRenderGraph.present(&rdCtx, _rdReq, tsfReq);
