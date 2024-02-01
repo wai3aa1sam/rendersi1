@@ -291,10 +291,6 @@ public:
 	template<size_t N> static u32 getQueueFaimlyPropertiesTo(Vector<VkQueueFamilyProperties, N>& out, Vk_PhysicalDevice_T* vkPhyDevice);
 
 	static void getPhyDevicePropertiesTo	(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice, bool isLogResult = false);
-	//static void getPhyDeviceFeatures2To		(RenderAdapterInfo& outInfo, VkPhysicalDeviceFeatures2* oVkPhyDevFeats, VkPhysicalDeviceDescriptorIndexingFeatures* oDesIdxFeats, Vk_PhysicalDevice_T* phyDevice);
-	//static void getPhyDeviceFeaturesTo		(RenderAdapterInfo& outInfo, Vk_PhysicalDevice_T* phyDevice);
-	//static void getVkPhyDeviceFeatures2To	(VkPhysicalDeviceFeatures2& out,	const RenderAdapterInfo& info);
-	//static void getVkPhyDeviceFeaturesTo	(VkPhysicalDeviceFeatures& out,		const RenderAdapterInfo& info);
 	static bool getSwapchainAvailableInfoTo	(Vk_SwapchainAvailableInfo& out, Vk_PhysicalDevice_T* vkPhydevice, Vk_Surface_T* vkSurface);
 
 

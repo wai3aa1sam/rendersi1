@@ -315,7 +315,7 @@ protected:
 		out.polygonMode					= rdState.wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 		out.lineWidth					= 1.0f;		// check gpu features
 		out.cullMode					= Util::toVkCullMode(rdState.cull);
-		out.frontFace					= VK_FRONT_FACE_COUNTER_CLOCKWISE;	// VK_FRONT_FACE_CLOCKWISE VK_FRONT_FACE_COUNTER_CLOCKWISE
+		out.frontFace					= VK_FRONT_FACE_CLOCKWISE;	// VK_FRONT_FACE_CLOCKWISE VK_FRONT_FACE_COUNTER_CLOCKWISE
 		out.depthBiasEnable				= VK_FALSE;
 		out.depthBiasConstantFactor		= 0.0f; // Optional
 		out.depthBiasClamp				= 0.0f; // Optional

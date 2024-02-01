@@ -39,6 +39,8 @@ RenderRequest::setCamera(math::Camera3f& camera)
 	matrix_view   = camera.viewMatrix();
 	matrix_proj   = camera.projMatrix();
 	cameraPos     = camera.pos();
+
+	matrix_proj[1][1] *= -1.0f;	// since we are using glm now, glm is for opengl, we need to reverse the y in vk / dx12
 }
 
 void 
