@@ -463,7 +463,7 @@ public:
 	RenderViewportScope(RenderCommandBuffer* cmdBuf) 
 	{
 		if (!cmdBuf) return;
-		_rect	= cmdBuf->scissorRect();
+		_rect	= cmdBuf->viewport();
 		_cmdBuf = cmdBuf;
 	}
 

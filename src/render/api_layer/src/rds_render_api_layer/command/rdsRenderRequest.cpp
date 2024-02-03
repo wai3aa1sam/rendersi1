@@ -23,6 +23,7 @@ RenderRequest::reset(RenderContext* rdCtx)
 {
 	_rdCmdBuf.reset();
 	_rdCtx = rdCtx;
+	_rdCmdBuf.setViewport	(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
 	_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
 }
 
@@ -39,8 +40,10 @@ RenderRequest::setCamera(math::Camera3f& camera)
 	matrix_view   = camera.viewMatrix();
 	matrix_proj   = camera.projMatrix();
 	cameraPos     = camera.pos();
-
+	
 	matrix_proj[1][1] *= -1.0f;	// since we are using glm now, glm is for opengl, we need to reverse the y in vk / dx12
+
+	_rdCmdBuf.setViewport(camera.viewport());
 }
 
 void 

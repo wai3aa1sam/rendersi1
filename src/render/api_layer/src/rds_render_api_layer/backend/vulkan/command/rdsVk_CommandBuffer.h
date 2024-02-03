@@ -83,8 +83,9 @@ public:
 	void executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs);
 	void waitIdle();
 
-	void setViewport(const Rect2f& rect, float minDepth = 0.0f, float maxDepth = 1.0f);
-	void setScissor (const Rect2f& rect);
+	void setViewport		(const Rect2f& rect, float minDepth = 0.0f, float maxDepth = 1.0f);
+	void setViewportReverse	(const Rect2f& rect, float minDepth = 0.0f, float maxDepth = 1.0f);		// VK_KHR_Maintenance1 
+	void setScissor			(const Rect2f& rect);
 	
 	//void beginRenderPass(Vk_RenderPass_T* vkRdPassHnd, Vk_Framebuffer_T* vkFramebufHnd, const math::Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents);
 	void beginRenderPass(Vk_RenderPass*		 vkRdPass, Vk_Framebuffer*		vkFramebuf, const Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents);

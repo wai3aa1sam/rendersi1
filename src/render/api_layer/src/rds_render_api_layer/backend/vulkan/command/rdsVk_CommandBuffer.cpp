@@ -267,27 +267,27 @@ Vk_CommandBuffer::waitIdle()
 void 
 Vk_CommandBuffer::setViewport(const Rect2f& rect, float minDepth, float maxDepth)
 {
-	#define RDS_VK_REVERSE_VIEWPORT 0
-
 	VkViewport viewport = {};
-	#if RDS_VK_REVERSE_VIEWPORT
-	viewport.x			= rect.x;
-	viewport.y			= rect.y + rect.h;	// VK_KHR_Maintenance1 
-	viewport.width		= rect.w;
-	viewport.height		= -rect.h;			// VK_KHR_Maintenance1 
-
-	// if reverse, need change proj matrix
-
-	#else
 	viewport.x			= rect.x;
 	viewport.y			= rect.y;	
 	viewport.width		= rect.w;
-	viewport.height		= rect.h;			
-	#endif // 0
-	
+	viewport.height		= rect.h;		
 	viewport.minDepth	= minDepth;
 	viewport.maxDepth	= maxDepth;
+
 	vkCmdSetViewport(hnd(), 0, 1, &viewport);
+}
+
+void 
+Vk_CommandBuffer::setViewportReverse(const Rect2f& rect, float minDepth, float maxDepth)
+{
+	Rect2f viewport = {};
+	viewport.x		= rect.x;
+	viewport.y		= rect.y + rect.h;
+	viewport.w		= rect.w;
+	viewport.h		= -rect.h;
+
+	setViewport(viewport, minDepth, maxDepth);
 }
 
 void 

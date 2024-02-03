@@ -162,7 +162,7 @@ public:
 		_mvp = mvp;
 	}
 
-	void drawScene(RenderRequest& rdReq, Material* mtl, Function<void(Material* mtl)>* setMtlFn = nullptr)
+	void drawScene(RenderRequest& rdReq, Material* mtl, Function<void(Material* mtl, int)>* setMtlFn = nullptr)
 	{
 		#if 0
 		for (size_t i = 0; i < _rdMeshes.size(); i++)
@@ -201,17 +201,17 @@ public:
 			for (size_t i = 0; i < s_kObjectCount; i++)
 			{
 				auto& srcMtl = _mtls[i];
-				Mat4f matModel	= Mat4f::s_translate(Vec3f{startPosX + stepPosX * i, 0.0f, 10.0f});
+				Mat4f matModel	= Mat4f::s_translate(Vec3f{startPosX + stepPosX * i, i % 2 ? 0.0f : 10.0f, 10.0f});
 				if (setMtlFn)
 				{
-					(*setMtlFn)(srcMtl);
+					(*setMtlFn)(srcMtl, sCast<int>(i));
 				}
 				rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, matModel);
 			}
 		}
 	}
 
-	const Mat4f&			mvp()			const { return _mvp; }
+	//const Mat4f&			mvp()			const { return _mvp; }
 	Mat4f					projMatrix()	const { return _camera->projMatrix(); }
 	const math::Camera3f&	camera()		const { return *_camera; }
 
@@ -262,6 +262,9 @@ public:
 			texCDesc.create("asset/texture/uvChecker2.png");
 			_uvCheckerTex2 = Renderer::rdDev()->createTexture2D(texCDesc);
 			_uvCheckerTex2->setDebugName("uvChecker2");
+
+			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test_bindless.shader");
+			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
 		}
 
 		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
@@ -302,7 +305,6 @@ public:
 
 		_shaderPbr	= Renderer::rdDev()->createShader("asset/shader/pbr.shader");
 		_mtlPbr		= Renderer::rdDev()->createMaterial(_shaderPbr);
-
 	}
 
 	void update()
@@ -318,8 +320,10 @@ public:
 		RdgTextureHnd oTexDepth;
 
 		//oTex = testCompute(_rdGraph, false);
-		oTex = testDeferred(&_rdGraph, &oTexDepth);
-		//oTex = testPbr(&_rdGraph, &oTexDepth);
+		//oTex = testDeferred(&_rdGraph, &oTexDepth);
+		oTex = testPbr(&_rdGraph, &oTexDepth);
+		//oTex = testBindless(&_rdGraph, &oTexDepth);
+
 		oTex = testSkybox(&_rdGraph, oTex, oTexDepth);
 		finalComposite(&_rdGraph, oTex);
 
@@ -518,16 +522,8 @@ public:
 				clearValue->setClearDepth(1.0f);
 
 				auto& mtl = _mtlSkybox;
-
-				auto drawCall = rdReq.addDrawCall();
-				drawCall->setSubMesh(meshAssets.box.subMesh());
-				drawCall->material			= mtl;
-				drawCall->materialPassIdx	= 0;
-
-				mtl->setParam("skybox",				_texDefaultSkybox);
-				mtl->setParam("rds_matrix_view",	_scene.camera().viewMatrix());
-				mtl->setParam("rds_matrix_proj",	_scene.projMatrix());
-				mtl->setParam("rds_matrix_mvp",		_scene.mvp());
+				mtl->setParam("skybox", _texDefaultSkybox);
+				rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
 			});
 
 		return texColor;
@@ -535,17 +531,99 @@ public:
 
 	RdgTextureHnd testPbr(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
 	{
-		static Tuple3f posLight		= {};
-		static Tuple3f colorLight	= {};
-		static float   roughness	= {};
-		static float   ao			= {};
-		static float   albedo		= {};
-		static float   metallic		= {};
+		auto*	rdGraph		= outRdGraph;
+		auto*	rdCtx		= _rdCtx;
+		auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
+
+		auto* mtl = _mtlPbr.ptr();
+
+		RdgTextureHnd texPbrColor	= rdGraph->createTexture("pbr_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+		RdgTextureHnd texPbrDepth	= rdGraph->createTexture("pbr_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
+
+		auto& gBufferPass = rdGraph->addPass("pbr", RdgPassTypeFlags::Graphics);
+		gBufferPass.setRenderTarget(texPbrColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		gBufferPass.setDepthStencil(texPbrDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
+		gBufferPass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), *_camera);
+
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+				clearValue->setClearDepth(1.0f);
+
+				Function<void(Material*, int i)> fn 
+					= [&](Material* mtl, int i)
+					{
+						mtl->setParam("texture0", _uvCheckerTex);
+						mtl->setParam("texture1", _uvCheckerTex2);
+
+						{
+							static Tuple3f posLight		= {};
+							static Tuple3f colorLight	= {};
+							static float   roughness	= {};
+							static float   ao			= {};
+							static float   albedo		= {};
+							static float   metallic		= {};
+
+
+							{
+								ImGui::Begin("test pbr");
+
+								auto dragFloat3 = [&](Material* mtl, const char* name, float* v)
+									{
+										Tuple3f temp {v[0], v[1], v[2]};
+										ImGui::DragFloat3(name, v);
+										mtl->setParam(name, temp);
+										//reinCast<Tuple3f&>(*v) = temp;
+									};
+
+								auto dragFloat = [&](Material* mtl, const char* name, float* v)
+									{
+										float temp  = *v;
+										ImGui::DragFloat(name, v);
+										mtl->setParam(name, temp);
+										//reinCast<float&>(*v) = temp;
+									};
+
+								dragFloat3	(mtl, "posView",	&constCast(_camera->pos()).x);
+								dragFloat3	(mtl, "posLight",	posLight.data);
+								dragFloat3	(mtl, "colorLight",	colorLight.data);
+								dragFloat	(mtl, "roughness",	&roughness);
+								dragFloat	(mtl, "ao",			&ao);
+								dragFloat	(mtl, "albedo",		&albedo);
+								dragFloat	(mtl, "metallic",	&metallic);
+
+								//RDS_DUMP_VAR(_camera->pos());
+
+								ImGui::End();
+							}
+						}
+
+						mtl->setParam("roughness", i % 2 ? 0.0f : 1.0f);
+					};
+				scene()->drawScene(rdReq, mtl, &fn);
+			}
+		);
+
+		if (outTexDepth)
+		{
+			*outTexDepth = texPbrDepth;
+		}
+
+		return texPbrColor;
+	}
+	
+	RdgTextureHnd testBindless(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
+	{
+		static float   rds_test_1	= {};
+		static float   rds_test_3	= {};
+		static float   rds_test_5	= {};
 
 		auto* mtl = _mtlPbr.ptr();
 
 		{
-			ImGui::Begin("test pbr");
+			ImGui::Begin("test bindless");
 
 			auto dragFloat3 = [&](Material* mtl, const char* name, float* v)
 				{
@@ -563,13 +641,9 @@ public:
 					//reinCast<float&>(*v) = temp;
 				};
 
-			dragFloat3	(mtl, "posView",	&constCast(_camera->pos()).x);
-			dragFloat3	(mtl, "posLight",	posLight.data);
-			dragFloat3	(mtl, "colorLight",	colorLight.data);
-			dragFloat	(mtl, "roughness",	&roughness);
-			dragFloat	(mtl, "ao",			&ao);
-			dragFloat	(mtl, "albedo",		&albedo);
-			dragFloat	(mtl, "metallic",	&metallic);
+			dragFloat	(mtl, "rds_test_1",		&rds_test_1);
+			dragFloat	(mtl, "rds_test_3",		&rds_test_3);
+			dragFloat	(mtl, "rds_test_5",		&rds_test_5);
 
 			ImGui::End();
 		}
@@ -578,11 +652,10 @@ public:
 		auto*	rdCtx		= _rdCtx;
 		auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
+		RdgTextureHnd texPbrColor	= rdGraph->createTexture("test_bindless_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+		RdgTextureHnd texPbrDepth	= rdGraph->createTexture("test_bindless_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
-		RdgTextureHnd texPbrColor	= rdGraph->createTexture("pbr_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
-		RdgTextureHnd texPbrDepth	= rdGraph->createTexture("pbr_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
-
-		auto& gBufferPass = rdGraph->addPass("pbr", RdgPassTypeFlags::Graphics);
+		auto& gBufferPass = rdGraph->addPass("test_bindless", RdgPassTypeFlags::Graphics);
 		gBufferPass.setRenderTarget(texPbrColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		gBufferPass.setDepthStencil(texPbrDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
 		gBufferPass.setExecuteFunc(
@@ -594,13 +667,7 @@ public:
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 
-				Function<void(Material*)> fn 
-					= [&](Material* mtl)
-					{
-						mtl->setParam("texture0", _uvCheckerTex);
-						mtl->setParam("texture1", _uvCheckerTex2);
-					};
-				scene()->drawScene(rdReq, mtl, &fn);
+				scene()->drawScene(rdReq, mtl);
 			}
 		);
 
@@ -623,7 +690,7 @@ public:
 			[=](RenderRequest& rdReq)
 			{
 				_presentMtl->setParam("texture0",			presentTex.renderResource());
-				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, -1.0f, 1.0f}));
+				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, 1.0f, 1.0f}));
 			}
 		);
 	}
@@ -679,7 +746,10 @@ public:
 
 	SPtr<Shader>		_shaderPbr;
 	SPtr<Material>		_mtlPbr;
-	
+
+	SPtr<Shader>		_shaderTestBindless;
+	SPtr<Material>		_mtlTestBindless;
+
 	SPtr<Shader>				_testComputeShader;
 	SPtr<Material>				_testComputeMtl;
 	SPtr<RenderGpuBuffer>		_testComputeLastFrameParticles;
