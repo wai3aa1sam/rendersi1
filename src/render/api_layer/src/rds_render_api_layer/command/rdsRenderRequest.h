@@ -74,6 +74,10 @@ public:
 	RDS_NODISCARD	RenderScissorRectScope	scissorRectScope();
 	RDS_INLINE		void					setScissorRect	(const Rect2f& rect);
 
+	RDS_NODISCARD	RenderViewportScope		viewportScope		();
+	RDS_INLINE		void					setViewport			(const Rect2f& rect);
+	RDS_INLINE		void					setViewportReverse	(const Rect2f& rect);
+
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform = Mat4f::s_identity());
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY);
 
@@ -97,8 +101,13 @@ inline RenderCommand_SwapBuffers*		RenderRequest::swapBuffers()		{ return render
 inline RenderCommand_DrawCall*			RenderRequest::addDrawCall()		{ return renderCommandBuffer().addDrawCall(); }
 
 
-inline RenderScissorRectScope		RenderRequest::scissorRectScope()						{ return RenderScissorRectScope(&_rdCmdBuf); }
-inline void							RenderRequest::setScissorRect(const Rect2f& rect)		{ _rdCmdBuf.setScissorRect(rect); }
+inline RenderScissorRectScope		RenderRequest::scissorRectScope		()						{ return RenderScissorRectScope(&_rdCmdBuf); }
+inline void							RenderRequest::setScissorRect		(const Rect2f& rect)	{ _rdCmdBuf.setScissorRect(rect); }
+
+inline RenderViewportScope			RenderRequest::viewportScope		()						{ return RenderViewportScope(&_rdCmdBuf); }
+inline void							RenderRequest::setViewport			(const Rect2f& rect)	{ _rdCmdBuf.setViewport(rect); }	
+inline void							RenderRequest::setViewportReverse	(const Rect2f& rect)	{ _rdCmdBuf.setViewportReverse(rect); }			
+
 inline Span<RenderCommand*>			RenderRequest::commands()								{ return _rdCmdBuf.commands(); }
 inline const RenderCommandBuffer&	RenderRequest::commandBuffer() const					{ return _rdCmdBuf; }
 

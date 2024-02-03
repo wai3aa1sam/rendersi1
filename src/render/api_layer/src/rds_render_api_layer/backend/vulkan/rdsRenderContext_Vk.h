@@ -58,6 +58,7 @@ public:
 	void onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd);
 	void onRenderCommand_SwapBuffers		(RenderCommand_SwapBuffers*		cmd);
 	void onRenderCommand_SetScissorRect		(RenderCommand_SetScissorRect*	cmd, void* userData);
+	void onRenderCommand_SetViewport		(RenderCommand_SetViewport*		cmd, void* userData);
 
 	void _onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd);
 	//void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd);

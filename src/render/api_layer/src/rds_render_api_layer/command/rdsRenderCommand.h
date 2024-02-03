@@ -30,6 +30,7 @@ using DrawingSettings = u64;
 	E(SwapBuffers,) \
 	E(DrawCall,) \
 	E(SetScissorRect, ) \
+	E(SetViewport, ) \
 	\
 	E(DrawRenderables,) \
 	\
@@ -175,6 +176,19 @@ public:
 	RenderCommand_SetScissorRect() : Base(Type::SetScissorRect) {}
 };
 
+class RenderCommand_SetViewport : public RenderCommand 
+{
+public:
+	using Base = RenderCommand;
+	using This = RenderCommand_SetViewport;
+
+public:
+	Rect2f rect;
+
+public:
+	RenderCommand_SetViewport() : Base(Type::SetViewport) {}
+};
+
 class RenderCommand_DrawRenderables : public RenderCommand
 {
 public:
@@ -294,10 +308,13 @@ public:
 	RenderCommand_DrawCall*				addDrawCall();
 
 	void setScissorRect(const Rect2f& rect);
+	void setViewport(const Rect2f& rect);
+	void setViewportReverse(const Rect2f& rect);
 
 	Span<RenderCommand*> commands();
 
-	const Rect2f& scissorRect() const;
+	const Rect2f& scissorRect	() const;
+	const Rect2f& viewport		() const;
 
 	const RenderCommand_ClearFramebuffers* getClearValue() const;
 
@@ -311,6 +328,8 @@ private:
 	RenderCommand_ClearFramebuffers			_clearFramebufCmd;
 	
 	Rect2f	_scissorRect	= {};
+	Rect2f	_viewport		= {};
+
 };
 
 template<class CMD> inline
@@ -331,7 +350,8 @@ inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()			{ return n
 
 inline Span<RenderCommand*> RenderCommandBuffer::commands() { return _commands.span(); }
 
-inline const Rect2f&	RenderCommandBuffer::scissorRect() const { return _scissorRect; }
+inline const Rect2f&	RenderCommandBuffer::scissorRect()	const { return _scissorRect; }
+inline const Rect2f&	RenderCommandBuffer::viewport()		const { return _viewport; }
 
 inline const RenderCommand_ClearFramebuffers* RenderCommandBuffer::getClearValue() const { return _clearFramebufCmd.isValid() ? &_clearFramebufCmd : nullptr; }
 
@@ -420,7 +440,47 @@ private:
 	RenderCommandBuffer* _cmdBuf = nullptr;
 	Rect2f _rect;
 };
+
 #endif // 1
 
+#if 0
+#pragma mark --- rdsRenderViewportScope-Impl ---
+#endif // 0
+#if 1
+
+class RenderViewportScope : public NonCopyable 
+{
+public:
+	RenderViewportScope() = default;
+
+	RenderViewportScope(RenderViewportScope && r) 
+	{
+		_cmdBuf = r._cmdBuf;
+		_rect	= r._rect;
+		r._cmdBuf = nullptr;
+	}
+
+	RenderViewportScope(RenderCommandBuffer* cmdBuf) 
+	{
+		if (!cmdBuf) return;
+		_rect	= cmdBuf->scissorRect();
+		_cmdBuf = cmdBuf;
+	}
+
+	~RenderViewportScope() { detach(); }
+
+	void detach() 
+	{
+		if (!_cmdBuf) return;
+		_cmdBuf->setViewport(_rect);
+		_cmdBuf = nullptr;
+	}
+
+private:
+	RenderCommandBuffer* _cmdBuf = nullptr;
+	Rect2f _rect;
+};
+
+#endif // 1
 
 }

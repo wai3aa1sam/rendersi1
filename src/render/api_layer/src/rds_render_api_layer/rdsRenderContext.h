@@ -156,6 +156,7 @@ RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData)
 		_DISPACH_CMD_CASE(ClearFramebuffers);
 		_DISPACH_CMD_CASE(SwapBuffers);
 		_DISPACH_CMD_CASE(SetScissorRect,		userData);
+		_DISPACH_CMD_CASE(SetViewport,			userData);
 		_DISPACH_CMD_CASE(DrawCall,				userData);
 		_DISPACH_CMD_CASE(DrawRenderables,		userData);
 		default: { throwError("undefined render command"); } break;

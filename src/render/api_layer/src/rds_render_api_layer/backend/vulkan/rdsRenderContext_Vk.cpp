@@ -727,6 +727,13 @@ RenderContext_Vk::onRenderCommand_SetScissorRect(RenderCommand_SetScissorRect* c
 	vkCmdBuf->setScissor(cmd->rect);
 }
 
+void 
+RenderContext_Vk::onRenderCommand_SetViewport(RenderCommand_SetViewport* cmd, void* userData)
+{
+	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
+	vkCmdBuf->setViewport(cmd->rect);
+}
+
 //void
 //RenderContext_Vk::onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd)
 //{

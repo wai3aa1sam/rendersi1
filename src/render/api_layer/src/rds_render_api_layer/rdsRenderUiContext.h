@@ -83,8 +83,10 @@ protected:
 	ImGuiContext*	_ctx = nullptr;
 };
 
-inline Vec2f Vec2f_make(const ImVec2& v) { return Vec2f(v.x, v.y); }
-inline Vec4f Vec4f_make(const ImVec4& v) { return Vec4f(v.x, v.y, v.z, v.w); }
+inline Vec2f makeVec2f(const ImVec2& v) { return Vec2f(v.x, v.y); }
+inline Vec4f makeVec4f(const ImVec4& v) { return Vec4f(v.x, v.y, v.z, v.w); }
+
+inline Rect2f makeRect2f(const ImVec2& pos, const ImVec2& size) { Rect2f o; o.set(makeVec2f(pos), makeVec2f(size)); return o; }
 
 #endif
 

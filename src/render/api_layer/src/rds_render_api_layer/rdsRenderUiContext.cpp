@@ -153,7 +153,9 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 	// need set set viewport too
 	// vkCmdSetViewport(command_buffer, 0, 1, &viewport);
-	auto scissorRectScope = req.scissorRectScope();
+
+	auto viewportScope		= req.viewportScope();
+	auto scissorRectScope	= req.scissorRectScope();
 
 	{
 		_vertexData.clear();
@@ -161,6 +163,10 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 		ImVec2 clip_off		= data->DisplayPos;
 		ImVec2 clip_scale	= data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+		
+		Rect2f viewport = {};
+		viewport.set(makeVec2f(clip_off), _rdCtx->framebufferSize());
+		req.setViewportReverse(viewport);
 
 		int vertexStart = 0;
 		int indexStart  = 0;
@@ -186,8 +192,8 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 					continue;
 
 				// Apply scissor/clipping rectangle
-				auto a = Vec2f_make(clip_min);
-				auto b = Vec2f_make(clip_max);
+				auto a = makeVec2f(clip_min);
+				auto b = makeVec2f(clip_max);
 
 				req.setScissorRect(Rect2f{a, b - a});
 

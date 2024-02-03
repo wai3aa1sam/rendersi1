@@ -41,15 +41,16 @@ PixelIn vs_main(VertexIn i)
 	o.pos = mul(rds_matrix_proj, float4(i.pos.xy, 0.f, 1.f));
 	o.col = i.col;
 	o.uv  = i.uv;
-
-	//o.uv.y = -o.uv.y;
+	//o.uv.y = -o.uv.y;		// flip viewport in application side
 
 	return o;
 }
 
 float4 ps_main(PixelIn i) : SV_TARGET 
 {
-	float4 o = i.col * texture0.Sample(_rds_texture0_sampler, i.uv);	// for ImGui::GetTexDataAsRGBA32
+	float2 uv = i.uv;
+	//uv.y = -uv.y;
+	float4 o = i.col * texture0.Sample(_rds_texture0_sampler, uv);	// for ImGui::GetTexDataAsRGBA32
 	//o = i.col * texture0.Sample(_rds_texture0_sampler, i.uv).r;		// for ImGui::GetTexDataAsAlpha8
 
 	return o;

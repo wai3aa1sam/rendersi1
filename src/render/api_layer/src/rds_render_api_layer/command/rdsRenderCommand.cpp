@@ -42,13 +42,32 @@ RenderCommandBuffer::alloc(SizeType n, SizeType align)
 	//return RenderFrameContext::instance()->renderFrame().renderCommandAllocator().alloc(n, align);
 }
 
-
 void 
 RenderCommandBuffer::setScissorRect(const Rect2f& rect) 
 {
 	_scissorRect = rect;
 	auto* cmd = newCommand<RenderCommand_SetScissorRect>();
 	cmd->rect = rect;
+}
+
+void 
+RenderCommandBuffer::setViewport(const Rect2f& rect) 
+{
+	_viewport = rect;
+	auto* cmd = newCommand<RenderCommand_SetViewport>();
+	cmd->rect = rect;
+}
+
+void 
+RenderCommandBuffer::setViewportReverse(const Rect2f& rect)
+{
+	Rect2f reserveRect = {};
+	reserveRect.x = rect.x;
+	reserveRect.y = rect.y + rect.h;
+	reserveRect.w = rect.w;
+	reserveRect.h = -rect.h;
+
+	setViewport(reserveRect);
 }
 
 #endif
