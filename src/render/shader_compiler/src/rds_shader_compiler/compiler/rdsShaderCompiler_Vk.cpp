@@ -51,10 +51,21 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	RDS_TODO("check vulkan extension whether existed then add the compile option, eg. -fhlsl-functionality1");
 	RDS_TODO("cbuffer only for hlsl, use ubo for glsl, same for uav, use ssbo");
 
+	u32 stageOffset = 0;
+	if (BitUtil::has(desc.stage, ShaderStageFlag::Pixel)) stageOffset = 0;
+
+	// 16 is minimum spec in vulkan
+	u32 cbufferOffset	= stageOffset + 0;
+	u32 textureOffset	= stageOffset + 4;
+	u32 samplerOffset	= stageOffset + 8;
+	u32 uavOffset		= stageOffset + 12;
+	u32 imageOffset		= stageOffset + 14;
+
 	TempString args;
 	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
 	fmtTo(args, " -fauto-bind-uniforms");	// auto bind all uniform variable
-	fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}", 0, 4, 8, 12 ,14); // 16 is minimum spec in vulkan
+	fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}"
+				, cbufferOffset, textureOffset, samplerOffset, uavOffset, imageOffset); 
 	//fmtTo(args, " -I\"dir"");
 	
 	//fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 100 -fresource-set-binding b1 1 2");
@@ -101,11 +112,6 @@ ShaderCompiler_Vk::reflect(StrView outpath, ByteSpan spvBytes, ShaderStageFlag s
 	TempString dstpath;
 	fmtTo(dstpath, "{}.json", outpath);
 	JsonUtil::writeFileIfChanged(dstpath, outInfo, true);
-
-	if (true)
-	{
-
-	}
 }
 
 void 
@@ -295,8 +301,38 @@ ShaderCompiler_Vk::_reflect_storageBufs	(ShaderStageInfo& outInfo, SpirvCompiler
 
 	for (const Resource& resource : res.storage_buffers)
 	{
-		StorageBuffer& dst		= outInfo.storageBufs.emplace_back();
-		const SPIRType& type	= compiler.get_type(resource.base_type_id);
+				StorageBuffer&	dst		= outInfo.storageBufs.emplace_back();
+		const	SPIRType&		type	= compiler.get_type(resource.base_type_id);
+
+		#if 0
+		size_t memberCount = type.member_types.size();
+		for (u32 i = 0; i < memberCount; i++)
+		{
+			auto &member_type = compiler.get_type(type.member_types[i]);
+			size_t member_size = compiler.get_declared_struct_member_size(type, i);
+
+			// Get member offset within this struct.
+			size_t offset = compiler.type_struct_member_offset(type, i);
+
+			if (!member_type.array.empty())
+			{
+				// Get array stride, e.g. float4 foo[]; Will have array stride of 16 bytes.
+				size_t array_stride = compiler.type_struct_member_array_stride(type, i);
+				RDS_DUMP_VAR(array_stride);
+			}
+
+			if (member_type.columns > 1)
+			{
+				// Get bytes stride between columns (if column major), for float4x4 -> 16 bytes.
+				size_t matrix_stride = compiler.type_struct_member_matrix_stride(type, i);
+				RDS_DUMP_VAR(matrix_stride);
+			}
+
+			const std::string &name = compiler.get_member_name(type.self, i);
+			RDS_DUMP_VAR(name, member_size, offset);
+		}
+		#endif // 0
+
 		//size_t size = compiler.get_declared_struct_size(type);
 
 		const std::string& name = compiler.get_name(resource.id);

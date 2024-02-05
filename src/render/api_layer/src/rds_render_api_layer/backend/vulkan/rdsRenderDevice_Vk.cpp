@@ -206,9 +206,16 @@ RenderDevice_Vk::createVkDevice(const Vk_PhysicalDeviceFeatures& vkPhyDevFeats)
 	// vulkan core feature base on its version, otherwise it is a extension
 	#if RDS_VK_VER_1_3
 
+	VkPhysicalDeviceVulkan12Features phyDevVkFeats12 = {};
+	phyDevVkFeats12.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	phyDevVkFeats12.bufferDeviceAddress = VK_TRUE;
+	phyDevVkFeats12.timelineSemaphore	= VK_TRUE;
+
 	VkPhysicalDeviceVulkan13Features phyDevVkFeats = {};
 	phyDevVkFeats.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	phyDevVkFeats.synchronization2	= true;
+	phyDevVkFeats.synchronization2	= VK_TRUE;
+
+	phyDevVkFeats.pNext				= &phyDevVkFeats12;
 
 	#elif RDS_VK_VER_1_2
 
@@ -383,6 +390,7 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
 	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing);
 	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
+	RDS_CORE_ASSERT(descriptorIndexingFeatures.runtimeDescriptorArray);
 
 	outInfo->feature.bindless = true;
 	_getRenderApaterFeaturesTo(outInfo);

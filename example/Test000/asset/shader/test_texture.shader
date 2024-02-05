@@ -33,7 +33,7 @@ Shader {
 struct VertexIn
 {
     float4 positionOS   : SV_POSITION;
-    float4 color        : COLOR;
+    //float4 color        : COLOR;
     float2 uv           : TEXCOORD0;
 
     uint vertexId       : SV_VertexID;
@@ -73,7 +73,7 @@ PixelIn vs_main(VertexIn i)
     //o.color         = colors[i.vertexId];
     o.positionHCS = mul(rds_matrix_mvp, i.positionOS);
     //o.positionHCS = i.positionOS;
-    o.color       = i.color;
+   // o.color       = i.color;
     o.uv          = i.uv;
     
     return o;

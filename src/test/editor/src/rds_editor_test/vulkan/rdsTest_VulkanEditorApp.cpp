@@ -105,7 +105,7 @@ protected:
 		auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 		Base::onCreate(thisCDesc);
 
-		_camera.setPos(0, 20, 30);
+		_camera.setPos(0, 20, -30);
 		_camera.setAim(0, 0, 0);
 	}
 

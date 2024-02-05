@@ -120,7 +120,7 @@ class TestScene
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	static constexpr SizeType s_kObjectCount = 10;
+	static constexpr SizeType s_kObjectCount = 25;
 
 public:
 	TestScene()
@@ -142,49 +142,11 @@ public:
 
 	void update(float dt, float aspectRatio)
 	{
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-		Mat4f model		= Mat4f::s_rotateZ(math::radians(90.0f) * time);
-		//Mat4f view		= Mat4f::s_lookAt(Vec3f{ 2.0f, 2.0f, 2.0f }, Vec3f::s_zero(), Vec3f{ 0.0f, 0.0f, 1.0f });
-		//Mat4f proj		= Mat4f::s_perspective(math::radians(45.0f), aspectRatio, 0.1f, 10.0f);
-		//proj[1][1]		*= -1;		// no need this line as enabled VK_KHR_Maintenance1 
-
-		model		= Mat4f::s_identity();
-
-		Mat4f mvp		= _camera->viewProjMatrix() * model;
-
-		//mvp = model;
-		//mvp = Mat4f::s_identity();
-
-		_mvp = mvp;
+		
 	}
 
 	void drawScene(RenderRequest& rdReq, Material* mtl, Function<void(Material* mtl, int)>* setMtlFn = nullptr)
 	{
-		#if 0
-		for (size_t i = 0; i < _rdMeshes.size(); i++)
-		{
-			auto drawCall = rdReq.addDrawCall();
-
-			drawCall->setSubMesh(_rdMeshes[i]->subMesh());
-			drawCall->material			= mtl;
-			drawCall->materialPassIdx	= 0;
-		}
-		#endif // 0
-		
-		#if 0
-		auto drawCall = rdReq.addDrawCall();
-
-		drawCall->setSubMesh(meshAssets.box.subMesh());
-		drawCall->material			= mtl;
-		drawCall->materialPassIdx	= 0;
-
-		mtl->setParam("rds_matrix_mvp", _mvp);
-		#endif // 0
-
 		if (_mtls.is_empty() || _mtls[0]->shader() != mtl->shader())
 		{
 			_mtls.clear();
@@ -196,17 +158,26 @@ public:
 		}
 
 		{
-			float startPosX = -25.0f;
-			float stepPosX	= 5.0f;
-			for (size_t i = 0; i < s_kObjectCount; i++)
+			auto row = math::sqrt(sCast<int>(s_kObjectCount));
+			auto col = row;
+
+			auto stepPos	= Tuple2f{3.0f,	3.0f};
+			auto startPos	= Tuple2f{-0.0f, 0.0f};
+
+
+			for (size_t r = 0; r < row; r++)
 			{
-				auto& srcMtl = _mtls[i];
-				Mat4f matModel	= Mat4f::s_translate(Vec3f{startPosX + stepPosX * i, i % 2 ? 0.0f : 10.0f, 10.0f});
-				if (setMtlFn)
+				for (size_t c = 0; c < col; c++)
 				{
-					(*setMtlFn)(srcMtl, sCast<int>(i));
+					auto i = r * col + c;
+					auto& srcMtl = _mtls[i];
+					Mat4f matModel	= Mat4f::s_translate(Vec3f{startPos.x + stepPos.x * c, 0.0f, startPos.y + stepPos.y * r});
+					if (setMtlFn)
+					{
+						(*setMtlFn)(srcMtl, sCast<int>(i));
+					}
+					rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, matModel);
 				}
-				rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, matModel);
 			}
 		}
 	}
@@ -248,11 +219,6 @@ public:
 		//return;
 
 		{
-			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
-
-			_testMtl = Renderer::rdDev()->createMaterial();
-			_testMtl->setShader(_testShader);
-
 			auto texCDesc = Texture2D::makeCDesc();
 
 			texCDesc.create("asset/texture/uvChecker.png");
@@ -262,6 +228,11 @@ public:
 			texCDesc.create("asset/texture/uvChecker2.png");
 			_uvCheckerTex2 = Renderer::rdDev()->createTexture2D(texCDesc);
 			_uvCheckerTex2->setDebugName("uvChecker2");
+
+			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+			_testMtl = Renderer::rdDev()->createMaterial();
+			_testMtl->setShader(_testShader);
+			_testMtl->setParam("texture0", _uvCheckerTex);
 
 			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
@@ -552,6 +523,8 @@ public:
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 
+				static Tuple3f posLight		= Tuple3f{0.0f, 20.0f, 0.0f};
+
 				Function<void(Material*, int i)> fn 
 					= [&](Material* mtl, int i)
 					{
@@ -559,29 +532,29 @@ public:
 						mtl->setParam("texture1", _uvCheckerTex2);
 
 						{
-							static Tuple3f posLight		= {};
-							static Tuple3f colorLight	= {};
-							static float   roughness	= {};
-							static float   ao			= {};
-							static float   albedo		= {};
-							static float   metallic		= {};
+							static Tuple3f colorLight	= Tuple3f{1.2f, 0.0f, 0.0f};
+							static Tuple3f colorSpec	= Tuple3f{0.2f, 0.4f, 0.6f};
+							static float   roughness	= 0.3f;
+							static float   ao			= 0.2f;
+							static float   albedo		= 0.2f;
+							static float   metallic		= 0.0f;
 
 
 							{
 								ImGui::Begin("test pbr");
 
-								auto dragFloat3 = [&](Material* mtl, const char* name, float* v)
+								auto dragFloat3 = [](Material* mtl, const char* name, float* v)
 									{
 										Tuple3f temp {v[0], v[1], v[2]};
-										ImGui::DragFloat3(name, v);
+										ImGui::DragFloat3(name, v, 0.01f);
 										mtl->setParam(name, temp);
 										//reinCast<Tuple3f&>(*v) = temp;
 									};
 
-								auto dragFloat = [&](Material* mtl, const char* name, float* v)
+								auto dragFloat = [](Material* mtl, const char* name, float* v)
 									{
 										float temp  = *v;
-										ImGui::DragFloat(name, v);
+										ImGui::DragFloat(name, v, 0.01f);
 										mtl->setParam(name, temp);
 										//reinCast<float&>(*v) = temp;
 									};
@@ -589,20 +562,23 @@ public:
 								dragFloat3	(mtl, "posView",	&constCast(_camera->pos()).x);
 								dragFloat3	(mtl, "posLight",	posLight.data);
 								dragFloat3	(mtl, "colorLight",	colorLight.data);
+								dragFloat3	(mtl, "colorSpec",	colorSpec.data);
 								dragFloat	(mtl, "roughness",	&roughness);
 								dragFloat	(mtl, "ao",			&ao);
 								dragFloat	(mtl, "albedo",		&albedo);
 								dragFloat	(mtl, "metallic",	&metallic);
 
-								//RDS_DUMP_VAR(_camera->pos());
-
 								ImGui::End();
 							}
 						}
-
-						mtl->setParam("roughness", i % 2 ? 0.0f : 1.0f);
 					};
+
 				scene()->drawScene(rdReq, mtl, &fn);
+
+				{
+					Mat4f matModel = Mat4f::s_translate(Vec3f{posLight});
+					rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, _testMtl, matModel);
+				}
 			}
 		);
 
