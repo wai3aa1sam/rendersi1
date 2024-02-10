@@ -17,6 +17,7 @@
 #if RDS_RENDER_HAS_VULKAN
 
 #define RDS_TEST_MT_DRAW_CALLS 0
+#define RDS_TEST_DUMMY_FOR_NO_SWAP_BUF 1
 
 namespace rds
 {
@@ -135,7 +136,7 @@ RenderContext_Vk::addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd)
 bool 
 RenderContext_Vk::isFrameCompleted()
 {
-	return vkRdFrame().inFlightFence()->isSignaled(renderDeviceVk());
+	return vkRdFrame().inFlightFence()->isSignaled(renderDeviceVk()) || vkRdFrame().submitCount() == 0;
 }
 
 void
@@ -150,10 +151,18 @@ RenderContext_Vk::onBeginRender()
 	// 2023.12.19: but the cmd buf is still executing, must wait before reset, must wait here
 	{
 		RDS_PROFILE_SECTION("vkWaitForFences()");
-		vkRdFrame().inFlightFence()->wait(rdDevVk);
+		if (vkRdFrame().submitCount() > 0)
+		{
+			RDS_PROFILE_SCOPED();
+		}
+		if (vkRdFrame().submitCount() != 0)
+		{
+			vkRdFrame().inFlightFence()->wait(rdDevVk);
+		}
 	}
 
 	//vkResetFences(vkDevice, vkFenceCount, vkFences);		// reset too early will cause deadlock, since the invalidate wii cause no work submitted (returned) and then no one will signal it
+	
 	ret = _vkSwapchain.acquireNextImage(_curImageIdx, vkRdFrame().imageAvaliableSmp()); RDS_UNUSED(ret);
 	if (!Util::isSuccess(ret))
 	{
@@ -163,9 +172,11 @@ RenderContext_Vk::onBeginRender()
 
 	{
 		{
-			RDS_TODO("remove temporary test");
+			RDS_TODO("remove temporary test, frame buf should be cache and reuse, but current solution has problem when cache and reuse when using rdGraph");
 			vkRdFrame()._vkFramebufPool.destroy();
 			vkRdFrame()._vkFramebufPool.create(rdDevVk);
+
+			//
 			vkRdFrame().reset();
 		}
 	}
@@ -178,34 +189,67 @@ RenderContext_Vk::onEndRender()
 	// submit
 	{
 		auto* rdDevVk = renderDeviceVk();
-
 		vkRdFrame().inFlightFence()->reset(rdDevVk);
 
-		Vector<Vk_SmpSubmitInfo, 8> waitSmps;
-		Vector<Vk_SmpSubmitInfo, 8> signalSmps;
-
-		waitSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame().imageAvaliableSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
-		if (auto* tsfCompletedVkSmp = vkTransferFrame().requestCompletedVkSmp(QueueTypeFlags::Graphics))
+		#if RDS_TEST_DUMMY_FOR_NO_SWAP_BUF
+		if (_pendingGfxVkCmdbufHnds.is_empty())
 		{
-			waitSmps.emplace_back	(Vk_SmpSubmitInfo{tsfCompletedVkSmp->hnd(),	VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT});
+			rdDevVk->waitIdle();
+
+			// easy handle for deadlock when nothing is committed
+			auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "dummyBegin");
+			vkCmdBuf->beginRecord(vkGraphicsQueue());
+			vkCmdBuf->endRecord();
+			_pendingGfxVkCmdbufHnds.emplace_back(vkCmdBuf->hnd());	
+		}
+		//else
+		#endif // 0
+		{
+			Vector<Vk_SmpSubmitInfo, 8> waitSmps;
+			Vector<Vk_SmpSubmitInfo, 8> signalSmps;
+
+			waitSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame().imageAvaliableSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+			if (auto* tsfCompletedVkSmp = vkTransferFrame().requestCompletedVkSmp(QueueTypeFlags::Graphics))
+			{
+				waitSmps.emplace_back	(Vk_SmpSubmitInfo{tsfCompletedVkSmp->hnd(),	VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT});
+			}
+
+			signalSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame().renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+			
+			Vk_CommandBuffer::submit(vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame().inFlightFence(), waitSmps, signalSmps);
 		}
 
-		signalSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame().renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
-
-		Vk_CommandBuffer::submit(vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame().inFlightFence(), waitSmps, signalSmps);
-
-		// present if needed
-		if (_shdSwapBuffers)
+		#if RDS_TEST_DUMMY_FOR_NO_SWAP_BUF && 0
+		if (_pendingGfxVkCmdbufHnds.is_empty())
 		{
-			RDS_TODO("handle do not get next image idx if no swap buffers in the next frame");
-			auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, vkRdFrame().renderCompletedSmp()); RDS_UNUSED(ret);
-			//invalidateSwapchain(ret, _vkSwapchain.framebufferSize());
-			_shdSwapBuffers = false;
+			auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "dummyEnd");
+			vkCmdBuf->beginRecord(vkGraphicsQueue());
+			vkCmdBuf->endRecord();
+
+			_pendingGfxVkCmdbufHnds.clear();
+			_pendingGfxVkCmdbufHnds.emplace_back(vkCmdBuf->hnd());
+
+			Vector<Vk_SmpSubmitInfo, 1> vkSmpWaitDummy;
+			vkSmpWaitDummy.emplace_back(Vk_SmpSubmitInfo{ vkRdFrame().renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_NONE });
+			Vk_CommandBuffer::submit(vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame().vkFenceDummy(), vkSmpWaitDummy, {});
+			//_hasSwapedBuffersInLastFrame = false;
 		}
+		#endif // 0
+	}
+
+	// present if needed
+	auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, vkRdFrame().renderCompletedSmp()); RDS_UNUSED(ret);
+
+	if (_shdSwapBuffers)
+	{
+		RDS_TODO("handle do not get next image idx if no swap buffers in the next frame");
+		//invalidateSwapchain(ret, _vkSwapchain.framebufferSize());
+		_shdSwapBuffers = false;
 	}
 
 	// next frame idx
 	{
+		vkRdFrame().setSubmitCount(_pendingGfxVkCmdbufHnds.size());
 		_pendingGfxVkCmdbufHnds.clear();
 		_presentVkCmdBuf = nullptr;
 
@@ -216,10 +260,6 @@ RenderContext_Vk::onEndRender()
 void
 RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
 {
-	bool isInvalidSize = math::equals0(newSize.x) || math::equals0(newSize.y);
-	if (isInvalidSize)
-		return;
-
 	invalidateSwapchain(VK_ERROR_OUT_OF_DATE_KHR, newSize);
 }
 
@@ -234,7 +274,7 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 		return;
 
 	auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Prim");
-
+	
 	vkCmdBuf->beginRecord(vkGraphicsQueue(), VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	_gfxProfiler.beginProfile(vkCmdBuf->hnd(), "RenderContext_Vk::onCommit(RenderCommandBuffer)");
 
@@ -307,7 +347,9 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			if (pass->isCommitted())
 				return;
 
-			pass->checkValidRenderTargetExtent();
+			pass->checkValid(); 
+			if (!pass->isValid())
+				return;
 
 			//RdgPassTypeFlags	typeFlags		= pass->typeFlags();
 			//bool				isGraphicsQueue	= BitUtil::hasAny(typeFlags, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
@@ -452,21 +494,13 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 					case SRC::Texture:	
 					{
 						auto* rdgTex	= sCast<RdgTexture*>(rsc);
-						auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdgTex));
-
-						VkFormat		vkFormat	= Util::toVkFormat(texVk->format());
-						//bool			isDepth		= Util::isDepthFormat(vkFormat);
-
-						//RDS_TODO("a last resouce layout hint and texture usage hint and RdgAcesss to determine the from and to layout");
-						//VkImageLayout	srcLayout	= isDepth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL	: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-						//VkImageLayout	dstLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+						auto* vkImgHnd	= Vk_Texture::getVkImageHnd(RdgResourceAccessor::access(rdgTex));
 
 						VkImageLayout	srcLayout	= Util::toVkImageLayout(rscAccess.state.srcUsage.tex, rscAccess.state.srcAccess);
 						VkImageLayout	dstLayout	= Util::toVkImageLayout(rscAccess.state.dstUsage.tex, rscAccess.state.dstAccess);
 
-						vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), vkFormat, srcLayout, dstLayout);
-						// && BitUtil::has(texVk->flag(), TextureFlags::DepthStencil) 
-
+						//vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, Util::toVkFormat(rdgTex->format()), srcLayout, dstLayout);
+						vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout, rdgTex->desc());
 					} break;
 
 					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
@@ -508,13 +542,12 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 					continue;
 
 				auto* rdgTex	= sCast<RdgTexture*>(rsc);
-				auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdgTex));
+				auto* vkImgHnd	= Vk_Texture::getVkImageHnd(RdgResourceAccessor::access(rdgTex));
 
-				VkFormat		vkFormat	= Util::toVkFormat(texVk->format());
 				VkImageLayout	srcLayout	= Util::toVkImageLayout(stateTrack.currentUsage().tex,	sCast<RenderAccess>(stateTrack.currentAccess()));
 				VkImageLayout	dstLayout	= Util::toVkImageLayout(expTex.usage.tex,				sCast<RenderAccess>(expTex.access));
-
-				vkCmdBuf->cmd_addImageMemBarrier(texVk->vkImageHnd(), vkFormat, srcLayout, dstLayout);
+				
+				vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout, rdgTex->desc());
 			}
 
 			vkCmdBuf->endRecord();
@@ -539,8 +572,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 	if (rdGraph.resultPasses().is_empty())
 		return;
 
-	if (!_vkSwapchain.isValid())
-		return;
+	//if (!_vkSwapchain.isValid())
+	//	return;
 
 	Base::onCommit(rdGraph);
 
@@ -1013,6 +1046,31 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 	vkCmdBuf->executeSecondaryCmdBufs(vkCmdBufs.span());
 
 	#endif // 0
+}
+
+void 
+RenderContext_Vk::onRenderCommand_CopyTexture(RenderCommand_CopyTexture* cmd, void* userData)
+{
+	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
+
+	VkImageCopy copyRegion = {};
+
+	auto src = Vk_Texture::getVkImageHnd(cmd->src);
+	auto dst = Vk_Texture::getVkImageHnd(cmd->dst);
+
+	copyRegion.extent = Util::toVkExtent3D(cmd->src->size());
+
+	copyRegion.srcSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
+	copyRegion.srcSubresource.baseArrayLayer	= cmd->srcLayer;
+	copyRegion.srcSubresource.layerCount		= 1;
+	copyRegion.srcSubresource.mipLevel			= cmd->srcMip;
+
+	copyRegion.dstSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
+	copyRegion.dstSubresource.baseArrayLayer	= cmd->dstLayer;
+	copyRegion.dstSubresource.layerCount		= 1;
+	copyRegion.dstSubresource.mipLevel			= cmd->dstMip;
+
+	vkCmdBuf->cmd_copyImage(dst, src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copyRegion);
 }
 
 #endif // 1

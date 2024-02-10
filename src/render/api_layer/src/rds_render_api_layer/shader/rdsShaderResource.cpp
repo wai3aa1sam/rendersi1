@@ -145,11 +145,11 @@ ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass)
 void 
 passTest(Vector<u8>& data, const ShaderResources::ConstBuffer::VarInfo& varInfo, const ShaderResources::ConstBuffer::Info* info, const void* value)
 {
-	for (size_t i = 0; i < data.size(); i++)
-	{
-		//RDS_DUMP_VAR(i, data[i]);
-		//data[i] = 0;
-	}
+	//for (size_t i = 0; i < data.size(); i++)
+	//{
+	//	//RDS_DUMP_VAR(i, data[i]);
+	//	//data[i] = 0;
+	//}
 	RDS_CALL_ONCE(RDS_LOG("sizeof(Mat4f) == {}, *reinCast<const Mat4f*>(value) = {}", sizeof(Mat4f), *reinCast<const Mat4f*>(value)));
 	RDS_CALL_ONCE(RDS_DUMP_VAR(reinCast<void*>(data.data()), *reinCast<Mat4f*>(&data[varInfo.offset])));
 	//memcpy(data.data() + varInfo.offset, value, sizeof(Mat4f));										// this will success

@@ -47,9 +47,10 @@ public:
 						Vk_CommandBuffer*	requestCommandBuffer	(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 	template<size_t N>	void				requestCommandBuffersTo	(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 
-
 	void resetCommandPools();
 	void resetCommandPool(QueueTypeFlags queueType);
+
+	void setSubmitCount(SizeType n) { _submitCount = n; }
 
 	Vk_CommandPool&			commandPool(QueueTypeFlags queueType);
 	Vk_DescriptorAllocator& descriptorAllocator();
@@ -57,6 +58,8 @@ public:
 	Vk_Semaphore*	imageAvaliableSmp();
 	Vk_Semaphore*	renderCompletedSmp();
 	Vk_Fence*		inFlightFence();
+
+	SizeType		submitCount() const;
 
 	RenderDevice_Vk*	renderDeviceVk();
 	RenderContext_Vk*	rdCtxVk();
@@ -83,9 +86,10 @@ protected:
 	Vk_Semaphore	_renderCompletedVkSmp;
 	Vk_Fence		_inFlightVkFence;
 
-
 	Vk_DescriptorAllocator _descriptorAlloc;
 	//Vector<Vk_DescriptorPool, s_kThreadCount> // use VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, only reset the pool
+
+	SizeType _submitCount = 0;
 };
 
 template<size_t N> inline
@@ -122,13 +126,13 @@ Vk_RenderFrame::commandPool(QueueTypeFlags queueType)
 
 inline Vk_DescriptorAllocator& Vk_RenderFrame::descriptorAllocator() { return _descriptorAlloc; }
 
-inline Vk_Semaphore*	Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
-inline Vk_Semaphore*	Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }
-inline Vk_Fence*		Vk_RenderFrame::inFlightFence()			{ return &_inFlightVkFence; }
+inline Vk_Semaphore*			Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
+inline Vk_Semaphore*			Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }
+inline Vk_Fence*				Vk_RenderFrame::inFlightFence()			{ return &_inFlightVkFence; }
 
-inline RenderContext_Vk* Vk_RenderFrame::rdCtxVk() { return _rdCtxVk; }
+inline Vk_RenderFrame::SizeType	Vk_RenderFrame::submitCount() const		{ return _submitCount; }
 
-
+inline RenderContext_Vk*		Vk_RenderFrame::rdCtxVk() { return _rdCtxVk; }
 
 #endif
 

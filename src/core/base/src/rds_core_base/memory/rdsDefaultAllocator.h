@@ -28,7 +28,7 @@ public:
 
 	static const char* name() { return MemoryContext::instance()->name(); }
 
-	static bool is_owning(void* p, SizeType n) { RDS_CORE_ASSERT(false); return false; };
+	static bool is_owning(void* p, SizeType n) { return true; };
 
 private:
 };

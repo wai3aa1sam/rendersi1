@@ -124,6 +124,20 @@ Vk_RenderApiUtil::toRect2f(const VkExtent2D& ext2d)
 	return Rect2f{ 0, 0, sCast<float>(ext2d.width), sCast<float>(ext2d.height) };
 }
 
+VkExtent3D Vk_RenderApiUtil::toVkExtent3D(const Tuple3u&  v)
+{
+	VkExtent3D o = {};
+	o.width		= v.x;
+	o.height	= v.y;
+	o.depth		= v.z;
+	return o;
+}
+
+VkExtent3D Vk_RenderApiUtil::toVkExtent3D(u32 x, u32 y, u32 z)
+{
+	return toVkExtent3D(Tuple3u{ x, y, z });
+}
+
 VkFormat
 Vk_RenderApiUtil::toVkFormat(RenderDataType v)
 {
@@ -215,6 +229,11 @@ Vk_RenderApiUtil::toVkFormat(ColorType v)
 	switch (v) 
 	{
 		case SRC::Rb:		{ return VK_FORMAT_R8_UNORM;			} break;
+
+		case SRC::RGBb:		{ return VK_FORMAT_R8G8B8_UNORM;		} break;
+		case SRC::RGBs:		{ return VK_FORMAT_R16G16B16_UNORM;		} break;
+		case SRC::RGBh:		{ return VK_FORMAT_R16G16B16_SFLOAT;	} break;
+		case SRC::RGBf:		{ return VK_FORMAT_R32G32B32_SFLOAT;	} break;
 
 		case SRC::RGBAb:	{ return VK_FORMAT_R8G8B8A8_UNORM;		} break;
 		case SRC::RGBAs:	{ return VK_FORMAT_R16G16B16A16_UNORM;	} break;
@@ -636,12 +655,33 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
 		dstAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
 	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) // read depthStencil in shader
+	{
+		srcStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dstStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcAccess	= VK_ACCESS_SHADER_READ_BIT;	// should be none btw
+		dstAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) 
+	{
+		srcStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		srcAccess	= VK_ACCESS_TRANSFER_READ_BIT;		// should be none btw
+		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
 	{
 		srcStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
 		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		srcAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
 		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
+	{
+		srcStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
+		dstAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)						// write renderTarget
 	{
@@ -705,6 +745,13 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) // to transfer src
+	{
+		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dstStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_ACCESS_TRANSFER_READ_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) // present
 	{
@@ -921,6 +968,8 @@ Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v)
 		case SRC::UnorderedAccess:	{ return VkImageLayout::VK_IMAGE_LAYOUT_GENERAL; }							break;
 		case SRC::RenderTarget:		{ return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; }			break;
 		case SRC::DepthStencil:		{ return VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; }	break;
+		case SRC::TransferSrc:		{ return VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL; }				break;
+		case SRC::TransferDst:		{ return VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; }				break;
 
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
@@ -937,7 +986,9 @@ Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v, RenderAccess access)
 		case SRC::ShaderResource:	{ return VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; }										break;
 		case SRC::UnorderedAccess:	{ return VkImageLayout::VK_IMAGE_LAYOUT_GENERAL; }														break;
 		case SRC::RenderTarget:		{ return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;}										break;
-		case SRC::DepthStencil:		{ return access == RenderAccess::Write ? VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL	: VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL; }	break;
+		case SRC::DepthStencil:		{ return access == RenderAccess::Write ? VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL; }	break;
+		case SRC::TransferSrc:		{ return VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;}											break;
+		case SRC::TransferDst:		{ return VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;}											break;
 
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
@@ -1192,6 +1243,21 @@ Vk_RenderApiUtil::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 void 
 Vk_RenderApiUtil::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
 {
+	transitionImageLayout(image->hnd(), vkFormat, dstLayout, srcLayout, dstQueue, srcQueue, vkCmdBuf);
+}
+
+void 
+Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
+{
+	Texture_Desc desc;
+	desc.mipCount	= 1;
+	desc.layerCount = 1;
+	transitionImageLayout(hnd, desc, vkFormat, dstLayout, srcLayout, dstQueue, srcQueue, vkCmdBuf);
+}
+
+void 
+Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
+{
 	vkCmdBuf->beginRecord(srcQueue);
 
 	VkPipelineStageFlags	srcStage		= {};
@@ -1225,8 +1291,8 @@ Vk_RenderApiUtil::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkIm
 		throwError("");
 	}
 
-	VkImageAspectFlags aspectMask = dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-	if (hasStencilComponent(vkFormat)) 
+	VkImageAspectFlags aspectMask = dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	if (hasStencilComponent(toVkFormat(desc.format))) 
 		aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
 
 	#if 1
@@ -1237,13 +1303,13 @@ Vk_RenderApiUtil::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkIm
 	barrier.newLayout						= dstLayout;
 	barrier.srcQueueFamilyIndex				= dstQueue ? srcQueue->familyIdx() : VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex				= dstQueue ? dstQueue->familyIdx() : VK_QUEUE_FAMILY_IGNORED;
-	barrier.image							= image->hnd();
+	barrier.image							= hnd;
 
 	barrier.subresourceRange.aspectMask		= aspectMask;
 	barrier.subresourceRange.baseMipLevel	= 0;
 	barrier.subresourceRange.baseArrayLayer	= 0;
-	barrier.subresourceRange.levelCount		= 1;
-	barrier.subresourceRange.layerCount		= 1;
+	barrier.subresourceRange.levelCount		= desc.mipCount;
+	barrier.subresourceRange.layerCount		= desc.layerCount;
 
 	barrier.srcAccessMask = srcAccessMask;
 	barrier.dstAccessMask = dstAccessMask;
@@ -1282,7 +1348,7 @@ Vk_RenderApiUtil::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkIm
 	depInfo.sType					= VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
 	depInfo.imageMemoryBarrierCount = 1;
 	depInfo.pImageMemoryBarriers	= &barrier;
-	
+
 	auto vkCmdPipelineBarrier23 = Renderer_Vk::instance()->extInfo().getDeviceExtFunction<PFN_vkCmdPipelineBarrier2>("vkCmdPipelineBarrier2");
 	vkCmdPipelineBarrier23(vkCmdBuf->hnd(), &depInfo);
 

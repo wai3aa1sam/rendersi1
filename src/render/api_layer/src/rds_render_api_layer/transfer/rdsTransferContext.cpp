@@ -53,7 +53,6 @@ TransferContext::commit(TransferRequest& tsfReq, bool isWaitImmediate)
 {
 	RDS_WARN_ONCE("Before waitUploadTextureCompleted()");
 	tsfReq.waitUploadTextureCompleted();
-	RDS_WARN_ONCE("================");
 	//tsfReq.waitUploadBufferCompleted();
 	onCommit(tsfReq, isWaitImmediate);
 }

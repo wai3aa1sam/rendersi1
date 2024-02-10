@@ -58,7 +58,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 {
     float4 o;
 	float3 uv = i.uv;
-	//uv.y = -uv.y;
+	uv.y = -uv.y;
     o = RDS_SAMPLE_TEXTURE_CUBE(skybox, uv);
     o.a = 1.0;
     return o;

@@ -31,6 +31,8 @@ class RenderGraph : public NonCopyable
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 
 public:
+	using TextureT			= Texture;
+
 	using Texture			= RdgResource_TextureT;
 	using Buffer			= RdgResource_BufferT;
 
@@ -193,8 +195,9 @@ public:
 	RdgTextureHnd	createTexture	(StrView name, const TextureCreateDesc&	cDesc);
 	RdgBufferHnd	createBuffer	(StrView name, const BufferCreateDesc&	cDesc);
 
-	RdgTextureHnd	importTexture(StrView name, Texture* tex);
-	void			exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFlags usageFlags, Access access = Access::Read);
+	RdgTextureHnd	importTexture(StrView name, TextureT* tex, TextureUsageFlags lastUsage, Access lastAccess = Access::None);
+	void			exportTexture(SPtr<Texture>*		out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
+	void			exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
 
 	RdgBufferHnd	importBuffer(StrView name, Buffer* buf, RenderGpuBufferTypeFlags lastUsage, Access lastAccess);
 	void			exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlags, Access access = Access::Read);

@@ -4,6 +4,8 @@
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 #include "rdsTextureCube_Vk.h"
 
+#include "../transfer/rdsTransferContext_Vk.h"
+
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
@@ -140,6 +142,8 @@ Vk_Image::create(RenderDevice_Vk* rdDevVk, const Texture_Desc& texDesc, QueueTyp
 	if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::UnorderedAccess))	{ usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT; }
 	if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::RenderTarget))		{ usageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; }
 	if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::DepthStencil))		{ usageFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT; }
+	if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferSrc))		{ usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; }
+	if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferDst))		{ usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; }
 
 	auto& vkQueueIndices = rdDevVk->queueFamilyIndices();
 
@@ -172,6 +176,10 @@ Vk_Image::create(RenderDevice_Vk* rdDevVk, const Texture_Desc& texDesc, QueueTyp
 	}
 
 	create(vkAlloc, &imageInfo, allocInfo, vkMemPropFlags);
+
+	auto& tsfCtxVk = rdDevVk->transferContextVk();
+	//if		(BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferSrc)) { tsfCtxVk.transitImageLayout(hnd(), vkFormat, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, queueTypeFlags); }
+	if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferDst)) { tsfCtxVk.transitImageLayout(hnd(), texDesc, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, queueTypeFlags); }
 }
 
 #endif
@@ -270,7 +278,6 @@ Vk_Texture::createVkImage		(Vk_Image*		o, Texture* tex, RenderDevice_Vk* rdDevVk
 	allocInfo.usage = RenderMemoryUsage::GpuOnly;
 	o->create(rdDevVk, tex->desc(), QueueTypeFlags::Graphics
 		, vkAlloc, &allocInfo);
-
 }
 
 void 

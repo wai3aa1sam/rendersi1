@@ -34,6 +34,9 @@ public:
 	static constexpr SizeType s_kFaceCount = 6;
 
 public:
+	Vector<Image, s_kFaceCount> uploadImages;
+
+public:
 	void create(Span<StrView> filenames, TextureUsageFlags usageFlags_ = TextureUsageFlags::ShaderResource)
 	{
 		for (auto& e : filenames)
@@ -48,8 +51,10 @@ public:
 		}
 	}
 
-public:
-	Vector<Image, s_kFaceCount> uploadImages;
+	void create(Tuple2u size_, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
+	{
+		Base::create(RenderDataType::TextureCube, size_.x, size_.y, 1, format_, usageFlags_, mipCount_, s_kFaceCount, sampleCount_, {});
+	}
 };
 
 

@@ -228,11 +228,15 @@ RenderGraph::compile()
 	{
 		for (auto& expBuf : exportedBuffers())
 		{
+			if (!expBuf.outRdRsc)
+				continue;
 			(*expBuf.outRdRsc).reset(sCast<RenderGpuBuffer*>(expBuf.rdgRsc->renderResource()));
 		}
 
 		for (auto& expTex : exportedTextures())
 		{
+			if (!expTex.outRdRsc)
+				continue;
 			(*expTex.outRdRsc).reset(sCast<Texture2D*>(expTex.rdgRsc->renderResource()));
 		}
 	}
@@ -285,15 +289,20 @@ RenderGraph::createBuffer(StrView name, const BufferCreateDesc& cDesc)
 }
 
 RdgTextureHnd 
-RenderGraph::importTexture(StrView name, Texture* tex)
+RenderGraph::importTexture(StrView name, TextureT* tex, TextureUsageFlags lastUsage, Access lastAccess)
 {
 	RdgTexture_CreateDesc cDesc = {};
 	cDesc.create(tex->desc());
+
 	auto	hnd		= createTexture(name, cDesc);
 	auto*	rdgTex	= sCast<RdgTexture*>(hnd._rdgRsc);
+
 	rdgTex->_desc = tex->desc();
 	rdgTex->setImport(true);
 	rdgTex->commitRenderResouce(tex);
+
+	rdgTex->_stateTrack.setCurrentUsageAccess(lastUsage, lastAccess);
+
 	return hnd;
 }
 
@@ -309,10 +318,16 @@ RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFl
 	exportRsc.access	= access;
 }
 
+void
+RenderGraph::exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access)
+{
+	exportTexture(nullptr, hnd, usageFlag, access);
+}
+
 RdgBufferHnd 
 RenderGraph::importBuffer(StrView name, Buffer* buf, RenderGpuBufferTypeFlags lastUsage, Access lastAccess)
 {
-	RdgBuffer_CreateDesc cDesc;
+	RdgBuffer_CreateDesc cDesc = {};
 	cDesc.create(buf->desc());
 	auto	hnd		= createBuffer(name, cDesc);
 	auto*	rdgBuf	= sCast<RdgBuffer*>(hnd._rdgRsc);

@@ -6,7 +6,7 @@ references:
 #ifndef __rdsPbrCommon_HLSL__
 #define __rdsPbrCommon_HLSL__
 
-#include "rdsCommon.hlsl"
+#include "../common/rdsCommon.hlsl"
 
 float3 Pbr_fresnelSchlick(float cosTheta, float3 baseRefl)
 {

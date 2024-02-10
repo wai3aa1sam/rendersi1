@@ -56,6 +56,7 @@ class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T, VK_OBJ
 	using Base = Vk_RenderApiPrimitive<Vk_CommandBuffer_T, VK_OBJECT_TYPE_COMMAND_BUFFER>;
 public:
 
+	static void submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_SmpSubmitInfo waitSmp, Span<Vk_SmpSubmitInfo> signalSmps);
 	static void submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
 	static void submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
 
@@ -109,6 +110,9 @@ public:
 	void cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, Span<VkBufferImageCopy> copyDesc);
 	void cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height, u32 srcOffset);
 
+	void cmd_copyImage(Vk_Image_T* dst, Vk_Image_T* src, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageCopy& copyRegion);
+	void cmd_copyImage(Vk_Image_T* dst, Vk_Image_T* src, VkImageLayout srcLayout, VkImageLayout dstLayout, Tuple3u extent, u32 srcBaseLayer, u32 dstBaseLayer, u32 srcMip, u32 dstMip);
+
 	/*
 	// other than layout transitions or queue family transfers, no implementation actually looks at the resource to implement buffer or image barriers.
 	*/
@@ -121,8 +125,9 @@ public:
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 baseLayer, u32 layerCount);
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
-	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout
+	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkImageLayout srcLayout, VkImageLayout dstLayout
 								, const Texture_Desc& texDesc, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
+	void cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLayout, VkImageLayout dstLayout, const Texture_Desc& texDesc);
 	void cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 baseLayer, u32 layerCount, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
 
 	void cmd_addBufferMemoryBarrier(); // use for queue family tansfer

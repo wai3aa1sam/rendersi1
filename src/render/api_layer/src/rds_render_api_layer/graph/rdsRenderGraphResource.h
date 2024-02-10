@@ -568,7 +568,7 @@ public:
 
 protected:
 			ResourceT* resource()		{ return sCast<			ResourceT*>(_rdgRsc); }
-	const	ResourceT* resource() const	{ return sCast<const	ResourceT*>(_rdgRsc); }
+			ResourceT* resource() const	{ return sCast<			ResourceT*>(_rdgRsc); }
 
 	//		RenderResourceT* renderResource()		{ return sCast<			RenderResourceT*>(resource()->access()); }
 	//const	RenderResourceT* renderResource() const	{ return sCast<const	RenderResourceT*>(resource()->access()); }
@@ -629,6 +629,15 @@ public:
 	Size				size()				const	{ return resource()->access()->size(); }
 	ColorType			format()			const	{ return resource()->desc().format; }
 	TextureUsageFlags	usageFlags()		const	{ return desc().usageFlags; }
+
+	Texture*		texture()				{ return sCast<Texture*>(resource()->renderResource()); }
+	
+	Texture2D*		texture2D()				{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);	return sCast<Texture2D*>(resource()->renderResource()); }
+	Texture2D*		texture2D()		const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);	return sCast<Texture2D*>(resource()->renderResource()); }
+
+	TextureCube*	textureCube()			{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);	return sCast<TextureCube*>(resource()->renderResource()); }
+	TextureCube*	textureCube()	const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);	return sCast<TextureCube*>(resource()->renderResource()); }
+
 };
 
 class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>

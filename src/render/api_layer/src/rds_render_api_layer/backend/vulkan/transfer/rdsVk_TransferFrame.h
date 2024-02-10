@@ -243,7 +243,6 @@ public:
 	void	uploadToStagingBuf		(StagingHandle& out, ByteSpan		data, SizeType offset);
 	void*	mappedStagingBufData	(StagingHandle  hnd);
 
-
 	// VK_COMMAND_BUFFER_LEVEL_PRIMARY
 	Vk_CommandBuffer* requestCommandBuffer			(QueueTypeFlags type, VkCommandBufferLevel level, StrView debugName);
 	Vk_CommandBuffer* requestGraphicsCommandBuffer	(VkCommandBufferLevel level, StrView debugName);

@@ -184,6 +184,9 @@ public:
 	static VkExtent2D toVkExtent2D(const Vec2f&  vec2);
 	static Rect2f	  toRect2f	  (const VkExtent2D&  ext2d);
 
+	static VkExtent3D toVkExtent3D(const Tuple3u&  v);
+	static VkExtent3D toVkExtent3D(u32 x, u32 y, u32 z);
+
 	static VkFormat	toVkFormat(RenderDataType	v);
 	static VkFormat	toVkFormat(ColorType		v);
 	static VkFormat	toVkFormat_ShaderTexture(VkFormat v);		// to UNORM
@@ -284,6 +287,8 @@ public:
 public:
 	static void copyBuffer				(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue, RenderDevice_Vk* rdDevVk);
 	static void transitionImageLayout	(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf);
+	static void transitionImageLayout	(Vk_Image_T* hnd, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf);
+	static void transitionImageLayout	(Vk_Image_T* hnd, const Texture_Desc& desc, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf);
 	static void copyBufferToImage		(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 width, u32 height, Vk_Queue* vkQueue, Vk_CommandBuffer* vkCmdBuf);
 
 public:

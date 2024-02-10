@@ -211,6 +211,9 @@ public:
 
 	virtual void onCreate() override
 	{
+		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
+		auto& rdCtx = mainWin->renderContext();		RDS_UNUSED(rdCtx);
+
 		{
 			#if 1
 			auto t = VertexTypeUtil::make(RenderDataType::Float32x3
@@ -252,7 +255,7 @@ public:
 
 		#if 1
 		{
-			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+			_testShader = Renderer::rdDev()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
 			_testMaterial = Renderer::rdDev()->createMaterial();
@@ -272,7 +275,95 @@ public:
 			meshAssets.create();
 		}
 
-		Renderer::rdDev()->transferContext().transferRequest().commit(true);
+		// prepare
+		#if 1
+		{
+
+			RenderRequest req;
+
+			rdCtx.beginRender();
+
+			_testRenderGraph.prepare();	
+			_testRenderGraph.commit();
+			_testRenderGraph.present(&rdCtx, req, Renderer::rdDev()->transferContext().transferRequest(), false);
+
+			rdCtx.endRender();
+
+			Renderer::rdDev()->waitIdle();
+	}
+		#endif // 0
+
+		
+
+		#if 0
+		{
+			//Mat4f::Base::Base::operator(Mat4f::s_identity());
+			//Mat4f::Base a;
+			//using Type = Mat4f::Base;
+			using Type = Mat4f;
+
+			Type a;
+			Type b;
+			glm::operator*(a, b);
+		}
+
+		RDS_LOG("===============**************************************************** {}", RDS_SRCLOC);
+		{
+			//int* p = reinCast<int*>(~size_t(0));
+			int* p = reinCast<int*>(~size_t(0));
+			RDS_DUMP_VAR((void*)p);
+			new(p) int();
+			delete[] p;
+		}
+		RDS_LOG("===============**************************************************** {}", RDS_SRCLOC);
+		#endif // 0
+
+
+		#if 0
+		{
+			RDS_LOG("=============== {}", RDS_SRCLOC);
+
+			Mat4f s[3];
+			auto v = s[0] * s[1] * s[2];
+
+			RDS_LOG("=============== {}", RDS_SRCLOC);
+		}
+
+		{
+			RDS_LOG("=============== {}", RDS_SRCLOC);
+			RenderRequest rdReq;
+			rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, this->_testMaterial);
+			RDS_LOG("=============== {}", RDS_SRCLOC);
+			throwIf(true, "");
+		}
+
+		{
+			// crash in different setExecuteFunc
+
+			auto center = Vec3f::s_zero();
+
+			const Vector<Mat4f> matViews = {
+				Mat4f::s_lookAt(center, Vec3f::s_right(),	Vec3f{0.0f, -1.0f,  0.0f}),
+				Mat4f::s_lookAt(center, Vec3f::s_left(),	Vec3f{0.0f, -1.0f,  0.0f}),
+				Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,  1.0f}),
+				Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f, -1.0f}),
+				Mat4f::s_lookAt(center, Vec3f::s_forward(), Vec3f{0.0f, -1.0f,  0.0f}),
+				Mat4f::s_lookAt(center, Vec3f::s_back(),	Vec3f{0.0f, -1.0f,  0.0f}),
+			};
+			for (size_t i = 0; i < 6; i++)
+			{
+				RenderGraph rdGraph;
+				rdGraph.create("test", &rdCtx);
+				auto& pass = rdGraph.addPass("test_pass", RdgPassTypeFlags::Graphics);
+				pass.setExecuteFunc(
+					[=](RenderRequest& rdReq)
+					{
+						matViews[i];
+					});
+			}
+			RDS_LOG("=============== {}", RDS_SRCLOC);
+		}
+		#endif // 0
 	}
 
 	virtual void onUpdate() override
@@ -280,7 +371,7 @@ public:
 		RDS_PROFILE_SCOPED();
 		auto* mainWnd	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWnd->renderContext();
-		
+
 		#if 1
 		{
 			RDS_PROFILE_SECTION("wait frame");

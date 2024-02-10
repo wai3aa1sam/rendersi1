@@ -18,6 +18,8 @@ class TransferCommand_UploadTexture;
 	E(RenderTarget,		= BitUtil::bit(2)) \
 	E(DepthStencil,		= BitUtil::bit(3)) \
 	E(BackBuffer,		= BitUtil::bit(4)) \
+	E(TransferSrc,		= BitUtil::bit(5)) \
+	E(TransferDst,		= BitUtil::bit(6)) \
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(TextureUsageFlags, u8);
@@ -173,9 +175,9 @@ public:
 		Base::create(RenderDataType::Texture2D, width_, height_, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
 	}
 
-	Texture2D_CreateDesc(Tuple2u size, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
+	Texture2D_CreateDesc(Tuple2u size_, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
 	{
-		Base::create(RenderDataType::Texture2D, size.x, size.y, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
+		Base::create(RenderDataType::Texture2D, size_.x, size_.y, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
 	}
 
 	void create(StrView filename, TextureUsageFlags usageFlags_ = TextureUsageFlags::ShaderResource)
@@ -223,6 +225,8 @@ public:
 	using CreateDesc		= Texture_CreateDesc;
 	using Desc				= Texture_Desc;
 	using TextureCreateDesc	= Texture_CreateDesc;
+
+	using Size				= Vec3u;
 
 public:
 	virtual ~Texture();

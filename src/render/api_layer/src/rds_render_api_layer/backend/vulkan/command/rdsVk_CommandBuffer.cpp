@@ -50,7 +50,7 @@ Vk_CommandBuffer::submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHn
 	submitInfo.pWaitSemaphoreInfos		= waitSmps.data();
 	submitInfo.pSignalSemaphoreInfos	= signalSmps.data();;
 	submitInfo.pCommandBufferInfos		= cmdBufSubmitInfos.data();
-
+	
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
 	auto ret = vkQueueSubmit2(vkQueue->hnd(), 1, &submitInfo, signalFence->hnd());
 	Util::throwIfError(ret);
@@ -394,6 +394,30 @@ Vk_CommandBuffer::cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkIma
 }
 
 void 
+Vk_CommandBuffer::cmd_copyImage(Vk_Image_T* dst, Vk_Image_T* src, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageCopy& copyRegion)
+{
+	vkCmdCopyImage(hnd(), src, srcLayout, dst, dstLayout, 1, &copyRegion);
+}
+
+void 
+Vk_CommandBuffer::cmd_copyImage(Vk_Image_T* dst, Vk_Image_T* src, VkImageLayout srcLayout, VkImageLayout dstLayout, Tuple3u extent, u32 srcBaseLayer, u32 dstBaseLayer, u32 srcMip, u32 dstMip)
+{
+	VkImageCopy copyRegion = {};
+	copyRegion.extent = Util::toVkExtent3D(extent);
+	copyRegion.srcSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
+	copyRegion.srcSubresource.baseArrayLayer	= srcBaseLayer;
+	copyRegion.srcSubresource.mipLevel			= srcMip;
+	copyRegion.srcSubresource.layerCount		= 1;
+
+	copyRegion.dstSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
+	copyRegion.dstSubresource.baseArrayLayer	= dstBaseLayer;
+	copyRegion.dstSubresource.mipLevel			= dstMip;
+	copyRegion.dstSubresource.layerCount		= 1;
+
+	cmd_copyImage(dst, src, srcLayout, dstLayout, copyRegion);
+}
+
+void 
 Vk_CommandBuffer::cmd_copyBufferToImage(Vk_Image_T* dst, Vk_Buffer_T* src, VkImageLayout layout, u32 width, u32 height, u32 srcOffset)
 {
 	RDS_CORE_ASSERT(width != 0 || height != 0, "");
@@ -606,12 +630,12 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, V
 }
 
 void 
-Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLayout, VkImageLayout dstLayout
 										, const Texture_Desc& texDesc, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner)
 {
 	Vk_Cmd_AddImageMemBarrierDesc desc = {};
 	desc.image				= image;
-	desc.format				= vkFormat;
+	desc.format				= Util::toVkFormat(texDesc.format);
 	desc.srcLayout			= srcLayout;
 	desc.dstLayout			= dstLayout;
 	desc.srcQueueFamilyIdx	= srcQueueFamilyIdx;
@@ -624,6 +648,12 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, V
 	desc.layerCount			= texDesc.layerCount;
 
 	cmd_addImageMemBarrier(desc);
+}
+
+void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLayout, VkImageLayout dstLayout, const Texture_Desc& texDesc)
+{
+	cmd_addImageMemBarrier(image, srcLayout, dstLayout, texDesc, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, false);
 }
 
 void 

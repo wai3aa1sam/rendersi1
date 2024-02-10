@@ -69,9 +69,7 @@ Vk_RenderFrame::destroy()
 	destroyCommandPool(_transferCommandPools);
 
 	_descriptorAlloc.destroy();
-	_imageAvailableVkSmp.destroy(renderDeviceVk());
-	_renderCompletedVkSmp.destroy(renderDeviceVk());
-	_inFlightVkFence.destroy(renderDeviceVk());
+	destroySyncObjects();
 
 	_vkFramebufPool.destroy();
 
@@ -83,6 +81,7 @@ Vk_RenderFrame::reset()
 {
 	resetCommandPools();
 	descriptorAllocator().reset();
+	setSubmitCount(0);
 }
 
 void 
@@ -152,18 +151,21 @@ Vk_RenderFrame::destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPo
 void 
 Vk_RenderFrame::createSyncObjects()
 {
-	_imageAvailableVkSmp.create(renderDeviceVk());
-	_renderCompletedVkSmp.create(renderDeviceVk());
-	_inFlightVkFence.create(renderDeviceVk());
+	auto* rdDevVk = renderDeviceVk();
 
+	_imageAvailableVkSmp.create(rdDevVk);
+	_renderCompletedVkSmp.create(rdDevVk);
+	_inFlightVkFence.create(rdDevVk);
 }
 
 void 
 Vk_RenderFrame::destroySyncObjects()
 {
-	_inFlightVkFence.destroy(renderDeviceVk());
-	_renderCompletedVkSmp.destroy(renderDeviceVk());
-	_imageAvailableVkSmp.destroy(renderDeviceVk());
+	auto* rdDevVk = renderDeviceVk();
+
+	_inFlightVkFence.destroy(rdDevVk);
+	_renderCompletedVkSmp.destroy(rdDevVk);
+	_imageAvailableVkSmp.destroy(rdDevVk);
 }
 
 RenderDevice_Vk* 

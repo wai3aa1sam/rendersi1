@@ -66,6 +66,8 @@ public:
 
 	void onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd, void* userData);
 
+	void onRenderCommand_CopyTexture(RenderCommand_CopyTexture* cmd, void* userData);
+
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onPostCreate(const CreateDesc& cDesc);
@@ -105,7 +107,8 @@ protected:
 	Vk_RenderFrames		_vkRdFrames;
 	//Vk_CommandBuffer*	_curGraphicsVkCmdBuf = nullptr;
 
-	bool _shdSwapBuffers = false;
+	bool _shdSwapBuffers				= false;
+	bool _hasSwapedBuffersInLastFrame	= true;
 
 	Vk_RenderPassPool	_vkRdPassPool;		// persistent
 	//Vk_FramebufferPool	_vkFramebufPool;	// clear when invalidate swapchain

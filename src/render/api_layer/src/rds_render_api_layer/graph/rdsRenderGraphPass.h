@@ -76,7 +76,7 @@ class RdgPass : public NonCopyable
 	friend class RdgDrawer;
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	static constexpr SizeType s_kFuncLocalSize = 256;
+	static constexpr SizeType s_kFuncLocalSize = 64 * 4;
 
 public:
 	using Pass = RdgPass;
@@ -86,7 +86,8 @@ public:
 	using Access	= RenderAccess;
 	using Usage		= RdgResourceUsage;
 
-	using ExecuteFunc		= Function<void(RenderRequest& rdReq), s_kFuncLocalSize>;
+	using ExecuteFunc		= Function<void(RenderRequest& rdReq), 0, s_kFuncLocalSize>;
+	//using ExecuteFunc		= std::function<void(RenderRequest& rdReq)>;
 
 	// const for std::initlist
 	using RdgTextureHndSpan							= Span<const RdgTextureHnd>;
@@ -105,16 +106,25 @@ public:
 	RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlag flag);
 	~RdgPass();
 
-	void setExecuteFunc(ExecuteFunc&& func);
+	//void setExecuteFunc(ExecuteFunc&& func);
+
+	template<class FUNC>
+	void setExecuteFunc(FUNC&& func)
+	{
+		RDS_TODO("void setExecuteFunc(ExecuteFunc&& func); nmsp::Function_T has bug, wont use this version btw (will copy twice), but the problem still need to solve");
+		RDS_TODO("crash in [void nmsp::Function_T::_move(Function_T&& rhs)], when [pfunc		= rhs._ftr->clone(buf);], the placement new will crash due to access error 0xFFFF");
+		RDS_TODO("but the buf is not 0xFFFF");
+		_executeFunc = rds::move(func);
+	}
 
 	void setRenderTarget(RdgTextureHnd		hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp);
 	//void setRenderTarget(RdgTextureHndSpan	hnds);
 	void setDepthStencil(RdgTextureHnd		hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp);
 
-	void readTexture	(RdgTextureHnd		hnd);
+	void readTexture	(RdgTextureHnd		hnd, TextureUsageFlags usage = TextureUsageFlags::ShaderResource);
 	void readTextures	(RdgTextureHndSpan	hnds);
 
-	void writeTexture	(RdgTextureHnd		hnd);
+	void writeTexture	(RdgTextureHnd		hnd, TextureUsageFlags usage = TextureUsageFlags::UnorderedAccess);
 	void writeTextures	(RdgTextureHndSpan	hnds);
 
 	void readBuffer		(RdgBufferHnd		hnd,	ShaderStageFlag useStages = ShaderStageFlag::Compute);
@@ -122,6 +132,8 @@ public:
 
 	void writeBuffer	(RdgBufferHnd		hnd);
 	void writeBuffers	(RdgBufferHndSpan	hnds);
+
+	void runAfter(RdgPass* pass);
 
 	RdgPassTypeFlags	typeFlags()			const;
 	RdgId				id()				const;
@@ -149,7 +161,9 @@ public:
 	SizeType dependencyCount() const;
 
 	bool hasRenderPass()				const;
-	bool checkValidRenderTargetExtent() const;
+	bool isValid()	const;
+	bool isValidRenderTargetExtent()	const;
+	bool checkValid() const;
 	bool hasRenderTargetOrDepth()		const;
 	bool hasDependency()				const;
 
@@ -177,7 +191,7 @@ protected:
 
 	Vector<RdgResource*,	s_kLocalSize> _reads;
 	Vector<RdgResource*,	s_kLocalSize> _writes;
-	Vector<Pass*,			s_kLocalSize> _runBefore;
+	Vector<Pass*,			s_kLocalSize> _runBefore;		// TODO: useless, only use for draw graph, later should delete this
 	Vector<Pass*,			s_kLocalSize> _runAfter;
 
 	ResourceAccesses _rscAccesses;
@@ -234,12 +248,12 @@ RdgPass::renderTargetExtent()  const
 	if (!_rdTargets.is_empty())
 	{
 		const auto& size = _rdTargets[0].targetHnd.size();
-		o = Rect2f { Tuple2f::s_zero(), Tuple2f::s_cast(size) };
+		o = Rect2f { Tuple2f::s_zero(), Tuple2f{size.x, size.y} };
 	}
 	else if (const RdgDepthStencil& depthStencil = _depthStencil)
 	{
 		const auto& size = depthStencil.targetHnd.size();
-		o = Rect2f{ Tuple2f::s_zero(), Tuple2f::s_cast(size) };
+		o = Rect2f{ Tuple2f::s_zero(), Tuple2f{size.x, size.y} };
 	}
 	return o; 
 }
@@ -258,18 +272,17 @@ inline RdgPass::SizeType	RdgPass::dependencyCount()	const	{ return _runBefore.si
 //inline bool					RdgPass::hasRenderPass()	const	{ return BitUtil::hasAny(typeFlags(), RdgPassTypeFlags::Graphics); }
 inline bool					RdgPass::hasRenderPass()	const	{ return !_rdTargets.is_empty() || _depthStencil; }
 
+inline bool RdgPass::isValid()	const { return !hasRenderPass() || (hasRenderPass() && hasRenderTargetOrDepth() && isValidRenderTargetExtent()); }
+
+inline bool RdgPass::isValidRenderTargetExtent()	const { return renderTargetExtent() && !Vec2f{ renderTargetExtent().value().size }.equals0(); }
+
 inline 
 bool 
-RdgPass::checkValidRenderTargetExtent() const
+RdgPass::checkValid() const
 {
 	//!math::equals(renderTargetExtent().value().size, Tuple2f{0, 0}, Tuple2f{math::epsilon<f32>(), math::epsilon<f32>()});
-	RDS_CORE_ASSERT(!hasRenderPass() 
-					|| (hasRenderPass() && hasRenderTargetOrDepth() 
-						&& renderTargetExtent() && !Vec2f{renderTargetExtent().value().size }.equals0())
-		, "Graphics pass should have target");
-	return !(!hasRenderPass() 
-			|| (hasRenderPass() && hasRenderTargetOrDepth() 
-				&& renderTargetExtent() && !Vec2f{renderTargetExtent().value().size }.equals0()));
+	RDS_CORE_ASSERT(isValid(), "Graphics pass should have target");
+	return isValid();
 }
 
 inline bool RdgPass::hasRenderTargetOrDepth()	const { return (!_rdTargets.is_empty() || _depthStencil); }

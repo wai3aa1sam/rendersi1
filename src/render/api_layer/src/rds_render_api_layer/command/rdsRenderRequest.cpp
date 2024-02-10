@@ -23,8 +23,11 @@ RenderRequest::reset(RenderContext* rdCtx)
 {
 	_rdCmdBuf.reset();
 	_rdCtx = rdCtx;
-	_rdCmdBuf.setViewport	(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
-	_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
+	if (_rdCtx->isValidFramebufferSize())
+	{
+		_rdCmdBuf.setViewport	(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
+		_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()}); 
+	}
 }
 
 void 
@@ -53,11 +56,11 @@ RenderRequest::setMaterialCommonParams(Material* mtl, const Mat4f& transform)
 
 	if (!mtl) return;
 
+	Mat4f mvp = matrix_proj * matrix_view * transform;
+
 	mtl->setParam("rds_matrix_model",	transform);
 	mtl->setParam("rds_matrix_view",	matrix_view);
 	mtl->setParam("rds_matrix_proj",	matrix_proj);
-
-	auto mvp = matrix_proj * matrix_view * transform;
 	mtl->setParam("rds_matrix_mvp",		mvp);
 
 	mtl->setParam("rds_camera_pos",		cameraPos);
@@ -163,13 +166,31 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, co
 	p->material = mtl;
 }
 
-void RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform)
+void 
+RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
+{
+	auto* cmd = renderCommandBuffer().copyTexture();
+	cmd->src = src;
+	cmd->dst = dst;
+
+	cmd->extent = src->size();
+
+	cmd->srcLayer = srcLayer;
+	cmd->srcMip	  = srcMip;
+
+	cmd->dstLayer = dstLayer;
+	cmd->dstMip	  = dstMip;
+}
+
+void 
+RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform)
 {
 	_notYetSupported(RDS_SRCLOC);
 	drawMesh(RDS_RD_CMD_DEBUG_ARG, fullScreenTriangle, presentMtl, transform);
 }
 
-void RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY)
+void 
+RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY)
 {
 	_notYetSupported(RDS_SRCLOC);
 }

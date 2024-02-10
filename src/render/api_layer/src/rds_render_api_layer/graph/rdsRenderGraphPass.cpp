@@ -42,12 +42,6 @@ RdgPass::execute()
 }
 
 void 
-RdgPass::setExecuteFunc(ExecuteFunc&& func)
-{
-	_executeFunc = nmsp::move(func);
-}
-
-void 
 RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp)
 {
 	RDS_CORE_ASSERT(BitUtil::has(_typeFlags, TypeFlag::Graphics));
@@ -92,24 +86,32 @@ RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp de
 }
 
 void 
-RdgPass::readTexture(RdgTextureHnd	hnd)
+RdgPass::readTexture(RdgTextureHnd	hnd, TextureUsageFlags usage)
 {
-	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureUsageFlags::ShaderResource), "must have ShaderResource flag");
-	auto usage = Usage{ TextureUsageFlags::ShaderResource };
+	RDS_CORE_ASSERT(BitUtil::has(typeFlags(), RdgPassTypeFlags::Transfer) || BitUtil::has(hnd.usageFlags(), TextureUsageFlags::ShaderResource), "must have ShaderResource flag");
+	if (BitUtil::has(typeFlags(), RdgPassTypeFlags::Transfer))
+	{
+		RDS_CORE_ASSERT(BitUtil::has(hnd.desc().usageFlags, TextureUsageFlags::TransferSrc));
+		usage = TextureUsageFlags::TransferSrc;
+	}
 	accessResource(hnd, usage, Access::Read);
 }
 void 
 RdgPass::readTextures(RdgTextureHndSpan hnds)
 {
-	RDS_CORE_ASSERT(BitUtil::has(hnds[0].usageFlags(), TextureUsageFlags::ShaderResource), "must have ShaderResource flag");
+	RDS_CORE_ASSERT(BitUtil::has(typeFlags(), RdgPassTypeFlags::Transfer) || BitUtil::has(hnds[0].usageFlags(), TextureUsageFlags::ShaderResource), "must have ShaderResource flag");
 	auto usage = Usage{ TextureUsageFlags::ShaderResource };
 	accessResources(toHndSpan(hnds), usage, Access::Read);
 }
 
 void
-RdgPass::writeTexture(RdgTextureHnd hnd)
+RdgPass::writeTexture(RdgTextureHnd hnd, TextureUsageFlags usage)
 {
-	auto usage = Usage{ TextureUsageFlags::UnorderedAccess };
+	if (BitUtil::has(typeFlags(), RdgPassTypeFlags::Transfer))
+	{
+		RDS_CORE_ASSERT(BitUtil::has(hnd.desc().usageFlags, TextureUsageFlags::TransferDst));
+		usage = TextureUsageFlags::TransferDst;
+	}
 	accessResource(hnd, usage, Access::Write);
 }
 
@@ -150,6 +152,17 @@ RdgPass::writeBuffers(RdgBufferHndSpan hnds)
 {
 	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
 	accessResources(toHndSpan(hnds), usage, Access::Write);
+}
+
+void 
+RdgPass::runAfter(RdgPass* pass)
+{
+	if (!pass)
+		return;
+	if (!isDuplicatedPass(pass->runAfterThis(), this))
+	{
+		pass->_runAfter.emplace_back(this);
+	}
 }
 
 void 

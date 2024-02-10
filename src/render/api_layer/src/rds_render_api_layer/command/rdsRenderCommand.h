@@ -34,6 +34,8 @@ using DrawingSettings = u64;
 	\
 	E(DrawRenderables,) \
 	\
+	E(CopyTexture,) \
+	\
 	E(Dispatch,) \
 	\
 	E(CopyBuffer,) \
@@ -205,6 +207,38 @@ public:
 
 #endif
 
+#if 0
+#pragma mark --- rdsTransfer-RenderCommand-Impl ---
+#endif // 0
+#if 1
+
+class RenderCommand_CopyTexture : public RenderCommand
+{
+public:
+	using Base = RenderCommand;
+	using This = RenderCommand_CopyTexture;
+
+public:
+
+	SPtr<Texture> src;
+	SPtr<Texture> dst;
+
+	Tuple3u extent		= {0, 0, 1};
+	Tuple3u srcOffset	= {0, 0, 0};
+	Tuple3u dstOffset	= {0, 0, 0};
+
+	u32 srcMip		= 0;
+	u32 dstMip		= 0;
+
+	u32 srcLayer	= 0;
+	u32 dstLayer	= 0;
+
+public:
+	RenderCommand_CopyTexture() : Base(Type::CopyTexture) {}
+	virtual ~RenderCommand_CopyTexture() {};
+};
+
+#endif
 
 #if 0
 #pragma mark --- rdsCompute-RenderCommand-Impl ---
@@ -307,6 +341,8 @@ public:
 	RenderCommand_SwapBuffers*			swapBuffers();
 	RenderCommand_DrawCall*				addDrawCall();
 
+	RenderCommand_CopyTexture*			copyTexture();
+
 	void setScissorRect(const Rect2f& rect);
 	void setViewport(const Rect2f& rect);
 	void setViewportReverse(const Rect2f& rect);
@@ -347,6 +383,8 @@ inline RenderCommand_Dispatch*			RenderCommandBuffer::dispatch()				{ return new
 inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
 inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()			{ return newCommand<RenderCommand_SwapBuffers>(); }
 inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()			{ return newCommand<RenderCommand_DrawCall>(); }
+
+inline RenderCommand_CopyTexture*		RenderCommandBuffer::copyTexture()			{ return newCommand<RenderCommand_CopyTexture>(); }
 
 inline Span<RenderCommand*> RenderCommandBuffer::commands() { return _commands.span(); }
 

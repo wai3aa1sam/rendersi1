@@ -170,10 +170,9 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 	{
 		RDS_CORE_ASSERT(e->type() == TransferCommandType::UploadTexture, "");
 		auto*	cmd			= sCast<TransferCommand_UploadTexture*>(e);
-		auto	vkFormat	= Util::toVkFormat(cmd->dst->format());
 		auto*	dst			= Vk_Texture::getVkImageHnd(cmd->dst);
 
-		vkCmdBuf->cmd_addImageMemBarrier(dst, vkFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		vkCmdBuf->cmd_addImageMemBarrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 										, cmd->dst->desc(), transferQueueFamilyIdx(), queueFamilyIdx(queueType), false);
 	}
 
@@ -212,6 +211,22 @@ void*
 TransferContext_Vk::mappedStagingBufData(StagingHandle  hnd)
 {
 	return vkTransferFrame().mappedStagingBufData(hnd);
+}
+
+void 
+TransferContext_Vk::transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags srcQueueType)
+{
+	auto& vkTsfFrame	= vkTransferFrame();
+	auto* hndVkCmd		= vkTsfFrame.requestCommandBuffer(srcQueueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "transit");
+	auto* srcQueue		= requestVkQueue(srcQueueType);
+
+	Util::transitionImageLayout(hnd, desc, Util::toVkFormat(desc.format), dstLayout, srcLayout, nullptr, srcQueue, hndVkCmd);
+}
+
+void 
+TransferContext_Vk::transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout dstLayout, QueueTypeFlags queueType)
+{
+	transitImageLayout(hnd, desc, VK_IMAGE_LAYOUT_UNDEFINED, dstLayout, queueType);
 }
 
 void 

@@ -229,12 +229,12 @@ public:
 			_uvCheckerTex2 = Renderer::rdDev()->createTexture2D(texCDesc);
 			_uvCheckerTex2->setDebugName("uvChecker2");
 
-			_testShader = Renderer::rdDev()->createShader("asset/shader/test_texture.shader"); RDS_UNUSED(_testShader);
+			_testShader = Renderer::rdDev()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testMtl = Renderer::rdDev()->createMaterial();
 			_testMtl->setShader(_testShader);
 			_testMtl->setParam("texture0", _uvCheckerTex);
 
-			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test_bindless.shader");
+			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
 		}
 
@@ -251,7 +251,7 @@ public:
 		_presentMtl		= Renderer::rdDev()->createMaterial(_presentShader);
 		_presentMtl->setParam("texture0", _uvCheckerTex);
 
-		_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test_compute.shader");
+		_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test/test_compute.shader");
 		_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
 		testCompute(&_rdGraph, true);
 
@@ -274,8 +274,164 @@ public:
 			_texDefaultSkybox->setDebugName("default_skybox");
 		}
 
-		_shaderPbr	= Renderer::rdDev()->createShader("asset/shader/pbr.shader");
-		_mtlPbr		= Renderer::rdDev()->createMaterial(_shaderPbr);
+		{
+			_shaderPbr	= Renderer::rdDev()->createShader("asset/shader/pbr/pbr.shader");
+			_mtlPbr		= Renderer::rdDev()->createMaterial(_shaderPbr);
+
+			_shaderHdrToCube	= Renderer::rdDev()->createShader("asset/shader/pbr/hdrToCube.shader");
+			_mtlHdrToCube		= Renderer::rdDev()->createMaterial(_shaderHdrToCube);
+
+			auto texCDesc = Texture2D::makeCDesc();
+			texCDesc.create("asset/texture/hdr/newport_loft.hdr");
+			_texHdrEnvMap = Renderer::rdDev()->createTexture2D(texCDesc);
+			_texHdrEnvMap->setDebugName("texHdrEnvMap");
+
+			auto texCubeCDesc = TextureCube::makeCDesc();
+			texCubeCDesc.create(Tuple2u{ 512, 512 }, ColorType::RGBAf, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource);
+			_texCubeHdrEnvMap = Renderer::rdDev()->createTextureCube(texCubeCDesc);
+			_texCubeHdrEnvMap->setDebugName("texCubeHdrEnvMap");
+		}
+	}
+
+	void prepare()
+	{
+		auto* rdGraph = &_rdGraph;
+		rdGraph->reset();
+
+		RdgTextureHnd texDstIrradiance;
+
+		{
+			float cubeSize = 512;
+
+			auto center = Vec3f{ 0.0f, 0.0f, 0.0f};
+
+			auto matProj	= Mat4f::s_perspective(math::radians(90.0f), 1.0, 0.1f, cubeSize);
+			auto viewport	= Rect2u{ Tuple2u::s_zero(), Tuple2u{cubeSize, cubeSize} };
+			//matProj[1][1] *= -1.0f;
+
+			if (_mtlHdrToCubes.is_empty())
+			{
+				_mtlHdrToCubes.resize(TextureCube::s_kFaceCount);
+				for (auto& e : _mtlHdrToCubes)
+				{
+					e = Renderer::rdDev()->createMaterial(_shaderHdrToCube);
+				}
+			}
+
+			RdgPass* lastCopyPass = nullptr;
+
+			RdgTextureHnd texTempToCubeColor	= rdGraph->createTexture("temp_pbr_toCubeColor", Texture2D_CreateDesc{ viewport.size, ColorType::RGBAf, TextureUsageFlags::RenderTarget | TextureUsageFlags::TransferSrc});
+			for (u32 face = 0; face < TextureCube::s_kFaceCount; face++)
+			{
+				auto* mtl = _mtlHdrToCubes[face].ptr(); RDS_UNUSED(mtl);
+
+				TempString pbrEnvMapName;
+				fmtTo(pbrEnvMapName, "pbrEnvMap-{}", face);
+				auto& passHdrToCube = rdGraph->addPass(pbrEnvMapName, RdgPassTypeFlags::Graphics);
+				passHdrToCube.runAfter(lastCopyPass);
+				passHdrToCube.setRenderTarget(texTempToCubeColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+
+				#if 0
+				passHdrToCube.setExecuteFunc(
+					[=](RenderRequest& rdReq)
+					{
+						const Vector<Mat4f> matViews = {
+							Mat4f::s_lookAt(center, Vec3f::s_right(),	Vec3f{0.0f, -1.0f,  0.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_left(),	Vec3f{0.0f, -1.0f,  0.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,  1.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f, -1.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_forward(), Vec3f{0.0f, -1.0f,  0.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_back(),	Vec3f{0.0f, -1.0f,  0.0f}),
+						};
+
+						/*
+						math::Camera3f camera;
+						camera.setPos(center);
+						camera.setUp()
+						camera.setViewport(Rect2f{Tuple2f::s_cast(viewport.pos), Tuple2f::s_cast(viewport.size)});
+						camera.setFov(90.0f);
+						*/
+
+						rdReq.reset(rdGraph->renderContext());
+
+						rdReq.setViewport(Rect2f{ Tuple2f::s_zero(), Tuple2f{cubeSize, cubeSize} });
+
+						const auto& matView = matViews[face];
+						auto		mvp		= matProj * matView;
+
+						rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
+
+						// override drawMesh set common paramo
+						mtl->setParam("rds_matrix_view",	matView);
+						mtl->setParam("rds_matrix_proj",	matProj);
+						mtl->setParam("rds_matrix_mvp",		mvp);
+
+						mtl->setParam("equirectangularMap", _texHdrEnvMap);
+					});
+
+				#else
+				
+				passHdrToCube.setExecuteFunc(
+					[=](RenderRequest& rdReq) 
+					{
+						rdReq.reset(rdGraph->renderContext());
+
+						Vector<Mat4f, TextureCube::s_kFaceCount> matViews = {
+							Mat4f::s_lookAt(center, Vec3f::s_right(),	Vec3f{0.0f, -1.0f,  0.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_left(),	Vec3f{0.0f, -1.0f,  0.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,  1.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f, -1.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_forward(), Vec3f{0.0f, -1.0f,  0.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_back(),	Vec3f{0.0f, -1.0f,  0.0f}),
+						};
+
+						auto	matProj	= Mat4f::s_perspective(math::radians(90.0f), 1.0, 0.1f, cubeSize);
+						auto&	matView	= matViews[face];
+						auto	mvp		= matProj * matView;
+
+						rdReq.setViewport(Rect2f{ Tuple2f::s_zero(), Tuple2f{cubeSize, cubeSize} });
+
+						mtl->setParam("equirectangularMap", _texHdrEnvMap);
+
+						rdReq.matrix_proj = matProj;
+						rdReq.matrix_view = matView;
+						rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
+					});
+
+				#endif // 0
+
+				texDstIrradiance = rdGraph->importTexture("tex_dstIrradiance", _texCubeHdrEnvMap, TextureUsageFlags::TransferDst);
+
+				TempString pbrCopyToEnvMapName;
+				fmtTo(pbrCopyToEnvMapName, "pbrCopyToEnvMap-{}", face);
+				auto& passCopyPbrEnvToCube = rdGraph->addPass(pbrCopyToEnvMapName, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
+				passCopyPbrEnvToCube.readTexture(texTempToCubeColor);
+				passCopyPbrEnvToCube.writeTexture(texDstIrradiance);
+				passCopyPbrEnvToCube.setExecuteFunc(
+					[=](RenderRequest& rdReq)
+					{
+						rdReq.copyTexture(RDS_SRCLOC, _texCubeHdrEnvMap, texTempToCubeColor.renderResource(), 0, face, 0, 0);
+					}
+				);
+
+				lastCopyPass = &passCopyPbrEnvToCube;
+			}
+
+			#if 1
+			auto& passEnvMapTransit = rdGraph->addPass("EnvMapTransit", RdgPassTypeFlags::Graphics);
+			passEnvMapTransit.readTexture(texDstIrradiance);
+			passEnvMapTransit.setExecuteFunc(
+				[=](RenderRequest& rdReq)
+				{
+				}
+			);
+			#else
+			rdGraph->exportTexture(texDstIrradiance, TextureUsageFlags::ShaderResource);
+			#endif // 0
+		}
+
+		_rdGraph.compile();
+		_rdGraph.execute();
 	}
 
 	void update()
@@ -289,13 +445,15 @@ public:
 
 		RdgTextureHnd oTex;
 		RdgTextureHnd oTexDepth;
+		RdgTextureHnd oTexEnvIrradianceCube;
 
 		//oTex = testCompute(_rdGraph, false);
 		//oTex = testDeferred(&_rdGraph, &oTexDepth);
-		oTex = testPbr(&_rdGraph, &oTexDepth);
+		oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
 		//oTex = testBindless(&_rdGraph, &oTexDepth);
 
-		oTex = testSkybox(&_rdGraph, oTex, oTexDepth);
+		auto* texSkybox = 0 ? &oTexEnvIrradianceCube : nullptr;
+		oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
 		finalComposite(&_rdGraph, oTex);
 
 		_rdGraph.compile();
@@ -424,7 +582,7 @@ public:
 		}
 
 		auto* rdGraph = outRdGraph;
-		RdgBufferHnd particlesRead	= rdGraph->importBuffer("particlesRead",		_testComputeLastFrameParticles, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
+		RdgBufferHnd particlesRead	= rdGraph->importBuffer("particlesRead",	_testComputeLastFrameParticles, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
 		RdgBufferHnd particlesWrite	= rdGraph->createBuffer("particlesWrite",	RenderGpuBuffer_CreateDesc{ sizeof(Particle) * s_kMaxParticleCount, sizeof(Particle), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex });
 
 		auto& test_compute = rdGraph->addPass("test_compute", RdgPassTypeFlags::Compute);
@@ -472,7 +630,7 @@ public:
 		return test_compute_present_tex;
 	}
 
-	RdgTextureHnd testSkybox(RenderGraph* outRdGraph, RdgTextureHnd texColor, RdgTextureHnd texDepth)
+	RdgTextureHnd testSkybox(RenderGraph* outRdGraph, RdgTextureHnd texColor, RdgTextureHnd texDepth, RdgTextureHnd* texSkybox = nullptr)
 	{
 		auto* rdGraph	= outRdGraph;
 
@@ -480,9 +638,10 @@ public:
 		//auto skyboxTarget	= _rdGraph.createTexture("skyboxTarget", Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 
 		auto& skyboxPass = _rdGraph.addPass("test_skybox", RdgPassTypeFlags::Graphics);
-		//skyboxPass.readTexture(texColor);
 		skyboxPass.setRenderTarget(texColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
 		skyboxPass.setDepthStencil(texDepth, RenderAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+		if (texSkybox)
+			skyboxPass.readTexture(*texSkybox);
 		skyboxPass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
@@ -493,14 +652,17 @@ public:
 				clearValue->setClearDepth(1.0f);
 
 				auto& mtl = _mtlSkybox;
-				mtl->setParam("skybox", _texDefaultSkybox);
+				//mtl->setParam("skybox", _texDefaultSkybox);
+				//mtl->setParam("skybox", texSkybox ? texSkybox->textureCube() : _texDefaultSkybox);
+				mtl->setParam("skybox", _texCubeHdrEnvMap);
+
 				rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
 			});
 
 		return texColor;
 	}
 
-	RdgTextureHnd testPbr(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
+	RdgTextureHnd testPbr(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth, RdgTextureHnd* outTexEnvIrrdianceMap = nullptr)
 	{
 		auto*	rdGraph		= outRdGraph;
 		auto*	rdCtx		= _rdCtx;
@@ -511,10 +673,10 @@ public:
 		RdgTextureHnd texPbrColor	= rdGraph->createTexture("pbr_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 		RdgTextureHnd texPbrDepth	= rdGraph->createTexture("pbr_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
-		auto& gBufferPass = rdGraph->addPass("pbr", RdgPassTypeFlags::Graphics);
-		gBufferPass.setRenderTarget(texPbrColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		gBufferPass.setDepthStencil(texPbrDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
-		gBufferPass.setExecuteFunc(
+		auto& passPbr = rdGraph->addPass("pbr", RdgPassTypeFlags::Graphics);
+		passPbr.setRenderTarget(texPbrColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		passPbr.setDepthStencil(texPbrDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
+		passPbr.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
 				rdReq.reset(rdGraph->renderContext(), *_camera);
@@ -525,7 +687,9 @@ public:
 
 				static Tuple3f posLight		= Tuple3f{0.0f, 20.0f, 0.0f};
 
-				Function<void(Material*, int i)> fn 
+				#if 1
+				Function<void(Material*, int i)> fn  
+
 					= [&](Material* mtl, int i)
 					{
 						mtl->setParam("texture0", _uvCheckerTex);
@@ -572,6 +736,7 @@ public:
 							}
 						}
 					};
+				#endif // 0
 
 				scene()->drawScene(rdReq, mtl, &fn);
 
@@ -582,9 +747,15 @@ public:
 			}
 		);
 
+
 		if (outTexDepth)
 		{
 			*outTexDepth = texPbrDepth;
+		}
+
+		if (outTexEnvIrrdianceMap)
+		{
+			*outTexEnvIrrdianceMap = {};
 		}
 
 		return texPbrColor;
@@ -658,33 +829,38 @@ public:
 	void finalComposite(RenderGraph* outRdGraph, RdgTextureHnd presentTex)
 	{
 		auto*	rdGraph			= outRdGraph;
-		auto	backBufferRt	= rdGraph->importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
+		auto	backBufferRt	= rdGraph->importTexture("back_buffer", _rdCtx->backBuffer(), TextureUsageFlags::None); RDS_UNUSED(backBufferRt);
 
 		auto& finalComposePass = _rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
 		finalComposePass.readTexture(presentTex);
 		finalComposePass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				_presentMtl->setParam("texture0",			presentTex.renderResource());
+				_presentMtl->setParam("texture0",			presentTex.texture2D());
 				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, 1.0f, 1.0f}));
 			}
 		);
 	}
 
-	void present(RenderContext* rdCtx, RenderRequest& rdReq, TransferRequest& tsfReq)
+	void present(RenderContext* rdCtx, RenderRequest& rdReq, TransferRequest& tsfReq, bool isPresent = true)
 	{
 		RDS_TODO("the rdReq here must be framed, otherwise some rsc will be deleted while executing");
 
 		// _rdReq should be per frame, but all the present resources are higher lifetime scope
 		rdReq.reset(rdCtx);
-		auto* clearValue = rdReq.clearFramebuffers();
-		clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
-		clearValue->setClearDepth(1.0f);
+		if (isPresent)
+		{
+			auto* clearValue = rdReq.clearFramebuffers();
+			clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+			clearValue->setClearDepth(1.0f);
 
-		rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
-		rdCtx->drawUI(rdReq);
+			rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
+			rdReq.swapBuffers();
+		}
+		RDS_TODO("move to endRender when upload buffer is cpu prefered");
+
+		rdCtx->drawUI(rdReq);		
 		tsfReq.commit();
-		rdReq.swapBuffers();
 
 		rdCtx->commit(rdReq);
 	}
@@ -722,6 +898,13 @@ public:
 
 	SPtr<Shader>		_shaderPbr;
 	SPtr<Material>		_mtlPbr;
+
+	SPtr<Shader>		_shaderHdrToCube;
+	SPtr<Material>		_mtlHdrToCube;
+	SPtr<Texture2D>		_texHdrEnvMap;
+	SPtr<TextureCube>	_texCubeHdrEnvMap;
+
+	Vector<SPtr<Material>, TextureCube::s_kFaceCount> _mtlHdrToCubes;
 
 	SPtr<Shader>		_shaderTestBindless;
 	SPtr<Material>		_mtlTestBindless;

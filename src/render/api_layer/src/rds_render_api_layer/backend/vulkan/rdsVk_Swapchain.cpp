@@ -29,6 +29,8 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	RDS_CORE_ASSERT(cDesc.outBackbuffers, "no backbuffers");
 
 	const auto& framebufferRect2f = cDesc.framebufferRect2f;
+	_swapchainInfo.rect2f = framebufferRect2f;
+
 	bool isInvalidSize = math::equals0(framebufferRect2f.size.x) || math::equals0(framebufferRect2f.size.y);
 	if (isInvalidSize || !cDesc.rdCtx)
 		return;
@@ -87,8 +89,10 @@ Vk_Swapchain::acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp)
 
 	u32 imageIdx = 0;
 	auto ret = vkAcquireNextImageKHR(vkDev, hnd(), NumLimit<u64>::max(), signalSmp->hnd(), VK_NULL_HANDLE, &imageIdx);
-	_curImageIdx = Util::isSuccess(ret) ? imageIdx : _curImageIdx;
-	outImageIdx = _curImageIdx;
+	//_curImageIdx = Util::isSuccess(ret) ? imageIdx : _curImageIdx;
+
+	_curImageIdx	= imageIdx;
+	outImageIdx		= _curImageIdx;
 
 	return ret;
 }
