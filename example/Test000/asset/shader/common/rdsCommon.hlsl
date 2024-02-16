@@ -4,6 +4,7 @@
 /*
 references:
 ~ https://gist.github.com/mattatz/86fff4b32d198d0928d0fa4ff32cf6fa
+~ http://filmicgames.com/archives/75
 */
 
 #if 0
@@ -33,6 +34,8 @@ struct rds_Surface
 
     float  roughness;
     float  metallic;
+
+    float  ambientOcclusion;
 };
 
 static const float rds_pi = 3.14159265359;
@@ -86,6 +89,14 @@ SamplerState    RDS_GET_SAMPLER(NAME) 	    : register(S, space1) \
 #define RDS_SAMPLE_TEXTURE_2D(TEX, UV)      RDS_GET_TEXTURE_2D(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
 #define RDS_SAMPLE_TEXTURE_CUBE(TEX, UV)    RDS_GET_TEXTURE_CUBE(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
 
+#define RDS_TEXTURE_2D_SAMPLE(TEX, UV)                  RDS_GET_TEXTURE_2D(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
+#define RDS_TEXTURE_2D_SAMPLE_LOD(TEX, UV, LOD)         RDS_GET_TEXTURE_2D(TEX).SampleLevel(RDS_GET_SAMPLER(TEX), UV, LOD)
+#define RDS_TEXTURE_2D_GET_DIMENSIONS(TEX, OUT_WH)      RDS_GET_TEXTURE_2D(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+
+#define RDS_TEXTURE_CUBE_SAMPLE(TEX, UV)                RDS_GET_TEXTURE_CUBE(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
+#define RDS_TEXTURE_CUBE_SAMPLE_LOD(TEX, UV, LOD)       RDS_GET_TEXTURE_CUBE(TEX).SampleLevel(RDS_GET_SAMPLER(TEX), UV, LOD)
+#define RDS_TEXTURE_CUBE_GET_DIMENSIONS(TEX, OUT_WH)    RDS_GET_TEXTURE_CUBE(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+
 #endif
 
 #if 0
@@ -126,14 +137,44 @@ float3 PostProc_gammaDecoding(float3 v) { return pow(v, 2.2); }
 
 float3 ToneMapping_reinhard(float3 v) { return v / (v + float3(1.0)); }
 
+// From http://filmicgames.com/archives/75
+float3 ToneMapping_uncharted2(float3 x)
+{
+	float A = 0.15;
+	float B = 0.50;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.02;
+	float F = 0.30;
+	return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
+}
+
 
 #endif
 
 #endif
 
+#if 0
+#pragma mark --- SampleUtil-Impl ---
+#endif
+#if 1
 
+float SampleUtil_sequence_vdc(uint bits) 
+{
+    bits = (bits << 16u) | (bits >> 16u);
+    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+    return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
 
+float2 SampleUtil_sequence_hammersley(uint i, uint N)
+{
+    return float2(float(i)/float(N), SampleUtil_sequence_vdc(i));
+}  
 
+#endif
 
 float4x4 inverse(float4x4 m) 
 {

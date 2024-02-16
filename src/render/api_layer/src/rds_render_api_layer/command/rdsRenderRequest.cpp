@@ -166,20 +166,32 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, co
 	p->material = mtl;
 }
 
-void 
-RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
+void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, Tuple3u extent,		u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
 {
+	RDS_CORE_ASSERT(extent.x <= src->size().x && extent.y <= src->size().y && extent.z <= src->size().z, "invalid extent");
+
 	auto* cmd = renderCommandBuffer().copyTexture();
 	cmd->src = src;
 	cmd->dst = dst;
 
-	cmd->extent = src->size();
+	cmd->extent = extent;
 
 	cmd->srcLayer = srcLayer;
 	cmd->srcMip	  = srcMip;
 
 	cmd->dstLayer = dstLayer;
 	cmd->dstMip	  = dstMip;
+}
+
+void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 width, u32 height, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
+{
+	copyTexture(RDS_RD_CMD_DEBUG_ARG, dst, src, Tuple3u{width, height, 1}, srcLayer, dstLayer, srcMip, dstMip);
+}
+
+void 
+RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
+{
+	copyTexture(RDS_RD_CMD_DEBUG_ARG, dst, src, src->size(), srcLayer, dstLayer, srcMip, dstMip);
 }
 
 void 

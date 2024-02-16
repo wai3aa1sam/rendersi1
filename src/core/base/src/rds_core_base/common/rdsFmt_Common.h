@@ -39,6 +39,7 @@ template<class T> using FormatTrait = ::nmsp::FormatTrait<T>;
 
 using ::nmsp::makeStdStrView;
 using ::nmsp::fmtTo;
+using ::nmsp::fmtToNew;
 using ::nmsp::fmtAs_T;
 
 #endif

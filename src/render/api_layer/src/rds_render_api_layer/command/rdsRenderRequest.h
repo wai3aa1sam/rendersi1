@@ -35,8 +35,8 @@ class RenderRequest : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	Mat4f matrix_view;
-	Mat4f matrix_proj;
+	Mat4f matrix_view = Mat4f::s_identity();
+	Mat4f matrix_proj = Mat4f::s_identity();
 
 	Vec3f cameraPos;
 
@@ -79,6 +79,8 @@ public:
 	RDS_INLINE		void					setViewport			(const Rect2f& rect);
 	RDS_INLINE		void					setViewportReverse	(const Rect2f& rect);
 
+	void copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, Tuple3u extent,		u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip);
+	void copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 width, u32 height, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip);
 	void copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip);
 
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform = Mat4f::s_identity());

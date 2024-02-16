@@ -230,6 +230,11 @@ Vk_RenderApiUtil::toVkFormat(ColorType v)
 	{
 		case SRC::Rb:		{ return VK_FORMAT_R8_UNORM;			} break;
 
+		case SRC::RGb:		{ return VK_FORMAT_R8G8_UNORM;			} break;
+		case SRC::RGs:		{ return VK_FORMAT_R16G16_UNORM;		} break;
+		case SRC::RGh:		{ return VK_FORMAT_R16G16_SFLOAT;		} break;
+		case SRC::RGf:		{ return VK_FORMAT_R32G32_SFLOAT;		} break;
+
 		case SRC::RGBb:		{ return VK_FORMAT_R8G8B8_UNORM;		} break;
 		case SRC::RGBs:		{ return VK_FORMAT_R16G16B16_UNORM;		} break;
 		case SRC::RGBh:		{ return VK_FORMAT_R16G16B16_SFLOAT;	} break;

@@ -51,10 +51,21 @@ public:
 		}
 	}
 
-	void create(Tuple2u size_, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
+	void create(u32 size_, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
 	{
-		Base::create(RenderDataType::TextureCube, size_.x, size_.y, 1, format_, usageFlags_, mipCount_, s_kFaceCount, sampleCount_, {});
+		Base::create(RenderDataType::TextureCube, size_, size_, 1, format_, usageFlags_, mipCount_, s_kFaceCount, sampleCount_, {});
 	}
+
+	void create(u32 size_, ColorType format_, bool isUseMip, TextureUsageFlags usageFlags_, u32 sampleCount_ = 1)
+	{
+		Base::create(RenderDataType::TextureCube, size_, size_, 1, format_, isUseMip, usageFlags_, s_kFaceCount, sampleCount_, {});
+	}
+
+	void create(u32 size_, ColorType format_, bool isUseMip, TextureUsageFlags usageFlags_, const SamplerState& samplerState_)
+	{
+		Base::create(RenderDataType::TextureCube, size_, size_, 1, format_, isUseMip, usageFlags_, s_kFaceCount, 1, samplerState_);
+	}
+	
 };
 
 
@@ -72,7 +83,7 @@ public:
 	using TextureDesc	= Base::CreateDesc;
 	using Desc			= Base::Desc;
 
-	using Size			= Tuple2u;
+	using Size			= u32;
 
 public:
 	static constexpr SizeType s_kFaceCount = CreateDesc::s_kFaceCount;
@@ -99,7 +110,7 @@ protected:
 
 };
 
-inline TextureCube::Size TextureCube::size() const { return Size{ Base::size().x, Base::size().y}; }
+inline TextureCube::Size TextureCube::size() const { return Base::size().x; }
 
 
 #endif

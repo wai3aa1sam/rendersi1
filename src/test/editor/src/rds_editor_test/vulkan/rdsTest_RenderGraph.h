@@ -15,6 +15,8 @@ namespace rds
 
 #if 1
 
+EditMesh getFullScreenTriangleMesh();
+
 struct MeshAssets
 {
 	void create()
@@ -25,16 +27,22 @@ struct MeshAssets
 
 		WavefrontObjLoader::loadFile(mesh, "asset/mesh/sphere.obj");
 		sphere.create(mesh);
+
+		fullScreenTriangle.create(getFullScreenTriangleMesh());
 	}
 
 	void destroy()
 	{
 		box.clear();
 		sphere.clear();
+		fullScreenTriangle.clear();
 	}
 
 	RenderMesh box;
 	RenderMesh sphere;
+
+	RenderMesh fullScreenTriangle;
+
 };
 MeshAssets meshAssets;
 
@@ -198,8 +206,243 @@ private:
 	math::Camera3f* _camera = nullptr;
 };
 
+class RenderFeaturePass {};
+class RfpPbr : RenderFeaturePass
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	virtual ~RfpPbr()
+	{
+		destroy();
+	}
+
+	SPtr<Shader> _shaderHdrToCube;
+	SPtr<Shader> _shaderIrradianceEnvCube;
+	SPtr<Shader> _shaderPrefilteredEnvCube;
+	SPtr<Shader> _shaderBrdfLut;
+
+	using CubeMaterial = Vector<SPtr<Material>, TextureCube::s_kFaceCount >;
+	CubeMaterial _mtlsHdrToCube;
+	CubeMaterial _mtlsIrradianceEnvCube;
+	CubeMaterial _mtlsPrefilteredEnvCube;
+
+	void create(Shader* shaderHdrToCube, Shader* shaderIrradianceEnvCube, Shader* shaderPrefilteredEnvCube, Shader* shaderBrdfLut)
+	{
+		_shaderHdrToCube			= shaderHdrToCube;
+		_shaderIrradianceEnvCube	= shaderIrradianceEnvCube;
+		_shaderPrefilteredEnvCube	= shaderPrefilteredEnvCube;
+		_shaderBrdfLut				= shaderBrdfLut;
+	}
+
+	void destroy()
+	{
+
+	}
+
+	struct OutputTextures
+	{
+		TextureCube*	texCubeEnvMap			= nullptr;
+		TextureCube*	texCubeIrradinceMap		= nullptr;
+		TextureCube*	texCubePrefilteredMap	= nullptr;
+		Texture2D*		texBrdfLut				= nullptr;
+	};
+
+public:
+	void requestIrradianceEnvCube(RenderGraph* outRdGraph, OutputTextures* outTexs, Texture2D* texHdrEnvMap)
+	{
+		auto* rdGraph = outRdGraph;
+
+		//auto		cubeSize	= sCast<float>(size);
+
+		#if 1
+		auto* passHdrToCube			= renderToCube("hdrToCube",			rdGraph, outTexs->texCubeEnvMap, _shaderHdrToCube, nullptr
+			, _mtlsHdrToCube
+			, [=](Material* mtl, u32 mip, u32 face)
+			{
+				mtl->setParam("equirectangularMap", texHdrEnvMap);
+			}
+		); RDS_UNUSED(passHdrToCube);
+		#if 1
+		auto* passIrradianceEnvCube = renderToCube("irradianceEnvCube", rdGraph, outTexs->texCubeIrradinceMap, _shaderIrradianceEnvCube, passHdrToCube
+			, _mtlsIrradianceEnvCube
+			, [=](Material* mtl, u32 mip, u32 face)
+			{
+				mtl->setParam("deltaPhi",	0.025f);
+				mtl->setParam("deltaTheta", 0.025f);
+				mtl->setParam("envCubeMap", outTexs->texCubeEnvMap);
+			}
+		); RDS_UNUSED(passIrradianceEnvCube);
+		#endif // 0
+		#if 1
+		auto* passPrefilteredEnvCube = renderToCube("PrefilteredEnvCube", rdGraph, outTexs->texCubePrefilteredMap, _shaderPrefilteredEnvCube, passIrradianceEnvCube
+			, _mtlsPrefilteredEnvCube
+			, [=](Material* mtl, u32 mip, u32 face)
+			{
+				mtl->setParam("roughness",	sCast<float>(mip) / outTexs->texCubePrefilteredMap->mipCount());
+				mtl->setParam("envCubeMap", outTexs->texCubeEnvMap);
+			}
+		); RDS_UNUSED(passPrefilteredEnvCube);
+		#endif // 0
+		#else
+		RdgPass* passPrefilteredEnvCube = nullptr;
+		#endif // 0
+
+		requestBrdfLut(rdGraph, outTexs->texBrdfLut, meshAssets.fullScreenTriangle, passPrefilteredEnvCube);
+	}
+
+	void requestBrdfLut(RenderGraph* outRdGraph, Texture2D* outBrdfLut, RenderMesh& quad, RdgPass* dependency)
+	{
+		auto* rdGraph = outRdGraph;
+
+		auto texDst		= rdGraph->importTexture("texBrdfLut", outBrdfLut, TextureUsageFlags::None);
+		auto viewport	= Rect2f{ Tuple2f::s_zero(), Tuple2f::s_cast(outBrdfLut->size())};
+
+
+		auto& passBrdfLut = rdGraph->addPass("brdfLut", RdgPassTypeFlags::Graphics);
+		passBrdfLut.runAfter(dependency);
+		passBrdfLut.setRenderTarget(texDst,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		passBrdfLut.setExecuteFunc(
+			[=](RenderRequest& rdReq) 
+			{
+				rdReq.reset(rdGraph->renderContext());
+
+				auto mtl = Renderer::rdDev()->createMaterial(_shaderBrdfLut);
+
+				rdReq.setViewport(viewport);
+				rdReq.setScissorRect(viewport);
+				rdReq.drawMesh(RDS_SRCLOC, meshAssets.fullScreenTriangle, mtl);
+			});
+
+		auto& passEnvMapTransit = rdGraph->addPass("brdfLut_transit", RdgPassTypeFlags::Graphics);
+		passEnvMapTransit.readTexture(texDst);
+		passEnvMapTransit.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+			}
+		);
+	}
+
+	// std::function can accept l and r value type
+	static RdgPass* renderToCube(StrView name, RenderGraph* outRdGraph, TextureCube* outCube, Shader* shader, RdgPass* dependency, CubeMaterial& mtls, std::function<void(Material*, u32, u32)> setMtlFunc)
+	{
+		//Vector<SPtr<Material>, TextureCube::s_kFaceCount> mtls;
+		RdgTextureHnd	texDst;
+		RdgPass*		lastPass = nullptr;
+
+		auto*		rdGraph		= outRdGraph;
+		ColorType	outFormat	= outCube->format();
+		auto		cubeSize	= sCast<float>(outCube->size());
+		auto		center		= Vec3f{ 0.0f, 0.0f, 0.0f};
+		auto		mipCount	= Texture_mipCount(sCast<u32>(cubeSize));
+		//mipCount = 1;
+
+		{
+			//matProj[1][1] *= -1.0f;
+			if (mtls.is_empty())
+			{
+				RDS_TODO("remove, material should not store mvp related param");
+				mtls.resize(TextureCube::s_kFaceCount * mipCount);
+				for (auto& e : mtls)
+				{
+					e = Renderer::rdDev()->createMaterial(shader);
+				}
+			}
+
+			TempString renderToCubeName;
+			fmtToNew(renderToCubeName, "{}_tex_temp_rdToCube", name);
+
+			RdgPass* lastCopyPass = nullptr;
+			RdgTextureHnd texTempToCubeColor = rdGraph->createTexture(renderToCubeName
+						, Texture2D_CreateDesc{ sCast<u32>(cubeSize), sCast<u32>(cubeSize), outFormat, TextureUsageFlags::RenderTarget | TextureUsageFlags::TransferSrc});
+
+			for (u32 mip = 0; mip < mipCount; mip++)
+			{
+				for (u32 face = 0; face < TextureCube::s_kFaceCount; face++)
+				{
+					auto* mtl = mtls[mip * TextureCube::s_kFaceCount + face].ptr(); RDS_UNUSED(mtl);
+
+					auto viewportFactor = math::pow(0.5f, sCast<float>(mip));
+					auto viewport		= Rect2f{ Tuple2f::s_zero(), Tuple2f{cubeSize * viewportFactor, cubeSize * viewportFactor}};
+
+					setMtlFunc(mtl, mip, face);
+
+					fmtToNew(renderToCubeName, "{}-m{}-f{}", name, mip, face);
+					auto& passRdToCube = rdGraph->addPass(renderToCubeName, RdgPassTypeFlags::Graphics);
+					passRdToCube.runAfter(lastCopyPass);
+					passRdToCube.setRenderTarget(texTempToCubeColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+					if (face == 0 && mip == 0)
+					{
+						passRdToCube.runAfter(dependency);
+					}
+					passRdToCube.setExecuteFunc(
+						[=](RenderRequest& rdReq) 
+						{
+							rdReq.reset(rdGraph->renderContext());
+
+							Vector<Mat4f, TextureCube::s_kFaceCount> matViews = {
+								Mat4f::s_lookAt(center, Vec3f::s_right(),	Vec3f{0.0f, -1.0f,  0.0f}),
+								Mat4f::s_lookAt(center, Vec3f::s_left(),	Vec3f{0.0f, -1.0f,  0.0f}),
+								Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,  1.0f}),
+								Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f, -1.0f}),
+								Mat4f::s_lookAt(center, Vec3f::s_forward(), Vec3f{0.0f, -1.0f,  0.0f}),
+								Mat4f::s_lookAt(center, Vec3f::s_back(),	Vec3f{0.0f, -1.0f,  0.0f}),
+							};
+
+
+							auto	matProj	= Mat4f::s_perspective(math::radians(90.0f), 1.0, 0.1f, viewport.size.x);
+							auto&	matView	= matViews[face];
+							auto	mvp		= matProj * matView;
+
+
+							rdReq.setViewport(viewport);
+							rdReq.setScissorRect(viewport);
+							rdReq.matrix_proj = matProj;
+							rdReq.matrix_view = matView;
+							rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
+						});
+
+					fmtToNew(renderToCubeName, "{}_tex-m{}-f{}", name, mip, face);
+					texDst = rdGraph->importTexture(renderToCubeName, outCube, TextureUsageFlags::TransferDst);
+
+					fmtToNew(renderToCubeName, "{}_copyToDst-m{}-f{}", name, mip, face);
+					auto& passCopyPbrEnvToCube = rdGraph->addPass(renderToCubeName, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
+					passCopyPbrEnvToCube.readTexture(texTempToCubeColor);
+					passCopyPbrEnvToCube.writeTexture(texDst);
+					passCopyPbrEnvToCube.setExecuteFunc(
+						[=](RenderRequest& rdReq)
+						{
+							rdReq.copyTexture(RDS_SRCLOC, outCube, texTempToCubeColor.renderResource(), sCast<u32>(viewport.w), sCast<u32>(viewport.h), 0, face, 0, mip);
+						}
+					);
+
+					lastCopyPass = &passCopyPbrEnvToCube;
+				}
+			}
+
+			#if 1
+			fmtToNew(renderToCubeName, "{}_transit", name);
+			auto& passEnvMapTransit = rdGraph->addPass(renderToCubeName, RdgPassTypeFlags::Graphics);
+			passEnvMapTransit.readTexture(texDst);
+			passEnvMapTransit.setExecuteFunc(
+				[=](RenderRequest& rdReq)
+				{
+				}
+			);
+			#else
+			rdGraph->exportTexture(texDstIrradiance, TextureUsageFlags::ShaderResource);		// this is not work, idk why, but export only transit in the end
+			#endif // 0
+
+			lastPass = &passEnvMapTransit;
+		}
+
+		return lastPass;
+	}
+};
+
 class Test_RenderGraph : public NonCopyable
 {
+public:
+	RfpPbr _rfpPbr;
 public:
 
 	Test_RenderGraph()
@@ -275,11 +518,20 @@ public:
 		}
 
 		{
-			_shaderPbr	= Renderer::rdDev()->createShader("asset/shader/pbr/pbr.shader");
-			_mtlPbr		= Renderer::rdDev()->createMaterial(_shaderPbr);
+			_shaderPbr					= Renderer::rdDev()->createShader("asset/shader/pbr/pbrBasic.shader");
+			_shaderPbrIbl				= Renderer::rdDev()->createShader("asset/shader/pbr/pbrIbl.shader");
+			_shaderHdrToCube			= Renderer::rdDev()->createShader("asset/shader/pbr/hdrToCube.shader");
+			_shaderIrradianceEnvCube	= Renderer::rdDev()->createShader("asset/shader/pbr/irradianceEnvCube.shader");
+			_shaderPrefilteredEnvCube	= Renderer::rdDev()->createShader("asset/shader/pbr/PrefilteredEnvCube.shader");
+			_shaderBrdfLut				= Renderer::rdDev()->createShader("asset/shader/pbr/brdfLut.shader");
 
-			_shaderHdrToCube	= Renderer::rdDev()->createShader("asset/shader/pbr/hdrToCube.shader");
-			_mtlHdrToCube		= Renderer::rdDev()->createMaterial(_shaderHdrToCube);
+			_mtlPbr			= Renderer::rdDev()->createMaterial(_shaderPbr);
+			_mtlPbrIbl		= Renderer::rdDev()->createMaterial(_shaderPbrIbl);
+
+			SamplerState samplerState;
+			samplerState.wrapU = SamplerWrap::ClampToEdge;
+			samplerState.wrapV = SamplerWrap::ClampToEdge;
+			samplerState.wrapS = SamplerWrap::ClampToEdge;
 
 			auto texCDesc = Texture2D::makeCDesc();
 			texCDesc.create("asset/texture/hdr/newport_loft.hdr");
@@ -287,10 +539,25 @@ public:
 			_texHdrEnvMap->setDebugName("texHdrEnvMap");
 
 			auto texCubeCDesc = TextureCube::makeCDesc();
-			texCubeCDesc.create(Tuple2u{ 512, 512 }, ColorType::RGBAf, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource);
-			_texCubeHdrEnvMap = Renderer::rdDev()->createTextureCube(texCubeCDesc);
-			_texCubeHdrEnvMap->setDebugName("texCubeHdrEnvMap");
+			texCubeCDesc.create(512, ColorType::RGBAf, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
+			_texCubeEnvMap = Renderer::rdDev()->createTextureCube(texCubeCDesc);
+			_texCubeEnvMap->setDebugName("texCubeHdrEnvMap");
+
+			texCubeCDesc.create(32, ColorType::RGBAf, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
+			_texCubeIrradianceEnvMap = Renderer::rdDev()->createTextureCube(texCubeCDesc);
+			_texCubeIrradianceEnvMap->setDebugName("texCubeIrradianceEnvMap");
+			
+			texCubeCDesc.create(512, ColorType::RGBAh, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
+			_texCubePrefilteredEnvMap = Renderer::rdDev()->createTextureCube(texCubeCDesc);
+			_texCubePrefilteredEnvMap->setDebugName("texCubePrefilteredEnvMap");
+
+			texCDesc = Texture2D_CreateDesc{ Tuple2u{ 512, 512 }, ColorType::RGh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource, samplerState };
+			//texCDesc.create("asset/texture/brdf_lut.png");
+			_texBrdfLut = Renderer::rdDev()->createTexture2D(texCDesc);
+			_texBrdfLut->setDebugName("texBrdfLut");
 		}
+
+		_rfpPbr.create(_shaderHdrToCube, _shaderIrradianceEnvCube, _shaderPrefilteredEnvCube, _shaderBrdfLut);
 	}
 
 	void prepare()
@@ -298,137 +565,12 @@ public:
 		auto* rdGraph = &_rdGraph;
 		rdGraph->reset();
 
-		RdgTextureHnd texDstIrradiance;
-
-		{
-			float cubeSize = 512;
-
-			auto center = Vec3f{ 0.0f, 0.0f, 0.0f};
-
-			auto matProj	= Mat4f::s_perspective(math::radians(90.0f), 1.0, 0.1f, cubeSize);
-			auto viewport	= Rect2u{ Tuple2u::s_zero(), Tuple2u{cubeSize, cubeSize} };
-			//matProj[1][1] *= -1.0f;
-
-			if (_mtlHdrToCubes.is_empty())
-			{
-				_mtlHdrToCubes.resize(TextureCube::s_kFaceCount);
-				for (auto& e : _mtlHdrToCubes)
-				{
-					e = Renderer::rdDev()->createMaterial(_shaderHdrToCube);
-				}
-			}
-
-			RdgPass* lastCopyPass = nullptr;
-
-			RdgTextureHnd texTempToCubeColor	= rdGraph->createTexture("temp_pbr_toCubeColor", Texture2D_CreateDesc{ viewport.size, ColorType::RGBAf, TextureUsageFlags::RenderTarget | TextureUsageFlags::TransferSrc});
-			for (u32 face = 0; face < TextureCube::s_kFaceCount; face++)
-			{
-				auto* mtl = _mtlHdrToCubes[face].ptr(); RDS_UNUSED(mtl);
-
-				TempString pbrEnvMapName;
-				fmtTo(pbrEnvMapName, "pbrEnvMap-{}", face);
-				auto& passHdrToCube = rdGraph->addPass(pbrEnvMapName, RdgPassTypeFlags::Graphics);
-				passHdrToCube.runAfter(lastCopyPass);
-				passHdrToCube.setRenderTarget(texTempToCubeColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-
-				#if 0
-				passHdrToCube.setExecuteFunc(
-					[=](RenderRequest& rdReq)
-					{
-						const Vector<Mat4f> matViews = {
-							Mat4f::s_lookAt(center, Vec3f::s_right(),	Vec3f{0.0f, -1.0f,  0.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_left(),	Vec3f{0.0f, -1.0f,  0.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,  1.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f, -1.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_forward(), Vec3f{0.0f, -1.0f,  0.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_back(),	Vec3f{0.0f, -1.0f,  0.0f}),
-						};
-
-						/*
-						math::Camera3f camera;
-						camera.setPos(center);
-						camera.setUp()
-						camera.setViewport(Rect2f{Tuple2f::s_cast(viewport.pos), Tuple2f::s_cast(viewport.size)});
-						camera.setFov(90.0f);
-						*/
-
-						rdReq.reset(rdGraph->renderContext());
-
-						rdReq.setViewport(Rect2f{ Tuple2f::s_zero(), Tuple2f{cubeSize, cubeSize} });
-
-						const auto& matView = matViews[face];
-						auto		mvp		= matProj * matView;
-
-						rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
-
-						// override drawMesh set common paramo
-						mtl->setParam("rds_matrix_view",	matView);
-						mtl->setParam("rds_matrix_proj",	matProj);
-						mtl->setParam("rds_matrix_mvp",		mvp);
-
-						mtl->setParam("equirectangularMap", _texHdrEnvMap);
-					});
-
-				#else
-				
-				passHdrToCube.setExecuteFunc(
-					[=](RenderRequest& rdReq) 
-					{
-						rdReq.reset(rdGraph->renderContext());
-
-						Vector<Mat4f, TextureCube::s_kFaceCount> matViews = {
-							Mat4f::s_lookAt(center, Vec3f::s_right(),	Vec3f{0.0f, -1.0f,  0.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_left(),	Vec3f{0.0f, -1.0f,  0.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,  1.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f, -1.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_forward(), Vec3f{0.0f, -1.0f,  0.0f}),
-							Mat4f::s_lookAt(center, Vec3f::s_back(),	Vec3f{0.0f, -1.0f,  0.0f}),
-						};
-
-						auto	matProj	= Mat4f::s_perspective(math::radians(90.0f), 1.0, 0.1f, cubeSize);
-						auto&	matView	= matViews[face];
-						auto	mvp		= matProj * matView;
-
-						rdReq.setViewport(Rect2f{ Tuple2f::s_zero(), Tuple2f{cubeSize, cubeSize} });
-
-						mtl->setParam("equirectangularMap", _texHdrEnvMap);
-
-						rdReq.matrix_proj = matProj;
-						rdReq.matrix_view = matView;
-						rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
-					});
-
-				#endif // 0
-
-				texDstIrradiance = rdGraph->importTexture("tex_dstIrradiance", _texCubeHdrEnvMap, TextureUsageFlags::TransferDst);
-
-				TempString pbrCopyToEnvMapName;
-				fmtTo(pbrCopyToEnvMapName, "pbrCopyToEnvMap-{}", face);
-				auto& passCopyPbrEnvToCube = rdGraph->addPass(pbrCopyToEnvMapName, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
-				passCopyPbrEnvToCube.readTexture(texTempToCubeColor);
-				passCopyPbrEnvToCube.writeTexture(texDstIrradiance);
-				passCopyPbrEnvToCube.setExecuteFunc(
-					[=](RenderRequest& rdReq)
-					{
-						rdReq.copyTexture(RDS_SRCLOC, _texCubeHdrEnvMap, texTempToCubeColor.renderResource(), 0, face, 0, 0);
-					}
-				);
-
-				lastCopyPass = &passCopyPbrEnvToCube;
-			}
-
-			#if 1
-			auto& passEnvMapTransit = rdGraph->addPass("EnvMapTransit", RdgPassTypeFlags::Graphics);
-			passEnvMapTransit.readTexture(texDstIrradiance);
-			passEnvMapTransit.setExecuteFunc(
-				[=](RenderRequest& rdReq)
-				{
-				}
-			);
-			#else
-			rdGraph->exportTexture(texDstIrradiance, TextureUsageFlags::ShaderResource);
-			#endif // 0
-		}
+		RfpPbr::OutputTextures outTexs;
+		outTexs.texBrdfLut				= _texBrdfLut;
+		outTexs.texCubeEnvMap			= _texCubeEnvMap;
+		outTexs.texCubeIrradinceMap		= _texCubeIrradianceEnvMap;
+		outTexs.texCubePrefilteredMap	= _texCubePrefilteredEnvMap;
+		_rfpPbr.requestIrradianceEnvCube(rdGraph, &outTexs, _texHdrEnvMap);
 
 		_rdGraph.compile();
 		_rdGraph.execute();
@@ -446,6 +588,8 @@ public:
 		RdgTextureHnd oTex;
 		RdgTextureHnd oTexDepth;
 		RdgTextureHnd oTexEnvIrradianceCube;
+
+		//_rfpPbr.requestIrradianceEnvCube(&_rdGraph, _texCubeEnvMap, _texCubeIrradianceEnvMap, 512, _texHdrEnvMap);
 
 		//oTex = testCompute(_rdGraph, false);
 		//oTex = testDeferred(&_rdGraph, &oTexDepth);
@@ -654,7 +798,9 @@ public:
 				auto& mtl = _mtlSkybox;
 				//mtl->setParam("skybox", _texDefaultSkybox);
 				//mtl->setParam("skybox", texSkybox ? texSkybox->textureCube() : _texDefaultSkybox);
-				mtl->setParam("skybox", _texCubeHdrEnvMap);
+				mtl->setParam("skybox", _texCubeEnvMap);
+				//mtl->setParam("skybox", _texCubeIrradianceEnvMap);
+				//mtl->setParam("skybox", _texCubePrefilteredEnvMap);
 
 				rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
 			});
@@ -669,11 +815,12 @@ public:
 		auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
 		auto* mtl = _mtlPbr.ptr();
+		mtl = _mtlPbrIbl.ptr();
 
 		RdgTextureHnd texPbrColor	= rdGraph->createTexture("pbr_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 		RdgTextureHnd texPbrDepth	= rdGraph->createTexture("pbr_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
-		auto& passPbr = rdGraph->addPass("pbr", RdgPassTypeFlags::Graphics);
+		auto& passPbr = rdGraph->addPass("pbrIbl", RdgPassTypeFlags::Graphics);
 		passPbr.setRenderTarget(texPbrColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		passPbr.setDepthStencil(texPbrDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
 		passPbr.setExecuteFunc(
@@ -687,23 +834,24 @@ public:
 
 				static Tuple3f posLight		= Tuple3f{0.0f, 20.0f, 0.0f};
 
+
+				static Tuple3f colorLight	= Tuple3f{0.8f, 0.2f, 0.1f};
+				static Tuple3f color		= Tuple3f{0.2f, 0.4f, 0.6f};
+				static Tuple3f colorSpec	= Tuple3f{0.2f, 0.4f, 0.6f};
+				static float   roughness	= 0.0f;
+				static float   ao			= 0.2f;
+				static float   albedo		= 0.2f;
+				static float   metallic		= 1.0f;
 				#if 1
 				Function<void(Material*, int i)> fn  
 
 					= [&](Material* mtl, int i)
 					{
-						mtl->setParam("texture0", _uvCheckerTex);
-						mtl->setParam("texture1", _uvCheckerTex2);
+						mtl->setParam("brdfLut",			_texBrdfLut);
+						mtl->setParam("irradianceEnvMap",	_texCubeIrradianceEnvMap);
+						mtl->setParam("prefilteredEnvMap",	_texCubePrefilteredEnvMap);
 
 						{
-							static Tuple3f colorLight	= Tuple3f{1.2f, 0.0f, 0.0f};
-							static Tuple3f colorSpec	= Tuple3f{0.2f, 0.4f, 0.6f};
-							static float   roughness	= 0.3f;
-							static float   ao			= 0.2f;
-							static float   albedo		= 0.2f;
-							static float   metallic		= 0.0f;
-
-
 							{
 								ImGui::Begin("test pbr");
 
@@ -726,6 +874,7 @@ public:
 								dragFloat3	(mtl, "posView",	&constCast(_camera->pos()).x);
 								dragFloat3	(mtl, "posLight",	posLight.data);
 								dragFloat3	(mtl, "colorLight",	colorLight.data);
+								dragFloat3	(mtl, "color",		color.data);
 								dragFloat3	(mtl, "colorSpec",	colorSpec.data);
 								dragFloat	(mtl, "roughness",	&roughness);
 								dragFloat	(mtl, "ao",			&ao);
@@ -739,6 +888,8 @@ public:
 				#endif // 0
 
 				scene()->drawScene(rdReq, mtl, &fn);
+
+				
 
 				{
 					Mat4f matModel = Mat4f::s_translate(Vec3f{posLight});
@@ -899,13 +1050,22 @@ public:
 	SPtr<Shader>		_shaderPbr;
 	SPtr<Material>		_mtlPbr;
 
-	SPtr<Shader>		_shaderHdrToCube;
-	SPtr<Material>		_mtlHdrToCube;
-	SPtr<Texture2D>		_texHdrEnvMap;
-	SPtr<TextureCube>	_texCubeHdrEnvMap;
+	SPtr<Shader>		_shaderPbrIbl;
+	SPtr<Material>		_mtlPbrIbl;
 
+	SPtr<Shader>		_shaderHdrToCube;
+	SPtr<Shader>		_shaderIrradianceEnvCube;
+	SPtr<Shader>		_shaderPrefilteredEnvCube;
+	SPtr<Shader>		_shaderBrdfLut;
+
+	SPtr<Texture2D>		_texHdrEnvMap;
+	SPtr<Texture2D>		_texBrdfLut;
+	SPtr<TextureCube>	_texCubeEnvMap;
+	SPtr<TextureCube>	_texCubeIrradianceEnvMap;
+	SPtr<TextureCube>	_texCubePrefilteredEnvMap;
 	Vector<SPtr<Material>, TextureCube::s_kFaceCount> _mtlHdrToCubes;
 
+	
 	SPtr<Shader>		_shaderTestBindless;
 	SPtr<Material>		_mtlTestBindless;
 

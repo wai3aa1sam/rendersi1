@@ -448,8 +448,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			{
 				const auto& framebufRect2f = rdTargetExtent.value();
 				vkCmdBuf->beginRenderPass(vkRdPass, vkFramebuf, framebufRect2f, clearValues, VK_SUBPASS_CONTENTS_INLINE);
-				vkCmdBuf->setViewport(framebufRect2f);
-				vkCmdBuf->setScissor (framebufRect2f);
+				//vkCmdBuf->setViewport(framebufRect2f);
+				//vkCmdBuf->setScissor (framebufRect2f);
 			}
 			for (auto* cmd : pass->commnads())
 			{
@@ -1058,7 +1058,7 @@ RenderContext_Vk::onRenderCommand_CopyTexture(RenderCommand_CopyTexture* cmd, vo
 	auto src = Vk_Texture::getVkImageHnd(cmd->src);
 	auto dst = Vk_Texture::getVkImageHnd(cmd->dst);
 
-	copyRegion.extent = Util::toVkExtent3D(cmd->src->size());
+	copyRegion.extent = Util::toVkExtent3D(cmd->extent);
 
 	copyRegion.srcSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
 	copyRegion.srcSubresource.baseArrayLayer	= cmd->srcLayer;

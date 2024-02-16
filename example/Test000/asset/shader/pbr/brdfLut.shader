@@ -27,29 +27,22 @@ reference:
 ~ https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 */
 
-#include "../common/rdsCommon.hlsl"
+#include "rdsPbrCommon.hlsl"
 
 struct VertexIn
 {
     float4 positionOS   : SV_POSITION;
+    float2 uv           : TEXCOORD0;
 };
 
 struct PixelIn 
 {
 	float4 positionHCS  : SV_POSITION;
 	float3 positionOS	: POSITION;
+    float2 uv           : TEXCOORD0;
 };
 
-RDS_TEXTURE_2D(equirectangularMap);
-
-const float2 invAtan = float2(0.1591, 0.3183);
-float2 sampleSphericalMap(float3 v)
-{
-    float2 uv = float2(atan2(v.z, v.x), asin(v.y));
-    uv *= invAtan;
-    uv += 0.5;
-    return uv;
-}
+static const uint s_kSampleCount = 1024u;
 
 PixelIn vs_main(VertexIn i)
 {
@@ -57,16 +50,17 @@ PixelIn vs_main(VertexIn i)
 
     o.positionHCS   = mul(rds_matrix_mvp, i.positionOS);
     o.positionOS 	= i.positionOS;
+    o.uv            = i.uv;
 
     return o;
 }
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    float3 o;
-	
-	float2 uv = sampleSphericalMap(normalize(i.positionOS));
-    o = RDS_SAMPLE_TEXTURE_2D(equirectangularMap, uv);
+    float3 o = float3(0.0);
 
+    float2 uv = i.uv;
+    o.xy = Pbr_integrateBrdf(uv.x, uv.y, s_kSampleCount);
+    
     return float4(o, 1.0);
 }

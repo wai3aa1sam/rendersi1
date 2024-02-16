@@ -61,9 +61,9 @@ public:
 	Filter	minFliter = Filter::Linear;
 	Filter	magFliter = Filter::Linear;
 
-	Wrap	wrapU = Wrap::Repeat;
-	Wrap	wrapV = Wrap::Repeat;
-	Wrap	wrapS = Wrap::Repeat;
+	Wrap	wrapU = Wrap::ClampToEdge;
+	Wrap	wrapV = Wrap::ClampToEdge;
+	Wrap	wrapS = Wrap::ClampToEdge;
 
 	// TODO: Border Color
 
@@ -74,6 +74,8 @@ public:
 
 	u32 sampleCount = 1;
 
+	bool isValidMaxLod() const { return maxLod != math::inf<float>(); }
+
 public:
 	SamplerState()
 		: isAnisotropy(true)
@@ -81,6 +83,9 @@ public:
 };
 
 #endif // 1
+
+u32 Texture_mipCount(u32 width_, u32 height_);
+u32 Texture_mipCount(u32 size);
 
 #if 0
 #pragma mark --- rdsTexture_CreateDesc-Impl ---
@@ -147,6 +152,14 @@ public:
 		mipCount		= sCast<u8>(mipCount_);
 		layerCount		= sCast<u8>(layerCount_);
 		sampleCount		= sCast<u8>(sampleCount_);
+
+		samplerState.maxLod = sampleCount;
+	}
+
+	void create(RenderDataType type_, u32 width_, u32 height_, u32 depth_, ColorType format_, bool isUseMip, TextureUsageFlags usageFlags_
+				, u32 layerCount_, u32 sampleCount_, const SamplerState& samplerState_)
+	{
+		create(type_, width_, height_, depth_, format_, usageFlags_, isUseMip ? Texture_mipCount(width_, height_) : 1, layerCount_, sampleCount_, samplerState_);
 	}
 
 	void create(const Texture_Desc& desc)
@@ -175,9 +188,24 @@ public:
 		Base::create(RenderDataType::Texture2D, width_, height_, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
 	}
 
+	Texture2D_CreateDesc(Tuple2u size_, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_, u32 sampleCount_, const SamplerState& samplerState_)
+	{
+		Base::create(RenderDataType::Texture2D, size_.x, size_.y, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, samplerState_);
+	}
+
+	Texture2D_CreateDesc(Tuple2u size_, ColorType format_, TextureUsageFlags usageFlags_, const SamplerState& samplerState_)
+	{
+		Base::create(RenderDataType::Texture2D, size_.x, size_.y, 1, format_, usageFlags_, 1, 1, 1, samplerState_);
+	}
+
 	Texture2D_CreateDesc(Tuple2u size_, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
 	{
 		Base::create(RenderDataType::Texture2D, size_.x, size_.y, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
+	}
+
+	Texture2D_CreateDesc(Tuple2u size_, ColorType format_, bool isUseMip, TextureUsageFlags usageFlags_, u32 sampleCount_ = 1)
+	{
+		Base::create(RenderDataType::Texture2D, size_.x, size_.y, 1, format_, isUseMip, usageFlags_, 1, sampleCount_, {});
 	}
 
 	void create(StrView filename, TextureUsageFlags usageFlags_ = TextureUsageFlags::ShaderResource)
@@ -337,5 +365,22 @@ class Texture3D : public Texture
 {
 
 };
+
+inline
+u32 
+Texture_mipCount(u32 width_, u32 height_)
+{
+	const u32 mipCount_ = sCast<u32>(math::floor(sCast<float>(math::log2(math::max(width_, height_))))) + 1;
+	return mipCount_;
+}
+
+inline
+u32 
+Texture_mipCount(u32 size)
+{
+	const u32 mipCount_ = sCast<u32>(math::floor(sCast<float>(math::log2(size)))) + 1;
+	return mipCount_;
+}
+
 
 }

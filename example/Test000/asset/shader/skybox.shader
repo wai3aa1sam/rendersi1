@@ -56,10 +56,15 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    float4 o;
+    float3 o;
 	float3 uv = i.uv;
-	uv.y = -uv.y;
-    o = RDS_SAMPLE_TEXTURE_CUBE(skybox, uv);
-    o.a = 1.0;
-    return o;
+	//uv.y = -uv.y;
+    o.rgb = RDS_SAMPLE_TEXTURE_CUBE(skybox, uv);
+    //o.rgb = RDS_TEXTURE_CUBE_SAMPLE_LOD(skybox, uv, 1.2);
+	
+    
+    //o = ToneMapping_reinhard(o);
+    //o = PostProc_gammaEncoding(o);
+
+    return float4(o, 1.0);
 }

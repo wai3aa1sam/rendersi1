@@ -40,16 +40,20 @@ protected:
 		compile("asset/shader/test/test_compute.shader",		opt);
 		compile("asset/shader/test/test_bindless.shader",		opt);
 
-		compile("asset/shader/ui/imgui.shader",				opt);
-		compile("asset/shader/terrain/my_terrain.shader",	opt);
-		compile("asset/shader/present.shader",				opt);
-		compile("asset/shader/preDepth.shader",				opt);
-		compile("asset/shader/gBuffer.shader",				opt);
-		compile("asset/shader/deferredLighting.shader",		opt);
-		compile("asset/shader/skybox.shader",				opt);
+		compile("asset/shader/ui/imgui.shader",					opt);
+		compile("asset/shader/terrain/my_terrain.shader",		opt);
+		compile("asset/shader/present.shader",					opt);
+		compile("asset/shader/preDepth.shader",					opt);
+		compile("asset/shader/gBuffer.shader",					opt);
+		compile("asset/shader/deferredLighting.shader",			opt);
+		compile("asset/shader/skybox.shader",					opt);
 		
-		compile("asset/shader/pbr/pbr.shader",			opt);
-		compile("asset/shader/pbr/hdrToCube.shader",	opt);
+		compile("asset/shader/pbr/pbrBasic.shader",				opt);
+		compile("asset/shader/pbr/pbrIbl.shader",				opt);
+		compile("asset/shader/pbr/hdrToCube.shader",			opt);
+		compile("asset/shader/pbr/irradianceEnvCube.shader",	opt);
+		compile("asset/shader/pbr/prefilteredEnvCube.shader",	opt);
+		compile("asset/shader/pbr/brdfLut.shader",				opt);
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)

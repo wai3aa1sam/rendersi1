@@ -414,11 +414,12 @@ public:
 
 		rdCtx.beginRender();
 
+		//_testRenderGraph.prepare();
 		_testRenderGraph.update();	// temporary, should move to Update() loop
 		_testRenderGraph.commit();
 
 		// drawUI() will upload vertex, therefore must before tsfReq.commit(), _rdReq must be framed, as ui buffer may be in use 
-		_testRenderGraph.present(&rdCtx, _rdReq, tsfReq);
+		_testRenderGraph.present(&rdCtx, _rdReq, tsfReq, true);
 
 		rdCtx.endRender();
 	}

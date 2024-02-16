@@ -74,6 +74,7 @@ TextureCube::uploadToGpu(CreateDesc& cDesc)
 void 
 TextureCube::onCreate(CreateDesc& cDesc)
 {
+	RDS_CORE_ASSERT(cDesc.size.x == cDesc.size.y, "cube must be same size");
 	Base::onCreate(cDesc);
 }
 
