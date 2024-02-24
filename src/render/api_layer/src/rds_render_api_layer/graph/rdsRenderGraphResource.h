@@ -49,15 +49,6 @@ RDS_ENUM_CLASS(RdgResourceType, u8);
 
 #if 1
 
-//
-//#define RdgAccess_ENUM_LIST(E) \
-//	E(None, = 0) \
-//	E(Read,) \
-//	E(Write,) \
-//	E(_kCount,) \
-////---
-//RDS_ENUM_CLASS(RdgAccess, u8);
-
 using RdgAccess = RenderAccess;
 
 struct RdgResourceUsage
@@ -190,45 +181,7 @@ protected:
 	Usage	_pendingUsage	= {};*/
 };
 
-#else
-
-struct RdgResourceState
-{
-public:
-	using Access	= RenderAccess;
-	using Usage		= RdgResourceUsage;
-
-public:
-	Access	access		= Access::None;
-	Usage	usage		= {};
-};
-
-class RdgResourceStateTracker
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	static constexpr SizeType s_kResourceLocalSize	= 32;
-
-public:
-
-
-private:
-
-};
-
 #endif // 0
-
-//struct RdgPendingResourceState
-//{
-//public:
-//	using Access	= RdgAccess;
-//
-//public:
-//	//RdgResource*	rsc			= nullptr;
-//	u32				writeCount	= 0;
-//	u32				readCount	= 0;
-//	Access			access		= Access::None;
-//};
 
 #if 0
 #pragma mark --- rdsRdgResource_CreateDesc-Decl ---
@@ -240,41 +193,6 @@ using RdgBuffer_CreateDesc	=  RdgResource_BufferT::CreateDesc;
 
 using RdgTexture_Desc	= RdgResource_TextureT::Desc;
 using RdgBuffer_Desc	=  RdgResource_BufferT::Desc;
-
-#else
-
-//struct RdgTexture_CreateDesc : public RdgResource_TextureT::CreateDesc
-//{
-//	RDS_RENDER_API_LAYER_COMMON_BODY();
-//public:
-//	using Base = RdgResource_TextureT::CreateDesc;
-//	using RenderResourceCDesc = RdgResource_TextureT::CreateDesc;
-//
-//public:
-//	RdgTexture_CreateDesc() = default;
-//};
-
-//struct RdgTexture_CreateDesc : public RdgResource_TextureT::Desc
-//{
-//
-//};
-
-//struct RdgBuffer_CreateDesc : public RdgResource_BufferT::Desc
-//{
-//	RDS_RENDER_API_LAYER_COMMON_BODY();
-//public:
-//	using Base = RdgResource_BufferT::Desc;
-//
-//	using RenderResourceCDesc = RdgResource_BufferT::Desc;
-//
-//public:
-//	RdgBuffer_CreateDesc() = default;
-//
-//	RdgBuffer_CreateDesc(const RenderResourceCDesc& cDesc)
-//		: Base(cDesc)
-//	{}
-//};
-
 
 #endif // 1
 
@@ -366,6 +284,8 @@ public:
 
 	const StateTrack&	stateTrack() const;
 
+	RenderResource* renderResource();
+
 protected:
 	void addProducer(RdgPass* producer);
 
@@ -375,8 +295,6 @@ protected:
 
 	void commitRenderResouce(RenderResource* rdRsc);
 
-	RenderResource* renderResource();
-
 	template<size_t N> bool appendUnqiueProducerTo(Vector<Pass*, N>& dst, RdgPass* producer);
 	bool isUniqueProducer(RdgPass* producer) const;
 
@@ -384,11 +302,11 @@ protected:
 	StateTrack&	stateTrack();
 
 protected:
-	String	_name;
-	RdgId	_id = -1;
-	Type	_type;
-	bool	_isImported : 1;
-	bool	_isExported : 1;
+	TempString	_name;
+	RdgId		_id = -1;
+	Type		_type;
+	bool		_isImported : 1;
+	bool		_isExported : 1;
 
 	Passes	_producers;
 
@@ -398,24 +316,6 @@ protected:
 	RenderResource*			_pRdRsc	= nullptr;
 	SPtr<RenderResource>	_spRdRsc;
 };
-
-//template<size_t N>
-//bool 
-//RdgResource::appendUnqiueProducerTo(Vector<Pass*, N>& dst, RdgPass* producer)
-//{
-//	bool isUnique = true;
-//	for (auto* pass : dst)
-//	{
-//		if (pass == producer)
-//		{
-//			isUnique = false
-//			return isUnique;
-//		}
-//	}
-//	isUnique = true;
-//	dst.emplace_back(producer)
-//	return true;
-//}
 
 inline
 bool 

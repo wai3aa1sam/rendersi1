@@ -495,6 +495,14 @@ Vk_CommandBuffer::cmd_addMemoryBarrier(RenderGpuBufferTypeFlags srcVkStage, Rend
 }
 
 void 
+Vk_CommandBuffer::cmd_addMemoryBarrier(RenderResourceStateFlags srcState, RenderResourceStateFlags dstState)
+{
+	using StateUtil = RenderResourceStateFlagsUtil;
+	cmd_addMemoryBarrier(Util::toVkStageAccess(StateUtil::getBufferUsageFlags(srcState), StateUtil::getBufferUsageFlags(dstState)
+						, StateUtil::getRenderAccess(srcState), StateUtil::getRenderAccess(dstState)));
+}
+
+void 
 Vk_CommandBuffer::cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc)
 {
 	auto vkStageAcess = Util::toVkStageAccess(desc.srcLayout, desc.dstLayout);

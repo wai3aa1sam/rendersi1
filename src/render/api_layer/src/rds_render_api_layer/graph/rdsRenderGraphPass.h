@@ -60,7 +60,10 @@ struct RdgResourceAccess
 
 public:
 	Resource*	rsc		= nullptr;
-	State		state	= {};
+	//State		state	= {};
+
+	RenderResourceStateFlags srcState;
+	RenderResourceStateFlags dstState;
 	//State			srcState	= {};
 	//State			dstState	= {};
 };
@@ -79,14 +82,15 @@ public:
 	static constexpr SizeType s_kFuncLocalSize = 64 * 4;
 
 public:
-	using Pass = RdgPass;
+	using StateUtil = RenderResourceStateFlagsUtil;
+	using Pass		= RdgPass;
 	using TypeFlag	= RdgPassTypeFlags;
 	using PassFlag	= RdgPassFlag;
 
 	using Access	= RenderAccess;
 	using Usage		= RdgResourceUsage;
 
-	using ExecuteFunc		= Function<void(RenderRequest& rdReq), 0, s_kFuncLocalSize>;
+	using ExecuteFunc		= Function<void(RenderRequest& rdReq), s_kFuncLocalSize>;
 	//using ExecuteFunc		= std::function<void(RenderRequest& rdReq)>;
 
 	// const for std::initlist
@@ -173,8 +177,8 @@ public:
 protected:
 	void execute();
 
-	void accessResources(RdgResourceHndSpan hnds,	Usage usage, Access access, bool isRenderTarget = false);
-	void accessResource (RdgResourceHnd hnd,		Usage usage, Access access, bool isRenderTarget = false);
+	void accessResources(RdgResourceHndSpan hnds,	RenderResourceStateFlags state,		bool isRenderTarget = false);
+	void accessResource (RdgResourceHnd hnd,		RenderResourceStateFlags state,		bool isRenderTarget = false);
 
 	void cull();
 

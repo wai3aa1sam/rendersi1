@@ -137,7 +137,7 @@ public:
 		RDS_CORE_ASSERT(hnd(), "VkObjectType: {}, setDebugName, hnd == nullptr", enumInt(VK_OBJ_T));
 		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 		_debugName = name;
-		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), vkObjectType(), _debugName, hnd());
+		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), vkObjectType(), _debugName.c_str(), hnd());
 		#endif // RDS_DEVELOPMENT
 	}
 
@@ -175,7 +175,7 @@ protected:
 	T*		_hnd = VK_NULL_HANDLE;
 
 	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-	String	_debugName;
+	TempString	_debugName;
 	#endif
 };
 

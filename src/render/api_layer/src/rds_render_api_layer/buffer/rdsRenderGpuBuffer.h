@@ -15,20 +15,6 @@ class TransferCommand_UploadBuffer;
 #endif // 0
 #if 1
 
-// should change to RenderGpuBufferUsageFlags
-#define RenderGpuBufferTypeFlags_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(Vertex,		= BitUtil::bit(0)) \
-	E(Index,		= BitUtil::bit(1)) \
-	E(Const,		= BitUtil::bit(2)) \
-	E(Compute,		= BitUtil::bit(3)) \
-	E(TransferSrc,	= BitUtil::bit(4)) \
-	E(TransferDst,	= BitUtil::bit(5)) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(RenderGpuBufferTypeFlags, u8);
-RDS_ENUM_ALL_OPERATOR(RenderGpuBufferTypeFlags);
-
 #define RenderGpuBufferFlags_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(CpuPrefer,) \

@@ -186,13 +186,11 @@ RenderGraph::compile()
 	}
 
 	// reorder passes
+	// TODO
+	{
 
-	// set rsc state
-	_setResourcesState(sortedPasses, passDepths);
+	}
 
-	// create resource (_commitResouces())
-	// could loop _resources, but all rsc should have a _isCulled
-	// could loop pass for rdTarget, depthStencil, writes...
 	for (auto& e : resources)
 	{
 		if (e->_pRdRsc || e->_spRdRsc)
@@ -223,6 +221,7 @@ RenderGraph::compile()
 			default: { RDS_THROW("unknow Render Graph Resource"); } break;
 		}
 	}
+
 
 	// export resources
 	{
@@ -258,6 +257,23 @@ RenderGraph::execute()
 void 
 RenderGraph::commit()
 {
+	// should call in render thread
+
+	auto& rdgFrame	= renderGraphFrame();
+	//auto& resources = rdgFrame.resources;
+
+	Passes&		sortedPasses	= rdgFrame.resultPasses;
+	PassDepths&	passDepths		= rdgFrame.resultPassDepths;
+	{
+		/*
+		since commit() only called in render thread,
+		we only touch (read and write) the RenderResourceState in render thread, all pass is ordered (alias resource may have some problem
+			, as they may share the same state but they should not share),
+		may rework when impl async compute
+		*/
+		_setResourcesState(sortedPasses, passDepths);
+	}
+
 	_rdCtx->commit(*this);
 	rotateFrame();
 }
@@ -289,7 +305,7 @@ RenderGraph::createBuffer(StrView name, const BufferCreateDesc& cDesc)
 }
 
 RdgTextureHnd 
-RenderGraph::importTexture(StrView name, TextureT* tex, TextureUsageFlags lastUsage, Access lastAccess)
+RenderGraph::importTexture(StrView name, TextureT* tex)
 {
 	RdgTexture_CreateDesc cDesc = {};
 	cDesc.create(tex->desc());
@@ -301,7 +317,7 @@ RenderGraph::importTexture(StrView name, TextureT* tex, TextureUsageFlags lastUs
 	rdgTex->setImport(true);
 	rdgTex->commitRenderResouce(tex);
 
-	rdgTex->_stateTrack.setCurrentUsageAccess(lastUsage, lastAccess);
+	//rdgTex->_stateTrack.setCurrentUsageAccess(lastUsage, lastAccess);
 
 	return hnd;
 }
@@ -313,9 +329,8 @@ RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFl
 	exportRsc.rdgRsc = hnd.resource();
 	exportRsc.rdgRsc->setExport(true);
 
-	exportRsc.outRdRsc	= out;
-	exportRsc.usage.tex = usageFlag;
-	exportRsc.access	= access;
+	exportRsc.outRdRsc		= out;
+	exportRsc.pendingState	= StateUtil::make(usageFlag, access);
 }
 
 void
@@ -325,17 +340,19 @@ RenderGraph::exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Acces
 }
 
 RdgBufferHnd 
-RenderGraph::importBuffer(StrView name, Buffer* buf, RenderGpuBufferTypeFlags lastUsage, Access lastAccess)
+RenderGraph::importBuffer(StrView name, Buffer* buf)
 {
 	RdgBuffer_CreateDesc cDesc = {};
 	cDesc.create(buf->desc());
+
 	auto	hnd		= createBuffer(name, cDesc);
 	auto*	rdgBuf	= sCast<RdgBuffer*>(hnd._rdgRsc);
+
 	rdgBuf->_desc = buf->desc();
 	rdgBuf->setImport(true);
 	rdgBuf->commitRenderResouce(buf);
 
-	rdgBuf->_stateTrack.setCurrentUsageAccess(lastUsage, lastAccess);
+	//rdgBuf->_stateTrack.setCurrentUsageAccess(lastUsage, lastAccess);
 
 	return hnd;
 }
@@ -347,9 +364,8 @@ RenderGraph::exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTy
 	exportRsc.rdgRsc = hnd.resource();
 	exportRsc.rdgRsc->setExport(true);
 
-	exportRsc.outRdRsc	= out;
-	exportRsc.usage.buf = usageFlag;
-	exportRsc.access	= access;
+	exportRsc.outRdRsc		= out;
+	exportRsc.pendingState	= StateUtil::make(usageFlag, access);
 }
 
 RdgTextureHnd RenderGraph::findTexture(StrView name)
@@ -424,11 +440,9 @@ RenderGraph::_setResourcesState(const Passes& sortedPasses, const PassDepths& pa
 {
 	using StateTrack = RdgResourceStateTrack;
 
-	//u32 curPassDepth = 0;
-	auto n = renderGraphFrame().resources.size();
-
-	PendingResources pendingRscs;
-	pendingRscs.reserve(n);
+	/*
+	currently, this solution only works work non-async queue, later study async compute to rework this.
+	*/
 
 	for (SizeType i = 0; i < sortedPasses.size(); i++)
 	{
@@ -439,16 +453,13 @@ RenderGraph::_setResourcesState(const Passes& sortedPasses, const PassDepths& pa
 		if (pass->isCulled())
 			continue;
 
-		/*if (curPassDepth != passDepth)
-		{
-			_flushResourcesState(pendingRscs);
-			curPassDepth = passDepth;
-		}*/
-
-		for (auto& rscAccess : rscAccesses)
+		for (RdgResourceAccess& rscAccess : rscAccesses)
 		{
 			auto*		rsc			= rscAccess.rsc;
 			//auto		id			= rsc->id();
+
+			#if 0
+
 			StateTrack&	stateTrack	= rsc->stateTrack();
 
 			//RDS_TODO("modify only loop one rscAccesses instead of read write");
@@ -458,45 +469,22 @@ RenderGraph::_setResourcesState(const Passes& sortedPasses, const PassDepths& pa
 
 			RDS_TODO("check valid usage");
 
-			/*
-			currently, this solution only works work non-async queue, later study async compute to rework this.
-			*/
 
 			bool isValid = stateTrack.setPendingUsageAccess(rscAccess.state.dstUsage, rscAccess.state.dstAccess);
 			throwIf(!isValid, "cannot change another access type while the pending access is Write");
-			pendingRscs.emplace_back(rsc);
-
-			// temp soulution
+			//
+			//// temp soulution
 			rsc->stateTrack().commit();
+
+			#else
+
+			auto* rdRsc = rsc->renderResource();
+			rscAccess.srcState = rdRsc->renderResourceStateFlags();
+			rdRsc->_internal_setRenderResourceState(rscAccess.dstState);
+
+			#endif // 0
 		}
-
-		/*for (auto* write : pass->writes())
-		{
-			auto*				rsc			= write;
-			RdgResourceState&	curState	= rsc->state();
-
-			RDS_TODO("modify only loop one rscAccesses instead of read write");
-			auto& rscAccess = rscAccesses.emplace_back();		
-			rscAccess.srcAccess = curState.currentAccess();
-			rscAccess.dstAccess = RdgAccess::Write;
-
-			bool isValid = curState.setPendingAccess(rscAccess.dstAccess);
-			throwIf(!isValid, "cannot change another access type while the pending access is Write");
-			pendingRscs.emplace_back(rsc);
-		}*/
 	}
-
-	//_flushResourcesState(pendingRscs);
-}
-
-void 
-RenderGraph::_flushResourcesState(PendingResources& pendingRscs)
-{
-	for (auto& rsc : pendingRscs)
-	{
-		rsc->stateTrack().commit();
-	}
-	pendingRscs.clear();
 }
 
 RenderDevice* RenderGraph::renderDevice() { return _rdCtx->renderDevice(); }

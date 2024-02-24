@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rdsRenderDataType.h"
+#include "rdsRenderResourceState.h"
 
 namespace rds
 {
@@ -123,7 +124,8 @@ class RenderResource : public RefCount_Base
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class Renderer;
 public:
-	using CreateDesc = RenderResource_CreateDesc;
+	using CreateDesc	= RenderResource_CreateDesc;
+	using StateUtil		= RenderResourceStateFlagsUtil;
 
 public:
 	static constexpr bool s_kIsRenderResource = true;
@@ -154,14 +156,21 @@ public:
 	TransferContext&	transferContext();
 	TransferRequest&	transferRequest();
 
+	RenderResourceStateFlags renderResourceStateFlags(u32 subResource = RenderResourceState::s_kAllSubResource) const;
+
+public:
+	void setSubResourceCount(SizeType n);
+	void _internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
+
+
 protected:
 	RDS_DEBUG_SRCLOC_DECL;
 	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-	String _debugName;
+	TempString _debugName;
 	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 
-
-	RenderDevice* _rdDev = nullptr;
+	RenderDevice*		_rdDev = nullptr;
+	RenderResourceState _rdState;
 };
 
 template<class T> inline
@@ -189,6 +198,8 @@ RenderResource::debugName() const
 	return "";
 	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 }
+
+inline RenderResourceStateFlags RenderResource::renderResourceStateFlags(u32 subResource) const { return _rdState.state(subResource); }
 
 #endif
 

@@ -1048,6 +1048,24 @@ Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v, RenderAccess access, Rend
 	//return VkBlendOp::VK_BLEND_OP_MAX_ENUM;
 }
 
+VkImageLayout		
+Vk_RenderApiUtil::toVkImageLayout(RenderResourceStateFlags v, RenderTargetLoadOp  op)
+{
+	return toVkImageLayout(StateUtil::getTextureUsageFlags(v), StateUtil::getRenderAccess(v), op);
+}
+
+VkImageLayout		
+Vk_RenderApiUtil::toVkImageLayout(RenderResourceStateFlags v, RenderTargetStoreOp op)
+{
+	return toVkImageLayout(StateUtil::getTextureUsageFlags(v), StateUtil::getRenderAccess(v), op);
+}
+
+VkImageLayout
+Vk_RenderApiUtil::toVkImageLayout(RenderResourceStateFlags v)
+{
+	return toVkImageLayout(StateUtil::getTextureUsageFlags(v), StateUtil::getRenderAccess(v));
+}
+
 u32
 Vk_RenderApiUtil::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties, RenderDevice_Vk* rdDevVk)
 {
@@ -1069,14 +1087,14 @@ Vk_RenderApiUtil::getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryProper
 }
 
 void 
-Vk_RenderApiUtil::setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const String& name, const void* vkHnd)
+Vk_RenderApiUtil::setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const char* name, const void* vkHnd)
 {
 	RDS_CORE_ASSERT(vkHnd, "");
 
 	VkDebugUtilsObjectNameInfoEXT nameInfo = {};
 	nameInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
 	nameInfo.objectType		= vkObjT;
-	nameInfo.pObjectName	= name.c_str();
+	nameInfo.pObjectName	= name;
 	nameInfo.objectHandle	= reinCast<u64>(vkHnd);
 	nameInfo.pNext			= VK_NULL_HANDLE;
 

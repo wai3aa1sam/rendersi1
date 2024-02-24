@@ -60,8 +60,6 @@ struct Particle
   float2 position;
   float2 velocity;
   float4 color;
-  float4 test;
-  float4x4 s;
 };
 StructuredBuffer	<Particle> in_particle_buffer;
 RWStructuredBuffer	<Particle> out_particle_buffer;

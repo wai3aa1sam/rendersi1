@@ -11,20 +11,6 @@ class Backbuffers;
 
 class TransferCommand_UploadTexture;
 
-#define TextureUsageFlags_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(ShaderResource,	= BitUtil::bit(0)) \
-	E(UnorderedAccess,	= BitUtil::bit(1)) \
-	E(RenderTarget,		= BitUtil::bit(2)) \
-	E(DepthStencil,		= BitUtil::bit(3)) \
-	E(BackBuffer,		= BitUtil::bit(4)) \
-	E(TransferSrc,		= BitUtil::bit(5)) \
-	E(TransferDst,		= BitUtil::bit(6)) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(TextureUsageFlags, u8);
-RDS_ENUM_ALL_OPERATOR(TextureUsageFlags);
-
 #if 0
 #pragma mark --- rdsSamplerState-Decl ---
 #endif // 0

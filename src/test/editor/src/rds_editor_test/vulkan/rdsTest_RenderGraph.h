@@ -294,7 +294,7 @@ public:
 	{
 		auto* rdGraph = outRdGraph;
 
-		auto texDst		= rdGraph->importTexture("texBrdfLut", outBrdfLut, TextureUsageFlags::None);
+		auto texDst		= rdGraph->importTexture("texBrdfLut", outBrdfLut);
 		auto viewport	= Rect2f{ Tuple2f::s_zero(), Tuple2f::s_cast(outBrdfLut->size())};
 
 
@@ -402,7 +402,7 @@ public:
 						});
 
 					fmtToNew(renderToCubeName, "{}_tex-m{}-f{}", name, mip, face);
-					texDst = rdGraph->importTexture(renderToCubeName, outCube, TextureUsageFlags::TransferDst);
+					texDst = rdGraph->importTexture(renderToCubeName, outCube);
 
 					fmtToNew(renderToCubeName, "{}_copyToDst-m{}-f{}", name, mip, face);
 					auto& passCopyPbrEnvToCube = rdGraph->addPass(renderToCubeName, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
@@ -477,7 +477,7 @@ public:
 			_testMtl->setShader(_testShader);
 			_testMtl->setParam("texture0", _uvCheckerTex);
 
-			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
+			//_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
 		}
 
@@ -570,7 +570,7 @@ public:
 		outTexs.texCubeEnvMap			= _texCubeEnvMap;
 		outTexs.texCubeIrradinceMap		= _texCubeIrradianceEnvMap;
 		outTexs.texCubePrefilteredMap	= _texCubePrefilteredEnvMap;
-		_rfpPbr.requestIrradianceEnvCube(rdGraph, &outTexs, _texHdrEnvMap);
+		//_rfpPbr.requestIrradianceEnvCube(rdGraph, &outTexs, _texHdrEnvMap);
 
 		_rdGraph.compile();
 		_rdGraph.execute();
@@ -589,15 +589,13 @@ public:
 		RdgTextureHnd oTexDepth;
 		RdgTextureHnd oTexEnvIrradianceCube;
 
-		//_rfpPbr.requestIrradianceEnvCube(&_rdGraph, _texCubeEnvMap, _texCubeIrradianceEnvMap, 512, _texHdrEnvMap);
-
-		//oTex = testCompute(_rdGraph, false);
+		oTex = testCompute(&_rdGraph, false);
 		//oTex = testDeferred(&_rdGraph, &oTexDepth);
-		oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
+		//oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
 		//oTex = testBindless(&_rdGraph, &oTexDepth);
 
-		auto* texSkybox = 0 ? &oTexEnvIrradianceCube : nullptr;
-		oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
+		auto* texSkybox = 0 ? &oTexEnvIrradianceCube : nullptr; RDS_UNUSED(texSkybox);
+		//oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
 		finalComposite(&_rdGraph, oTex);
 
 		_rdGraph.compile();
@@ -726,10 +724,11 @@ public:
 		}
 
 		auto* rdGraph = outRdGraph;
-		RdgBufferHnd particlesRead	= rdGraph->importBuffer("particlesRead",	_testComputeLastFrameParticles, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
+		RdgBufferHnd particlesRead	= rdGraph->importBuffer("particlesRead",	_testComputeLastFrameParticles);
 		RdgBufferHnd particlesWrite	= rdGraph->createBuffer("particlesWrite",	RenderGpuBuffer_CreateDesc{ sizeof(Particle) * s_kMaxParticleCount, sizeof(Particle), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex });
 
 		auto& test_compute = rdGraph->addPass("test_compute", RdgPassTypeFlags::Compute);
+		test_compute.readBuffer(particlesRead);
 		test_compute.writeBuffer(particlesWrite);
 		test_compute.setExecuteFunc(
 			[=](RenderRequest& rdReq)
@@ -980,7 +979,7 @@ public:
 	void finalComposite(RenderGraph* outRdGraph, RdgTextureHnd presentTex)
 	{
 		auto*	rdGraph			= outRdGraph;
-		auto	backBufferRt	= rdGraph->importTexture("back_buffer", _rdCtx->backBuffer(), TextureUsageFlags::None); RDS_UNUSED(backBufferRt);
+		auto	backBufferRt	= rdGraph->importTexture("back_buffer", _rdCtx->backBuffer()); RDS_UNUSED(backBufferRt);
 
 		auto& finalComposePass = _rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
 		finalComposePass.readTexture(presentTex);

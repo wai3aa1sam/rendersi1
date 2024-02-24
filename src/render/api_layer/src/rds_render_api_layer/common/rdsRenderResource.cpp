@@ -59,6 +59,18 @@ RenderResource::setDebugName(StrView name)
 	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 }
 
+void 
+RenderResource::setSubResourceCount(SizeType n)
+{
+	_rdState.setSubResourceCount(n);
+}
+
+void 
+RenderResource::_internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource)
+{
+	_rdState.setState(state, subResource);
+}
+
 bool 
 RenderResource::hasCreated() const
 {

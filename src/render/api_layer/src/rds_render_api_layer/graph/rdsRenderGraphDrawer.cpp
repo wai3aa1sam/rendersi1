@@ -125,7 +125,7 @@ RdgDrawer::_dumpPasses()
 
 	headerComment("dump passes");
 
-	for (const auto& e : _rdgGraph->passes()) 
+	for (const auto& e : _rdgGraph->resultPasses()) 
 	{
 		auto id					= e->id();
 		const char* passColor	= e->isCulled() ? style().color.pass.culled : style().color.pass.executed;
@@ -150,7 +150,20 @@ void RdgDrawer::_dumpResources()
 		const auto& name	= e->name();
 		auto type			= e->type();
 		auto fillColor		= e->isExported() ? style().color.resource.imported : style().color.resource.transient;
-		auto refCount = 0;
+		auto refCount		= 0;
+
+		/*
+		if want to have resource state, we have to save a VectorMap for each transition and its corresponding pass
+		create a resource drawNode for each transition
+		*/
+		#if 0
+		TempString state = "n/a";
+		auto* rdRsc = e->renderResource();
+		if (rdRsc)
+		{
+			state = enumStr(rdRsc->renderResourceStateFlags());
+		}
+		#endif // 0
 
 		newLine();
 		writeResourceNodeName(id);

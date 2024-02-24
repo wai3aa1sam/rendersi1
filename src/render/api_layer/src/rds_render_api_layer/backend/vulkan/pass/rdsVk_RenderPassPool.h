@@ -72,8 +72,8 @@ public:
 			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, rdTarget.loadOp);
 			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, rdTarget.storeOp);	// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 			#else
-			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, rdTarget.loadOp);
-			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, rdTarget.storeOp);
+			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.srcState, rdTarget.loadOp);
+			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.dstState, rdTarget.storeOp);
 
 			vkDesc.initialLayout	= vkDesc.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED ? vkDesc.initialLayout : vkDesc.finalLayout;
 			#endif // 0
@@ -100,8 +100,8 @@ public:
 			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, depthStencil->loadOp);
 			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, RenderTargetStoreOp::Store);
 			#else
-			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.state.srcUsage.tex, rdgAccess.state.srcAccess, depthStencil->loadOp);
-			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.state.dstUsage.tex, rdgAccess.state.dstAccess, RenderTargetStoreOp::Store);
+			vkDesc.initialLayout	= Util::toVkImageLayout(rdgAccess.srcState, depthStencil->loadOp);
+			vkDesc.finalLayout		= Util::toVkImageLayout(rdgAccess.dstState, RenderTargetStoreOp::Store);
 
 			vkDesc.initialLayout	= vkDesc.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED ? vkDesc.initialLayout : vkDesc.finalLayout;
 			#endif // 0

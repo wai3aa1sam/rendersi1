@@ -56,17 +56,10 @@ RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTar
 	dst.targetHnd	= hnd;
 	dst._localId	= sCast<int>(_rscAccesses.size());
 
-	auto usage = Usage{ TextureUsageFlags::RenderTarget };
-	accessResource(hnd, usage, Access::Write, true);
+	auto usage = TextureUsageFlags::RenderTarget;
+	auto state = StateUtil::make(usage, Access::Write);
+	accessResource(hnd, state, true);
 }
-
-//void 
-//RdgPass::setRenderTarget(RdgTextureHndSpan hnds)
-//{
-//	//accessResources(toHndSpan(hnds), Access::Write);
-//
-//
-//}
 
 void 
 RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp)
@@ -81,8 +74,9 @@ RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp de
 	_depthStencil.access		= access;
 	_depthStencil._localId		= sCast<int>(_rscAccesses.size());
 
-	auto usage = Usage{ TextureUsageFlags::DepthStencil };
-	accessResource(hnd, usage, access, true);
+	auto usage = TextureUsageFlags::DepthStencil;
+	auto state = StateUtil::make(usage, access);
+	accessResource(hnd, state, true);
 }
 
 void 
@@ -94,14 +88,16 @@ RdgPass::readTexture(RdgTextureHnd	hnd, TextureUsageFlags usage)
 		RDS_CORE_ASSERT(BitUtil::has(hnd.desc().usageFlags, TextureUsageFlags::TransferSrc));
 		usage = TextureUsageFlags::TransferSrc;
 	}
-	accessResource(hnd, usage, Access::Read);
+	auto state = StateUtil::make(usage, Access::Read);
+	accessResource(hnd, state);
 }
 void 
 RdgPass::readTextures(RdgTextureHndSpan hnds)
 {
 	RDS_CORE_ASSERT(BitUtil::has(typeFlags(), RdgPassTypeFlags::Transfer) || BitUtil::has(hnds[0].usageFlags(), TextureUsageFlags::ShaderResource), "must have ShaderResource flag");
-	auto usage = Usage{ TextureUsageFlags::ShaderResource };
-	accessResources(toHndSpan(hnds), usage, Access::Read);
+	auto usage = TextureUsageFlags::ShaderResource;
+	auto state = StateUtil::make(usage, Access::Read);
+	accessResources(toHndSpan(hnds), state);
 }
 
 void
@@ -112,46 +108,50 @@ RdgPass::writeTexture(RdgTextureHnd hnd, TextureUsageFlags usage)
 		RDS_CORE_ASSERT(BitUtil::has(hnd.desc().usageFlags, TextureUsageFlags::TransferDst));
 		usage = TextureUsageFlags::TransferDst;
 	}
-	accessResource(hnd, usage, Access::Write);
+	auto state = StateUtil::make(usage, Access::Write);
+	accessResource(hnd, state);
 }
 
 void 
 RdgPass::writeTextures(RdgTextureHndSpan hnds)
 {
-	auto usage = Usage{ TextureUsageFlags::UnorderedAccess };
-	accessResources(toHndSpan(hnds), usage, Access::Write);
+	auto usage = TextureUsageFlags::UnorderedAccess;
+	auto state = StateUtil::make(usage, Access::Write);
+	accessResources(toHndSpan(hnds), state);
 }
 
 void 
 RdgPass::readBuffer(RdgBufferHnd hnd, ShaderStageFlag useStages)
 {
-	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
-	if		(BitUtil::has(useStages, ShaderStageFlag::Vertex))	usage.buf = RenderGpuBufferTypeFlags::Vertex;
-	else if (BitUtil::has(useStages, ShaderStageFlag::Pixel))	usage.buf = RenderGpuBufferTypeFlags::Const;
-	accessResource(hnd, usage, Access::Read);
+	auto usage = RenderGpuBufferTypeFlags::Compute;
+	if		(BitUtil::has(useStages, ShaderStageFlag::Vertex))	usage = RenderGpuBufferTypeFlags::Vertex;
+	else if (BitUtil::has(useStages, ShaderStageFlag::Pixel))	usage = RenderGpuBufferTypeFlags::Const;
+	auto state = StateUtil::make(usage, Access::Read);
+	accessResource(hnd, state);
 }
 
 void 
 RdgPass::readBuffers(RdgBufferHndSpan hnds, ShaderStageFlag useStages)
 {
-	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
-	if		(BitUtil::has(useStages, ShaderStageFlag::Vertex))	usage.buf = RenderGpuBufferTypeFlags::Vertex;
-	else if (BitUtil::has(useStages, ShaderStageFlag::Pixel))	usage.buf = RenderGpuBufferTypeFlags::Const;
-	accessResources(toHndSpan(hnds), usage, Access::Read);
+	auto usage = RenderGpuBufferTypeFlags::Compute;
+	if		(BitUtil::has(useStages, ShaderStageFlag::Vertex))	usage = RenderGpuBufferTypeFlags::Vertex;
+	else if (BitUtil::has(useStages, ShaderStageFlag::Pixel))	usage = RenderGpuBufferTypeFlags::Const;
+	auto state = StateUtil::make(usage, Access::Read);
+	accessResources(toHndSpan(hnds), state);
 }
 
 void 
 RdgPass::writeBuffer(RdgBufferHnd hnd)
 {
-	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
-	accessResource(hnd, usage, Access::Write);
+	auto state = StateUtil::make(RenderGpuBufferTypeFlags::Compute, Access::Write);
+	accessResource(hnd, state);
 }
 
 void 
 RdgPass::writeBuffers(RdgBufferHndSpan hnds)
 {
-	auto usage = Usage{ RenderGpuBufferTypeFlags::Compute };
-	accessResources(toHndSpan(hnds), usage, Access::Write);
+	auto state = StateUtil::make(RenderGpuBufferTypeFlags::Compute, Access::Write);
+	accessResources(toHndSpan(hnds), state);
 }
 
 void 
@@ -166,27 +166,27 @@ RdgPass::runAfter(RdgPass* pass)
 }
 
 void 
-RdgPass::accessResources(RdgResourceHndSpan hnds, Usage usage, Access access, bool isRenderTarget)
+RdgPass::accessResources(RdgResourceHndSpan hnds, RenderResourceStateFlags state, bool isRenderTarget)
 {
 	for (auto& e : hnds)
 	{
-		accessResource(e, usage, access, isRenderTarget);
+		accessResource(e, state, isRenderTarget);
 	}
 }
 
 void 
-RdgPass::accessResource(RdgResourceHnd hnd, Usage usage, Access access, bool isRenderTarget)
+RdgPass::accessResource(RdgResourceHnd hnd, RenderResourceStateFlags state, bool isRenderTarget)
 {
-	using SRC = Access;
-
 	RDS_TODO("check unique resource");
+	using SRC		= RenderAccess;
 
 	auto* rdgRsc = hnd._rdgRsc;
 
 	auto& rscAccess = _rscAccesses.emplace_back();
 	rscAccess.rsc				= rdgRsc;
-	rscAccess.state.dstUsage	= usage;
-	rscAccess.state.dstAccess	= access;
+	rscAccess.dstState			= state;
+
+	auto access = StateUtil::getRenderAccess(rscAccess.dstState);
 
 	auto appendUniqueProducerTo = [this](auto& passes, RdgResource* rdgRsc)
 		{
@@ -239,7 +239,6 @@ RdgPass::accessResource(RdgResourceHnd hnd, Usage usage, Access access, bool isR
 		} break;
 	}
 }
-
 
 void 
 RdgPass::cull()

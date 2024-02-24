@@ -119,6 +119,7 @@ public:
 	void cmd_addMemoryBarrier(Vk_StageAccess vkStageAccess);
 	void cmd_addMemoryBarrier(VkPipelineStageFlags srcVkStage, VkPipelineStageFlags dstVkStage, VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess);
 	void cmd_addMemoryBarrier(RenderGpuBufferTypeFlags srcVkStage, RenderGpuBufferTypeFlags dstVkStage, RenderAccess srcAccess, RenderAccess dstAccess);
+	void cmd_addMemoryBarrier(RenderResourceStateFlags srcState, RenderResourceStateFlags dstState);
 
 	void cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc);
 	void cmd_addImageMemBarrier(Vk_Image*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout);

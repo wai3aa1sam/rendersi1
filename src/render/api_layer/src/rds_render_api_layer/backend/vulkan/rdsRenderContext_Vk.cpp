@@ -333,8 +333,6 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				_commitPass(pass);
 			}
 			//_submit(_graphicsVkCmdBufsHnds, QueueTypeFlags::Graphics);
-
-			
 		}
 
 		void addGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd)
@@ -475,6 +473,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				auto* rsc = rscAccess.rsc;
 				auto type = rsc->type();
 
+				#if 0
 				if (rscAccess.state.isSameTransition())
 					continue;
 
@@ -487,7 +486,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 						if (rscAccess.state.srcUsage.buf != RenderGpuBufferTypeFlags::None)
 						{
 							vkCmdBuf->cmd_addMemoryBarrier(rscAccess.state.srcUsage.buf,	rscAccess.state.dstUsage.buf
-														 , rscAccess.state.srcAccess,		rscAccess.state.dstAccess);
+								, rscAccess.state.srcAccess,		rscAccess.state.dstAccess);
 						}
 					} break;
 
@@ -505,6 +504,41 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
 				}
+
+				#else
+
+				if (!RenderResourceState::isTransitionNeeded(rscAccess.srcState, rscAccess.dstState))
+					continue;
+
+				switch (type)
+				{
+					case SRC::Buffer:	
+					{
+						//auto* rdgBuf	= sCast<RdgTexture*>(rsc);
+						//auto* bufVk		= sCast<RenderGpuBuffer_Vk*>(RdgResourceAccessor::access(rdgBuf));
+						auto srcUsage = RenderResourceStateFlagsUtil::getBufferUsageFlags(rscAccess.srcState);
+						if (srcUsage != RenderGpuBufferTypeFlags::None)
+						{
+							vkCmdBuf->cmd_addMemoryBarrier(rscAccess.srcState, rscAccess.dstState);
+						}
+					} break;
+
+					case SRC::Texture:	
+					{
+						auto* rdgTex	= sCast<RdgTexture*>(rsc);
+						auto* vkImgHnd	= Vk_Texture::getVkImageHnd(RdgResourceAccessor::access(rdgTex));
+
+						VkImageLayout	srcLayout	= Util::toVkImageLayout(rscAccess.srcState);
+						VkImageLayout	dstLayout	= Util::toVkImageLayout(rscAccess.dstState);
+
+						vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout, rdgTex->desc());
+					} break;
+
+					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
+				}
+
+				#endif // 0
+
 			}
 		}
 
@@ -522,13 +556,22 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				using SRC = RdgResourceType;
 
 				auto* rsc				= expBuf.rdgRsc;
-				const auto& stateTrack	= sCast<const RdgResource*>(rsc)->stateTrack();
+				const auto& stateTrack = sCast<const RdgResource*>(rsc)->stateTrack(); RDS_UNUSED(stateTrack);
 
-				if (stateTrack.currentUsage() == expBuf.usage && stateTrack.currentAccess() == expBuf.access)
+				auto srcState	= rsc->renderResource()->renderResourceStateFlags();
+
+				#if 0
+				auto srcUsage	= StateUtil::getBufferUsageFlags(srcState);
+				auto srcAccess	= StateUtil::getRenderAccess	(srcState);
+
+				auto dstUsage	= StateUtil::getBufferUsageFlags(expBuf.pendingState);
+				auto dstAccess	= StateUtil::getRenderAccess	(expBuf.pendingState);
+				#endif // 1
+
+				if (srcState == expBuf.pendingState)
 					continue;
 
-				vkCmdBuf->cmd_addMemoryBarrier(stateTrack.currentUsage().buf,	expBuf.usage.buf
-											 , stateTrack.currentAccess(),		expBuf.access);
+				vkCmdBuf->cmd_addMemoryBarrier(srcState, expBuf.pendingState);
 			}
 
 			for (auto& expTex : rdGraph.exportedTextures())
@@ -536,17 +579,19 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				using SRC = RdgResourceType;
 
 				auto* rsc				= expTex.rdgRsc;
-				const auto& stateTrack	= sCast<const RdgResource*>(rsc)->stateTrack();
+				const auto& stateTrack	= sCast<const RdgResource*>(rsc)->stateTrack(); RDS_UNUSED(stateTrack);
 
-				if (stateTrack.currentUsage() == expTex.usage && stateTrack.currentAccess() == expTex.access)
+				auto srcState	= rsc->renderResource()->renderResourceStateFlags();
+
+				if (srcState == expTex.pendingState)
 					continue;
 
 				auto* rdgTex	= sCast<RdgTexture*>(rsc);
 				auto* vkImgHnd	= Vk_Texture::getVkImageHnd(RdgResourceAccessor::access(rdgTex));
 
-				VkImageLayout	srcLayout	= Util::toVkImageLayout(stateTrack.currentUsage().tex,	sCast<RenderAccess>(stateTrack.currentAccess()));
-				VkImageLayout	dstLayout	= Util::toVkImageLayout(expTex.usage.tex,				sCast<RenderAccess>(expTex.access));
-				
+				VkImageLayout	srcLayout	= Util::toVkImageLayout(srcState);
+				VkImageLayout	dstLayout	= Util::toVkImageLayout(expTex.pendingState);
+
 				vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout, rdgTex->desc());
 			}
 

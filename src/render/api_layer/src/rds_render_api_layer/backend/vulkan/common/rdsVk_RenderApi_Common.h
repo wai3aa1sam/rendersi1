@@ -164,6 +164,7 @@ public:
 	using Base					= RenderApiUtil;
 	using Result				= VkResult;
 	//using SwapchainAvailInfo	= SwapchainAvailInfo_Vk;
+	using StateUtil				= RenderResourceStateFlagsUtil;
 
 public:
 	Vk_RenderApiUtil() = delete;
@@ -249,6 +250,9 @@ public:
 	static VkImageLayout		toVkImageLayout(TextureUsageFlags v, RenderAccess access);
 	static VkImageLayout		toVkImageLayout(TextureUsageFlags v, RenderAccess access, RenderTargetLoadOp  op);
 	static VkImageLayout		toVkImageLayout(TextureUsageFlags v, RenderAccess access, RenderTargetStoreOp op);
+	static VkImageLayout		toVkImageLayout(RenderResourceStateFlags v, RenderTargetLoadOp  op);
+	static VkImageLayout		toVkImageLayout(RenderResourceStateFlags v, RenderTargetStoreOp op);
+	static VkImageLayout		toVkImageLayout(RenderResourceStateFlags v);
 
 	template<size_t N> static void getVkClearValuesTo(Vector<VkClearValue, N>& out, const RenderCommand_ClearFramebuffers* value, SizeType colorCount, bool hasDepth);
 	
@@ -261,7 +265,7 @@ public:
 	
 public:
 	static u32	getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties, RenderDevice_Vk* rdDevVk);
-	static void setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const String& name, const void* vkHnd);
+	static void setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const char* name, const void* vkHnd);
 
 public:
 	static Vk_Buffer*	toVkBuf		(		RenderGpuBuffer* rdGpuBuf);

@@ -31,6 +31,8 @@ class RenderGraph : public NonCopyable
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 
 public:
+	using StateUtil = RenderResourceStateFlagsUtil;
+
 	using TextureT			= Texture;
 
 	using Texture			= RdgResource_TextureT;
@@ -166,11 +168,11 @@ public:
 	{
 		using Usage		= RdgResourceUsage;
 		using Access	= RdgAccess;
+		using State		= RenderResourceStateFlags;
 
 		RdgResource*	rdgRsc		= nullptr;
 		SPtr<T>*		outRdRsc	= nullptr;
-		Usage			usage		= {};
-		Access			access		= {};
+		State			pendingState;
 	};
 	using ExportedTexture	= ExportedResourceT<Texture>;
 	using ExportedBuffer	= ExportedResourceT<Buffer >;
@@ -195,18 +197,20 @@ public:
 	RdgTextureHnd	createTexture	(StrView name, const TextureCreateDesc&	cDesc);
 	RdgBufferHnd	createBuffer	(StrView name, const BufferCreateDesc&	cDesc);
 
-	RdgTextureHnd	importTexture(StrView name, TextureT* tex, TextureUsageFlags lastUsage, Access lastAccess = Access::None);
+	RdgTextureHnd	importTexture(StrView name, TextureT* tex);
 	void			exportTexture(SPtr<Texture>*		out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
 	void			exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
 
-	RdgBufferHnd	importBuffer(StrView name, Buffer* buf, RenderGpuBufferTypeFlags lastUsage, Access lastAccess);
+	RdgBufferHnd	importBuffer(StrView name, Buffer* buf);
 	void			exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlags, Access access = Access::Read);
 
 	RdgTextureHnd	findTexture(StrView name);
 	RdgBufferHnd	findBuffer (StrView name);
 
-	Span<Pass*>		resultPasses();
-	Span<Pass*>		allPasses();
+	Span<Pass*>				resultPasses();
+	Span<Pass*>				allPasses();
+
+	Span<RdgResource*>		allResources();
 
 	Span<ExportedTexture> exportedTextures();
 	Span<ExportedBuffer > exportedBuffers();
@@ -223,7 +227,6 @@ protected:
 	void rotateFrame();
 
 	void _setResourcesState(const Passes& sortedPasses, const PassDepths& passDepths);
-	void _flushResourcesState(PendingResources& pendingRscs);
 
 	RdgResourcePool&	resourcePool();
 	RenderGraphFrame&	renderGraphFrame();
@@ -267,6 +270,8 @@ protected:
 
 inline Span<RenderGraph::Pass*>	RenderGraph::allPasses()	{ return renderGraphFrame().passes; }
 inline Span<RenderGraph::Pass*> RenderGraph::resultPasses() { return renderGraphFrame().resultPasses; }
+
+inline Span<RdgResource*>		RenderGraph::allResources() { return renderGraphFrame().resources; }
 
 inline Span<RenderGraph::ExportedTexture> RenderGraph::exportedTextures()	{ return _exportedTexs; }
 inline Span<RenderGraph::ExportedBuffer > RenderGraph::exportedBuffers()	{ return _exportedBufs; }
