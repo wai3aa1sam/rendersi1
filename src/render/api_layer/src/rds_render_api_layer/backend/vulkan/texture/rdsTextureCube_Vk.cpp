@@ -16,9 +16,10 @@ RenderDevice_Vk::onCreateTextureCube(TextureCube_CreateDesc& cDesc)
 }
 
 #if 0
-#pragma mark --- rdsTexture_Vk-Impl ---
+#pragma mark --- rdsTextureCube_Vk-Impl ---
 #endif // 0
 #if 1
+
 
 TextureCube_Vk::TextureCube_Vk()
 {
@@ -27,19 +28,6 @@ TextureCube_Vk::TextureCube_Vk()
 TextureCube_Vk::~TextureCube_Vk()
 {
 	destroy();
-}
-
-void 
-TextureCube_Vk::setDebugName(StrView name)
-{
-	Base::setDebugName(name);
-	_setDebugName(name);
-}
-
-bool 
-TextureCube_Vk::isNull() const
-{
-	return !_vkImage.hnd();
 }
 
 void 
@@ -65,12 +53,6 @@ TextureCube_Vk::onPostCreate(CreateDesc& cDesc)
 void 
 TextureCube_Vk::onDestroy()
 {
-	auto* rdDevVk = renderDeviceVk();
-
-	_vkSampler.destroy(rdDevVk);
-	_vkImageView.destroy(rdDevVk);
-	_vkImage.destroy();
-
 	Base::onDestroy();
 }
 
@@ -105,24 +87,18 @@ TextureCube_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* 
 	Vk_Texture::createVkResource(this);
 }
 
-void
-TextureCube_Vk::_setDebugName(StrView name)
+void 
+TextureCube_Vk::setDebugName(StrView name)
 {
-	if (!_vkSampler)
-		return;
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkSampler,	"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	Base::setDebugName(name);
 }
 
+// only use  for swapchain
 void 
 TextureCube_Vk::setNull()
 {
-	_vkSampler.destroy(nullptr);
-	_vkImage.destroy();
-	_vkImageView.destroy(nullptr);
+	Base::setNull();
 }
-
 
 #endif
 

@@ -42,22 +42,10 @@ Texture2D_Vk::~Texture2D_Vk()
 }
 
 void 
-Texture2D_Vk::setDebugName(StrView name)
-{
-	Base::setDebugName(name);
-	_setDebugName(name);
-}
-
-bool 
-Texture2D_Vk::isNull() const
-{
-	return !_vkImage.hnd();
-}
-
-void 
 Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
+
 	if (cDesc.uploadImage.isValid())
 	{
 		uploadToGpu(cDesc);
@@ -77,15 +65,6 @@ Texture2D_Vk::onPostCreate(CreateDesc& cDesc)
 void 
 Texture2D_Vk::onDestroy()
 {
-	if (!_vkImage)
-		return;
-
-	auto* rdDevVk = renderDeviceVk();
-
-	_vkSampler.destroy(rdDevVk);
-	_vkImageView.destroy(rdDevVk);
-	_vkImage.destroy();
-
 	Base::onDestroy();
 }
 
@@ -94,7 +73,7 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 {
 	Base::onUploadToGpu(cDesc, cmd);
 
-	const auto& srcImage	= cDesc.uploadImage;
+	const auto& srcImage = cDesc.uploadImage;
 	if (srcImage.isValid())
 	{
 		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
@@ -104,26 +83,17 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 }
 
 void 
-Texture2D_Vk::_setDebugName(StrView name)
+Texture2D_Vk::setDebugName(StrView name)
 {
-	if (!_vkSampler)
-		return;
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkSampler,	"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
-
-	//RDS_VK_SET_DEBUG_NAME_FMT(_vkImgViewShaderRsc, "{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	Base::setDebugName(name);
 }
 
 // only use  for swapchain
 void 
 Texture2D_Vk::setNull()
 {
-	_vkSampler.destroy(nullptr);
-	_vkImage.destroy();
-	_vkImageView.destroy(nullptr);
+	Base::setNull();
 }
-
 
 #endif
 

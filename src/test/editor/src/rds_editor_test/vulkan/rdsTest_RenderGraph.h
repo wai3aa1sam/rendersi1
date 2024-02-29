@@ -591,8 +591,8 @@ public:
 
 		//oTex = testCompute(&_rdGraph, false);
 		//oTex = testDeferred(&_rdGraph, &oTexDepth);
-		//oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
-		oTex = testBindless(&_rdGraph, &oTexDepth);
+		oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
+		//oTex = testBindless(&_rdGraph, &oTexDepth);
 
 		auto* texSkybox = 0 ? &oTexEnvIrradianceCube : nullptr; RDS_UNUSED(texSkybox);
 		oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);

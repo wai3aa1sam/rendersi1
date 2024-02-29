@@ -16,8 +16,9 @@ struct Vk_Texture;
 template<class TEX_BASE>
 class Texture_Vk : public RenderResource_Vk<TEX_BASE>
 {
-	friend class RenderContext_Vk;
-	friend class Vk_Swapchain;
+	friend class	RenderContext_Vk;
+	friend class	Vk_Swapchain;
+	friend struct	Vk_Texture;
 public:
 	using Base = TEX_BASE;
 	using CreateDesc = typename Base::CreateDesc;
@@ -26,46 +27,10 @@ public:
 	Texture_Vk();
 	virtual ~Texture_Vk();
 
-	Vk_Image_T*		vkImageHnd();
-	Vk_ImageView_T* vkImageViewHnd();
-	Vk_Sampler_T*	vkSamplerHnd();
-
-protected:
-	virtual void onCreate		(CreateDesc& cDesc) override;
-	virtual void onPostCreate	(CreateDesc& cDesc) override;
-	virtual void onDestroy		() override;
-
-	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
-
-	virtual void setDebugName(StrView name) override;
-	virtual void setNull() override;
-
-protected:
-	Vk_Image		_vkImage;
-	Vk_ImageView	_vkImageView;
-	Vk_Sampler		_vkSampler;		// TODO: sampler in RenderDevice_Vk, shared globally;
-};
-
-#if 0
-#pragma mark --- rdsTexture2D_Vk-Decl ---
-#endif // 0
-#if 1
-
-class Texture2D_Vk : public RenderResource_Vk<Texture2D>
-{
-	friend class RenderContext_Vk;
-	friend class Vk_Swapchain;
-	friend struct Vk_Texture;
-public:
-	Texture2D_Vk();
-	virtual ~Texture2D_Vk();
-
-	virtual void setDebugName(StrView name) override;
 
 public:
 	virtual bool isNull() const;
 
-public:
 	Vk_Image*		vkImage();
 	Vk_ImageView*	vkImageView();
 	Vk_Sampler*		vkSampler();
@@ -81,9 +46,7 @@ protected:
 
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 
-protected:
-	void _setDebugName(StrView name);
-
+	virtual void setDebugName(StrView name) override;
 	virtual void setNull() override;
 
 protected:
@@ -92,13 +55,37 @@ protected:
 	Vk_Sampler		_vkSampler;		// TODO: sampler in RenderDevice_Vk, shared globally;
 };
 
-inline Vk_Image*		Texture2D_Vk::vkImage()			{ return &_vkImage; }
-inline Vk_ImageView*	Texture2D_Vk::vkImageView()		{ return &_vkImageView; }	
-inline Vk_Sampler*		Texture2D_Vk::vkSampler()		{ return &_vkSampler; }	
+#if 0
+#pragma mark --- rdsTexture2D_Vk-Decl ---
+#endif // 0
+#if 1
 
-inline Vk_Image_T*		Texture2D_Vk::vkImageHnd()		{ return _vkImage.hnd(); }
-inline Vk_ImageView_T*	Texture2D_Vk::vkImageViewHnd()	{ return _vkImageView.hnd(); }
-inline Vk_Sampler_T*	Texture2D_Vk::vkSamplerHnd()	{ return _vkSampler.hnd(); }
+class Texture2D_Vk : public Texture_Vk<Texture2D>
+{
+	friend class	RenderContext_Vk;
+	friend class	Vk_Swapchain;
+	friend struct	Vk_Texture;
+public:
+	using Base = Texture_Vk<Texture2D>;
+
+public:
+	Texture2D_Vk();
+	virtual ~Texture2D_Vk();
+
+public:
+	virtual void setDebugName(StrView name) override;
+	virtual void setNull() override;
+
+protected:
+	virtual void onCreate		(CreateDesc& cDesc) override;
+	virtual void onPostCreate	(CreateDesc& cDesc) override;
+	virtual void onDestroy		() override;
+
+	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
+
+protected:
+
+};
 
 #endif
 
@@ -155,6 +142,94 @@ struct Vk_Texture
 	static void createVkImageView	(Vk_ImageView*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
 	static void createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
 };
+
+#if 0
+#pragma mark --- rdsTexture_Vk-Impl ---
+#endif // 0
+#if 1
+template<class TEX_BASE> inline
+Texture_Vk<TEX_BASE>::Texture_Vk()
+{
+
+}
+
+template<class TEX_BASE> inline
+Texture_Vk<TEX_BASE>::~Texture_Vk()
+{
+	
+}
+
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::onCreate(CreateDesc& cDesc)
+{
+	Base::onCreate(cDesc);
+}
+
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::onPostCreate(CreateDesc& cDesc)
+{
+	Base::onPostCreate(cDesc);
+}
+
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::onDestroy()
+{
+	if (!_vkImage)
+		return;
+
+	auto* rdDevVk = renderDeviceVk();
+
+	_vkSampler.destroy(rdDevVk);
+	_vkImageView.destroy(rdDevVk);
+	_vkImage.destroy();
+
+	Base::onDestroy();
+}
+
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
+{
+	Base::onUploadToGpu(cDesc, cmd);
+}
+
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::setDebugName(StrView name)
+{
+	Base::setDebugName(name);
+
+	if (!_vkSampler)		// prevent crash when it is back buffer
+		return;
+
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkSampler,	"{}-{}-[{}:{}]", name, "_vkSampler",	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-{}-[{}:{}]", name, "_vkImage",		RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-{}-[{}:{}]", name, "_vkImageView",	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+}
+
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::setNull()
+{
+	_vkSampler.destroy(nullptr);
+	_vkImage.destroy();
+	_vkImageView.destroy(nullptr);
+}
+
+template<class TEX_BASE> inline bool			Texture_Vk<TEX_BASE>::isNull()	const	{ return !_vkImage; }
+
+template<class TEX_BASE> inline Vk_Image*		Texture_Vk<TEX_BASE>::vkImage()			{ return &_vkImage; }
+template<class TEX_BASE> inline Vk_ImageView*	Texture_Vk<TEX_BASE>::vkImageView()		{ return &_vkImageView; }
+template<class TEX_BASE> inline Vk_Sampler*		Texture_Vk<TEX_BASE>::vkSampler()		{ return &_vkSampler; }
+
+template<class TEX_BASE> inline Vk_Image_T*		Texture_Vk<TEX_BASE>::vkImageHnd()		{ return _vkImage.hnd(); }
+template<class TEX_BASE> inline Vk_ImageView_T* Texture_Vk<TEX_BASE>::vkImageViewHnd()	{ return _vkImageView.hnd(); }
+template<class TEX_BASE> inline Vk_Sampler_T*	Texture_Vk<TEX_BASE>::vkSamplerHnd()	{ return _vkSampler.hnd(); }
+
+#endif
 
 }
 #endif
