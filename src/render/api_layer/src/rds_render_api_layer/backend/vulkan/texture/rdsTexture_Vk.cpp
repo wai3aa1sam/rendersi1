@@ -48,6 +48,12 @@ Texture2D_Vk::setDebugName(StrView name)
 	_setDebugName(name);
 }
 
+bool 
+Texture2D_Vk::isNull() const
+{
+	return !_vkImage.hnd();
+}
+
 void 
 Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
@@ -71,6 +77,9 @@ Texture2D_Vk::onPostCreate(CreateDesc& cDesc)
 void 
 Texture2D_Vk::onDestroy()
 {
+	if (!_vkImage)
+		return;
+
 	auto* rdDevVk = renderDeviceVk();
 
 	_vkSampler.destroy(rdDevVk);
@@ -102,6 +111,8 @@ Texture2D_Vk::_setDebugName(StrView name)
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkSampler,	"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+
+	//RDS_VK_SET_DEBUG_NAME_FMT(_vkImgViewShaderRsc, "{}-[{}:{}]", name, RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 }
 
 // only use  for swapchain
@@ -231,7 +242,7 @@ Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, RenderDev
 {
 	throwIf(!vkImageHnd, "no VkImage while creating image view");
 	VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-	if (BitUtil::has(desc.usageFlags, TextureUsageFlags::DepthStencil)) { aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT; }
+	if		(BitUtil::has(desc.usageFlags, TextureUsageFlags::DepthStencil)) { aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT; }	// view cannot have both depth and stencil
 
 	// when the format is SRGB, vulkan will convert it to linear when sampling
 	VkImageViewCreateInfo cInfo = {};

@@ -10,12 +10,20 @@
 #include "pass/rdsVk_RenderPassPool.h"
 #include "pass/rdsVk_FramebufferPool.h"
 
+#include "shader/rdsVk_BindlessResources.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
 {
 
 struct Vk_PhysicalDeviceFeatures;
+
+#if RDS_VK_VER_1_3
+using Vk_PhysicalDeviceVulkanFeatures = VkPhysicalDeviceVulkan13Features;
+#elif
+using Vk_PhysicalDeviceVulkanFeatures = VkPhysicalDeviceVulkan12Features;
+#endif
 
 #if 0
 #pragma mark --- rdsRenderDevice_Vk-Decl ---
@@ -52,7 +60,9 @@ public:
 			Vk_SwapchainAvailableInfo&	swapchainAvailableInfo();
 			QueueFamilyIndices&			queueFamilyIndices();
 
-			RenderDevice_Vk* renderDeviceVk() { RDS_TODO("remove"); return this; }
+	RenderDevice_Vk*		renderDeviceVk()	{ RDS_TODO("remove"); return this; }
+
+	BindlessResources_Vk&	bindlessResourceVk();
 
 public:
 
@@ -100,6 +110,8 @@ private:
 
 	Vk_FramebufferPool	_vkFramebufPool;
 	Vk_RenderPassPool	_vkRdPassPool;
+
+	BindlessResources_Vk _bindlessRscsVk;
 };
 
 #endif
@@ -124,6 +136,8 @@ inline			Vk_SwapchainAvailableInfo&		RenderDevice_Vk::swapchainAvailableInfo()		
 
 inline			QueueFamilyIndices&				RenderDevice_Vk::queueFamilyIndices()				{ return _queueFamilyIndices; }
 
+inline			BindlessResources_Vk&			RenderDevice_Vk::bindlessResourceVk()				{ return _bindlessRscsVk; }
+
 #endif
 
 
@@ -134,15 +148,25 @@ inline			QueueFamilyIndices&				RenderDevice_Vk::queueFamilyIndices()				{ retur
 #if 1
 
 
-struct Vk_PhysicalDeviceFeatures : public VkPhysicalDeviceFeatures2
+struct Vk_PhysicalDeviceFeatures
 {
+public:
 	void create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_T* vkPhyDevHnd);
+
+	VkPhysicalDeviceFeatures2*			vkPhyDevFeatures()		const;
+	Vk_PhysicalDeviceVulkanFeatures*	vkPhyDevVkFeatures()	const;
 
 private:
 	void _getRenderApaterFeaturesTo(RenderAdapterInfo* outInfo);
 
 private:
-	VkPhysicalDeviceDescriptorIndexingFeatures _vkDescriptorIdxFeats;
+	//VkPhysicalDeviceDescriptorIndexingFeatures			_vkDescrIdxFeats		= {};
+
+	mutable VkPhysicalDeviceFeatures2					_vkPhyDevFeats2			= {};
+	mutable VkPhysicalDeviceVulkan12Features			_vkPhyDevVkFeats12		= {};
+	#if RDS_VK_VER_1_3
+	mutable VkPhysicalDeviceVulkan13Features			_vkPhyDevVkFeats13		= {};
+	#endif
 };
 
 #endif

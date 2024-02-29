@@ -31,7 +31,7 @@ MaterialPass_Stage::create(MaterialPass* pass, ShaderStage* shaderStage)
 	_shaderStage = shaderStage;
 
 	RDS_TODO("move to pass, 1 per ShaderResource pass, create on demand");
-	_framedShaderResources.resize(s_kFrameInFlightCount);
+	_framedShaderResources.resize(1);
 	for (auto& e : _framedShaderResources)
 	{
 		RDS_TODO("change to MaterialPass");

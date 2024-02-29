@@ -38,8 +38,7 @@ protected:
 		compile("asset/shader/test/test_texture.shader",		opt);
 		compile("asset/shader/test/test_texture_set0.shader",	opt);
 		compile("asset/shader/test/test_compute.shader",		opt);
-		//compile("asset/shader/test/test_bindless.shader",		opt);
-
+		
 		compile("asset/shader/ui/imgui.shader",					opt);
 		compile("asset/shader/terrain/my_terrain.shader",		opt);
 		compile("asset/shader/present.shader",					opt);
@@ -54,6 +53,10 @@ protected:
 		compile("asset/shader/pbr/irradianceEnvCube.shader",	opt);
 		compile("asset/shader/pbr/prefilteredEnvCube.shader",	opt);
 		compile("asset/shader/pbr/brdfLut.shader",				opt);
+
+		opt.isNoOffset	= true;
+		opt.enableLog	= true; 
+		compile("asset/shader/test/test_bindless.shader",		opt);
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)

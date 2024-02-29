@@ -20,29 +20,18 @@ struct MaterialPass_Stage;
 
 //using DescriptorPoolSizes = Vector<Pair<VkDescriptorType, float>, 32 >;
 
-struct DescriptorPoolSizes
+using Vk_DescriptorTypePair = Pair<VkDescriptorType, float>;
+
+struct DescriptorPoolSizes : public Vector<Vk_DescriptorTypePair, 16 >
 {
-	Vector<Pair<VkDescriptorType, float>, 32 > sizes =
-	{
-		{ VK_DESCRIPTOR_TYPE_SAMPLER,					0.5f },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,	4.0f },
-		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,				4.0f },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,				1.0f },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,		1.0f },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,		1.0f },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			2.0f },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,			2.0f },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,	1.0f },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,	1.0f },
-		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,			0.5f },
-	};
+	//Vector<Vk_DescriptorTypePair, 16 > sizes;
 };
 
 struct Vk_DescriptorAllocator_CreateDesc
 {
 	DescriptorPoolSizes			poolSizes;
-	u32							setReservedSize = 1000;
-	VkDescriptorPoolCreateFlags cFlag			= 0;
+	u32							descrCount	= 1000;
+	VkDescriptorPoolCreateFlags cFlag		= 0;
 };
 
 
@@ -63,10 +52,15 @@ public:
 
 	void create(RenderDevice_Vk* rdDevVk);
 	void create(const CreateDesc& cDesc, RenderDevice_Vk* rdDevVk);
+	void createBindless(CreateDesc& cDesc, RenderDevice_Vk* rdDevVk);
+
 	void destroy();
 
 	void reset();
 	Vk_DescriptorSet alloc(const Vk_DescriptorSetLayout* layout);
+
+public:
+	u32 descriptorCount() const;
 
 	Vk_Device_T*		vkDevHnd();
 	RenderDevice_Vk*	renderDeviceVk();
@@ -88,6 +82,8 @@ private:
 	Vector<Vk_DescriptorPool, 8> _usedPools;
 	Vector<Vk_DescriptorPool, 8> _freePools;
 };
+
+inline u32 Vk_DescriptorAllocator::descriptorCount() const { return _cDesc.descrCount; }
 
 inline RenderDevice_Vk* Vk_DescriptorAllocator::renderDeviceVk() { return _rdDevVk; }
 

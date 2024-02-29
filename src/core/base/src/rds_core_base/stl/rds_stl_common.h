@@ -99,6 +99,7 @@ using TempStringW	= TempStringW_T<DefaultAllocator>;
 #if 1
 template<class KEY, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>								using Set		= ::nmsp::Set_T<KEY, PRED, ALLOC>;
 template<class KEY, class HASH = Hash<KEY>, class PRED = EqualTo<KEY>, class ALLOC = DefaultAllocator>	using UnordSet	= ::nmsp::UnorderedSet_T<KEY, HASH, PRED, ALLOC>;
+template<class KEY, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>								using VectorSet	= ::nmsp::VectorSet_T<KEY, PRED, ALLOC>;
 
 template<class KEY, class VALUE, class PRED = Less<KEY>, class ALLOC = DefaultAllocator>								using Map		= ::nmsp::Map_T<KEY, VALUE, PRED, ALLOC>;
 template<class KEY, class VALUE, class HASH = Hash<KEY>, class PRED  = EqualTo<KEY>, class ALLOC = DefaultAllocator>	using UnordMap	= ::nmsp::UnorderedMap_T<KEY, VALUE, HASH, PRED, ALLOC>;

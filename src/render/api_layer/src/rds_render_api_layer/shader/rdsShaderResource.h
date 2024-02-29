@@ -120,6 +120,9 @@ public:
 		static constexpr SizeType s_kLocalDataSize = 2;
 
 	public:
+		ConstBuffer();
+		~ConstBuffer();
+
 		void create	(const Info* info, ShaderPass* pass);
 		void destroy();
 
@@ -139,6 +142,7 @@ public:
 
 	protected:
 		void _setParam(const VarInfo& varInfo, const i32&		v)	{ return _setParamCheckType(varInfo, v); }
+		void _setParam(const VarInfo& varInfo, const u32&		v)	{ return _setParamCheckType(varInfo, v); }
 		void _setParam(const VarInfo& varInfo, const f32&		v)	{ return _setParamCheckType(varInfo, v); }
 		void _setParam(const VarInfo& varInfo, const Color4b&	v)	{ return _setParamCheckType(varInfo, v); }
 		void _setParam(const VarInfo& varInfo, const Tuple2f&	v)	{ return _setParamCheckType(varInfo, v); }
@@ -343,7 +347,6 @@ ShaderResources::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v)
 	auto end = varInfo.offset + sizeof(v);
 	throwIf(end > _cpuBuf.size() || !data(), "material set param failed, cpuBuffer overflow");
 
-	_cpuBuf.resize(_info->size);
 	auto* dst = reinCast<T*>(data() + varInfo.offset);
 	
 	passTest(_cpuBuf, varInfo, _info, &v);
@@ -351,6 +354,7 @@ ShaderResources::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v)
 
 	//*dst = v;
 	//memory_copy(dst, &v, 1);
+	auto sizeofT = sizeof(T); RDS_UNUSED(sizeofT);
 	::memcpy(dst, &v, sizeof(T));
 
 	RDS_WARN_ONCE("*dst = v success");

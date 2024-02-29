@@ -124,6 +124,16 @@ ShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
 #endif // 0
 #if 1
 
+ShaderResources::ConstBuffer::ConstBuffer()
+{
+
+}
+
+ShaderResources::ConstBuffer::~ConstBuffer()
+{
+	destroy();
+}
+
 void 
 ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass)
 {
@@ -168,6 +178,8 @@ ShaderResources::ConstBuffer::destroy()
 {
 	_info = nullptr;
 	_gpuBuffer.reset(nullptr);
+	_cpuBuf.clear();
+	_isDirty = false;
 }
 
 void 

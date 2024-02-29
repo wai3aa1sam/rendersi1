@@ -55,12 +55,20 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 	{
 		_internal_setRenderResourceState(RenderResourceStateFlags::Transfer_Dst);
 	}
+
+	if (BitUtil::has(desc().usageFlags, TextureUsageFlags::ShaderResource))
+	{
+		_bindlessHnd = renderDevice()->bindlessResource().allocTexture(this);
+	}
 }
 
 void 
 Texture::onDestroy()
 {
-
+	if (!isNull())
+	{
+		renderDevice()->bindlessResource().freeTexture(this);
+	}
 }
 
 bool 

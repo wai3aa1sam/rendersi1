@@ -271,6 +271,11 @@ public:
 			RDS_NAMED_FIXED_IO(se, bindPoint);
 			RDS_NAMED_FIXED_IO(se, bindCount);
 		}
+
+		bool isBindlessResource() const
+		{
+			return StrUtil::isSame(name.c_str(), "texture2DTable");
+		}
 	};
 
 	struct Sampler

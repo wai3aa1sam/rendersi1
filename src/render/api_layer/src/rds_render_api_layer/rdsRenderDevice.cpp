@@ -54,6 +54,8 @@ RenderDevice::create(const CreateDesc& cDesc)
 	}
 
 	_tsfCtx->transferRequest().reset(_tsfCtx);
+
+	RDS_CORE_ASSERT(_bindlessRscs, "");
 }
 
 

@@ -15,7 +15,7 @@ struct ShaderCompileOption
 {
 public:
 	ShaderCompileOption()
-		: isDebug(false), isToSpirv(false), enableLog(false)
+		: isDebug(false), isToSpirv(false), enableLog(false), isNoOffset(false)
 	{
 
 	}
@@ -23,6 +23,8 @@ public:
 	bool isDebug	: 1;
 	bool enableLog	: 1;
 	bool isToSpirv	: 1;
+
+	bool isNoOffset : 1;
 };
 
 struct ShaderCompileDesc

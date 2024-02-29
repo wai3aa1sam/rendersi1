@@ -61,11 +61,16 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	u32 uavOffset		= stageOffset + 12;
 	u32 imageOffset		= stageOffset + 14;
 
+
 	TempString args;
 	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
 	fmtTo(args, " -fauto-bind-uniforms");	// auto bind all uniform variable
-	fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}"
-				, cbufferOffset, textureOffset, samplerOffset, uavOffset, imageOffset); 
+	if (!desc.opt->isNoOffset)
+	{
+		fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}"
+				, cbufferOffset, textureOffset, samplerOffset, uavOffset, imageOffset);
+	}
+	
 	//fmtTo(args, " -I\"dir"");
 	
 	//fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 100 -fresource-set-binding b1 1 2");

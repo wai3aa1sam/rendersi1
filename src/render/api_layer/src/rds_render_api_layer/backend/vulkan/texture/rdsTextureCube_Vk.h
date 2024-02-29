@@ -29,6 +29,9 @@ public:
 
 	virtual void setDebugName(StrView name) override;
 
+public:
+	bool isNull() const;
+
 	Vk_Image*		vkImage();
 	Vk_ImageView*	vkImageView();
 	Vk_Sampler*		vkSampler();
@@ -36,6 +39,8 @@ public:
 	Vk_Image_T*		vkImageHnd();
 	Vk_ImageView_T* vkImageViewHnd();
 	Vk_Sampler_T*	vkSamplerHnd();
+
+	Vk_ImageView	_vkImgViewShaderRsc;
 
 protected:
 	virtual void onCreate		(CreateDesc& cDesc) override;

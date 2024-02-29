@@ -153,7 +153,7 @@ public:
 		
 	}
 
-	void drawScene(RenderRequest& rdReq, Material* mtl, Function<void(Material* mtl, int)>* setMtlFn = nullptr)
+	void drawScene(RenderRequest& rdReq, Material* mtl, Function<void(Material* mtl, int)>* setMtlFn)
 	{
 		if (_mtls.is_empty() || _mtls[0]->shader() != mtl->shader())
 		{
@@ -477,7 +477,7 @@ public:
 			_testMtl->setShader(_testShader);
 			_testMtl->setParam("texture0", _uvCheckerTex);
 
-			//_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
+			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
 		}
 
@@ -570,7 +570,7 @@ public:
 		outTexs.texCubeEnvMap			= _texCubeEnvMap;
 		outTexs.texCubeIrradinceMap		= _texCubeIrradianceEnvMap;
 		outTexs.texCubePrefilteredMap	= _texCubePrefilteredEnvMap;
-		//_rfpPbr.requestIrradianceEnvCube(rdGraph, &outTexs, _texHdrEnvMap);
+		_rfpPbr.requestIrradianceEnvCube(rdGraph, &outTexs, _texHdrEnvMap);
 
 		_rdGraph.compile();
 		_rdGraph.execute();
@@ -589,13 +589,13 @@ public:
 		RdgTextureHnd oTexDepth;
 		RdgTextureHnd oTexEnvIrradianceCube;
 
-		oTex = testCompute(&_rdGraph, false);
+		//oTex = testCompute(&_rdGraph, false);
 		//oTex = testDeferred(&_rdGraph, &oTexDepth);
 		//oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
-		//oTex = testBindless(&_rdGraph, &oTexDepth);
+		oTex = testBindless(&_rdGraph, &oTexDepth);
 
 		auto* texSkybox = 0 ? &oTexEnvIrradianceCube : nullptr; RDS_UNUSED(texSkybox);
-		//oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
+		oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
 		finalComposite(&_rdGraph, oTex);
 
 		_rdGraph.compile();
@@ -655,7 +655,7 @@ public:
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 
-				scene()->drawScene(rdReq, _gBufferMtl);
+				scene()->drawScene(rdReq, _gBufferMtl, nullptr);
 			}
 		);
 
@@ -917,8 +917,8 @@ public:
 		static float   rds_test_3	= {};
 		static float   rds_test_5	= {};
 
-		auto* mtl = _mtlPbr.ptr();
-
+		auto* mtl = _mtlTestBindless.ptr();
+		
 		{
 			ImGui::Begin("test bindless");
 
@@ -964,7 +964,13 @@ public:
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 
-				scene()->drawScene(rdReq, mtl);
+				Function<void(Material*, int i)> fn  
+
+					= [&](Material* mtl, int i)
+					{
+						mtl->setParam("texture0", _uvCheckerTex);
+					};
+				scene()->drawScene(rdReq, mtl, &fn);
 			}
 		);
 

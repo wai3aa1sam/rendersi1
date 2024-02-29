@@ -36,6 +36,12 @@ TextureCube_Vk::setDebugName(StrView name)
 	_setDebugName(name);
 }
 
+bool 
+TextureCube_Vk::isNull() const
+{
+	return !_vkImage.hnd();
+}
+
 void 
 TextureCube_Vk::onCreate(CreateDesc& cDesc)
 {

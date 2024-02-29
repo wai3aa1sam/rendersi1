@@ -229,6 +229,9 @@ Vk_RenderApiUtil::toVkFormat(ColorType v)
 	switch (v) 
 	{
 		case SRC::Rb:		{ return VK_FORMAT_R8_UNORM;			} break;
+		case SRC::Rs:		{ return VK_FORMAT_R16_UNORM;			} break;
+		case SRC::Rh:		{ return VK_FORMAT_R16_SFLOAT;			} break;
+		case SRC::Rf:		{ return VK_FORMAT_R32_SFLOAT;			} break;
 
 		case SRC::RGb:		{ return VK_FORMAT_R8G8_UNORM;			} break;
 		case SRC::RGs:		{ return VK_FORMAT_R16G16_UNORM;		} break;
@@ -476,6 +479,7 @@ Vk_RenderApiUtil::toVkShaderStageBit(ShaderStageFlag v)
 		case SRC::Vertex:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT; }	break;
 		case SRC::Pixel:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT; } break;
 		case SRC::Compute:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT; }	break;
+		case SRC::All:		{ return VkShaderStageFlagBits::VK_SHADER_STAGE_ALL; }			break;
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 

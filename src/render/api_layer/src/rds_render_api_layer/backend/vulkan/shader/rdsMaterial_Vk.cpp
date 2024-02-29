@@ -72,13 +72,18 @@ struct Vk_PipelineLayoutCDesc : public Vk_CDesc_Base
 {
 	static constexpr SizeType s_kLocalSize = 8;
 public:
-	void createGraphics(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDev)
+	void createGraphics(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDevVk)
 	{
 		destroy();
 
 		if (pass->vertexStage())	_hnds.emplace_back(pass->vkVertexStage_NoCheck()._vkDescriptorSetLayout.hnd());
 		if (pass->pixelStage())		_hnds.emplace_back(pass->vkPixelStage_NoCheck()._vkDescriptorSetLayout.hnd());
 		if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
+
+		if (StrUtil::isSame(TempString{Path::basename(pass->shader()->filename())}.c_str(), "test_bindless.shader"))
+		{
+			rdDevVk->bindlessResourceVk().getDescriptorSetLayoutTo(_hnds);
+		}
 
 		RDS_CORE_ASSERT(!_hnds.is_empty(), "no descriptor set layout");
 
@@ -90,7 +95,7 @@ public:
 			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
 			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
 		}
-		out.create(&pipelineLayoutInfo, rdDev);
+		out.create(&pipelineLayoutInfo, rdDevVk);
 	}
 
 	void createCompute(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDev)
@@ -485,6 +490,14 @@ public:
 		using Util = Vk_RenderApiUtil;
 		for (const auto& paramInfo : infos)
 		{
+			if (type	== VK_DESCRIPTOR_TYPE_STORAGE_BUFFER	&& StrUtil::isSame(paramInfo.name.c_str(), "bufferTable")
+				|| type	== VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE		&& StrUtil::isSame(paramInfo.name.c_str(), "texture2DTable")
+				|| type == VK_DESCRIPTOR_TYPE_SAMPLER			&& StrUtil::isSame(paramInfo.name.c_str(), "samplerTable")
+				)
+			{
+				continue;
+			}
+
 			auto& e = dst.emplace_back();
 			e.descriptorType		= type;
 			e.stageFlags			= Util::toVkShaderStageBit(stageFlag);
@@ -529,7 +542,7 @@ public:
 	createVkDescriptorSet(STAGE* stage, RenderDevice_Vk* rdDevVk)
 	{
 		createVkDescriptorSetLayout(&stage->_vkDescriptorSetLayout, stage, rdDevVk);
-		stage->_vkFramedDescSets.resize(s_kFrameInFlightCount);
+		stage->_vkFramedDescSets.resize(1);
 	}
 
 	template<class STAGE> static 
@@ -546,6 +559,8 @@ public:
 		shaderRsc.uploadToGpu();
 
 		auto& vkDescSet = vkDescriptorSet(stage, mtl);
+
+		RDS_TODO("rotate rsc, framed resource should in each shader resource, not in resources");
 
 		RDS_TODO("temporary solution for binding, also, DescriptorAllocator is leaking memory since the Vk_DescriptorSet (it's debugName) has not destroy?");
 

@@ -44,6 +44,13 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 		_tsfCtx = &_transferCtxVk;
 	}
 
+	{
+		auto bindlessRscVkcDesc = BindlessResources_Vk::makeCDesc();
+		bindlessRscVkcDesc._internal_create(this);
+		_bindlessRscsVk.create(bindlessRscVkcDesc);
+		_bindlessRscs = &_bindlessRscsVk;
+	}
+
 	_setDebugName();
 }
 
@@ -51,6 +58,8 @@ void
 RenderDevice_Vk::onDestroy()
 {
 	waitIdle();
+
+	_bindlessRscsVk.destroy();
 
 	_tsfCtx->destroy();
 
@@ -136,7 +145,7 @@ RenderDevice_Vk::createVkInstance()
 }
 
 void
-RenderDevice_Vk::createVkPhyDevice(Vk_PhysicalDeviceFeatures* vkPhyDevFeats, const CreateDesc& cDesc)
+RenderDevice_Vk::createVkPhyDevice(Vk_PhysicalDeviceFeatures* oVkPhyDevFeats, const CreateDesc& cDesc)
 {
 	static constexpr SizeType s_kLocalSize = 8;
 	Vector<Vk_PhysicalDevice_T*, s_kLocalSize> phyDevices;
@@ -166,11 +175,12 @@ RenderDevice_Vk::createVkPhyDevice(Vk_PhysicalDeviceFeatures* vkPhyDevFeats, con
 		{
 			largestScore = score;
 			largestScoreIndex = i;
+			*oVkPhyDevFeats = tempVkPhyDevFeats;
 		}
 	}
 
 	_vkPhysicalDevice.create(phyDevices[largestScoreIndex]);
-	_rateAndInitVkPhyDevice(vkPhyDevFeats, &_adapterInfo, cDesc, _vkPhysicalDevice.hnd(), tempSurface.hnd(), true);
+	_rateAndInitVkPhyDevice(oVkPhyDevFeats, &_adapterInfo, cDesc, _vkPhysicalDevice.hnd(), tempSurface.hnd(), true);
 }
 
 void 
@@ -203,40 +213,16 @@ RenderDevice_Vk::createVkDevice(const Vk_PhysicalDeviceFeatures& vkPhyDevFeats)
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
-	// vulkan core feature base on its version, otherwise it is a extension
-	#if RDS_VK_VER_1_3
-
-	VkPhysicalDeviceVulkan12Features phyDevVkFeats12 = {};
-	phyDevVkFeats12.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-	phyDevVkFeats12.bufferDeviceAddress = VK_TRUE;
-	phyDevVkFeats12.timelineSemaphore	= VK_TRUE;
-
-	VkPhysicalDeviceVulkan13Features phyDevVkFeats = {};
-	phyDevVkFeats.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	phyDevVkFeats.synchronization2	= VK_TRUE;
-
-	phyDevVkFeats.pNext				= &phyDevVkFeats12;
-
-	#elif RDS_VK_VER_1_2
-
-	VkPhysicalDeviceVulkan12Features phyDevVkFeats = {};
-	phyDevVkFeats.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-	//phyDevVkFeats.synchronization2	= true;
-
-	#else
-	#error "unsupport vulkan version";
-	#endif // 0
-	
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.queueCreateInfoCount		= sCast<u32>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos		= queueCreateInfos.data();
-	createInfo.pEnabledFeatures			= &vkPhyDevFeats.features;
+	//createInfo.pEnabledFeatures			= &vkPhyDevFeats.vkPhyDevFeatures()->features;
 	createInfo.enabledExtensionCount	= sCast<u32>(_vkExtInfo.phyDeviceExts().size());
 	createInfo.ppEnabledExtensionNames	= _vkExtInfo.phyDeviceExts().data();
 	createInfo.enabledLayerCount		= _adapterInfo.isDebug ? sCast<u32>(_vkExtInfo.validationLayers().size()) : 0;	// ignored in new vk impl
 	createInfo.ppEnabledLayerNames		= _vkExtInfo.validationLayers().data();											// ignored in new vk impl
-	createInfo.pNext					= &phyDevVkFeats;
+	createInfo.pNext					= vkPhyDevFeats.vkPhyDevFeatures();
 
 	auto ret = vkCreateDevice(_vkPhysicalDevice.hnd(), &createInfo, allocCallbacks(), _vkDevice.hndForInit());
 	Util::throwIfError(ret);
@@ -374,32 +360,67 @@ RenderDevice_Vk::_setDebugName()
 void 
 Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_T* vkPhyDevHnd)
 {
-	auto& descriptorIndexingFeatures = _vkDescriptorIdxFeats;
-	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-	descriptorIndexingFeatures.pNext = nullptr;
-
-	auto& devFeats = *this;
-	devFeats.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	devFeats.pNext = &descriptorIndexingFeatures;
-
-	vkGetPhysicalDeviceFeatures2(vkPhyDevHnd, &devFeats);
-
-	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
-	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind);
-	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing);
-	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
-	RDS_CORE_ASSERT(descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing);
-	RDS_CORE_ASSERT(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
-	RDS_CORE_ASSERT(descriptorIndexingFeatures.runtimeDescriptorArray);
-
 	outInfo->feature.bindless = true;
 	_getRenderApaterFeaturesTo(outInfo);
+
+	// vulkan core feature base on its version, otherwise it is a extension
+
+	#if RDS_VK_VER_1_3
+
+	VkPhysicalDeviceVulkan13Features& vkPhyDevVkFeats13 = _vkPhyDevVkFeats13;
+	vkPhyDevVkFeats13 = {};
+	vkPhyDevVkFeats13.sType				= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	vkPhyDevVkFeats13.synchronization2	= VK_TRUE;
+	vkPhyDevVkFeats13.pNext				= nullptr;
+
+	#else
+	#error "unsupport vulkan version";
+	#endif // 0
+
+	VkPhysicalDeviceVulkan12Features& vkPhyDevVkFeats12 = _vkPhyDevVkFeats12;
+	vkPhyDevVkFeats12 = {};
+	vkPhyDevVkFeats12.sType	= VkStructureType::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	vkPhyDevVkFeats12.bufferDeviceAddress									= VK_TRUE;
+	vkPhyDevVkFeats12.timelineSemaphore										= VK_TRUE;
+
+	vkPhyDevVkFeats12.descriptorBindingUniformBufferUpdateAfterBind			= VK_TRUE;
+	vkPhyDevVkFeats12.descriptorBindingSampledImageUpdateAfterBind			= VK_TRUE;
+	vkPhyDevVkFeats12.descriptorBindingStorageImageUpdateAfterBind			= VK_TRUE;
+	vkPhyDevVkFeats12.descriptorBindingStorageBufferUpdateAfterBind			= VK_TRUE;
+	vkPhyDevVkFeats12.descriptorBindingUniformTexelBufferUpdateAfterBind	= VK_TRUE;		
+	vkPhyDevVkFeats12.descriptorBindingStorageTexelBufferUpdateAfterBind	= VK_TRUE;		
+	vkPhyDevVkFeats12.descriptorBindingUpdateUnusedWhilePending				= VK_TRUE;
+	vkPhyDevVkFeats12.descriptorBindingPartiallyBound						= VK_TRUE;
+	vkPhyDevVkFeats12.descriptorBindingVariableDescriptorCount				= VK_TRUE;
+	vkPhyDevVkFeats12.runtimeDescriptorArray								= VK_TRUE;
+
+	vkPhyDevVkFeats12.pNext	= &vkPhyDevVkFeats13;
+
+	VkPhysicalDeviceDescriptorIndexingFeatures vkDescrIdxFeats = {};		// already include in VkPhysicalDeviceVulkan12Features, only for checking
+	vkDescrIdxFeats.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+	vkDescrIdxFeats.pNext = nullptr;
+
+	auto& vkPhyDevFeats = _vkPhyDevFeats2;
+	vkPhyDevFeats = {};
+	vkPhyDevFeats.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	vkPhyDevFeats.pNext = &vkDescrIdxFeats;
+
+	vkGetPhysicalDeviceFeatures2(vkPhyDevHnd, &vkPhyDevFeats);
+	vkPhyDevFeats.pNext = &vkPhyDevVkFeats12;
+
+	RDS_CORE_ASSERT(vkDescrIdxFeats.shaderSampledImageArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(vkDescrIdxFeats.descriptorBindingSampledImageUpdateAfterBind);
+	RDS_CORE_ASSERT(vkDescrIdxFeats.shaderUniformBufferArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(vkDescrIdxFeats.descriptorBindingUniformBufferUpdateAfterBind);
+	RDS_CORE_ASSERT(vkDescrIdxFeats.shaderStorageBufferArrayNonUniformIndexing);
+	RDS_CORE_ASSERT(vkDescrIdxFeats.descriptorBindingStorageBufferUpdateAfterBind);
+	RDS_CORE_ASSERT(vkDescrIdxFeats.runtimeDescriptorArray);
 }
 
 void 
 Vk_PhysicalDeviceFeatures::_getRenderApaterFeaturesTo(RenderAdapterInfo* outInfo)
 {
-	const auto& devFeats = this->features;
+	const auto& devFeats = this->_vkPhyDevFeats2.features;
 
 	RenderAdapterInfo::Feature temp;
 	temp.shaderHasFloat64		= devFeats.shaderFloat64;
@@ -408,6 +429,16 @@ Vk_PhysicalDeviceFeatures::_getRenderApaterFeaturesTo(RenderAdapterInfo* outInfo
 	temp.hasWireframe			= devFeats.fillModeNonSolid;
 
 	outInfo->feature = temp;
+}
+
+VkPhysicalDeviceFeatures2*			Vk_PhysicalDeviceFeatures::vkPhyDevFeatures()	const { return &_vkPhyDevFeats2; }
+Vk_PhysicalDeviceVulkanFeatures*	Vk_PhysicalDeviceFeatures::vkPhyDevVkFeatures() const 
+{
+	#if RDS_VK_VER_1_3
+	return &_vkPhyDevVkFeats13;
+	#elif
+	return &_vkPhyDevVkFeats12;
+	#endif
 }
 
 #endif

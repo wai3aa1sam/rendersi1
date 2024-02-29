@@ -180,6 +180,8 @@ RenderContext_Vk::onBeginRender()
 			vkRdFrame().reset();
 		}
 	}
+
+	rdDevVk->bindlessResourceVk().commit();
 }
 
 void
@@ -437,6 +439,11 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 			vkCmdBuf->setDebugName(passName, _rdCtxVk->renderDeviceVk());
 			vkCmdBuf->beginRecord();
+
+			//auto* rdDevVk = _rdCtxVk->renderDeviceVk();
+			RDS_TODO("remove");
+			_rdCtxVk->_isTestBindlessPass = StrUtil::isSame(pass->name().c_str(), "test_bindless");
+
 			queueProfiler->beginProfile(vkCmdBuf->hnd(), pass->name().c_str());
 
 			_recordBarriers(pass, vkCmdBuf);
@@ -830,7 +837,7 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 {
 	if (!cmd->vertexLayout) { RDS_CORE_ASSERT(false, "drawcall no vertexLayout"); return; }
 
-	auto* vkCmdBuf = cmdBuf->hnd();
+	auto* vkCmdBufHnd = cmdBuf->hnd();
 
 	auto vtxCount = sCast<u32>(cmd->vertexCount);
 	auto idxCount = sCast<u32>(cmd->indexCount);
@@ -849,7 +856,14 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 	if (auto* pass = cmd->getMaterialPass())
 	{
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
+		
 		vkMtlPass->onBind(this, cmd->vertexLayout, cmdBuf);
+
+		RDS_TODO("remove");
+		if (vkMtlPass->vkPipelineLayout() && _isTestBindlessPass/*StrUtil::isSame(pass->name().c_str(), "test_bindless")*/)		// temp test
+		{
+			renderDeviceVk()->bindlessResourceVk().bind(vkCmdBufHnd, vkMtlPass->vkPipelineLayout().hnd());
+		}
 	}
 	else
 	{
@@ -858,7 +872,7 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 
 	Vk_Buffer_T* vertexBuffers[]	= { vtxBufHndVk };
 	VkDeviceSize offsets[]			= { Util::toVkDeviceSize(cmd->vertexOffset) };
-	vkCmdBindVertexBuffers(vkCmdBuf, 0, 1, vertexBuffers, offsets);
+	vkCmdBindVertexBuffers(vkCmdBufHnd, 0, 1, vertexBuffers, offsets);
 
 	RDS_VK_INSERT_DEBUG_LABEL(cmdBuf, cmd);
 
@@ -866,13 +880,13 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 	{
 		u32				idxOffset = sCast<u32>(cmd->indexOffset);
 		VkIndexType		vkIdxType = Util::toVkIndexType(cmd->indexType);
-		vkCmdBindIndexBuffer(vkCmdBuf, idxBufVk->vkBuf()->hnd(), idxOffset, vkIdxType);
+		vkCmdBindIndexBuffer(vkCmdBufHnd, idxBufVk->vkBuf()->hnd(), idxOffset, vkIdxType);
 
-		vkCmdDrawIndexed(vkCmdBuf, idxCount, 1, 0, 0, 0);
+		vkCmdDrawIndexed(vkCmdBufHnd, idxCount, 1, 0, 0, 0);
 	}
 	else
 	{
-		vkCmdDraw(vkCmdBuf, vtxCount, 1, 0, 0);
+		vkCmdDraw(vkCmdBufHnd, vtxCount, 1, 0, 0);
 	}
 }
 

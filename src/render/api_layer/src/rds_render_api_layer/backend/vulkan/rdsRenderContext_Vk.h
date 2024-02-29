@@ -115,6 +115,8 @@ protected:
 
 	Vector<Vk_CommandBuffer_T*, 32> _pendingGfxVkCmdbufHnds;
 	Vk_CommandBuffer*				_presentVkCmdBuf = nullptr;
+
+	bool _isTestBindlessPass = false;
 };
 
 inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return &_vkGraphicsQueue; }

@@ -62,6 +62,10 @@ public:
 
 	virtual void setDebugName(StrView name) override;
 
+public:
+	virtual bool isNull() const;
+
+public:
 	Vk_Image*		vkImage();
 	Vk_ImageView*	vkImageView();
 	Vk_Sampler*		vkSampler();
@@ -84,7 +88,7 @@ protected:
 
 protected:
 	Vk_Image		_vkImage;
-	Vk_ImageView	_vkImageView;
+	Vk_ImageView	_vkImageView;	// TODO: if only stencil, then must have a separate view
 	Vk_Sampler		_vkSampler;		// TODO: sampler in RenderDevice_Vk, shared globally;
 };
 
@@ -135,9 +139,12 @@ struct Vk_Texture
 	template<class TEX_VK>
 	static void createVkResource	(TEX_VK* tex)
 	{ 
-		createVkImage		(getVkImage		(tex), tex, tex->renderDeviceVk());
-		createVkImageView	(getVkImageView	(tex), tex, tex->renderDeviceVk());
-		createVkSampler		(getVkSampler	(tex), tex, tex->renderDeviceVk());
+		auto* rdDevVk = tex->renderDeviceVk();
+		createVkImage		(getVkImage		(tex), tex, rdDevVk);
+		createVkImageView	(getVkImageView	(tex), tex, rdDevVk);
+		createVkSampler		(getVkSampler	(tex), tex, rdDevVk);
+
+		//tex->_vkImgViewShaderRsc.create(getVkImage(tex)->hnd(), tex->desc(), TextureUsageFlags::ShaderResource, rdDevVk);
 
 		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 		tex->setDebugName(tex->_debugName);

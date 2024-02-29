@@ -773,7 +773,8 @@ Vk_DescriptorSetLayout::create(const VkDescriptorSetLayoutCreateInfo* pCreateInf
 void 
 Vk_DescriptorSetLayout::destroy(RenderDevice_Vk* rdDevVk)
 {
-	RDS_CORE_ASSERT(hnd(), "");
+	if (!hnd())
+		return;
 
 	auto* vkDev			= rdDevVk->vkDevice();
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();

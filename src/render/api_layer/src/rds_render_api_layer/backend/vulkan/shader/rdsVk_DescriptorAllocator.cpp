@@ -30,7 +30,20 @@ Vk_DescriptorAllocator::~Vk_DescriptorAllocator()
 void 
 Vk_DescriptorAllocator::create(RenderDevice_Vk* rdDevVk)
 {
-	create(makeCDesc(), rdDevVk);
+	auto cDesc = makeCDesc();
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_SAMPLER,					0.5f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,	4.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,			4.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,			1.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,	1.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,	1.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			2.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,			2.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,	1.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,	1.0f });
+	cDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,		0.5f });
+
+	create(cDesc, rdDevVk);
 }
 
 void 
@@ -38,8 +51,17 @@ Vk_DescriptorAllocator::create(const CreateDesc& cDesc, RenderDevice_Vk* rdDevVk
 {
 	destroy();
 
+	_cDesc = cDesc;
+
 	_rdDevVk	= rdDevVk;
 	_curPool	= requestPool();
+}
+
+void 
+Vk_DescriptorAllocator::createBindless(CreateDesc& cDesc, RenderDevice_Vk* rdDevVk)
+{
+	cDesc.cFlag |= VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+	create(cDesc, rdDevVk);
 }
 
 void 
@@ -110,7 +132,7 @@ Vk_DescriptorAllocator::requestPool()
 	}
 	else
 	{
-		createPool(out, _cDesc.poolSizes, _cDesc.setReservedSize, _cDesc.cFlag, _rdDevVk);
+		createPool(out, _cDesc.poolSizes, _cDesc.descrCount, _cDesc.cFlag, _rdDevVk);
 		RDS_VK_SET_DEBUG_NAME_SRCLOC(out);
 	}
 
@@ -121,8 +143,8 @@ VkResult
 Vk_DescriptorAllocator::createPool(Vk_DescriptorPool& out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk)
 {
 	Vector<VkDescriptorPoolSize, 32> sizes;
-	sizes.reserve(poolSizes.sizes.size());
-	for (auto sz : poolSizes.sizes) 
+	sizes.reserve(poolSizes.size());
+	for (auto sz : poolSizes) 
 	{
 		sizes.push_back({ sz.first, sCast<u32>(sz.second * setReservedSize) });
 	}
@@ -295,6 +317,9 @@ Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, const BufferParam& bu
 void 
 Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, const TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag)
 {
+	if (texParam.info().isBindlessResource())
+		return;
+
 	bindTexture(dstSet, texParam, stageFlag);
 	TempString temp;
 	shaderRscs._getAutoSetSamplerNameTo(temp, texParam.name());

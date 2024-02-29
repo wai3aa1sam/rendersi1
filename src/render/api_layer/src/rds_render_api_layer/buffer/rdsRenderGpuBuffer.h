@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
+#include "rds_render_api_layer/shader/rdsBindlessResourceHandle.h"
 
 namespace rds
 {
@@ -113,6 +114,8 @@ public:
 	SizeType	elementCount()	const;
 	TypeFlags	typeFlags()		const;
 
+	BindlessResourceHandle	bindlessHandle() const;
+
 protected:
 	virtual void onCreate		(CreateDesc& cDesc);
 	virtual void onPostCreate	(CreateDesc& cDesc);
@@ -120,7 +123,8 @@ protected:
 
 
 protected:
-	Desc _desc;
+	Desc					_desc;
+	BindlessResourceHandle	_bindlessHnd;
 };
 
 inline const RenderGpuBuffer::Desc& RenderGpuBuffer::desc() const { return _desc; }
@@ -129,6 +133,8 @@ inline RenderGpuBuffer::SizeType	RenderGpuBuffer::stride()			const { return _des
 inline RenderGpuBuffer::SizeType	RenderGpuBuffer::bufSize()			const { return _desc.bufSize; }
 inline RenderGpuBuffer::SizeType	RenderGpuBuffer::elementCount()		const { return _desc.bufSize / _desc.stride; }
 inline RenderGpuBuffer::TypeFlags	RenderGpuBuffer::typeFlags()		const { return _desc.typeFlags; }
+
+inline BindlessResourceHandle		RenderGpuBuffer::bindlessHandle()	const { return _bindlessHnd; }
 
 #endif
 }

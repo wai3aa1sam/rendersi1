@@ -59,6 +59,11 @@ void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 	if it is write, maybe Transfer_Dst, but we do not need to transit state as Tsf_Dst
 	so no need to set the state
 	*/
+
+	if (BitUtil::has(desc().typeFlags, RenderGpuBufferTypeFlags::Compute))
+	{
+		//_bindlessHnd = renderDevice()->bindlessResource().allocBuffer(this);
+	}
 }
 
 void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)

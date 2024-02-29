@@ -43,7 +43,8 @@ public:
 		_vkModule.create(binPath, rdDevVk);
 
 		binPath += ".json";
-		JsonUtil::readFile(binPath, _info);
+		//JsonUtil::readFile(binPath, _info);
+		_info.load(binPath);
 
 		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(_vkModule, rdDevVk, "{}-{}", pass->shader()->filename(), stageFlag());
 	}

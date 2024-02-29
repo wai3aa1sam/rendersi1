@@ -4,6 +4,7 @@
 #include "vertex/rdsVertexLayoutManager.h"
 #include "rdsRenderFrame.h"
 #include "rds_render_api_layer/transfer/rdsTransferFrame.h"
+#include "rds_render_api_layer/shader/rdsBindlessResources.h"
 
 namespace rds
 {
@@ -110,6 +111,9 @@ public:
 			TransferContext&	transferContext();
 			TransferRequest&	transferRequest();
 
+			BindlessResources&	bindlessResource();
+
+
 	u32 iFrame() const;
 
 protected:
@@ -136,7 +140,8 @@ protected:
 	TransferContext* _tsfCtx = nullptr;
 	TransferRequest	 _tsfReq;
 
-	TextureStock _textureStock;
+	TextureStock		_textureStock;
+	BindlessResources*	_bindlessRscs = nullptr;
 };
 
 inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const	{ return _adapterInfo; }
@@ -147,6 +152,8 @@ inline			TransferFrame&			RenderDevice::transferFrame()			{ return _tsfFrames[iF
 
 inline			TransferContext&		RenderDevice::transferContext()			{ return *_tsfCtx; }
 inline			TransferRequest&		RenderDevice::transferRequest()			{ return _tsfReq; }
+
+inline			BindlessResources&		RenderDevice::bindlessResource()		{ return *_bindlessRscs; }
 
 inline			u32						RenderDevice::iFrame() const			{ return _iFrame; }
 

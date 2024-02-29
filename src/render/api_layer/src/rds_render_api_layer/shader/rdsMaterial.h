@@ -12,6 +12,9 @@ class RenderContext;
 
 class RenderGpuBuffer;
 
+class Texture;
+class RenderGpuBuffer;
+
 #if 0
 #pragma mark --- rdsMaterial-Decl ---
 #endif // 0
@@ -58,6 +61,7 @@ public:
 	void setParam(StrView name, const	SamplerState&	v);
 
 	void setParam(StrView name, const i32&		v);
+	void setParam(StrView name, const u32&		v);
 	void setParam(StrView name, const f32&		v);
 	void setParam(StrView name, const Color4b&	v);
 	void setParam(StrView name, const Tuple2f&	v);
@@ -101,6 +105,7 @@ inline void Material::setParam(StrView name,		TextureCube*	v, bool isAutoSetSamp
 inline void Material::setParam(StrView name, const	SamplerState&	v)							{ return _setSamplerParam(name, v); }
 
 inline void Material::setParam(StrView name, const i32&		v)		{ return _setParam(name, v); }
+inline void Material::setParam(StrView name, const u32&		v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const f32&		v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const Color4b&	v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const Tuple2f&	v)		{ return _setParam(name, v); }
@@ -145,6 +150,8 @@ Material::_setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
 	{
 		pass->setTexParam(name, v, isAutoSetSampler);
 	}
+
+	setParam(name, v->bindlessHandle().getResourceIndex());
 }
 
 inline

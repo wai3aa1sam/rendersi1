@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
+#include "rds_render_api_layer/shader/rdsBindlessResourceHandle.h"
 
 namespace rds
 {
@@ -247,20 +248,23 @@ public:
 
 	void destroy();
 
+	virtual bool isNull() const = 0;
+
 public:
-	RenderDataType		type()			const;
-	const Desc&			desc()			const;
+	RenderDataType			type()				const;
+	const Desc&				desc()				const;
 
-	TextureUsageFlags	usageFlags()	const;
-	ColorType			format()		const;
-	const SamplerState&	samplerState()	const;
-	u8					mipCount()		const;
-	u8					layerCount()	const;
-	u8					sampleCount()	const;
-	Vec3u				size()			const;
+	TextureUsageFlags		usageFlags()		const;
+	ColorType				format()			const;
+	const SamplerState&		samplerState()		const;
+	u8						mipCount()			const;
+	u8						layerCount()		const;
+	u8						sampleCount()		const;
+	Vec3u					size()				const;
 
-	SizeType			totalByteSize() const;
+	SizeType				totalByteSize()		const;
 
+	BindlessResourceHandle	bindlessHandle()	const;;
 
 protected:
 	Texture(RenderDataType type);
@@ -275,7 +279,8 @@ protected:
 	virtual void onDestroy		();
 
 protected:
-	Desc			_desc;
+	Desc					_desc;
+	BindlessResourceHandle	_bindlessHnd;
 };
 
 inline RenderDataType				Texture::type()				const { return _desc.type; }
@@ -291,6 +296,8 @@ inline u8							Texture::sampleCount()		const { return desc().sampleCount; }
 inline Vec3u						Texture::size()				const { return desc().size; }
 
 inline Texture::SizeType			Texture::totalByteSize()	const { return desc().totalByteSize(); }
+
+inline BindlessResourceHandle		Texture::bindlessHandle()	const { return _bindlessHnd; }
 
 #endif
 
