@@ -65,7 +65,7 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 void 
 Texture::onDestroy()
 {
-	if (!isNull())
+	if (!isNull() || bindlessHandle().isValid())
 	{
 		renderDevice()->bindlessResource().freeTexture(this);
 	}

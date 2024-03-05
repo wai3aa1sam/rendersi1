@@ -34,11 +34,12 @@ protected:
 		opt.isToSpirv	= true;
 		opt.enableLog	= false;
 
+		#if 1
 		compile("asset/shader/test/test.shader",				opt);
 		compile("asset/shader/test/test_texture.shader",		opt);
 		compile("asset/shader/test/test_texture_set0.shader",	opt);
 		compile("asset/shader/test/test_compute.shader",		opt);
-		
+
 		compile("asset/shader/ui/imgui.shader",					opt);
 		compile("asset/shader/terrain/my_terrain.shader",		opt);
 		compile("asset/shader/present.shader",					opt);
@@ -46,7 +47,7 @@ protected:
 		compile("asset/shader/gBuffer.shader",					opt);
 		compile("asset/shader/deferredLighting.shader",			opt);
 		compile("asset/shader/skybox.shader",					opt);
-		
+
 		compile("asset/shader/pbr/pbrBasic.shader",				opt);
 		compile("asset/shader/pbr/pbrIbl.shader",				opt);
 		compile("asset/shader/pbr/hdrToCube.shader",			opt);
@@ -55,8 +56,9 @@ protected:
 		compile("asset/shader/pbr/brdfLut.shader",				opt);
 
 		opt.isNoOffset	= true;
-		opt.enableLog	= true; 
+		opt.enableLog	= false; 
 		compile("asset/shader/test/test_bindless.shader",		opt);
+		#endif // 0
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)
@@ -72,7 +74,8 @@ protected:
 
 		{
 			StrView				binpath = Traits::s_spirvPath;
-			ShaderCompiler_Vk	compiler;
+			ShaderCompiler_Vk	compilerVk;
+			ShaderCompiler_Dx12	compilerDx12;
 
 			Path::create(binpath);
 
@@ -83,9 +86,17 @@ protected:
 				fmtTo(dstBinPath, "{}/{}/pass{}", dstDir, binpath, passIdx);
 				Path::create(dstBinPath);
 
-				compiler.compile(dstBinPath, srcpath, ShaderStageFlag::Compute,	pass.csFunc, opt);
-				compiler.compile(dstBinPath, srcpath, ShaderStageFlag::Vertex,	pass.vsFunc, opt);
-				compiler.compile(dstBinPath, srcpath, ShaderStageFlag::Pixel,	pass.psFunc, opt);
+				compilerDx12.compile(dstBinPath, srcpath, ShaderStageFlag::Compute,	pass.csFunc, opt);
+				compilerDx12.compile(dstBinPath, srcpath, ShaderStageFlag::Vertex,	pass.vsFunc, opt);
+				compilerDx12.compile(dstBinPath, srcpath, ShaderStageFlag::Pixel,	pass.psFunc, opt);
+
+				auto opt2 = opt;
+				opt2.isCompileBinary	= false;
+				opt2.isReflect			= true;
+
+				compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Compute,	pass.csFunc, opt2);
+				compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Vertex,	pass.vsFunc, opt2);
+				compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Pixel,		pass.psFunc, opt2);
 			}
 		}
 	}

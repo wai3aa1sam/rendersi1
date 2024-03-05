@@ -210,11 +210,13 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 	}
 
 	#define RDS_TEMP_BIND_TEX_WITH_SAMPLER 1
-	
+	#define RDS_TEMP_COMBINED_TEXTURE 1
+
 	auto shaderStageFlag = Util::toVkShaderStageBit(shaderRscs.info().stageFlag);
 
 	for (const auto& e : shaderRscs.constBufs())		bindConstantBuffer	(dstSet, e, shaderStageFlag);
 
+	#if !RDS_TEMP_COMBINED_TEXTURE
 	#if !RDS_TEMP_BIND_TEX_WITH_SAMPLER
 
 	for (const auto& e : shaderRscs.texParams())		bindTexture	(dstSet, e, shaderStageFlag);
@@ -225,6 +227,13 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 	for (const auto& e : shaderRscs.texParams())		bindTextureWithSampler	(dstSet, e, shaderRscs, shaderStageFlag);
 
 	#endif // 0
+
+	#else
+
+	for (const auto& e : shaderRscs.texParams())		bindCombinedTexture	(dstSet, e, shaderStageFlag);
+
+	#endif // 0
+
 
 	for (const auto& e : shaderRscs.bufferParams())		bindBuffer	(dstSet, e, shaderStageFlag);
 
@@ -312,6 +321,33 @@ Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, const BufferParam& bu
 	out.pBufferInfo			= &bufInfo;
 	out.pImageInfo			= nullptr; // Optional
 	out.pTexelBufferView	= nullptr; // Optional
+}
+
+void 
+Vk_DescriptorBuilder::bindCombinedTexture(Vk_DescriptorSet& dstSet, const TexParam& texParam, VkShaderStageFlags stageFlag)
+{
+	if (!texParam._tex)
+		return;
+
+	const auto& info = texParam.info();
+
+	auto& imageInfo	= _imageInfos.emplace_back();
+	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView		= Vk_Texture::getVkImageViewHnd(texParam.getUpdatedTexture(renderDeviceVk()));
+	imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk()));;
+
+	auto& out = _writeDescs.emplace_back();
+	out = {};
+
+	out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	out.dstSet				= dstSet.hnd();
+	out.dstBinding			= info.bindPoint;
+	out.dstArrayElement		= 0;
+	out.descriptorType		= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	out.descriptorCount		= 1;
+	out.pBufferInfo			= nullptr;
+	out.pImageInfo			= &imageInfo;
+	out.pTexelBufferView	= nullptr;
 }
 
 void 

@@ -183,9 +183,25 @@ public:
 	// Info Type
 	#if 1
 
-	struct Input
+	struct ShaderResource
 	{
+	public:
 		String			name;
+
+	public:
+		template<class JSON_SE>
+		void onJsonIo(JSON_SE& se)
+		{
+			RDS_NAMED_FIXED_IO(se, name);
+		}
+	};
+
+	struct Input : public ShaderResource
+	{
+	public:
+		using Base = ShaderResource;
+
+	public:
 		RenderDataType	dataType;
 		VertexSemantic	semantic;
 
@@ -193,15 +209,18 @@ public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-			RDS_NAMED_FIXED_IO(se, name);
+			Base::onJsonIo(se);
 			RDS_NAMED_FIXED_IO(se, dataType);
 			RDS_NAMED_FIXED_IO(se, semantic);
 		}
 	};
 
-	struct Output
+	struct Output : public ShaderResource
 	{
-		String			name;
+	public:
+		using Base = ShaderResource;
+
+	public:
 		RenderDataType	dataType;
 		VertexSemantic	semantic;
 
@@ -209,23 +228,44 @@ public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-			RDS_NAMED_FIXED_IO(se, name);
+			Base::onJsonIo(se);
 			RDS_NAMED_FIXED_IO(se, dataType);
 			RDS_NAMED_FIXED_IO(se, semantic);
 		}
 	};
 
-	struct ConstBuffer
+	struct ShaderResourceParam : public ShaderResource
 	{
 	public:
-		static constexpr ShaderResourceType paramType() { return ShaderResourceType::ConstantBuffer; }
+		using Base = ShaderResource;
 
 	public:
-		String				name;
-		u16					bindPoint	= 0;
-		u16					bindCount	= 0;
+		u16	bindSet		= 0;
+		u16	bindPoint	= 0;
+		u16	bindCount	= 0;
+
+	public:
+		template<class JSON_SE>
+		void onJsonIo(JSON_SE& se)
+		{
+			Base::onJsonIo(se);
+			RDS_NAMED_FIXED_IO(se, bindSet);
+			RDS_NAMED_FIXED_IO(se, bindPoint);
+			RDS_NAMED_FIXED_IO(se, bindCount);
+		}
+	};
+
+	struct ConstBuffer : public ShaderResourceParam
+	{
+	public:
+		using Base = ShaderResourceParam;
+
+	public:
 		u32					size		= 0;
 		Vector<Variable, 8> variables;
+
+	public:
+		static constexpr ShaderResourceType paramType() { return ShaderResourceType::ConstantBuffer; }
 
 	public:
 		const Variable* findVariable(StrView name_) const
@@ -244,32 +284,30 @@ public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-			RDS_NAMED_FIXED_IO(se, name);
-			RDS_NAMED_FIXED_IO(se, bindPoint);
-			RDS_NAMED_FIXED_IO(se, bindCount);
+			Base::onJsonIo(se);
+			
 			RDS_NAMED_FIXED_IO(se, size);
 			RDS_NAMED_FIXED_IO(se, variables);
 		}
 	};
 
-	struct Texture
+	struct Texture : public ShaderResourceParam
 	{
 	public:
-		static constexpr ShaderResourceType paramType() { return ShaderResourceType::Texture; }
+		using Base = ShaderResourceParam;
 
 	public:
-		String		name;
 		DataType	dataType	= DataType::None;
-		u16			bindPoint	= 0;
-		u16			bindCount	= 0;
+
+	public:
+		static constexpr ShaderResourceType paramType() { return ShaderResourceType::Texture; }
 
 	public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-			RDS_NAMED_FIXED_IO(se, name);
-			RDS_NAMED_FIXED_IO(se, bindPoint);
-			RDS_NAMED_FIXED_IO(se, bindCount);
+			Base::onJsonIo(se);
+			RDS_NAMED_FIXED_IO(se, dataType);
 		}
 
 		bool isBindlessResource() const
@@ -278,62 +316,57 @@ public:
 		}
 	};
 
-	struct Sampler
+	struct Sampler : public ShaderResourceParam
 	{
+	public:
+		using Base = ShaderResourceParam;
+
 	public:
 		static constexpr ShaderResourceType paramType() { return ShaderResourceType::Sampler; }
 
-		String	name;
-		u16		bindPoint = 0;
-		u16		bindCount = 0;
+	public:
 
 	public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-			RDS_NAMED_FIXED_IO(se, name);
-			RDS_NAMED_FIXED_IO(se, bindPoint);
-			RDS_NAMED_FIXED_IO(se, bindCount);
+			Base::onJsonIo(se);
 		}
 	};
 
-	struct StorageBuffer
+	struct StorageBuffer : public ShaderResourceParam
 	{
+	public:
+		using Base = ShaderResourceParam;
+
 	public:
 		static constexpr ShaderResourceType paramType() { return ShaderResourceType::StorageBuffer; }
 
 	public:
-		String	name;
-		u16		bindPoint = 0;
-		u16		bindCount = 0;
 
 	public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-			RDS_NAMED_FIXED_IO(se, name);
-			RDS_NAMED_FIXED_IO(se, bindPoint);
-			RDS_NAMED_FIXED_IO(se, bindCount);
+			Base::onJsonIo(se);
 		}
 	};
 
-	struct StorageImage
+	struct StorageImage : public ShaderResourceParam
 	{
+	public:
+		using Base = ShaderResourceParam;
+
 	public:
 		static constexpr ShaderResourceType paramType() { return ShaderResourceType::StorageImage; }
 
 	public:
-		String	name;
-		u16		bindPoint = 0;
-		u16		bindCount = 0;
 
 	public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
-			RDS_NAMED_FIXED_IO(se, name);
-			RDS_NAMED_FIXED_IO(se, bindPoint);
-			RDS_NAMED_FIXED_IO(se, bindCount);
+			Base::onJsonIo(se);
 		}
 	};
 

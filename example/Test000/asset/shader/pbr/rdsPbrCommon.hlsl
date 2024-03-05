@@ -16,7 +16,7 @@ float3 Pbr_fresnelSchlick(float cosTheta, float3 baseRefl)
 float3 Pbr_fresnelSchlick(float cosTheta, float3 baseRefl, float roughness)
 {
     //return baseRefl + (max(float3(1.0 - roughness), baseRefl) - baseRefl) * pow(1.0 - cosTheta, 5.0);
-    return baseRefl + (max(float3(1.0 - roughness), baseRefl) - baseRefl) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return baseRefl + (max(float3(1.0 - roughness, 1.0 - roughness, 1.0 - roughness), baseRefl) - baseRefl) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float Pbr_distributionGGX(float dotNH, float roughness)
@@ -85,7 +85,7 @@ float3 Pbr_basic_lighting(rds_Surface surface, float3 dirView, float3 posLight, 
     float dotNV = max(dot(normal,   dirView),  0.0);
     float dotNL = max(dot(normal,   dirLight), 0.0);
 
-    float3 baseRefl = float3(0.04);   // non-metallic surfaces
+    float3 baseRefl = float3(0.04, 0.04, 0.04);   // non-metallic surfaces
     baseRefl        = lerp(baseRefl, albedo, surface.metallic);
 
     float3  fresnel     = Pbr_fresnelSchlick(dotHV, baseRefl);                  // dotNV or dotHV
@@ -97,7 +97,7 @@ float3 Pbr_basic_lighting(rds_Surface surface, float3 dirView, float3 posLight, 
     float3  specular    = spec_numer / spec_denom;
 
     float3 kSpecular = fresnel;
-    float3 kDiffuse  = float3(1.0) - kSpecular;
+    float3 kDiffuse  = float3(1.0, 1.0, 1.0) - kSpecular;
     kDiffuse        *= 1.0 - surface.metallic;  // metallic surface absorb all diffuse 
     
     float3  lambert = albedo / rds_pi;
@@ -114,7 +114,7 @@ float3 Pbr_basic_lighting(rds_Surface surface, float3 dirView, float3 posLight, 
 
 float3 Pbr_indirectDiffuse_ibl(rds_Surface surface, float3 dirView, float3 irradianceEnv, float ao)
 {
-    float3 baselRefl = float3(0.04); 
+    float3 baselRefl = float3(0.04, 0.04, 0.04); 
     baselRefl = lerp(baselRefl, surface.color, surface.metallic);
 
     float3 kS = Pbr_fresnelSchlick(max(dot(surface.normal, dirView), 0.0), baselRefl);
@@ -188,11 +188,11 @@ float2 Pbr_integrateBrdf(float dotNV, float roughness, uint sampleCount)
 
 float3 Pbr_indirectLighting(rds_Surface surface, float3 irradianceEnv, float3 prefilteredRefl, float2 brdf, float dotNV)
 {
-    float3 o = float3(0.0);
+    float3 o = float3(0.0, 0.0, 0.0);
 
     float3 albedo = surface.color;
 
-    float3 baseRefl = float3(0.04); 
+    float3 baseRefl = float3(0.04, 0.04, 0.04); 
     baseRefl        = lerp(baseRefl, albedo, surface.metallic);
 
     float3 diffuse = irradianceEnv * albedo;

@@ -39,8 +39,6 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	if (desc.entry.is_empty())
 		return;
 
-	_opt = desc.opt;
-
 	String			srcPath = desc.filename;		// shoulde be realpath
 	ShaderStageFlag stage	= desc.stage; 
 	TempString		dstpath;
@@ -54,41 +52,54 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	u32 stageOffset = 0;
 	if (BitUtil::has(desc.stage, ShaderStageFlag::Pixel)) stageOffset = 0;
 
-	// 16 is minimum spec in vulkan
-	u32 cbufferOffset	= stageOffset + 0;
-	u32 textureOffset	= stageOffset + 4;
-	u32 samplerOffset	= stageOffset + 8;
-	u32 uavOffset		= stageOffset + 12;
-	u32 imageOffset		= stageOffset + 14;
-
-
-	TempString args;
-	fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
-	fmtTo(args, " -fauto-bind-uniforms");	// auto bind all uniform variable
-	if (!desc.opt->isNoOffset)
+	if (_opt->isCompileBinary)
 	{
-		fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}"
+		// 16 is minimum spec in vulkan
+		u32 cbufferOffset	= stageOffset + 0;
+		u32 textureOffset	= stageOffset + 4;
+		u32 samplerOffset	= stageOffset + 8;
+		u32 uavOffset		= stageOffset + 12;
+		u32 imageOffset		= stageOffset + 14;
+
+
+		TempString args;
+		fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
+		fmtTo(args, " --target-env=vulkan1.2 --target-spv=spv1.5");	//  --target-spv=spv1.5
+		fmtTo(args, " -fauto-bind-uniforms");	// auto bind all uniform variable
+		if (!desc.opt->isNoOffset)
+		{
+			fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}"
 				, cbufferOffset, textureOffset, samplerOffset, uavOffset, imageOffset);
-	}
-	
-	//fmtTo(args, " -I\"dir"");
-	
-	//fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 100 -fresource-set-binding b1 1 2");
-	//fmtTo(args, " -fresource-set-binding b1 1 2");
+		}
 
+		//fmtTo(args, " -I\"dir"");
+
+		//fmtTo(args, " -fauto-bind-uniforms -fubo-binding-base 100 -fresource-set-binding b1 1 2");
+		//fmtTo(args, " -fresource-set-binding b1 1 2");
+
+		{
+			CmdLine cmdl;
+			cmdl.execute(args);
+		}
+	}
+
+	if (_opt->isReflect)
 	{
-		CmdLine cmdl;
-		cmdl.execute(args);
+		Vector<u8> spvBin;
+		File::readFile(dstpath, spvBin);
+
+		reflect(dstpath, spvBin, stage);
 	}
-
-	Vector<u8> spvBin;
-	File::readFile(dstpath, spvBin);
-
-	reflect(dstpath, spvBin, stage);
 
 	_log("outputed to {}", dstpath);
+	
+	//_opt = nullptr;
+}
 
-	_opt = nullptr;
+StrView
+ShaderCompiler_Vk::toShaderStageProfile(ShaderStageFlag stage)
+{
+	return Util::toShaderStageProfile(stage);
 }
 
 void 
@@ -191,6 +202,7 @@ ShaderCompiler_Vk::_reflect_constBufs(ShaderStageInfo& outInfo, SpirvCompiler& c
 
 		dst.name		= name.c_str();
 		dst.size		= sCast<u32>(size);
+		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
 		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
@@ -256,12 +268,22 @@ ShaderCompiler_Vk::_reflect_textures(ShaderStageInfo& outInfo, SpirvCompiler& co
 
 		u32 set		= compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);	RDS_UNUSED(set);
 		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
-
+		
 		dst.name		= name.c_str();
+		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
 		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
-		log("Texture name: {}, set: {}, binding: {}", name, set, binding);
+		switch (type.image.dim)
+		{
+			using SRC = spv::Dim;
+			case SRC::Dim1D:	{ dst.dataType = RenderDataType::Texture1D;		} break;
+			case SRC::Dim2D:	{ dst.dataType = RenderDataType::Texture2D;		} break;
+			case SRC::Dim3D:	{ dst.dataType = RenderDataType::Texture3D;		} break;
+			case SRC::DimCube:	{ dst.dataType = RenderDataType::TextureCube;	} break;
+
+			default: { RDS_THROW("invalid texture dimension"); } break;
+		}
 	}
 
 	log("");
@@ -287,6 +309,7 @@ ShaderCompiler_Vk::_reflect_samplers(ShaderStageInfo& outInfo, SpirvCompiler& co
 		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
 
 		dst.name		= name.c_str();
+		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
 		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
@@ -346,6 +369,7 @@ ShaderCompiler_Vk::_reflect_storageBufs	(ShaderStageInfo& outInfo, SpirvCompiler
 		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
 
 		dst.name		= name.c_str();
+		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
 		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
@@ -375,6 +399,7 @@ ShaderCompiler_Vk::_reflect_storageImages	(ShaderStageInfo& outInfo, SpirvCompil
 		u32 binding	= compiler.get_decoration(resource.id, spv::DecorationBinding);			RDS_UNUSED(binding);
 
 		dst.name		= name.c_str();
+		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
 		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 

@@ -69,7 +69,7 @@ PixelOut ps_main(PixelIn i)
 	o.normal   = float4(i.normal, 1.0);
 	o.position = i.positionHCS;
 
-	o.normal = (o.normal + float4(1.0)) / 2.0;
+	o.normal = (o.normal + float4(1.0, 1.0, 1.0, 1.0)) / 2.0;
 
     return o;
 }

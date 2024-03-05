@@ -62,9 +62,6 @@ SamplerState    _rds_texture0_sampler 	: register(s1, space1);
 Texture2D       texture2 			;//: register(t2, space0);       // texture is a reserved word
 SamplerState    texture2_Sampler 	;//: register(s2, space1);
 
-float3 Color_Linear_to_sRGB(float3 x) { return x < 0.0031308 ? 12.92 * x : 1.13005 * sqrt(x - 0.00228) - 0.13448 * x + 0.005719; }
-float3 Color_sRGB_to_Linear(float3 x) { return x < 0.04045 ? x / 12.92 : -7.43605 * x - 31.24297 * sqrt(-0.53792 * x + 1.279924) + 35.34864; }
-
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;

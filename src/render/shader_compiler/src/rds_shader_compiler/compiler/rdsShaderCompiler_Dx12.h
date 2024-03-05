@@ -8,7 +8,6 @@
 #if RDS_RENDER_HAS_DX12
 
 #include <wrl/client.h>
-
 #include <d3d12shader.h>
 
 namespace rds
@@ -28,11 +27,11 @@ public:
 
 public:
 	using Dxc_Compiler = IDxcCompiler3;
-	template<class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 protected:
 	/* .hlsl -> .spv */ 
-	virtual void onCompile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt);
+	virtual void onCompile(const CompileDesc& desc);
+	virtual StrView toShaderStageProfile(ShaderStageFlag stage) override;
 
 protected:
 	// reflect .spv by spirv_cross

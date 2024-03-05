@@ -49,7 +49,7 @@ PixelIn vs_main(VertexIn i)
     PixelIn o;
 
     o.positionHCS   = mul(rds_matrix_mvp, i.positionOS);
-    o.positionOS 	= i.positionOS;
+    o.positionOS 	= i.positionOS.xyz;
     o.uv            = i.uv;
 
     return o;
@@ -57,7 +57,7 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    float3 o = float3(0.0);
+    float3 o = float3(0.0, 0.0, 0.0);
 
     float2 uv = i.uv;
     o.xy = Pbr_integrateBrdf(uv.x, uv.y, s_kSampleCount);

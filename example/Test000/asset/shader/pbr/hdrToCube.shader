@@ -42,9 +42,10 @@ struct PixelIn
 
 RDS_TEXTURE_2D(equirectangularMap);
 
-const float2 invAtan = float2(0.1591, 0.3183);
 float2 sampleSphericalMap(float3 v)
 {
+	const float2 invAtan = float2(0.1591, 0.3183);
+
     float2 uv = float2(atan2(v.z, v.x), asin(v.y));
     uv *= invAtan;
     uv += 0.5;
@@ -56,7 +57,7 @@ PixelIn vs_main(VertexIn i)
     PixelIn o;
 
     o.positionHCS   = mul(rds_matrix_mvp, i.positionOS);
-    o.positionOS 	= i.positionOS;
+    o.positionOS 	= i.positionOS.xyz;
 
     return o;
 }
@@ -66,7 +67,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
     float3 o;
 	
 	float2 uv = sampleSphericalMap(normalize(i.positionOS));
-    o = RDS_SAMPLE_TEXTURE_2D(equirectangularMap, uv);
+    o = RDS_SAMPLE_TEXTURE_2D(equirectangularMap, uv).rgb;
 
     return float4(o, 1.0);
 }

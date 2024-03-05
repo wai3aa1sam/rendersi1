@@ -50,7 +50,7 @@ PixelIn vs_main(VertexIn i)
     PixelIn o;
 
     o.positionHCS   = mul(rds_matrix_mvp, i.positionOS);
-    o.positionOS 	= i.positionOS;
+    o.positionOS 	= i.positionOS.xyz;
 
     o.positionOS.x = roughness + i.positionOS.x;
     o.positionOS.x -= roughness;
@@ -60,7 +60,7 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    float3 o = float3(0.0);
+    float3 o = float3(0.0, 0.0, 0.0);
     o.r = rds_matrix_mvp[0][0];
     o.r += roughness; 
     o.r -= rds_matrix_mvp[0][0]; 
@@ -75,7 +75,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	float envMapDim = float(envCubeMapDims.x);
 
     float   totalWeight         = 0.0;   
-    float3  prefilteredColor    = float3(0.0);     
+    float3  prefilteredColor    = float3(0.0, 0.0, 0.0);     
     for(uint i = 0u; i < s_kSampleCount; ++i)
     {
         float2 sampleSeq    = SampleUtil_sequence_hammersley(i, s_kSampleCount);

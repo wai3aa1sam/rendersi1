@@ -67,7 +67,7 @@ PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
     o.positionHCS = mul(rds_matrix_mvp,     i.positionOS);
-    o.positionWS  = mul(rds_matrix_model,   i.positionOS);
+    o.positionWS  = mul(rds_matrix_model,   i.positionOS).xyz;
     o.normal      = mul((float3x3)rds_matrix_model, i.normal);
     //o.normal      = mul((float3x3)transpose(inverse(rds_matrix_model)), i.normal);
 
@@ -75,7 +75,8 @@ PixelIn vs_main(VertexIn i)
     o.uv.y        = 1 - i.uv.y;
     
     o.uv.x = roughness;     // temp solution for match same descriptor set layout
-    o.uv.x = i.uv.x;
+    o.uv.x += i.uv.x;
+    o.uv.x -= roughness;
 
     return o;
 }
@@ -102,9 +103,9 @@ float4 ps_main(PixelIn i) : SV_TARGET
     o = Pbr_basic_lighting(surface, dirView, posLight, colorLight);
 
     float  dotNV            = max(dot(surface.normal, dirView), 0.0);
-    float3 irradiance       = RDS_SAMPLE_TEXTURE_CUBE(irradianceEnvMap, surface.normal);
-    float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(prefilteredEnvMap, dirRefl, surface.roughness * s_kMaxLod);
-    float2 brdf             = RDS_TEXTURE_2D_SAMPLE(brdfLut, float2(dotNV, surface.roughness));
+    float3 irradiance       = RDS_SAMPLE_TEXTURE_CUBE(irradianceEnvMap, surface.normal).rgb;
+    float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(prefilteredEnvMap, dirRefl, surface.roughness * s_kMaxLod).rgb;
+    float2 brdf             = RDS_TEXTURE_2D_SAMPLE(brdfLut, float2(dotNV, surface.roughness)).rg;
 
     float3 ambient = Pbr_indirectLighting(surface, irradiance, prefilteredRefl, brdf, dotNV);
     //ambient = float3(0.0);

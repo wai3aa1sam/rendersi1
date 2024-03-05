@@ -15,7 +15,7 @@ struct ShaderCompileOption
 {
 public:
 	ShaderCompileOption()
-		: isDebug(false), isToSpirv(false), enableLog(false), isNoOffset(false)
+		: isDebug(false), isToSpirv(false), enableLog(false), isNoOffset(false), isCompileBinary(true), isReflect(true)
 	{
 
 	}
@@ -25,6 +25,11 @@ public:
 	bool isToSpirv	: 1;
 
 	bool isNoOffset : 1;
+
+	bool isCompileBinary	: 1;
+	bool isReflect			: 1;
+
+	RenderApiType apiType = RenderApiType::Vulkan;
 };
 
 struct ShaderCompileDesc
@@ -45,13 +50,20 @@ public:
 	using Option		= CompileDesc::Option;
 
 public:
+	template<class STR> void toBinFilepath(STR& dst, StrView outpath, StrView stageProfile);
+
+public:
 	virtual ~ShaderCompiler() = default;
 
 	void compile(const CompileDesc& desc);
 	void compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt);
 	
+	template<class STR> void toBinFilepath(STR& dst, StrView filename, StrView outpath, ShaderStageFlag stage);
+
 protected:
 	virtual void onCompile(const CompileDesc& desc) = 0;
+
+	virtual StrView toShaderStageProfile(ShaderStageFlag stage) = 0;
 
 protected:
 	template<class... ARGS> void log(const char* fmt, ARGS&&... args);
@@ -65,6 +77,22 @@ protected:
 };
 
 inline const ShaderCompiler::Option& ShaderCompiler::opt() const { return *_opt; }
+
+template<class STR> inline
+void 
+ShaderCompiler::toBinFilepath(STR& dst, StrView outpath, StrView stageProfile)
+{
+	fmtTo(dst, "{}/{}.bin", outpath, stageProfile);
+}
+
+template<class STR> inline
+void 
+ShaderCompiler::toBinFilepath(STR& dst, StrView filename, StrView outpath, ShaderStageFlag stage_)
+{
+	//TempString		srcPath = filename;		// shoulde be realpath
+	ShaderStageFlag stage	= stage_; 
+	toBinFilepath(dst, outpath, toShaderStageProfile(stage));
+}
 
 template<class... ARGS> inline
 void 

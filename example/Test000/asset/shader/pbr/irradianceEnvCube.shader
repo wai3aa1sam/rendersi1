@@ -49,7 +49,7 @@ PixelIn vs_main(VertexIn i)
     PixelIn o;
 
     o.positionHCS   = mul(rds_matrix_mvp, i.positionOS);
-    o.positionOS 	= i.positionOS;
+    o.positionOS 	= i.positionOS.xyz;
 
     o.positionOS.x = deltaPhi + i.positionOS.x;
     o.positionOS.x -= deltaPhi;
@@ -59,7 +59,7 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    float3 o = float3(0.0);
+    float3 o = float3(0.0, 0.0, 0.0);
     o.r = rds_matrix_mvp[0][0];
     o.r += deltaPhi; 
     o.r -= rds_matrix_mvp[0][0]; 
@@ -73,7 +73,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	const float pi_two  = rds_pi * 2.0;
 	const float pi_half = rds_pi * 0.5;
 
-	float3  irradiance   = float3(0.0);
+	float3  irradiance   = float3(0.0, 0.0, 0.0);
 	uint    sampleCount  = 0u;
 	for (float phi = 0.0; phi < pi_two; phi += deltaPhi) 
     {

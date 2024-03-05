@@ -1,21 +1,42 @@
+/*
+reference:
+~ https://simoncoenen.com/blog/programming/graphics/DxcCompiling#all-compiler-arguments
+*/
+
 #include "rds_shader_compiler-pch.h"
 #include "rdsShaderCompiler_Dx12.h"
 
-#if RDS_RENDER_HAS_DX12
-
+#if RDS_RENDER_HAS_DX12 && 0
 
 // DirectX 12 specific headers.
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <d3dcompiler.h>
 
 // D3D12 extension library.
-//#include <directx/d3dx12.h>
+#include <directx/d3dx12.h>
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+#endif
+
+#if RDS_RENDER_HAS_VULKAN
+
+#include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
+
+
+#else
+
+
+#endif // RDS_RENDER_HAS_VULKAN
+
+#if RDS_RENDER_HAS_DX12 || RDS_OS_WINDOWS
+
 namespace rds
 {
+
+template<class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 struct Dx12Util
 {
@@ -54,19 +75,11 @@ struct Dx12Util
 		auto str = UtfUtil::toString(buf);
 		return str;
 	}
+};
 
-	static const wchar_t* toShaderProfile(ShaderStageFlag stage)
-	{
-		using SRC = ShaderStageFlag;
-		switch (stage)
-		{
-			case SRC::Vertex:	{ return L"vs_6_0"; } break;
-			case SRC::Pixel:	{ return L"ps_6_0"; } break;
-			case SRC::Compute:	{ return L"cs_6_0"; } break;
-		}
-		RDS_CORE_ASSERT(false);
-		return L"";
-	}
+struct VkUtil : Vk_RenderApiUtil
+{
+
 };
 
 #if 0
@@ -75,9 +88,14 @@ struct Dx12Util
 #if 1
 
 void 
-ShaderCompiler_Dx12::onCompile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt)
+ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 {
-	auto srcPath = Path::realpath(filename);
+	auto srcPath = Path::realpath(desc.filename);
+
+	const auto& opt			= desc.opt;
+	const auto& filename	= desc.filename;
+	const auto& outpath		= desc.outpath;
+	ShaderStageFlag stage	= desc.stage;
 
 	ComPtr<Dxc_Compiler>		compiler;
 	ComPtr<IDxcUtils>			utils;
@@ -92,44 +110,66 @@ ShaderCompiler_Dx12::onCompile(StrView outpath, StrView filename, ShaderStageFla
 	ret = utils->CreateDefaultIncludeHandler(&includeHandler);
 	Util::throwIfError(ret);
 
-	auto entryW = UtfUtil::toTempStringW(entry);
+	auto entryW = UtfUtil::toTempStringW(desc.entry);
 
-	Vector<const wchar_t*, 32> compileArgs =
-	{
-		{
-			L"-E", entryW.c_str(),
-			L"-T", Util::toShaderProfile(stage),
-			L"-HV", L"2018",		// 2021 has change vector ternary op to select/any/...
-			DXC_ARG_WARNINGS_ARE_ERRORS,
-			DXC_ARG_ALL_RESOURCES_BOUND,
-		}
-	};
+	Vector<TempStringW, 64> compileArgs;
+
+	compileArgs.emplace_back(L"-E");	compileArgs.emplace_back(entryW);
+	compileArgs.emplace_back(L"-T");	compileArgs.emplace_back(UtfUtil::toTempStringW(toShaderStageProfile(desc.stage)));
+	compileArgs.emplace_back(L"-HV");	compileArgs.emplace_back(L"2021");							// 2021 has change vector ternary op to select/any/...
+	
+	compileArgs.emplace_back(DXC_ARG_WARNINGS_ARE_ERRORS);
+	compileArgs.emplace_back(DXC_ARG_ALL_RESOURCES_BOUND);
+	compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
+
+	compileArgs.emplace_back(L"-Qstrip_debug");			// adding this then can extract DXC_OUT_PDB
 
 	bool isBypassReflection = false;
-	if (opt.isToSpirv)
+	if (opt->isToSpirv)
 	{
-		compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
+		//compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
 		compileArgs.emplace_back(L"-spirv");
 		compileArgs.emplace_back(L"-fspv-target-env=vulkan1.2");	// 1.3 cannot read by spirv-cross
 		compileArgs.emplace_back(L"-fspv-reflect");
+		compileArgs.emplace_back(L"-fvk-auto-shift-bindings");
 
-		isBypassReflection = true;	// dxc does not support spirv reflection, use spirv-cross instead
+		u32 stageOffset = 0;
+		// 16 is minimum spec in vulkan
+		u32 cbufferOffset	= stageOffset + 0;		RDS_UNUSED(cbufferOffset);
+		u32 textureOffset	= stageOffset + 4;		RDS_UNUSED(textureOffset);
+		u32 samplerOffset	= stageOffset + 8;		RDS_UNUSED(samplerOffset);
+		u32 uavOffset		= stageOffset + 12;		RDS_UNUSED(uavOffset	);
+		u32 imageOffset		= stageOffset + 14;		RDS_UNUSED(imageOffset	);
+		// <shift> <space>
+		compileArgs.emplace_back(L"-fvk-b-shift"); compileArgs.emplace_back(StrUtil::toStrW(cbufferOffset));	compileArgs.emplace_back(L"0");
+		compileArgs.emplace_back(L"-fvk-t-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");	// temporary
+		compileArgs.emplace_back(L"-fvk-s-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");
+		compileArgs.emplace_back(L"-fvk-u-shift"); compileArgs.emplace_back(StrUtil::toStrW(imageOffset));		compileArgs.emplace_back(L"0");
+
+		isBypassReflection = true;	// dxc does not support spirv reflection (Qstrip_reflect), use spirv-cross instead
 	}
 	else		// only available in dx12
 	{
-		compileArgs.emplace_back(L"DXC_ARG_PACK_MATRIX_ROW_MAJOR");
-		compileArgs.emplace_back(L"-Qstrip_reflect");
+		//compileArgs.emplace_back(L"DXC_ARG_PACK_MATRIX_ROW_MAJOR");
+		compileArgs.emplace_back(L"-Qstrip_reflect");		// adding this then can extract DXC_OUT_REFLECTION, spv do not support it
 	}
 
-	if (opt.isDebug)
+	if (opt->isDebug)
 	{
-		compileArgs.emplace_back(L"-Qstrip_debug");
 		compileArgs.emplace_back(DXC_ARG_DEBUG);
 	}
 	else
 	{
-		compileArgs.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);
+		compileArgs.emplace_back(DXC_ARG_OPTIMIZATION_LEVEL3);
 	}
+
+	auto curDir = Path::getCurrentDir();
+	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader")));
+	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/common")));
+	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/pbr")));
+	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/terrain")));
+	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/test")));
+	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/ui")));
 
 	// Load the shader source file to a blob.
 	ComPtr<IDxcBlobEncoding> sourceBlob = {};
@@ -142,11 +182,18 @@ ShaderCompiler_Dx12::onCompile(StrView outpath, StrView filename, ShaderStageFla
 	sourceBuffer.Size		= sourceBlob->GetBufferSize();
 	sourceBuffer.Encoding	= 0;
 
+	Vector<const wchar_t*, 64> compileArgs_wc;
+	compileArgs_wc.reserve(compileArgs.size());
+	for (const auto& e : compileArgs)
+	{
+		compileArgs_wc.emplace_back(e.c_str());
+	}
+
 	// Compile the shader.
 	ComPtr<IDxcResult> compiledShaderBuffer = {};
 	ret = compiler->Compile(&sourceBuffer,
-							compileArgs.data(),
-							sCast<u32>(compileArgs.size()),
+							compileArgs_wc.data(),
+							sCast<u32>(compileArgs_wc.size()),
 							includeHandler.Get(),   
 							IID_PPV_ARGS(&compiledShaderBuffer));
 	//Util::throwIfError(ret);
@@ -169,12 +216,35 @@ ShaderCompiler_Dx12::onCompile(StrView outpath, StrView filename, ShaderStageFla
 	bin.resize(size);
 	memory_copy(bin.data(), sCast<u8*>(pResult->GetBufferPointer()), bin.size());
 	
-	File::writeFile(outpath, bin.byteSpan(), true);
-
-	if (!isBypassReflection)
+	TempString binFilepath;
+	switch (opt->apiType)
 	{
-		reflect(outpath, compiledShaderBuffer.Get(), utils.Get(), stage);
+		case RenderApiType::Dx12:	{ toBinFilepath(binFilepath, filename, outpath, stage); }						break;
+		case RenderApiType::Vulkan: { toBinFilepath(binFilepath, outpath, VkUtil::toShaderStageProfile(stage)); }	break;
 	}
+	File::writeFile(binFilepath, bin.byteSpan(), true);
+
+	if (_opt->isReflect)
+	{
+		if (!isBypassReflection)
+		{
+			reflect(outpath, compiledShaderBuffer.Get(), utils.Get(), stage);
+		}
+	}
+}
+
+StrView
+ShaderCompiler_Dx12::toShaderStageProfile(ShaderStageFlag stage)
+{
+	using SRC = ShaderStageFlag;
+	switch (stage)
+	{
+		case SRC::Vertex:	{ return "vs_6_0"; } break;
+		case SRC::Pixel:	{ return "ps_6_0"; } break;
+		case SRC::Compute:	{ return "cs_6_0"; } break;
+	}
+	RDS_CORE_ASSERT(false);
+	return "";
 }
 
 void 
@@ -183,9 +253,12 @@ ShaderCompiler_Dx12::reflect(StrView outpath, IDxcResult* compiledShaderBuffer, 
 	ShaderStageInfo outInfo;
 	outInfo.stageFlag = stage;
 
+	//ID3D12ShaderReflection* pReflection = NULL;
+	//D3DReflect(compiledShaderBuffer->GetBufferPointer(), pPSBlob->GetBufferSize(), IID_ID3D12ShaderReflection, (void**)&pReflection);
+
 	// Get shader reflection data.
 	ComPtr<IDxcBlob> reflectionBlob = {};
-	auto ret = compiledShaderBuffer->GetOutput(DXC_OUT_REFLECTION, IID_PPV_ARGS(&reflectionBlob), nullptr);
+	auto ret = compiledShaderBuffer->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&reflectionBlob), nullptr);
 	Util::throwIfError(ret);
 
 	DxcBuffer reflectionBuffer;

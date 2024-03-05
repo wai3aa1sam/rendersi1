@@ -490,9 +490,10 @@ public:
 		using Util = Vk_RenderApiUtil;
 		for (const auto& paramInfo : infos)
 		{
-			if (type	== VK_DESCRIPTOR_TYPE_STORAGE_BUFFER	&& StrUtil::isSame(paramInfo.name.c_str(), "bufferTable")
-				|| type	== VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE		&& StrUtil::isSame(paramInfo.name.c_str(), "texture2DTable")
-				|| type == VK_DESCRIPTOR_TYPE_SAMPLER			&& StrUtil::isSame(paramInfo.name.c_str(), "samplerTable")
+			if (type	== VK_DESCRIPTOR_TYPE_STORAGE_BUFFER			&& StrUtil::isSame(paramInfo.name.c_str(), "bufferTable")
+				|| type	== VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE				&& StrUtil::isSame(paramInfo.name.c_str(), "texture2DTable")
+				|| type == VK_DESCRIPTOR_TYPE_SAMPLER					&& StrUtil::isSame(paramInfo.name.c_str(), "samplerTable")
+				|| type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER	&& StrUtil::isSame(paramInfo.name.c_str(), "samplerTable")
 				)
 			{
 				continue;
@@ -523,8 +524,12 @@ public:
 
 		bindings.reserve(bindingCount);
 		createShaderResourceLayoutBinding(bindings, info.constBufs,		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			stage->shaderStage()->stageFlag());
-		createShaderResourceLayoutBinding(bindings, info.textures,		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,			stage->shaderStage()->stageFlag());
-		createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_SAMPLER,					stage->shaderStage()->stageFlag());
+		
+		//createShaderResourceLayoutBinding(bindings, info.textures,		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,			stage->shaderStage()->stageFlag());
+		//createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_SAMPLER,					stage->shaderStage()->stageFlag());
+
+		createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,	stage->shaderStage()->stageFlag());
+		
 		createShaderResourceLayoutBinding(bindings, info.storageBufs,	VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,			stage->shaderStage()->stageFlag());
 		createShaderResourceLayoutBinding(bindings, info.storageImages,	VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,			stage->shaderStage()->stageFlag());
 

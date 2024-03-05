@@ -48,7 +48,7 @@ struct PixelIn
     float3 normal       : NORMAL0;
 };
 
-cbuffer rds_common : register(c0, space0)
+cbuffer rds_common : register(b0, space0)
 {
 	float4x4	rds_matrix_model;
 	float4x4	rds_matrix_view;
@@ -82,33 +82,15 @@ cbuffer rds_common : register(c0, space0)
 #define RDS_SAMPLER_SPACE 	space5
 
 // ByteAddressBuffer
-ByteAddressBuffer 	bufferTable		[] 	: register(b0, RDS_BUFFER_SPACE);
+ByteAddressBuffer 	bufferTable		[] 	: register(t0, RDS_BUFFER_SPACE);
 
 Texture2D 			texture2DTable	[]  : register(t0, RDS_TEX_2D_SPACE);
 TextureCube 		textureCubeTable[]  : register(t0, RDS_TEX_CUBE_SPACE);
 SamplerState    	samplerTable	[] 	: register(s0, RDS_SAMPLER_SPACE);
 
-RWTexture2D<float>	image2DTable	[]	: register(t0, RDS_IMAGE_SPACE);
+RWTexture2D<float>	image2DTable	[]	: register(u0, RDS_IMAGE_SPACE);
 
 #endif
-
-// cbuffer rds_common_1 : register(c5, space11)
-// {
-// 	float rds_test_1;
-// 	float rds_test_2;
-// };
-
-// cbuffer rds_common_2 : register(c6, space11)
-// {
-// 	float rds_test_3;
-// 	float rds_test_4;
-// };
-
-// cbuffer rds_common_3 : register(c7, space11)
-// {
-// 	float rds_test_5;
-// 	float rds_test_6;
-// };
 
 struct TextureIdx
 {
@@ -118,7 +100,21 @@ struct TextureIdx
 	uint texture3;
 };
 
-ConstantBuffer<TextureIdx> textureIdx : register(c1, space1);
+ConstantBuffer<TextureIdx> textureIdx : register(b1, space1);
+
+template<typename T> 
+T loadBindings() 
+{
+    T result = bufferTable[0].Load<T>(0);		// (g_bindingsOffset.bindingsOffset)
+	return result;
+}
+
+template<typename T> 
+T loadTexture(float2 uv) 
+{
+	T o = texture2DTable[textureIdx.texture0].Sample(samplerTable[textureIdx.texture0], uv);
+	return o;
+}
 
 PixelIn vs_main(VertexIn i)
 {
@@ -143,13 +139,14 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-    float4 color = float4(0.0);
+    float4 color = float4(0.0, 0.0, 0.0, 0.0);
 	//color.r += rds_matrix_mvp[0][0];
 
 	//color.r = rds_test_1;
 	//color.g = rds_test_3;
 	//color.b = rds_test_5;
-	color += texture2DTable[textureIdx.texture0].Sample(samplerTable[textureIdx.texture0], i.uv);
+	//color += texture2DTable[textureIdx.texture0].Sample(samplerTable[textureIdx.texture0], i.uv);
+	color = loadTexture<float4>(i.uv);
 	//color.r -= rds_matrix_mvp[0][0];
 
     return color;

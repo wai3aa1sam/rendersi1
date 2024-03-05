@@ -508,9 +508,9 @@ Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag v)
 	using SRC = rds::ShaderStageFlag;
 	switch (v)
 	{
-		case SRC::Vertex:		{ return "vs_1.1"; } break;
-		case SRC::Pixel:		{ return "ps_1.1"; } break;
-		case SRC::Compute:		{ return "cs_1.1"; } break;
+		case SRC::Vertex:		{ return "vs_1.5"; } break;
+		case SRC::Pixel:		{ return "ps_1.5"; } break;
+		case SRC::Compute:		{ return "cs_1.5"; } break;
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 }

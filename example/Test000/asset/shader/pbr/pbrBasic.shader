@@ -39,7 +39,7 @@ struct VertexIn
 struct PixelIn 
 {
 	float4 positionHCS  : SV_POSITION;
-	float3 positionWS   : POSITION;
+	float4 positionWS   : POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal       : NORMAL0;
 };
@@ -80,7 +80,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
     o.r = rds_camera_pos.x;
 
     rds_Surface surface;
-    surface.posWS       = i.positionWS;
+    surface.posWS       = i.positionWS.xyz;
     surface.normal      = normalize(i.normal);
     surface.color       = albedo;
     surface.roughness   = roughness;
@@ -91,7 +91,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 
     o = Pbr_basic_lighting(surface, dirView, posLight, colorLight);
 
-    float3 kAmbient = float3(0.03);
+    float3 kAmbient = float3(0.03, 0.03, 0.03);
     float3 ambient  = kAmbient * albedo * ao;
 
     o = ambient + o;

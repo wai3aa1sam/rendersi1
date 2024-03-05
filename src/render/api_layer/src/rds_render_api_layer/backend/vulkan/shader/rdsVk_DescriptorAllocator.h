@@ -118,6 +118,8 @@ protected:
 	void bindSampler		(Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam,	VkShaderStageFlags stageFlag);
 	void bindBuffer			(Vk_DescriptorSet& dstSet, const BufferParam&	bufParam,		VkShaderStageFlags stageFlag);
 
+	void bindCombinedTexture(Vk_DescriptorSet& dstSet, const TexParam&		texParam,		VkShaderStageFlags stageFlag);
+
 	void bindTextureWithSampler(Vk_DescriptorSet& dstSet, const TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag);
 
 	void _bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam, Vk_Sampler_T* samplerHnd,	VkShaderStageFlags stageFlag);

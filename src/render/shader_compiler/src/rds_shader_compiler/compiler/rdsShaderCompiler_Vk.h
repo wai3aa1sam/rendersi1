@@ -32,7 +32,8 @@ public:
 	/* .hlsl -> .spv */ 
 
 protected:
-	virtual void onCompile(const CompileDesc& desc);
+	virtual void onCompile(const CompileDesc& desc) override;
+	virtual StrView toShaderStageProfile(ShaderStageFlag stage) override;
 
 protected:
 	// reflect .spv by spirv_cross

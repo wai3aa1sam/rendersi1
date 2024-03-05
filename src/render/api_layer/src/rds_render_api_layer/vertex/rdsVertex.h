@@ -234,9 +234,12 @@ VertexSemanticUtil::parse(StrView v)
 	if (StrUtil::ignoreCaseCompare(v, "SV_Position")	== 0)	{ return VertexSemantic::SV_Position; }
 	if (StrUtil::ignoreCaseCompare(v, "SV_Target")		== 0)	{ return VertexSemantic::SV_TARGET0; }
 	if (StrUtil::ignoreCaseCompare(v, "SV_VertexID")	== 0)	{ return VertexSemantic::SV_VertexID; }
+	
+	TempString buf;
+	StrUtil::toUpperCase(buf, v);
 
 	VertexSemantic o;
-	throwIf(!enumTryParse(o, v), "VertexSemantic parse failed");
+	throwIf(!enumTryParse(o, buf), "VertexSemantic parse failed");
 	return o;
 }
 

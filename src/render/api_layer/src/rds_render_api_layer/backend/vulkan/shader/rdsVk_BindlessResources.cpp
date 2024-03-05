@@ -161,7 +161,7 @@ BindlessResources_Vk::_createDescritporSet(Vk_DescriptorSet& dstSet, Vk_Descript
 	e.descriptorCount		= sCast<u32>(descrCount);
 	e.pImmutableSamplers	= nullptr;
 
-	flags.emplace_back() = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+	flags.emplace_back() = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT /*| VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT*/;
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags = {};
 	bindingFlags.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;

@@ -19,15 +19,23 @@ ShaderCompiler::compile(StrView outpath, StrView filename, ShaderStageFlag stage
 	desc.entry		= entry;
 	desc.opt		= &opt;
 
+	if (entry.is_empty())
+	{
+		return;
+	}
+
+
 	compile(desc);
 }
 
 void 
 ShaderCompiler::compile(const CompileDesc& desc)
 {
-	onCompile(desc);
-}
+	_opt = desc.opt;
 
+	onCompile(desc);
+
+}
 
 #endif
 

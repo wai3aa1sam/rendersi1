@@ -378,7 +378,7 @@ bool
 ShaderResources::TexParam::setTexure(TEX* v)
 {
 	if (!v) RDS_CORE_ASSERT(false, "texure == nullptr");
-	bool isValid = info().dataType != RenderDataTypeUtil::get<TEX>();
+	bool isValid = info().dataType == RenderDataTypeUtil::get<TEX>();
 	// bool isValid = info().dataType() != v->type();
 	if (!isValid)
 	{
