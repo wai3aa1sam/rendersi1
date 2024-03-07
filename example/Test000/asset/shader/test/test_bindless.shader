@@ -59,21 +59,14 @@ cbuffer rds_common : register(b0, space0)
 #define RDS_RegisterUniform(name, structure) \
 	cbuffer name structure; \
 	uint 	name ## idx; \
-//---
-
-// RDS_RegisterUniform(camera, 
-// {
-// 	float3		rds_pos_view;
-// 	float4x4 	rds_mat_view;
-// });
-
-
-//cbuffer 		cbufferTable {} cbufferTables[]  : register(t0, RDS_TEX_2D_SPACE);
 
 #if	1
 
 #define RDS_CONCAT_IMPL(A, B) A ## B
 #define RDS_CONCAT(A, B) RDS_CONCAT_IMPL(A, B)
+
+// typedef uint64_t u64; this is ok
+#define u64 uint64_t
 
 #define RDS_BUFFER_SPACE 	space2
 
@@ -103,9 +96,15 @@ RWTexture2D<float>	image2DTable	[]						: register(u0, RDS_IMAGE_SPACE);
 struct ResourceHandle
 {
 	RDS_TEXTURE_2D(texture0);
+	uint testBufferIndex;
 };
 
 ConstantBuffer<ResourceHandle> rscHnd : register(b1, space1);
+
+struct TestBuffer
+{
+	float4 color;
+};
 
 template<typename T> 
 T loadBindings() 
@@ -121,6 +120,7 @@ T loadTexture(float2 uv)
 	return o;
 }
 
+
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
@@ -129,7 +129,7 @@ PixelIn vs_main(VertexIn i)
     o.positionWS  = mul(rds_matrix_model,   i.positionOS);
     o.normal      = i.normal;
     o.uv          = i.uv;
-	
+
 	//o.uv.x += (float)texture0;
 	//o.uv.x = i.uv.x;
 
@@ -152,6 +152,12 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	//color.b = rds_test_5;
 	//color += texture2DTable[textureIdx.texture0].Sample(samplerTable[textureIdx.texture0], i.uv);
 	color = loadTexture<float4>(i.uv);
+
+	ByteAddressBuffer buffer = bufferTable[rscHnd.testBufferIndex];
+	//TestBuffer ret = buffer.Load<TestBuffer>(sizeof(TestBuffer) * 1);
+	TestBuffer ret = buffer.Load<TestBuffer>(0);
+	color *= ret.color;
+
 	//color.r -= rds_matrix_mvp[0][0];
 
     return color;

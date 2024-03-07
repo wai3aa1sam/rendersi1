@@ -27,6 +27,8 @@ public:
 	Vk_Buffer*		vkBuf();
 	Vk_Buffer_T*	vkBufHnd();
 
+	u64				gpuAddress() const;
+
 protected:
 	virtual void onCreate		(CreateDesc& cDesc)	override;
 	virtual void onPostCreate	(CreateDesc& cDesc)	override;
@@ -34,11 +36,14 @@ protected:
 
 	virtual void onUploadToGpu	(TransferCommand_UploadBuffer* cmd) override;
 protected:
-	Vk_Buffer _vkBuf;
+	Vk_Buffer	_vkBuf;
+	u64			_gpuAddress = 0;
 };
 
-inline Vk_Buffer*	RenderGpuBuffer_Vk::vkBuf()		{ return &_vkBuf; }
-inline Vk_Buffer_T* RenderGpuBuffer_Vk::vkBufHnd()	{ return vkBuf()->hnd(); }
+inline Vk_Buffer*	RenderGpuBuffer_Vk::vkBuf()				{ return &_vkBuf; }
+inline Vk_Buffer_T* RenderGpuBuffer_Vk::vkBufHnd()			{ return vkBuf()->hnd(); }
+
+inline u64			RenderGpuBuffer_Vk::gpuAddress() const	{ return _gpuAddress; }
 
 #endif
 }

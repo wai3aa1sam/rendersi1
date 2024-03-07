@@ -13,6 +13,12 @@
 namespace rds
 {
 
+struct TestBindlessBuffer
+{
+	Color4f color;
+};
+
+
 #if 1
 
 EditMesh getFullScreenTriangleMesh();
@@ -479,6 +485,12 @@ public:
 
 			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
+
+			
+			auto bufCDesc = RenderGpuBuffer::makeCDesc();
+			bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Compute;
+			bufCDesc.bufSize	= sizeof(TestBindlessBuffer);
+			_testBindlessBuffer = Renderer::rdDev()->createRenderGpuBuffer(bufCDesc);
 		}
 
 		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
@@ -930,6 +942,16 @@ public:
 					//reinCast<Tuple3f&>(*v) = temp;
 				};
 
+			auto dragAndUploadFloat4 = [&](Material* mtl, const char* name, float* v, RenderGpuBuffer* buf)
+				{
+					Tuple4f temp {v[0], v[1], v[2], v[4]};
+					ImGui::DragFloat4(name, v, 0.01f);
+					mtl->setParam(name, temp);
+					buf->uploadToGpu(ByteSpan{(u8*)temp.data, sizeof(Tuple4f)});
+					//reinCast<Tuple3f&>(*v) = temp;
+				};
+
+
 			auto dragFloat = [&](Material* mtl, const char* name, float* v)
 				{
 					float temp  = *v;
@@ -942,6 +964,10 @@ public:
 			dragFloat	(mtl, "rds_test_3",		&rds_test_3);
 			dragFloat	(mtl, "rds_test_5",		&rds_test_5);
 
+			static Vector<u8, 256> data;
+			data.resize(sizeof(TestBindlessBuffer));
+			dragAndUploadFloat4(mtl, "color", (float*)data.data(), _testBindlessBuffer);
+			_testBindlessBuffer->setDebugName("_testBindlessBuffer");
 			ImGui::End();
 		}
 
@@ -964,11 +990,15 @@ public:
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 
+				
+
 				Function<void(Material*, int i)> fn  
 
 					= [&](Material* mtl, int i)
 					{
-						mtl->setParam("texture0", _uvCheckerTex);
+						mtl->setParam("texture0",			_uvCheckerTex);
+						mtl->setParam("testBufferIndex",	_testBindlessBuffer);
+						
 					};
 				scene()->drawScene(rdReq, mtl, &fn);
 			}
@@ -1071,8 +1101,9 @@ public:
 	Vector<SPtr<Material>, TextureCube::s_kFaceCount> _mtlHdrToCubes;
 
 	
-	SPtr<Shader>		_shaderTestBindless;
-	SPtr<Material>		_mtlTestBindless;
+	SPtr<Shader>			_shaderTestBindless;
+	SPtr<Material>			_mtlTestBindless;
+	SPtr<RenderGpuBuffer>	_testBindlessBuffer;
 
 	SPtr<Shader>				_testComputeShader;
 	SPtr<Material>				_testComputeMtl;

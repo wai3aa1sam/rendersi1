@@ -60,9 +60,9 @@ void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 	so no need to set the state
 	*/
 
-	if (BitUtil::has(desc().typeFlags, RenderGpuBufferTypeFlags::Compute))
+	if (BitUtil::hasAny(desc().typeFlags, RenderGpuBufferTypeFlags::Compute))
 	{
-		//_bindlessHnd = renderDevice()->bindlessResource().allocBuffer(this);
+		_bindlessHnd = renderDevice()->bindlessResource().allocBuffer(this);
 	}
 }
 
@@ -73,7 +73,10 @@ void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
 
 void RenderGpuBuffer::onDestroy()
 {
-
+	if (/*!isNull() || */bindlessHandle().isValid())
+	{
+		renderDevice()->bindlessResource().freeBuffer(this);
+	}
 }
 
 void 

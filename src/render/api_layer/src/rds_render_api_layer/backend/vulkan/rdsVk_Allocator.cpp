@@ -44,12 +44,13 @@ Vk_Allocator::create(RenderDevice_Vk* rdDev)
 void 
 Vk_Allocator::create(Vk_Device_T* vkDev, Vk_PhysicalDevice_T* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks)
 {
-	VmaAllocatorCreateInfo allocatorInfo = {};
-	allocatorInfo.instance				= vkInst;
-	allocatorInfo.physicalDevice		= vkPhyDev;
-	allocatorInfo.device				= vkDev;
-	allocatorInfo.pAllocationCallbacks	= vkAllocCallbacks;
-	vmaCreateAllocator(&allocatorInfo, &_allocator);
+	VmaAllocatorCreateInfo allocatorCInfo = {};
+	allocatorCInfo.instance				= vkInst;
+	allocatorCInfo.physicalDevice		= vkPhyDev;
+	allocatorCInfo.device				= vkDev;
+	allocatorCInfo.pAllocationCallbacks	= vkAllocCallbacks;
+	allocatorCInfo.flags				= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+	vmaCreateAllocator(&allocatorCInfo, &_allocator);
 }
 
 void 

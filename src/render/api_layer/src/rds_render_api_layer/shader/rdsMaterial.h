@@ -167,6 +167,8 @@ Material::_setBufferParam(StrView name, RenderGpuBuffer* v)
 	{
 		pass->setBufferParam(name, v);
 	}
+
+	setParam(name, v->bindlessHandle().getResourceIndex());
 }
 
 #endif

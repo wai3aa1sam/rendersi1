@@ -702,7 +702,7 @@ Vk_Buffer::create(RenderDevice_Vk* rdDevVk, Vk_Allocator* vkAlloc, Vk_AllocInfo*
 	VkBufferCreateInfo bufferInfo = {};
 	bufferInfo.sType					= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferInfo.size						= size;
-	bufferInfo.usage					= usage;
+	bufferInfo.usage					= usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 	bufferInfo.sharingMode				= VK_SHARING_MODE_EXCLUSIVE;
 
 	Vector<u32, QueueFamilyIndices::s_kQueueTypeCount> queueIdices;

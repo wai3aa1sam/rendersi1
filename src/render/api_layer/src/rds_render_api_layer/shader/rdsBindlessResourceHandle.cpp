@@ -9,9 +9,10 @@ namespace rds
 #endif // 0
 #if 1
 
-u32 
+u32
 BindlessResourceHandle::getResourceIndex() const
 {
+	RDS_CORE_ASSERT(isValid(), "invalid bindless resource");
 	return _hnd;
 }
 

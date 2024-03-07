@@ -69,6 +69,11 @@ RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 				, QueueTypeFlags::Graphics);
 
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkBuf);
+
+	VkBufferDeviceAddressInfo address_info = {};
+	address_info.sType	= VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+	address_info.buffer = vkBufHnd();
+	_gpuAddress = sCast<u64>(vkGetBufferDeviceAddress(renderDeviceVk()->vkDevice(), &address_info));
 }
 
 void
@@ -80,6 +85,8 @@ RenderGpuBuffer_Vk::onPostCreate(CreateDesc& cDesc)
 void
 RenderGpuBuffer_Vk::onDestroy()
 {
+	_gpuAddress = 0;
+
 	Base::onDestroy();
 }
 

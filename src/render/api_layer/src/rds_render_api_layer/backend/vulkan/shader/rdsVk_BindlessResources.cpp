@@ -74,63 +74,95 @@ BindlessResources_Vk::onDestroy()
 void 
 BindlessResources_Vk::onCommit()
 {
+	// update descriptor set
 	{
-		auto data = _texAlloc.scopedULock();
-		auto& rscs = data->rscs;
-
-		Vector<VkDescriptorImageInfo,	64>	imageInfos;
 		Vector<VkWriteDescriptorSet,	64>	writeDescs;
+		Vector<VkDescriptorImageInfo,	64>	imgInfos;
+		Vector<VkDescriptorBufferInfo,	64>	bufInfos;
 
 		auto* rdDevVk = renderDeviceVk();
 
-		for (auto& rsc : rscs)
 		{
+			auto data = _texAlloc.scopedULock();
+			auto& rscs = data->rscs;
+
+			writeDescs.reserve	(writeDescs.size()	+ rscs.size());
+			imgInfos.reserve	(imgInfos.size()	+ rscs.size());
+
+			for (auto& rsc : rscs)
 			{
-				auto& dstSet = _descrSetTex;
+				{
+					auto& dstSet = _descrSetTex;
 
-				auto& imageInfo	= imageInfos.emplace_back();
-				imageInfo = {};
-				imageInfo.imageLayout	= BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo.imageView		= Vk_Texture::getVkImageViewHnd(rsc);
-				//imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
+					auto& info	= imgInfos.emplace_back();
+					info = {};
+					info.imageLayout	= BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					info.imageView		= Vk_Texture::getVkImageViewHnd(rsc);
+					//imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
 
-				auto& out = writeDescs.emplace_back();
-				out = {};
-				out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				out.dstSet				= dstSet.hnd();
-				out.dstBinding			= sCast<u32>(_vkSamplers.size());
-				out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
-				out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				out.descriptorCount		= 1;
-				out.pBufferInfo			= nullptr;
-				out.pImageInfo			= &imageInfo;
-				out.pTexelBufferView	= nullptr;
+					auto& out = writeDescs.emplace_back();
+					out = {};
+					out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					out.dstSet				= dstSet.hnd();
+					out.dstBinding			= sCast<u32>(_vkSamplers.size());
+					out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
+					out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+					out.descriptorCount		= 1;
+					out.pBufferInfo			= nullptr;
+					out.pImageInfo			= &info;
+					out.pTexelBufferView	= nullptr;
+				}
 			}
+		}
 
-			//{
-			//	auto& dstSet = _descrSetSampler;
+		{
+			auto data = _bufAlloc.scopedULock();
+			auto& rscs = data->rscs;
 
-			//	auto& imageInfo	= imageInfos.emplace_back();
-			//	imageInfo = {};
-			//	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			//	//imageInfo.imageView		= Vk_Texture::getVkImageViewHnd(rsc);
-			//	imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
+			bufInfos.reserve(bufInfos.size()		+ rscs.size());
+			writeDescs.reserve(writeDescs.size()	+ rscs.size());
 
-			//	auto& out = writeDescs.emplace_back();
-			//	out = {};
-			//	out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			//	out.dstSet				= dstSet.hnd();
-			//	out.dstBinding			= 0;
-			//	out.dstArrayElement		= rsc->bindlessHandle().getResourceIndex();
-			//	out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLER;
-			//	out.descriptorCount		= 1;
-			//	out.pBufferInfo			= nullptr;
-			//	out.pImageInfo			= &imageInfo;
-			//	out.pTexelBufferView	= nullptr;
-			//}
+			for (auto& rsc : rscs)
+			{
+				{
+					auto& dstSet	= _descrSetBuf;
+					auto* rscVk		= sCast<RenderGpuBuffer_Vk*>(rsc.ptr());
+
+					auto& info	= bufInfos.emplace_back();
+					info = {};
+					info.buffer	= rscVk->vkBufHnd();
+					info.offset	= 0;
+					info.range	= sCast<VkDeviceSize>(rscVk->bufSize());		// VK_WHOLE_SIZE
+
+					auto& out = writeDescs.emplace_back();
+					out = {};
+					out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					out.dstSet				= dstSet.hnd();
+					out.dstBinding			= 0;
+					out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
+					//out.descriptorType		= BitUtil::has(rscVk->typeFlags(), RenderGpuBufferTypeFlags::Compute) ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+					out.descriptorType		= VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+					out.descriptorCount		= 1;
+					out.pBufferInfo			= &info;
+					out.pImageInfo			= nullptr;
+					out.pTexelBufferView	= nullptr;
+				}
+			}
 		}
 
 		vkUpdateDescriptorSets(rdDevVk->vkDevice(), sCast<u32>(writeDescs.size()), writeDescs.data(), 0, nullptr);
+	}
+
+	// clean up
+	{
+		auto data = _texAlloc.scopedULock();
+		auto& rscs = data->rscs;
+		rscs.clear();
+	}
+
+	{
+		auto data = _bufAlloc.scopedULock();
+		auto& rscs = data->rscs;
 		rscs.clear();
 	}
 }
@@ -172,6 +204,7 @@ BindlessResources_Vk::_createDescritporSet(Vk_DescriptorSet& dstSet, Vk_Descript
 	Vector<Vk_Sampler_T*, 64> vkSamplerHnds;
 	if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
 	{
+		vkSamplerHnds.reserve(_samplerStateListTable.size());
 		for (const auto& s : _samplerStateListTable)
 		{
 			auto& vkSampler = _vkSamplers.emplace_back();

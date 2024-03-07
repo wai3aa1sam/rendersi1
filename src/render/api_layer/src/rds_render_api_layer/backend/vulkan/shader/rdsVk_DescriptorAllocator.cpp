@@ -235,7 +235,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 	#endif // 0
 
 
-	for (const auto& e : shaderRscs.bufferParams())		bindBuffer	(dstSet, e, shaderStageFlag);
+	//for (const auto& e : shaderRscs.bufferParams())		bindBuffer	(dstSet, e, shaderStageFlag);
 
 
 	if (!_writeDescs.is_empty())
