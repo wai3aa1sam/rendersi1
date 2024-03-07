@@ -62,6 +62,12 @@ BindlessResources_Vk::onDestroy()
 
 	_descrAlloc.destroy();
 
+	for (auto& e : _vkSamplers)
+	{
+		e.destroy(rdDevVk);
+	}
+	_vkSamplers.clear();
+
 	Base::onDestroy();
 }
 
@@ -92,8 +98,8 @@ BindlessResources_Vk::onCommit()
 				out = {};
 				out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				out.dstSet				= dstSet.hnd();
-				out.dstBinding			= 0;
-				out.dstArrayElement		= rsc->bindlessHandle().getResourceIndex();
+				out.dstBinding			= sCast<u32>(_vkSamplers.size());
+				out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
 				out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 				out.descriptorCount		= 1;
 				out.pBufferInfo			= nullptr;
@@ -101,27 +107,27 @@ BindlessResources_Vk::onCommit()
 				out.pTexelBufferView	= nullptr;
 			}
 
-			{
-				auto& dstSet = _descrSetSampler;
+			//{
+			//	auto& dstSet = _descrSetSampler;
 
-				auto& imageInfo	= imageInfos.emplace_back();
-				imageInfo = {};
-				imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				//imageInfo.imageView		= Vk_Texture::getVkImageViewHnd(rsc);
-				imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
+			//	auto& imageInfo	= imageInfos.emplace_back();
+			//	imageInfo = {};
+			//	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			//	//imageInfo.imageView		= Vk_Texture::getVkImageViewHnd(rsc);
+			//	imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
 
-				auto& out = writeDescs.emplace_back();
-				out = {};
-				out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				out.dstSet				= dstSet.hnd();
-				out.dstBinding			= 0;
-				out.dstArrayElement		= rsc->bindlessHandle().getResourceIndex();
-				out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLER;
-				out.descriptorCount		= 1;
-				out.pBufferInfo			= nullptr;
-				out.pImageInfo			= &imageInfo;
-				out.pTexelBufferView	= nullptr;
-			}
+			//	auto& out = writeDescs.emplace_back();
+			//	out = {};
+			//	out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			//	out.dstSet				= dstSet.hnd();
+			//	out.dstBinding			= 0;
+			//	out.dstArrayElement		= rsc->bindlessHandle().getResourceIndex();
+			//	out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLER;
+			//	out.descriptorCount		= 1;
+			//	out.pBufferInfo			= nullptr;
+			//	out.pImageInfo			= &imageInfo;
+			//	out.pTexelBufferView	= nullptr;
+			//}
 		}
 
 		vkUpdateDescriptorSets(rdDevVk->vkDevice(), sCast<u32>(writeDescs.size()), writeDescs.data(), 0, nullptr);
@@ -151,8 +157,8 @@ BindlessResources_Vk::_createDescritporSet(Vk_DescriptorSet& dstSet, Vk_Descript
 {
 	auto* rdDevVk = renderDeviceVk();
 
-	Vector<VkDescriptorSetLayoutBinding,	1> bindings;
-	Vector<VkDescriptorBindingFlags,		1>	flags;
+	Vector<VkDescriptorSetLayoutBinding,	2> bindings;
+	Vector<VkDescriptorBindingFlags,		2>	flags;
 
 	auto& e = bindings.emplace_back();
 	e.descriptorType		= type;
@@ -163,11 +169,33 @@ BindlessResources_Vk::_createDescritporSet(Vk_DescriptorSet& dstSet, Vk_Descript
 
 	flags.emplace_back() = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT /*| VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT*/;
 
+	Vector<Vk_Sampler_T*, 64> vkSamplerHnds;
+	if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+	{
+		for (const auto& s : _samplerStateListTable)
+		{
+			auto& vkSampler = _vkSamplers.emplace_back();
+			vkSampler.create(*s, rdDevVk);
+			vkSamplerHnds.emplace_back(vkSampler.hnd());
+		}
+
+		e.binding				= sCast<u32>(vkSamplerHnds.size());
+
+		auto& binding = bindings.emplace_back();
+		binding.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLER;
+		binding.stageFlags			= Util::toVkShaderStageBit(ShaderStageFlag::All);
+		binding.binding				= 0;
+		binding.descriptorCount		= sCast<u32>(vkSamplerHnds.size());
+		binding.pImmutableSamplers	= vkSamplerHnds.data();
+
+		flags.emplace_back() = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT /*| VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT*/;
+	}
+
 	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags = {};
 	bindingFlags.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
 	bindingFlags.pNext			= nullptr;
 	bindingFlags.pBindingFlags	= flags.data();
-	bindingFlags.bindingCount	= 1;
+	bindingFlags.bindingCount	= sCast<u32>(flags.size());
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

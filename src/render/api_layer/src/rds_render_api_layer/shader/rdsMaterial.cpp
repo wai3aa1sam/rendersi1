@@ -129,6 +129,17 @@ Material::getParamId(StrView name) const
 	return 0;
 }
 
+void 
+Material::_setSamplerParam(StrView name, const SamplerState& v)
+{
+	/*for (auto& pass : _passes)
+	{
+	pass->setSamplerParam(name, v);
+	}*/
+
+	setParam(name, renderDevice()->bindlessResource().findSamplerIndex(v));
+}
+
 const ShaderInfo&	Material::info() const	{ return _shader->info(); }
 
 #endif

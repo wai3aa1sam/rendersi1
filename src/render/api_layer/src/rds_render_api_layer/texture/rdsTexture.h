@@ -44,6 +44,8 @@ public:
 	using Filter	= SamplerFilter;
 	using Wrap		= SamplerWrap;
 
+	using HashValue	= SizeType;
+
 public:
 	Filter	minFliter = Filter::Linear;
 	Filter	magFliter = Filter::Linear;
@@ -59,14 +61,41 @@ public:
 
 	bool isAnisotropy : 1;
 
-	u32 sampleCount = 1;
+	//u32 sampleCount = 1;
 
-	bool isValidMaxLod() const { return maxLod != math::inf<float>(); }
 
 public:
 	SamplerState()
 		: isAnisotropy(true)
 	{}
+
+	bool isValidMaxLod() const { return maxLod != math::inf<float>(); }
+
+	bool operator<(const SamplerState& rhs) const
+	{
+		return hash() < rhs.hash();
+	}
+
+	HashValue hash() const
+	{
+		HashValue o = {};
+
+		math::hashCombine(o, enumInt(minFliter));
+		math::hashCombine(o, enumInt(magFliter));
+
+		math::hashCombine(o, enumInt(wrapU));
+		math::hashCombine(o, enumInt(wrapV));
+		math::hashCombine(o, enumInt(wrapS));
+
+		Hash<decltype(minLod)> hasher;
+
+		math::hashCombine(o, hasher(minLod));
+		math::hashCombine(o, hasher(maxLod));
+
+		math::hashCombine(o, isAnisotropy);
+
+		return o;
+	}
 };
 
 #endif // 1

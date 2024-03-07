@@ -46,7 +46,7 @@ public:
 	void create(MaterialPass* pass, ShaderStage* shaderStage);
 	void destroy();
 
-	template<class TEX> void setTexParam	(Material* mtl, StrView name, TEX* v, bool isAutoSampler);
+	template<class TEX> void setTexParam	(Material* mtl, StrView name, TEX* v);
 	template<class T>	void setParam		(Material* mtl, StrView name, const T& v);
 						void setSamplerParam(Material* mtl, StrView name, const SamplerState&	v);
 						void setBufferParam	(Material* mtl, StrView name, RenderGpuBuffer*		v);
@@ -75,11 +75,11 @@ MaterialPass_Stage::setParam(Material* mtl, StrView name, const T& v)
 
 template<class TEX> inline
 void 
-MaterialPass_Stage::setTexParam(Material* mtl, StrView name, TEX* v, bool isAutoSampler)
+MaterialPass_Stage::setTexParam(Material* mtl, StrView name, TEX* v)
 {
 	/*if (!_shaderStage)
 	return;*/
-	shaderResources(mtl).setTexParam(name, v, isAutoSampler);
+	shaderResources(mtl).setTexParam(name, v);
 }
 
 inline
@@ -168,7 +168,7 @@ public:
 
 	//void bind(RenderContext* ctx, const VertexLayout* vtxLayout);
 
-	template<class TEX> void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
+	template<class TEX> void setTexParam	(StrView name, TEX* v);
 	template<class T>	void setParam		(StrView name, const T& v);
 						void setSamplerParam(StrView name, const SamplerState& samplerState);
 						void setBufferParam	(StrView name, RenderGpuBuffer* v);
@@ -198,12 +198,12 @@ protected:
 
 template<class TEX> inline 
 void 
-MaterialPass::setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
+MaterialPass::setTexParam(StrView name, TEX* v)
 {
 	auto* mtl = _material;
-	if (_vertexStage)	_vertexStage ->setTexParam(mtl, name, v, isAutoSetSampler);
-	if (_pixelStage)	_pixelStage  ->setTexParam(mtl, name, v, isAutoSetSampler);
-	if (_computeStage)	_computeStage->setTexParam(mtl, name, v, isAutoSetSampler);
+	if (_vertexStage)	_vertexStage ->setTexParam(mtl, name, v);
+	if (_pixelStage)	_pixelStage  ->setTexParam(mtl, name, v);
+	if (_computeStage)	_computeStage->setTexParam(mtl, name, v);
 }
 
 template<class T> inline 

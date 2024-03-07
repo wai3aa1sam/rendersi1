@@ -334,7 +334,8 @@ Vk_DescriptorBuilder::bindCombinedTexture(Vk_DescriptorSet& dstSet, const TexPar
 	auto& imageInfo	= _imageInfos.emplace_back();
 	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo.imageView		= Vk_Texture::getVkImageViewHnd(texParam.getUpdatedTexture(renderDeviceVk()));
-	imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk()));;
+	//imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk()));
+	imageInfo.sampler		= renderDeviceVk()->bindlessResourceVk().vkSamplers()[0].hnd();
 
 	auto& out = _writeDescs.emplace_back();
 	out = {};

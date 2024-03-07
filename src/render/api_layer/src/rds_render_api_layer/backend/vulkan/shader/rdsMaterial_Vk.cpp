@@ -828,7 +828,8 @@ MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPas
 void
 MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout)
 {
-	auto* rdDevVk = material()->renderDeviceVk();
+	auto*		rdDevVk		= material()->renderDeviceVk();
+	const auto& filename	= shader()->filename();
 
 	VkGraphicsPipelineCreateInfo pipelineCInfo = {};
 
@@ -837,7 +838,7 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 
 	Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
 	vkPipelineLayoutCDesc.createGraphics(_vkPipelineLayout, this, rdDevVk);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", shader()->filename(), "vkPipelineLayout");
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", filename, "vkPipelineLayout");
 
 	Vk_GraphicsPipelineCDesc vkRenderStateCDesc;
 	vkRenderStateCDesc.create(pipelineCInfo, info().renderState, pixelStage()->info());

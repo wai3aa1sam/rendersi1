@@ -95,6 +95,23 @@ void
 BindlessResources::onCreate(const CreateDesc& cDesc)
 {
 	_size	= cDesc.size;
+
+	{
+		auto& table = _samplerStateListTable;
+
+		SamplerState s;
+		table.add(s);
+
+		s = {};
+		s.minFliter = SamplerFilter::Nearest;
+		s.magFliter = SamplerFilter::Nearest;
+		table.add(s);
+
+		s = {};
+		s.minFliter = SamplerFilter::Nearest;
+		s.magFliter = SamplerFilter::Bilinear;
+		table.add(s);
+	}
 }
 
 template<class RSC>
@@ -116,6 +133,7 @@ BindlessResources::onDestroy()
 {
 	ResourceAlloc_destroy(_bufAlloc);
 	ResourceAlloc_destroy(_texAlloc);
+	_samplerStateListTable.clear();
 
 	// this will lock twice
 	//{ auto data = _bufAlloc.scopedULock(); data->rscs.clear(); }

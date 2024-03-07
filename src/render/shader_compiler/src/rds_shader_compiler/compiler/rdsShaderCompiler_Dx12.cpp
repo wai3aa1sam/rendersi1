@@ -146,6 +146,12 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 		compileArgs.emplace_back(L"-fvk-s-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");
 		compileArgs.emplace_back(L"-fvk-u-shift"); compileArgs.emplace_back(StrUtil::toStrW(imageOffset));		compileArgs.emplace_back(L"0");
 
+		// rds_define
+		if (true)
+		{
+			compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}", Renderer::rdDev()->bindlessResource().samplerCount())));
+		}
+
 		isBypassReflection = true;	// dxc does not support spirv reflection (Qstrip_reflect), use spirv-cross instead
 	}
 	else		// only available in dx12

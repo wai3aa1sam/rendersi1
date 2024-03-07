@@ -72,35 +72,40 @@ cbuffer rds_common : register(b0, space0)
 
 #if	1
 
+#define RDS_CONCAT_IMPL(A, B) A ## B
+#define RDS_CONCAT(A, B) RDS_CONCAT_IMPL(A, B)
+
 #define RDS_BUFFER_SPACE 	space2
 
 #define RDS_TEX_2D_SPACE 	space3
 #define RDS_TEX_CUBE_SPACE 	RDS_TEX_2D_SPACE
+#define RDS_SAMPLER_SPACE 	RDS_TEX_2D_SPACE
 
 #define RDS_IMAGE_SPACE 	space4
 
-#define RDS_SAMPLER_SPACE 	space5
+//#define RDS_K_SAMPLER_COUNT 1		// set in compiler
+#define RDS_TEXTURE_BINDING RDS_CONCAT(t, RDS_K_SAMPLER_COUNT)
 
 // ByteAddressBuffer
-ByteAddressBuffer 	bufferTable		[] 	: register(t0, RDS_BUFFER_SPACE);
+ByteAddressBuffer 	bufferTable		[] 						: register(t0, RDS_BUFFER_SPACE);
 
-Texture2D 			texture2DTable	[]  : register(t0, RDS_TEX_2D_SPACE);
-TextureCube 		textureCubeTable[]  : register(t0, RDS_TEX_CUBE_SPACE);
-SamplerState    	samplerTable	[] 	: register(s0, RDS_SAMPLER_SPACE);
+SamplerState    	samplerTable	[RDS_K_SAMPLER_COUNT] 	: register(s0, 					RDS_SAMPLER_SPACE);
+Texture2D 			texture2DTable	[]  					: register(RDS_TEXTURE_BINDING, RDS_TEX_2D_SPACE);
+TextureCube 		textureCubeTable[]  					: register(RDS_TEXTURE_BINDING, RDS_TEX_CUBE_SPACE);
 
-RWTexture2D<float>	image2DTable	[]	: register(u0, RDS_IMAGE_SPACE);
+RWTexture2D<float>	image2DTable	[]						: register(u0, RDS_IMAGE_SPACE);
 
 #endif
 
-struct TextureIdx
+#define RDS_SAMPLER_NAME(TEX_NAME) RDS_CONCAT(RDS_CONCAT(_rds_, TEX_NAME), _sampler)
+#define RDS_TEXTURE_2D(NAME) uint NAME; uint RDS_SAMPLER_NAME(NAME)
+
+struct ResourceHandle
 {
-	uint texture0;
-	uint texture1;
-	uint texture2;
-	uint texture3;
+	RDS_TEXTURE_2D(texture0);
 };
 
-ConstantBuffer<TextureIdx> textureIdx : register(b1, space1);
+ConstantBuffer<ResourceHandle> rscHnd : register(b1, space1);
 
 template<typename T> 
 T loadBindings() 
@@ -112,7 +117,7 @@ T loadBindings()
 template<typename T> 
 T loadTexture(float2 uv) 
 {
-	T o = texture2DTable[textureIdx.texture0].Sample(samplerTable[textureIdx.texture0], uv);
+	T o = texture2DTable[rscHnd.texture0].Sample(samplerTable[rscHnd.RDS_SAMPLER_NAME(texture0)], uv);
 	return o;
 }
 

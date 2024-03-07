@@ -94,7 +94,7 @@ public:
 
 public:
 	template<class T>	void setParam		(StrView name, const T& v);
-	template<class TEX>	void setTexParam	(StrView name, TEX* v, bool isAutoSetSampler);
+	template<class TEX>	void setTexParam	(StrView name, TEX* v);
 						void setSamplerParam(StrView name, const SamplerState&	v);
 						void setBufferParam	(StrView name, RenderGpuBuffer*		v);
 						//void setImageParam	(StrView name, Texture*				v);
@@ -276,7 +276,7 @@ ShaderResources::setParam(StrView name, const T& v)
 
 template<class TEX> inline
 void 
-ShaderResources::setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
+ShaderResources::setTexParam(StrView name, TEX* v)
 {
 	for (auto& e : texParams())
 	{
@@ -284,12 +284,6 @@ ShaderResources::setTexParam(StrView name, TEX* v, bool isAutoSetSampler)
 		if (!isSame)
 			continue;
 		_isDirty |= e.setTexure(v);
-		if (isAutoSetSampler)
-		{
-			TempString temp;
-			_getAutoSetSamplerNameTo(temp, name);
-			setSamplerParam(temp, v->samplerState());
-		}
 	}
 }
 

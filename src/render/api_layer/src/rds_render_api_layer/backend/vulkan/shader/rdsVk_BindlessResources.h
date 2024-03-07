@@ -24,12 +24,15 @@ public:
 	virtual ~BindlessResources_Vk();
 
 public:
-	u32 descriptorCount() const;
-
 	void bind(Vk_CommandBuffer_T* vkCmdBufHnd, VkPipelineLayout_T* vkPipelineLayoutHnd);
 
 	template<size_t N> void getDescriptorSetLayoutTo(Vector<Vk_DescriptorSetLayout_T*, N>& o);
 
+
+public:
+	u32 descriptorCount() const;
+
+	Span<Vk_Sampler> vkSamplers();
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
@@ -52,6 +55,8 @@ protected:
 	Vk_DescriptorSetLayout		_descrSetLayoutTex;
 	Vk_DescriptorSetLayout		_descrSetLayoutImg;
 	Vk_DescriptorSetLayout		_descrSetLayoutSampler;
+
+	Vector<Vk_Sampler, 64> _vkSamplers;
 };
 
 template<size_t N> inline
@@ -66,6 +71,7 @@ BindlessResources_Vk::getDescriptorSetLayoutTo(Vector<Vk_DescriptorSetLayout_T*,
 
 inline u32 BindlessResources_Vk::descriptorCount() const { return _descrAlloc.descriptorCount(); }
 
+inline Span<Vk_Sampler> BindlessResources_Vk::vkSamplers() { return _vkSamplers; }
 
 #endif
 
