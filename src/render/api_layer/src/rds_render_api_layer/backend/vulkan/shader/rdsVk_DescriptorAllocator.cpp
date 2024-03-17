@@ -201,7 +201,7 @@ Vk_DescriptorBuilder::Vk_DescriptorBuilder()
 }
 
 bool
-Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, const ShaderResources& shaderRscs)
+Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs)
 {
 	dstSet = _alloc->alloc(&layout);
 	if (!dstSet)
@@ -209,45 +209,82 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 		return false;
 	}
 
+	RDS_TODO("since the TransferContext is committed before RenderContext, using staging will not cause it failed to upload (cleared)");
+	shaderRscs.uploadToGpu(renderDeviceVk());
+
 	#define RDS_TEMP_BIND_TEX_WITH_SAMPLER 1
 	#define RDS_TEMP_COMBINED_TEXTURE 1
 
 	auto shaderStageFlag = Util::toVkShaderStageBit(shaderRscs.info().stageFlag);
 
-	for (const auto& e : shaderRscs.constBufs())		bindConstantBuffer	(dstSet, e, shaderStageFlag);
+	for (auto& e : shaderRscs.constBufs())		bindConstantBuffer	(dstSet, e, shaderStageFlag);
 
 	#if !RDS_TEMP_COMBINED_TEXTURE
 	#if !RDS_TEMP_BIND_TEX_WITH_SAMPLER
 
-	for (const auto& e : shaderRscs.texParams())		bindTexture	(dstSet, e, shaderStageFlag);
-	for (const auto& e : shaderRscs.samplerParams())	bindSampler	(dstSet, e, shaderStageFlag);
+	for (auto& e : shaderRscs.texParams())		bindTexture	(dstSet, e, shaderStageFlag);
+	for (auto& e : shaderRscs.samplerParams())	bindSampler	(dstSet, e, shaderStageFlag);
 
 	#else
 
-	for (const auto& e : shaderRscs.texParams())		bindTextureWithSampler	(dstSet, e, shaderRscs, shaderStageFlag);
+	for (auto& e : shaderRscs.texParams())		bindTextureWithSampler	(dstSet, e, shaderRscs, shaderStageFlag);
 
 	#endif // 0
 
 	#else
 
-	for (const auto& e : shaderRscs.texParams())		bindCombinedTexture	(dstSet, e, shaderStageFlag);
+	for (auto& e : shaderRscs.texParams())		bindCombinedTexture	(dstSet, e.shaderResource(), shaderStageFlag);
 
 	#endif // 0
 
 
-	//for (const auto& e : shaderRscs.bufferParams())		bindBuffer	(dstSet, e, shaderStageFlag);
+	//for (auto& e : shaderRscs.bufferParams())		bindBuffer	(dstSet, e, shaderStageFlag);
 
 
 	if (!_writeDescs.is_empty())
 		vkUpdateDescriptorSets(_alloc->vkDevHnd(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
 
+	clear();
+
+	return true;
+}
+
+bool 
+Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources::ConstBuffersView constBufsView, ShaderResources& shaderRscs)
+{
+	dstSet = _alloc->alloc(&layout);
+	if (!dstSet)
+	{
+		return false;
+	}
+
+	for (auto& e : shaderRscs.constBufs()) bindConstantBuffer(dstSet, e, VkShaderStageFlagBits::VK_SHADER_STAGE_ALL);
+
+	if (!_writeDescs.is_empty())
+		vkUpdateDescriptorSets(_alloc->vkDevHnd(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
+
+	clear();
+
 	return true;
 }
 
 void 
-Vk_DescriptorBuilder::bindConstantBuffer(Vk_DescriptorSet& dstSet, const ConstBuffer& constBuf, VkShaderStageFlags stageFlag)
+Vk_DescriptorBuilder::clear()
+{
+	_writeDescs.clear();
+	_bufInfos.clear();
+	_imageInfos.clear();
+}
+
+void 
+Vk_DescriptorBuilder::bindConstantBuffer(Vk_DescriptorSet& dstSet, ConstBuffer& constBuf, VkShaderStageFlags stageFlag)
 {
 	const auto& info = constBuf.info();
+
+	if (!constBuf._gpuBuffer.ptr())
+	{
+		constBuf.create(&info, _alloc->renderDeviceVk());
+	}
 
 	auto& bufInfo	= _bufInfos.emplace_back();
 	bufInfo.buffer	= Util::toVkBufHnd(constBuf._gpuBuffer.ptr());
@@ -269,7 +306,7 @@ Vk_DescriptorBuilder::bindConstantBuffer(Vk_DescriptorSet& dstSet, const ConstBu
 }
 
 void 
-Vk_DescriptorBuilder::bindTexture(Vk_DescriptorSet& dstSet, const TexParam& texParam, VkShaderStageFlags stageFlag)
+Vk_DescriptorBuilder::bindTexture(Vk_DescriptorSet& dstSet, TexParam& texParam, VkShaderStageFlags stageFlag)
 {
 	const auto& info = texParam.info();
 
@@ -293,14 +330,14 @@ Vk_DescriptorBuilder::bindTexture(Vk_DescriptorSet& dstSet, const TexParam& texP
 }
 
 void 
-Vk_DescriptorBuilder::bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam& samplerParam, VkShaderStageFlags stageFlag)
+Vk_DescriptorBuilder::bindSampler(Vk_DescriptorSet& dstSet, SamplerParam& samplerParam, VkShaderStageFlags stageFlag)
 {
 	throwIf(true, "need a global cache sampler");
 	_bindSampler(dstSet, samplerParam, nullptr, stageFlag);
 }
 
 void 
-Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, const BufferParam& bufParam, VkShaderStageFlags stageFlag)
+Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, BufferParam& bufParam, VkShaderStageFlags stageFlag)
 {
 	const auto& info = bufParam.info();
 
@@ -324,7 +361,7 @@ Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, const BufferParam& bu
 }
 
 void 
-Vk_DescriptorBuilder::bindCombinedTexture(Vk_DescriptorSet& dstSet, const TexParam& texParam, VkShaderStageFlags stageFlag)
+Vk_DescriptorBuilder::bindCombinedTexture(Vk_DescriptorSet& dstSet, TexParam& texParam, VkShaderStageFlags stageFlag)
 {
 	if (!texParam._tex)
 		return;
@@ -352,17 +389,18 @@ Vk_DescriptorBuilder::bindCombinedTexture(Vk_DescriptorSet& dstSet, const TexPar
 }
 
 void 
-Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, const TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag)
+Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag)
 {
 	if (texParam.info().isBindlessResource())
 		return;
 
 	bindTexture(dstSet, texParam, stageFlag);
-	TempString temp;
-	shaderRscs._getAutoSetSamplerNameTo(temp, texParam.name());
-	if (auto* samplerParam = shaderRscs.findSamplerParam(temp))
+
+	TempString samplerName;
+	ShaderResources::getSamplerNameTo(samplerName, texParam.name());
+	if (auto* samplerParam = shaderRscs.findSamplerParam(samplerName))
 	{
-		_bindSampler(dstSet, *samplerParam, Vk_Texture::getVkSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk())), stageFlag);
+		_bindSampler(dstSet, samplerParam->shaderResource(), Vk_Texture::getVkSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk())), stageFlag);
 	}
 }
 

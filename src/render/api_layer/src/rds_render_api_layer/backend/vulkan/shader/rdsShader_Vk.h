@@ -39,19 +39,19 @@ public:
 		TempString binPath;
 		fmtTo(binPath, "{}/{}.bin", passPath, Util::toShaderStageProfile(stageFlag()));
 
-		auto* rdDevVk = pass->shader()->renderDeviceVk();
+		auto* rdDevVk = pass->renderDeviceVk();
 		_vkModule.create(binPath, rdDevVk);
 
 		binPath += ".json";
 		//JsonUtil::readFile(binPath, _info);
-		_info.load(binPath);
+		_info.create(binPath);
 
 		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(_vkModule, rdDevVk, "{}-{}", pass->shader()->filename(), stageFlag());
 	}
 
 	void destroy(ShaderPass_Vk* pass)
 	{
-		_vkModule.destroy(pass->shader()->renderDeviceVk());
+		_vkModule.destroy(pass->renderDeviceVk());
 	}
 
 	VkPipelineShaderStageCreateInfo createVkStageInfo(const char* entry)
@@ -114,11 +114,15 @@ public:
 	ShaderPass_Vk();
 	virtual ~ShaderPass_Vk();
 
-	Shader_Vk* shader();
+public:
+	Shader_Vk*			shaderVk();
+	RenderDevice_Vk*	renderDeviceVk();
 
 	VertexStage*	vkVertexStage();
 	PixelStage*		vkPixelStage();
 	ComputeStage*	vkComputeStage();
+
+	Vk_DescriptorSetLayout&	vkDescriptorSetLayout();
 
 protected:
 	virtual void onCreate(Shader* shader, const Info* info, StrView passPath) override;
@@ -131,6 +135,8 @@ protected:
 	VertexStage		_vkVertexStage;
 	PixelStage		_vkPixelStage;
 	ComputeStage	_vkComputeStage;
+
+	Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
 };
 
 template<size_t N> inline 
@@ -143,12 +149,13 @@ ShaderPass_Vk::createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo,
 	if (!info().psFunc.is_empty()) { outCInfos.emplace_back( _vkPixelStage  .createVkStageInfo(info().psFunc.c_str())); }
 }
 
-inline Shader_Vk* ShaderPass_Vk::shader() { return sCast<Shader_Vk*>(_shader); }
+inline Shader_Vk*		ShaderPass_Vk::shaderVk()		{ return sCast<Shader_Vk*>(_shader); }
 
+inline ShaderPass_Vk::VertexStage*	ShaderPass_Vk::vkVertexStage	()		{ return &_vkVertexStage; }
+inline ShaderPass_Vk::PixelStage*	ShaderPass_Vk::vkPixelStage		()		{ return &_vkPixelStage; }
+inline ShaderPass_Vk::ComputeStage*	ShaderPass_Vk::vkComputeStage	()		{ return &_vkComputeStage; }
 
-inline ShaderPass_Vk::VertexStage*	ShaderPass_Vk::vkVertexStage	() { return &_vkVertexStage; }
-inline ShaderPass_Vk::PixelStage*	ShaderPass_Vk::vkPixelStage		() { return &_vkPixelStage; }
-inline ShaderPass_Vk::ComputeStage*	ShaderPass_Vk::vkComputeStage	() { return &_vkComputeStage; }
+inline Vk_DescriptorSetLayout&		ShaderPass_Vk::vkDescriptorSetLayout()	{ return _vkDescriptorSetLayout; }
 
 #endif
 
@@ -181,6 +188,11 @@ protected:
 };
 
 #endif
+
+
+
+
+
 }
 #endif
 

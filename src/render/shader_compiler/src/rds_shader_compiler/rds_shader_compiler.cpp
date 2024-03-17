@@ -35,11 +35,13 @@ protected:
 		opt.enableLog	= false;
 
 		#if 1
+		opt.isNoOffset	= false;
 		compile("asset/shader/test/test.shader",				opt);
 		compile("asset/shader/test/test_texture.shader",		opt);
 		compile("asset/shader/test/test_texture_set0.shader",	opt);
 		compile("asset/shader/test/test_compute.shader",		opt);
 
+		opt.isNoOffset	= true;
 		compile("asset/shader/ui/imgui.shader",					opt);
 		compile("asset/shader/terrain/my_terrain.shader",		opt);
 		compile("asset/shader/present.shader",					opt);
@@ -55,7 +57,6 @@ protected:
 		compile("asset/shader/pbr/prefilteredEnvCube.shader",	opt);
 		compile("asset/shader/pbr/brdfLut.shader",				opt);
 
-		opt.isNoOffset	= true;
 		opt.enableLog	= false; 
 		compile("asset/shader/test/test_bindless.shader",		opt);
 		#endif // 0
@@ -97,6 +98,10 @@ protected:
 				compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Compute,	pass.csFunc, opt2);
 				compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Vertex,	pass.vsFunc, opt2);
 				compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Pixel,		pass.psFunc, opt2);
+
+				TempString dstAllStageUnionInfoPath;
+				fmtTo(dstAllStageUnionInfoPath, "{}/pass{}", dstBinPath, passIdx);
+				compilerVk.writeAllStageUnionInfo(dstAllStageUnionInfoPath);
 			}
 		}
 	}

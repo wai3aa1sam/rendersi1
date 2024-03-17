@@ -16,17 +16,28 @@ namespace rds
 const ShaderStageInfo& ShaderResources::info() const { return *this->_info; }
 
 void 
-ShaderResources::create(ShaderStage* shaderStage, ShaderPass* pass)
+ShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
 {
 	using ConstBufInfo = ShaderStageInfo::ConstBuffer;
+	destroy();
 
-	_info = &shaderStage->info();
+	_info = &info_;
+
+	/*const auto& constBufInfos = info().constBufs;
+	_constBufs.reserve(constBufInfos.size());
+	for (const auto& e : constBufInfos)
+	{
+		auto& cb = _constBufs.emplace_back();
+		cb.create(&e, pass);
+	}*/
 
 	const auto& constBufInfos = info().constBufs;
-	_constBufs.reserve(constBufInfos.size());
-	for (const ConstBufInfo& e : constBufInfos)
+	_framedConstBufs.reserve(s_kFrameInFlightCount);
+	auto& constBufs = _framedConstBufs.emplace_back();
+	constBufs.reserve(constBufInfos.size());
+	for (const auto& e : constBufInfos)
 	{
-		ConstBuffer& cb = _constBufs.emplace_back();
+		auto& cb = constBufs.emplace_back();
 		cb.create(&e, pass);
 	}
 
@@ -53,66 +64,222 @@ ShaderResources::create(ShaderStage* shaderStage, ShaderPass* pass)
 		auto& bufferParam = _bufferParams.emplace_back();
 		bufferParam.create(&e, pass);
 	}
+
+	const auto& imageInfos = info().storageImages;
+	_imageParams.reserve(imageInfos.size());
+	for (const auto& e : imageInfos)
+	{
+		auto& imageParam = _imageParams.emplace_back();
+		imageParam.create(&e, pass);
+	}
 }
 
 void 
 ShaderResources::destroy()
 {
 	clear();
+	_info = nullptr;
 }
 
 void 
-ShaderResources::uploadToGpu()
+ShaderResources::uploadToGpu(RenderDevice* rdDev)
 {
-	for (auto& e : constBufs())
+	const auto& constBufInfos = info().constBufs;
+	auto src = constBufs();
+	bool isDirty = !constBufInfos.is_empty() && !src.is_empty() && src[0]._isDirty;
+
+	#if 0
+	auto copyCpuBufToNextFrame =
+		[&](auto* oConstBufs)
+		{
+			auto& dst = *oConstBufs;
+			for (size_t i = 0; i < constBufInfos.size(); i++)
+			{
+				dst[i]._cpuBuf = src[i]._cpuBuf;
+				// gpu buffer will create on demand in backend
+			}
+		};
+	#endif // 0
+
+	for (auto& e : src)
 	{
 		e.uploadToGpu();
+	}
+
+	if (_framedConstBufs.size() < s_kFrameInFlightCount && isDirty)
+	{
+		auto& dst = _framedConstBufs.emplace_back();
+		
+		dst.reserve(constBufInfos.size());
+		for (const auto& e : constBufInfos)
+		{
+			auto& cb = dst.emplace_back();
+			cb.create(&e, rdDev);
+		}
+	}
+
+	if (isDirty)
+	{
+		_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
+		auto dst = constBufs();
+		for (size_t i = 0; i < constBufInfos.size(); i++)
+		{
+			dst[i]._cpuBuf = src[i]._cpuBuf;
+			// gpu buffer will create on demand in backend
+		}
 	}
 }
 
 void 
 ShaderResources::clear()
 {
-	_constBufs.clear();
+	/*for (auto& e : _constBufs)
+	{
+		e.destroy();
+	}*/
+
+	for (auto& _constBufs : _framedConstBufs)
+	{
+		for (auto& e : _constBufs)
+		{
+			e.destroy();
+		}
+	}
+
+	for (auto& e : _texParams)
+	{
+		e.destroy();
+	}
+
+	for (auto& e : _samplerParams)
+	{
+		e.destroy();
+	}
+
+	for (auto& e : _bufferParams)
+	{
+		e.destroy();
+	}
+
+	for (auto& e : _imageParams)
+	{
+		e.destroy();
+	}
+
+	//_constBufs.clear();
+	_framedConstBufs.clear();
 	_texParams.clear();
 	_samplerParams.clear();
 	_bufferParams.clear();
+	_imageParams.clear();
 }
 
-const ShaderResources::SamplerParam* 
+const ShaderResources::SamplerParamT* 
 ShaderResources::findSamplerParam(StrView name) const
 {
 	for (const auto& e : samplerParams())
 	{
-		bool isSame = StrUtil::ignoreCaseCompare(e.name(), name) == 0;
+		const auto& rsc = e.shaderResource();
+		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
 		if (isSame)
 			return &e;
 	}
 	return nullptr;
 }
 
+ShaderResources::TexParamT*		
+ShaderResources::findTexParam(StrView name)
+{
+	for (auto& e : _texParams)
+	{
+		auto& rsc = e.shaderResource();
+		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
+		if (isSame)
+		{
+			return &e;
+		}
+	}
+	return nullptr;
+}
+
+ShaderResources::SamplerParamT*	
+ShaderResources::findSamplerParam(StrView name)
+{
+	for (auto& e : _samplerParams)
+	{
+		auto& rsc = e.shaderResource();
+		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
+		if (isSame)
+		{
+			return &e;
+		}
+	}
+	return nullptr;
+}
+
+ShaderResources::BufferParamT*	
+ShaderResources::findBufferParam(StrView name)
+{
+	for (auto& e : _bufferParams)
+	{
+		auto& rsc = e.shaderResource();
+		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
+		if (isSame)
+		{
+			return &e;
+		}
+	}
+	return nullptr;
+}
+
+ShaderResources::ImageParamT*	
+ShaderResources::findImageParam(StrView name)
+{
+	for (auto& e : _imageParams)
+	{
+		auto& rsc = e.shaderResource();
+		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
+		if (isSame)
+		{
+			return &e;
+		}
+	}
+	return nullptr;
+}
 
 void 
 ShaderResources::setSamplerParam(StrView name, const SamplerState& v)
 {
-	for (auto& e : samplerParams())
+	auto it = findSamplerParam(name);
+	if (it)
 	{
-		bool hasFound = e.find(name);
-		if (!hasFound)
-			continue;
-		e.setSamplerParam(v);
+		auto& rsc = it->shaderResource();
+		rsc.setSamplerParam(v);
+		it->roatateFrame();
 	}
 }
 
 void 
 ShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
 {
-	for (auto& e : bufferParams())
+	auto it = findBufferParam(name);
+	if (it)
 	{
-		bool hasFound = e.find(name);
-		if (!hasFound)
-			continue;
-		_isDirty |= e.setBufferParam(v);
+		auto& rsc = it->shaderResource();
+		rsc.setBufferParam(v);
+		it->roatateFrame();
+	}
+}
+
+void 
+ShaderResources::setImageParam(StrView name, Texture* v)
+{
+	auto it = findImageParam(name);
+	if (it)
+	{
+		auto& rsc = it->shaderResource();
+		rsc.setImageParam(v);
+		it->roatateFrame();
 	}
 }
 
@@ -135,14 +302,14 @@ ShaderResources::ConstBuffer::~ConstBuffer()
 }
 
 void 
-ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass)
+ShaderResources::ConstBuffer::create(const Info* info, RenderDevice* rdDev)
 {
 	destroy();
 	throwIf(info->size == 0, "constbuffer size is 0");
 
-	auto* rdDev		= pass->shader()->renderDevice();
+	//auto* rdDev		= pass->shader()->renderDevice();
 	auto bufSize	= info->size;
-	
+
 	_info = info;
 	_cpuBuf.resize(bufSize);
 
@@ -150,6 +317,13 @@ ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass)
 	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Const;
 	bufCDesc.bufSize	= bufSize;
 	_gpuBuffer = rdDev->createRenderGpuBuffer(bufCDesc);
+}
+
+void 
+ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass)
+{
+	auto* rdDev	= pass->shader()->renderDevice();
+	create(info, rdDev);
 }
 
 void 
@@ -236,10 +410,15 @@ ShaderResources::SamplerParam::create(const Info* info, ShaderPass* pass)
 	Base::create(info);
 }
 
-void 
+bool 
 ShaderResources::SamplerParam::setSamplerParam(const SamplerState& v)
 {
-	_samplerState = v;
+	bool isDirty = _samplerState.hash() != v.hash();
+	if (isDirty)
+	{
+		_samplerState = v;
+	}
+	return isDirty;
 }
 
 #endif
@@ -269,6 +448,35 @@ ShaderResources::BufferParam::setBufferParam(RenderGpuBuffer* v)
 	bool isDirty = !isSame;
 	return isDirty;
 }
+
+#endif
+
+#if 0
+#pragma mark --- rdsShaderResources::ImageParam-Impl ---
+#endif // 0
+#if 1
+
+void 
+ShaderResources::ImageParam::create(const Info* info, ShaderPass* pass)
+{
+	Base::create(info);
+}
+
+bool 
+ShaderResources::ImageParam::setImageParam(Texture* v)
+{
+	if (!v) RDS_CORE_ASSERT(false, "Texture == nullptr");
+
+	bool isSame = _image == v;
+	if (!isSame)
+	{
+		_image.reset(v);
+	}
+
+	bool isDirty = !isSame;
+	return isDirty;
+}
+
 
 #endif
 

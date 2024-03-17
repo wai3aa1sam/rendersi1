@@ -477,16 +477,24 @@ public:
 			texCDesc.create("asset/texture/uvChecker2.png");
 			_uvCheckerTex2 = Renderer::rdDev()->createTexture2D(texCDesc);
 			_uvCheckerTex2->setDebugName("uvChecker2");
+		}
 
-			_testShader = Renderer::rdDev()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
-			_testMtl = Renderer::rdDev()->createMaterial();
-			_testMtl->setShader(_testShader);
-			_testMtl->setParam("texture0", _uvCheckerTex);
+		{
+			if (false)
+			{
+				_testShader = Renderer::rdDev()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
+				_testMtl = Renderer::rdDev()->createMaterial();
+				_testMtl->setShader(_testShader);
+				_testMtl->setParam("texture0", _uvCheckerTex);
+
+				_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test/test_compute.shader");
+				_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
+				testCompute(&_rdGraph, true);
+			}
 
 			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
 
-			
 			auto bufCDesc = RenderGpuBuffer::makeCDesc();
 			bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Compute;
 			bufCDesc.bufSize	= sizeof(TestBindlessBuffer);
@@ -506,9 +514,6 @@ public:
 		_presentMtl		= Renderer::rdDev()->createMaterial(_presentShader);
 		_presentMtl->setParam("texture0", _uvCheckerTex);
 
-		_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test/test_compute.shader");
-		_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
-		testCompute(&_rdGraph, true);
 
 		{
 			_shaderSkybox	= Renderer::rdDev()->createShader("asset/shader/skybox.shader");

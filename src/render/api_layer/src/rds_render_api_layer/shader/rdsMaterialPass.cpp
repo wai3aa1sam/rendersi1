@@ -31,26 +31,26 @@ MaterialPass_Stage::create(MaterialPass* pass, ShaderStage* shaderStage)
 	_shaderStage = shaderStage;
 
 	RDS_TODO("move to pass, 1 per ShaderResource pass, create on demand");
-	_framedShaderResources.resize(1);
+	/*_framedShaderResources.resize(1);
 	for (auto& e : _framedShaderResources)
 	{
 		RDS_TODO("change to MaterialPass");
 		e.create(shaderStage, &pass->shaderPass());
-	}
+	}*/
 }
 
 void 
 MaterialPass_Stage::destroy()
 {
-	for (auto& e : _framedShaderResources)
+	/*for (auto& e : _framedShaderResources)
 	{
 		e.destroy();
 	}
-	_framedShaderResources.clear();
+	_framedShaderResources.clear();*/
 	this->_shaderStage = nullptr;
 }
 
-ShaderResources& MaterialPass_Stage::shaderResources(Material* mtl) { return _framedShaderResources[mtl->frameIdx()]; }
+//ShaderResources& MaterialPass_Stage::shaderResources(Material* mtl) { return _framedShaderResources[mtl->frameIdx()]; }
 
 #endif
 
@@ -92,6 +92,8 @@ MaterialPass::onCreate(Material* material, ShaderPass* shaderPass)
 {
 	_material	= material;
 	_shaderPass = shaderPass;
+
+	_shaderResources.create(info().allStageUnionInfo, shaderPass);
 }
 
 void 

@@ -133,23 +133,31 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 		compileArgs.emplace_back(L"-fspv-reflect");
 		compileArgs.emplace_back(L"-fvk-auto-shift-bindings");
 
-		u32 stageOffset = 0;
-		// 16 is minimum spec in vulkan
-		u32 cbufferOffset	= stageOffset + 0;		RDS_UNUSED(cbufferOffset);
-		u32 textureOffset	= stageOffset + 4;		RDS_UNUSED(textureOffset);
-		u32 samplerOffset	= stageOffset + 8;		RDS_UNUSED(samplerOffset);
-		u32 uavOffset		= stageOffset + 12;		RDS_UNUSED(uavOffset	);
-		u32 imageOffset		= stageOffset + 14;		RDS_UNUSED(imageOffset	);
-		// <shift> <space>
-		compileArgs.emplace_back(L"-fvk-b-shift"); compileArgs.emplace_back(StrUtil::toStrW(cbufferOffset));	compileArgs.emplace_back(L"0");
-		compileArgs.emplace_back(L"-fvk-t-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");	// temporary
-		compileArgs.emplace_back(L"-fvk-s-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");
-		compileArgs.emplace_back(L"-fvk-u-shift"); compileArgs.emplace_back(StrUtil::toStrW(imageOffset));		compileArgs.emplace_back(L"0");
+		if (!opt->isNoOffset)
+		{
+			u32 stageOffset = 0;
+			// 16 is minimum spec in vulkan
+			u32 cbufferOffset	= stageOffset + 0;		RDS_UNUSED(cbufferOffset);
+			u32 textureOffset	= stageOffset + 4;		RDS_UNUSED(textureOffset);
+			u32 samplerOffset	= stageOffset + 8;		RDS_UNUSED(samplerOffset);
+			u32 uavOffset		= stageOffset + 12;		RDS_UNUSED(uavOffset	);
+			u32 imageOffset		= stageOffset + 14;		RDS_UNUSED(imageOffset	);
+			// <shift> <space>
+			compileArgs.emplace_back(L"-fvk-b-shift"); compileArgs.emplace_back(StrUtil::toStrW(cbufferOffset));	compileArgs.emplace_back(L"0");
+			compileArgs.emplace_back(L"-fvk-t-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");	// temporary
+			compileArgs.emplace_back(L"-fvk-s-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");
+			compileArgs.emplace_back(L"-fvk-u-shift"); compileArgs.emplace_back(StrUtil::toStrW(imageOffset));		compileArgs.emplace_back(L"0");
+		}
 
 		// rds_define
 		if (true)
 		{
-			compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}", Renderer::rdDev()->bindlessResource().samplerCount())));
+			auto& bindlessRsc = Renderer::rdDev()->bindlessResource();
+
+			compileArgs.emplace_back(L"-fvk-bind-globals"); compileArgs.emplace_back(StrUtil::toStrW(14));	compileArgs.emplace_back(StrUtil::toStrW(bindlessRsc.bindlessTypeCount()));
+			
+			compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}",				bindlessRsc.samplerCount())));
+			compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_CONSTANT_BUFFER_SPACE=space{}",	bindlessRsc.bindlessTypeCount())));
 		}
 
 		isBypassReflection = true;	// dxc does not support spirv reflection (Qstrip_reflect), use spirv-cross instead

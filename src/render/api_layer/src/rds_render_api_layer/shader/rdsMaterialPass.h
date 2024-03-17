@@ -7,6 +7,7 @@
 #include "rds_render_api_layer/texture/rdsTexture.h"
 #include "rdsShaderResource.h"
 
+
 namespace rds
 {
 
@@ -18,6 +19,7 @@ class Material;
 class MaterialPass;
 
 class RenderContext;
+
 
 #if 0
 #pragma mark --- rdsMaterialPass_Stage-Decl ---
@@ -52,11 +54,11 @@ public:
 						void setBufferParam	(Material* mtl, StrView name, RenderGpuBuffer*		v);
 
 	const ShaderStageInfo&	info() const;
-	ShaderResources&		shaderResources(Material* mtl);
+	//ShaderResources&		shaderResources(Material* mtl);
 
 protected:
 	ShaderStage*			_shaderStage = nullptr;
-	FramedShaderResources	_framedShaderResources;
+	ShaderResources	_shaderResources;
 };
 
 #if 0
@@ -64,12 +66,13 @@ protected:
 #endif // 0
 #if 1
 
+#if RDS_NO_BINDLESS
 template<class T> inline 
 void 
 MaterialPass_Stage::setParam(Material* mtl, StrView name, const T& v)
 {
 	/*if (!_shaderStage)
-		return;*/
+	return;*/
 	shaderResources(mtl).setParam(name, v);
 }
 
@@ -99,6 +102,7 @@ MaterialPass_Stage::setBufferParam(Material* mtl, StrView name, RenderGpuBuffer*
 	return;*/
 	shaderResources(mtl).setBufferParam(name, v);
 }
+#endif // 0
 
 inline const ShaderStageInfo& MaterialPass_Stage::info() const { return _shaderStage->info(); }
 
@@ -170,17 +174,19 @@ public:
 
 	template<class TEX> void setTexParam	(StrView name, TEX* v);
 	template<class T>	void setParam		(StrView name, const T& v);
-						void setSamplerParam(StrView name, const SamplerState& samplerState);
+						void setSamplerParam(StrView name, const SamplerState& v);
 						void setBufferParam	(StrView name, RenderGpuBuffer* v);
 
+public:
 	const Info& info() const;
 
 	VertexStage*	vertexStage();
 	PixelStage*		pixelStage();
 	ComputeStage*	computeStage();
 
-	Material&		material();
-	ShaderPass&		shaderPass();
+	Material&			material();
+	ShaderPass&			shaderPass();
+	ShaderResources&	shaderResources();
 
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass);
@@ -194,44 +200,66 @@ protected:
 	VertexStage*	_vertexStage	= nullptr;
 	PixelStage*		_pixelStage		= nullptr;
 	ComputeStage*	_computeStage	= nullptr;
+
+	ShaderResources	_shaderResources;
 };
 
 template<class TEX> inline 
 void 
 MaterialPass::setTexParam(StrView name, TEX* v)
 {
-	auto* mtl = _material;
+	auto* mtl = _material; RDS_UNUSED(mtl);
+
+	#if RDS_NO_BINDLESS
 	if (_vertexStage)	_vertexStage ->setTexParam(mtl, name, v);
 	if (_pixelStage)	_pixelStage  ->setTexParam(mtl, name, v);
 	if (_computeStage)	_computeStage->setTexParam(mtl, name, v);
+	#endif // RDS_NO_BINDLESS
+	
+	_shaderResources.setTexParam(name, v);
 }
 
 template<class T> inline 
 void 
 MaterialPass::setParam(StrView name, const T& v)
 {
-	auto* mtl = _material;
+	auto* mtl = _material; RDS_UNUSED(mtl);
+
+	#if RDS_NO_BINDLESS
 	if (_vertexStage)	_vertexStage ->setParam(mtl, name, v);
 	if (_pixelStage)	_pixelStage	 ->setParam(mtl, name, v);
 	if (_computeStage)	_computeStage->setParam(mtl, name, v);
+	#endif
+
+	_shaderResources.setParam(name, v);
 }
 
 inline
 void 
-MaterialPass::setSamplerParam(StrView name, const SamplerState& samplerState)
+MaterialPass::setSamplerParam(StrView name, const SamplerState& v)
 {
-	auto* mtl = _material;
-	if (_vertexStage)	_vertexStage ->setSamplerParam(mtl, name, samplerState);
-	if (_pixelStage)	_pixelStage  ->setSamplerParam(mtl, name, samplerState);
-	if (_computeStage)	_computeStage->setSamplerParam(mtl, name, samplerState);
+	auto* mtl = _material; RDS_UNUSED(mtl);
+
+	#if RDS_NO_BINDLESS
+	if (_vertexStage)	_vertexStage ->setSamplerParam(mtl, name, v);
+	if (_pixelStage)	_pixelStage  ->setSamplerParam(mtl, name, v);
+	if (_computeStage)	_computeStage->setSamplerParam(mtl, name, v);
+	#endif
+
+	_shaderResources.setSamplerParam(name, v);
 }
 
 inline
 void 
 MaterialPass::setBufferParam(StrView name, RenderGpuBuffer* v)
 {
-	auto* mtl = _material;
+	auto* mtl = _material; RDS_UNUSED(mtl);
+
+	#if RDS_NO_BINDLESS
 	if (_computeStage)	_computeStage->setBufferParam(mtl, name, v);
+	#endif
+
+	_shaderResources.setBufferParam(name, v);
 }
 
 
@@ -241,8 +269,9 @@ inline MaterialPass::VertexStage*	MaterialPass::vertexStage()		{ return _vertexS
 inline MaterialPass::PixelStage*	MaterialPass::pixelStage()		{ return _pixelStage; }
 inline MaterialPass::ComputeStage*	MaterialPass::computeStage()	{ return _computeStage; }
 
-inline Material&					MaterialPass::material()	{ return *_material; }
-inline ShaderPass&					MaterialPass::shaderPass()	{ return *_shaderPass; }
+inline Material&					MaterialPass::material()		{ return *_material; }
+inline ShaderPass&					MaterialPass::shaderPass()		{ return *_shaderPass; }
+inline ShaderResources&				MaterialPass::shaderResources()	{ return _shaderResources; }
 
 #endif
 

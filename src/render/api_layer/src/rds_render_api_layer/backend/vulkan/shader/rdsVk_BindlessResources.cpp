@@ -32,17 +32,38 @@ BindlessResources_Vk::onCreate(const CreateDesc& cDesc)
 
 	auto descrAllocCDesc = _descrAlloc.makeCDesc();
 	descrAllocCDesc.descrCount = cDesc.size;
-	descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,	1.0f });
-	descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,		1.0f });	// VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-	descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,		1.0f });
-	descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_SAMPLER,			1.0f });
+	descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,				1.0f });
+	descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,					1.0f });	// VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+	descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,					1.0f });
+	//descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,	1.0f });
 
 	_descrAlloc.createBindless(descrAllocCDesc, rdDevVk);
 
-	_createDescritporSet(_descrSetBuf,		_descrSetLayoutBuf,		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,	descriptorCount());	_descrSetBuf.setDebugName("bindless_buffer",		rdDevVk);
-	_createDescritporSet(_descrSetTex,		_descrSetLayoutTex,		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,	descriptorCount()); _descrSetTex.setDebugName("bindless_texture",		rdDevVk);
-	_createDescritporSet(_descrSetImg,		_descrSetLayoutImg,		VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,	descriptorCount());	_descrSetImg.setDebugName("bindless_image",			rdDevVk);
-	_createDescritporSet(_descrSetSampler,	_descrSetLayoutSampler, VK_DESCRIPTOR_TYPE_SAMPLER,			descriptorCount());	_descrSetSampler.setDebugName("bindless_sampler",	rdDevVk);
+	_descrSets.resize(bindlessTypeCount());
+	_descrSetLayouts.resize(bindlessTypeCount());
+
+	_createDescritporSet(descrSetBuf(),		descrSetLayoutBuf(),		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,	descriptorCount());	descrSetBuf().setDebugName("bindless_buffer",	rdDevVk);
+	_createDescritporSet(descrSetTex(),		descrSetLayoutTex(),		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,	descriptorCount()); descrSetTex().setDebugName("bindless_texture",	rdDevVk);
+	_createDescritporSet(descrSetImg(),		descrSetLayoutImg(),		VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,	descriptorCount());	descrSetImg().setDebugName("bindless_image",	rdDevVk);
+
+	{
+		Vector<Vk_DescriptorSetLayout_T*, 8> layoutHnds;
+		layoutHnds.reserve(_descrSetLayouts.size());
+		for (auto& layout : _descrSetLayouts)
+		{
+			layoutHnds.emplace_back(layout.hnd());
+		}
+
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+		{
+			pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_descrSetLayouts.size());			// Optional
+			pipelineLayoutInfo.pSetLayouts				= layoutHnds.data();						// set0, set1, set2, ...
+			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
+			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
+		}
+		_vkPipelineLayoutCommon.create(&pipelineLayoutInfo, rdDevVk);
+	}
 }
 
 void 
@@ -50,15 +71,14 @@ BindlessResources_Vk::onDestroy()
 {
 	auto* rdDevVk = renderDeviceVk();
 
-	_descrSetLayoutBuf.destroy(rdDevVk);
-	_descrSetLayoutTex.destroy(rdDevVk);
-	_descrSetLayoutImg.destroy(rdDevVk);
-	_descrSetLayoutSampler.destroy(rdDevVk);
+	_vkPipelineLayoutCommon.destroy(rdDevVk);
 
-	/*_descrSetBuf.destroy();
-	_descrSetTex.destroy();
-	_descrSetImg.destroy();
-	_descrSetSampler.destroy();*/
+	for (auto& layout : _descrSetLayouts)
+	{
+		layout.destroy(rdDevVk);
+	}
+	_descrSetLayouts.clear();
+	_descrSets.clear();
 
 	_descrAlloc.destroy();
 
@@ -92,7 +112,7 @@ BindlessResources_Vk::onCommit()
 			for (auto& rsc : rscs)
 			{
 				{
-					auto& dstSet = _descrSetTex;
+					auto& dstSet = descrSetTex();
 
 					auto& info	= imgInfos.emplace_back();
 					info = {};
@@ -125,7 +145,7 @@ BindlessResources_Vk::onCommit()
 			for (auto& rsc : rscs)
 			{
 				{
-					auto& dstSet	= _descrSetBuf;
+					auto& dstSet	= descrSetBuf();
 					auto* rscVk		= sCast<RenderGpuBuffer_Vk*>(rsc.ptr());
 
 					auto& info	= bufInfos.emplace_back();
@@ -168,18 +188,21 @@ BindlessResources_Vk::onCommit()
 }
 
 void 
-BindlessResources_Vk::bind(Vk_CommandBuffer_T* vkCmdBufHnd, VkPipelineLayout_T* vkPipelineLayoutHnd)
+BindlessResources_Vk::bind(Vk_CommandBuffer_T* vkCmdBufHnd, VkPipelineBindPoint bindPt)
 {
 	Vector<Vk_DescriptorSet_T*, 8> descrSets;
-	descrSets.emplace_back(	   _descrSetBuf.hnd());
-	descrSets.emplace_back(	   _descrSetTex.hnd());
-	descrSets.emplace_back(	   _descrSetImg.hnd());
-	descrSets.emplace_back(_descrSetSampler.hnd());
+	for (auto& set : _descrSets)
+	{
+		descrSets.emplace_back(set.hnd());
+	}
+
+	VkPipelineLayout_T* vkPipelineLayoutHnd = vkPipelineLayoutCommon().hnd();
+	u32 firstSet = 0;
 
 	//VkPipelineLayout_T* vkPipelineLayoutHnd = nullptr;
-	vkCmdBindDescriptorSets(vkCmdBufHnd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+	vkCmdBindDescriptorSets(vkCmdBufHnd, bindPt,
 							vkPipelineLayoutHnd
-							, 2, sCast<u32>(descrSets.size()), descrSets.data()
+							, firstSet, sCast<u32>(descrSets.size()), descrSets.data()
 							, 0, nullptr);
 
 }

@@ -734,6 +734,9 @@ public:
 	Vk_DescriptorSetLayout()	= default;
 	~Vk_DescriptorSetLayout()	= default;
 
+	Vk_DescriptorSetLayout	(Vk_DescriptorSetLayout&& rhs) noexcept { move(rds::move(rhs)); }
+	void operator=			(Vk_DescriptorSetLayout&& rhs) noexcept { RDS_CORE_ASSERT(this != &rhs); move(rds::move(rhs)); }
+
 	void create	(const VkDescriptorSetLayoutCreateInfo* cInfo, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 };
@@ -781,7 +784,6 @@ public:
 
 	Vk_DescriptorSet(Vk_DescriptorSet&& rhs) noexcept : Base(rds::move(rhs)) {}
 	void operator=	(Vk_DescriptorSet&& rhs) noexcept { return Base::operator=(rds::move(rhs)); }
-
 
 	VkResult	create (VkDescriptorSetAllocateInfo* pAllocateInfo, RenderDevice_Vk* rdDevVk);
 	void		destroy();

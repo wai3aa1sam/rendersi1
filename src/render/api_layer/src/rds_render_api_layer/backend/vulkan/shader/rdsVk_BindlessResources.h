@@ -24,13 +24,23 @@ public:
 	virtual ~BindlessResources_Vk();
 
 public:
-	void bind(Vk_CommandBuffer_T* vkCmdBufHnd, VkPipelineLayout_T* vkPipelineLayoutHnd);
+	void bind(Vk_CommandBuffer_T* vkCmdBufHnd, VkPipelineBindPoint bindPt);
 
 	template<size_t N> void getDescriptorSetLayoutTo(Vector<Vk_DescriptorSetLayout_T*, N>& o);
 
 
 public:
-	u32 descriptorCount() const;
+	Vk_PipelineLayout& vkPipelineLayoutCommon();
+
+	Vk_DescriptorSet& descrSetBuf();
+	Vk_DescriptorSet& descrSetTex();
+	Vk_DescriptorSet& descrSetImg();
+
+	Vk_DescriptorSetLayout& descrSetLayoutBuf();
+	Vk_DescriptorSetLayout& descrSetLayoutTex();
+	Vk_DescriptorSetLayout& descrSetLayoutImg();
+
+	u32 descriptorCount()	const;
 
 	Span<Vk_Sampler> vkSamplers();
 
@@ -46,28 +56,34 @@ private:
 protected:
 	Vk_DescriptorAllocator	_descrAlloc;
 
-	Vk_DescriptorSet _descrSetBuf;
-	Vk_DescriptorSet _descrSetTex;
-	Vk_DescriptorSet _descrSetImg;
-	Vk_DescriptorSet _descrSetSampler;
-
-	Vk_DescriptorSetLayout		_descrSetLayoutBuf;
-	Vk_DescriptorSetLayout		_descrSetLayoutTex;
-	Vk_DescriptorSetLayout		_descrSetLayoutImg;
-	Vk_DescriptorSetLayout		_descrSetLayoutSampler;
+	Vector<Vk_DescriptorSet,		s_kTypeCount> _descrSets;
+	Vector<Vk_DescriptorSetLayout,	s_kTypeCount> _descrSetLayouts;
 
 	Vector<Vk_Sampler, 64> _vkSamplers;
+
+	Vk_PipelineLayout _vkPipelineLayoutCommon;
 };
 
 template<size_t N> inline
 void 
 BindlessResources_Vk::getDescriptorSetLayoutTo(Vector<Vk_DescriptorSetLayout_T*, N>& o)
 {
-	o.emplace_back(_descrSetLayoutBuf.hnd());
-	o.emplace_back(_descrSetLayoutTex.hnd());
-	o.emplace_back(_descrSetLayoutImg.hnd());
-	o.emplace_back(_descrSetLayoutSampler.hnd());;
+	o.reserve(_descrSetLayouts.size());
+	for (auto& layout : _descrSetLayouts)
+	{
+		o.emplace_back(layout.hnd());
+	}
 }
+
+inline Vk_PipelineLayout& BindlessResources_Vk::vkPipelineLayoutCommon()	{ return _vkPipelineLayoutCommon; }
+
+inline Vk_DescriptorSet& BindlessResources_Vk::descrSetBuf()				{ return _descrSets[enumInt(BindlessResourceType::Buffer)]; }
+inline Vk_DescriptorSet& BindlessResources_Vk::descrSetTex()				{ return _descrSets[enumInt(BindlessResourceType::Texture)]; }
+inline Vk_DescriptorSet& BindlessResources_Vk::descrSetImg()				{ return _descrSets[enumInt(BindlessResourceType::Image)]; }
+
+inline Vk_DescriptorSetLayout& BindlessResources_Vk::descrSetLayoutBuf()	{ return _descrSetLayouts[enumInt(BindlessResourceType::Buffer)]; }
+inline Vk_DescriptorSetLayout& BindlessResources_Vk::descrSetLayoutTex()	{ return _descrSetLayouts[enumInt(BindlessResourceType::Texture)]; }
+inline Vk_DescriptorSetLayout& BindlessResources_Vk::descrSetLayoutImg()	{ return _descrSetLayouts[enumInt(BindlessResourceType::Image)]; }
 
 inline u32 BindlessResources_Vk::descriptorCount() const { return _descrAlloc.descriptorCount(); }
 

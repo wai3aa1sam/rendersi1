@@ -76,6 +76,8 @@ cbuffer rds_common : register(b0, space0)
 
 #define RDS_IMAGE_SPACE 	space4
 
+//#define RDS_CONSTANT_SPACE spacex		// define when compile
+
 //#define RDS_K_SAMPLER_COUNT 1		// set in compiler
 #define RDS_TEXTURE_BINDING RDS_CONCAT(t, RDS_K_SAMPLER_COUNT)
 

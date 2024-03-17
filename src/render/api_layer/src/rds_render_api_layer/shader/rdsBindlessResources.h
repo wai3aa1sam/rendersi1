@@ -25,6 +25,15 @@ struct BindlessResources_CreateDesc : public RenderResource_CreateDesc
 #endif // 0
 #if 1
 
+enum class BindlessResourceType
+{
+    Buffer,
+    Texture,
+    Image,
+    AccelerationStruct,
+    _kCount,
+};
+
 class BindlessResources : public RenderResource
 {
 public:
@@ -32,10 +41,7 @@ public:
     using CreateDesc    = BindlessResources_CreateDesc;
 
 public:
-    static constexpr SizeType s_kSetBuffer  = 2 + 0;
-    static constexpr SizeType s_kSetTexture = 2 + 1;
-    static constexpr SizeType s_kSetImage   = 2 + 2;
-    static constexpr SizeType s_kSetSampler = 2 + 3;
+    static constexpr SizeType s_kTypeCount = enumInt(BindlessResourceType::_kCount);
    
 public:
     static CreateDesc makeCDesc();
@@ -60,7 +66,8 @@ public:
     u32 findSamplerIndex(const SamplerState& samplerState) const;
 
 public:
-    SizeType samplerCount() const;
+    SizeType samplerCount()         const;
+    SizeType bindlessTypeCount()    const;
 
 protected:
     virtual void onCreate(const CreateDesc& cDesc);
@@ -235,7 +242,13 @@ protected:
     SizeType _size = 0;
 };
 
-inline BindlessResources::SizeType BindlessResources::samplerCount() const { return _samplerStateListTable.size(); }
+inline BindlessResources::SizeType BindlessResources::samplerCount()        const { return _samplerStateListTable.size(); }
+inline BindlessResources::SizeType BindlessResources::bindlessTypeCount()   const 
+{ 
+    bool isSupportAcceralteStruct = false; 
+    auto typeCount = enumInt(BindlessResourceType::_kCount); 
+    return isSupportAcceralteStruct ? typeCount : typeCount - 1; 
+}
 
 inline u32 BindlessResources::findSamplerIndex(const SamplerState& samplerState) const 
 { 

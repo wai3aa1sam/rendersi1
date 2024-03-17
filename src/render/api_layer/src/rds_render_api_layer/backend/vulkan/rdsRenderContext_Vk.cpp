@@ -275,10 +275,12 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	if (!_vkSwapchain.isValid())
 		return;
 
-	auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Prim");
+	auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "RenderContext_Vk::onCommit-Graphics");
 	
 	vkCmdBuf->beginRecord(vkGraphicsQueue(), VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	_gfxProfiler.beginProfile(vkCmdBuf->hnd(), "RenderContext_Vk::onCommit(RenderCommandBuffer)");
+
+	renderDeviceVk()->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
 	#if !RDS_TEST_DRAW_CALL
 
@@ -328,13 +330,25 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 		void commit(RenderGraph& rdGraph, RenderContext_Vk* rdCtxVk)
 		{
 			_rdCtxVk = rdCtxVk;
+			auto*	rdDevVk			= _rdCtxVk->renderDeviceVk();
+
+			_curVkCmdBufGraphics	= requestVkCmdBuf(RdgPassTypeFlags::Graphics, "");
+			//_curVkCmdBufCompute		= requestVkCmdBuf(RdgPassTypeFlags::Compute, "");
+
+			{
+				auto* vkCmdBuf = _curVkCmdBufGraphics;
+				_curVkCmdBufGraphics->beginRecord();
+				rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+			}
+
+			//_curVkCmdBufCompute->beginRecord();
 
 			for (RdgPass* pass : rdGraph.resultPasses())
 			{
-				//auto* entryPass = *rdGraph.passes().begin();
 				_commitPass(pass);
 			}
-			//_submit(_graphicsVkCmdBufsHnds, QueueTypeFlags::Graphics);
+
+			_curVkCmdBufGraphics->endRecord();
 		}
 
 		void addGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd)
@@ -365,40 +379,34 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			_recordCommands(pass, vkCmdBuf, vkRdPass, vkFramebuf);
 
 			// submit
-			if (isGraphicsQueue(pass))
+			/*if (isGraphicsQueue(pass) && !isMainVkCommandBuffer(vkCmdBuf))
 			{
 				addGraphicsVkCommandBufHnd(vkCmdBuf->hnd());
 			}
 			else
 			{
 				_notYetSupported(RDS_SRCLOC);
-			}
+			}*/
 
 			pass->_internal_commit();
 		}
 
 		bool _getVkResources(RdgPass* pass, Vk_CommandBuffer** outVkCmdBuf, Vk_RenderPass** outVkRdPass, Vk_Framebuffer** outVkFramebuf)
 		{
-			RdgPassTypeFlags	typeFlags		= pass->typeFlags();
+			RDS_TODO("later maybe support multi-thread record, then those pool should be locked");
+
 			Vk_RenderPassPool&	vkRdPassPool	= _rdCtxVk->_vkRdPassPool;
 			//Vk_FramebufferPool& vkFramebufPool	= _rdCtxVk->_vkFramebufPool;
 			Vk_FramebufferPool& vkFramebufPool = _rdCtxVk->vkRdFrame()._vkFramebufPool;
 
 			bool hasRenderPass	= pass->hasRenderPass();
 
-			if		(BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::Transfer))		
-			{ 
-				*outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY, pass->name());
-			}
-			else if	(BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::AsyncCompute))	
-			{ 
-				*outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Compute, VK_COMMAND_BUFFER_LEVEL_PRIMARY, pass->name()); 
-			}
+			bool isRequestNewCmdBuf = false;
+			RdgPassTypeFlags typeFlags = pass->typeFlags();
+			if (isRequestNewCmdBuf || BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::AsyncCompute) || BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::Transfer))
+				*outVkCmdBuf = requestVkCmdBuf(typeFlags, pass->name());
 			else
-			{
-				*outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, pass->name());
-			}
-			RDS_CORE_ASSERT(*outVkCmdBuf, "");
+				*outVkCmdBuf = _curVkCmdBufGraphics;
 
 			if (hasRenderPass)
 			{
@@ -418,7 +426,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 		void _recordCommands(RdgPass* pass, Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, Vk_Framebuffer* vkFramebuf)
 		{
-			bool hasRenderPass	= pass->hasRenderPass();
+			auto*	rdDevVk			= _rdCtxVk->renderDeviceVk();
+			bool	hasRenderPass	= pass->hasRenderPass();
 
 			Opt<Rect2f> rdTargetExtent = pass->renderTargetExtent();
 			if (!rdTargetExtent && hasRenderPass)
@@ -437,14 +446,19 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			queueProfiler = pass->isAsyncCompute() ? _rdCtxVk->computeQueueProfiler() : _rdCtxVk->graphicsQueueProfiler();
 			RDS_CORE_ASSERT(queueProfiler, "queueProfiler");
 
-			vkCmdBuf->setDebugName(passName, _rdCtxVk->renderDeviceVk());
-			vkCmdBuf->beginRecord();
-
-			//auto* rdDevVk = _rdCtxVk->renderDeviceVk();
-			RDS_TODO("remove");
-			_rdCtxVk->_isTestBindlessPass = StrUtil::isSame(pass->name().c_str(), "test_bindless");
+			bool isMainVkCmdBuf = isMainVkCommandBuffer(vkCmdBuf);
+			if (!isMainVkCmdBuf)
+			{
+				vkCmdBuf->beginRecord(passName, _rdCtxVk->renderDeviceVk());
+			}
+			else
+			{
+				vkCmdBuf->insertDebugLabel(passName);
+			}
 
 			queueProfiler->beginProfile(vkCmdBuf->hnd(), pass->name().c_str());
+
+			rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
 			_recordBarriers(pass, vkCmdBuf);
 
@@ -460,11 +474,14 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			{
 				_rdCtxVk->_dispatchCommand(_rdCtxVk, cmd, vkCmdBuf);
 			}
+
 			if (hasRenderPass)
 				vkCmdBuf->endRenderPass();
 
 			queueProfiler->endProfile(vkCmdBuf->hnd());
-			vkCmdBuf->endRecord();
+
+			if (!isMainVkCmdBuf)
+				vkCmdBuf->endRecord();
 
 			/*
 			maybe use sync pt level as each prim buffer, then submit between sync pt
@@ -479,40 +496,6 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 				auto* rsc = rscAccess.rsc;
 				auto type = rsc->type();
-
-				#if 0
-				if (rscAccess.state.isSameTransition())
-					continue;
-
-				switch (type)
-				{
-					case SRC::Buffer:	
-					{
-						//auto* rdgBuf	= sCast<RdgTexture*>(rsc);
-						//auto* bufVk		= sCast<RenderGpuBuffer_Vk*>(RdgResourceAccessor::access(rdgBuf));
-						if (rscAccess.state.srcUsage.buf != RenderGpuBufferTypeFlags::None)
-						{
-							vkCmdBuf->cmd_addMemoryBarrier(rscAccess.state.srcUsage.buf,	rscAccess.state.dstUsage.buf
-								, rscAccess.state.srcAccess,		rscAccess.state.dstAccess);
-						}
-					} break;
-
-					case SRC::Texture:	
-					{
-						auto* rdgTex	= sCast<RdgTexture*>(rsc);
-						auto* vkImgHnd	= Vk_Texture::getVkImageHnd(RdgResourceAccessor::access(rdgTex));
-
-						VkImageLayout	srcLayout	= Util::toVkImageLayout(rscAccess.state.srcUsage.tex, rscAccess.state.srcAccess);
-						VkImageLayout	dstLayout	= Util::toVkImageLayout(rscAccess.state.dstUsage.tex, rscAccess.state.dstAccess);
-
-						//vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, Util::toVkFormat(rdgTex->format()), srcLayout, dstLayout);
-						vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout, rdgTex->desc());
-					} break;
-
-					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
-				}
-
-				#else
 
 				if (!RenderResourceState::isTransitionNeeded(rscAccess.srcState, rscAccess.dstState))
 					continue;
@@ -543,9 +526,6 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
 				}
-
-				#endif // 0
-
 			}
 		}
 
@@ -605,7 +585,35 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			vkCmdBuf->endRecord();
 		}
 
-		Span<Vk_CommandBuffer_T*> graphicsVkCmdBufsHnds() { return _graphicsVkCmdBufsHnds; }
+		Vk_CommandBuffer* requestVkCmdBuf(RdgPassTypeFlags typeFlags, StrView name)
+		{
+			Vk_CommandBuffer* outVkCmdBuf = nullptr;
+
+			if		(BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::Transfer))		
+			{ 
+				outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY, name);
+			}
+			else if	(BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::AsyncCompute))	
+			{ 
+				outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Compute, VK_COMMAND_BUFFER_LEVEL_PRIMARY, name); 
+			}
+			else
+			{
+				outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, name);
+				addGraphicsVkCommandBufHnd(outVkCmdBuf->hnd());
+			}
+
+			RDS_CORE_ASSERT(outVkCmdBuf);
+
+			return outVkCmdBuf;
+		}
+
+		bool isMainVkCommandBuffer(Vk_CommandBuffer* vkCmdBuf) const
+		{
+			return vkCmdBuf == _curVkCmdBufGraphics || vkCmdBuf == _curVkCmdBufCompute;
+		}
+
+		//Span<Vk_CommandBuffer_T*> graphicsVkCmdBufsHnds() { return _graphicsVkCmdBufsHnds; }
 
 		static bool isGraphicsQueue(RdgPass* pass)
 		{
@@ -616,7 +624,9 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 	private:
 		RenderContext_Vk*				_rdCtxVk = nullptr;
-		Vector<Vk_CommandBuffer_T*, 64> _graphicsVkCmdBufsHnds;
+		//Vector<Vk_CommandBuffer_T*, 64> _graphicsVkCmdBufsHnds;
+		Vk_CommandBuffer*				_curVkCmdBufGraphics	= nullptr;
+		Vk_CommandBuffer*				_curVkCmdBufCompute		= nullptr;
 	};
 
 	RDS_PROFILE_SCOPED();
@@ -858,12 +868,6 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
 		
 		vkMtlPass->onBind(this, cmd->vertexLayout, cmdBuf);
-
-		RDS_TODO("remove");
-		if (vkMtlPass->vkPipelineLayout() && _isTestBindlessPass/*StrUtil::isSame(pass->name().c_str(), "test_bindless")*/)		// temp test
-		{
-			renderDeviceVk()->bindlessResourceVk().bind(vkCmdBufHnd, vkMtlPass->vkPipelineLayout().hnd());
-		}
 	}
 	else
 	{

@@ -136,6 +136,13 @@ Vk_CommandBuffer::beginRecord(VkCommandBufferUsageFlags usageFlags, const VkComm
 }
 
 void 
+Vk_CommandBuffer::beginRecord(const char* debugName, RenderDevice_Vk* rdDevVk, VkCommandBufferUsageFlags usageFlags, const VkCommandBufferInheritanceInfo* inheriInfo)
+{
+	setDebugName(debugName, rdDevVk);
+	beginRecord(_vkQueue, usageFlags, inheriInfo);
+}
+
+void 
 Vk_CommandBuffer::beginSecondaryRecord(Vk_Queue* vkQueue, Vk_RenderPass* vkRenderPass, Vk_Framebuffer* vkFramebuffer, u32 subpassIdx, VkCommandBufferUsageFlags usageFlags)
 {
 	VkCommandBufferInheritanceInfo cmdBufferInheritanceInfo = {};

@@ -109,25 +109,23 @@ ShaderCompiler_Vk::reflect(StrView outpath, ByteSpan spvBytes, ShaderStageFlag s
 	SpirvCompiler	compiler	= { u32Spv.data(), u32Spv.size() };
 
 	auto active			= compiler.get_active_interface_variables();
-	ShaderResources res = compiler.get_shader_resources(active);
+	ShaderResources rsc = compiler.get_shader_resources(active);
 	compiler.set_enabled_interface_variables(rds::move(active));
 
 	ShaderStageInfo outInfo;
 	outInfo.stageFlag = stage;
 
-	_reflect_inputs			(outInfo, compiler, res);
-	_reflect_outputs		(outInfo, compiler, res);
-	_reflect_constBufs		(outInfo, compiler, res);
-	_reflect_textures		(outInfo, compiler, res);
-	_reflect_samplers		(outInfo, compiler, res);
-	_reflect_storageBufs	(outInfo, compiler, res);
-	_reflect_storageImages	(outInfo, compiler, res);
+	_reflect_inputs			(outInfo, compiler, rsc);
+	_reflect_outputs		(outInfo, compiler, rsc);
+	_reflect_constBufs		(outInfo, compiler, rsc);
+	_reflect_textures		(outInfo, compiler, rsc);
+	_reflect_samplers		(outInfo, compiler, rsc);
+	_reflect_storageBufs	(outInfo, compiler, rsc);
+	_reflect_storageImages	(outInfo, compiler, rsc);
 
 	_reflect_threadGroups	(outInfo, compiler);
 
-	TempString dstpath;
-	fmtTo(dstpath, "{}.json", outpath);
-	JsonUtil::writeFileIfChanged(dstpath, outInfo, true);
+	_writeShaderStageInfo(outpath, outInfo);
 }
 
 void 
@@ -246,6 +244,7 @@ ShaderCompiler_Vk::_reflect_constBufs(ShaderStageInfo& outInfo, SpirvCompiler& c
 			dstVar.offset	= sCast<u32>(offset);
 			log("\t\tmemberName: {}, offset: {}, membSize: {}", memberName, offset, memberSize);
 		}
+		_appendStageUnionInfo_constBufs(_allStageUnionInfo, dst);
 	}
 	log("");
 }
@@ -284,6 +283,7 @@ ShaderCompiler_Vk::_reflect_textures(ShaderStageInfo& outInfo, SpirvCompiler& co
 
 			default: { RDS_THROW("invalid texture dimension"); } break;
 		}
+		_appendStageUnionInfo_textures(_allStageUnionInfo, dst);
 	}
 
 	log("");
@@ -314,6 +314,7 @@ ShaderCompiler_Vk::_reflect_samplers(ShaderStageInfo& outInfo, SpirvCompiler& co
 		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
 		log("Sampler name: {}, set: {}, binding: {}", name, set, binding);
+		_appendStageUnionInfo_samplers(_allStageUnionInfo, dst);
 	}
 
 	log("");
@@ -374,6 +375,7 @@ ShaderCompiler_Vk::_reflect_storageBufs	(ShaderStageInfo& outInfo, SpirvCompiler
 		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
 		log("StorageBuffer name: {}, set: {}, binding: {}", name, set, binding);
+		_appendStageUnionInfo_storageBufs(_allStageUnionInfo, dst);
 	}
 
 	log("");
@@ -404,6 +406,7 @@ ShaderCompiler_Vk::_reflect_storageImages	(ShaderStageInfo& outInfo, SpirvCompil
 		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
 
 		log("StorageImage name: {}, set: {}, binding: {}", name, set, binding);
+		_appendStageUnionInfo_storageImages(_allStageUnionInfo, dst);
 	}
 
 	log("");

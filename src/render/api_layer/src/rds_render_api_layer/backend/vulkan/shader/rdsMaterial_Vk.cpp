@@ -76,55 +76,61 @@ public:
 	{
 		destroy();
 
-		if (pass->vertexStage())	_hnds.emplace_back(pass->vkVertexStage_NoCheck()._vkDescriptorSetLayout.hnd());
-		if (pass->pixelStage())		_hnds.emplace_back(pass->vkPixelStage_NoCheck()._vkDescriptorSetLayout.hnd());
-		if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
-
-		if (StrUtil::isSame(TempString{Path::basename(pass->shader()->filename())}.c_str(), "test_bindless.shader"))
+		rdDevVk->bindlessResourceVk().getDescriptorSetLayoutTo(_setLayoutHnds);
+		if (auto* layoutHnd = pass->shaderPass()->vkDescriptorSetLayout().hnd())
 		{
-			rdDevVk->bindlessResourceVk().getDescriptorSetLayoutTo(_hnds);
+			_setLayoutHnds.emplace_back(layoutHnd);
 		}
+		//if (pass->vertexStage())	_hnds.emplace_back(pass->vkVertexStage_NoCheck()._vkDescriptorSetLayout.hnd());
+		//if (pass->pixelStage())		_hnds.emplace_back(pass->vkPixelStage_NoCheck()._vkDescriptorSetLayout.hnd());
+		//if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
 
-		RDS_CORE_ASSERT(!_hnds.is_empty(), "no descriptor set layout");
+		RDS_CORE_ASSERT(!_setLayoutHnds.is_empty(), "no descriptor set layout");
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		{
 			pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_hnds.size());			// Optional
-			pipelineLayoutInfo.pSetLayouts				= _hnds.data();						// set0, set1, set2, ...
+			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_setLayoutHnds.size());			// Optional
+			pipelineLayoutInfo.pSetLayouts				= _setLayoutHnds.data();						// set0, set1, set2, ...
 			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
 			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
 		}
 		out.create(&pipelineLayoutInfo, rdDevVk);
 	}
 
-	void createCompute(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDev)
+	void createCompute(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDevVk)
 	{
 		destroy();
 
-		if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
+		//if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
 
-		RDS_CORE_ASSERT(!_hnds.is_empty(), "no descriptor set layout");
+		rdDevVk->bindlessResourceVk().getDescriptorSetLayoutTo(_setLayoutHnds);
+		if (auto* layoutHnd = pass->shaderPass()->vkDescriptorSetLayout().hnd())
+		{
+			_setLayoutHnds.emplace_back(layoutHnd);
+		}
+
+		RDS_CORE_ASSERT(!_setLayoutHnds.is_empty(), "no descriptor set layout");
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		{
 			pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_hnds.size());			// Optional
-			pipelineLayoutInfo.pSetLayouts				= _hnds.data();						// set0, set1, set2, ...
+			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_setLayoutHnds.size());			// Optional
+			pipelineLayoutInfo.pSetLayouts				= _setLayoutHnds.data();						// set0, set1, set2, ...
 			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
 			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
 		}
-		out.create(&pipelineLayoutInfo, rdDev);
+		out.create(&pipelineLayoutInfo, rdDevVk);
 	}
 
 protected:
 	void destroy()
 	{
-		_hnds.clear();
+		_setLayoutHnds.clear();
 	}
 
 private:
-	Vector<Vk_DescriptorSetLayout_T*, s_kLocalSize> _hnds;
+	Vector<Vk_DescriptorSetLayout_T*, s_kLocalSize> _setLayoutHnds;
 };
 
 struct Vk_GraphicsPipelineCDesc : public Vk_CDesc_Base
@@ -479,113 +485,6 @@ protected:
 #endif // 0
 #if 1
 
-struct MaterialStage_Helper
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	template<class INFO, size_t N, class ALLOC>
-	static void 
-	createShaderResourceLayoutBinding(Vector<VkDescriptorSetLayoutBinding, N, ALLOC>& dst, const INFO& infos, VkDescriptorType type, ShaderStageFlag stageFlag)
-	{
-		using Util = Vk_RenderApiUtil;
-		for (const auto& paramInfo : infos)
-		{
-			if (type	== VK_DESCRIPTOR_TYPE_STORAGE_BUFFER			&& StrUtil::isSame(paramInfo.name.c_str(), "bufferTable")
-				|| type	== VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE				&& StrUtil::isSame(paramInfo.name.c_str(), "texture2DTable")
-				|| type == VK_DESCRIPTOR_TYPE_SAMPLER					&& StrUtil::isSame(paramInfo.name.c_str(), "samplerTable")
-				|| type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER	&& StrUtil::isSame(paramInfo.name.c_str(), "samplerTable")
-				)
-			{
-				continue;
-			}
-
-			auto& e = dst.emplace_back();
-			e.descriptorType		= type;
-			e.stageFlags			= Util::toVkShaderStageBit(stageFlag);
-			e.binding				= paramInfo.bindPoint;
-			e.descriptorCount		= paramInfo.bindCount;
-			e.pImmutableSamplers	= nullptr;
-
-			RDS_TODO("manual shader stage flag for optimize?");
-			e.stageFlags			= VK_SHADER_STAGE_ALL;
-
-			RDS_CORE_ASSERT(e.descriptorCount != 0, "");
-		}
-	}
-
-	template<class STAGE>
-	static void 
-	createVkDescriptorSetLayout(Vk_DescriptorSetLayout* dst, STAGE* stage, RenderDevice_Vk* rdDevVk)
-	{
-		Vector<VkDescriptorSetLayoutBinding, 64> bindings;
-		const ShaderStageInfo& info = stage->info();
-
-		SizeType bindingCount = info.bindingCount();
-
-		bindings.reserve(bindingCount);
-		createShaderResourceLayoutBinding(bindings, info.constBufs,		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			stage->shaderStage()->stageFlag());
-		
-		//createShaderResourceLayoutBinding(bindings, info.textures,		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,			stage->shaderStage()->stageFlag());
-		//createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_SAMPLER,					stage->shaderStage()->stageFlag());
-
-		createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,	stage->shaderStage()->stageFlag());
-		
-		createShaderResourceLayoutBinding(bindings, info.storageBufs,	VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,			stage->shaderStage()->stageFlag());
-		createShaderResourceLayoutBinding(bindings, info.storageImages,	VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,			stage->shaderStage()->stageFlag());
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = sCast<u32>(bindings.size());
-		layoutInfo.pBindings	= bindings.data();
-
-		dst->create(&layoutInfo, rdDevVk);
-	}
-
-
-	template<class STAGE> static 
-	void 
-	createVkDescriptorSet(STAGE* stage, RenderDevice_Vk* rdDevVk)
-	{
-		createVkDescriptorSetLayout(&stage->_vkDescriptorSetLayout, stage, rdDevVk);
-		stage->_vkFramedDescSets.resize(1);
-	}
-
-	template<class STAGE> static 
-	void 
-	bind(STAGE* stage, VkPipelineBindPoint vkBindPt, u32 set, Vk_PipelineLayout_T* vkPipelineLayout, RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
-	{
-		if (!stage->shaderStage())
-			return;
-
-		auto* mtl		= pass->material();
-		auto& shaderRsc = stage->shaderResources(mtl);
-
-		RDS_TODO("since the TransferContext is committed before RenderContext, using staging will not cause it failed to upload (cleared)");
-		shaderRsc.uploadToGpu();
-
-		auto& vkDescSet = vkDescriptorSet(stage, mtl);
-
-		RDS_TODO("rotate rsc, framed resource should in each shader resource, not in resources");
-
-		RDS_TODO("temporary solution for binding, also, DescriptorAllocator is leaking memory since the Vk_DescriptorSet (it's debugName) has not destroy?");
-
-		if (!vkDescSet || shaderRsc.isDirty() || true)
-		{
-			auto&	descriptorAlloc	= ctx->vkRdFrame().descriptorAllocator();
-			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
-			builder.build(vkDescSet, stage->_vkDescriptorSetLayout, shaderRsc);
-		}
-
-		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayout, set, 1, vkDescSet.hndArray(), 0, nullptr);
-	}
-
-	template<class STAGE>
-	static Vk_DescriptorSet&
-	vkDescriptorSet(STAGE* stage, Material_Vk* mtl)
-	{
-		return stage->_vkFramedDescSets[mtl->frameIdx()]; 
-	}
-};
 
 Vk_MaterialPass_VertexStage::Vk_MaterialPass_VertexStage()
 {
@@ -601,19 +500,17 @@ Vk_MaterialPass_VertexStage::create(MaterialPass_Vk* pass, ShaderStage* shaderSt
 {
 	RDS_WARN_ONCE("move vk set to material pass, union reflection info");
 	Base::create(pass, shaderStage);
-	Helper::createVkDescriptorSet(this, pass->renderDeviceVk());
 }
 
 void
 Vk_MaterialPass_VertexStage::destroy(MaterialPass_Vk* pass)
 {
-	_vkDescriptorSetLayout.destroy(pass->renderDeviceVk());
 }
 
 void 
-Vk_MaterialPass_VertexStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
+Vk_MaterialPass_PixelStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
 {
-	Helper::bind(this, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, pass->vkPipelineLayout().hnd(), ctx, vkCmdBuf, vtxLayout, pass);
+	//Helper::bind(this, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, pass->vkPipelineLayout().hnd(), ctx, vkCmdBuf, vtxLayout, pass);
 }
 
 const Vk_MaterialPass_VertexStage::Vk_VertexInputAttrs& 
@@ -657,20 +554,17 @@ void
 Vk_MaterialPass_PixelStage::create(MaterialPass_Vk* pass, ShaderStage* shaderStage)
 {
 	Base::create(pass, shaderStage);
-	using Helper = MaterialStage_Helper;
-	Helper::createVkDescriptorSet(this, pass->renderDeviceVk());
 }
 
 void 
 Vk_MaterialPass_PixelStage::destroy(MaterialPass_Vk* pass)
 {
-	_vkDescriptorSetLayout.destroy(pass->renderDeviceVk());
 }
 
 void 
-Vk_MaterialPass_PixelStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
+Vk_MaterialPass_VertexStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
 {
-	Helper::bind(this, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, pass->vkPipelineLayout().hnd(), ctx, vkCmdBuf, vtxLayout, pass);
+	//Helper::bind(this, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, pass->vkPipelineLayout().hnd(), ctx, vkCmdBuf, vtxLayout, pass);
 }
 
 void 
@@ -678,19 +572,18 @@ Vk_MaterialPass_ComputeStage::create	(MaterialPass_Vk* pass, ShaderStage* shader
 {
 	Base::create(pass, shaderStage);
 	using Helper = MaterialStage_Helper;
-	Helper::createVkDescriptorSet(this, pass->renderDeviceVk());
+	//Helper::createVkDescriptorSet(this, pass->renderDeviceVk());
 }
 
 void 
 Vk_MaterialPass_ComputeStage::destroy(MaterialPass_Vk* pass)
 {
-	_vkDescriptorSetLayout.destroy(pass->renderDeviceVk());
 }
 
 void 
 Vk_MaterialPass_ComputeStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, MaterialPass_Vk* pass)
 {
-	Helper::bind(this, VK_PIPELINE_BIND_POINT_COMPUTE, 0, pass->computeVkPipelineLayout().hnd(), ctx, vkCmdBuf, nullptr, pass);
+	//Helper::bind(this, VK_PIPELINE_BIND_POINT_COMPUTE, 0, pass->computeVkPipelineLayout().hnd(), ctx, vkCmdBuf, nullptr, pass);
 }
 
 #endif
@@ -733,6 +626,8 @@ MaterialPass_Vk::onCreate(Material* material, ShaderPass* shaderPass)
 		_computeStage = &_vkComputeStage;
 		createComputeVkPipeline(_computeVkPipeline);
 	}
+
+	_vkFramedDescrSets.resize(s_kFrameInFlightCount);
 }
 
 void 
@@ -768,8 +663,8 @@ MaterialPass_Vk::onDestroy()
 	_vkPipelineMap.clear();
 
 	_vkPipelineLayout.destroy(rdDevVk);
-	//_vkDescriptorSetLayout.destroy(rdDevVk);
-	//_vkFramedDescSets.clear();
+
+	_vkFramedDescrSets.clear();
 
 	Base::onDestroy();
 }
@@ -777,6 +672,7 @@ MaterialPass_Vk::onDestroy()
 void 
 MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf)
 {
+	auto* rdDevVk	= renderDeviceVk();
 	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
 	//auto* vkCmdBuf	= vkCtx->graphicsVkCmdBuf();
 	auto* vkRdPass	= vkCmdBuf->getVkRenderPass();
@@ -785,8 +681,28 @@ MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_Co
 
 	bindPipeline(vkCmdBuf, vkRdPass, vtxLayout);
 
-	_vkVertexStage.bind(vkCtx, vkCmdBuf, vtxLayout, this);
-	 _vkPixelStage.bind(vkCtx, vkCmdBuf, vtxLayout, this);
+	{
+		//auto* mtl		= pass->material();
+		auto& shaderRsc = shaderResources();
+
+		auto& vkDescrSet = vkDescriptorSet();
+		if (!vkDescrSet)
+		{
+			auto&	descriptorAlloc	= vkCtx->vkRdFrame().descriptorAllocator();
+			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
+			builder.buildBindless(vkDescriptorSet(), shaderPass()->vkDescriptorSetLayout(), shaderRsc.constBufs(), shaderRsc);
+		}
+
+		shaderRsc.uploadToGpu(rdDevVk);		// this will reset dirty
+
+		VkPipelineBindPoint vkBindPt			= VK_PIPELINE_BIND_POINT_GRAPHICS;
+		auto				vkPipelineLayoutHnd = vkPipelineLayout().hnd();
+		auto				set					= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());
+		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayoutHnd, set, 1, vkDescrSet.hndArray(), 0, nullptr);
+	}
+
+	//_vkVertexStage.bind(vkCtx, vkCmdBuf, vtxLayout, this);
+	// _vkPixelStage.bind(vkCtx, vkCmdBuf, vtxLayout, this);
 }
 
 void 

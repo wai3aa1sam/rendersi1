@@ -60,6 +60,20 @@ public:
 	
 	template<class STR> void toBinFilepath(STR& dst, StrView filename, StrView outpath, ShaderStageFlag stage);
 
+	void writeAllStageUnionInfo(StrView outpath);
+
+protected:
+
+	bool _appendUniqueSetBinding(u32 set, u32 binding, StrView name, bool isIgnoreSameBinding = false);
+	void _appendStageUnionInfo_constBufs	(ShaderStageInfo& outInfo, const ShaderStageInfo::ConstBuffer&		v);
+	void _appendStageUnionInfo_textures		(ShaderStageInfo& outInfo, const ShaderStageInfo::Texture&			v);
+	void _appendStageUnionInfo_samplers		(ShaderStageInfo& outInfo, const ShaderStageInfo::Sampler&			v);
+	void _appendStageUnionInfo_storageBufs	(ShaderStageInfo& outInfo, const ShaderStageInfo::StorageBuffer&	v);
+	void _appendStageUnionInfo_storageImages(ShaderStageInfo& outInfo, const ShaderStageInfo::StorageImage&		v);
+
+	void _writeShaderStageInfo(StrView outpath, ShaderStageInfo& info);
+
+
 protected:
 	virtual void onCompile(const CompileDesc& desc) = 0;
 
@@ -74,6 +88,8 @@ protected:
 
 protected:
 	const Option* _opt = nullptr;
+	VectorMap<u32, VectorMap<u32, TempString> > _setBindingTable;
+	ShaderStageInfo								_allStageUnionInfo;
 };
 
 inline const ShaderCompiler::Option& ShaderCompiler::opt() const { return *_opt; }

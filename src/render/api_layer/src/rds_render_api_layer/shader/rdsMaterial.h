@@ -155,7 +155,7 @@ Material::_setTexParam(StrView name, TEX* v, const SamplerState& samplerState)
 	setParam(name, v->bindlessHandle().getResourceIndex());
 
 	TempString samplerName;
-	fmtTo(samplerName, "_rds_{}_sampler", name);
+	ShaderResources::getSamplerNameTo(samplerName, name);
 	setParam(samplerName, samplerState);
 }
 

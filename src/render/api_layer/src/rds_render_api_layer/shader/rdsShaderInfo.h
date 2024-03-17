@@ -154,10 +154,27 @@ public:
 	static constexpr SizeType s_kStorageImageLocalSize	= 3;
 
 public:
-	void load(StrView filename_)
+
+	void create(StrView filename_)
 	{
+		destroy();
+
 		filename = filename_;
 		JsonUtil::readFile(filename, *this);
+	}
+
+	void destroy()
+	{
+		filename.clear();
+		stageFlag = ShaderStageFlag::None;
+
+		inputs.clear();
+		outputs.clear();
+		constBufs.clear();
+		textures.clear();
+		samplers.clear();
+		storageBufs.clear();
+		storageImages.clear();
 	}
 
 	SizeType bindingCount() const
@@ -240,11 +257,18 @@ public:
 		using Base = ShaderResource;
 
 	public:
-		u16	bindSet		= 0;
-		u16	bindPoint	= 0;
-		u16	bindCount	= 0;
+		u16		bindSet		= 0;
+		u16		bindPoint	= 0;
+		u16		bindCount	= 0;
+		//bool	isBindless	: 1;
 
 	public:
+		ShaderResourceParam()
+			//: isBindless(false)
+		{
+
+		}
+
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
@@ -252,6 +276,12 @@ public:
 			RDS_NAMED_FIXED_IO(se, bindSet);
 			RDS_NAMED_FIXED_IO(se, bindPoint);
 			RDS_NAMED_FIXED_IO(se, bindCount);
+			//RDS_NAMED_FIXED_IO(se, isBindless);
+		}
+
+		bool isBindlessResource() const
+		{
+			return true; // isBindless;
 		}
 	};
 
@@ -309,11 +339,6 @@ public:
 			Base::onJsonIo(se);
 			RDS_NAMED_FIXED_IO(se, dataType);
 		}
-
-		bool isBindlessResource() const
-		{
-			return StrUtil::isSame(name.c_str(), "texture2DTable");
-		}
 	};
 
 	struct Sampler : public ShaderResourceParam
@@ -350,6 +375,11 @@ public:
 		{
 			Base::onJsonIo(se);
 		}
+
+		/*bool isBindlessResource() const
+		{
+			return true;
+		}*/
 	};
 
 	struct StorageImage : public ShaderResourceParam
@@ -415,6 +445,9 @@ public:
 
 	RenderState renderState;
 
+	// --- no need to serialize
+	ShaderStageInfo	allStageUnionInfo;
+
 public:
 	template<class JSON_SE>
 	void onJsonIo(JSON_SE& se)
@@ -438,13 +471,13 @@ public:
 	using Stage		= ShaderStageInfo;
 
 public:
-	static constexpr SizeType s_kShaderStageCount = enumInt(ShaderStageFlag::_kCount);
+	static constexpr SizeType s_kShaderStageCount	= enumInt(ShaderStageFlag::_kCount);
 	static constexpr SizeType s_kLocalPassSize		= 2;
-	static constexpr SizeType s_kLocalPropSize	= 12;
+	static constexpr SizeType s_kLocalPropSize		= 12;
 
 public:
-	Vector<Prop, s_kLocalPropSize> props;
-	Vector<Pass, s_kLocalPassSize> passes;
+	Vector<Prop, s_kLocalPropSize>	props;
+	Vector<Pass, s_kLocalPassSize>	passes;
 
 public:
 	void clear()
@@ -459,7 +492,6 @@ public:
 	{
 		RDS_NAMED_FIXED_IO(se, props);
 		RDS_NAMED_FIXED_IO(se, passes);
-		//RDS_NAMED_FIXED_IO(se, stages);
 	}
 };
 

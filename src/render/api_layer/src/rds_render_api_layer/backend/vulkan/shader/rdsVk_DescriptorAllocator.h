@@ -110,17 +110,20 @@ public:
 
 public:
 	void createLayout(Vk_DescriptorSetLayout& layout, MaterialPass_Stage* stage);
-	bool build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, const ShaderResources& shaderRscs);
+	bool build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs);
+	bool buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources::ConstBuffersView constBufsView, ShaderResources& shaderRscs);
 
 protected:
-	void bindConstantBuffer	(Vk_DescriptorSet& dstSet, const ConstBuffer&	constBuf,		VkShaderStageFlags stageFlag);
-	void bindTexture		(Vk_DescriptorSet& dstSet, const TexParam&		texParam,		VkShaderStageFlags stageFlag);
-	void bindSampler		(Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam,	VkShaderStageFlags stageFlag);
-	void bindBuffer			(Vk_DescriptorSet& dstSet, const BufferParam&	bufParam,		VkShaderStageFlags stageFlag);
+	void clear();
 
-	void bindCombinedTexture(Vk_DescriptorSet& dstSet, const TexParam&		texParam,		VkShaderStageFlags stageFlag);
+	void bindConstantBuffer	(Vk_DescriptorSet& dstSet, ConstBuffer&		constBuf,		VkShaderStageFlags stageFlag);
+	void bindTexture		(Vk_DescriptorSet& dstSet, TexParam&		texParam,		VkShaderStageFlags stageFlag);
+	void bindSampler		(Vk_DescriptorSet& dstSet, SamplerParam&	samplerParam,	VkShaderStageFlags stageFlag);
+	void bindBuffer			(Vk_DescriptorSet& dstSet, BufferParam&		bufParam,		VkShaderStageFlags stageFlag);
 
-	void bindTextureWithSampler(Vk_DescriptorSet& dstSet, const TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag);
+	void bindCombinedTexture(Vk_DescriptorSet& dstSet, TexParam&		texParam,		VkShaderStageFlags stageFlag);
+
+	void bindTextureWithSampler(Vk_DescriptorSet& dstSet, TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag);
 
 	void _bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam, Vk_Sampler_T* samplerHnd,	VkShaderStageFlags stageFlag);
 
