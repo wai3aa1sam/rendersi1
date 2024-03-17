@@ -332,7 +332,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			_rdCtxVk = rdCtxVk;
 			auto*	rdDevVk			= _rdCtxVk->renderDeviceVk();
 
-			_curVkCmdBufGraphics	= requestVkCmdBuf(RdgPassTypeFlags::Graphics, "");
+			_curVkCmdBufGraphics	= requestVkCmdBuf(RdgPassTypeFlags::Graphics, fmtAs_T<TempString>("{}-main_graphics", rdGraph.name()));
 			//_curVkCmdBufCompute		= requestVkCmdBuf(RdgPassTypeFlags::Compute, "");
 
 			{

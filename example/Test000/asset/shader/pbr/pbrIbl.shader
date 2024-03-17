@@ -44,24 +44,20 @@ struct PixelIn
     float3 normal       : NORMAL0;
 };
 
-RDS_TEXTURE_2D_1(brdfLut);
-RDS_TEXTURE_CUBE_2(irradianceEnvMap);
-RDS_TEXTURE_CUBE_3(prefilteredEnvMap);
+RDS_TEXTURE_2D(brdfLut);
+RDS_TEXTURE_CUBE(irradianceEnvMap);
+RDS_TEXTURE_CUBE(prefilteredEnvMap);
 
 static const float s_kMaxLod = 9.0;
 
-cbuffer PbrParam
-{
-    float   roughness;
-    float3  posLight;
-    float3  colorLight;
-    float3  color;
-    float   ao;
-    float   albedo;
-    float   metallic;
-
-    float3 colorSpec;
-};
+float   roughness;
+float3  posLight;
+float3  colorLight;
+float3  color;
+float   ao;
+float   albedo;
+float   metallic;
+float3  colorSpec;
 
 PixelIn vs_main(VertexIn i)
 {
@@ -103,7 +99,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
     o = Pbr_basic_lighting(surface, dirView, posLight, colorLight);
 
     float  dotNV            = max(dot(surface.normal, dirView), 0.0);
-    float3 irradiance       = RDS_SAMPLE_TEXTURE_CUBE(irradianceEnvMap, surface.normal).rgb;
+    float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(irradianceEnvMap, surface.normal).rgb;
     float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(prefilteredEnvMap, dirRefl, surface.roughness * s_kMaxLod).rgb;
     float2 brdf             = RDS_TEXTURE_2D_SAMPLE(brdfLut, float2(dotNV, surface.roughness)).rg;
 

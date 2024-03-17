@@ -87,6 +87,8 @@ ShaderResources::uploadToGpu(RenderDevice* rdDev)
 	const auto& constBufInfos = info().constBufs;
 	auto src = constBufs();
 	bool isDirty = !constBufInfos.is_empty() && !src.is_empty() && src[0]._isDirty;
+	if (!isDirty)
+		return;
 
 	#if 0
 	auto copyCpuBufToNextFrame =

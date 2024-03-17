@@ -67,7 +67,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
     float3 o;
 	
 	float2 uv = sampleSphericalMap(normalize(i.positionOS));
-    o = RDS_SAMPLE_TEXTURE_2D(equirectangularMap, uv).rgb;
+    o = RDS_TEXTURE_2D_SAMPLE(equirectangularMap, uv).rgb;
 
     return float4(o, 1.0);
 }

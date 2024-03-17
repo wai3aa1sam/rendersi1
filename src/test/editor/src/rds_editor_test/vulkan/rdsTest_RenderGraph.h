@@ -848,8 +848,9 @@ public:
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 
-				static Tuple3f posLight		= Tuple3f{0.0f, 20.0f, 0.0f};
+				#if 1
 
+				static Tuple3f posLight		= Tuple3f{0.0f, 20.0f, 0.0f};
 
 				static Tuple3f colorLight	= Tuple3f{0.8f, 0.2f, 0.1f};
 				static Tuple3f color		= Tuple3f{0.2f, 0.4f, 0.6f};
@@ -858,7 +859,7 @@ public:
 				static float   ao			= 0.2f;
 				static float   albedo		= 0.2f;
 				static float   metallic		= 1.0f;
-				#if 1
+
 				Function<void(Material*, int i)> fn  
 
 					= [&](Material* mtl, int i)
@@ -869,12 +870,12 @@ public:
 
 						{
 							{
-								ImGui::Begin("test pbr");
+								//ImGui::Begin("test pbr");
 
 								auto dragFloat3 = [](Material* mtl, const char* name, float* v)
 									{
 										Tuple3f temp {v[0], v[1], v[2]};
-										ImGui::DragFloat3(name, v, 0.01f);
+										//ImGui::DragFloat3(name, v, 0.01f);
 										mtl->setParam(name, temp);
 										//reinCast<Tuple3f&>(*v) = temp;
 									};
@@ -882,7 +883,7 @@ public:
 								auto dragFloat = [](Material* mtl, const char* name, float* v)
 									{
 										float temp  = *v;
-										ImGui::DragFloat(name, v, 0.01f);
+										//ImGui::DragFloat(name, v, 0.01f);
 										mtl->setParam(name, temp);
 										//reinCast<float&>(*v) = temp;
 									};
@@ -897,23 +898,30 @@ public:
 								dragFloat	(mtl, "albedo",		&albedo);
 								dragFloat	(mtl, "metallic",	&metallic);
 
-								ImGui::End();
+								//ImGui::End();
 							}
 						}
 					};
-				#endif // 0
 
-				scene()->drawScene(rdReq, mtl, &fn);
-
-				
-
+				if (false)
 				{
 					Mat4f matModel = Mat4f::s_translate(Vec3f{posLight});
 					rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, _testMtl, matModel);
 				}
+
+				#else
+
+				Function<void(Material*, int i)> fn
+					= [&](Material* mtl, int i)
+					{
+
+					};
+
+				#endif // 0
+
+				scene()->drawScene(rdReq, mtl, &fn);
 			}
 		);
-
 
 		if (outTexDepth)
 		{
@@ -930,55 +938,11 @@ public:
 	
 	RdgTextureHnd testBindless(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
 	{
-		static float   rds_test_1	= {};
-		static float   rds_test_3	= {};
-		static float   rds_test_5	= {};
-
-		auto* mtl = _mtlTestBindless.ptr();
-		
-		{
-			ImGui::Begin("test bindless");
-
-			auto dragFloat3 = [&](Material* mtl, const char* name, float* v)
-				{
-					Tuple3f temp {v[0], v[1], v[2]};
-					ImGui::DragFloat3(name, v);
-					mtl->setParam(name, temp);
-					//reinCast<Tuple3f&>(*v) = temp;
-				};
-
-			auto dragAndUploadFloat4 = [&](Material* mtl, const char* name, float* v, RenderGpuBuffer* buf)
-				{
-					Tuple4f temp {v[0], v[1], v[2], v[4]};
-					ImGui::DragFloat4(name, v, 0.01f);
-					mtl->setParam(name, temp);
-					buf->uploadToGpu(ByteSpan{(u8*)temp.data, sizeof(Tuple4f)});
-					//reinCast<Tuple3f&>(*v) = temp;
-				};
-
-
-			auto dragFloat = [&](Material* mtl, const char* name, float* v)
-				{
-					float temp  = *v;
-					ImGui::DragFloat(name, v);
-					mtl->setParam(name, temp);
-					//reinCast<float&>(*v) = temp;
-				};
-
-			dragFloat	(mtl, "rds_test_1",		&rds_test_1);
-			dragFloat	(mtl, "rds_test_3",		&rds_test_3);
-			dragFloat	(mtl, "rds_test_5",		&rds_test_5);
-
-			static Vector<u8, 256> data;
-			data.resize(sizeof(TestBindlessBuffer));
-			dragAndUploadFloat4(mtl, "color", (float*)data.data(), _testBindlessBuffer);
-			_testBindlessBuffer->setDebugName("_testBindlessBuffer");
-			ImGui::End();
-		}
-
 		auto*	rdGraph		= outRdGraph;
 		auto*	rdCtx		= _rdCtx;
 		auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
+
+		auto* mtl = _mtlTestBindless.ptr();
 
 		RdgTextureHnd texPbrColor	= rdGraph->createTexture("test_bindless_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 		RdgTextureHnd texPbrDepth	= rdGraph->createTexture("test_bindless_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
@@ -994,8 +958,6 @@ public:
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
-
-				
 
 				Function<void(Material*, int i)> fn  
 
@@ -1028,6 +990,8 @@ public:
 			[=](RenderRequest& rdReq)
 			{
 				_presentMtl->setParam("texture0",			presentTex.texture2D());
+				//_presentMtl->setParam("texture0",			_uvCheckerTex);
+
 				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, 1.0f, 1.0f}));
 			}
 		);
@@ -1059,6 +1023,69 @@ public:
 	void dump(StrView filename = "debug/render_graph")
 	{
 		_rdGraph.dumpGraphviz(filename);
+	}
+
+	void drawUi()
+	{
+		// test bindless
+		{
+			static float   rds_test_1	= {};
+			static float   rds_test_3	= {};
+			static float   rds_test_5	= {};
+
+			auto* mtl = _mtlTestBindless.ptr();
+
+			{
+				auto dragFloat3 = [&](Material* mtl, const char* name, float* v)
+					{
+						Tuple3f temp {v[0], v[1], v[2]};
+						ImGui::DragFloat3(name, v);
+						mtl->setParam(name, temp);
+						//reinCast<Tuple3f&>(*v) = temp;
+					};
+
+				auto dragAndUploadFloat4 = [&](Material* mtl, const char* name, float* v, RenderGpuBuffer* buf)
+					{
+						Tuple4f temp {v[0], v[1], v[2], v[4]};
+						ImGui::DragFloat4(name, v, 0.01f);
+						mtl->setParam(name, temp);
+						buf->uploadToGpu(ByteSpan{(u8*)temp.data, sizeof(Tuple4f)});
+						//reinCast<Tuple3f&>(*v) = temp;
+					};
+
+
+				auto dragFloat = [&](Material* mtl, const char* name, float* v)
+					{
+						float temp  = *v;
+						ImGui::DragFloat(name, v);
+						mtl->setParam(name, temp);
+						//reinCast<float&>(*v) = temp;
+					};
+
+				static Vector<u8, 256> data;
+				data.resize(sizeof(TestBindlessBuffer));
+				CallOnce co;
+				co.callOnce([&]()
+					{
+						auto color = reinCast<Color4f*>(data.data());
+						color->r = 1.0f;
+						color->g = 1.0f;
+						color->b = 1.0f;
+						color->a = 1.0f;
+					});
+
+				ImGui::Begin("test bindless");
+				// 
+				//dragFloat(mtl, "rds_test_1", &rds_test_1);
+				//dragFloat(mtl, "rds_test_3", &rds_test_3);
+				//dragFloat(mtl, "rds_test_5", &rds_test_5);
+
+				dragAndUploadFloat4(mtl, "color", (float*)data.data(), _testBindlessBuffer);
+				ImGui::End();
+
+				_testBindlessBuffer->setDebugName("_testBindlessBuffer");
+			}
+		}
 	}
 
 	TestScene* scene() { return &_scene; }

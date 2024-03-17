@@ -59,8 +59,8 @@ float4 ps_main(PixelIn i) : SV_TARGET
     float3 o;
 	float3 uv = i.uv;
 	//uv.y = -uv.y;
-    o = RDS_SAMPLE_TEXTURE_CUBE(skybox, uv).rgb;
-    //o.rgb = RDS_TEXTURE_CUBE_SAMPLE_LOD(skybox, uv, 1.2);
+    //o = RDS_TEXTURE_CUBE_SAMPLE(skybox, uv).rgb;
+    o.rgb = RDS_TEXTURE_CUBE_SAMPLE_LOD(skybox, uv, 0).rgb;
 	
     
     //o = ToneMapping_reinhard(o);

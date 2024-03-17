@@ -31,6 +31,8 @@ Shader {
 }
 #endif
 
+#include "common/rdsCommon.hlsl"
+
 struct VertexIn
 {
     float4 positionOS   : SV_POSITION;
@@ -48,60 +50,18 @@ struct PixelIn
     float3 normal       : NORMAL0;
 };
 
-cbuffer rds_common : register(b0, space0)
-{
-	float4x4	rds_matrix_model;
-	float4x4	rds_matrix_view;
-	float4x4	rds_matrix_proj;
-	float4x4	rds_matrix_mvp;
-};
 
 #define RDS_RegisterUniform(name, structure) \
 	cbuffer name structure; \
 	uint 	name ## idx; \
 
-#if	1
-
-#define RDS_CONCAT_IMPL(A, B) A ## B
-#define RDS_CONCAT(A, B) RDS_CONCAT_IMPL(A, B)
-
-// typedef uint64_t u64; this is ok
-#define u64 uint64_t
-
-#define RDS_BUFFER_SPACE 	space2
-
-#define RDS_TEX_2D_SPACE 	space3
-#define RDS_TEX_CUBE_SPACE 	RDS_TEX_2D_SPACE
-#define RDS_SAMPLER_SPACE 	RDS_TEX_2D_SPACE
-
-#define RDS_IMAGE_SPACE 	space4
-
-//#define RDS_CONSTANT_SPACE spacex		// define when compile
-
-//#define RDS_K_SAMPLER_COUNT 1		// set in compiler
-#define RDS_TEXTURE_BINDING RDS_CONCAT(t, RDS_K_SAMPLER_COUNT)
-
-// ByteAddressBuffer
-ByteAddressBuffer 	bufferTable		[] 						: register(t0, RDS_BUFFER_SPACE);
-
-SamplerState    	samplerTable	[RDS_K_SAMPLER_COUNT] 	: register(s0, 					RDS_SAMPLER_SPACE);
-Texture2D 			texture2DTable	[]  					: register(RDS_TEXTURE_BINDING, RDS_TEX_2D_SPACE);
-TextureCube 		textureCubeTable[]  					: register(RDS_TEXTURE_BINDING, RDS_TEX_CUBE_SPACE);
-
-RWTexture2D<float>	image2DTable	[]						: register(u0, RDS_IMAGE_SPACE);
-
-#endif
-
-#define RDS_SAMPLER_NAME(TEX_NAME) RDS_CONCAT(RDS_CONCAT(_rds_, TEX_NAME), _sampler)
-#define RDS_TEXTURE_2D(NAME) uint NAME; uint RDS_SAMPLER_NAME(NAME)
-
 struct ResourceHandle
 {
 	RDS_TEXTURE_2D(texture0);
-	uint testBufferIndex;
+	RDS_BUFFER(testBufferIndex);
 };
-
-ConstantBuffer<ResourceHandle> rscHnd : register(b1, space1);
+RDS_CONSTANT_BUFFER(ResourceHandle, rscHnd, 1);
+//ConstantBuffer<ResourceHandle> rscHnd : register(b1, RDS_CONSTANT_BUFFER_SPACE);
 
 struct TestBuffer
 {
@@ -121,7 +81,6 @@ T loadTexture(float2 uv)
 	T o = texture2DTable[rscHnd.texture0].Sample(samplerTable[rscHnd.RDS_SAMPLER_NAME(texture0)], uv);
 	return o;
 }
-
 
 PixelIn vs_main(VertexIn i)
 {

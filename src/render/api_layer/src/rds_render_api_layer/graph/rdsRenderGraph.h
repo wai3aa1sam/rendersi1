@@ -207,6 +207,7 @@ public:
 	RdgTextureHnd	findTexture(StrView name);
 	RdgBufferHnd	findBuffer (StrView name);
 
+public:
 	Span<Pass*>				resultPasses();
 	Span<Pass*>				allPasses();
 
@@ -216,6 +217,8 @@ public:
 	Span<ExportedBuffer > exportedBuffers();
 
 	RenderContext* renderContext();
+
+	const String& name() const;
 
 protected:
 	template<class T> typename RdgResourceTraits<T>::Hnd createRdgResource(StrView name, const RdgResource_CreateDescT<T>& cDesc);
@@ -307,6 +310,8 @@ RenderGraph::deleteT(T* p)
 }
 
 inline RenderContext* RenderGraph::renderContext() { return _rdCtx; }
+
+inline const String& RenderGraph::name() const { return _name; }
 
 inline RdgResourcePool& RenderGraph::resourcePool()						{ return renderGraphFrame().rscPool; }
 inline RenderGraph::RenderGraphFrame& RenderGraph::renderGraphFrame()	{ return _rdgFrames[_frameIdx]; }

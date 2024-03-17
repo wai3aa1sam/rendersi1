@@ -391,7 +391,7 @@ public:
 		//uploadTestMultiBuf();
 
 		{
-			//_testRenderGraph.update();
+			_testRenderGraph.update();
 			//_testRenderGraph.dump();
 		}
 	}
@@ -415,7 +415,8 @@ public:
 		rdCtx.beginRender();
 
 		//_testRenderGraph.prepare();
-		_testRenderGraph.update();	// temporary, should move to Update() loop
+		//_testRenderGraph.update();	// temporary, should move to Update() loop
+		_testRenderGraph.drawUi();
 		_testRenderGraph.commit();
 
 		// drawUI() will upload vertex, therefore must before tsfReq.commit(), _rdReq must be framed, as ui buffer may be in use 

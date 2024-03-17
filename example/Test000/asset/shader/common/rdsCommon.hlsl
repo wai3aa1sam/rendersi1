@@ -7,12 +7,93 @@ references:
 ~ http://filmicgames.com/archives/75
 */
 
+#include "rdsMarco_Common.hlsl"
+
+#if 0
+#pragma mark --- rdsCommonDefine-Impl ---
+#endif
+#if 1
+
+// typedef uint64_t u64; // this is ok
+#define u64 uint64_t
+
+#define RDS_BINDLESS 1
+#if RDS_BINDLESS
+
+    /* 
+    --- define space for bindless type
+    */
+    #define RDS_BUFFER_SPACE 	space0
+
+    #define RDS_TEX_2D_SPACE 	space1
+    #define RDS_TEX_CUBE_SPACE 	RDS_TEX_2D_SPACE
+    #define RDS_SAMPLER_SPACE 	RDS_TEX_2D_SPACE
+
+    #define RDS_IMAGE_SPACE 	space2
+
+    //#define RDS_CONSTANT_BUFFER_SPACE spacex		// define when compile
+
+    //#define RDS_K_SAMPLER_COUNT 1		// set in compiler
+    #define RDS_TEXTURE_BINDING RDS_CONCAT(t, RDS_K_SAMPLER_COUNT)
+
+    /* 
+    --- define bindless type
+    */
+    // ByteAddressBuffer
+    ByteAddressBuffer 	bufferTable		[] 						: register(t0, RDS_BUFFER_SPACE);
+
+    SamplerState    	samplerTable	[RDS_K_SAMPLER_COUNT] 	: register(s0, 					RDS_SAMPLER_SPACE);
+    Texture2D 			texture2DTable	[]  					: register(RDS_TEXTURE_BINDING, RDS_TEX_2D_SPACE);
+    TextureCube 		textureCubeTable[]  					: register(RDS_TEXTURE_BINDING, RDS_TEX_CUBE_SPACE);
+
+    RWTexture2D<float>	image2DTable	[]						: register(u0, RDS_IMAGE_SPACE);
+
+    /* 
+    --- define Texture
+    */
+    #define RDS_SAMPLER_NAME(TEX_NAME) RDS_CONCAT(RDS_CONCAT(_rds_, TEX_NAME), _sampler)
+    #define RDS_TEXTURE_2D(NAME)    uint NAME; uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_CUBE(NAME)  uint NAME; uint RDS_SAMPLER_NAME(NAME)
+
+    #define RDS_SAMPLER_GET(NAME)       samplerTable[RDS_SAMPLER_NAME(NAME)]
+    #define RDS_TEXTURE_2D_GET(NAME)    texture2DTable[NAME]
+    #define RDS_TEXTURE_CUBE_GET(NAME)  textureCubeTable[NAME]
+
+    #define RDS_TEXTURE_2D_SAMPLE(TEX, UV)                  RDS_TEXTURE_2D_GET(TEX).Sample(RDS_SAMPLER_GET(TEX), UV)
+    #define RDS_TEXTURE_2D_SAMPLE_LOD(TEX, UV, LOD)         RDS_TEXTURE_2D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), UV, LOD)
+    #define RDS_TEXTURE_2D_GET_DIMENSIONS(TEX, OUT_WH)      RDS_TEXTURE_2D_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+
+    #define RDS_TEXTURE_CUBE_SAMPLE(TEX, UV)                RDS_TEXTURE_CUBE_GET(TEX).Sample(RDS_SAMPLER_GET(TEX), UV)
+    #define RDS_TEXTURE_CUBE_SAMPLE_LOD(TEX, UV, LOD)       RDS_TEXTURE_CUBE_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), UV, LOD)
+    #define RDS_TEXTURE_CUBE_GET_DIMENSIONS(TEX, OUT_WH)    RDS_TEXTURE_CUBE_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+
+    /* 
+    --- define ConstantBuffer Util
+    */
+    #define RDS_CONSTANT_BUFFER_BINDING(N) RDS_CONCAT(b, N)
+    #define RDS_CONSTANT_BUFFER(TYPE, NAME, BINDING) ConstantBuffer<TYPE> NAME : register(RDS_CONSTANT_BUFFER_BINDING(BINDING), RDS_CONSTANT_BUFFER_SPACE)
+    
+    /* 
+    --- define Buffer
+    */
+
+    #define RDS_BUFFER(NAME)        uint NAME
+    #define RDS_BUFFER_GET(NAME)    bufferTable[NAME]
+
+
+#else
+    #error "only support for bindless"
+#endif
+
+#endif
+
+
 #if 0
 #pragma mark --- rds_global_variable-Impl ---
 #endif
 #if 1
 
-cbuffer rds_CommonParam
+cbuffer rds_CommonParam : register(RDS_CONSTANT_BUFFER_BINDING(15), RDS_CONSTANT_BUFFER_SPACE)
 {
     float4x4	rds_matrix_model;
     float4x4	rds_matrix_view;
@@ -21,6 +102,8 @@ cbuffer rds_CommonParam
 
     float3      rds_camera_pos;
 };
+
+//RDS_CONSTANT_BUFFER(rds_CommonParam, );
 
 struct rds_Surface 
 {
@@ -43,59 +126,19 @@ static const float rds_pi = 3.14159265359;
 #endif
 
 #if 0
-#pragma mark --- Texture-Impl ---
+#pragma mark --- Util-Impl ---
 #endif
 #if 1
 
-#define RDS_GET_SAMPLER(NAME)       _rds_ ## NAME ## _sampler
-#define RDS_GET_TEXTURE_2D(NAME)    NAME
-#define RDS_GET_TEXTURE_CUBE(NAME)  NAME
+#define RDS_DECLARE_PT_SIZE(var) 	[[vk::builtin("PointSize")]] float var : PSIZE
+#define RDS_SET_PT_SIZE(var, v) 	var = v
 
-#define RDS_TEXTURE_2D(NAME) \
-Texture2D       RDS_GET_TEXTURE_2D(NAME) 	: register(t1, space1); \
-SamplerState    RDS_GET_SAMPLER(NAME) 	    : register(s1, space1) \
-// ---
+#endif
 
-#define RDS_TEXTURE_CUBE(NAME) \
-TextureCube     RDS_GET_TEXTURE_CUBE(NAME) 	: register(t1, space1); \
-SamplerState    RDS_GET_SAMPLER(NAME) 	    : register(s1, space1) \
-// ---
-
-#define RDS_TEXTURE_2D_N(NAME, T, S) \
-Texture2D       RDS_GET_TEXTURE_2D(NAME) 	: register(T, space1); \
-SamplerState    RDS_GET_SAMPLER(NAME) 	    : register(S, space1) \
-// ---
-
-#define RDS_TEXTURE_CUBE_N(NAME, T, S) \
-TextureCube     RDS_GET_TEXTURE_CUBE(NAME) 	: register(T, space1); \
-SamplerState    RDS_GET_SAMPLER(NAME) 	    : register(S, space1) \
-// ---
-
-#define RDS_TEXTURE_2D_1(NAME)      RDS_TEXTURE_2D_N(NAME, t1, s1)
-#define RDS_TEXTURE_2D_2(NAME)      RDS_TEXTURE_2D_N(NAME, t2, s2)
-#define RDS_TEXTURE_2D_3(NAME)      RDS_TEXTURE_2D_N(NAME, t3, s3)
-#define RDS_TEXTURE_2D_4(NAME)      RDS_TEXTURE_2D_N(NAME, t4, s4)
-#define RDS_TEXTURE_2D_5(NAME)      RDS_TEXTURE_2D_N(NAME, t5, s5)
-#define RDS_TEXTURE_2D_6(NAME)      RDS_TEXTURE_2D_N(NAME, t6, s6)
-
-#define RDS_TEXTURE_CUBE_1(NAME)    RDS_TEXTURE_CUBE_N(NAME, t1, s1)
-#define RDS_TEXTURE_CUBE_2(NAME)    RDS_TEXTURE_CUBE_N(NAME, t2, s2)
-#define RDS_TEXTURE_CUBE_3(NAME)    RDS_TEXTURE_CUBE_N(NAME, t3, s3)
-#define RDS_TEXTURE_CUBE_4(NAME)    RDS_TEXTURE_CUBE_N(NAME, t4, s4)
-#define RDS_TEXTURE_CUBE_5(NAME)    RDS_TEXTURE_CUBE_N(NAME, t5, s5)
-#define RDS_TEXTURE_CUBE_6(NAME)    RDS_TEXTURE_CUBE_N(NAME, t6, s6)
-
-
-#define RDS_SAMPLE_TEXTURE_2D(TEX, UV)      RDS_GET_TEXTURE_2D(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
-#define RDS_SAMPLE_TEXTURE_CUBE(TEX, UV)    RDS_GET_TEXTURE_CUBE(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
-
-#define RDS_TEXTURE_2D_SAMPLE(TEX, UV)                  RDS_GET_TEXTURE_2D(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
-#define RDS_TEXTURE_2D_SAMPLE_LOD(TEX, UV, LOD)         RDS_GET_TEXTURE_2D(TEX).SampleLevel(RDS_GET_SAMPLER(TEX), UV, LOD)
-#define RDS_TEXTURE_2D_GET_DIMENSIONS(TEX, OUT_WH)      RDS_GET_TEXTURE_2D(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
-
-#define RDS_TEXTURE_CUBE_SAMPLE(TEX, UV)                RDS_GET_TEXTURE_CUBE(TEX).Sample(RDS_GET_SAMPLER(TEX), UV)
-#define RDS_TEXTURE_CUBE_SAMPLE_LOD(TEX, UV, LOD)       RDS_GET_TEXTURE_CUBE(TEX).SampleLevel(RDS_GET_SAMPLER(TEX), UV, LOD)
-#define RDS_TEXTURE_CUBE_GET_DIMENSIONS(TEX, OUT_WH)    RDS_GET_TEXTURE_CUBE(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+#if 0
+#pragma mark --- Texture-Impl ---
+#endif
+#if 1
 
 #endif
 

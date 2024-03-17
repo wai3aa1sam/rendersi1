@@ -50,6 +50,6 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-	float4 o = RDS_SAMPLE_TEXTURE_2D(texture0, i.uv);
+	float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv);
     return o;
 }

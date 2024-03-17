@@ -10,7 +10,7 @@
 #include "pass/rdsVk_RenderPassPool.h"
 #include "pass/rdsVk_FramebufferPool.h"
 
-#include "shader/rdsVk_BindlessResources.h"
+#include "shader/rdsBindlessResources_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 

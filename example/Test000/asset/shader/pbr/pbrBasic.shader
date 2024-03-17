@@ -44,9 +44,6 @@ struct PixelIn
     float3 normal       : NORMAL0;
 };
 
-RDS_TEXTURE_2D_1(texture0);
-RDS_TEXTURE_2D_2(texture1);
-
 cbuffer PbrParam
 {
     float   roughness;
@@ -58,6 +55,9 @@ cbuffer PbrParam
 
     float3 colorSpec;
 };
+
+RDS_TEXTURE_2D(texture0);
+RDS_TEXTURE_2D(texture1);
 
 PixelIn vs_main(VertexIn i)
 {

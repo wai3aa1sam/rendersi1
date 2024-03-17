@@ -1,5 +1,5 @@
 #include "rds_render_api_layer-pch.h"
-#include "rdsVk_BindlessResources.h"
+#include "rdsBindlessResources_Vk.h"
 
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"

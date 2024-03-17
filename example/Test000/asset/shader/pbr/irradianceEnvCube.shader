@@ -87,7 +87,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
             // tangent space to world
             float3 sampleDir    = cartesianCoord.x * right + cartesianCoord.y * up + cartesianCoord.z * normal; 
 
-            irradiance += RDS_SAMPLE_TEXTURE_CUBE(envCubeMap, sampleDir).rgb * cosTheta * sinTheta;
+            irradiance += RDS_TEXTURE_CUBE_SAMPLE(envCubeMap, sampleDir).rgb * cosTheta * sinTheta;
 			sampleCount++;
 		}
 	}
