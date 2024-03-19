@@ -393,6 +393,7 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 	vkPhyDevVkFeats12.descriptorBindingPartiallyBound						= VK_TRUE;
 	vkPhyDevVkFeats12.descriptorBindingVariableDescriptorCount				= VK_TRUE;
 	vkPhyDevVkFeats12.runtimeDescriptorArray								= VK_TRUE;
+	vkPhyDevVkFeats12.shaderSampledImageArrayNonUniformIndexing				= VK_TRUE;
 
 	vkPhyDevVkFeats12.pNext	= &vkPhyDevVkFeats13;
 

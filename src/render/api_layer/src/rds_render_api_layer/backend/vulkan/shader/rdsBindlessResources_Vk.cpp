@@ -114,11 +114,14 @@ BindlessResources_Vk::onCommit()
 				{
 					auto& dstSet = descrSetTex();
 
+					RDS_CORE_ASSERT(Vk_Texture::getVkImageViewHnd(rsc), "_vkImageView == nullptr");
+
 					auto& info	= imgInfos.emplace_back();
 					info = {};
 					info.imageLayout	= BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 					info.imageView		= Vk_Texture::getVkImageViewHnd(rsc);
-					//imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
+					info.sampler		=  nullptr;
+					//info.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
 
 					auto& out = writeDescs.emplace_back();
 					out = {};
@@ -244,7 +247,7 @@ BindlessResources_Vk::_createDescritporSet(Vk_DescriptorSet& dstSet, Vk_Descript
 		binding.descriptorCount		= sCast<u32>(vkSamplerHnds.size());
 		binding.pImmutableSamplers	= vkSamplerHnds.data();
 
-		flags.emplace_back() = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT /*| VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT*/;
+		flags.emplace_back() = {};// VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT /*| VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT*/;
 	}
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags = {};

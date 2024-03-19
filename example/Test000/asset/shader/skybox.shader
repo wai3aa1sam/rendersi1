@@ -37,6 +37,7 @@ struct PixelIn
 
 RDS_TEXTURE_CUBE(skybox);
 
+
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
@@ -59,10 +60,12 @@ float4 ps_main(PixelIn i) : SV_TARGET
     float3 o;
 	float3 uv = i.uv;
 	//uv.y = -uv.y;
-    //o = RDS_TEXTURE_CUBE_SAMPLE(skybox, uv).rgb;
-    o.rgb = RDS_TEXTURE_CUBE_SAMPLE_LOD(skybox, uv, 0).rgb;
+    o = RDS_TEXTURE_CUBE_SAMPLE(skybox, uv).rgb;
+    //o = RDS_TEXTURE_CUBE_SAMPLE_LOD(skybox, uv, 8).rgb;
+
+	//o = RDS_TEXTURE_CUBE_GET(skybox).Sample(_sampler, uv).rgb;
+	//o = RDS_TEXTURE_CUBE_GET(skybox).SampleLevel(_sampler, uv, 8).rgb;
 	
-    
     //o = ToneMapping_reinhard(o);
     //o = PostProc_gammaEncoding(o);
 

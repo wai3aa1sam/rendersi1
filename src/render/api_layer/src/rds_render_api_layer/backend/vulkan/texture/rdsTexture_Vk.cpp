@@ -188,7 +188,7 @@ Vk_Sampler::create(const SamplerState& samplerState, RenderDevice_Vk* rdDevVk)
 	cInfo.unnormalizedCoordinates	= VK_FALSE;
 	cInfo.compareEnable				= VK_FALSE;
 	cInfo.compareOp					= VK_COMPARE_OP_ALWAYS;
-	cInfo.mipmapMode				= VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	cInfo.mipmapMode				= samplerState.magFliter == SamplerFilter::Linear ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
 	cInfo.mipLodBias				= 0.0f;
 	cInfo.minLod					= samplerState.minLod;
 	cInfo.maxLod					= samplerState.maxLod;
@@ -267,19 +267,19 @@ Vk_Texture::createVkImageView	(Vk_ImageView*	o, Texture* tex, RenderDevice_Vk* r
 	o->create(getVkImageHnd(tex), tex->desc(), rdDevVk);
 }
 
-void 
-Vk_Texture::createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk)
-{
-	o->create(tex->samplerState(), rdDevVk);
-}
+//void 
+//Vk_Texture::createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk)
+//{
+//	o->create(tex->samplerState(), rdDevVk);
+//}
 
 Vk_Image*		Vk_Texture::getVkImage			(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkImage());		return nullptr; }
 Vk_ImageView*	Vk_Texture::getVkImageView		(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkImageView());	return nullptr; }
-Vk_Sampler*		Vk_Texture::getVkSampler		(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkSampler());		return nullptr; }
+//Vk_Sampler*		Vk_Texture::getVkSampler		(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkSampler());		return nullptr; }
 
 Vk_Image_T*		Vk_Texture::getVkImageHnd		(Texture* tex) { return getVkImage		(tex)->hnd(); }
 Vk_ImageView_T*	Vk_Texture::getVkImageViewHnd	(Texture* tex) { return getVkImageView	(tex)->hnd(); }
-Vk_Sampler_T*	Vk_Texture::getVkSamplerHnd		(Texture* tex) { return getVkSampler	(tex)->hnd(); }
+//Vk_Sampler_T*	Vk_Texture::getVkSamplerHnd		(Texture* tex) { return getVkSampler	(tex)->hnd(); }
 
 #endif // 1
 

@@ -811,8 +811,15 @@ public:
 				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 				clearValue->setClearDepth(1.0f);
 
+				SamplerState s = {};
+				#if 1
+				s.minFliter = SamplerFilter::Nearest;
+				s.magFliter = SamplerFilter::Nearest;
+				#endif // 0
+
 				auto& mtl = _mtlSkybox;
-				//mtl->setParam("skybox", _texDefaultSkybox);
+				mtl->setParam("skybox", _texDefaultSkybox, s);
+				
 				//mtl->setParam("skybox", texSkybox ? texSkybox->textureCube() : _texDefaultSkybox);
 				mtl->setParam("skybox", _texCubeEnvMap);
 				//mtl->setParam("skybox", _texCubeIrradianceEnvMap);
@@ -963,9 +970,15 @@ public:
 
 					= [&](Material* mtl, int i)
 					{
-						mtl->setParam("texture0",			_uvCheckerTex);
+
+						SamplerState s = {};
+						#if 1
+						s.minFliter = SamplerFilter::Nearest;
+						s.magFliter = SamplerFilter::Nearest;
+						#endif // 0
+
+						mtl->setParam("texture0",			_uvCheckerTex, s);
 						mtl->setParam("testBufferIndex",	_testBindlessBuffer);
-						
 					};
 				scene()->drawScene(rdReq, mtl, &fn);
 			}
@@ -1064,7 +1077,7 @@ public:
 
 				static Vector<u8, 256> data;
 				data.resize(sizeof(TestBindlessBuffer));
-				CallOnce co;
+				static CallOnce co;
 				co.callOnce([&]()
 					{
 						auto color = reinCast<Color4f*>(data.data());

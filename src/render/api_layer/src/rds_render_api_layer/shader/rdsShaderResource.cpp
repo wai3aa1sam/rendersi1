@@ -38,7 +38,7 @@ ShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
 	for (const auto& e : constBufInfos)
 	{
 		auto& cb = constBufs.emplace_back();
-		cb.create(&e, pass);
+		cb.create(&e, pass, _iFrame);
 	}
 
 	const auto& texInfos = info().textures;
@@ -82,7 +82,7 @@ ShaderResources::destroy()
 }
 
 void 
-ShaderResources::uploadToGpu(RenderDevice* rdDev)
+ShaderResources::uploadToGpu(ShaderPass* pass)
 {
 	const auto& constBufInfos = info().constBufs;
 	auto src = constBufs();
@@ -116,7 +116,7 @@ ShaderResources::uploadToGpu(RenderDevice* rdDev)
 		for (const auto& e : constBufInfos)
 		{
 			auto& cb = dst.emplace_back();
-			cb.create(&e, rdDev);
+			cb.create(&e, pass, sCast<u32>(_framedConstBufs.size() - 1));
 		}
 	}
 
@@ -304,8 +304,10 @@ ShaderResources::ConstBuffer::~ConstBuffer()
 }
 
 void 
-ShaderResources::ConstBuffer::create(const Info* info, RenderDevice* rdDev)
+ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass, u32 idx)
 {
+	auto* rdDev	= pass->shader()->renderDevice();
+
 	destroy();
 	throwIf(info->size == 0, "constbuffer size is 0");
 
@@ -319,13 +321,7 @@ ShaderResources::ConstBuffer::create(const Info* info, RenderDevice* rdDev)
 	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Const;
 	bufCDesc.bufSize	= bufSize;
 	_gpuBuffer = rdDev->createRenderGpuBuffer(bufCDesc);
-}
-
-void 
-ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass)
-{
-	auto* rdDev	= pass->shader()->renderDevice();
-	create(info, rdDev);
+	_gpuBuffer->setDebugName(fmtAs_T<TempString>("{}-cb-{}-{}", pass->shader()->filename(), info->name, idx));
 }
 
 void 

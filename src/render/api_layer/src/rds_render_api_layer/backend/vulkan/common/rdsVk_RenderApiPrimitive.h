@@ -221,6 +221,8 @@ public:
 
 	bool isInvalid() { return !_alloc; }
 
+	explicit operator bool () const { return Base::operator bool() && _alloc; }
+
 protected:
 	void move(Vk_AllocableRenderApiPrimitive&& rhs) 
 	{

@@ -27,17 +27,14 @@ public:
 	Texture_Vk();
 	virtual ~Texture_Vk();
 
-
 public:
 	virtual bool isNull() const;
 
 	Vk_Image*		vkImage();
 	Vk_ImageView*	vkImageView();
-	Vk_Sampler*		vkSampler();
 
 	Vk_Image_T*		vkImageHnd();
 	Vk_ImageView_T* vkImageViewHnd();
-	Vk_Sampler_T*	vkSamplerHnd();
 
 protected:
 	virtual void onCreate		(CreateDesc& cDesc) override;
@@ -52,7 +49,6 @@ protected:
 protected:
 	Vk_Image		_vkImage;
 	Vk_ImageView	_vkImageView;	// TODO: if only stencil, then must have a separate view
-	Vk_Sampler		_vkSampler;		// TODO: sampler in RenderDevice_Vk, shared globally;
 };
 
 #if 0
@@ -129,7 +125,7 @@ struct Vk_Texture
 		auto* rdDevVk = tex->renderDeviceVk();
 		createVkImage		(getVkImage		(tex), tex, rdDevVk);
 		createVkImageView	(getVkImageView	(tex), tex, rdDevVk);
-		createVkSampler		(getVkSampler	(tex), tex, rdDevVk);
+		//createVkSampler		(getVkSampler	(tex), tex, rdDevVk);
 
 		//tex->_vkImgViewShaderRsc.create(getVkImage(tex)->hnd(), tex->desc(), TextureUsageFlags::ShaderResource, rdDevVk);
 
@@ -140,7 +136,7 @@ struct Vk_Texture
 
 	static void createVkImage		(Vk_Image*		o, Texture* tex, RenderDevice_Vk* rdDevVk);
 	static void createVkImageView	(Vk_ImageView*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
-	static void createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
+	//static void createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
 };
 
 #if 0
@@ -182,7 +178,6 @@ Texture_Vk<TEX_BASE>::onDestroy()
 
 	auto* rdDevVk = renderDeviceVk();
 
-	_vkSampler.destroy(rdDevVk);
 	_vkImageView.destroy(rdDevVk);
 	_vkImage.destroy();
 
@@ -202,10 +197,9 @@ Texture_Vk<TEX_BASE>::setDebugName(StrView name)
 {
 	Base::setDebugName(name);
 
-	if (!_vkSampler)		// prevent crash when it is back buffer
+	if (!_vkImage || !_vkImageView)		// prevent crash when it is back buffer
 		return;
 
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkSampler,	"{}-{}-[{}:{}]", name, "_vkSampler",	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-{}-[{}:{}]", name, "_vkImage",		RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-{}-[{}:{}]", name, "_vkImageView",	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 }
@@ -214,7 +208,6 @@ template<class TEX_BASE> inline
 void 
 Texture_Vk<TEX_BASE>::setNull()
 {
-	_vkSampler.destroy(nullptr);
 	_vkImage.destroy();
 	_vkImageView.destroy(nullptr);
 }
@@ -223,11 +216,9 @@ template<class TEX_BASE> inline bool			Texture_Vk<TEX_BASE>::isNull()	const	{ re
 
 template<class TEX_BASE> inline Vk_Image*		Texture_Vk<TEX_BASE>::vkImage()			{ return &_vkImage; }
 template<class TEX_BASE> inline Vk_ImageView*	Texture_Vk<TEX_BASE>::vkImageView()		{ return &_vkImageView; }
-template<class TEX_BASE> inline Vk_Sampler*		Texture_Vk<TEX_BASE>::vkSampler()		{ return &_vkSampler; }
 
 template<class TEX_BASE> inline Vk_Image_T*		Texture_Vk<TEX_BASE>::vkImageHnd()		{ return _vkImage.hnd(); }
 template<class TEX_BASE> inline Vk_ImageView_T* Texture_Vk<TEX_BASE>::vkImageViewHnd()	{ return _vkImageView.hnd(); }
-template<class TEX_BASE> inline Vk_Sampler_T*	Texture_Vk<TEX_BASE>::vkSamplerHnd()	{ return _vkSampler.hnd(); }
 
 #endif
 

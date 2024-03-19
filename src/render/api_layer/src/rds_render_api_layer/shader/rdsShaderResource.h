@@ -113,9 +113,13 @@ public:
 	void create(const Info* info, ShaderPass* pass)
 	{
 		destroy();
+
+		Base::create(info);
+
 		_shaderRscs.reserve(s_kFrameInFlightCount);
 		auto& dst = _shaderRscs.emplace_back();
 		dst.create(info, nullptr);
+
 	}
 
 	void destroy()
@@ -123,6 +127,7 @@ public:
 		for (auto& rsc : _shaderRscs)
 		{
 			rsc.destroy();
+			Base::destroy();
 		}
 	}
 
@@ -219,7 +224,7 @@ public:
 	void create	(const ShaderStageInfo& info_, ShaderPass* pass);
 	void destroy();
 
-	void uploadToGpu(RenderDevice* rdDev);
+	void uploadToGpu(ShaderPass* pass);
 
 	void clear();
 
@@ -272,8 +277,7 @@ public:
 		ConstBuffer();
 		~ConstBuffer();
 
-		void create	(const Info* info, RenderDevice* rdDev);
-		void create	(const Info* info, ShaderPass* pass);
+		void create	(const Info* info, ShaderPass* pass, u32 idx);
 		void destroy();
 
 		template<class T> 

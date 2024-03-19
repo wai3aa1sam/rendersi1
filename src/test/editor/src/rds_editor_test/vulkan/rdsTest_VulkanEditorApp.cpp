@@ -278,12 +278,11 @@ public:
 		// prepare
 		#if 1
 		{
-
-			RenderRequest req;
+			_testRenderGraph.prepare();	
 
 			rdCtx.beginRender();
 
-			_testRenderGraph.prepare();	
+			RenderRequest req;
 			_testRenderGraph.commit();
 			_testRenderGraph.present(&rdCtx, req, Renderer::rdDev()->transferContext().transferRequest(), false);
 

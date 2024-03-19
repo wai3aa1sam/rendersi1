@@ -48,6 +48,8 @@ references:
 
     RWTexture2D<float>	image2DTable	[]						: register(u0, RDS_IMAGE_SPACE);
 
+    SamplerState _sampler : register(s13, RDS_CONSTANT_BUFFER_SPACE);   // immutable sampler behave differently, so use this temp solution
+
     /* 
     --- define Texture
     */
@@ -55,9 +57,11 @@ references:
     #define RDS_TEXTURE_2D(NAME)    uint NAME; uint RDS_SAMPLER_NAME(NAME)
     #define RDS_TEXTURE_CUBE(NAME)  uint NAME; uint RDS_SAMPLER_NAME(NAME)
 
-    #define RDS_SAMPLER_GET(NAME)       samplerTable[RDS_SAMPLER_NAME(NAME)]
-    #define RDS_TEXTURE_2D_GET(NAME)    texture2DTable[NAME]
-    #define RDS_TEXTURE_CUBE_GET(NAME)  textureCubeTable[NAME]
+    #define RDS_SAMPLER_GET(NAME)       _sampler
+
+    //#define RDS_SAMPLER_GET(NAME)       samplerTable[NonUniformResourceIndex(RDS_SAMPLER_NAME(NAME))]
+    #define RDS_TEXTURE_2D_GET(NAME)    texture2DTable[NonUniformResourceIndex(NAME)]
+    #define RDS_TEXTURE_CUBE_GET(NAME)  textureCubeTable[NonUniformResourceIndex(NAME)]
 
     #define RDS_TEXTURE_2D_SAMPLE(TEX, UV)                  RDS_TEXTURE_2D_GET(TEX).Sample(RDS_SAMPLER_GET(TEX), UV)
     #define RDS_TEXTURE_2D_SAMPLE_LOD(TEX, UV, LOD)         RDS_TEXTURE_2D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), UV, LOD)
@@ -78,7 +82,7 @@ references:
     */
 
     #define RDS_BUFFER(NAME)        uint NAME
-    #define RDS_BUFFER_GET(NAME)    bufferTable[NAME]
+    #define RDS_BUFFER_GET(NAME)    bufferTable[NonUniformResourceIndex(NAME)]
 
 
 #else

@@ -690,10 +690,10 @@ MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_Co
 		{
 			auto&	descriptorAlloc	= vkCtx->vkRdFrame().descriptorAllocator();
 			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
-			builder.buildBindless(vkDescriptorSet(), shaderPass()->vkDescriptorSetLayout(), shaderRsc.constBufs(), shaderRsc);
+			builder.buildBindless(vkDescriptorSet(), shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
 		}
 
-		shaderRsc.uploadToGpu(rdDevVk);		// this will reset dirty
+		shaderRsc.uploadToGpu(shaderPass());		// this will reset dirty
 
 		VkPipelineBindPoint vkBindPt			= VK_PIPELINE_BIND_POINT_GRAPHICS;
 		auto				vkPipelineLayoutHnd = vkPipelineLayout().hnd();

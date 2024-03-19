@@ -46,7 +46,7 @@ public:
 			bool isBindless =  type	== VK_DESCRIPTOR_TYPE_STORAGE_BUFFER	
 				|| type	== VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE		|| type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 				|| type == VK_DESCRIPTOR_TYPE_SAMPLER			|| type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			if (isBindless)
+			if (isBindless && !StrUtil::isSame(paramInfo.name.c_str(), "_sampler"))
 				continue;
 
 			auto& e = dst.emplace_back();
@@ -74,6 +74,10 @@ public:
 		bindings.reserve(bindingCount);
 		createShaderResourceLayoutBinding(bindings, info.constBufs,		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			info.stageFlag);
 
+		if (true)
+		{
+			createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_SAMPLER,					info.stageFlag);
+		}
 		#if RDS_NO_BINDLESS
 
 		//createShaderResourceLayoutBinding(bindings, info.textures,		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,			info.stageFlag);
