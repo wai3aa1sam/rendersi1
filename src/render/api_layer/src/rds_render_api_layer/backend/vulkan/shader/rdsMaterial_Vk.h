@@ -216,7 +216,6 @@ public:
 	ComputeStage&	vkComputeStage_noCheck();
 
 	Vk_PipelineLayout& vkPipelineLayout();
-	Vk_PipelineLayout& computeVkPipelineLayout();
 
 	RenderDevice_Vk* renderDeviceVk();
 
@@ -239,7 +238,6 @@ protected:
 	ComputeStage	_vkComputeStage;
 
 	Vk_PipelineLayout	_vkPipelineLayout;				// maybe should in shader, since it does not need to recreate if no push_constant
-	Vk_PipelineLayout	_computeVkPipelineLayout;		// maybe should in shader, since it does not need to recreate if no push_constant
 	Vk_PipelineMap		_vkPipelineMap;
 	Vk_Pipeline			_computeVkPipeline;
 
@@ -252,7 +250,6 @@ protected:
 };
 
 inline Vk_PipelineLayout&				MaterialPass_Vk::vkPipelineLayout()				{ return _vkPipelineLayout; }
-inline Vk_PipelineLayout&				MaterialPass_Vk::computeVkPipelineLayout()		{ return _computeVkPipelineLayout; }
 
 inline Material_Vk*						MaterialPass_Vk::material()				{ return sCast<Material_Vk*>(_material); }
 inline Shader_Vk*						MaterialPass_Vk::shader()				{ return reinCast<Shader_Vk*>(_material->shader()); }

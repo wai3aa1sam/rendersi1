@@ -72,7 +72,7 @@ struct Vk_PipelineLayoutCDesc : public Vk_CDesc_Base
 {
 	static constexpr SizeType s_kLocalSize = 8;
 public:
-	void createGraphics(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDevVk)
+	void create(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDevVk)
 	{
 		destroy();
 
@@ -84,31 +84,6 @@ public:
 		//if (pass->vertexStage())	_hnds.emplace_back(pass->vkVertexStage_NoCheck()._vkDescriptorSetLayout.hnd());
 		//if (pass->pixelStage())		_hnds.emplace_back(pass->vkPixelStage_NoCheck()._vkDescriptorSetLayout.hnd());
 		//if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
-
-		RDS_CORE_ASSERT(!_setLayoutHnds.is_empty(), "no descriptor set layout");
-
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-		{
-			pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_setLayoutHnds.size());			// Optional
-			pipelineLayoutInfo.pSetLayouts				= _setLayoutHnds.data();						// set0, set1, set2, ...
-			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
-			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
-		}
-		out.create(&pipelineLayoutInfo, rdDevVk);
-	}
-
-	void createCompute(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDevVk)
-	{
-		destroy();
-
-		//if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
-
-		rdDevVk->bindlessResourceVk().getDescriptorSetLayoutTo(_setLayoutHnds);
-		if (auto* layoutHnd = pass->shaderPass()->vkDescriptorSetLayout().hnd())
-		{
-			_setLayoutHnds.emplace_back(layoutHnd);
-		}
 
 		RDS_CORE_ASSERT(!_setLayoutHnds.is_empty(), "no descriptor set layout");
 
@@ -652,7 +627,6 @@ MaterialPass_Vk::onDestroy()
 		_vkComputeStage.destroy(this);
 		_computeStage	= nullptr;
 
-		_computeVkPipelineLayout.destroy(rdDevVk);
 		_computeVkPipeline.destroy(rdDevVk);
 	}
 
@@ -661,7 +635,6 @@ MaterialPass_Vk::onDestroy()
 		e.second.destroy(rdDevVk);
 	}
 	_vkPipelineMap.clear();
-
 	_vkPipelineLayout.destroy(rdDevVk);
 
 	_vkFramedDescrSets.clear();
@@ -737,7 +710,7 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 
 		shaderRsc.uploadToGpu(shaderPass());		// this will reset dirty
 
-		auto				vkPipelineLayoutHnd = vkBindPt == VK_PIPELINE_BIND_POINT_GRAPHICS ? vkPipelineLayout().hnd() : _computeVkPipelineLayout.hnd();
+		auto				vkPipelineLayoutHnd = vkPipelineLayout().hnd();
 		auto				set					= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());
 		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayoutHnd, set, 1, vkDescrSet.hndArray(), 0, nullptr);
 	}
@@ -754,9 +727,12 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 	Vk_ShaderStagesCDesc vkShaderStagesCDesc;
 	vkShaderStagesCDesc.createGraphics(pipelineCInfo, shaderPass());
 
-	Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
-	vkPipelineLayoutCDesc.createGraphics(_vkPipelineLayout, this, rdDevVk);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", filename, "vkPipelineLayout");
+	if (!_vkPipelineLayout)
+	{
+		Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
+		vkPipelineLayoutCDesc.create(_vkPipelineLayout, this, rdDevVk);
+		RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", filename, "vkPipelineLayout");
+	}
 
 	Vk_GraphicsPipelineCDesc vkRenderStateCDesc;
 	vkRenderStateCDesc.create(pipelineCInfo, info().renderState, pixelStage()->info());
@@ -778,18 +754,23 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 void 
 MaterialPass_Vk::createComputeVkPipeline(Vk_Pipeline& out)
 {
-	auto* rdDevVk = material()->renderDeviceVk();
+	auto*		rdDevVk		= material()->renderDeviceVk();
+	const auto& filename	= shader()->filename();
 
 	VkComputePipelineCreateInfo pipelineCInfo = {};
 
-	Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
-	vkPipelineLayoutCDesc.createCompute(_computeVkPipelineLayout, this, rdDevVk);
-
+	if (!_vkPipelineLayout)
+	{
+		Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
+		vkPipelineLayoutCDesc.create(_vkPipelineLayout, this, rdDevVk);
+		RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", filename, "vkPipelineLayout");
+	}
+	
 	Vk_ShaderStagesCDesc vkShaderStagesCDesc;
 	vkShaderStagesCDesc.createCompute(pipelineCInfo, shaderPass());
 
 	pipelineCInfo.sType		= VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-	pipelineCInfo.layout	= _computeVkPipelineLayout.hnd();
+	pipelineCInfo.layout	= _vkPipelineLayout.hnd();
 
 	Vk_PipelineCache* vkPipelineCache = VK_NULL_HANDLE;
 	out.create(&pipelineCInfo, vkPipelineCache, rdDevVk);
