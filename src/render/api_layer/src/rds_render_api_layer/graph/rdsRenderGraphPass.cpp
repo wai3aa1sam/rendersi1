@@ -44,6 +44,7 @@ RdgPass::execute()
 void 
 RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp)
 {
+	RDS_CORE_ASSERT(hnd, "invalid RenderTarget hnd");
 	RDS_CORE_ASSERT(BitUtil::has(_typeFlags, TypeFlag::Graphics));
 	//accessResource(hnd, Access::Write);
 	//RDS_CORE_ASSERT(!isDuplicatedHnd(_rdTargets[0].span(), hnd), "RenderPass: {} has repeated read resource {}", _name, hnd.name());
@@ -64,6 +65,7 @@ RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTar
 void 
 RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp)
 {
+	RDS_CORE_ASSERT(hnd, "invalid DepthStencil hnd");
 	RDS_CORE_ASSERT(!_depthStencil, "depthStencil already set");
 	RDS_CORE_ASSERT(BitUtil::has(_typeFlags, TypeFlag::Graphics));
 	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureUsageFlags::DepthStencil));
@@ -223,12 +225,13 @@ RdgPass::accessResource(RdgResourceHnd hnd, RenderResourceStateFlags state, bool
 
 			for (auto& e : rdgRsc->producers())
 			{
-				if (!isDuplicatedPass(e->_runBefore, this))
+				/*if (!isDuplicatedPass(e->_runBefore, this))
 				{
 					e->_runBefore.emplace_back(this);
-				}
+				}*/
+				runAfter(e);
 			}
-
+			
 			rdgRsc->addProducer(this);
 			_writes.emplace_back(rdgRsc);
 		} break;

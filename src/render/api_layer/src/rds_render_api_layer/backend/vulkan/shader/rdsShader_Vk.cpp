@@ -46,7 +46,7 @@ public:
 			bool isBindless =  type	== VK_DESCRIPTOR_TYPE_STORAGE_BUFFER	
 				|| type	== VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE		|| type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 				|| type == VK_DESCRIPTOR_TYPE_SAMPLER			|| type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			if (isBindless && !StrUtil::isSame(paramInfo.name.c_str(), "_sampler"))
+			if (isBindless && !StrUtil::isSame(paramInfo.name.c_str(), "rds_sampler"))
 				continue;
 
 			auto& e = dst.emplace_back();

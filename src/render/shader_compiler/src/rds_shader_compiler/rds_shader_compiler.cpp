@@ -36,10 +36,10 @@ protected:
 
 		#if 1
 		opt.isNoOffset	= false;
-		compile("asset/shader/test/test.shader",				opt);
-		compile("asset/shader/test/test_texture.shader",		opt);
-		compile("asset/shader/test/test_texture_set0.shader",	opt);
-		compile("asset/shader/test/test_compute.shader",		opt);
+		compile("asset/shader/test/test.shader",					opt);
+		compile("asset/shader/test/test_texture.shader",			opt);
+		compile("asset/shader/test/test_texture_set0.shader",		opt);
+		compile("asset/shader/test/test_compute.shader",			opt);
 
 		opt.isNoOffset	= true;
 		compile("asset/shader/ui/imgui.shader",					opt);
@@ -58,7 +58,9 @@ protected:
 		compile("asset/shader/pbr/brdfLut.shader",				opt);
 
 		opt.enableLog	= false; 
-		compile("asset/shader/test/test_bindless.shader",		opt);
+		compile("asset/shader/test/test_bindless.shader",			opt);
+		compile("asset/shader/test/test_compute_bindless.shader",	opt);
+
 		#endif // 0
 	}
 

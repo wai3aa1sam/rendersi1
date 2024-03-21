@@ -9,6 +9,7 @@
 
 #define RDS_RENDER_GRAPH_PRESENT 0
 #define RDS_TEST_COMPUTE_GROUP_THREAD 256
+#define RDS_TEST_BUFFER_ELEMENT_COUNT 4
 
 namespace rds
 {
@@ -487,18 +488,24 @@ public:
 				_testMtl->setShader(_testShader);
 				_testMtl->setParam("texture0", _uvCheckerTex);
 
-				_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test/test_compute.shader");
-				_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
-				testCompute(&_rdGraph, true);
 			}
+
+			_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test/test_compute_bindless.shader");
+			_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
+			testCompute(&_rdGraph, nullptr, true);
 
 			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
 
 			auto bufCDesc = RenderGpuBuffer::makeCDesc();
-			bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Compute;
-			bufCDesc.bufSize	= sizeof(TestBindlessBuffer);
-			_testBindlessBuffer = Renderer::rdDev()->createRenderGpuBuffer(bufCDesc);
+			bufCDesc.typeFlags		= RenderGpuBufferTypeFlags::Compute;
+			bufCDesc.bufSize		= sizeof(TestBindlessBuffer) * RDS_TEST_BUFFER_ELEMENT_COUNT;
+
+			/*static SPtr<RenderGpuBuffer> k;
+			k = Renderer::rdDev()->createRenderGpuBuffer(bufCDesc);*/
+
+			_testBindlessBuffer		= Renderer::rdDev()->createRenderGpuBuffer(bufCDesc);
+			_testBindlessRwBuffer	= Renderer::rdDev()->createRenderGpuBuffer(bufCDesc);
 		}
 
 		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
@@ -606,12 +613,14 @@ public:
 		RdgTextureHnd oTexDepth;
 		RdgTextureHnd oTexEnvIrradianceCube;
 
-		//oTex = testCompute(&_rdGraph, false);
+		oTex = testCompute(&_rdGraph, &oTexDepth, false);
 		//oTex = testDeferred(&_rdGraph, &oTexDepth);
 		//oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
-		oTex = testBindless(&_rdGraph, &oTexDepth);
+		//oTex = testBindless(&_rdGraph, &oTexDepth);
 
 		auto* texSkybox = 0 ? &oTexEnvIrradianceCube : nullptr; RDS_UNUSED(texSkybox);
+
+		RDS_TODO("has bug in render graph, when testCompute + testSkybox");
 		oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
 		finalComposite(&_rdGraph, oTex);
 
@@ -700,7 +709,7 @@ public:
 		return normalTex;
 	}
 
-	RdgTextureHnd testCompute(RenderGraph* outRdGraph, bool isCreate = false)
+	RdgTextureHnd testCompute(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth, bool isCreate)
 	{
 		static constexpr int s_kMaxParticleCount = RDS_TEST_COMPUTE_GROUP_THREAD * 10;
 
@@ -787,6 +796,11 @@ public:
 			}
 		);
 
+		if (outTexDepth)
+		{
+			*outTexDepth = test_compute_depth_tex;
+		}
+
 		return test_compute_present_tex;
 	}
 
@@ -799,7 +813,8 @@ public:
 
 		auto& skyboxPass = _rdGraph.addPass("test_skybox", RdgPassTypeFlags::Graphics);
 		skyboxPass.setRenderTarget(texColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
-		skyboxPass.setDepthStencil(texDepth, RenderAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+		if (texDepth)
+			skyboxPass.setDepthStencil(texDepth, RenderAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
 		if (texSkybox)
 			skyboxPass.readTexture(*texSkybox);
 		skyboxPass.setExecuteFunc(
@@ -977,8 +992,10 @@ public:
 						s.magFliter = SamplerFilter::Nearest;
 						#endif // 0
 
-						mtl->setParam("texture0",			_uvCheckerTex, s);
-						mtl->setParam("testBufferIndex",	_testBindlessBuffer);
+						mtl->setParam("texture0",		_uvCheckerTex, s);
+						mtl->setParam("testBuffer",		_testBindlessBuffer);
+						mtl->setParam("testRwBuffer",	_testBindlessRwBuffer);
+						
 					};
 				scene()->drawScene(rdReq, mtl, &fn);
 			}
@@ -1057,12 +1074,11 @@ public:
 						//reinCast<Tuple3f&>(*v) = temp;
 					};
 
-				auto dragAndUploadFloat4 = [&](Material* mtl, const char* name, float* v, RenderGpuBuffer* buf)
+				auto dragAndUploadFloat4 = [&](Material* mtl, const char* name, float* v)
 					{
 						Tuple4f temp {v[0], v[1], v[2], v[4]};
 						ImGui::DragFloat4(name, v, 0.01f);
 						mtl->setParam(name, temp);
-						buf->uploadToGpu(ByteSpan{(u8*)temp.data, sizeof(Tuple4f)});
 						//reinCast<Tuple3f&>(*v) = temp;
 					};
 
@@ -1076,15 +1092,19 @@ public:
 					};
 
 				static Vector<u8, 256> data;
-				data.resize(sizeof(TestBindlessBuffer));
+				data.resize(sizeof(TestBindlessBuffer) * RDS_TEST_BUFFER_ELEMENT_COUNT);
 				static CallOnce co;
 				co.callOnce([&]()
 					{
-						auto color = reinCast<Color4f*>(data.data());
-						color->r = 1.0f;
-						color->g = 1.0f;
-						color->b = 1.0f;
-						color->a = 1.0f;
+						for (size_t i = 0; i < RDS_TEST_BUFFER_ELEMENT_COUNT; i++)
+						{
+							auto buf = reinCast<TestBindlessBuffer*>(data.data()) + i;
+							buf->color.r = 1.0f;
+							buf->color.g = 1.0f;
+							buf->color.b = 1.0f;
+							buf->color.a = 1.0f;
+						}
+						
 					});
 
 				ImGui::Begin("test bindless");
@@ -1093,7 +1113,14 @@ public:
 				//dragFloat(mtl, "rds_test_3", &rds_test_3);
 				//dragFloat(mtl, "rds_test_5", &rds_test_5);
 
-				dragAndUploadFloat4(mtl, "color", (float*)data.data(), _testBindlessBuffer);
+				for (size_t i = 0; i < RDS_TEST_BUFFER_ELEMENT_COUNT; i++)
+				{
+					dragAndUploadFloat4(mtl, fmtAs_T<TempString>("color-{}", i).c_str(), (float*)((TestBindlessBuffer*)data.data() + i));
+				}
+				mtl->setParam("testBuffer", _testBindlessBuffer);
+				_testBindlessBuffer->uploadToGpu(data);
+				//_testBindlessRwBuffer->uploadToGpu(data);
+
 				ImGui::End();
 
 				_testBindlessBuffer->setDebugName("_testBindlessBuffer");
@@ -1149,6 +1176,7 @@ public:
 	SPtr<Shader>			_shaderTestBindless;
 	SPtr<Material>			_mtlTestBindless;
 	SPtr<RenderGpuBuffer>	_testBindlessBuffer;
+	SPtr<RenderGpuBuffer>	_testBindlessRwBuffer;
 
 	SPtr<Shader>				_testComputeShader;
 	SPtr<Material>				_testComputeMtl;

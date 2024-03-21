@@ -339,6 +339,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				auto* vkCmdBuf = _curVkCmdBufGraphics;
 				_curVkCmdBufGraphics->beginRecord();
 				rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+				rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_COMPUTE);
 			}
 
 			//_curVkCmdBufCompute->beginRecord();
@@ -450,6 +451,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			if (!isMainVkCmdBuf)
 			{
 				vkCmdBuf->beginRecord(passName, _rdCtxVk->renderDeviceVk());
+				rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+				rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_COMPUTE);
 			}
 			else
 			{
@@ -457,8 +460,6 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			}
 
 			queueProfiler->beginProfile(vkCmdBuf->hnd(), pass->name().c_str());
-
-			rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
 			_recordBarriers(pass, vkCmdBuf);
 

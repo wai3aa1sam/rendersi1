@@ -40,15 +40,16 @@ references:
     --- define bindless type
     */
     // ByteAddressBuffer
-    ByteAddressBuffer 	bufferTable		[] 						: register(t0, RDS_BUFFER_SPACE);
+    ByteAddressBuffer 	    rds_bufferTable		    [] 						: register(t0, RDS_BUFFER_SPACE);
+    RWByteAddressBuffer 	rds_rwBufferTable	    [] 						: register(u0, RDS_BUFFER_SPACE);
 
-    SamplerState    	samplerTable	[RDS_K_SAMPLER_COUNT] 	: register(s0, 					RDS_SAMPLER_SPACE);
-    Texture2D 			texture2DTable	[]  					: register(RDS_TEXTURE_BINDING, RDS_TEX_2D_SPACE);
-    TextureCube 		textureCubeTable[]  					: register(RDS_TEXTURE_BINDING, RDS_TEX_CUBE_SPACE);
+    SamplerState    	    rds_samplerTable	    [RDS_K_SAMPLER_COUNT] 	: register(s0, 					RDS_SAMPLER_SPACE);
+    Texture2D 			    rds_texture2DTable	    []  					: register(RDS_TEXTURE_BINDING, RDS_TEX_2D_SPACE);
+    TextureCube 		    rds_textureCubeTable    []  					: register(RDS_TEXTURE_BINDING, RDS_TEX_CUBE_SPACE);
 
-    RWTexture2D<float>	image2DTable	[]						: register(u0, RDS_IMAGE_SPACE);
+    RWTexture2D<float>	    rds_image2DTable	    []						: register(u0, RDS_IMAGE_SPACE);
 
-    SamplerState _sampler : register(s13, RDS_CONSTANT_BUFFER_SPACE);   // immutable sampler behave differently, so use this temp solution
+    SamplerState rds_sampler : register(s13, RDS_CONSTANT_BUFFER_SPACE);   // immutable sampler behave differently, so use this temp solution
 
     /* 
     --- define Texture
@@ -57,11 +58,11 @@ references:
     #define RDS_TEXTURE_2D(NAME)    uint NAME; uint RDS_SAMPLER_NAME(NAME)
     #define RDS_TEXTURE_CUBE(NAME)  uint NAME; uint RDS_SAMPLER_NAME(NAME)
 
-    #define RDS_SAMPLER_GET(NAME)       _sampler
+    #define RDS_SAMPLER_GET(NAME)       rds_sampler
 
-    //#define RDS_SAMPLER_GET(NAME)       samplerTable[NonUniformResourceIndex(RDS_SAMPLER_NAME(NAME))]
-    #define RDS_TEXTURE_2D_GET(NAME)    texture2DTable[NonUniformResourceIndex(NAME)]
-    #define RDS_TEXTURE_CUBE_GET(NAME)  textureCubeTable[NonUniformResourceIndex(NAME)]
+    //#define RDS_SAMPLER_GET(NAME)       rds_samplerTable[NonUniformResourceIndex(RDS_SAMPLER_NAME(NAME))]
+    #define RDS_TEXTURE_2D_GET(NAME)    rds_texture2DTable[NonUniformResourceIndex(NAME)]
+    #define RDS_TEXTURE_CUBE_GET(NAME)  rds_textureCubeTable[NonUniformResourceIndex(NAME)]
 
     #define RDS_TEXTURE_2D_SAMPLE(TEX, UV)                  RDS_TEXTURE_2D_GET(TEX).Sample(RDS_SAMPLER_GET(TEX), UV)
     #define RDS_TEXTURE_2D_SAMPLE_LOD(TEX, UV, LOD)         RDS_TEXTURE_2D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), UV, LOD)
@@ -80,10 +81,17 @@ references:
     /* 
     --- define Buffer
     */
+    #define RDS_BUFFER(TYPE, NAME)                              uint NAME
+    #define RDS_BUFFER_GET(NAME)                                rds_bufferTable[NonUniformResourceIndex(NAME)]
+    #define RDS_BUFFER_LOAD_I(TYPE, NAME, IDX)                  RDS_BUFFER_GET(NAME).Load<TYPE>(sizeof(TYPE) * (IDX))
+    #define RDS_BUFFER_LOAD(TYPE, NAME)                         RDS_BUFFER_LOAD_I(TYPE, NAME, 0)
 
-    #define RDS_BUFFER(NAME)        uint NAME
-    #define RDS_BUFFER_GET(NAME)    bufferTable[NonUniformResourceIndex(NAME)]
-
+    #define RDS_RW_BUFFER(TYPE, NAME)                           uint NAME
+    #define RDS_RW_BUFFER_GET(NAME)                             rds_rwBufferTable[NonUniformResourceIndex(NAME)]
+    #define RDS_RW_BUFFER_LOAD_I(TYPE, NAME, IDX)               RDS_RW_BUFFER_GET(NAME).Load<TYPE>( sizeof(TYPE) * (IDX))
+    #define RDS_RW_BUFFER_STORE_I(TYPE, NAME, IDX, VALUE)       RDS_RW_BUFFER_GET(NAME).Store<TYPE>(sizeof(TYPE) * (IDX), VALUE)
+    #define RDS_RW_BUFFER_LOAD(TYPE, NAME)                      RDS_RW_BUFFER_LOAD_I(TYPE, NAME, 0)
+    #define RDS_RW_BUFFER_STORE(TYPE, NAME, VALUE)              RDS_RW_BUFFER_STORE_I(TYPE, NAME, 0, VALUE)
 
 #else
     #error "only support for bindless"

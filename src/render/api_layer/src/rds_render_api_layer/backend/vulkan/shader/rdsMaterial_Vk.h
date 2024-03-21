@@ -199,6 +199,9 @@ public:
 	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf);
 	virtual void onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf);
 
+protected:
+	void bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf);
+
 public:
 	Material_Vk*	material	();
 	Shader_Vk*		shader		();

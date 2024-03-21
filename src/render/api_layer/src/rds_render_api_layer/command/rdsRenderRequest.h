@@ -69,6 +69,9 @@ public:
 	void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const Mat4f& transform = Mat4f::s_identity());
 	void drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const Mat4f& transform = Mat4f::s_identity());
 
+	template<class T>
+	void drawMeshT	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const Mat4f& transform = Mat4f::s_identity());
+
 	RenderCmdIter<RenderCommand_DrawCall> addDrawCalls(SizeType n);
 	void drawRenderables(const DrawingSettings& settings);
 

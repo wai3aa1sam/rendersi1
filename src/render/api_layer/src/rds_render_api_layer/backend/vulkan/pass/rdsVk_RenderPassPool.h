@@ -48,7 +48,7 @@ public:
 
 		auto& vkAttacmentDescs	= outAtchDesc;
 		auto& vkAttacmentRefs	= outAtchRef;
-
+		
 		vkAttacmentDescs.clear();
 		vkAttacmentRefs.clear();
 
@@ -61,6 +61,7 @@ public:
 		{
 			auto& rdTarget = rdTargets[i];
 			auto& rdgAccess = rdgPass->resourceAccesses()[rdTarget._localId];
+			RDS_CORE_ASSERT(rdgAccess.rsc, "invalid RenderTraget");
 
 			auto& vkDesc = vkAttacmentDescs.emplace_back();
 			vkDesc.format			= Util::toVkFormat(rdTarget.format());
@@ -86,6 +87,7 @@ public:
 		if (auto* depthStencil = rdgPass->depthStencil())
 		{
 			auto& rdgAccess = rdgPass->resourceAccesses()[depthStencil->_localId];
+			RDS_CORE_ASSERT(rdgAccess.rsc, "invalid DepthStencil");
 
 			auto& vkDesc = vkAttacmentDescs.emplace_back();
 			vkDesc.format			= Util::toVkFormat(depthStencil->format());

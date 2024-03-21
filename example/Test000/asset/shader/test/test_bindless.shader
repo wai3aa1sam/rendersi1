@@ -55,32 +55,24 @@ struct PixelIn
 	cbuffer name structure; \
 	uint 	name ## idx; \
 
-struct ResourceHandle
-{
-	RDS_TEXTURE_2D(texture0);
-	RDS_BUFFER(testBufferIndex);
-};
-RDS_CONSTANT_BUFFER(ResourceHandle, rscHnd, 1);
-//ConstantBuffer<ResourceHandle> rscHnd : register(b1, RDS_CONSTANT_BUFFER_SPACE);
-
 struct TestBuffer
 {
 	float4 color;
 };
 
-template<typename T> 
-T loadBindings() 
-{
-    T result = bufferTable[0].Load<T>(0);		// (g_bindingsOffset.bindingsOffset)
-	return result;
-}
+//struct ResourceHandle
+//{
+//};
+//RDS_CONSTANT_BUFFER(ResourceHandle, rscHnd, 1);
 
-template<typename T> 
-T loadTexture(float2 uv) 
-{
-	T o = texture2DTable[rscHnd.texture0].Sample(samplerTable[rscHnd.RDS_SAMPLER_NAME(texture0)], uv);
-	return o;
-}
+RDS_TEXTURE_2D(texture0);
+
+//ConstantBuffer<ResourceHandle> rscHnd : register(b1, RDS_CONSTANT_BUFFER_SPACE);
+
+RDS_BUFFER(TestBuffer, 		testBuffer);
+
+// dont test in ps, since it has sync problem, but I don't want to think a example for atomic usage
+RDS_RW_BUFFER(TestBuffer, 	testRwBuffer);	
 
 PixelIn vs_main(VertexIn i)
 {
@@ -112,13 +104,46 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	//color.g = rds_test_3;
 	//color.b = rds_test_5;
 	//color += texture2DTable[textureIdx.texture0].Sample(samplerTable[textureIdx.texture0], i.uv);
-	color = loadTexture<float4>(i.uv);
+	color = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv);
 
-	ByteAddressBuffer buffer = bufferTable[rscHnd.testBufferIndex];
-	//TestBuffer ret = buffer.Load<TestBuffer>(sizeof(TestBuffer) * 1);
-	TestBuffer ret = buffer.Load<TestBuffer>(0);
-	color *= ret.color;
+	TestBuffer temp;
+	temp.color = color;
+	//RDS_RW_BUFFER_STORE_I(TestBuffer, testRwBuffer, 0, temp);
+	//RDS_RW_BUFFER_STORE_I(TestBuffer, testRwBuffer, 1, temp);
+	//RDS_RW_BUFFER_STORE_I(TestBuffer, testRwBuffer, 2, temp);
+	//RDS_RW_BUFFER_STORE_I(TestBuffer, testRwBuffer, 3, temp);
 
+	TestBuffer ret = RDS_BUFFER_LOAD(TestBuffer, testBuffer);
+	
+	//color.r = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 0).color.r * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 0).color.r;
+	//color.g = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 1).color.g * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 1).color.g;
+	//color.b = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 2).color.b * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 2).color.b;
+	//color.a = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 3).color.a * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 3).color.a;
+
+	#if 1
+
+	color.r = color.r * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 0).color.r;
+	color.g = color.g * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 1).color.g;
+	color.b = color.b * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 2).color.b;
+	color.a = color.a * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 3).color.a;
+
+	#else
+	color.r = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 0).color.r;
+	color.g = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 1).color.g;
+	color.b = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 2).color.b;
+	color.a = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 3).color.a;
+
+	//color = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 0).color;
+	
+	rds_rwBufferTable[NonUniformResourceIndex(testRwBuffer)].Store<TestBuffer>(0, temp);
+	color = rds_rwBufferTable[NonUniformResourceIndex(testRwBuffer)].Load<TestBuffer>(0).color;
+
+	#endif
+	
+	//RWStructuredBuffer<TestBuffer> outBuf = RDS_RW_BUFFER_GET(testRwBuffer).Load<TestBuffer>(0);
+	//outBuf.color;
+
+	//ret.color = color;
 	//color.r -= rds_matrix_mvp[0][0];
 
     return color;

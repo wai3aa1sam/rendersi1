@@ -672,48 +672,24 @@ MaterialPass_Vk::onDestroy()
 void 
 MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf)
 {
-	auto* rdDevVk	= renderDeviceVk();
-	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
+	//auto* rdDevVk	= renderDeviceVk();
+	//auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
 	//auto* vkCmdBuf	= vkCtx->graphicsVkCmdBuf();
 	auto* vkRdPass	= vkCmdBuf->getVkRenderPass();
 
 	throwIf(!vkRdPass, "no render pass");
 
+	VkPipelineBindPoint vkBindPt = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	bindPipeline(vkCmdBuf, vkRdPass, vtxLayout);
-
-	{
-		//auto* mtl		= pass->material();
-		auto& shaderRsc = shaderResources();
-
-		auto& vkDescrSet = vkDescriptorSet();
-		if (!vkDescrSet)
-		{
-			auto&	descriptorAlloc	= vkCtx->vkRdFrame().descriptorAllocator();
-			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
-			builder.buildBindless(vkDescriptorSet(), shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
-		}
-
-		shaderRsc.uploadToGpu(shaderPass());		// this will reset dirty
-
-		VkPipelineBindPoint vkBindPt			= VK_PIPELINE_BIND_POINT_GRAPHICS;
-		auto				vkPipelineLayoutHnd = vkPipelineLayout().hnd();
-		auto				set					= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());
-		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayoutHnd, set, 1, vkDescrSet.hndArray(), 0, nullptr);
-	}
-
-	//_vkVertexStage.bind(vkCtx, vkCmdBuf, vtxLayout, this);
-	// _vkPixelStage.bind(vkCtx, vkCmdBuf, vtxLayout, this);
+	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf);
 }
 
 void 
 MaterialPass_Vk::onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf)
 {
-	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
-	VkPipelineBindPoint vkBindPt	= VK_PIPELINE_BIND_POINT_COMPUTE;
-
+	VkPipelineBindPoint vkBindPt = VK_PIPELINE_BIND_POINT_COMPUTE;
 	vkCmdBindPipeline(vkCmdBuf->hnd(), vkBindPt, _computeVkPipeline.hnd());
-
-	_vkComputeStage.bind(vkCtx, vkCmdBuf, this);
+	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf);
 }
 
 void 
@@ -739,6 +715,32 @@ MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPas
 	}
 
 	vkCmdBindPipeline(vkCmdBuf->hnd(), vkBindPt, vkPipeline->hnd());
+}
+
+void 
+MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf)
+{
+	auto* rdDevVk	= renderDeviceVk();
+	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
+
+	{
+		//auto* mtl		= pass->material();
+		auto& shaderRsc = shaderResources();
+
+		auto& vkDescrSet = vkDescriptorSet();
+		if (!vkDescrSet)
+		{
+			auto&	descriptorAlloc	= vkCtx->vkRdFrame().descriptorAllocator();
+			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
+			builder.buildBindless(vkDescriptorSet(), shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
+		}
+
+		shaderRsc.uploadToGpu(shaderPass());		// this will reset dirty
+
+		auto				vkPipelineLayoutHnd = vkBindPt == VK_PIPELINE_BIND_POINT_GRAPHICS ? vkPipelineLayout().hnd() : _computeVkPipelineLayout.hnd();
+		auto				set					= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());
+		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayoutHnd, set, 1, vkDescrSet.hndArray(), 0, nullptr);
+	}
 }
 
 void

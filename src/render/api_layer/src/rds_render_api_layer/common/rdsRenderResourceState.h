@@ -128,6 +128,16 @@ public:
     static constexpr RenderGpuBufferTypeFlags	getBufferUsageFlags		(RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxBufferUsage> (x); }
     static constexpr TextureUsageFlags		    getTextureUsageFlags    (RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxTextureUsage>(x); }
 
+    static void debugWatcher(RenderResourceStateFlags v)
+    {
+        #if RDS_DEVELOPMENT
+        auto access     = getRenderAccess(v);       RDS_UNUSED(access);
+        auto bufUsage   = getBufferUsageFlags(v);   RDS_UNUSED(bufUsage);
+        auto texUsage   = getTextureUsageFlags(v);  RDS_UNUSED(texUsage);
+        v = v;
+        #endif // RDS_DEVELOPMENT
+    }
+
     static String toString();
 };
 

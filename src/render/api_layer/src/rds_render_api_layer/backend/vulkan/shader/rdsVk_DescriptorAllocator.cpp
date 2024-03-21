@@ -266,7 +266,7 @@ Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_Descripto
 
 	for (auto& e : shaderRscs.samplerParams())
 	{
-		if (StrUtil::isSame(e.name().c_str(), "_sampler"))
+		if (StrUtil::isSame(e.name().c_str(), "rds_sampler"))
 		{
 			bindSampler	(dstSet, e.shaderResource(), shaderStageFlag, pass);
 		}

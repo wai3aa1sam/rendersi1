@@ -92,7 +92,7 @@ ShaderCompiler::_appendStageUnionInfo_samplers(ShaderStageInfo& outInfo, const S
 void 
 ShaderCompiler::_appendStageUnionInfo_storageBufs(ShaderStageInfo& outInfo, const ShaderStageInfo::StorageBuffer& v)
 {
-	if (_appendUniqueSetBinding(v.bindSet, v.bindPoint, v.name))
+	if (_appendUniqueSetBinding(v.bindSet, v.bindPoint, v.name, true))
 	{
 		outInfo.storageBufs.emplace_back(v);
 	}
@@ -101,7 +101,7 @@ ShaderCompiler::_appendStageUnionInfo_storageBufs(ShaderStageInfo& outInfo, cons
 void 
 ShaderCompiler::_appendStageUnionInfo_storageImages(ShaderStageInfo& outInfo, const ShaderStageInfo::StorageImage& v)
 {
-	if (_appendUniqueSetBinding(v.bindSet, v.bindPoint, v.name))
+	if (_appendUniqueSetBinding(v.bindSet, v.bindPoint, v.name, true))
 	{
 		outInfo.storageImages.emplace_back(v);
 	}

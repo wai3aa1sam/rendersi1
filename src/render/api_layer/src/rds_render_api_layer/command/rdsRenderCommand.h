@@ -155,10 +155,21 @@ public:
 
 	SPtr<Material>			material;
 
+	// storage for extra data
+	void*		_extraData		= nullptr;
+	SizeType	_extraDataSize	= 0;
+
 public:
 	Material::Pass* getMaterialPass() { return material ? material->getPass(materialPassIdx) : nullptr; }
 
 	void setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset = 0, SizeType idxOffset = 0);
+
+	template<class T>
+	void setExtraData(const T& data)
+	{
+		*sCast<T*>(_extraData)	= data;
+		_extraDataSize			= sizeof(T);
+	}
 
 public:
 	RenderCommand_DrawCall() : Base(Type::DrawCall) {}
