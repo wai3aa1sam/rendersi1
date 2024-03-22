@@ -10,6 +10,11 @@ using ShaderParamId = int;
 
 class Texture2D;
 
+struct PerObjectParam
+{
+	u32 id = 0;
+};
+
 #define ShaderStageFlag_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(Vertex,	= BitUtil::bit(0)) \
@@ -143,6 +148,7 @@ struct ShaderStageInfo
 public:
 	using Variable = ShaderVariableInfo;
 	using DataType = RenderDataType;
+	using Variables = Vector<Variable, 8>;
 
 public:
 	static constexpr SizeType s_kInputLocalSize			= 8;
@@ -155,12 +161,26 @@ public:
 
 public:
 
-	void create(StrView filename_)
+	void create(StrView filename_, bool isLoadDefaultPushConst)
 	{
 		destroy();
 
 		filename = filename_;
 		JsonUtil::readFile(filename, *this);
+
+		if (isLoadDefaultPushConst)
+		{
+			createDefaultPushConstant();
+		}
+	}
+
+	void createDefaultPushConstant()
+	{
+		// hardcode currently
+		auto& pushConst = pushConstants.emplace_back();
+		pushConst.name		= "rds_perObjectParam";		
+		pushConst.offset	= 0;
+		pushConst.size		= sizeof(PerObjectParam);
 	}
 
 	void destroy()
@@ -170,6 +190,7 @@ public:
 
 		inputs.clear();
 		outputs.clear();
+		pushConstants.clear();
 		constBufs.clear();
 		textures.clear();
 		samplers.clear();
@@ -251,6 +272,27 @@ public:
 		}
 	};
 
+	struct PushConstant : public ShaderResource
+	{
+	public:
+		using Base = ShaderResource;
+
+	public:
+		u32			offset		= 0;
+		u32			size		= 0;
+		Variables	variables;
+
+	public:
+		template<class JSON_SE>
+		void onJsonIo(JSON_SE& se)
+		{
+			Base::onJsonIo(se);
+			RDS_NAMED_FIXED_IO(se, offset);
+			RDS_NAMED_FIXED_IO(se, size);
+			RDS_NAMED_FIXED_IO(se, variables);
+		}
+	};
+
 	struct ShaderResourceParam : public ShaderResource
 	{
 	public:
@@ -291,8 +333,8 @@ public:
 		using Base = ShaderResourceParam;
 
 	public:
-		u32					size		= 0;
-		Vector<Variable, 8> variables;
+		u32			size		= 0;
+		Variables	variables;
 
 	public:
 		static constexpr ShaderResourceType paramType() { return ShaderResourceType::ConstantBuffer; }
@@ -408,6 +450,7 @@ public:
 
 	Vector<Input,			s_kInputLocalSize>			inputs;
 	Vector<Output,			s_kOutputLocalSize>			outputs;
+	Vector<PushConstant,	s_kConstBufLocalSize>		pushConstants;
 	Vector<ConstBuffer,		s_kConstBufLocalSize>		constBufs;
 	Vector<Texture,			s_kTextureLocalSize>		textures;
 	Vector<Sampler,			s_kSamplerLocalSize>		samplers;
@@ -422,6 +465,7 @@ public:
 
 		RDS_NAMED_FIXED_IO(se, inputs);
 		RDS_NAMED_FIXED_IO(se, outputs);
+		RDS_NAMED_FIXED_IO(se, pushConstants);
 		RDS_NAMED_FIXED_IO(se, constBufs);
 		RDS_NAMED_FIXED_IO(se, textures);
 		RDS_NAMED_FIXED_IO(se, samplers);

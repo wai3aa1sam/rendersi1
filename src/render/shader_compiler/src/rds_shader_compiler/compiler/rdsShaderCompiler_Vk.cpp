@@ -118,6 +118,7 @@ ShaderCompiler_Vk::reflect(StrView outpath, ByteSpan spvBytes, ShaderStageFlag s
 	_reflect_inputs			(outInfo, compiler, rsc);
 	_reflect_outputs		(outInfo, compiler, rsc);
 	_reflect_constBufs		(outInfo, compiler, rsc);
+	//_reflect_pushConstants	(outInfo, compiler, rsc);
 	_reflect_textures		(outInfo, compiler, rsc);
 	_reflect_samplers		(outInfo, compiler, rsc);
 	_reflect_storageBufs	(outInfo, compiler, rsc);
@@ -157,7 +158,7 @@ void
 ShaderCompiler_Vk::_reflect_outputs(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res)
 {
 	log("--- Output");
-
+	
 	outInfo.outputs.reserve(res.stage_outputs.size());
 	for (const Resource& e : res.stage_outputs)
 	{
@@ -206,46 +207,51 @@ ShaderCompiler_Vk::_reflect_constBufs(ShaderStageInfo& outInfo, SpirvCompiler& c
 
 		log("\tname: {}, size: {}, set: {}, binding: {}", name, size, set, binding);
 
-		size_t member_count = type.member_types.size();
-		dst.variables.reserve(member_count);
-
-		for (u32 i = 0; i < member_count; i++)
-		{
-			Variable& dstVar = dst.variables.emplace_back();
-
-			const SPIRType&		memberType = compiler.get_type(type.member_types[i]);
-			size_t				memberSize = compiler.get_declared_struct_member_size(type, i);
-			const std::string&	memberName = compiler.get_member_name(type.self, i);
-
-			// Get member offset within this struct.
-			size_t offset = compiler.type_struct_member_offset(type, i);
-
-			if (!memberType.array.empty())
-			{
-				// Get array stride, e.g. float4 foo[]; Will have array stride of 16 bytes.
-				size_t arrayStride = compiler.type_struct_member_array_stride(type, i);
-				bool hasPaddingWarning = memberSize % arrayStride != 0;
-				if (hasPaddingWarning)
-				{
-					_log("array padding warning: variable: {}, dataType : {}, array stride: {}", memberName, SpirvUtil::toStr(memberType.basetype), arrayStride);
-				}
-			}
-
-			if (memberType.columns > 1)
-			{
-				// Get bytes stride between columns (if column major), for float4x4 -> 16 bytes.
-				//size_t matrixStride = compiler.type_struct_member_matrix_stride(type, i);
-				dstVar.isRowMajor = compiler.get_decoration(e.id, spv::DecorationRowMajor);
-			}
-
-			dstVar.name		= memberName.c_str();
-			dstVar.dataType = SpirvUtil::toRenderDataType(memberType);
-			dstVar.size		= sCast<u32>(memberSize);
-			dstVar.offset	= sCast<u32>(offset);
-			log("\t\tmemberName: {}, offset: {}, membSize: {}", memberName, offset, memberSize);
-		}
+		bool isRowMajor = compiler.get_decoration(e.id, spv::DecorationRowMajor);
+		_reflect_struct(outInfo, &dst.variables, compiler, type, isRowMajor);
 		_appendStageUnionInfo_constBufs(_allStageUnionInfo, dst);
 	}
+	log("");
+}
+
+void 
+ShaderCompiler_Vk::_reflect_pushConstants(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res)
+{
+	using PushConstant	= ShaderStageInfo::PushConstant;
+	using Variable		= ShaderStageInfo::Variable;
+
+	log("--- Push Constant");
+
+	outInfo.constBufs.reserve(res.push_constant_buffers.size());
+	for (u32 i = 0; i < res.push_constant_buffers.size(); ++i)
+	{
+		const Resource& e = res.push_constant_buffers[i];
+
+		PushConstant&	dst		= outInfo.pushConstants.emplace_back();
+		const SPIRType& type	= compiler.get_type(e.base_type_id);
+
+		const std::string& name = compiler.get_name(e.id);
+		size_t size				= compiler.get_declared_struct_size(type);
+
+		/*auto ranges = compiler.get_active_buffer_ranges(res.push_constant_buffers[i].id);
+		for (auto& range : ranges)
+		{
+			range.index;
+			range.offset;
+			range.range;
+		}*/
+
+		dst.name	= name.c_str();
+		dst.size	= sCast<u32>(size);
+		dst.offset	= sCast<u32>(compiler.type_struct_member_offset(type, i));
+
+		log("\tname: {}, size: {}", name, size);
+
+		bool isRowMajor = compiler.get_decoration(e.id, spv::DecorationRowMajor);
+		_reflect_struct(outInfo, &dst.variables, compiler, type, isRowMajor);
+		_appendStageUnionInfo_pushConstants(_allStageUnionInfo, dst);
+	}
+
 	log("");
 }
 
@@ -433,6 +439,57 @@ ShaderCompiler_Vk::_reflect_threadGroups(ShaderStageInfo& outInfo, SpirvCompiler
 	a[0];
 }
 
+void 
+ShaderCompiler_Vk::_reflect_struct(ShaderStageInfo& outInfo, ShaderStageInfo::Variables* outVariables, SpirvCompiler& compiler, const SPIRType& type, bool isRowMajor)
+{
+	using Variable		= ShaderStageInfo::Variable;
+
+	size_t member_count = type.member_types.size();
+	outVariables->reserve(outVariables->size() + member_count);
+	for (u32 i = 0; i < member_count; i++)
+	{
+		Variable& dstVar = outVariables->emplace_back();
+
+		const SPIRType&		memberType = compiler.get_type(type.member_types[i]);
+		size_t				memberSize = compiler.get_declared_struct_member_size(type, i);
+		const std::string&	memberName = compiler.get_member_name(type.self, i);
+
+		// Get member offset within this struct.
+		size_t offset = compiler.type_struct_member_offset(type, i);
+
+		if (!memberType.array.empty())
+		{
+			// Get array stride, e.g. float4 foo[]; Will have array stride of 16 bytes.
+			size_t arrayStride = compiler.type_struct_member_array_stride(type, i);
+			bool hasPaddingWarning = memberSize % arrayStride != 0;
+			if (hasPaddingWarning)
+			{
+				_log("array padding warning: variable: {}, dataType : {}, array stride: {}", memberName, SpirvUtil::toStr(memberType.basetype), arrayStride);
+			}
+		}
+
+		if (memberType.columns > 1)
+		{
+			// Get bytes stride between columns (if column major), for float4x4 -> 16 bytes.
+			//size_t matrixStride = compiler.type_struct_member_matrix_stride(type, i);
+			dstVar.isRowMajor = isRowMajor;
+		}
+
+		if (memberType.basetype != SPIRType::BaseType::Struct)
+		{
+			dstVar.name		= memberName.c_str();
+			dstVar.dataType = SpirvUtil::toRenderDataType(memberType);
+			dstVar.size		= sCast<u32>(memberSize);
+			dstVar.offset	= sCast<u32>(offset);
+			log("\t\tmemberName: {}, offset: {}, membSize: {}", memberName, offset, memberSize);
+		}
+		else
+		{
+			//_reflect_struct(outInfo, outVariables, compiler, type, isRowMajor);
+		}
+	}
+}
+
 
 #endif
 
@@ -477,7 +534,8 @@ SpirvUtil::toStr(SPIRType::BaseType baseType)
 		case SRC::Float:	{ return "Float32";		} break;
 		case SRC::Double:	{ return "Float64";		} break;
 
-		case SRC::Struct:	{ RDS_THROW("not support struct"); } break;
+		//case SRC::Struct:	{ RDS_THROW("not support struct"); } break;
+		case SRC::Struct:	{ return "Struct"; } break;
 
 		default:			{ RDS_THROW("unknow type"); }	break;
 	}

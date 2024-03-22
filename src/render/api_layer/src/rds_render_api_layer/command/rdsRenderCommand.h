@@ -155,6 +155,7 @@ public:
 
 	SPtr<Material>			material;
 
+public:
 	// storage for extra data
 	void*		_extraData		= nullptr;
 	SizeType	_extraDataSize	= 0;
@@ -351,6 +352,7 @@ public:
 	RenderCommand_ClearFramebuffers*	clearFramebuffers();
 	RenderCommand_SwapBuffers*			swapBuffers();
 	RenderCommand_DrawCall*				addDrawCall();
+	RenderCommand_DrawCall*				addDrawCall(SizeType extraDataSize);
 
 	RenderCommand_CopyTexture*			copyTexture();
 
@@ -391,9 +393,19 @@ RenderCommandBuffer::newCommand()
 
 inline RenderCommand_Dispatch*			RenderCommandBuffer::dispatch()				{ return newCommand<RenderCommand_Dispatch>(); }
 
-inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
-inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()			{ return newCommand<RenderCommand_SwapBuffers>(); }
-inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()			{ return newCommand<RenderCommand_DrawCall>(); }
+inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()					{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
+inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()							{ return newCommand<RenderCommand_SwapBuffers>(); }
+inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()							{ return newCommand<RenderCommand_DrawCall>(); }
+
+inline 
+RenderCommand_DrawCall*			
+RenderCommandBuffer::addDrawCall(SizeType extraDataSize)	
+{ 
+	auto* p = addDrawCall();
+	p->_extraData		= alloc(extraDataSize, s_kAlign);
+	p->_extraDataSize	= extraDataSize;
+	return p;
+}
 
 inline RenderCommand_CopyTexture*		RenderCommandBuffer::copyTexture()			{ return newCommand<RenderCommand_CopyTexture>(); }
 

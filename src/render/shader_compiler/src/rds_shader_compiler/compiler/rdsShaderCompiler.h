@@ -65,6 +65,7 @@ public:
 protected:
 
 	bool _appendUniqueSetBinding(u32 set, u32 binding, StrView name, bool isIgnoreSameBinding = false);
+	void _appendStageUnionInfo_pushConstants(ShaderStageInfo& outInfo, const ShaderStageInfo::PushConstant&		v);
 	void _appendStageUnionInfo_constBufs	(ShaderStageInfo& outInfo, const ShaderStageInfo::ConstBuffer&		v);
 	void _appendStageUnionInfo_textures		(ShaderStageInfo& outInfo, const ShaderStageInfo::Texture&			v);
 	void _appendStageUnionInfo_samplers		(ShaderStageInfo& outInfo, const ShaderStageInfo::Sampler&			v);
@@ -89,6 +90,7 @@ protected:
 protected:
 	const Option* _opt = nullptr;
 	VectorMap<u32, VectorMap<u32, TempString> > _setBindingTable;
+	VectorSet<TempString>						_pushConstantTable;
 	ShaderStageInfo								_allStageUnionInfo;
 };
 

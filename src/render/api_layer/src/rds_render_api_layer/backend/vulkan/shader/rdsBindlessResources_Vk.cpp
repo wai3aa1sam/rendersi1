@@ -5,6 +5,8 @@
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
+#include "rds_render_api_layer/backend/vulkan/shader/rdsShader_Vk.h"
+
 namespace rds
 {
 
@@ -47,22 +49,10 @@ BindlessResources_Vk::onCreate(const CreateDesc& cDesc)
 	_createDescritporSet(descrSetImg(),		descrSetLayoutImg(),		VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,	descriptorCount());	descrSetImg().setDebugName("bindless_image",	rdDevVk);
 
 	{
-		Vector<Vk_DescriptorSetLayout_T*, 8> layoutHnds;
-		layoutHnds.reserve(_descrSetLayouts.size());
-		for (auto& layout : _descrSetLayouts)
-		{
-			layoutHnds.emplace_back(layout.hnd());
-		}
-
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-		{
-			pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_descrSetLayouts.size());			// Optional
-			pipelineLayoutInfo.pSetLayouts				= layoutHnds.data();						// set0, set1, set2, ...
-			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
-			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
-		}
-		_vkPipelineLayoutCommon.create(&pipelineLayoutInfo, rdDevVk);
+		Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc = {};
+		ShaderPassInfo passInfo;
+		passInfo.allStageUnionInfo.createDefaultPushConstant();
+		vkPipelineLayoutCDesc.create(_vkPipelineLayoutCommon, passInfo, nullptr, rdDevVk);
 	}
 }
 
@@ -268,5 +258,8 @@ BindlessResources_Vk::_createDescritporSet(Vk_DescriptorSet& dstSet, Vk_Descript
 }
 
 #endif
+
+
+
 
 }

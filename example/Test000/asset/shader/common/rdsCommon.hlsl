@@ -105,17 +105,25 @@ references:
 #endif
 #if 1
 
-cbuffer rds_CommonParam : register(RDS_CONSTANT_BUFFER_BINDING(15), RDS_CONSTANT_BUFFER_SPACE)
+struct PerObjectParam
 {
-    float4x4	rds_matrix_model;
-    float4x4	rds_matrix_view;
-    float4x4	rds_matrix_proj;
-    float4x4	rds_matrix_mvp;
-
-    float3      rds_camera_pos;
+    uint id;
 };
+[[vk::push_constant]] ConstantBuffer<PerObjectParam> rds_perObjectParam;
 
+// cbuffer rds_CommonParam : register(RDS_CONSTANT_BUFFER_BINDING(15), RDS_CONSTANT_BUFFER_SPACE)
+// {
+    
+// };
 //RDS_CONSTANT_BUFFER(rds_CommonParam, );
+
+float4x4	rds_matrix_model;
+float4x4	rds_matrix_view;
+float4x4	rds_matrix_proj;
+float4x4	rds_matrix_mvp;
+
+float3      rds_camera_pos;
+
 
 struct rds_Surface 
 {

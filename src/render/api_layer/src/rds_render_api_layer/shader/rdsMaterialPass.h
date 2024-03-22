@@ -275,4 +275,13 @@ inline ShaderResources&				MaterialPass::shaderResources()	{ return _shaderResou
 
 #endif
 
+
+#if 0
+#pragma mark --- rdsVk_PipelineLayoutCDesc-Impl ---
+#endif // 0
+#if 1
+
+
+#endif
+
 }

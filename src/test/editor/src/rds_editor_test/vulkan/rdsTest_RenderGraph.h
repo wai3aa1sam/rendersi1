@@ -131,6 +131,147 @@ EditMesh getFullScreenTriangleMesh()
 
 #endif // 0
 
+#if 0
+
+
+class ObjectTransformBuffer
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	using T = Mat4f;
+
+public:
+	ObjectTransformBuffer()
+	{
+
+	}
+
+	void setValue(SizeType i, const T& v)
+	{
+		at(i) = v;
+	}
+
+	void rotateFrame()
+	{
+		//u32 iFrame = _gpuBufs.iFrame();
+
+
+	}
+
+public:
+			T& at(SizeType i)			{ return sCast<			T&>(cpuBuffer()[i * sizeof(T)]); }
+	const	T& at(SizeType i) const		{ return sCast<const	T&>(cpuBuffer()[i * sizeof(T)]); }
+
+			RenderGpuBuffer& gpuBuffer();
+	const	RenderGpuBuffer& gpuBuffer() const;
+
+			Vector<u8>& cpuBuffer();
+	const	Vector<u8>& cpuBuffer() const;
+
+private:
+	RenderGpuMultiBuffer						_gpuBufs;
+	Vector<Vector<u8>, s_kFrameInFlightCount>	_cpuBufs;;
+};
+
+class CSystem_Base : public NonCopyable
+{
+public:
+
+};
+
+class CRenderableSystem : public CSystem_Base
+{
+public:
+
+	void render(RenderRequest& rdReq)
+	{
+
+	}
+};
+
+class CTransform;
+
+using EntityId = u32;
+class Entity : public RefCount_Base
+{
+public:
+
+private:
+	CTransform	_transform;
+	EntityId	_id = 0;
+};
+
+class Scene
+{
+public:
+
+
+
+private:
+	Vector<Entity*>					_entities;
+	VectorMap<EntityId, Entity*>	_entityTable;
+};
+
+class CComponent : public RefCount_Base
+{
+public:
+
+protected:
+
+};
+
+class CTransform : public CComponent
+{
+public:
+
+
+private:
+	Vec3f	_localPosition;
+	Vec3f	_localScale;
+	Quat4f	_localRotation;
+
+	Mat4f _matLocal;
+	//Mat4f _matWorld;
+
+
+	bool _isDirty = false;
+
+};
+
+class CRenderable : public CComponent
+{
+public:
+
+	virtual void render(RenderRequest& rdReq)
+	{
+
+	}
+
+protected:
+
+};
+
+class CMeshRenderable : public CRenderable
+{
+public:
+	using Base = CRenderable;
+
+public:
+
+	virtual void render(RenderRequest& rdReq)
+	{
+		Base::render(rdReq);
+
+
+	}
+
+protected:
+
+};
+
+#endif // 1
+
+
 class TestScene
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
@@ -147,7 +288,6 @@ public:
 		_rdMeshes.emplace_back(&_rdMesh2);
 
 		_mtls.reserve(s_kObjectCount);
-
 	}
 
 	void create(math::Camera3f* camera)
@@ -191,7 +331,12 @@ public:
 					{
 						(*setMtlFn)(srcMtl, sCast<int>(i));
 					}
-					rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, matModel);
+					//rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, matModel);
+
+					PerObjectParam perObjectParam;
+					perObjectParam.id = sCast<u32>(i);
+					rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, perObjectParam);
+					rdReq.setMaterialCommonParams(srcMtl, matModel);
 				}
 			}
 		}
@@ -317,6 +462,8 @@ public:
 
 				rdReq.setViewport(viewport);
 				rdReq.setScissorRect(viewport);
+
+				rdReq.setMaterialCommonParams(mtl, Mat4f::s_identity());
 				rdReq.drawMesh(RDS_SRCLOC, meshAssets.fullScreenTriangle, mtl);
 			});
 
@@ -395,11 +542,9 @@ public:
 								Mat4f::s_lookAt(center, Vec3f::s_back(),	Vec3f{0.0f, -1.0f,  0.0f}),
 							};
 
-
 							auto	matProj	= Mat4f::s_perspective(math::radians(90.0f), 1.0, 0.1f, viewport.size.x);
 							auto&	matView	= matViews[face];
 							auto	mvp		= matProj * matView;
-
 
 							rdReq.setViewport(viewport);
 							rdReq.setScissorRect(viewport);
@@ -487,7 +632,6 @@ public:
 				_testMtl = Renderer::rdDev()->createMaterial();
 				_testMtl->setShader(_testShader);
 				_testMtl->setParam("texture0", _uvCheckerTex);
-
 			}
 
 			_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test/test_compute_bindless.shader");
@@ -613,10 +757,10 @@ public:
 		RdgTextureHnd oTexDepth;
 		RdgTextureHnd oTexEnvIrradianceCube;
 
-		oTex = testCompute(&_rdGraph, &oTexDepth, false);
+		//oTex = testCompute(&_rdGraph, &oTexDepth, false);
 		//oTex = testDeferred(&_rdGraph, &oTexDepth);
 		//oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
-		//oTex = testBindless(&_rdGraph, &oTexDepth);
+		oTex = testBindless(&_rdGraph, &oTexDepth);
 
 		auto* texSkybox = 0 ? &oTexEnvIrradianceCube : nullptr; RDS_UNUSED(texSkybox);
 
@@ -839,7 +983,7 @@ public:
 				mtl->setParam("skybox", _texCubeEnvMap);
 				//mtl->setParam("skybox", _texCubeIrradianceEnvMap);
 				//mtl->setParam("skybox", _texCubePrefilteredEnvMap);
-
+				rdReq.setMaterialCommonParams(mtl, Mat4f::s_identity());
 				rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
 			});
 
@@ -1039,7 +1183,7 @@ public:
 			clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 			clearValue->setClearDepth(1.0f);
 
-			rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl);
+			rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl, Mat4f::s_identity());
 			rdReq.swapBuffers();
 		}
 		RDS_TODO("move to endRender when upload buffer is cpu prefered");

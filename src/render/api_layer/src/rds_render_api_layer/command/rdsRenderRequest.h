@@ -42,7 +42,8 @@ public:
 
 public:
 	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
-	static void drawSubMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl);
+	template<class T>	static void drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData);
+						static void drawSubMesh (RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl);
 
 public:
 	RenderRequest();
@@ -66,11 +67,13 @@ public:
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color);
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color, float depth, u32 stencil = 0);
 
-	void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const Mat4f& transform = Mat4f::s_identity());
-	void drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const Mat4f& transform = Mat4f::s_identity());
+	void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const Mat4f& transform);
+	void drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const Mat4f& transform);
 
-	template<class T>
-	void drawMeshT	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const Mat4f& transform = Mat4f::s_identity());
+	template<class T>	void drawSubMeshT	(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const T& extraData);
+	template<class T>	void drawMeshT		(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const T& extraData);
+						void drawMesh		(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl);
+						void drawMesh		(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const PerObjectParam& perObjectParam);
 
 	RenderCmdIter<RenderCommand_DrawCall> addDrawCalls(SizeType n);
 	void drawRenderables(const DrawingSettings& settings);
@@ -89,12 +92,14 @@ public:
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform = Mat4f::s_identity());
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY);
 
+public:
 	Span<RenderCommand*>		commands();
 	const RenderCommandBuffer&	commandBuffer() const;
 
 public:
 	RenderCommand_SwapBuffers*	swapBuffers();
 	RenderCommand_DrawCall*		addDrawCall();
+	RenderCommand_DrawCall*		addDrawCall(SizeType extraDataSize);
 
 private:
 	RenderContext*		_rdCtx = nullptr;
@@ -102,12 +107,45 @@ private:
 	//Vector<RenderCommandBuffer, s_kThreadCount>	_RenderCommandBuffers;
 };
 
+#if 1
+
+template<class T>inline
+void 
+RenderRequest::drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData)
+{
+	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl);
+	*reinCast<T*>(p->_extraData)	= extraData;
+	p->_extraDataSize				= sizeof(T);
+}
+
+template<class T> inline
+void 
+RenderRequest::drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData)
+{
+	RDS_CORE_ASSERT(rdSubMesh.vertexBuffer() || rdSubMesh.indexBuffer(), "");
+
+	auto* p = addDrawCall(sizeof(T));
+	drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl, extraData);
+}
+
+template<class T> inline
+void 
+RenderRequest::drawMeshT(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const T& extraData)
+{
+	for (auto& e : rdMesh.subMeshes())
+	{
+		drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, e, mtl, extraData);
+	}
+}
+
+#endif // 1
+
 inline RenderCommandBuffer& RenderRequest::renderCommandBuffer() { return _rdCmdBuf; }
 
-inline RenderCommand_ClearFramebuffers* RenderRequest::clearFramebuffers()	{ return renderCommandBuffer().clearFramebuffers(); }
-inline RenderCommand_SwapBuffers*		RenderRequest::swapBuffers()		{ return renderCommandBuffer().swapBuffers(); }
-inline RenderCommand_DrawCall*			RenderRequest::addDrawCall()		{ return renderCommandBuffer().addDrawCall(); }
-
+inline RenderCommand_ClearFramebuffers* RenderRequest::clearFramebuffers()						{ return renderCommandBuffer().clearFramebuffers(); }
+inline RenderCommand_SwapBuffers*		RenderRequest::swapBuffers()							{ return renderCommandBuffer().swapBuffers(); }
+inline RenderCommand_DrawCall*			RenderRequest::addDrawCall()							{ return renderCommandBuffer().addDrawCall(); }
+inline RenderCommand_DrawCall*			RenderRequest::addDrawCall(SizeType extraDataSize)		{ return renderCommandBuffer().addDrawCall(extraDataSize); }
 
 inline RenderScissorRectScope		RenderRequest::scissorRectScope		()						{ return RenderScissorRectScope(&_rdCmdBuf); }
 inline void							RenderRequest::setScissorRect		(const Rect2f& rect)	{ _rdCmdBuf.setScissorRect(rect); }

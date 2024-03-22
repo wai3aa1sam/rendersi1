@@ -40,6 +40,7 @@ protected:
 	void reflect(StrView outpath, ByteSpan spvBytes, ShaderStageFlag stage);
 	void _reflect_inputs		(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
 	void _reflect_outputs		(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
+	void _reflect_pushConstants	(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
 	void _reflect_constBufs		(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
 	void _reflect_textures		(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
 	void _reflect_samplers		(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
@@ -47,6 +48,7 @@ protected:
 	void _reflect_storageImages	(ShaderStageInfo& outInfo, SpirvCompiler& compiler, const ShaderResources& res);
 
 	void _reflect_threadGroups	(ShaderStageInfo& outInfo, SpirvCompiler& compiler);
+	void _reflect_struct		(ShaderStageInfo& outInfo, ShaderStageInfo::Variables* outVariables, SpirvCompiler& compiler, const spirv_cross::SPIRType& type, bool isRowMajor);
 };
 
 

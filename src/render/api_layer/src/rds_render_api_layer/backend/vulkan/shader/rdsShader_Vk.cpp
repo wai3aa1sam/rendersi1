@@ -277,7 +277,7 @@ Shader_Vk::onReset()
 
 		TempString allStageUnionInfoPath;
 		fmtTo(allStageUnionInfoPath, "{}/pass{}.json", passPath, i);
-		passInfo.allStageUnionInfo.create(allStageUnionInfoPath);
+		passInfo.allStageUnionInfo.create(allStageUnionInfoPath, true);
 
 		auto pass = makeUPtr<Pass>();
 		pass->create(this, &passInfo, passPath);
@@ -286,6 +286,61 @@ Shader_Vk::onReset()
 }
 
 #endif
+
+
+#if 0
+#pragma mark --- rdsVk_PipelineLayoutCDesc-Impl ---
+#endif // 0
+#if 1
+
+void 
+Vk_PipelineLayoutCDesc::create(Vk_PipelineLayout& out, const ShaderInfo::Pass& passInfo, Vk_DescriptorSetLayout* setLayout, RenderDevice_Vk* rdDevVk)
+{
+	destroy();
+
+	rdDevVk->bindlessResourceVk().getDescriptorSetLayoutTo(_setLayoutHnds);
+	if (setLayout)
+	{
+		RDS_CORE_ASSERT(setLayout->hnd(), "invalid set layout handle");
+		auto* layoutHnd = setLayout->hnd();
+		_setLayoutHnds.emplace_back(layoutHnd);
+	}
+	//if (pass->vertexStage())	_hnds.emplace_back(pass->vkVertexStage_NoCheck()._vkDescriptorSetLayout.hnd());
+	//if (pass->pixelStage())		_hnds.emplace_back(pass->vkPixelStage_NoCheck()._vkDescriptorSetLayout.hnd());
+	//if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
+
+	RDS_CORE_ASSERT(!_setLayoutHnds.is_empty(), "no descriptor set layout");
+
+	for (auto& e : passInfo.allStageUnionInfo.pushConstants)
+	{
+		RDS_CORE_ASSERT(e.size == sizeof(PerObjectParam), " only support PerObjectParam for push_constant");
+		RDS_CORE_ASSERT(StrUtil::isSame(e.name.c_str(), "rds_perObjectParam"), "only support rds_perObjectParam for push constant");
+
+		VkPushConstantRange& pushConst = _pushConstantRanges.emplace_back();
+		pushConst.offset		= e.offset;
+		pushConst.size			= e.size;
+		pushConst.stageFlags	= VK_SHADER_STAGE_ALL;
+	}
+
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+	{
+		pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_setLayoutHnds.size());			// Optional
+		pipelineLayoutInfo.pSetLayouts				= _setLayoutHnds.data();						// set0, set1, set2, ...
+		pipelineLayoutInfo.pushConstantRangeCount	= sCast<u32>(_pushConstantRanges.size());		// Optional
+		pipelineLayoutInfo.pPushConstantRanges		= _pushConstantRanges.data();					// Optional
+	}
+	out.create(&pipelineLayoutInfo, rdDevVk);
+}
+
+void 
+Vk_PipelineLayoutCDesc::destroy()
+{
+	_setLayoutHnds.clear();
+	_pushConstantRanges.clear();
+}
+
+#endif // 1
 
 }
 #endif

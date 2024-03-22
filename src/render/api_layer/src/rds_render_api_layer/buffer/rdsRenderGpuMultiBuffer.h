@@ -34,6 +34,9 @@ public:
 
 	void rotate();
 
+public:
+	u32 iFrame() const;
+
 	const Desc& desc() const;
 
 	SizeType stride()		const;
@@ -61,6 +64,8 @@ protected:
 	Desc		_desc;
 	Vector<SPtr<RenderGpuBuffer>, s_kFrameInFlightCount> _renderGpuBuffers;
 };
+
+inline u32 RenderGpuMultiBuffer::iFrame() const { return _iFrame; }
 
 inline const RenderGpuMultiBuffer::Desc& RenderGpuMultiBuffer::desc()		const { return _renderGpuBuffers[_iFrame]->desc(); }
 

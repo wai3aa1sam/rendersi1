@@ -44,7 +44,8 @@ public:
 
 		binPath += ".json";
 		//JsonUtil::readFile(binPath, _info);
-		_info.create(binPath);
+		bool isLoadDefaultPushConst = false;
+		_info.create(binPath, isLoadDefaultPushConst);
 
 		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(_vkModule, rdDevVk, "{}-{}", pass->shader()->filename(), stageFlag());
 	}
@@ -189,8 +190,29 @@ protected:
 
 #endif
 
+#if 0
+#pragma mark --- rdsVk_PipelineLayoutCDesc-Decl ---
+#endif // 0
+#if 1
 
+struct Vk_PipelineLayoutCDesc
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	static constexpr SizeType s_kLocalSize = 8;
 
+public:
+	void create(Vk_PipelineLayout& out, const ShaderInfo::Pass& passInfo, Vk_DescriptorSetLayout* setLayout, RenderDevice_Vk* rdDevVk);
+
+protected:
+	void destroy();
+
+private:
+	Vector<Vk_DescriptorSetLayout_T*,	s_kLocalSize> _setLayoutHnds;
+	Vector<VkPushConstantRange,			s_kLocalSize> _pushConstantRanges;
+};
+
+#endif
 
 
 }

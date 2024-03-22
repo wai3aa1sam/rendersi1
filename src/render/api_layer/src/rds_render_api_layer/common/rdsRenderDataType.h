@@ -51,6 +51,8 @@ class TextureCube;
 	E(Depth,) \
 	E(Float24Norm8,)	E(Float32Norm8,) \
 	\
+	E(Struct,) \
+	\
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(RenderDataType, u8);

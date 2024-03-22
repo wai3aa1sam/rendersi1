@@ -242,7 +242,7 @@ protected:
 	Vk_Pipeline			_computeVkPipeline;
 
 	// TODO: use a union reflection, no, use bindless then only the Material_Vk has it
-	Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
+	//Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
 	Vk_FramedDescrSets		_vkFramedDescrSets;
 	
 	// per Renderer Pipeline state, created if not find 
@@ -263,7 +263,7 @@ inline MaterialPass_Vk::VertexStage&	MaterialPass_Vk::vkVertexStage_noCheck()	{ 
 inline MaterialPass_Vk::PixelStage&		MaterialPass_Vk::vkPixelStage_noCheck()		{ return _vkPixelStage; }
 inline MaterialPass_Vk::ComputeStage&	MaterialPass_Vk::vkComputeStage_noCheck()	{ return _vkComputeStage; }
 
-inline Vk_DescriptorSetLayout&			MaterialPass_Vk::vkDescriptorSetLayout()	{ return _vkDescriptorSetLayout; }
+inline Vk_DescriptorSetLayout&			MaterialPass_Vk::vkDescriptorSetLayout()	{ return shaderPass()->vkDescriptorSetLayout(); }
 inline Vk_DescriptorSet&				MaterialPass_Vk::vkDescriptorSet()			{ return _vkFramedDescrSets[_shaderResources.iFrame()]; }
 
 

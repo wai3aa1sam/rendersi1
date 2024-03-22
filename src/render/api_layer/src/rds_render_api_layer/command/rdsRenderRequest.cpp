@@ -117,6 +117,21 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMes
 }
 
 void 
+RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl)
+{
+	//Empty empty;
+	//drawMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, rdMesh, mtl, empty);
+
+	drawMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, rdMesh, mtl, Mat4f::s_identity());
+}
+
+void 
+RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const PerObjectParam& perObjectParam)
+{
+	drawMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, rdMesh, mtl, perObjectParam);
+}
+
+void 
 RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
 	throwIf(true, "store rdCtx");

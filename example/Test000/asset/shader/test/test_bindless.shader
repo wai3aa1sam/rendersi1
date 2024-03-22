@@ -127,13 +127,15 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	color.b = color.b * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 2).color.b;
 	color.a = color.a * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, 3).color.a;
 
+	color = temp.color * RDS_BUFFER_LOAD_I(TestBuffer, testBuffer, rds_perObjectParam.id).color;
+
 	#else
 	color.r = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 0).color.r;
 	color.g = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 1).color.g;
 	color.b = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 2).color.b;
 	color.a = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 3).color.a;
 
-	//color = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 0).color;
+	color = RDS_RW_BUFFER_LOAD_I(TestBuffer, testRwBuffer, 0).color;
 	
 	rds_rwBufferTable[NonUniformResourceIndex(testRwBuffer)].Store<TestBuffer>(0, temp);
 	color = rds_rwBufferTable[NonUniformResourceIndex(testRwBuffer)].Load<TestBuffer>(0).color;

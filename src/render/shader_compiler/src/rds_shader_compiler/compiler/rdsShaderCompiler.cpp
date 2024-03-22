@@ -63,6 +63,16 @@ ShaderCompiler::_appendUniqueSetBinding(u32 set, u32 binding, StrView name, bool
 }
 
 void 
+ShaderCompiler::_appendStageUnionInfo_pushConstants(ShaderStageInfo& outInfo, const ShaderStageInfo::PushConstant& v)
+{
+	auto it = _pushConstantTable.find(TempString{v.name});
+	if (it == _pushConstantTable.end())
+	{
+		outInfo.pushConstants.emplace_back(v);
+	}
+}
+
+void 
 ShaderCompiler::_appendStageUnionInfo_constBufs(ShaderStageInfo& outInfo, const ShaderStageInfo::ConstBuffer& v)
 {
 	if (_appendUniqueSetBinding(v.bindSet, v.bindPoint, v.name))

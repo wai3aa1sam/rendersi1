@@ -68,46 +68,6 @@ private:
 	Vk_ShaderStageCInfos _shaderStageCInfos;
 };
 
-struct Vk_PipelineLayoutCDesc : public Vk_CDesc_Base
-{
-	static constexpr SizeType s_kLocalSize = 8;
-public:
-	void create(Vk_PipelineLayout& out, MaterialPass_Vk* pass, RenderDevice_Vk* rdDevVk)
-	{
-		destroy();
-
-		rdDevVk->bindlessResourceVk().getDescriptorSetLayoutTo(_setLayoutHnds);
-		if (auto* layoutHnd = pass->shaderPass()->vkDescriptorSetLayout().hnd())
-		{
-			_setLayoutHnds.emplace_back(layoutHnd);
-		}
-		//if (pass->vertexStage())	_hnds.emplace_back(pass->vkVertexStage_NoCheck()._vkDescriptorSetLayout.hnd());
-		//if (pass->pixelStage())		_hnds.emplace_back(pass->vkPixelStage_NoCheck()._vkDescriptorSetLayout.hnd());
-		//if (pass->computeStage())	_hnds.emplace_back(pass->vkComputeStage_NoCheck()._vkDescriptorSetLayout.hnd());
-
-		RDS_CORE_ASSERT(!_setLayoutHnds.is_empty(), "no descriptor set layout");
-
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-		{
-			pipelineLayoutInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			pipelineLayoutInfo.setLayoutCount			= sCast<u32>(_setLayoutHnds.size());			// Optional
-			pipelineLayoutInfo.pSetLayouts				= _setLayoutHnds.data();						// set0, set1, set2, ...
-			pipelineLayoutInfo.pushConstantRangeCount	= 0;		// Optional
-			pipelineLayoutInfo.pPushConstantRanges		= nullptr;	// Optional
-		}
-		out.create(&pipelineLayoutInfo, rdDevVk);
-	}
-
-protected:
-	void destroy()
-	{
-		_setLayoutHnds.clear();
-	}
-
-private:
-	Vector<Vk_DescriptorSetLayout_T*, s_kLocalSize> _setLayoutHnds;
-};
-
 struct Vk_GraphicsPipelineCDesc : public Vk_CDesc_Base
 {
 	using Vk_PipelineColorBlendAttachmentStates = Vector<VkPipelineColorBlendAttachmentState, RDS_VK_MAX_RENDER_TARGET_COUNT>;
@@ -654,6 +614,7 @@ MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_Co
 
 	VkPipelineBindPoint vkBindPt = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	bindPipeline(vkCmdBuf, vkRdPass, vtxLayout);
+
 	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf);
 }
 
@@ -712,6 +673,7 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 
 		auto				vkPipelineLayoutHnd = vkPipelineLayout().hnd();
 		auto				set					= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());
+		//renderDeviceVk()->bindlessResourceVk().bind(vkCmdBuf->hnd(), vkBindPt);
 		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayoutHnd, set, 1, vkDescrSet.hndArray(), 0, nullptr);
 	}
 }
@@ -730,7 +692,7 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 	if (!_vkPipelineLayout)
 	{
 		Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
-		vkPipelineLayoutCDesc.create(_vkPipelineLayout, this, rdDevVk);
+		vkPipelineLayoutCDesc.create(_vkPipelineLayout, info(), &vkDescriptorSetLayout(), rdDevVk);
 		RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", filename, "vkPipelineLayout");
 	}
 
@@ -762,7 +724,7 @@ MaterialPass_Vk::createComputeVkPipeline(Vk_Pipeline& out)
 	if (!_vkPipelineLayout)
 	{
 		Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
-		vkPipelineLayoutCDesc.create(_vkPipelineLayout, this, rdDevVk);
+		vkPipelineLayoutCDesc.create(_vkPipelineLayout, info(), &vkDescriptorSetLayout(), rdDevVk);
 		RDS_VK_SET_DEBUG_NAME_FMT(_vkPipelineLayout, "{}-{}", filename, "vkPipelineLayout");
 	}
 	
