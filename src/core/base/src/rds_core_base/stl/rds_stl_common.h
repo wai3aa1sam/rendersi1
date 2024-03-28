@@ -175,6 +175,17 @@ using ::nmsp::makeSPtr;
 template<class T> using SharedPtr = ::nmsp::SharedPtr_T<T>;
 using ::nmsp::makeShared;
 
+
+template<class T>
+struct DefaultDestructor : public NonCopyable
+{
+	void operator() (T* p)
+	{
+		p->~T();
+	}
+};
+
+
 #endif
 
 #if 0

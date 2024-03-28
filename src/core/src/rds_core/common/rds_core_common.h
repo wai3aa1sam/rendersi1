@@ -5,6 +5,8 @@
 #include "rds_core-config.h"
 #include "rds_core_traits.h"
 
+#include "rdsObject.h"
+
 namespace rds
 {
 #if 0

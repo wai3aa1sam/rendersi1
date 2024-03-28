@@ -5,6 +5,13 @@
 
 namespace rds {
 
+#define RDS_ENGINE_COMMON_BODY() \
+public:																								\
+	using Traits	= EngineTraits;																	\
+	using SizeType	= Traits::SizeType;																\
+private:																							\
+//---
+
 #if 0
 #pragma mark --- rdsEngineTraits-Impl ---
 #endif // 0
