@@ -9,9 +9,12 @@ namespace rds
 #pragma mark --- rdsSingleton-Decl ---
 #endif // 0
 #if 1
-template<class T>
-class Singleton : public NonCopyable
+template<class T, class BASE = NonCopyable>
+class Singleton : public BASE
 {
+public:
+	using Base = BASE;
+
 public:
 	static T* instance();
 
@@ -26,15 +29,6 @@ protected:
 	static T* s_instance;
 };
 
-template<class T>
-class VirtualSingleton : public Singleton<T>
-{
-public:
-	static T* instance() { return s_instance; };
-
-public:
-	static void init() { /* override Singleton<T>::init() */ }
-};
 #endif // 1
 
 
@@ -43,7 +37,7 @@ public:
 #endif // 0
 #if 1
 
-template<class T>
+template<class T, class BASE = NonCopyable>
 class StackSingleton : public NonCopyable
 {
 public:
@@ -64,23 +58,23 @@ protected:
 #endif // 0
 #if 1
 
-template<class T> inline
+template<class T, class BASE> inline
 T* 
-Singleton<T>::instance()
+Singleton<T, BASE>::instance()
 {
 	RDS_CORE_ASSERT(s_instance);
 	return s_instance;
 }
 
-template<class T> inline
-Singleton<T>::Singleton()
+template<class T, class BASE> inline
+Singleton<T, BASE>::Singleton()
 {
 	RDS_CORE_ASSERT(!s_instance, "!s_instance");
 	s_instance = sCast<T*>(this);
 }
 
-template<class T> inline
-Singleton<T>::~Singleton()
+template<class T, class BASE> inline
+Singleton<T, BASE>::~Singleton()
 {
 	RDS_CORE_ASSERT(s_instance == this, "s_instance == this");
 	s_instance = nullptr;
@@ -93,21 +87,22 @@ Singleton<T>::~Singleton()
 #endif // 0
 #if 1
 
-template<class T> inline
-T* StackSingleton<T>::instance()
+template<class T, class BASE> inline
+T* 
+StackSingleton<T, BASE>::instance()
 {
 	return s_instance;
 }
 
-template<class T> inline
-StackSingleton<T>::StackSingleton()
+template<class T, class BASE> inline
+StackSingleton<T, BASE>::StackSingleton()
 {
 	RDS_CORE_ASSERT(!s_instance);
 	s_instance = sCast<T*>(this);
 }
 
-template<class T> inline
-StackSingleton<T>::~StackSingleton()
+template<class T, class BASE> inline
+StackSingleton<T, BASE>::~StackSingleton()
 {
 	RDS_CORE_ASSERT(s_instance == this);
 	s_instance = nullptr;

@@ -66,19 +66,19 @@ rds_malloc_delete(T* p)	RDS_NOEXCEPT
 }
 
 
-template<class T> inline
+template<class T, class BASE> inline
 void
-Singleton<T>::init()
+Singleton<T, BASE>::init()
 {
-	RDS_CORE_ASSERT(!s_instance, "Singleton<T> init failed, already inited");
+	RDS_CORE_ASSERT(!s_instance, "Singleton<T, BASE> init failed, already inited");
 	RDS_NEW(T)();	// ctor will assign this memory to s_instance;
 }
 
-template<class T> inline
+template<class T, class BASE> inline
 void
-Singleton<T>::terminate()
+Singleton<T, BASE>::terminate()
 {
-	RDS_CORE_ASSERT(s_instance, "Singleton<T> terminate failed, no inited yet");
+	RDS_CORE_ASSERT(s_instance, "Singleton<T, BASE> terminate failed, no inited yet");
 	RDS_DELETE(s_instance);
 }
 
