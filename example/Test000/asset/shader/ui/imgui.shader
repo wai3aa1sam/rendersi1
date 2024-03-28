@@ -33,7 +33,7 @@ struct PixelIn {
 	float2 uv	: TEXCOORD0;
 };
 
-RDS_TEXTURE_2D(texture0);
+RDS_TEXTURE_2D(fontTex);
 
 PixelIn vs_main(VertexIn i) 
 {
@@ -50,7 +50,9 @@ float4 ps_main(PixelIn i) : SV_TARGET
 {
 	float2 uv = i.uv;
 	//uv.y = -uv.y;
-	float4 o = i.col * RDS_TEXTURE_2D_SAMPLE(texture0, uv);	// for ImGui::GetTexDataAsRGBA32
+	//float4 o = i.col * RDS_TEXTURE_2D_SAMPLE(fontTex, uv);	// for ImGui::GetTexDataAsRGBA32
+	float4 o = i.col * (rds_texture2DTable[NonUniformResourceIndex(rds_perObjectParam.id)].Sample(RDS_SAMPLER_GET(fontTex), uv));	// for ImGui::GetTexDataAsRGBA32
+
 	//o = i.col * texture0.Sample(_rds_texture0_sampler, i.uv).r;		// for ImGui::GetTexDataAsAlpha8
 
 	return o;

@@ -220,6 +220,8 @@ public:
 
 	const String& name() const;
 
+	u32 iFrame() const;
+
 protected:
 	template<class T> typename RdgResourceTraits<T>::Hnd createRdgResource(StrView name, const RdgResource_CreateDescT<T>& cDesc);
 
@@ -245,7 +247,7 @@ private:
 
 protected:
 	String	_name;
-	u32		_frameIdx = 0;
+	u32		_iFrame = 0;
 
 	RenderContext*	_rdCtx = nullptr;
 	IAllocator*		_alloc = nullptr;
@@ -311,10 +313,12 @@ RenderGraph::deleteT(T* p)
 
 inline RenderContext* RenderGraph::renderContext() { return _rdCtx; }
 
-inline const String& RenderGraph::name() const { return _name; }
+inline const String&	RenderGraph::name()		const { return _name; }
 
-inline RdgResourcePool& RenderGraph::resourcePool()						{ return renderGraphFrame().rscPool; }
-inline RenderGraph::RenderGraphFrame& RenderGraph::renderGraphFrame()	{ return _rdgFrames[_frameIdx]; }
+inline u32				RenderGraph::iFrame()	const { return _iFrame; }
+
+inline RdgResourcePool&					RenderGraph::resourcePool()		{ return renderGraphFrame().rscPool; }
+inline RenderGraph::RenderGraphFrame&	RenderGraph::renderGraphFrame()	{ return _rdgFrames[_iFrame]; }
 
 inline RenderGraph::Passes&		RenderGraph::passes()		{ return renderGraphFrame().passes; }
 inline RenderGraph::Resources&	RenderGraph::resources()	{ return renderGraphFrame().resources; }

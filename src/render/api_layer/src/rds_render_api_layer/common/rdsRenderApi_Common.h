@@ -21,6 +21,8 @@ private:
 
 };
 
+template<class T> using FramedT = Vector<T, RenderApiLayerTraits::s_kFrameInFlightCount>;
+
 #endif
 
 #define QueueTypeFlags_ENUM_LIST(E) \

@@ -197,11 +197,14 @@ Texture_Vk<TEX_BASE>::setDebugName(StrView name)
 {
 	Base::setDebugName(name);
 
-	if (!_vkImage || !_vkImageView)		// prevent crash when it is back buffer
-		return;
-
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-{}-[{}:{}]", name, "_vkImage",		RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-{}-[{}:{}]", name, "_vkImageView",	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	if (_vkImage.hnd())
+	{
+		RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-{}-[{}:{}]", name, "_vkImage",		RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	}
+	if (_vkImageView.hnd())
+	{
+		RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-{}-[{}:{}]", name, "_vkImageView",	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	}
 }
 
 template<class TEX_BASE> inline 

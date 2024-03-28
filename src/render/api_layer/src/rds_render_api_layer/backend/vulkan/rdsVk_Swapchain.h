@@ -80,6 +80,10 @@ public:
 	VkResult acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp);
 	VkResult swapBuffers(Vk_Queue* presentQueue, Vk_Semaphore* waitSmp);
 
+public:
+	Vk_Image_T*				vkImageHnd();
+	Vk_ImageView_T*			vkImageViewHnd();
+
 	const Vk_SwapchainInfo& info() const;
 	Vk_Framebuffer*			framebuffer();
 	u32						curImageIdx() const;
@@ -132,6 +136,8 @@ protected:
 
 inline const Vk_SwapchainInfo& Vk_Swapchain::info() const { return _swapchainInfo; }
 
+inline Vk_Image_T*		Vk_Swapchain::vkImageHnd()			{ return _vkSwapchainImages[curImageIdx()].hnd(); }
+inline Vk_ImageView_T*	Vk_Swapchain::vkImageViewHnd()		{ return _vkSwapchainImageViews[curImageIdx()].hnd(); }
 inline Vk_Framebuffer*	Vk_Swapchain::framebuffer()			{ return !_vkSwapchainFramebuffers.is_empty() ? & _vkSwapchainFramebuffers[curImageIdx()] : nullptr; }
 inline u32				Vk_Swapchain::curImageIdx() const	{ return _curImageIdx; }
 

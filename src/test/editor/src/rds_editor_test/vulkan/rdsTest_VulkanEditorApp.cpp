@@ -212,7 +212,7 @@ public:
 	virtual void onCreate() override
 	{
 		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
-		auto& rdCtx = mainWin->renderContext();		RDS_UNUSED(rdCtx);
+		auto& rdCtx		= mainWin->renderContext();		RDS_UNUSED(rdCtx);
 
 		{
 			#if 1
@@ -275,6 +275,30 @@ public:
 			meshAssets.create();
 		}
 
+		#if 1
+		{
+			auto& egCtx = _egCtx;
+			egCtx.create();
+			_scene.create(egCtx);
+			auto n = 1;
+			for (size_t i = 0; i < n; i++)
+			{
+				auto* ent			= _scene.addEntity("");
+				ent->id();
+				//RDS_CORE_LOG_ERROR("=========");
+
+				auto* rdableMesh	= ent->addComponent<CRenderableMesh>();
+				rdableMesh->material;
+				rdableMesh->meshAsset->rdMesh;
+
+				auto* transform		= ent->getComponent<CTransform>();
+				transform->setLocalPosition(1, 1, 1);
+			}
+			//RDS_CORE_LOG_ERROR("=========");
+		}
+		#endif // 0
+
+
 		// prepare
 		#if 1
 		{
@@ -282,9 +306,16 @@ public:
 
 			rdCtx.beginRender();
 
-			RenderRequest req;
+			RenderRequest rdReq;
 			_testRenderGraph.commit();
-			_testRenderGraph.present(&rdCtx, req, Renderer::rdDev()->transferContext().transferRequest(), false);
+			_testRenderGraph.present(&rdCtx, rdReq, Renderer::rdDev()->transferContext().transferRequest(), false);
+
+			//rdCtx.drawUI(rdReq);
+			//rdCtx.commit(rdReq);
+
+			rdCtx.transferRequest().commit();
+
+			// no commit
 
 			rdCtx.endRender();
 
@@ -421,6 +452,9 @@ public:
 		// drawUI() will upload vertex, therefore must before tsfReq.commit(), _rdReq must be framed, as ui buffer may be in use 
 		_testRenderGraph.present(&rdCtx, _rdReq, tsfReq, true);
 
+		tsfReq.commit();
+
+
 		rdCtx.endRender();
 	}
 
@@ -486,6 +520,9 @@ public:
 	}
 
 protected:
+	EngineContext	_egCtx;;
+	Scene			_scene;
+
 	RenderRequest	_rdReq;
 
 	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;

@@ -95,7 +95,7 @@ public:
 
 	virtual bool isFrameCompleted();	// maybe can cache too
 
-	Texture2D* backBuffer();
+	Texture2D* backBuffer();		// this is fake, backBuffer before beginRender() is different with after beginRender()
 
 	bool isValidFramebufferSize() const;
 
@@ -153,8 +153,8 @@ RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData)
 	switch (cmd->type())
 	{
 		_DISPACH_CMD_CASE(Dispatch,				userData);
-		_DISPACH_CMD_CASE(ClearFramebuffers);
-		_DISPACH_CMD_CASE(SwapBuffers);
+		_DISPACH_CMD_CASE(ClearFramebuffers,	userData);
+		_DISPACH_CMD_CASE(SwapBuffers,			userData);
 		_DISPACH_CMD_CASE(SetScissorRect,		userData);
 		_DISPACH_CMD_CASE(SetViewport,			userData);
 		_DISPACH_CMD_CASE(DrawCall,				userData);

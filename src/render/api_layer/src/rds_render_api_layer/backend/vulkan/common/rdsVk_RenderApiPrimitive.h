@@ -206,11 +206,13 @@ public:
 	void setDebugName(StrView name, RenderDevice_Vk* rdDevVk)
 	{
 		#if RDS_DEVELOPMENT
-		
-		RDS_CORE_ASSERT(_alloc && _allocHnd, "");
 
 		Base::setDebugName(name, rdDevVk);
-		_alloc->setAllocationDebugName(debugName(), &_allocHnd);
+		if (_alloc)
+		{
+			RDS_CORE_ASSERT(_allocHnd, "");
+			_alloc->setAllocationDebugName(debugName(), &_allocHnd);
+		}
 		#endif // RDS_DEVELOPMENT
 	}
 

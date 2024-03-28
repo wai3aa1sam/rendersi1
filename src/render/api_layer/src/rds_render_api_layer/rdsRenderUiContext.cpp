@@ -197,7 +197,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 				req.setScissorRect(Rect2f{a, b - a});
 
-				auto* cmd = req.renderCommandBuffer().addDrawCall();
+				auto* cmd = req.renderCommandBuffer().addDrawCall(sizeof(PerObjectParam));
 
 				#if RDS_DEVELOPMENT
 				cmd->setDebugSrcLoc(RDS_SRCLOC);
@@ -220,13 +220,18 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 				cmd->vertexBuffer->setDebugName("imgui vtx buf");
 				cmd->indexBuffer ->setDebugName("imgui idx buf");
+
+				// temporary solution
+				PerObjectParam perObjParam;
+				perObjParam.id = srcBuf.TextureId ? reinCast<Texture*>(srcBuf.TextureId)->bindlessHandle().getResourceIndex() : _fontTex->bindlessHandle().getResourceIndex();
+				cmd->setExtraData(perObjParam);
 			}
 
 			vertexStart += srcCmd->VtxBuffer.Size;
 			indexStart  += srcCmd->IdxBuffer.Size;
 
 			_vertexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->VtxBuffer.Data), srcCmd->VtxBuffer.Size * vertexSize));
-			_indexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->IdxBuffer.Data), srcCmd->IdxBuffer.Size * indexSize ));
+			 _indexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->IdxBuffer.Data), srcCmd->IdxBuffer.Size * indexSize ));
 		}
 
 		_vtxBuf->uploadToGpu(_vertexData);

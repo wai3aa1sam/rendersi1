@@ -477,7 +477,20 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			}
 
 			if (hasRenderPass)
+			{
 				vkCmdBuf->endRenderPass();
+
+				// vkSwapchain.vkImageHnd() is different with rdGraph backBuffer, need to solve
+				//if (_rdCtxVk->_shdSwapBuffers)
+				//{
+				//	auto& vkSwapchain	= _rdCtxVk->_vkSwapchain;
+				//	auto* vkImgHnd		= vkSwapchain.vkImageHnd();
+				//	vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, vkSwapchain.colorFormat(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+				//	//vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, vkSwapchain.colorFormat(), VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+				//	_rdCtxVk->_shdSwapBuffers = false;
+				//}
+			}
+
 
 			queueProfiler->endProfile(vkCmdBuf->hnd());
 
@@ -491,7 +504,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 		void _recordBarriers(RdgPass* pass, Vk_CommandBuffer* vkCmdBuf)
 		{
-			for (const auto& rscAccess : pass->resourceAccesses())
+			auto rscAccesses = pass->resourceAccesses();
+			for (const auto& rscAccess : rscAccesses)
 			{
 				using SRC = RdgResourceType;
 
@@ -803,7 +817,7 @@ RenderContext_Vk::onRenderCommand_Dispatch(RenderCommand_Dispatch* cmd, void* us
 }
 
 void 
-RenderContext_Vk::onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd)
+RenderContext_Vk::onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuffers* cmd, void* userData)
 {
 	// vkCmdClearAttachments
 	// vkCmdClearColorImage
@@ -811,9 +825,14 @@ RenderContext_Vk::onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuff
 }
 
 void 
-RenderContext_Vk::onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd)
+RenderContext_Vk::onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd, void* userData)
 {
-	_shdSwapBuffers = true;
+	_shdSwapBuffers = true;		// seems useless
+
+	/*auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
+
+	auto* vkImgHnd = _vkSwapchain.vkImageHnd();
+	vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, _vkSwapchain.colorFormat(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);*/
 }
 
 void 

@@ -25,7 +25,6 @@ RenderDevice::createContext(const RenderContext_CreateDesc& cDesc)
 #endif // 0
 #if 1
 
-
 void 
 Backbuffers::create(RenderContext* rdCtx, SizeType imageCount)
 {
@@ -42,7 +41,7 @@ Backbuffers::create(RenderContext* rdCtx, SizeType imageCount)
 	{
 		auto& image = _images[i];
 		image = rdCtx->renderDevice()->createTexture2D(texCDesc);
-		RDS_RenderResouce_SET_DEBUG_NAME(image, "Backbuffer");
+		RDS_RenderResouce_SET_DEBUG_NAME(image, fmtAs_T<TempString>("Backbuffer-{}", i));
 	}
 }
 

@@ -202,7 +202,8 @@ Vk_Swapchain::createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebu
 	for (size_t i = 0; i < outBackbuffers.imageCount(); i++)
 	{
 		auto* backbuffer = outBackbuffers.backbuffer(i);
-		backbuffer->setDebugName(backbuffer->debugName());
+		TempString buf = backbuffer->debugName();
+		backbuffer->setDebugName(buf);
 	}
 }
 

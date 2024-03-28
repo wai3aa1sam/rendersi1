@@ -423,13 +423,14 @@ void RenderGraph::free(void* p, SizeType align)
 
 void RenderGraph::rotateFrame()
 {
-	_frameIdx = (_frameIdx + 1) % s_kFrameInFlightCount;
+	auto& iFrame = _iFrame;
+	iFrame = (iFrame + 1) % s_kFrameInFlightCount;
 
-	if (_rdgFrames.size() < _frameIdx + 1)
+	if (_rdgFrames.size() < iFrame + 1)
 	{
 		// use for first frame
 		if (_rdgFrames.is_empty())
-			_frameIdx = 0;
+			iFrame = 0;
 		auto& back = _rdgFrames.emplace_back();
 		back.create(this);
 	}

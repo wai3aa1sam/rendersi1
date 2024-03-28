@@ -19,6 +19,7 @@ struct TestBindlessBuffer
 	Color4f color;
 };
 
+static RdgTextureHnd s_presentTex;
 
 #if 1
 
@@ -130,147 +131,6 @@ EditMesh getFullScreenTriangleMesh()
 }
 
 #endif // 0
-
-#if 0
-
-
-class ObjectTransformBuffer
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	using T = Mat4f;
-
-public:
-	ObjectTransformBuffer()
-	{
-
-	}
-
-	void setValue(SizeType i, const T& v)
-	{
-		at(i) = v;
-	}
-
-	void rotateFrame()
-	{
-		//u32 iFrame = _gpuBufs.iFrame();
-
-
-	}
-
-public:
-			T& at(SizeType i)			{ return sCast<			T&>(cpuBuffer()[i * sizeof(T)]); }
-	const	T& at(SizeType i) const		{ return sCast<const	T&>(cpuBuffer()[i * sizeof(T)]); }
-
-			RenderGpuBuffer& gpuBuffer();
-	const	RenderGpuBuffer& gpuBuffer() const;
-
-			Vector<u8>& cpuBuffer();
-	const	Vector<u8>& cpuBuffer() const;
-
-private:
-	RenderGpuMultiBuffer						_gpuBufs;
-	Vector<Vector<u8>, s_kFrameInFlightCount>	_cpuBufs;;
-};
-
-class CSystem_Base : public NonCopyable
-{
-public:
-
-};
-
-class CRenderableSystem : public CSystem_Base
-{
-public:
-
-	void render(RenderRequest& rdReq)
-	{
-
-	}
-};
-
-class CTransform;
-
-using EntityId = u32;
-class Entity : public RefCount_Base
-{
-public:
-
-private:
-	CTransform	_transform;
-	EntityId	_id = 0;
-};
-
-class Scene
-{
-public:
-
-
-
-private:
-	Vector<Entity*>					_entities;
-	VectorMap<EntityId, Entity*>	_entityTable;
-};
-
-class CComponent : public RefCount_Base
-{
-public:
-
-protected:
-
-};
-
-class CTransform : public CComponent
-{
-public:
-
-
-private:
-	Vec3f	_localPosition;
-	Vec3f	_localScale;
-	Quat4f	_localRotation;
-
-	Mat4f _matLocal;
-	//Mat4f _matWorld;
-
-
-	bool _isDirty = false;
-
-};
-
-class CRenderable : public CComponent
-{
-public:
-
-	virtual void render(RenderRequest& rdReq)
-	{
-
-	}
-
-protected:
-
-};
-
-class CMeshRenderable : public CRenderable
-{
-public:
-	using Base = CRenderable;
-
-public:
-
-	virtual void render(RenderRequest& rdReq)
-	{
-		Base::render(rdReq);
-
-
-	}
-
-protected:
-
-};
-
-#endif // 1
-
 
 class TestScene
 {
@@ -768,12 +628,14 @@ public:
 		oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
 		finalComposite(&_rdGraph, oTex);
 
+		s_presentTex = oTex;
+
 		_rdGraph.compile();
-		_rdGraph.execute();
 	}
 
 	void commit()
 	{
+		_rdGraph.execute();
 		_rdGraph.commit();
 	}
 
@@ -1126,7 +988,6 @@ public:
 				clearValue->setClearDepth(1.0f);
 
 				Function<void(Material*, int i)> fn  
-
 					= [&](Material* mtl, int i)
 					{
 
@@ -1160,19 +1021,28 @@ public:
 
 		auto& finalComposePass = _rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
 		finalComposePass.readTexture(presentTex);
+		//finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		finalComposePass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+				clearValue->setClearDepth(1.0f);
+
 				_presentMtl->setParam("texture0",			presentTex.texture2D());
 				//_presentMtl->setParam("texture0",			_uvCheckerTex);
-
 				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, 1.0f, 1.0f}));
+
+				//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl, Mat4f::s_identity());
+				//rdGraph->renderContext()->drawUI(rdReq);
+				//rdReq.swapBuffers();
 			}
 		);
 	}
 
 	void present(RenderContext* rdCtx, RenderRequest& rdReq, TransferRequest& tsfReq, bool isPresent = true)
 	{
+		#if 1
 		RDS_TODO("the rdReq here must be framed, otherwise some rsc will be deleted while executing");
 
 		// _rdReq should be per frame, but all the present resources are higher lifetime scope
@@ -1189,9 +1059,10 @@ public:
 		RDS_TODO("move to endRender when upload buffer is cpu prefered");
 
 		rdCtx->drawUI(rdReq);		
-		tsfReq.commit();
+		//tsfReq.commit();
 
 		rdCtx->commit(rdReq);
+		#endif // 1
 	}
 
 	void dump(StrView filename = "debug/render_graph")
@@ -1269,6 +1140,21 @@ public:
 
 				_testBindlessBuffer->setDebugName("_testBindlessBuffer");
 			}
+		}
+
+		{
+			float width		= 800;
+			float height	= 600;
+
+
+			//auto imguiTexHnd = ImGui_ImplVulkan_AddTexture();
+
+			ImGui::Begin("Vulkan Texture Test");
+			ImGui::Text("pointer = %p", s_presentTex.renderResource());
+			ImGui::Text("size = %d x %d", width, height);
+			ImGui::Image((ImTextureID)s_presentTex.renderResource(), ImVec2(width, height));
+			ImGui::End();
+
 		}
 	}
 
