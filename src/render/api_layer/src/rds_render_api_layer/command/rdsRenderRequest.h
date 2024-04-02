@@ -49,6 +49,9 @@ public:
 	RenderRequest();
 	~RenderRequest();
 
+	RenderRequest	(const RenderRequest& rhs) { throwIf(true, ""); }
+	void operator=	(const RenderRequest& rhs) { throwIf(true, ""); }
+
 	void reset(RenderContext* rdCtx);
 	void reset(RenderContext* rdCtx, math::Camera3f& camera);
 	void setCamera(math::Camera3f& camera);

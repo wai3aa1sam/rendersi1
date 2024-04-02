@@ -27,6 +27,11 @@ EditMesh getFullScreenTriangleMesh();
 
 struct MeshAssets
 {
+	~MeshAssets()
+	{
+		destroy();
+	}
+
 	void create()
 	{
 		EditMesh mesh;
@@ -52,7 +57,7 @@ struct MeshAssets
 	RenderMesh fullScreenTriangle;
 
 };
-MeshAssets meshAssets;
+
 
 const VertexLayout* getVertexLayout_RndColorTriangle() { return Vertex_PosColorUvNormal<1>::vertexLayout(); }
 
@@ -132,6 +137,8 @@ EditMesh getFullScreenTriangleMesh()
 
 #endif // 0
 
+MeshAssets meshAssets;
+
 class TestScene
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
@@ -148,6 +155,11 @@ public:
 		_rdMeshes.emplace_back(&_rdMesh2);
 
 		_mtls.reserve(s_kObjectCount);
+	}
+
+	~TestScene()
+	{
+		meshAssets.destroy();
 	}
 
 	void create(math::Camera3f* camera)
@@ -205,6 +217,7 @@ public:
 	//const Mat4f&			mvp()			const { return _mvp; }
 	Mat4f					projMatrix()	const { return _camera->projMatrix(); }
 	const math::Camera3f&	camera()		const { return *_camera; }
+
 
 private:
 	Vector<RenderMesh*> _rdMeshes;
@@ -631,11 +644,11 @@ public:
 		s_presentTex = oTex;
 
 		_rdGraph.compile();
+		_rdGraph.execute();
 	}
 
 	void commit()
 	{
-		_rdGraph.execute();
 		_rdGraph.commit();
 	}
 
@@ -1058,7 +1071,7 @@ public:
 		}
 		RDS_TODO("move to endRender when upload buffer is cpu prefered");
 
-		rdCtx->drawUI(rdReq);		
+		rdCtx->drawUI(rdReq);
 		//tsfReq.commit();
 
 		rdCtx->commit(rdReq);

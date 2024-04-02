@@ -59,6 +59,7 @@ Renderer::create(const CreateDesc& cDesc)
 void 
 Renderer::destroy()
 {
+	Renderer::rdDev()->waitIdle();
 	_rdDevs.clear();
 }
 

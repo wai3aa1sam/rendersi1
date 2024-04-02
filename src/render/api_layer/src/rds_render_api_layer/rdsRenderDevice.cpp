@@ -62,6 +62,7 @@ RenderDevice::create(const CreateDesc& cDesc)
 void 
 RenderDevice::destroy()
 {
+	waitIdle();
 
 	onDestroy();
 

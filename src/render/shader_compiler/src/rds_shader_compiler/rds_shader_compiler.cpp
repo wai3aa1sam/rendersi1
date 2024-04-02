@@ -62,6 +62,9 @@ protected:
 		compile("asset/shader/test/test_compute_bindless.shader",	opt);
 
 		#endif // 0
+
+		compile("asset/shader/demo/hello_triangle/hello_triangle.shader",	opt);
+		
 	}
 
 	void compile(StrView filename, const ShaderCompileOption& opt)

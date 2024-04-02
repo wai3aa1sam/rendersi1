@@ -90,6 +90,19 @@ inline Vector<u8> EditMesh::makePackedVtxData() const { Vector<u8> o; createPack
 #endif
 
 #if 0
+#pragma mark --- rdsEditMeshUtil-Decl ---
+#endif // 0
+#if 1
+
+class EditMeshUtil
+{
+public:
+	static EditMesh getFullScreenTriangle();
+};
+
+#endif // 1
+
+#if 0
 #pragma mark --- rdsEditMeshT-Impl ---
 #endif // 0
 #if 1
@@ -436,7 +449,6 @@ PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out, const VertexLayout*
 
 #endif // 1
 
-
 inline
 const VertexLayout* 
 EditMesh::getVertexLayout() const
@@ -450,6 +462,5 @@ EditMesh::getVertexLayout() const
 		, &binormal,	s_kBinormalCount
 	);
 }
-
 
 }

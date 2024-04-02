@@ -205,7 +205,6 @@ public:
 	VulkanLayer() = default;
 	virtual ~VulkanLayer()
 	{
-		Renderer::rdDev()->waitIdle();
 		meshAssets.destroy();
 	}
 

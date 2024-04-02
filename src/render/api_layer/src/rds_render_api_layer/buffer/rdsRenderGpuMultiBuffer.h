@@ -35,7 +35,8 @@ public:
 	void rotate();
 
 public:
-	u32 iFrame() const;
+	u32		iFrame()	const;
+	bool	isEmpty()	const;
 
 	const Desc& desc() const;
 
@@ -66,6 +67,7 @@ protected:
 };
 
 inline u32 RenderGpuMultiBuffer::iFrame() const { return _iFrame; }
+inline bool RenderGpuMultiBuffer::isEmpty() const { return _renderGpuBuffers.is_empty(); }
 
 inline const RenderGpuMultiBuffer::Desc& RenderGpuMultiBuffer::desc()		const { return _renderGpuBuffers[_iFrame]->desc(); }
 
@@ -76,8 +78,8 @@ inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const
 inline			SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[_iFrame]; }
 inline const	SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::renderGpuBuffer() const	{ return _renderGpuBuffers[_iFrame]; }
 
-inline			SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::previousBuffer()			{ return _renderGpuBuffers[(_iFrame - 1) % s_kFrameInFlightCount]; }
-inline const	SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::previousBuffer() const		{ return _renderGpuBuffers[(_iFrame - 1) % s_kFrameInFlightCount]; }
+inline			SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::previousBuffer()			{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kFrameInFlightCount]; }
+inline const	SPtr<RenderGpuBuffer>& RenderGpuMultiBuffer::previousBuffer() const		{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kFrameInFlightCount]; }
 
 
 #endif
