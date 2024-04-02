@@ -66,7 +66,7 @@ struct Logger_CreateDesc : public Logger_Base_CreateDesc
 
 };
 
-class Logger: public Singleton<Logger>, public Logger_Base
+class Logger: public Singleton<Logger, Logger_Base>
 {
 public:
 	using Base			= Logger_Base;

@@ -58,7 +58,7 @@ EditorApp::onCreate	(const CreateDesc_Base& cd)
 void 
 EditorApp::onDestroy()
 {
-
+	Renderer::rdDev()->waitIdle();
 }
 
 void 
@@ -101,7 +101,11 @@ EditorApp::onQuit		()
 void 
 EditorApp::willQuit	()
 {
+	if (Renderer::rdDev())
+		Renderer::rdDev()->waitIdle();
+
 	Base::willQuit();
+
 	onDestroy();
 
 	Renderer::terminate();

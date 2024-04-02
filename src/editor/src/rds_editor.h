@@ -9,15 +9,15 @@
 namespace rds
 {
 
-inline 
+template<class T> inline 
 i32
 runApp()
 {
 	i32 exitCode;
 	MemoryContext::init();
 	{
-		auto cdesc = EditorApp::makeCDesc();
-		EditorApp app;
+		auto cdesc = T::makeCDesc();
+		T app;
 		exitCode = app.run(cdesc);
 	}
 	MemoryContext::terminate();

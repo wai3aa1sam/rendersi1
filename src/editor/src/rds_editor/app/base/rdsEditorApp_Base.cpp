@@ -13,7 +13,6 @@ namespace rds
 EditorApp_Base* EditorApp_Base::s_instance = nullptr;
 
 EditorApp_Base::EditorApp_Base()
-	: Base()
 {
 }
 

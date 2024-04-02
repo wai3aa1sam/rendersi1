@@ -38,7 +38,7 @@ protected:
 #if 1
 
 template<class T, class BASE = NonCopyable>
-class StackSingleton : public NonCopyable
+class StackSingleton : public BASE
 {
 public:
 	static T* instance();

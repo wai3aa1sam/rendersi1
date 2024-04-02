@@ -17,16 +17,12 @@ struct EditorApp_Base_CreateDesc : public NativeUIApp_CreateDesc
 
 class AppLayer;
 
-class EditorApp_Base : public NativeUIApp, public StackSingleton<EditorApp_Base>
+class EditorApp_Base : public StackSingleton<EditorApp_Base, NativeUIApp>
 {
 public:
 	using Base	= NativeUIApp;
-	using Base2 = StackSingleton<EditorApp_Base>;
 	using CreateDesc_Base	= Base::CreateDesc_Base;
 	using CreateDesc		= EditorApp_Base_CreateDesc;
-
-public:
-	static EditorApp_Base* instance();
 
 public:
 	EditorApp_Base();
@@ -46,21 +42,6 @@ protected:
 	AppLayerStack	_appLayerStack;
 	bool			_shouldQuit = false;
 };
-
-
-#endif
-
-
-#if 0
-#pragma mark --- rdsEditorApp_Base-Decl ---
-#endif // 0
-#if 1
-
-inline EditorApp_Base* 
-EditorApp_Base::instance()
-{
-	return s_instance;
-}
 
 
 #endif
