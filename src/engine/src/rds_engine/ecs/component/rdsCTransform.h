@@ -44,12 +44,12 @@ protected:
 	//void onDestroy()				override;
 
 protected:
-	Vec3f	_localPosition;
-	Vec3f	_localScale;
-	Quat4f	_localRotation;
+	Vec3f	_localPosition		= Vec3f {0, 0, 0};
+	Vec3f	_localScale			= Vec3f {1, 1, 1};
+	Quat4f	_localRotation		= Quat4f{0, 0, 0, 0};
 
-	Mat4f	_matLocal;
-	Mat4f	_matWorld;
+	Mat4f	_matLocal = Mat4f::s_identity();
+	Mat4f	_matWorld = Mat4f::s_identity();
 
 	bool _isDirty = false;
 };

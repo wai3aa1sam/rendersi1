@@ -55,7 +55,11 @@ add_subdirectory(src/engine)
 
 #-- editor
 add_subdirectory(src/editor)
-add_subdirectory(src/editor/app)
+add_subdirectory(src/editor/editor_app)
+
+#-- demo
+add_subdirectory(src/demo)
+add_subdirectory(src/demo/hello_triangle)
 
 message("--- rendersi1_test ---")
 #test

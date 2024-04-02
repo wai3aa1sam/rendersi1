@@ -26,11 +26,25 @@ CRenderableSystem::~CRenderableSystem()
 }
 
 void 
+CRenderableSystem::create(EngineContext* egCtx)
+{
+	Base::create(&engineContext());
+	_framedRdReq.resize(s_kFrameInFlightCount);
+}
+
+void 
+CRenderableSystem::destroy()
+{
+	_framedRdReq.clear();
+	Base::destroy();
+}
+
+void 
 CRenderableSystem::update()
 {
 	// transform system update
 	{
-		_objTransformBuf.resize(renderables().size());
+		_objTransformBuf.resize(renderables().size() + 1);
 
 		// or loop dirty transform only
 		for (auto* rdable : renderables())
@@ -42,41 +56,49 @@ CRenderableSystem::update()
 			_objTransformBuf.setValue(idx, transform.localMatrix());
 		}
 		// for all materials and setParam
+		_objTransformBuf.uploadToGpu();
 	}
 
 	// record command
 	{
 		auto& rdGraph = renderGraph();
 
-		rdGraph.reset();
-
+		//rdGraph.reset();
 		// update
-
 		// present
-		{
-			//Material* mtl = nullptr;
-
-			//auto* rdCtx = rdGraph.renderContext();
-			//rdCtx->drawUI();
-		}
 
 		rdGraph.compile();
 		rdGraph.execute();
-
-		/*VectorMap<int, SPtr<int>> a;
-		a.erase()*/
 	}
 
-	_objTransformBuf.uploadToGpu();
 }
 
 void
-CRenderableSystem::render(RenderRequest& rdReq)
+CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent)
 {
 	auto& rdGraph = renderGraph();
 	
 	// rdGraph.execute(); // execute in render thread, then later need to copy struct renderableObject list to render thread, keep simple first
 	rdGraph.commit();
+
+	// present
+	{
+		auto* rdCtx = rdGraph.renderContext();
+		auto& rdReq = renderRequest();
+		RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
+
+		{
+			rdReq.reset(rdCtx);
+			auto* clearValue = rdReq.clearFramebuffers();
+			clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+			clearValue->setClearDepth(1.0f);
+
+			rdReq.drawMesh(RDS_SRCLOC, fullScreenTriangle, mtlPresent);
+			rdReq.swapBuffers();
+		}
+		rdCtx->drawUI(rdReq);		
+		rdCtx->commit(rdReq);
+	}
 }
 
 void 

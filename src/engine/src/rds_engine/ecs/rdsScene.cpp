@@ -61,4 +61,24 @@ Scene::removeEntity(Entity* entity)
 
 #endif
 
+
+#if 0
+#pragma mark --- rdsSceneView-Impl ---
+#endif // 0
+#if 1
+
+void 
+SceneView::drawScene(RenderRequest& rdReq, Material* mtl)
+{
+	_rdableSys->drawRenderables(rdReq, mtl);
+}
+
+void 
+SceneView::drawScene(RenderRequest& rdReq)
+{
+	_rdableSys->drawRenderables(rdReq);
+}
+
+#endif
+
 }

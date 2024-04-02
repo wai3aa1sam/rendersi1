@@ -43,4 +43,27 @@ inline EngineContext& Scene::engineContext() { return *_egCtx; }
 
 #endif
 
+
+#if 0
+#pragma mark --- rdsSceneView-Impl ---
+#endif // 0
+#if 1
+
+class SceneView
+{
+public:
+	void create(CRenderableSystem* sys);
+
+	void drawScene(RenderRequest& rdReq, Material* mtl);
+	void drawScene(RenderRequest& rdReq);
+
+private:
+	CRenderableSystem* _rdableSys = nullptr;
+};
+
+inline void SceneView::create(CRenderableSystem* sys) { _rdableSys = sys; }
+
+
+#endif
+
 }

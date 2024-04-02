@@ -51,7 +51,7 @@ CRenderable::render(RenderRequest& rdReq)
 void 
 CRenderable::setMaterialCommonParam(Material* mtl)
 {
-	mtl->setParam("rds_localTransforms", &renderableSystem()._objTransformBuf.gpuBuffer());
+	mtl->setParam("rds_transforms", &renderableSystem()._objTransformBuf.prevGpuBuffer());	// since it upload first then record, this frame should be "previous"
 }
 
 CRenderableSystem&		CRenderable::renderableSystem()					{ return getSystem(engineContext()); }

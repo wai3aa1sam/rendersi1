@@ -111,6 +111,14 @@ struct PerObjectParam
 };
 [[vk::push_constant]] ConstantBuffer<PerObjectParam> rds_perObjectParam;
 
+RDS_BUFFER(float4x4, rds_transforms);
+#define RDS_MATRIX_MODEL RDS_BUFFER_LOAD_I(float4x4, rds_transforms, rds_perObjectParam.id)
+
+float4x4 rds_get_matrix_model()
+{
+    return RDS_MATRIX_MODEL;
+}
+
 // cbuffer rds_CommonParam : register(RDS_CONSTANT_BUFFER_BINDING(15), RDS_CONSTANT_BUFFER_SPACE)
 // {
     
@@ -121,6 +129,7 @@ float4x4	rds_matrix_model;
 float4x4	rds_matrix_view;
 float4x4	rds_matrix_proj;
 float4x4	rds_matrix_mvp;
+float4x4	rds_matrix_vp;
 
 float3      rds_camera_pos;
 

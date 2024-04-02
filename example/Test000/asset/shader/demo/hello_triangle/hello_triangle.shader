@@ -6,7 +6,7 @@ Shader {
 	
 	Pass {
 		// Queue	"Transparent"
-		//Cull		None
+		//Cull		Front
 
 //		DepthTest	Always
 //		DepthWrite	false
@@ -37,12 +37,13 @@ struct PixelIn
 };
 
 
-RDS_TEXTURE_2D(texPresent);
+RDS_TEXTURE_2D(texture0);
 
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
-    o.positionHCS = i.positionOS;
+	float4x4 mvp  = mul(rds_matrix_vp, rds_get_matrix_model());
+	o.positionHCS = mul(mvp, i.positionOS);
     o.uv          = i.uv;
     
     return o;
@@ -50,6 +51,6 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-	float4 o = RDS_TEXTURE_2D_SAMPLE(texPresent, i.uv);
+	float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv);
     return o;
 }
