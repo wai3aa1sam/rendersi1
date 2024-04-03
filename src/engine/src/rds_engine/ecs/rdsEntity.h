@@ -38,8 +38,11 @@ public:
 	EngineContext&		engineContext();
 	Scene&				scene();
 	EntityId			id()	const;
-	const TempString&	name()	const;
+	const String&		name()	const;
 	CTransform&			transform();
+
+	Span<		SPtr<CComponent> > components();
+	Span<const	SPtr<CComponent> > components() const;
 
 protected:
 	void create(Scene& scene, EntityId id);
@@ -48,7 +51,7 @@ protected:
 protected:
 	Scene*		_scene = nullptr;
 	EntityId	_id;
-	TempString	_name;
+	String		_name;
 	Components	_components;
 };
 
@@ -74,9 +77,11 @@ Entity::getComponent()
 
 inline Scene&				Entity::scene()				{ return *_scene; }
 inline EntityId				Entity::id()		const	{ return _id; }
-inline const TempString&	Entity::name()		const	{ return _name; }
+inline const String&		Entity::name()		const	{ return _name; }
 inline CTransform&			Entity::transform()			{ return *getComponent<CTransform>(); }
 
+inline Span<		SPtr<CComponent> > Entity::components()			{ return _components; }
+inline Span<const	SPtr<CComponent> > Entity::components() const	{ return spanConstCast<const SPtr<CComponent> >(_components); }
 
 #endif
 

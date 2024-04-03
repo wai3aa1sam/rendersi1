@@ -39,6 +39,13 @@ Scene::addEntity()
 	auto& id = ++_nextEntId;
 	auto* ent = _entVecTable.newElement<Entity>(id);
 	ent->create(*this, id);
+
+	#if 0
+	TempString buf;
+	fmtTo(buf, "Entity-{}", sCast<u64>(id));
+	ent->setName(buf);
+	#endif // 0
+
 	return ent;
 }
 
@@ -58,6 +65,18 @@ Scene::removeEntity(Entity* entity)
 	_entVecTable.removeElement(entity->id());
 }
 
+Entity* 
+Scene::findEntity(EntityId id)
+{
+	return _entVecTable.findElement(id);
+
+}
+
+const Entity* 
+Scene::findEntity(EntityId id) const
+{
+	return constCast(_entVecTable).findElement(id);
+}
 
 #endif
 

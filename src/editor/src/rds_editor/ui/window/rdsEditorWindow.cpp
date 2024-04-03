@@ -1,11 +1,11 @@
 #include "rds_editor-pch.h"
-#include "rdsEditorUi.h"
+#include "rdsEditorWindow.h"
 
 namespace rds
 {
 
 #if 0
-#pragma mark --- rdsEditorUi-Impl ---
+#pragma mark --- rdsEditorWindow-Impl ---
 #endif // 0
 #if 1
 

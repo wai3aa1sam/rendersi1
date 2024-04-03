@@ -119,7 +119,9 @@ public:
 	T* findElement(const Key& key);
 
 public:
-	Elements&	elements();
+			Elements&	elements();
+	const	Elements&	elements() const;
+
 	SizeType	size() const;
 
 private:
@@ -235,7 +237,9 @@ EcsVectorTable<T, VALUE>::findElement(const Key& key)
 	#endif // 0
 }
 
-template<class T, class VALUE> inline typename EcsVectorTable<T, VALUE>::Elements&	EcsVectorTable<T, VALUE>::elements()			{ return _elements; }
+template<class T, class VALUE> inline typename			EcsVectorTable<T, VALUE>::Elements&	EcsVectorTable<T, VALUE>::elements()		{ return _elements; }
+template<class T, class VALUE> inline typename const	EcsVectorTable<T, VALUE>::Elements&	EcsVectorTable<T, VALUE>::elements() const	{ return _elements; }
+
 template<class T, class VALUE> inline typename EcsVectorTable<T, VALUE>::SizeType	EcsVectorTable<T, VALUE>::size()		const	{ return _elements.size(); }
 
 #endif

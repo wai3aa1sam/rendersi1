@@ -87,12 +87,14 @@ CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle,
 		auto& rdReq = renderRequest();
 		RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
 
-		{
-			rdReq.reset(rdCtx);
-			auto* clearValue = rdReq.clearFramebuffers();
-			clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
-			clearValue->setClearDepth(1.0f);
+		rdReq.reset(rdCtx);
+		auto* clearValue = rdReq.clearFramebuffers();
+		clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+		clearValue->setClearColor(Color4f{0.0f, 0.0f, 0.0f, 1.0f});
+		clearValue->setClearDepth(1.0f);
 
+		if (mtlPresent)
+		{
 			rdReq.drawMesh(RDS_SRCLOC, fullScreenTriangle, mtlPresent);
 			rdReq.swapBuffers();
 		}

@@ -29,8 +29,14 @@ public:
 
 	void removeEntity(Entity* entity);
 
+			Entity* findEntity(EntityId id);
+	const	Entity* findEntity(EntityId id) const;
+
 public:
 	EngineContext& engineContext();
+
+	Span<		Entity*> entities();
+	Span<const	Entity*> entities() const;
 
 protected:
 	EngineContext*	_egCtx = nullptr;
@@ -39,6 +45,9 @@ protected:
 };
 
 inline EngineContext& Scene::engineContext() { return *_egCtx; }
+
+inline Span<		Entity*> Scene::entities()			{ return _entVecTable.elements(); }
+inline Span<const	Entity*> Scene::entities() const	{ return spanConstCast<const Entity*>(_entVecTable.elements()); }
 
 
 #endif

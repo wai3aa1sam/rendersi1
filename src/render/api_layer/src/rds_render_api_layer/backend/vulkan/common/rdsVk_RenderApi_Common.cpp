@@ -1143,7 +1143,7 @@ Vk_RenderApiUtil::createSwapchain(Vk_Swapchain_T** out, Vk_Surface_T* vkSurface,
 {
 	//u32 imageCount	= avaInfo.capabilities.minImageCount + 1;
 	u32 imageCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
-	imageCount		= math::clamp(imageCount, imageCount, avaInfo.capabilities.maxImageCount);
+	imageCount		= math::clamp(imageCount, avaInfo.capabilities.minImageCount, avaInfo.capabilities.maxImageCount);
 
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType			= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

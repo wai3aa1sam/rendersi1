@@ -5,6 +5,8 @@
 
 #include "../rdsGraphicsDemo.h"
 
+#include "imgui_internal.h"
+
 namespace rds
 {
 
@@ -103,6 +105,7 @@ DemoEditorLayer::onUpdate()
 		rdData.camera	 = &mainWnd.camera();
 		_gfxDemo->onExecuteRender(&rdGraph, rdData);
 		RDS_CORE_ASSERT(rdData.oTexPresent, "invalid present tex");
+		_texHndPresent = rdData.oTexPresent;
 
 		// present
 		{
@@ -150,10 +153,64 @@ DemoEditorLayer::onRender()
 
 	rdCtx.beginRender();
 
-	renderableSystem().render(&rdCtx, _fullScreenTriangle, _mtlPresent);
+	drawEditorUi(_texHndPresent);
+
+	//renderableSystem().render(&rdCtx, _fullScreenTriangle, _mtlPresent);
+	renderableSystem().render(&rdCtx, _fullScreenTriangle, nullptr);
+
 	tsfReq.commit();
 
 	rdCtx.endRender();
+}
+
+void 
+DemoEditorLayer::drawEditorUi(RdgTextureHnd texHndPresent)
+{
+	auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
+	{
+		static bool isShowDemoWindow = false;
+
+		ImGuiViewport*	pViewport = ImGui::GetMainViewport();
+		ImGuiID			dockspace = ImGui::DockSpaceOverViewport(pViewport); RDS_UNUSED(dockspace);
+
+		#if 0
+		if (ImGui::BeginMainMenuBar()) 
+		{
+			if (ImGui::BeginMenu("File")) 
+			{
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Edit")) 
+			{
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+		#endif // 0
+	}
+
+	// viewport
+	{
+		auto wnd = uiDrawReq.makeWindow("Viewport");
+		uiDrawReq.showImage(texHndPresent.renderResource());
+	}
+
+	#if 1
+	// console
+	{
+		auto wnd = uiDrawReq.makeWindow("Console");
+
+	}
+
+	// project
+	{
+		auto wnd = uiDrawReq.makeWindow("Project");
+
+	}
+
+	_edtHierarchyWnd.draw(&uiDrawReq, scene());
+	_edtInspectorWnd.draw(&uiDrawReq, scene());
+	#endif // 1
 }
 
 inline DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }

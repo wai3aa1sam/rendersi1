@@ -47,6 +47,10 @@ HelloTriangle::onCreateScene(Scene* oScene)
 
 		auto* transform	= ent->getComponent<CTransform>();
 		transform->setLocalPosition(0, 0, 0);
+
+		TempString buf;
+		fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
+		ent->setName(buf);
 	}
 }
 

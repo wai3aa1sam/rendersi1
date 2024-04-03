@@ -3,6 +3,7 @@
 #include "rds_demo/common/rds_demo_common.h"
 
 
+#include "rds_demo/editor/rdsDemoEditoMainWindow.h"
 #include "rds_demo/editor/rdsDemoEditorLayer.h"
 #include "rds_demo/editor/rdsDemoEditorApp.h"
 
@@ -34,11 +35,12 @@ int main(int argc_, char** argv_)
 	return runDemoApp();
 }
 
-#define RDS_DEMO(T) 							\
-inline											\
-UPtr<GraphicsDemo> 								\
-makeDemo()										\
-{												\
-	return makeUPtr<T>();						\
-}												\
+#define RDS_DEMO(T) 											\
+inline															\
+UPtr<GraphicsDemo> 												\
+makeDemo()														\
+{																\
+	DemoEditorApp::instance()->mainWindow().setWindowTitle(#T);	\
+	return makeUPtr<T>();										\
+}																\
 // ---

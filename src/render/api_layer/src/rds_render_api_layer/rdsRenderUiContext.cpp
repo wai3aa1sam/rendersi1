@@ -34,6 +34,7 @@ RenderUiContext::create(RenderContext* renderContext)
 	io.ConfigFlags				|= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags				|= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 	io.ConfigFlags				|= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+	io.ConfigViewportsNoDefaultParent = true;
 
 	//_setDarkTheme();
 
@@ -171,6 +172,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		int vertexStart = 0;
 		int indexStart  = 0;
 
+		ImVec2 clipOff = data->DisplayPos;
 		for (int i = 0; i < data->CmdListsCount; i++) 
 		{
 			auto* srcCmd = data->CmdLists[i];
@@ -179,52 +181,63 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 			{
 				auto& srcBuf = srcCmd->CmdBuffer[j];
 
-				// Project scissor/clipping rectangles into frame buffer space
+				if (srcBuf.UserCallback)
+				{
+					srcBuf.UserCallback(srcCmd, &srcBuf);
+				}
+				else
+				{
+					// Project scissor/clipping rectangles into frame buffer space
 
-				ImVec2 clip_min((srcBuf.ClipRect.x - clip_off.x) * clip_scale.x, (srcBuf.ClipRect.y - clip_off.y) * clip_scale.y);
-				ImVec2 clip_max((srcBuf.ClipRect.z - clip_off.x) * clip_scale.x, (srcBuf.ClipRect.w - clip_off.y) * clip_scale.y);
+					ImVec2 clip_min((srcBuf.ClipRect.x - clip_off.x) * clip_scale.x, (srcBuf.ClipRect.y - clip_off.y) * clip_scale.y);
+					ImVec2 clip_max((srcBuf.ClipRect.z - clip_off.x) * clip_scale.x, (srcBuf.ClipRect.w - clip_off.y) * clip_scale.y);
 
-				if (clip_min.x < 0.0f)		{ clip_min.x = 0.0f; }
-				if (clip_min.y < 0.0f)		{ clip_min.y = 0.0f; }
-				if (clip_max.x > fb_width)	{ clip_max.x = sCast<float>(fb_width); }
-				if (clip_max.y > fb_height) { clip_max.y = sCast<float>(fb_height); }
-				if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
-					continue;
+					if (clip_min.x < 0.0f)		{ clip_min.x = 0.0f; }
+					if (clip_min.y < 0.0f)		{ clip_min.y = 0.0f; }
+					if (clip_max.x > fb_width)	{ clip_max.x = sCast<float>(fb_width); }
+					if (clip_max.y > fb_height) { clip_max.y = sCast<float>(fb_height); }
+					if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+						continue;
 
-				// Apply scissor/clipping rectangle
-				auto a = makeVec2f(clip_min);
-				auto b = makeVec2f(clip_max);
+					// Apply scissor/clipping rectangle
+					auto a = makeVec2f(clip_min);
+					auto b = makeVec2f(clip_max);
 
-				req.setScissorRect(Rect2f{a, b - a});
+					req.setScissorRect(Rect2f{a, b - a});
 
-				auto* cmd = req.renderCommandBuffer().addDrawCall(sizeof(PerObjectParam));
+					auto* cmd = req.renderCommandBuffer().addDrawCall(sizeof(PerObjectParam));
 
-				#if RDS_DEVELOPMENT
-				cmd->setDebugSrcLoc(RDS_SRCLOC);
-				cmd->setDebugName("draw imgui");
-				#endif
+					#if RDS_DEVELOPMENT
+					cmd->setDebugSrcLoc(RDS_SRCLOC);
+					cmd->setDebugName("draw imgui");
+					#endif
 
-				cmd->material				= _material;
-				cmd->materialPassIdx		= 0;
-				cmd->renderPrimitiveType	= RenderPrimitiveType::Triangle;
+					cmd->material				= _material;
+					cmd->materialPassIdx		= 0;
+					cmd->renderPrimitiveType	= RenderPrimitiveType::Triangle;
 
-				cmd->vertexLayout			= _vertexLayout;
-				cmd->vertexBuffer			= _vtxBuf->renderGpuBuffer();
-				cmd->vertexOffset			= (vertexStart + srcBuf.VtxOffset) * vertexSize;
-				cmd->vertexCount			= 0;
+					cmd->vertexLayout			= _vertexLayout;
+					cmd->vertexBuffer			= _vtxBuf->renderGpuBuffer();
+					cmd->vertexOffset			= (vertexStart + srcBuf.VtxOffset) * vertexSize;
+					cmd->vertexCount			= 0;
 
-				cmd->indexType				= RenderDataTypeUtil::get<ImDrawIdx>();
-				cmd->indexBuffer			= _idxBuf->renderGpuBuffer();
-				cmd->indexOffset			= (indexStart + srcBuf.IdxOffset) * indexSize;
-				cmd->indexCount				= srcBuf.ElemCount;
+					cmd->indexType				= RenderDataTypeUtil::get<ImDrawIdx>();
+					cmd->indexBuffer			= _idxBuf->renderGpuBuffer();
+					cmd->indexOffset			= (indexStart + srcBuf.IdxOffset) * indexSize;
+					cmd->indexCount				= srcBuf.ElemCount;
 
-				cmd->vertexBuffer->setDebugName("imgui vtx buf");
-				cmd->indexBuffer ->setDebugName("imgui idx buf");
+					cmd->vertexBuffer->setDebugName("imgui vtx buf");
+					cmd->indexBuffer ->setDebugName("imgui idx buf");
 
-				// temporary solution
-				PerObjectParam perObjParam;
-				perObjParam.id = srcBuf.TextureId ? reinCast<Texture*>(srcBuf.TextureId)->bindlessHandle().getResourceIndex() : _fontTex->bindlessHandle().getResourceIndex();
-				cmd->setExtraData(perObjParam);
+					// temporary solution
+					PerObjectParam perObjParam;
+					perObjParam.id = _fontTex->bindlessHandle().getResourceIndex();
+					if (auto texId = srcBuf.GetTexID())
+					{
+						perObjParam.id = reinCast<Texture*>(texId)->bindlessHandle().getResourceIndex();
+					}
+					cmd->setExtraData(perObjParam);
+				}
 			}
 
 			vertexStart += srcCmd->VtxBuffer.Size;
