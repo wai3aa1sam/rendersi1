@@ -43,6 +43,25 @@ RenderUiContext::create(RenderContext* renderContext)
 	_material = rdDev->createMaterial();
 	_material->setShader(_shader);
 	_createFontTexture();
+
+	auto totalVertexDataSize	= 10000;
+	auto totalIndexDataSize		= 10000;
+
+	if (!_vtxBuf /*|| _vtxBuf->bufSize() < totalVertexDataSize*/) 
+	{
+		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
+		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
+		desc.bufSize	= totalVertexDataSize;
+		_vtxBuf = rdDev->createRenderGpuMultiBuffer(desc);
+	}
+
+	if (!_idxBuf /*|| _idxBuf->bufSize() < totalIndexDataSize*/) 
+	{
+		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
+		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
+		desc.bufSize	= totalIndexDataSize;
+		_idxBuf = rdDev->createRenderGpuMultiBuffer(desc);
+	}
 }
 
 void
@@ -131,7 +150,13 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 	RDS_CORE_ASSERT(vertexSize == _vertexLayout->stride());
 	RDS_CORE_ASSERT(indexSize  == sizeof(u16));
 
-	auto* rdDev = renderDevice();
+	auto* rdDev = renderDevice(); RDS_UNUSED(rdDev);
+	
+	/*
+		this has bug, since _vtxBuf will be destroy and the purpose of vtxBuf(MultiGpuBuffer) is to maintain the framed concept
+		, also, when the ptr is released
+	*/
+	#if 0
 
 	auto totalVertexDataSize = data->TotalVtxCount * vertexSize;
 	auto totalIndexDataSize  = data->TotalIdxCount * indexSize;
@@ -141,16 +166,21 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 		desc.bufSize	= totalVertexDataSize;
+		desc.stride		= vertexSize;
 		_vtxBuf = rdDev->createRenderGpuMultiBuffer(desc);
-	}
+}
 
 	if (!_idxBuf || _idxBuf->bufSize() < totalIndexDataSize) 
 	{
 		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
 		desc.bufSize	= totalIndexDataSize;
+		desc.stride		= indexSize;
 		_idxBuf = rdDev->createRenderGpuMultiBuffer(desc);
 	}
+	#else
+	
+	#endif // 0
 
 	// need set set viewport too
 	// vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -169,10 +199,24 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		viewport.set(makeVec2f(clip_off), _rdCtx->framebufferSize());
 		req.setViewportReverse(viewport);
 
+		// upload data to vtx and idx buf first, since it is using multi-buffer
+		{
+			for (int i = 0; i < data->CmdListsCount; i++) 
+			{
+				auto* srcCmd = data->CmdLists[i];
+
+				_vertexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->VtxBuffer.Data), srcCmd->VtxBuffer.Size * vertexSize));
+				 _indexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->IdxBuffer.Data), srcCmd->IdxBuffer.Size * indexSize ));
+			}
+			_vtxBuf->uploadToGpu(_vertexData);
+			_idxBuf->uploadToGpu(_indexData);
+		}
+
 		int vertexStart = 0;
 		int indexStart  = 0;
 
 		ImVec2 clipOff = data->DisplayPos;
+
 		for (int i = 0; i < data->CmdListsCount; i++) 
 		{
 			auto* srcCmd = data->CmdLists[i];
@@ -243,23 +287,20 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 			vertexStart += srcCmd->VtxBuffer.Size;
 			indexStart  += srcCmd->IdxBuffer.Size;
 
-			_vertexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->VtxBuffer.Data), srcCmd->VtxBuffer.Size * vertexSize));
-			 _indexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->IdxBuffer.Data), srcCmd->IdxBuffer.Size * indexSize ));
+			//_vertexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->VtxBuffer.Data), srcCmd->VtxBuffer.Size * vertexSize));
+			// _indexData.appendRange(Span<const u8>(reinCast<const u8*>(srcCmd->IdxBuffer.Data), srcCmd->IdxBuffer.Size * indexSize ));
 		}
-
-		_vtxBuf->uploadToGpu(_vertexData);
-		_idxBuf->uploadToGpu(_indexData);
 	}
 }
 
 bool
-RenderUiContext::onUIMouseEvent(UIMouseEvent& ev)
+RenderUiContext::onUiMouseEvent(UiMouseEvent& ev)
 {
 	RDS_CORE_ASSERT(_ctx, "not yet init");
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	using Type = UIMouseEventType;
+	using Type = UiMouseEventType;
 	switch (ev.type) 
 	{
 		case Type::Move: 
@@ -285,6 +326,25 @@ RenderUiContext::onUIMouseEvent(UIMouseEvent& ev)
 
 	return io.WantCaptureMouse;
 }
+
+bool 
+RenderUiContext::onUiKeyboardEvent(UiKeyboardEvent& ev)
+{
+	RDS_CORE_ASSERT(_ctx, "not yet init");
+
+	ImGuiIO& io = ImGui::GetIO();
+
+	using Type = UiKeyboardEventType;
+
+	//io.AddKeyEvent(); // lazy, impl a fn for our key to imgui key set
+
+	return io.WantCaptureKeyboard;
+}
+
+
+//virtual void onUiMouseEvent(UiMouseEvent& ev)		{};
+
+
 #endif // RDS_RENDER_ENABLE_UI
 
 
@@ -312,9 +372,9 @@ RenderUiContext::_createFontTexture()
 }
 
 int
-RenderUiContext::_mouseButton(UIMouseEventButton v)
+RenderUiContext::_mouseButton(UiMouseEventButton v)
 {
-	using Button = UIMouseEventButton;
+	using Button = UiMouseEventButton;
 	switch (v) 
 	{
 		case Button::Left:		{ return 0; } break;

@@ -61,21 +61,23 @@ void RenderGpuMultiBuffer::destroy()
 void 
 RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 {
-	RDS_TODO("upload to first buffer instead of create a new");
-	
-	transferRequest().uploadBuffer(makeNextBuffer(data.size() - offset), data, offset, this);
+	/*
+	* correct framed resource impl, only rotate when *commit, just like copy on write
+	* , we can get the exact resource, only rotate when write 
+	*/
+	rotate();
+
+	transferRequest().uploadBuffer(makeBufferOnDemand(data.size() - offset), data, offset, this);
 	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
 	//onUploadToGpu(data, offset);
-
-	rotate();
 }
 
 void 
 RenderGpuMultiBuffer::onCreate(CreateDesc& cDesc)
 {
-	_renderGpuBuffers.reserve(s_kFrameInFlightCount);
+	_renderGpuBuffers.resize(s_kFrameInFlightCount);
 	_desc = cDesc;
-	auto& e = _renderGpuBuffers.emplace_back(RenderGpuBuffer::make(cDesc)); RDS_UNUSED(e);
+	//auto& e = _renderGpuBuffers.emplace_back(RenderGpuBuffer::make(cDesc)); RDS_UNUSED(e);	
 }
 
 void 
@@ -95,19 +97,17 @@ void RenderGpuMultiBuffer::rotate()
 }
 
 SPtr<RenderGpuBuffer>& 
-RenderGpuMultiBuffer::makeNextBuffer(SizeType bufSize)
+RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 {
 	// do acutal rotate in this function, then tsfFrame / ctx no need to update the frame separately
-	auto nextIdx = (_iFrame + 1) % s_kFrameInFlightCount;
-	if (_renderGpuBuffers.size() < s_kFrameInFlightCount)
+	//auto idx = (_iFrame + 1) % s_kFrameInFlightCount;
+	auto idx = _iFrame % s_kFrameInFlightCount;;
+
+	if (!_renderGpuBuffers[idx] || _renderGpuBuffers[idx]->bufSize() < bufSize)
 	{
-		return _renderGpuBuffers.emplace_back(_makeNewBuffer(bufSize));
+		_renderGpuBuffers[idx] = _makeNewBuffer(bufSize);
 	}
-	else if (_renderGpuBuffers[nextIdx]->bufSize() < bufSize)
-	{
-		_renderGpuBuffers[nextIdx] = _makeNewBuffer(bufSize);
-	}
-	return _renderGpuBuffers[nextIdx];
+	return _renderGpuBuffers[idx];
 }
 
 SPtr<RenderGpuBuffer> 

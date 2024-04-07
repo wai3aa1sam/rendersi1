@@ -39,11 +39,12 @@ public:
 	void create (RenderContext* renderContext);
 	void destroy();
 
-	void onBeginRender	(RenderContext* renderContext);
-	void onEndRender	(RenderContext* renderContext);
+	void onBeginRender(	RenderContext* renderContext);
+	void onEndRender(	RenderContext* renderContext);
 
-	void onDrawUI		(RenderRequest& req);
-	bool onUIMouseEvent	(UIMouseEvent& ev);
+	void onDrawUI(			RenderRequest& req);
+	bool onUiMouseEvent(	UiMouseEvent& ev);
+	bool onUiKeyboardEvent(	UiKeyboardEvent& ev);
 	#else
 	void create (RenderContext* renderContext) {};
 	void destroy() {};
@@ -52,13 +53,15 @@ public:
 	void onEndRender	(RenderContext* renderContext) {};
 
 	void onDrawUI		(RenderRequest& req) {};
-	bool onUIMouseEvent	(UIMouseEvent& ev) {return true;};
+	bool onUiMouseEvent	(UiMouseEvent& ev) {return true;};
+	bool onUiKeyboardEvent(UiKeyboardEvent& ev) { return true; }
+
 	#endif // 0
 
 
 protected:
 	void _createFontTexture();
-	int _mouseButton(UIMouseEventButton v);
+	int _mouseButton(UiMouseEventButton v);
 
 	void _setDarkTheme();
 

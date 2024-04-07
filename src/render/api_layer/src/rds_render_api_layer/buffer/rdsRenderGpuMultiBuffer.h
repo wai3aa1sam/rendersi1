@@ -27,6 +27,9 @@ public:
 	RenderGpuMultiBuffer();
 	virtual ~RenderGpuMultiBuffer();
 
+	/*
+	* should not let other to use the buffer before upload
+	*/
 	void create(CreateDesc& cDesc);
 	void destroy();
 
@@ -44,6 +47,9 @@ public:
 	SizeType bufSize()		const;
 	SizeType elementCount()	const;
 
+	/*
+	* only call this after uploadToGpu()
+	*/
 			SPtr<RenderGpuBuffer>& renderGpuBuffer();
 	const	SPtr<RenderGpuBuffer>& renderGpuBuffer() const;
 
@@ -56,7 +62,7 @@ protected:
 	virtual void onPostCreate	(CreateDesc& cDesc);
 	virtual void onDestroy		();
 
-	SPtr<RenderGpuBuffer>& makeNextBuffer(SizeType bufSize);
+	SPtr<RenderGpuBuffer>& makeBufferOnDemand(SizeType bufSize);
 
 	SPtr<RenderGpuBuffer> _makeNewBuffer(SizeType bufSize);
 
