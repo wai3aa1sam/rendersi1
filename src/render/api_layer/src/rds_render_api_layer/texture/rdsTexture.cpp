@@ -8,6 +8,8 @@
 namespace rds
 {
 
+RDS_Define_TypeInfo(Texture2D);
+
 SPtr<Texture2D> 
 RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
 {

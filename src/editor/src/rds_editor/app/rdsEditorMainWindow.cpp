@@ -51,9 +51,16 @@ EditorMainWindow::onCloseButton()
 }
 
 void 
-EditorMainWindow::onUIMouseEvent(UIMouseEvent& ev) 
+EditorMainWindow::onUiMouseEvent(UiMouseEvent& ev) 
 {
-	if (_rdCtx->onUIMouseEvent(ev))
+	if (_rdCtx->onUiMouseEvent(ev))
+		return;
+}
+
+void 
+EditorMainWindow::onUiKeyboardEvent(UiKeyboardEvent& ev) 
+{
+	if (_rdCtx->onUiKeyboardEvent(ev))
 		return;
 }
 

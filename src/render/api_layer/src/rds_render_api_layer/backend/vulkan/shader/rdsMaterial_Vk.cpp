@@ -603,7 +603,7 @@ MaterialPass_Vk::onDestroy()
 }
 
 void 
-MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf)
+MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf, u32 iFrame)
 {
 	//auto* rdDevVk	= renderDeviceVk();
 	//auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
@@ -615,15 +615,15 @@ MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_Co
 	VkPipelineBindPoint vkBindPt = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	bindPipeline(vkCmdBuf, vkRdPass, vtxLayout);
 
-	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf);
+	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf, iFrame);
 }
 
 void 
-MaterialPass_Vk::onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf)
+MaterialPass_Vk::onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame)
 {
 	VkPipelineBindPoint vkBindPt = VK_PIPELINE_BIND_POINT_COMPUTE;
 	vkCmdBindPipeline(vkCmdBuf->hnd(), vkBindPt, _computeVkPipeline.hnd());
-	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf);
+	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf, iFrame);
 }
 
 void 
@@ -652,14 +652,20 @@ MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPas
 }
 
 void 
-MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf)
+MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame)
 {
 	auto* rdDevVk	= renderDeviceVk();
 	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
 
 	{
 		//auto* mtl		= pass->material();
-		auto& shaderRsc = shaderResources();
+		auto& shaderRsc = _framedShaderRscs.shaderResource(iFrame);
+
+		/*
+			maybe move to RenderCommand_DrawCall::setMaterial(), but it will have problem too (maybe setParam() then setMaterial twice, will have two rotate in same frame)
+			, upload in Render thread will have sync problem
+		*/
+		shaderRsc.uploadToGpu(shaderPass());		// this will reset dirty
 
 		auto& vkDescrSet = vkDescriptorSet();
 		if (!vkDescrSet)
@@ -668,8 +674,6 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
 			builder.buildBindless(vkDescriptorSet(), shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
 		}
-
-		shaderRsc.uploadToGpu(shaderPass());		// this will reset dirty
 
 		auto				vkPipelineLayoutHnd = vkPipelineLayout().hnd();
 		auto				set					= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());

@@ -806,7 +806,7 @@ RenderContext_Vk::onRenderCommand_Dispatch(RenderCommand_Dispatch* cmd, void* us
 	if (auto* pass = cmd->getMaterialPass())
 	{
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
-		vkMtlPass->onBind(this, vkCmdBuf);
+		vkMtlPass->onBind(this, vkCmdBuf, cmd->materialFrameIndex());
 	}
 	else
 	{
@@ -887,18 +887,17 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 	{
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
 		
-
-		vkMtlPass->onBind(this, cmd->vertexLayout, cmdBuf);
+		vkMtlPass->onBind(this, cmd->vertexLayout, cmdBuf, cmd->materialFrameIndex());
 
 		for (const auto& e : vkMtlPass->info().allStageUnionInfo.pushConstants)
 		{
 			using T = PerObjectParam;
-			if (!cmd->_extraDataSize || !cmd->_extraData)
+			if (!cmd->extraDataSize() || !cmd->extraData())
 			{
 				continue;
 			}
-			RDS_CORE_ASSERT(e.size == sizeof(T) && e.size == cmd->_extraDataSize, "invalid push_constant");
-			auto& extraData = *reinCast<T*>(cmd->_extraData); RDS_UNUSED(extraData);
+			RDS_CORE_ASSERT(e.size == sizeof(T) && e.size == cmd->extraDataSize(), "invalid push_constant");
+			auto& extraData = *reinCast<T*>(cmd->extraData()); RDS_UNUSED(extraData);
 			vkCmdPushConstants(vkCmdBufHnd, vkMtlPass->vkPipelineLayout().hnd(), VkShaderStageFlagBits::VK_SHADER_STAGE_ALL, e.offset, e.size, &extraData);
 		}
 	}

@@ -142,14 +142,14 @@ using ::nmsp::Directory;
 #endif // 0
 #if 1
 
-using UIEventModifier       = ::nmsp::UIEventModifier;
-using UIKeyboardEventType   = ::nmsp::UIKeyboardEventType;
-using UIKeyboardEvent       = ::nmsp::UIKeyboardEvent;
-using UIKeyboardEventButton = ::nmsp::UIKeyboardEventButton;
+using UiEventModifier       = ::nmsp::UiEventModifier;
+using UiKeyboardEventType   = ::nmsp::UiKeyboardEventType;
+using UiKeyboardEvent       = ::nmsp::UiKeyboardEvent;
+using UiKeyboardEventButton = ::nmsp::UiKeyboardEventButton;
 
-using UIMouseEventType      = ::nmsp::UIMouseEventType;
-using UIMouseEventButton    = ::nmsp::UIMouseEventButton;
-using UIMouseEvent          = ::nmsp::UIMouseEvent;
+using UiMouseEventType      = ::nmsp::UiMouseEventType;
+using UiMouseEventButton    = ::nmsp::UiMouseEventButton;
+using UiMouseEvent          = ::nmsp::UiMouseEvent;
 
 #endif
 

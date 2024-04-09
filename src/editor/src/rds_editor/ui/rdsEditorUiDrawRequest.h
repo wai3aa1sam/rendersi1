@@ -7,6 +7,7 @@ namespace rds
 {
 
 class EditorContext;
+class EditorWindow;
 
 #if 0
 #pragma mark --- rdsEditorUiDrawRequest-Decl ---
@@ -21,10 +22,15 @@ public:
 	using CollapsingHeader	= EditorUiWidget_CollapsingHeader;
 	using PushID			= EditorUiWidget_PushID;
 
+	using EditorUiWindow	= EditorUiWidget_EditorUiWindow;
+
 public:
 	static constexpr const char*	mixedValueFormat	= "--";
 	static constexpr const char*	floatFormat			= "%0.3f";
 	static constexpr bool			showMixedValue		= false;
+
+public:
+	ImGuiID	dockspaceId = 0;		// temporary
 
 public:
 	void create(EditorContext& edtCtx, RenderRequest* rdReq);
@@ -55,8 +61,19 @@ public:
 	RDS_NODISCARD PushID				makePushID(				const void* id);
 	RDS_NODISCARD PushID				makePushID(					  int	id);
 
+	RDS_NODISCARD EditorUiWindow		makeEditorUiWindow(EditorWindow* edtWnd, const char* label);
+
 	void showImage(Texture* tex, Tuple2f size);
 	void showImage(Texture* tex);
+
+	void showText(StrView text);
+	
+public:
+	/*
+		temporary
+	*/
+	void drawVec2f(StrView lable, Tuple2f v);
+	void drawVec3f(StrView lable, Tuple3f v);
 
 public:
 	EditorContext& editorContext();

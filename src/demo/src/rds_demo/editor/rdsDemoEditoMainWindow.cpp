@@ -1,5 +1,6 @@
 #include "rds_demo-pch.h"
 #include "rdsDemoEditoMainWindow.h"
+#include "rdsDemoEditorApp.h"
 
 namespace rds
 {
@@ -25,36 +26,29 @@ DemoEditorMainWindow::onCreate(const CreateDesc_Base& cDesc)
 }
 
 void 
-DemoEditorMainWindow::onUIMouseEvent(UIMouseEvent& ev)
+DemoEditorMainWindow::onUiMouseEvent(UiMouseEvent& ev)
 {
-	if (renderContext().onUIMouseEvent(ev))
-		return;
+	Base::onUiMouseEvent(ev);
 
-	if (ev.isDragging()) 
+	uiMouseEv = ev;
+	if (uiMouseFn)
 	{
-		using Button = UIMouseEventButton;
-		switch (ev.pressedButtons) 
-		{
-			case Button::Left: 
-			{
-				auto d = ev.deltaPos * 0.01f;
-				_camera.orbit(d.x, d.y);
-			} break;
-
-			case Button::Middle: 
-			{
-				auto d = ev.deltaPos * 0.1f;
-				_camera.move(d.x, d.y, 0);
-			} break;
-
-			case Button::Right: 
-			{
-				auto d = ev.deltaPos * -0.1f;
-				_camera.dolly(d.x + d.y);
-			} break;
-		}
+		uiMouseFn(ev);
 	}
 }
+
+void 
+DemoEditorMainWindow::onUiKeyboardEvent(UiKeyboardEvent& ev)
+{
+	Base::onUiKeyboardEvent(ev);
+
+	uiKeyboardEv = ev;
+	if (uiKeyboardFn)
+	{
+		uiKeyboardFn(ev);
+	}
+}
+
 
 #endif
 

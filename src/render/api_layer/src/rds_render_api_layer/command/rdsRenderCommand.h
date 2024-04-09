@@ -135,6 +135,7 @@ public:
 
 class RenderCommand_DrawCall : public RenderCommand
 {
+	friend class RenderCommandBuffer;
 public:
 	using Base = RenderCommand;
 	using This = RenderCommand_DrawCall;
@@ -148,28 +149,38 @@ public:
 	SizeType indexCount			= 0;
 	SizeType vertexOffset		= 0;
 	SizeType indexOffset		= 0;
-	SizeType materialPassIdx	= 0;
 
 	SPtr<RenderGpuBuffer>	vertexBuffer;
 	SPtr<RenderGpuBuffer>	indexBuffer;
 
-	SPtr<Material>			material;
-
 public:
+	Material*	material()					{ return _mtl; }
+	void*		extraData()					{ return _extraData; }
+	SizeType	extraDataSize()	const		{ return _extraDataSize; }
+
+	u32			materialFrameIndex() const	{ return _mtlRscFrameIdx; }
+
+protected:
 	// storage for extra data
 	void*		_extraData		= nullptr;
 	SizeType	_extraDataSize	= 0;
 
-public:
-	Material::Pass* getMaterialPass() { return material ? material->getPass(materialPassIdx) : nullptr; }
+	u32				_mtlRscFrameIdx	= 0;
+	u32				_mtlPassIdx		= 0;
+	SPtr<Material>	_mtl;
 
+
+public:
+	Material::Pass* getMaterialPass() { return _mtl ? _mtl->getPass(_mtlPassIdx) : nullptr; }
+
+	void setMaterial(Material* mtl, SizeType mtlPassIdx = 0);
 	void setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset = 0, SizeType idxOffset = 0);
 
 	template<class T>
 	void setExtraData(const T& data)
 	{
-		*sCast<T*>(_extraData)	= data;
-		_extraDataSize			= sizeof(T);
+		*reinCast<T*>(_extraData)	= data;
+		_extraDataSize				= sizeof(T);
 	}
 
 public:
@@ -265,14 +276,21 @@ public:
 
 public:
 	Tuple3u			threadGroups	= Tuple3u{1, 1, 1};
-	SizeType		materialPassIdx	= 0;
-	SPtr<Material>	material;
+	
+protected:
+	u32				_mtlRscFrameIdx	= 0;
+	u32				_mtlPassIdx		= 0;
+	SPtr<Material>	_mtl;
 
 public:
 	RenderCommand_Dispatch() : Base(Type::Dispatch) {}
 	virtual ~RenderCommand_Dispatch() {};
 
-	Material::Pass* getMaterialPass() { return material ? material->getPass(materialPassIdx) : nullptr; }
+	void setMaterial(Material* mtl, SizeType mtlPassIdx = 0);
+
+public:
+	Material::Pass* getMaterialPass()			{ return _mtl ? _mtl->getPass(_mtlPassIdx) : nullptr; }
+	u32				materialFrameIndex() const	{ return _mtlRscFrameIdx; }
 };
 
 #endif // 0

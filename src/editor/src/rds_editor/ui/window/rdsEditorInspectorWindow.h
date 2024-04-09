@@ -10,6 +10,9 @@ references:
 
 namespace rds
 {
+
+class EditorPropertyDrawRequest;
+
 #if 0
 #pragma mark --- rdsEditorInspectorWindow-Decl ---
 #endif // 0
@@ -18,15 +21,19 @@ namespace rds
 class EditorInspectorWindow : public EditorWindow
 {
 public:
+	static const char* label();
+
+public:
 	void draw(EditorUiDrawRequest* edtDrawReq, Scene& scene);
 
 protected:
-	void drawComponent(CComponent* c);
+	void drawComponent(EditorPropertyDrawRequest* propDrawReq, CComponent* c);
 
 private:
 
 };
 
+inline const char* EditorInspectorWindow::label() { return "Inspector"; }
 
 #endif
 }

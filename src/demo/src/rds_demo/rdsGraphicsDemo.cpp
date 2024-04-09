@@ -61,6 +61,18 @@ GraphicsDemo::onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData)
 	rdGraph.reset();
 }
 
+void 
+GraphicsDemo::onUiMouseEvent(UiMouseEvent& ev)
+{
+
+}
+
+void 
+GraphicsDemo::onUiKeyboardEvent(UiKeyboardEvent& ev)
+{
+
+}
+
 EngineContext& GraphicsDemo::engineContext() { return _demoLayer->engineContext(); }
 
 

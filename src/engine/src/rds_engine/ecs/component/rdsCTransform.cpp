@@ -15,7 +15,7 @@ CTransform::System&	CTransform::getSystem(EngineContext& egCtx)	{ return egCtx.t
 
 CTransform::CTransform()
 {
-
+	isTransform = true;
 }
 
 CTransform::~CTransform()

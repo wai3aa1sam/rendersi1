@@ -93,6 +93,12 @@ EditorUiDrawRequest::makePushID(int id)
 	return PushID{id};
 }
 
+EditorUiDrawRequest::EditorUiWindow
+EditorUiDrawRequest::makeEditorUiWindow(EditorWindow* edtWnd, const char* label)
+{
+	return EditorUiWindow{ edtWnd, label };
+}
+
 void 
 EditorUiDrawRequest::showImage(Texture* tex, Tuple2f size)
 {
@@ -110,6 +116,15 @@ EditorUiDrawRequest::showImage(Texture* tex)
 	auto availSize = ImGui::GetContentRegionAvail();
 	showImage(tex, makeVec2f(availSize));
 }
+
+void 
+EditorUiDrawRequest::showText(StrView text)
+{
+	TempString buf;
+	buf = text;
+	ImGui::Text(buf.c_str());
+}
+
 
 #endif
 

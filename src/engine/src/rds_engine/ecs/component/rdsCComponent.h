@@ -21,6 +21,16 @@ class CComponent : public Object
 	friend class Entity;
 	template<class T, class VALUE> friend class EcsVectorTable;
 public:
+	/*
+		temporary solution
+	*/
+	bool isTransform		= false;
+	bool isRenderableMesh	= false;
+	/*
+
+	*/
+
+public:
 	virtual ~CComponent();
 
 

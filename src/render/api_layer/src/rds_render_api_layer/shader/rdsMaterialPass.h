@@ -7,7 +7,6 @@
 #include "rds_render_api_layer/texture/rdsTexture.h"
 #include "rdsShaderResource.h"
 
-
 namespace rds
 {
 
@@ -57,8 +56,8 @@ public:
 	//ShaderResources&		shaderResources(Material* mtl);
 
 protected:
-	ShaderStage*			_shaderStage = nullptr;
-	ShaderResources	_shaderResources;
+	ShaderStage*				_shaderStage = nullptr;
+	//FramedT<ShaderResources>	_framedShaderResources;
 };
 
 #if 0
@@ -188,6 +187,8 @@ public:
 	ShaderPass&			shaderPass();
 	ShaderResources&	shaderResources();
 
+	u32 iFrame() const;
+
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass);
 	virtual void onDestroy();
@@ -201,7 +202,7 @@ protected:
 	PixelStage*		_pixelStage		= nullptr;
 	ComputeStage*	_computeStage	= nullptr;
 
-	ShaderResources	_shaderResources;
+	FramedShaderResources _framedShaderRscs;
 };
 
 template<class TEX> inline 
@@ -216,7 +217,7 @@ MaterialPass::setTexParam(StrView name, TEX* v)
 	if (_computeStage)	_computeStage->setTexParam(mtl, name, v);
 	#endif // RDS_NO_BINDLESS
 	
-	_shaderResources.setTexParam(name, v);
+	_framedShaderRscs.setTexParam(name, v);
 }
 
 template<class T> inline 
@@ -231,7 +232,7 @@ MaterialPass::setParam(StrView name, const T& v)
 	if (_computeStage)	_computeStage->setParam(mtl, name, v);
 	#endif
 
-	_shaderResources.setParam(name, v);
+	_framedShaderRscs.setParam(name, v);
 }
 
 inline
@@ -246,7 +247,7 @@ MaterialPass::setSamplerParam(StrView name, const SamplerState& v)
 	if (_computeStage)	_computeStage->setSamplerParam(mtl, name, v);
 	#endif
 
-	_shaderResources.setSamplerParam(name, v);
+	_framedShaderRscs.setSamplerParam(name, v);
 }
 
 inline
@@ -259,9 +260,8 @@ MaterialPass::setBufferParam(StrView name, RenderGpuBuffer* v)
 	if (_computeStage)	_computeStage->setBufferParam(mtl, name, v);
 	#endif
 
-	_shaderResources.setBufferParam(name, v);
+	_framedShaderRscs.setBufferParam(name, v);
 }
-
 
 inline const MaterialPass::Info& MaterialPass::info() const { return _shaderPass->info(); }
 
@@ -271,16 +271,9 @@ inline MaterialPass::ComputeStage*	MaterialPass::computeStage()	{ return _comput
 
 inline Material&					MaterialPass::material()		{ return *_material; }
 inline ShaderPass&					MaterialPass::shaderPass()		{ return *_shaderPass; }
-inline ShaderResources&				MaterialPass::shaderResources()	{ return _shaderResources; }
+inline ShaderResources&				MaterialPass::shaderResources()	{ return _framedShaderRscs.shaderResource(); }
 
-#endif
-
-
-#if 0
-#pragma mark --- rdsVk_PipelineLayoutCDesc-Impl ---
-#endif // 0
-#if 1
-
+inline u32							MaterialPass::iFrame() const	{ return _framedShaderRscs.iFrame(); }
 
 #endif
 

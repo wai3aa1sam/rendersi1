@@ -18,6 +18,8 @@ class TextureCube;
 #define RenderDataType_ENUM_LIST(E) \
 	E(None, = 0) \
 	\
+	E(Bool,) \
+	\
 	E(Int8,)	E(Int8x2,)		E(Int8x3,)		E(Int8x4,)  \
 	E(Int16,)	E(Int16x2,)		E(Int16x3,)		E(Int16x4,) \
 	E(Int32,)	E(Int32x2,)		E(Int32x3,)		E(Int32x4,) \
@@ -76,6 +78,8 @@ public:
 
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<void>() { return Type::None; };
 
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<bool>() { return Type::Bool; };
+
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<i8>()	{ return Type::Int8; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<i16>()	{ return Type::Int16; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<i32>()	{ return Type::Int32; };
@@ -98,6 +102,10 @@ template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tup
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple2f>()	{ return Type::Float32x2; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple3f>()	{ return Type::Float32x3; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple4f>()	{ return Type::Float32x4; };
+
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Vec2f>()	{ return Type::Float32x2; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Vec3f>()	{ return Type::Float32x3; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Vec4f>()	{ return Type::Float32x4; };
 
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Mat4f>()		{ return Type::Float32_4x4; };
 

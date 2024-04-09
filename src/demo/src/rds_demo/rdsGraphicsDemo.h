@@ -34,6 +34,9 @@ public:
 	virtual void onPrepareRender(RenderGraph* oRdGraph, RenderData& rdData);
 	virtual void onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData);
 
+	virtual void onUiMouseEvent(	UiMouseEvent&		ev);
+	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);
+
 public:
 	EngineContext& engineContext();
 

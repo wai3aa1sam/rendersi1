@@ -89,8 +89,8 @@ public:
 
 public:
 	void drawUI(RenderRequest& req);
-	bool onUIMouseEvent(UIMouseEvent& ev);
-
+	bool onUiMouseEvent(	UiMouseEvent&		ev);
+	bool onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 	void setFramebufferSize(const Vec2f& newSize);
 
 	virtual bool isFrameCompleted();	// maybe can cache too

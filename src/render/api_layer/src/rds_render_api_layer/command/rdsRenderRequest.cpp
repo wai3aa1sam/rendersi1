@@ -70,9 +70,8 @@ void
 RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u threadGrps)
 {
 	auto* cmd = _rdCmdBuf.dispatch();
-	cmd->material			= mtl;
-	cmd->materialPassIdx	= materialPassIdx;
 	cmd->threadGroups		= threadGrps;
+	cmd->setMaterial(mtl, materialPassIdx);
 
 	RDS_RD_CMD_DEBUG_ASSIGN(cmd);
 }
@@ -178,7 +177,7 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, co
 	p->indexCount	= e.indexCount();
 	p->indexOffset	= 0;
 
-	p->material = mtl;
+	p->setMaterial(mtl);
 }
 
 void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, Tuple3u extent,		u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)

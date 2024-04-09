@@ -1,7 +1,11 @@
 #if 0
 Shader {
 	Properties {
+		[DisplayName="Color Test"]
+		Color4f	color = {1,1,1,1}
 		
+		Texture2D 	texture0
+		Bool		test_bool
 	}
 	
 	Pass {
@@ -38,6 +42,8 @@ struct PixelIn
 
 
 RDS_TEXTURE_2D(texture0);
+float4 color;
+bool test_bool;
 
 PixelIn vs_main(VertexIn i)
 {
@@ -51,6 +57,6 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-	float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv);
+	float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv) * color;
     return o;
 }

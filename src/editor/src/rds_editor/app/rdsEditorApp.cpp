@@ -72,24 +72,29 @@ EditorApp::onRun		()
 
 	while (!_shouldQuit)
 	{
-		pollMsg();
-
-		for (auto& layer : _appLayerStack)
-		{
-			layer->update();
-		}
-
-		for (auto& layer : _appLayerStack)
-		{
-			layer->render();
-		}
-
-		JobSystem::instance()->_internal_nextFrame();
-
-		RDS_PROFILE_FRAME();
+		onExecuteRun();
 	}
 
 	willQuit();
+}
+
+void 
+EditorApp::onExecuteRun()
+{
+	pollMsg();
+
+	for (auto& layer : _appLayerStack)
+	{
+		layer->update();
+	}
+
+	for (auto& layer : _appLayerStack)
+	{
+		layer->render();
+	}
+
+	JobSystem::instance()->_internal_nextFrame();
+	RDS_PROFILE_FRAME();
 }
 
 void 

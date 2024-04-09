@@ -16,7 +16,7 @@ namespace rds
 const ShaderStageInfo& ShaderResources::info() const { return *this->_info; }
 
 void 
-ShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
+ShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass, u32 frameIdx)
 {
 	using ConstBufInfo = ShaderStageInfo::ConstBuffer;
 	destroy();
@@ -32,13 +32,12 @@ ShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
 	}*/
 
 	const auto& constBufInfos = info().constBufs;
-	_framedConstBufs.reserve(s_kFrameInFlightCount);
-	auto& constBufs = _framedConstBufs.emplace_back();
-	constBufs.reserve(constBufInfos.size());
+	_constBufs.reserve(constBufInfos.size());
+	//auto& constBufs = _constBufs.emplace_back();
 	for (const auto& e : constBufInfos)
 	{
-		auto& cb = constBufs.emplace_back();
-		cb.create(&e, pass, _iFrame);
+		auto& cb = _constBufs.emplace_back();
+		cb.create(&e, pass, frameIdx);
 	}
 
 	const auto& texInfos = info().textures;
@@ -103,20 +102,21 @@ ShaderResources::uploadToGpu(ShaderPass* pass)
 		};
 	#endif // 0
 
+	#if 0
 	for (auto& e : src)
 	{
 		e.uploadToGpu();
 	}
 
-	if (_framedConstBufs.size() < s_kFrameInFlightCount && isDirty)
+	if (_constBufs.size() < s_kFrameInFlightCount && isDirty)
 	{
-		auto& dst = _framedConstBufs.emplace_back();
-		
+		auto& dst = _constBufs.emplace_back();
+
 		dst.reserve(constBufInfos.size());
 		for (const auto& e : constBufInfos)
 		{
 			auto& cb = dst.emplace_back();
-			cb.create(&e, pass, sCast<u32>(_framedConstBufs.size() - 1));
+			cb.create(&e, pass, sCast<u32>(_constBufs.size() - 1));
 		}
 	}
 
@@ -130,6 +130,12 @@ ShaderResources::uploadToGpu(ShaderPass* pass)
 			// gpu buffer will create on demand in backend
 		}
 	}
+	#endif // 0
+
+	for (auto& e : _constBufs)
+	{
+		e.uploadToGpu();
+	}
 }
 
 void 
@@ -140,12 +146,9 @@ ShaderResources::clear()
 		e.destroy();
 	}*/
 
-	for (auto& _constBufs : _framedConstBufs)
+	for (auto& e : _constBufs)
 	{
-		for (auto& e : _constBufs)
-		{
-			e.destroy();
-		}
+		e.destroy();
 	}
 
 	for (auto& e : _texParams)
@@ -169,32 +172,81 @@ ShaderResources::clear()
 	}
 
 	//_constBufs.clear();
-	_framedConstBufs.clear();
+	_constBufs.clear();
 	_texParams.clear();
 	_samplerParams.clear();
 	_bufferParams.clear();
 	_imageParams.clear();
 }
 
-const ShaderResources::SamplerParamT* 
-ShaderResources::findSamplerParam(StrView name) const
+void 
+ShaderResources::copy(const ShaderResources& rsc)
 {
-	for (const auto& e : samplerParams())
+	RDS_CORE_ASSERT(&rsc.info() == &info(), "all ShaderResources must be created");
+	
+	// simple assign will call ctor instead of operator=(), _info will be invalid
+	#if 0
+	_constBufs		= rsc._constBufs;
+	_texParams		= rsc._texParams;
+	_samplerParams	= rsc._samplerParams;
+	_bufferParams	= rsc._bufferParams;
+	_imageParams	= rsc._imageParams;
+	#endif // 0
+
+	for (size_t i = 0; i < _constBufs.size();		++i) { auto& src = rsc._constBufs[i];		auto& dst = _constBufs[i];		dst.copy(src); }
+	for (size_t i = 0; i < _texParams.size();		++i) { auto& src = rsc._texParams[i];		auto& dst = _texParams[i];		dst.copy(src); }
+	for (size_t i = 0; i < _samplerParams.size();	++i) { auto& src = rsc._samplerParams[i];	auto& dst = _samplerParams[i];	dst.copy(src); }
+	for (size_t i = 0; i < _bufferParams.size();	++i) { auto& src = rsc._bufferParams[i];	auto& dst = _bufferParams[i];	dst.copy(src); }
+	for (size_t i = 0; i < _imageParams.size();		++i) { auto& src = rsc._imageParams[i];		auto& dst = _imageParams[i];	dst.copy(src); }
+
+	#if 0
+	for (size_t i = 0; i < rsc.constBufs().size(); ++i)
 	{
-		const auto& rsc = e.shaderResource();
-		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
-		if (isSame)
-			return &e;
+		const auto& src = constBufs(i);
+		auto& dst		= rsc.constBufs(i);
+		dst._cpuBuf = src._cpuBuf;
 	}
-	return nullptr;
+
+	for (size_t i = 0; i < rsc.texParams().size(); ++i)
+	{
+		const auto& src = texParams(i);
+		auto& dst		= rsc.texParams(i);
+		if (src._tex.ptr() != dst._tex.ptr())
+		{
+			//dst._tex.reset(src._tex.ptr());
+			dst._tex = src._tex;
+		}
+	}
+	#endif // 0
+}
+
+void*	
+ShaderResources::findParam(StrView name)
+{
+	void* param = nullptr;
+	for (auto& e : constBufs())
+	{
+		param = e.findParam(name);
+		if (param)
+		{
+			return param;
+		}
+	}
+	return param;
+}
+
+void*	
+ShaderResources::findParam(StrView name) const
+{
+	return constCast(*this).findParam(name);
 }
 
 ShaderResources::TexParamT*		
 ShaderResources::findTexParam(StrView name)
 {
-	for (auto& e : _texParams)
+	for (auto& e : texParams())
 	{
-		auto& rsc = e.shaderResource();
+		auto& rsc = e;
 		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
 		if (isSame)
 		{
@@ -207,24 +259,9 @@ ShaderResources::findTexParam(StrView name)
 ShaderResources::SamplerParamT*	
 ShaderResources::findSamplerParam(StrView name)
 {
-	for (auto& e : _samplerParams)
+	for (auto& e : samplerParams())
 	{
-		auto& rsc = e.shaderResource();
-		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
-		if (isSame)
-		{
-			return &e;
-		}
-	}
-	return nullptr;
-}
-
-ShaderResources::BufferParamT*	
-ShaderResources::findBufferParam(StrView name)
-{
-	for (auto& e : _bufferParams)
-	{
-		auto& rsc = e.shaderResource();
+		auto& rsc = e;
 		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
 		if (isSame)
 		{
@@ -237,9 +274,9 @@ ShaderResources::findBufferParam(StrView name)
 ShaderResources::ImageParamT*	
 ShaderResources::findImageParam(StrView name)
 {
-	for (auto& e : _imageParams)
+	for (auto& e : imageParams())
 	{
-		auto& rsc = e.shaderResource();
+		auto& rsc = e;
 		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
 		if (isSame)
 		{
@@ -249,40 +286,82 @@ ShaderResources::findImageParam(StrView name)
 	return nullptr;
 }
 
-void 
+ShaderResources::BufferParamT*	
+ShaderResources::findBufferParam(StrView name)
+{
+	for (auto& e : bufferParams())
+	{
+		auto& rsc = e;
+		bool isSame = StrUtil::ignoreCaseCompare(rsc.name(), name) == 0;
+		if (isSame)
+		{
+			return &e;
+		}
+	}
+	return nullptr;
+}
+
+const ShaderResources::TexParamT*		
+ShaderResources::findTexParam(StrView name) const
+{
+	return constCast(*this).findTexParam(name);
+}
+
+const ShaderResources::SamplerParamT* 
+ShaderResources::findSamplerParam(StrView name) const
+{
+	return constCast(*this).findSamplerParam(name);
+}
+
+const ShaderResources::BufferParamT*	
+ShaderResources::findBufferParam(StrView name) const
+{
+	return constCast(*this).findBufferParam(name);
+}
+
+const ShaderResources::ImageParamT*	
+ShaderResources::findImageParam(StrView name) const
+{
+	return constCast(*this).findImageParam(name);
+}
+
+bool
 ShaderResources::setSamplerParam(StrView name, const SamplerState& v)
 {
-	auto it = findSamplerParam(name);
+	auto it			= findSamplerParam(name);
+	bool isDirty	= false;
 	if (it)
 	{
-		auto& rsc = it->shaderResource();
-		rsc.setSamplerParam(v);
-		it->roatateFrame();
+		auto& rsc	= *it;
+		isDirty		= rsc.setSamplerParam(v);
 	}
+	return isDirty;
 }
 
-void 
+bool 
 ShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
 {
-	auto it = findBufferParam(name);
+	auto it			= findBufferParam(name);
+	bool isDirty	= false;
 	if (it)
 	{
-		auto& rsc = it->shaderResource();
-		rsc.setBufferParam(v);
-		it->roatateFrame();
+		auto& rsc	= *it;
+		isDirty		= rsc.setBufferParam(v);
 	}
+	return isDirty;
 }
 
-void 
+bool 
 ShaderResources::setImageParam(StrView name, Texture* v)
 {
-	auto it = findImageParam(name);
+	auto it			= findImageParam(name);
+	bool isDirty	= false;
 	if (it)
 	{
-		auto& rsc = it->shaderResource();
-		rsc.setImageParam(v);
-		it->roatateFrame();
+		auto& rsc	= *it;
+		isDirty		= rsc.setImageParam(v);
 	}
+	return isDirty;
 }
 
 #endif
@@ -473,6 +552,71 @@ ShaderResources::ImageParam::setImageParam(Texture* v)
 
 	bool isDirty = !isSame;
 	return isDirty;
+}
+
+
+#endif
+
+
+#if 0
+#pragma mark --- rdsFramedShaderResource-Impl ---
+#endif // 0
+#if 1
+
+FramedShaderResources::FramedShaderResources()
+{
+
+}
+
+FramedShaderResources::~FramedShaderResources()
+{
+	destroy();
+}
+
+void 
+FramedShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
+{
+	_shaderRscs.resize(s_kFrameInFlightCount);
+
+	u32 i = 0;
+	for (auto& e : _shaderRscs)
+	{
+		e.create(info_, pass, i);
+		++i;
+	}
+}
+
+void 
+FramedShaderResources::destroy()
+{
+	_shaderRscs.clear();
+}
+
+void 
+FramedShaderResources::rotate()
+{
+	if (_isRotated)
+	{
+		return;
+	}
+
+	u32 srcFrame = _iFrame;
+	u32 dstFrame = (_iFrame + 1) % s_kFrameInFlightCount;
+
+	auto& src = _shaderRscs[srcFrame];
+	auto& dst = _shaderRscs[dstFrame];
+
+	dst.copy(src);
+
+	_iFrame		= dstFrame;
+	_isRotated	= true;
+}
+
+void 
+FramedShaderResources::uploadToGpu(ShaderPass* pass)
+{
+	shaderResource().uploadToGpu(pass);
+	_isRotated = false;
 }
 
 

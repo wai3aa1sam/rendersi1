@@ -117,8 +117,7 @@ void
 RenderRequest::drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData)
 {
 	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl);
-	*reinCast<T*>(p->_extraData)	= extraData;
-	p->_extraDataSize				= sizeof(T);
+	p->setExtraData(extraData);
 }
 
 template<class T> inline

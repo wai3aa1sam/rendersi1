@@ -29,11 +29,16 @@ public:
 	void setLocalPosition	(float x, float y, float z);
 	void setLocalPosition	(const Vec3f&  v);
 	void setLocalRotation	(const Quat4f& v);
+	void setLocalRotation	(const Vec3f&  v);
 	void setLocalScale		(const Vec3f&  v);
 
 public:
 	const Mat4f& localMatrix();
 	const Mat4f& worldMatrix();
+
+	const Vec3f&	localPosition() const;
+	const Vec3f&	localScale()	const;
+	const Quat4f&	localRotation() const;
 
 protected:
 	void _setDirty();
@@ -46,7 +51,7 @@ protected:
 protected:
 	Vec3f	_localPosition		= Vec3f {0, 0, 0};
 	Vec3f	_localScale			= Vec3f {1, 1, 1};
-	Quat4f	_localRotation		= Quat4f{0, 0, 0, 0};
+	Quat4f	_localRotation		= Quat4f{0, 0, 0, 1};
 
 	Mat4f	_matLocal = Mat4f::s_identity();
 	Mat4f	_matWorld = Mat4f::s_identity();
@@ -55,9 +60,10 @@ protected:
 };
 
 inline void CTransform::setLocalPosition	(float x, float y, float z) { setLocalPosition(Vec3f(x,y,z)); }
-inline void CTransform::setLocalPosition	(const Vec3f&  v)			{ _localPosition = v;	_setDirty(); }
-inline void CTransform::setLocalRotation	(const Quat4f& v)			{ _localRotation = v;	_setDirty(); }
-inline void CTransform::setLocalScale		(const Vec3f&  v)			{ _localScale = v;		_setDirty(); }
+inline void CTransform::setLocalPosition	(const Vec3f&  v)			{ _localPosition = v;			_setDirty(); }
+inline void CTransform::setLocalRotation	(const Quat4f& v)			{ _localRotation = v;			_setDirty(); }
+inline void CTransform::setLocalRotation	(const Vec3f&  v)			{ _localRotation.setEuler(v);	_setDirty(); }
+inline void CTransform::setLocalScale		(const Vec3f&  v)			{ _localScale = v;				_setDirty(); }
 
 inline void CTransform::_setDirty() 
 { 
@@ -82,6 +88,11 @@ CTransform::worldMatrix()
 {
 	return localMatrix();
 }
+
+inline const Vec3f&		CTransform::localPosition() const { return _localPosition; }
+inline const Vec3f&		CTransform::localScale()	const { return _localScale; }
+inline const Quat4f&	CTransform::localRotation() const { return _localRotation; }
+
 
 #endif
 

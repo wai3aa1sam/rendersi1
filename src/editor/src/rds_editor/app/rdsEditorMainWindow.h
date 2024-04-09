@@ -22,7 +22,8 @@ protected:
 	virtual void onCreate (const CreateDesc_Base& desc) override;
 	virtual void onDestroy() override;
 	virtual void onCloseButton() override;
-	virtual void onUIMouseEvent(UIMouseEvent& ev) override;
+	virtual void onUiMouseEvent(	UiMouseEvent&		ev) override;
+	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev)	override;
 
 	virtual void onActive(bool isActive) override;
 

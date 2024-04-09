@@ -52,6 +52,16 @@ DemoEditorApp::onDestroy()
 	mainWindow().destroy();
 }
 
+void 
+DemoEditorApp::onExecuteRun()
+{
+	Base::onExecuteRun();
+
+	mainWindow().uiMouseEv		= {};
+	mainWindow().uiKeyboardEv	= {};
+}
+
+
 #endif
 
 }

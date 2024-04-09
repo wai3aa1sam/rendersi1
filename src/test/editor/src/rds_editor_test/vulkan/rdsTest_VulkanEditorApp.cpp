@@ -109,14 +109,14 @@ protected:
 		_camera.setAim(0, 0, 0);
 	}
 
-	virtual void onUIMouseEvent(UIMouseEvent& ev) override 
+	virtual void onUiMouseEvent(UiMouseEvent& ev) override 
 	{
-		if (renderContext().onUIMouseEvent(ev))
+		if (renderContext().onUiMouseEvent(ev))
 			return;
 
 		if (ev.isDragging()) 
 		{
-			using Button = UIMouseEventButton;
+			using Button = UiMouseEventButton;
 			switch (ev.pressedButtons) 
 			{
 				case Button::Left: 

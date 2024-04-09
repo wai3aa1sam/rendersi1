@@ -18,6 +18,9 @@ namespace rds
 class EditorHierarchyWindow : public EditorWindow
 {
 public:
+	static const char* label();
+
+public:
 	void draw(EditorUiDrawRequest* edtDrawReq, Scene& scene);
 
 protected:
@@ -26,6 +29,7 @@ protected:
 
 };
 
+inline const char* EditorHierarchyWindow::label() { return "Hierarchy"; }
 
 #endif
 }

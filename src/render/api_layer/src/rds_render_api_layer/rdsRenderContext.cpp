@@ -145,14 +145,22 @@ RenderContext::commit(RenderGraph& rdGraph)
 	onCommit(rdGraph);
 }
 
-void RenderContext::drawUI(RenderRequest& req)
+void 
+RenderContext::drawUI(RenderRequest& req)
 {
 	_rdUiCtx.onDrawUI(req);
 }
 
-bool RenderContext::onUIMouseEvent(UIMouseEvent& ev)
+bool 
+RenderContext::onUiMouseEvent(UiMouseEvent& ev)
 {
-	return _rdUiCtx.onUIMouseEvent(ev);
+	return _rdUiCtx.onUiMouseEvent(ev);
+}
+
+bool 
+RenderContext::onUiKeyboardEvent(UiKeyboardEvent& ev)
+{
+	return _rdUiCtx.onUiKeyboardEvent(ev);
 }
 
 void

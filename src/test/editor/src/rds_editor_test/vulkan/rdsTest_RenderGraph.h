@@ -810,8 +810,9 @@ public:
 				drawCall->vertexLayout			= Vectex_Pos2fUvColor4f<1>::vertexLayout();
 				drawCall->vertexBuffer			= particlesWrite.renderResource();
 				drawCall->vertexCount			= s_kMaxParticleCount;
-				drawCall->material				= _testComputeMtl;
 				drawCall->renderPrimitiveType	= RenderPrimitiveType::Point;	// current set in shader
+
+				drawCall->setMaterial(_testComputeMtl);
 			}
 		);
 

@@ -5,6 +5,9 @@
 
 namespace rds
 {
+
+class EditorWindow;
+
 #if 0
 #pragma mark --- rdsEditorWindow-Decl ---
 #endif // 0
@@ -12,9 +15,37 @@ namespace rds
 
 class EditorWindow : public /*NativeUIWindow*/ NonCopyable
 {
+public:
+	using EditorUiWindow = EditorUiDrawRequest::EditorUiWindow;
 
+public:
+	friend class EditorUiWindow;
+
+public:
+	static const char* label();
+
+public:
+	EditorWindow();
+
+	void displayFullScreen(EditorUiDrawRequest* edtDrawReq, const char* label);
+
+public:
+	bool isFocused()	const;
+	bool isFullScreen() const;
+
+protected:
+	RDS_NODISCARD EditorUiWindow window(EditorUiDrawRequest* edtDrawReq, const char* label);
+
+protected:
+	bool _isFocused		: 1;
+	bool _isFullScreen	: 1;
 };
+
+inline bool EditorWindow::isFocused()		const { return _isFocused; }
+inline bool EditorWindow::isFullScreen()	const { return _isFullScreen; }
 
 
 #endif
+
+
 }

@@ -29,6 +29,7 @@ public:
 	SPtr<Material>	material;
 
 public:
+	CRenderableMesh();
 	virtual ~CRenderableMesh();
 
 protected:

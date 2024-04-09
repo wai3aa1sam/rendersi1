@@ -21,6 +21,7 @@ struct DemoEditorApp_CreateDesc : public EditorApp_CreateDesc
 
 class DemoEditorApp : public EditorApp
 {
+	friend class DemoEditorMainWindow;
 public:
 	using Base = EditorApp;
 
@@ -37,6 +38,7 @@ public:
 protected:
 	virtual void onCreate(const CreateDesc_Base& cDesc) override;
 	virtual void onDestroy()							override;
+	virtual void onExecuteRun()							override;
 
 protected:
 	UPtr<DemoEditorMainWindow> _mainWnd;

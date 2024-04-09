@@ -4,6 +4,9 @@
 
 namespace rds
 {
+
+class EditorWindow;
+
 #if 0
 #pragma mark --- rdsEditorUiWidget-Decl ---
 #endif // 0
@@ -17,6 +20,9 @@ public:
 	bool isKeyCtrl()		const { return ImGui::GetIO().KeyCtrl; }
 
 	bool isItemClicked()	const { return ImGui::IsItemClicked(); }
+
+	bool isFocused()		const { return ImGui::IsWindowFocused(); }
+
 };
 
 #endif
@@ -105,6 +111,13 @@ public:
 
 protected:
 	bool  _isOpen = true;
+};
+
+
+class EditorUiWidget_EditorUiWindow : public EditorUiWidget_Window
+{
+public:
+	EditorUiWidget_EditorUiWindow(EditorWindow* edtWnd, const char* label);
 };
 
 #endif // 1

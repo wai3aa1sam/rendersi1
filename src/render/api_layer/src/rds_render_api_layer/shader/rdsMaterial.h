@@ -72,14 +72,13 @@ public:
 
 	void setParam(StrView name, RenderGpuBuffer* v);
 
+public:
 	Pass*			getPass		(SizeType i);
 	ShaderParamId	getParamId	(StrView name) const;
 
 	Span<UPtr<Pass> >	passes();
 	Shader*				shader();
 	const ShaderInfo&	info() const;
-
-	u32 frameIdx() const;
 
 protected:
 	virtual void onCreate		(const CreateDesc& cDesc);
@@ -97,8 +96,6 @@ protected:
 protected:
 	SPtr<Shader> _shader;
 	Vector<UPtr<MaterialPass>, s_kLocalPassSize> _passes;
-
-	u32 _frameIdx = 0;
 };
 
 inline void Material::setParam(StrView name,		Texture2D*		v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
@@ -130,8 +127,6 @@ Material::getPass(SizeType i)
 
 inline Shader*						Material::shader() { return _shader; }
 inline Span<UPtr<Material::Pass>>	Material::passes() { return _passes; }
-
-inline u32 Material::frameIdx() const { return _frameIdx; }
 
 template<class T> inline
 void 

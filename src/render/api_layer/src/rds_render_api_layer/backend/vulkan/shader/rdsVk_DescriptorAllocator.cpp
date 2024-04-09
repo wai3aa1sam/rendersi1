@@ -235,7 +235,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 
 	#else
 
-	for (auto& e : shaderRscs.texParams())		bindCombinedTexture	(dstSet, e.shaderResource(), shaderStageFlag, pass);
+	for (auto& e : shaderRscs.texParams())		bindCombinedTexture	(dstSet, e, shaderStageFlag, pass);
 
 	#endif // 0
 
@@ -268,7 +268,7 @@ Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_Descripto
 	{
 		if (StrUtil::isSame(e.name().c_str(), "rds_sampler"))
 		{
-			bindSampler	(dstSet, e.shaderResource(), shaderStageFlag, pass);
+			bindSampler	(dstSet, e, shaderStageFlag, pass);
 		}
 	}
 
@@ -416,8 +416,8 @@ Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, TexParam&
 	if (auto* samplerParam = shaderRscs.findSamplerParam(samplerName))
 	{
 		auto& bindlessRscVk = renderDeviceVk()->bindlessResourceVk();
-		auto samplerIdx = bindlessRscVk.findSamplerIndex(samplerParam->shaderResource().samplerState());
-		_bindSampler(dstSet, samplerParam->shaderResource(), bindlessRscVk.vkSamplers()[samplerIdx].hnd(), stageFlag, pass);
+		auto samplerIdx = bindlessRscVk.findSamplerIndex(samplerParam->samplerState());
+		_bindSampler(dstSet, *samplerParam, bindlessRscVk.vkSamplers()[samplerIdx].hnd(), stageFlag, pass);
 	}
 }
 

@@ -73,6 +73,16 @@ RenderCommandBuffer::setViewportReverse(const Rect2f& rect)
 #endif
 
 void 
+RenderCommand_DrawCall::setMaterial(Material* mtl, SizeType mtlPassIdx)
+{
+	RDS_CORE_ASSERT(mtl);
+
+	_mtl			= mtl;
+	_mtlPassIdx		= sCast<u32>(mtlPassIdx);
+	_mtlRscFrameIdx = getMaterialPass()->iFrame();
+}
+
+void 
 RenderCommand_DrawCall::setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset, SizeType idxOffset)
 {
 	if (!subMesh)
@@ -89,6 +99,16 @@ RenderCommand_DrawCall::setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset, S
 	vertexLayout		= subMesh->vertexLayout();
 	indexType			= subMesh->indexType();
 	renderPrimitiveType = subMesh->renderPrimitiveType();
+}
+
+void 
+RenderCommand_Dispatch::setMaterial(Material* mtl, SizeType mtlPassIdx)
+{
+	RDS_CORE_ASSERT(mtl);
+
+	_mtl			= mtl;
+	_mtlPassIdx		= sCast<u32>(mtlPassIdx);
+	_mtlRscFrameIdx = getMaterialPass()->iFrame();
 }
 
 }

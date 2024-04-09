@@ -35,6 +35,9 @@ protected:
 	virtual void onUpdate() override;
 	virtual void onRender() override;
 
+	virtual void onUiMouseEvent(    UiMouseEvent& ev)		override;
+	virtual void onUiKeyboardEvent( UiKeyboardEvent& ev)	override;
+
 	void drawEditorUi(RdgTextureHnd texHndPresent);		// should be copied from ImGui
 
 private:
@@ -46,11 +49,14 @@ protected:
 	SPtr<Material>	_mtlPresent;
 
 private:
-	EngineContext	_egCtx;;
-	EditorContext	_edtCtx;;
+	EngineContext	_egCtx;
+	EditorContext	_edtCtx;
 
-	EditorHierarchyWindow _edtHierarchyWnd;
-	EditorInspectorWindow _edtInspectorWnd;
+	EditorViewportWindow	_edtViewportWnd;
+	EditorHierarchyWindow	_edtHierarchyWnd;
+	EditorInspectorWindow	_edtInspectorWnd;
+	EditorProjectWindow		_edtProjectWnd;
+	EditorConsoleWindow		_edtConsoleWnd;
 
 	Scene			_scene;
 	SceneView		_sceneView;

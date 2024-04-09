@@ -10,6 +10,10 @@ namespace rds
 #endif // 0
 #if 1
 
+CRenderableMesh::CRenderableMesh()
+{
+	isRenderableMesh = true;
+}
 
 CRenderableMesh::~CRenderableMesh()
 {

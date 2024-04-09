@@ -19,6 +19,9 @@ DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 {
 	_gfxDemo = rds::move(gfxDemo);
 	_gfxDemo->_demoLayer = this;
+	
+	mainWindow().uiMouseFn		= [this](UiMouseEvent& ev)		{ return _gfxDemo->onUiMouseEvent(ev); };
+	mainWindow().uiKeyboardFn	= [this](UiKeyboardEvent& ev)	{ return _gfxDemo->onUiKeyboardEvent(ev); };
 }
 
 DemoEditorLayer::~DemoEditorLayer()
@@ -36,6 +39,8 @@ DemoEditorLayer::onCreate()
 	_egCtx.create();
 	_scene.create(_egCtx);
 	_sceneView.create(&renderableSystem());
+
+	_edtCtx.create();
 
 	#if 1
 	auto fullScreenTriangleMesh = EditMeshUtil::getFullScreenTriangle();
@@ -166,12 +171,29 @@ DemoEditorLayer::onRender()
 void 
 DemoEditorLayer::drawEditorUi(RdgTextureHnd texHndPresent)
 {
+	#if 0
+	static bool isRequestFullViewport	= false;
+	static bool isRequestRestore		= false;
+
+	//isFullScreen = BitUtil::hasOnly(mainWindow().uiMouseEv.button, UiMouseEventButton::Middle);
+	if (isRequestRestore)
+	{
+		ImGui::LoadIniSettingsFromDisk("imgui_default.ini");
+		isRequestRestore = false;
+	}
+	#endif // 0
+
 	auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
 	{
-		static bool isShowDemoWindow = false;
+		static bool isShowDemoWindow = true;
+		//ImGui::ShowDemoWindow(&isShowDemoWindow);
+
+		ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode; RDS_UNUSED(dockspace_flags);
+		dockspace_flags |= ImGuiDockNodeFlags_DockSpace; // ImGuiDockNodeFlags_CentralNode
 
 		ImGuiViewport*	pViewport = ImGui::GetMainViewport();
 		ImGuiID			dockspace = ImGui::DockSpaceOverViewport(pViewport); RDS_UNUSED(dockspace);
+		uiDrawReq.dockspaceId = dockspace;
 
 		#if 0
 		if (ImGui::BeginMainMenuBar()) 
@@ -184,34 +206,49 @@ DemoEditorLayer::drawEditorUi(RdgTextureHnd texHndPresent)
 			{
 				ImGui::EndMenu();
 			}
+
 			ImGui::EndMainMenuBar();
 		}
 		#endif // 0
 	}
 
-	// viewport
+	#if 0
+	auto hasClicked = ImGui::Checkbox("isFullViewport", &isRequestFullViewport);
+	if (hasClicked && !isRequestFullViewport )
 	{
-		auto wnd = uiDrawReq.makeWindow("Viewport");
-		uiDrawReq.showImage(texHndPresent.renderResource());
+		isRequestRestore = true;
 	}
-
-	#if 1
-	// console
+	if (isRequestFullViewport)
 	{
-		auto wnd = uiDrawReq.makeWindow("Console");
-
+		_edtViewportWnd.displayFullScreen(&uiDrawReq, _edtViewportWnd.label());
+		isRequestFullViewport = false;
 	}
+	#endif // 0
 
-	// project
-	{
-		auto wnd = uiDrawReq.makeWindow("Project");
 
-	}
-
+	_edtViewportWnd.draw(&uiDrawReq, texHndPresent.renderResource(), &mainWindow().camera(), mainWindow().uiMouseEv);
+	_edtProjectWnd.draw(&uiDrawReq);
+	_edtConsoleWnd.draw(&uiDrawReq);
 	_edtHierarchyWnd.draw(&uiDrawReq, scene());
 	_edtInspectorWnd.draw(&uiDrawReq, scene());
-	#endif // 1
+	//if (!_edtViewportWnd.isFullScreen())
+	{
+		
+	}
 }
+
+void 
+DemoEditorLayer::onUiMouseEvent(UiMouseEvent& ev)	
+{
+	
+}
+
+void 
+DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
+{
+
+}
+
 
 inline DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }
 inline DemoEditorMainWindow&	DemoEditorLayer::mainWindow()	{ return app().mainWindow(); }

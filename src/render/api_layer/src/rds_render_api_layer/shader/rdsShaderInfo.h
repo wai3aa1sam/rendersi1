@@ -28,7 +28,9 @@ RDS_ENUM_ALL_OPERATOR(ShaderStageFlag);
 
 #define ShaderPropType_ENUM_LIST(E) \
 	E(None, = 0) \
+	E(Bool,) \
 	E(Int,) \
+	E(UInt64,) \
 	E(Float,) \
 	E(Vec2f,) \
 	E(Vec3f,) \
@@ -51,9 +53,27 @@ public:
 
 public:
 	template<class T> static constexpr ShaderPropType get();
+
+	static constexpr RenderDataType toRenderDataType(Type v)
+	{
+		using SRC = Type;
+		switch (v)
+		{
+			case SRC::Int:			{ return RenderDataType::Int32; }		break;
+			case SRC::Float:		{ return RenderDataType::Float32; }		break;
+			case SRC::Vec2f:		{ return RenderDataType::Float32x2; }	break;
+			case SRC::Vec3f:		{ return RenderDataType::Float32x3; }	break;
+			case SRC::Vec4f:		{ return RenderDataType::Float32x4; }	break;
+			case SRC::Color4f:		{ return RenderDataType::Float32x4; }	break;
+			case SRC::Texture2D:	{ return RenderDataType::Texture2D; }	break;
+			default: { RDS_THROW(); break; }
+		}
+	}
 };
 
-template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<int>()		{ return Type::Int; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<bool>()		{ return Type::Bool; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<i32>()		{ return Type::Int; }
+template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<u64>()		{ return Type::UInt64; }
 template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<float>()		{ return Type::Float; }
 template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Vec2f>()		{ return Type::Vec2f; }
 template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Vec3f>()		{ return Type::Vec3f; }

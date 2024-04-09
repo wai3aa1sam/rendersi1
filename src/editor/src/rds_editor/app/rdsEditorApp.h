@@ -42,6 +42,8 @@ protected:
 	virtual void onQuit		() override;
 	virtual void willQuit	() override;
 
+	virtual void onExecuteRun();
+
 protected:
 	//EditorMainWindow _mainWin;
 };

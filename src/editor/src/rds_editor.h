@@ -8,6 +8,9 @@
 
 #include "rds_editor/ui/window/rdsEditorHierarchyWindow.h"
 #include "rds_editor/ui/window/rdsEditorInspectorWindow.h"
+#include "rds_editor/ui/window/rdsEditorProjectWindow.h"
+#include "rds_editor/ui/window/rdsEditorConsoleWindow.h"
+#include "rds_editor/ui/window/rdsEditorViewportWindow.h"
 
 #include "rds_editor/app/rdsEditorLayer.h"
 #include "rds_editor/app/rdsEditorApp.h"

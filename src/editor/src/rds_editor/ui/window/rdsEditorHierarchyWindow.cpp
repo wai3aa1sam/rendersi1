@@ -15,7 +15,7 @@ EditorHierarchyWindow::draw(EditorUiDrawRequest* edtDrawReq, Scene& scene)
 {
 	//auto& edtCtx = edtDrawReq->editorContext();
 
-	auto wnd = edtDrawReq->makeWindow("Hierarchy");
+	auto wnd = window(edtDrawReq, label());
 
 	for (auto* ent : scene.entities())
 	{

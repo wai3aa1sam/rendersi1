@@ -196,11 +196,11 @@ public:
 	MaterialPass_Vk();
 	virtual ~MaterialPass_Vk();
 
-	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf);
-	virtual void onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf);
+	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
+	virtual void onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
 
 protected:
-	void bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf);
+	void bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
 
 public:
 	Material_Vk*	material	();
@@ -264,7 +264,7 @@ inline MaterialPass_Vk::PixelStage&		MaterialPass_Vk::vkPixelStage_noCheck()		{ 
 inline MaterialPass_Vk::ComputeStage&	MaterialPass_Vk::vkComputeStage_noCheck()	{ return _vkComputeStage; }
 
 inline Vk_DescriptorSetLayout&			MaterialPass_Vk::vkDescriptorSetLayout()	{ return shaderPass()->vkDescriptorSetLayout(); }
-inline Vk_DescriptorSet&				MaterialPass_Vk::vkDescriptorSet()			{ return _vkFramedDescrSets[_shaderResources.iFrame()]; }
+inline Vk_DescriptorSet&				MaterialPass_Vk::vkDescriptorSet()			{ return _vkFramedDescrSets[iFrame()]; }
 
 
 #endif

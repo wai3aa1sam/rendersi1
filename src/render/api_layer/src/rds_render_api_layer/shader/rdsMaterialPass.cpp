@@ -93,7 +93,7 @@ MaterialPass::onCreate(Material* material, ShaderPass* shaderPass)
 	_material	= material;
 	_shaderPass = shaderPass;
 
-	_shaderResources.create(info().allStageUnionInfo, shaderPass);
+	_framedShaderRscs.create(info().allStageUnionInfo, shaderPass);
 }
 
 void 

@@ -2,6 +2,8 @@
 
 #include "rds_hello_triangle.h"
 
+#include "rds_editor/ui/property/rdsEditorPropertyDrawer.h"
+
 namespace rds
 {
 
@@ -41,7 +43,7 @@ HelloTriangle::onCreateScene(Scene* oScene)
 		auto* ent = scene.addEntity("");
 
 		auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-		rdableMesh->material;
+		rdableMesh->material = _mtlHelloTriangle;
 		rdableMesh->meshAsset = makeSPtr<MeshAsset>();
 		rdableMesh->meshAsset->rdMesh.create(mesh);
 
@@ -103,6 +105,16 @@ HelloTriangle::onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData)
 	);
 
 	rdData.oTexPresent = texColor;
+}
+
+void HelloTriangle::onUiMouseEvent(UiMouseEvent& ev)
+{
+	Base::onUiMouseEvent(ev);
+}
+
+void HelloTriangle::onUiKeyboardEvent(UiKeyboardEvent& ev)
+{
+	Base::onUiKeyboardEvent(ev);
 }
 
 }

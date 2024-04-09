@@ -20,6 +20,8 @@ using ::nmsp::_todo;
 
 #endif
 
+using ::nmsp::BitUtil;
+
 }
 
 

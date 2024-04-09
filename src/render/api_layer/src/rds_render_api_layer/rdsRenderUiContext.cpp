@@ -256,8 +256,8 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 					cmd->setDebugName("draw imgui");
 					#endif
 
-					cmd->material				= _material;
-					cmd->materialPassIdx		= 0;
+					cmd->setMaterial(_material);
+
 					cmd->renderPrimitiveType	= RenderPrimitiveType::Triangle;
 
 					cmd->vertexLayout			= _vertexLayout;

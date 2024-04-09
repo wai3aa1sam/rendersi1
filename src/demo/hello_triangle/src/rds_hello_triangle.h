@@ -17,6 +17,10 @@ public:
 	virtual void onPrepareRender(RenderGraph* oRdGraph, RenderData& rdData) override;
 	virtual void onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData) override;
 
+	virtual void onUiMouseEvent(	UiMouseEvent&		ev) override;
+	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
+
+
 protected:
 	SPtr<Shader>	_shaderHelloTriangle;
 	SPtr<Material>	_mtlHelloTriangle;

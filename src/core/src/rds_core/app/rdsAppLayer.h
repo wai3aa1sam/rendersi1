@@ -30,6 +30,9 @@ protected:
     virtual void onUpdate()     = 0;
     virtual void onRender()     = 0;
 
+    virtual void onUiMouseEvent(    UiMouseEvent& ev)       {};
+    virtual void onUiKeyboardEvent( UiKeyboardEvent& ev)    {};
+
 protected:
     String _name;
 };
