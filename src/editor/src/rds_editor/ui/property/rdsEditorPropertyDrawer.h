@@ -44,7 +44,7 @@ public:
 		return draw(drawReq);
 	}
 
-	bool draw(DrawRequest* drawReq, StrView label, void* o);
+	//bool draw(DrawRequest* drawReq, StrView label, void* o);
 };
 
 template<class T>
@@ -53,6 +53,9 @@ class EditorPropertyDrawerT : public EditorPropertyDrawer
 public:
 	using ValueT = T;
 	
+public:
+	
+
 public:
 	ValueT& value(		DrawRequest* drawReq) { return *reinCast<ValueT*>(drawReq->value); }
 	ValueT	resetValue(	DrawRequest* drawReq) { return drawReq->resetValue ? *reinCast<const ValueT*>(drawReq->resetValue) : ValueT{}; }
@@ -126,7 +129,7 @@ public:
 	virtual bool draw(DrawRequest* drawReq) override;
 };
 
-class EditorPropertyDrawer_Texture2D : public EditorPropertyDrawerT<Texture2D*>
+class EditorPropertyDrawer_Texture2D : public EditorPropertyDrawerT<Texture2D>
 {
 public:
 	virtual bool draw(DrawRequest* drawReq) override;

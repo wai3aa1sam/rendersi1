@@ -54,21 +54,25 @@ references:
     /* 
     --- define Texture
     */
-    #define RDS_SAMPLER_NAME(TEX_NAME) RDS_CONCAT(RDS_CONCAT(_rds_, TEX_NAME), _sampler)
-    #define RDS_TEXTURE_2D(NAME)    uint NAME; uint RDS_SAMPLER_NAME(NAME)
-    #define RDS_TEXTURE_CUBE(NAME)  uint NAME; uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_NAME(NAME) NAME
+    #define RDS_TEXTURE_ST(NAME)   RDS_CONCAT(NAME, _ST)
+    #define RDS_SAMPLER_NAME(NAME) RDS_CONCAT(RDS_CONCAT(_rds_, NAME), _sampler)
+    #define RDS_TEXTURE_2D(NAME)    uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME); float4 RDS_TEXTURE_ST(NAME)
+    #define RDS_TEXTURE_CUBE(NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
 
     #define RDS_SAMPLER_GET(NAME)       rds_sampler
 
-    //#define RDS_SAMPLER_GET(NAME)       rds_samplerTable[NonUniformResourceIndex(RDS_SAMPLER_NAME(NAME))]
-    #define RDS_TEXTURE_2D_GET(NAME)    rds_texture2DTable[NonUniformResourceIndex(NAME)]
-    #define RDS_TEXTURE_CUBE_GET(NAME)  rds_textureCubeTable[NonUniformResourceIndex(NAME)]
+    #define RDS_TEXTURE_UV2(NAME, UV) float2(UV.xy * RDS_TEXTURE_ST(NAME).xy + RDS_TEXTURE_ST(NAME).zw)
 
-    #define RDS_TEXTURE_2D_SAMPLE(TEX, UV)                  RDS_TEXTURE_2D_GET(TEX).Sample(RDS_SAMPLER_GET(TEX), UV)
-    #define RDS_TEXTURE_2D_SAMPLE_LOD(TEX, UV, LOD)         RDS_TEXTURE_2D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), UV, LOD)
+    //#define RDS_SAMPLER_GET(NAME)       rds_samplerTable[NonUniformResourceIndex(RDS_SAMPLER_NAME(NAME))]
+    #define RDS_TEXTURE_2D_GET(NAME)    rds_texture2DTable[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_CUBE_GET(NAME)  rds_textureCubeTable[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+
+    #define RDS_TEXTURE_2D_SAMPLE(TEX, UV)                  RDS_TEXTURE_2D_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, UV))
+    #define RDS_TEXTURE_2D_SAMPLE_LOD(TEX, UV, LOD)         RDS_TEXTURE_2D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, UV), LOD)
     #define RDS_TEXTURE_2D_GET_DIMENSIONS(TEX, OUT_WH)      RDS_TEXTURE_2D_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
 
-    #define RDS_TEXTURE_CUBE_SAMPLE(TEX, UV)                RDS_TEXTURE_CUBE_GET(TEX).Sample(RDS_SAMPLER_GET(TEX), UV)
+    #define RDS_TEXTURE_CUBE_SAMPLE(TEX, UV)                RDS_TEXTURE_CUBE_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), UV)
     #define RDS_TEXTURE_CUBE_SAMPLE_LOD(TEX, UV, LOD)       RDS_TEXTURE_CUBE_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), UV, LOD)
     #define RDS_TEXTURE_CUBE_GET_DIMENSIONS(TEX, OUT_WH)    RDS_TEXTURE_CUBE_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
 

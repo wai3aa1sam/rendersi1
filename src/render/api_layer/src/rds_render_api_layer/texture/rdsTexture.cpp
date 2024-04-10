@@ -61,6 +61,7 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 	if (BitUtil::has(desc().usageFlags, TextureUsageFlags::ShaderResource))
 	{
 		_bindlessHnd = renderDevice()->bindlessResource().allocTexture(this);
+		renderDevice()->textureStock().textures.add(this);
 	}
 }
 
@@ -69,6 +70,7 @@ Texture::onDestroy()
 {
 	if (/*!isNull() || */bindlessHandle().isValid())
 	{
+		renderDevice()->textureStock().textures.remove(this);		// must before remove bindless
 		renderDevice()->bindlessResource().freeTexture(this);
 	}
 }

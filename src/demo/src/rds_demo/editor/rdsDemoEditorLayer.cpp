@@ -104,6 +104,7 @@ DemoEditorLayer::onUpdate()
 
 	{
 		auto& rdGraph	= renderableSystem().renderGraph();
+		rdGraph.reset();
 
 		RenderData rdData;
 		rdData.sceneView = &_sceneView;

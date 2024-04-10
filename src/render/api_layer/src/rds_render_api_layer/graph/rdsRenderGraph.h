@@ -102,7 +102,12 @@ public:
 			}
 			for (RdgResource* rsc : resources)
 			{
-				deleteT(rsc);
+				switch (rsc->type())
+				{
+					case RdgResourceType::Buffer:	{ deleteT(sCast<RdgBuffer*>(rsc)); }	break;
+					case RdgResourceType::Texture:	{ deleteT(sCast<RdgTexture*>(rsc)); }	break;
+					default: { RDS_THROW("invalid RdgResourceType"); } break;
+				}
 			}
 
 			passes.clear();

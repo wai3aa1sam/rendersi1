@@ -57,8 +57,7 @@ GraphicsDemo::onPrepareRender(RenderGraph* oRdGraph, RenderData& rdData)
 void 
 GraphicsDemo::onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData)
 {
-	auto& rdGraph = *oRdGraph;
-	rdGraph.reset();
+	//auto& rdGraph = *oRdGraph;
 }
 
 void 

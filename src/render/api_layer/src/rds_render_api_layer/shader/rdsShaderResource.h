@@ -243,8 +243,15 @@ public:
 	static constexpr const char* s_kAutoSamplerNamePrefix = "_rds_";
 	static constexpr const char* s_kAutoSamplerNameSuffix = "_sampler";
 
+	static constexpr const char* s_kAutoTextureNamePrefix = "_rds_";
+	static constexpr const char* s_kAutoTextureNameSuffix = "_texture";
+
+	static constexpr const char* s_kAutoTextureStNameSuffix = "_ST";
+
 public:
 	static void getSamplerNameTo(TempString& out, StrView name);
+	static void getTextureNameTo(TempString& out, StrView name);
+	static void getTextureStNameTo(TempString& out, StrView name);
 
 public:
 	template<class T>	bool setParam		(StrView name, const T& v);
@@ -615,6 +622,23 @@ ShaderResources::getSamplerNameTo(TempString& out, StrView name)
 {
 	out.clear();
 	fmtTo(out, "{}{}{}", s_kAutoSamplerNamePrefix, name, s_kAutoSamplerNameSuffix);
+}
+
+inline
+void 
+ShaderResources::getTextureNameTo(TempString& out, StrView name)
+{
+	out.clear();
+	//fmtTo(out, "{}{}{}", s_kAutoTextureNamePrefix, name, s_kAutoTextureNameSuffix);		// hlsl side just use its name only
+	out = name;
+}
+
+inline
+void 
+ShaderResources::getTextureStNameTo(TempString& out, StrView name)
+{
+	out.clear();
+	fmtTo(out, "{}{}", name, s_kAutoTextureStNameSuffix);
 }
 
 template<class T> inline 

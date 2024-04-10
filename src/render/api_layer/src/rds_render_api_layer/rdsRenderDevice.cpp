@@ -42,18 +42,19 @@ void
 RenderDevice::create(const CreateDesc& cDesc)
 {
 	onCreate(cDesc);
-	{
-		// wait for UploadContext, since currently use RenderContext to upload
-		//rdr->_textureStock.white	= rdr->createSolidColorTexture2D(Color4b(255, 255, 255, 255));
-		//rdr->_textureStock.black	= rdr->createSolidColorTexture2D(Color4b(0,   0,   0,   255));
-		//rdr->_textureStock.red		= rdr->createSolidColorTexture2D(Color4b(255, 0,   0,   255));
-		//rdr->_textureStock.green	= rdr->createSolidColorTexture2D(Color4b(0,   255, 0,   255));
-		//rdr->_textureStock.blue		= rdr->createSolidColorTexture2D(Color4b(0,   0,   255, 255));
-		//rdr->_textureStock.magenta	= rdr->createSolidColorTexture2D(Color4b(255, 0,   255, 255));
-		//rdr->_textureStock.error	= rdr->createSolidColorTexture2D(Color4b(255, 0,   255, 255));
-	}
 
 	_tsfCtx->transferRequest().reset(_tsfCtx);
+
+	{
+		// wait for UploadContext, since currently use RenderContext to upload
+		_textureStock.white		= createSolidColorTexture2D(Color4b(255, 255, 255, 255));
+		_textureStock.black		= createSolidColorTexture2D(Color4b(0,   0,   0,   255));
+		_textureStock.red		= createSolidColorTexture2D(Color4b(255, 0,   0,   255));
+		_textureStock.green		= createSolidColorTexture2D(Color4b(0,   255, 0,   255));
+		_textureStock.blue		= createSolidColorTexture2D(Color4b(0,   0,   255, 255));
+		_textureStock.magenta	= createSolidColorTexture2D(Color4b(255, 0,   255, 255));
+		_textureStock.error		= createSolidColorTexture2D(Color4b(255, 0,   255, 255));
+	}
 
 	RDS_CORE_ASSERT(_bindlessRscs, "");
 }

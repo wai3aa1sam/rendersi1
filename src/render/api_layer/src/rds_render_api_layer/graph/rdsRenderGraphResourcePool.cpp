@@ -16,7 +16,7 @@ RdgResourcePool::RdgResourcePool()
 
 RdgResourcePool::~RdgResourcePool()
 {
-
+	destroy();
 }
 
 void 

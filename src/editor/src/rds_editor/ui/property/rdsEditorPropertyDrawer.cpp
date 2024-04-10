@@ -8,7 +8,7 @@
 namespace rds
 {
 
-static void sameLine(const char* label)
+static void sameLineWithText(const char* label)
 {
 	float width = ImGui::CalcItemWidth();
 
@@ -33,13 +33,13 @@ EditorPropertyDrawer::draw(DrawRequest* drawReq)
 	return false;
 }
 
-bool 
-EditorPropertyDrawer::draw(DrawRequest* drawReq, StrView label, void* o)
-{
-	drawReq->value = o;
-	drawReq->label = label;
-	return draw(drawReq);
-}
+//bool 
+//EditorPropertyDrawer::draw(DrawRequest* drawReq, StrView label, void* o)
+//{
+//	drawReq->value = o;
+//	drawReq->label = label;
+//	return draw(drawReq);
+//}
 
 #endif
 
@@ -64,10 +64,10 @@ bool
 	bool	hasValueChanged	= false;
 	//ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(label);
+	auto pushId = uiDrawReq.makePushID(&value);
 
-	sameLine(label);
-	hasValueChanged = uiDrawReq.dragFloat("", &value, 0.0f, 0.0f);
+	sameLineWithText(label);
+	hasValueChanged = uiDrawReq.dragFloat("", &value, 0.1f, 0.0f, 0.0f);
 
 	return hasValueChanged;
 }
@@ -94,13 +94,13 @@ bool
 	bool	hasValueChanged	= false;
 	//ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(label);
+	auto pushId = uiDrawReq.makePushID(&value);
 
 	//uiDrawReq.showText(label);
 	//ImGui::SameLine();
 
-	sameLine(label);
-	ImGui::Checkbox("", &value);
+	sameLineWithText(label);
+	hasValueChanged = ImGui::Checkbox("", &value);
 
 	return hasValueChanged;
 }
@@ -115,10 +115,10 @@ bool
 	bool	hasValueChanged	= false;
 	ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(label);
+	auto pushId = uiDrawReq.makePushID(&value);
 
-	sameLine(label);
-	ImGui::DragFloat2("", &value.x, 0.0f, 0.0f);
+	sameLineWithText(label);
+	hasValueChanged = ImGui::DragFloat2("", &value.x, 0.01f, 0.0f, 0.0f);
 
 	return hasValueChanged;
 }
@@ -230,10 +230,10 @@ EditorPropertyDrawer_Vec4f::draw(DrawRequest* drawReq)
 	bool	hasValueChanged	= false;
 	ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(label);
+	auto pushId = uiDrawReq.makePushID(&value);
 
-	sameLine(label);
-	hasValueChanged = ImGui::DragFloat4("", &value.x, 0.0f, 0.0f);
+	sameLineWithText(label);
+	hasValueChanged = ImGui::DragFloat4("", &value.x, 0.01f, 0.0f, 0.0f);
 
 	return hasValueChanged;
 }
@@ -248,10 +248,10 @@ bool
 	bool	hasValueChanged	= false;
 	ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(label);
+	auto pushId = uiDrawReq.makePushID(&value);
 
 	//uiDrawReq.showText(label);
-	sameLine(label);
+	sameLineWithText(label);
 	hasValueChanged = ImGui::ColorEdit4(label, value.data, ImGuiColorEditFlags_NoLabel);
 
 	return hasValueChanged;
@@ -267,9 +267,9 @@ bool
 	bool	hasValueChanged	= false;
 	//ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(label);
-	uiDrawReq.showText(label);
-	uiDrawReq.showImage(value);
+	auto pushId = uiDrawReq.makePushID(&value);
+	sameLineWithText(label);
+	uiDrawReq.showImage(&value, Tuple2f{75, 75});
 
 	return hasValueChanged;
 }

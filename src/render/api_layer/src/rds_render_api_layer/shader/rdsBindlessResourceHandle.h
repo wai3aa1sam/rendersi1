@@ -17,12 +17,15 @@ struct BindlessResourceHandle
     friend class BindlessResources;
     RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-    static constexpr u32 s_kInvalid = ~u32(0);
+    using IndexT = u32;
+
+public:
+    static constexpr IndexT s_kInvalid = ~IndexT(0);
 
 public:
 
 public:
-    u32     getResourceIndex() const;
+    IndexT  getResourceIndex() const;
     bool    isValid         () const;
 
 protected:

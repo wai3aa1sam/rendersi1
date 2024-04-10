@@ -66,6 +66,68 @@ struct TextureStock
 	SPtr<Texture2D>	blue;
 	SPtr<Texture2D>	magenta;
 	SPtr<Texture2D>	error;
+
+	struct Textures
+	{
+	public:
+		using Table = VectorMap<BindlessResourceHandle::IndexT, Texture*>;
+
+	public:
+		~Textures()
+		{
+			clear();
+		}
+
+		Texture* add(Texture* v)
+		{
+			RDS_CORE_ASSERT(v, "invalid texture");
+			auto& table = _table;
+			auto lock	= table.scopedULock();
+			auto& data	= *lock;
+			auto rscIdx = v->bindlessHandle().getResourceIndex();
+			data[rscIdx] = v;
+			return v;
+		}
+
+		void remove(Texture* v)
+		{
+			if (!v || !find(v->bindlessHandle().getResourceIndex()))
+				return;
+
+			RDS_CORE_ASSERT(v, "invalid texture");
+			auto& table = _table;
+			auto lock	= table.scopedULock();
+			auto& data	= *lock;
+			auto rscIdx = v->bindlessHandle().getResourceIndex();
+			data.erase(rscIdx);
+		}
+
+		void clear()
+		{
+			auto& table = _table;
+			auto lock	= table.scopedULock();
+			auto& data	= *lock;
+			data.clear();
+		}
+
+		Texture* find(u32 rscIdx)
+		{
+			auto& table = _table;
+			auto lock	= table.scopedULock();
+			auto& data	= *lock;
+			auto it = data.find(rscIdx);
+			if (it == data.end())
+			{
+				return nullptr;
+			}
+			return it->second;
+		}
+
+	protected:
+		MutexProtected<Table> _table;
+	};
+
+	Textures textures;
 };
 
 class RenderDevice : public RenderResource
