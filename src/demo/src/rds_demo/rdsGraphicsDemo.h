@@ -10,13 +10,6 @@ class DemoEditorLayer;
 class GraphicsDemo;
 extern UPtr<GraphicsDemo> makeDemo();
 
-struct RenderData
-{
-	SceneView*		sceneView	= nullptr;
-	math::Camera3f*	camera		= nullptr;
-
-	RdgTextureHnd oTexPresent;
-};
 
 #if 0
 #pragma mark --- rdsGraphicsDemo-Decl ---
@@ -31,8 +24,8 @@ public:
 
 	virtual void onCreate();
 	virtual void onCreateScene(Scene* oScene);
-	virtual void onPrepareRender(RenderGraph* oRdGraph, RenderData& rdData);
-	virtual void onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData);
+	virtual void onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData);
+	virtual void onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData);
 
 	virtual void onUiMouseEvent(	UiMouseEvent&		ev);
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);

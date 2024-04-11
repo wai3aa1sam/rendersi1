@@ -22,7 +22,7 @@ Shader {
 }
 #endif
 
-#include "common/rdsCommon.hlsl"
+#include "built-in/shader/common/rdsCommon.hlsl"
 
 struct VertexIn
 {
@@ -42,11 +42,13 @@ PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
 
-    float4x4 matView = rds_matrix_view;
+	DrawParam drawParam = rds_DrawParam_get();
+
+    float4x4 matView = drawParam.matrix_view;
 	matView[0][3] = 0.0;
 	matView[1][3] = 0.0;
 	matView[2][3] = 0.0;
-    float4x4 matVp  = mul(rds_matrix_proj, matView);
+    float4x4 matVp  = mul(drawParam.matrix_proj, matView);
 
     o.positionHCS   = mul(matVp, i.positionOS);              // view mat is camera translation only
     o.positionHCS   = o.positionHCS.xyww;

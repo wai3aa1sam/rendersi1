@@ -19,6 +19,12 @@ RenderRequest::~RenderRequest()
 }
 
 void 
+RenderRequest::reset(RenderContext* rdCtx, DrawData& drawData)
+{
+	reset(rdCtx);
+}
+
+void 
 RenderRequest::reset(RenderContext* rdCtx)
 {
 	_rdCmdBuf.reset();
@@ -28,42 +34,6 @@ RenderRequest::reset(RenderContext* rdCtx)
 		_rdCmdBuf.setViewport	(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
 		_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()}); 
 	}
-}
-
-void 
-RenderRequest::reset(RenderContext* rdCtx, math::Camera3f& camera)
-{
-	reset(rdCtx);
-	setCamera(camera);
-}
-
-void 
-RenderRequest::setCamera(math::Camera3f& camera)
-{
-	matrix_view   = camera.viewMatrix();
-	matrix_proj   = camera.projMatrix();
-	cameraPos     = camera.pos();
-	
-	matrix_proj[1][1] *= -1.0f;	// since we are using glm now, glm is for opengl, we need to reverse the y in vk / dx12
-
-	_rdCmdBuf.setViewport(camera.viewport());
-}
-
-void 
-RenderRequest::setMaterialCommonParams(Material* mtl, const Mat4f& transform)
-{
-	RDS_TODO("//TODO: move to separate cbuffer");
-
-	if (!mtl) return;
-
-	Mat4f mvp = matrix_proj * matrix_view * transform;
-
-	mtl->setParam("rds_matrix_model",	transform);
-	mtl->setParam("rds_matrix_view",	matrix_view);
-	mtl->setParam("rds_matrix_proj",	matrix_proj);
-	mtl->setParam("rds_matrix_mvp",		mvp);
-
-	mtl->setParam("rds_camera_pos",		cameraPos);
 }
 
 void 
@@ -95,33 +65,13 @@ RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u	threadGrp
 }
 
 void 
-RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)
+RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl)
 {
 	for (auto& e : rdMesh.subMeshes())
 	{
-		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, e, mtl, transform);
+		auto* p = addDrawCall();
+		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, e, mtl);
 	}
-}
-
-void 
-RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform)
-{
-	//if (!rdSubMesh.vertexBuffer() || !rdSubMesh.indexBuffer())
-	//	return;
-	RDS_CORE_ASSERT(rdSubMesh.vertexBuffer() || rdSubMesh.indexBuffer(), "");
-
-	auto* p = addDrawCall();
-	setMaterialCommonParams(mtl, transform);
-	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl);
-}
-
-void 
-RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl)
-{
-	//Empty empty;
-	//drawMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, rdMesh, mtl, empty);
-
-	drawMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, rdMesh, mtl, Mat4f::s_identity());
 }
 
 void 
@@ -209,10 +159,10 @@ RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u
 }
 
 void 
-RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform)
+RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl)
 {
 	_notYetSupported(RDS_SRCLOC);
-	drawMesh(RDS_RD_CMD_DEBUG_ARG, fullScreenTriangle, presentMtl, transform);
+	drawMesh(RDS_RD_CMD_DEBUG_ARG, fullScreenTriangle, presentMtl);
 }
 
 void 
@@ -220,5 +170,66 @@ RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTrian
 {
 	_notYetSupported(RDS_SRCLOC);
 }
+
+#if 0
+
+void 
+RenderRequest::reset(RenderContext* rdCtx, math::Camera3f& camera)
+{
+	reset(rdCtx);
+	setCamera(camera);
+}
+
+void 
+RenderRequest::setCamera(math::Camera3f& camera)
+{
+	matrix_view   = camera.viewMatrix();
+	matrix_proj   = camera.projMatrix();
+	cameraPos     = camera.pos();
+
+	matrix_proj[1][1] *= -1.0f;	// since we are using glm now, glm is for opengl, we need to reverse the y in vk / dx12
+
+	_rdCmdBuf.setViewport(camera.viewport());
+}
+
+void 
+RenderRequest::setMaterialCommonParams(Material* mtl, const Mat4f& transform)
+{
+	RDS_TODO("//TODO: move to separate cbuffer");
+
+	if (!mtl) return;
+
+	Mat4f mvp = matrix_proj * matrix_view * transform;
+
+	mtl->setParam("rds_matrix_model",	transform);
+	mtl->setParam("rds_matrix_view",	matrix_view);
+	mtl->setParam("rds_matrix_proj",	matrix_proj);
+	mtl->setParam("RDS_MATRIX_MVP",		mvp);
+
+	mtl->setParam("rds_camera_pos",		cameraPos);
+}
+
+void 
+RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform)
+{
+	//if (!rdSubMesh.vertexBuffer() || !rdSubMesh.indexBuffer())
+	//	return;
+	RDS_CORE_ASSERT(rdSubMesh.vertexBuffer() || rdSubMesh.indexBuffer(), "");
+
+	auto* p = addDrawCall();
+	setMaterialCommonParams(mtl, transform);
+	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl);
+}
+
+void 
+RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)
+{
+	for (auto& e : rdMesh.subMeshes())
+	{
+		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, e, mtl, transform);
+	}
+}
+#endif // 0
+
 
 }

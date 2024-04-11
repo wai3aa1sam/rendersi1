@@ -27,7 +27,7 @@ reference:
 ~ https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 */
 
-#include "../common/rdsCommon.hlsl"
+#include "built-in/shader/common/rdsCommon.hlsl"
 
 struct VertexIn
 {
@@ -48,7 +48,7 @@ PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
 
-    o.positionHCS   = mul(rds_matrix_mvp, i.positionOS);
+    o.positionHCS   = mul(RDS_MATRIX_MVP, i.positionOS);
     o.positionOS 	= i.positionOS.xyz;
 
     o.positionOS.x = deltaPhi + i.positionOS.x;
@@ -60,9 +60,9 @@ PixelIn vs_main(VertexIn i)
 float4 ps_main(PixelIn i) : SV_TARGET
 {
     float3 o = float3(0.0, 0.0, 0.0);
-    o.r = rds_matrix_mvp[0][0];
+    o.r = RDS_MATRIX_MVP[0][0];
     o.r += deltaPhi; 
-    o.r -= rds_matrix_mvp[0][0]; 
+    o.r -= RDS_MATRIX_MVP[0][0]; 
 
     // tangent space
     float3 normal   = normalize(i.positionOS);

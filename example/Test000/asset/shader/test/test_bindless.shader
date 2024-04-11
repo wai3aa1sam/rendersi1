@@ -31,7 +31,7 @@ Shader {
 }
 #endif
 
-#include "common/rdsCommon.hlsl"
+#include "built-in/shader/common/rdsCommon.hlsl"
 
 struct VertexIn
 {
@@ -50,6 +50,10 @@ struct PixelIn
     float3 normal       : NORMAL0;
 };
 
+float4x4	rds_matrix_model;
+float4x4	rds_matrix_view;
+float4x4	rds_matrix_proj;
+float4x4	rds_matrix_mvp;
 
 #define RDS_RegisterUniform(name, structure) \
 	cbuffer name structure; \
@@ -98,7 +102,7 @@ PixelIn vs_main(VertexIn i)
 float4 ps_main(PixelIn i) : SV_TARGET
 {
     float4 color = float4(0.0, 0.0, 0.0, 0.0);
-	//color.r += rds_matrix_mvp[0][0];
+	//color.r += RDS_MATRIX_MVP[0][0];
 
 	//color.r = rds_test_1;
 	//color.g = rds_test_3;
@@ -146,7 +150,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	//outBuf.color;
 
 	//ret.color = color;
-	//color.r -= rds_matrix_mvp[0][0];
+	//color.r -= RDS_MATRIX_MVP[0][0];
 
     return color;
 }

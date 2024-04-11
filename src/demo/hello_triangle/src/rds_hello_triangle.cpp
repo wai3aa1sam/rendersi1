@@ -36,43 +36,49 @@ HelloTriangle::onCreateScene(Scene* oScene)
 
 	EditMesh mesh;
 	WavefrontObjLoader::loadFile(mesh, "asset/mesh/box.obj");
+	WavefrontObjLoader::loadFile(mesh, "asset/mesh/suzanne.obj");
 
-	auto n = 1;
-	for (size_t i = 0; i < n; i++)
+	auto n = 25;
+	auto row = math::sqrt(sCast<int>(n));
+	auto col = row;
+	auto stepPos	= Tuple2f{ 3.0f, 3.0f};
+	auto startPos	= Tuple2f{-0.0f, 0.0f};
+	for (size_t r = 0; r < row; r++)
 	{
-		auto* ent = scene.addEntity("");
+		for (size_t c = 0; c < col; c++)
+		{
+			auto* ent = scene.addEntity("");
 
-		auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-		rdableMesh->material = _mtlHelloTriangle;
-		rdableMesh->meshAsset = makeSPtr<MeshAsset>();
-		rdableMesh->meshAsset->rdMesh.create(mesh);
+			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+			rdableMesh->material = _mtlHelloTriangle;
+			rdableMesh->meshAsset = makeSPtr<MeshAsset>();
+			rdableMesh->meshAsset->rdMesh.create(mesh);
 
-		auto* transform	= ent->getComponent<CTransform>();
-		transform->setLocalPosition(0, 0, 0);
+			auto* transform	= ent->getComponent<CTransform>();
+			transform->setLocalPosition(startPos.x + stepPos.x * c, 0.0f, startPos.y + stepPos.y * r);
 
-		TempString buf;
-		fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
-		ent->setName(buf);
+			TempString buf;
+			fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
+			ent->setName(buf);
+		}
 	}
 }
 
 void 
-HelloTriangle::onPrepareRender(RenderGraph* oRdGraph, RenderData& rdData)
+HelloTriangle::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
-	Base::onPrepareRender(oRdGraph, rdData);
+	Base::onPrepareRender(oRdGraph, drawData);
 
 }
 
 void 
-HelloTriangle::onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData)
+HelloTriangle::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
-	Base::onExecuteRender(oRdGraph, rdData);
+	Base::onExecuteRender(oRdGraph, drawData);
 
 	auto*	rdGraph		= oRdGraph;
 	auto*	rdCtx		= rdGraph->renderContext();
 	auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
-
-	//auto& camera = ;
 
 	RdgTextureHnd texColor	= rdGraph->createTexture("hello_triangle_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 	RdgTextureHnd texDepth	= rdGraph->createTexture("hello_triangle_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
@@ -83,28 +89,18 @@ HelloTriangle::onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData)
 	passHelloTriangle.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			auto& camera = *rdData.camera;
-			rdReq.reset(rdGraph->renderContext(), camera);
-
 			auto mtl = _mtlHelloTriangle;
-
-			//auto clientRect = Rect2f{ Vec2f::s_zero(), rdCtx->framebufferSize() };
-			//_rdCmdBuf.setViewport	();
-			//_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()}); 
+			rdReq.reset(rdGraph->renderContext(), *drawData);
 
 			auto* clearValue = rdReq.clearFramebuffers();
 			clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
 			clearValue->setClearDepth(1.0f);
 
-			auto matrix_view   = camera.viewMatrix();
-			auto matrix_proj   = camera.projMatrix();
-			mtl->setParam("rds_matrix_vp", matrix_proj * matrix_view);
-
-			rdData.sceneView->drawScene(rdReq, mtl);
+			drawData->sceneView->drawScene(rdReq, mtl, drawData);
 		}
 	);
 
-	rdData.oTexPresent = texColor;
+	drawData->oTexPresent = texColor;
 }
 
 void HelloTriangle::onUiMouseEvent(UiMouseEvent& ev)

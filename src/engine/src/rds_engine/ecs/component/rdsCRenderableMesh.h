@@ -33,7 +33,7 @@ public:
 	virtual ~CRenderableMesh();
 
 protected:
-	virtual void onRender(RenderRequest& rdReq, Material* mtl) override;
+	virtual void onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawData) override;
 };
 
 

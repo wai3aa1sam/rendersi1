@@ -24,7 +24,7 @@ Shader {
 }
 #endif
 
-//#include "common/rdsCommon.hlsl"
+//#include "built-in/shader/common/rdsCommon.hlsl"
 #include "rdsPbrCommon.hlsl"
 
 struct VertexIn
@@ -62,9 +62,9 @@ float3  colorSpec;
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
-    o.positionHCS = mul(rds_matrix_mvp,     i.positionOS);
-    o.positionWS  = mul(rds_matrix_model,   i.positionOS).xyz;
-    o.normal      = mul((float3x3)rds_matrix_model, i.normal);
+    o.positionHCS = mul(RDS_MATRIX_MVP,     i.positionOS);
+    o.positionWS  = mul(RDS_MATRIX_MODEL,   i.positionOS).xyz;
+    o.normal      = mul((float3x3)RDS_MATRIX_MODEL, i.normal);
     //o.normal      = mul((float3x3)transpose(inverse(rds_matrix_model)), i.normal);
 
     o.uv          = i.uv;
@@ -79,12 +79,12 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
+    DrawParam drawParam = rds_DrawParam_get();
+
     float3 o = float3(0.0, 0.0, 0.0);
     float2 uv = i.uv;
 
-    o.r = rds_camera_pos.x;
-
-    rds_Surface surface;
+    Surface surface;
     surface.posWS               = i.positionWS;
     surface.normal              = normalize(i.normal);
     surface.color               = color;
@@ -92,7 +92,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
     surface.metallic            = metallic;
     surface.ambientOcclusion    = ao;
 
-    float3 posView = rds_camera_pos;
+    float3 posView = drawParam.camera_pos;
     float3 dirView = normalize(posView - surface.posWS);
     float3 dirRefl = reflect(-dirView, surface.normal);
 

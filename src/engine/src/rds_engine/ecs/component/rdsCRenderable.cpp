@@ -2,6 +2,7 @@
 #include "rdsCRenderable.h"
 #include "rds_engine/rdsEngineContext.h"
 #include "rds_engine/ecs/system/rdsCRenderableSystem.h"
+#include "rds_engine/ecs/rdsScene.h"
 
 namespace rds
 {
@@ -37,21 +38,21 @@ CRenderable::onCreate(Entity* entity)
 //}
 
 void 
-CRenderable::render(RenderRequest& rdReq, Material* mtl)
+CRenderable::render(RenderRequest& rdReq, Material* mtl, DrawData* drawData)
 {
-	onRender(rdReq, mtl);
+	onRender(rdReq, mtl, drawData);
 }
 
 void			
-CRenderable::render(RenderRequest& rdReq)
+CRenderable::render(RenderRequest& rdReq, DrawData* drawData)
 {
-	onRender(rdReq, nullptr);
+	onRender(rdReq, nullptr, drawData);
 }
 
 void 
-CRenderable::setMaterialCommonParam(Material* mtl)
+CRenderable::setMaterialCommonParam(Material* mtl, DrawData& drawData)
 {
-	mtl->setParam("rds_transforms", &renderableSystem()._objTransformBuf.gpuBuffer());
+	drawData.setupMaterial(mtl);
 }
 
 CRenderableSystem&		CRenderable::renderableSystem()					{ return getSystem(engineContext()); }

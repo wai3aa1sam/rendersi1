@@ -289,15 +289,15 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 		Vector<VkClearValue, 4> clearValues;
 		Util::getVkClearValuesTo(clearValues, renderCmdBuf.getClearValue(), 2, true);
 
-		auto fbufRect2 = _vkSwapchain.framebufferRect2f();
+		auto fbufRect2 = _vkSwapchain.framebufferRect2f(); RDS_UNUSED(fbufRect2);
 
 		#if RDS_TEST_MT_DRAW_CALLS
 		// wait job sysytem handle
 		_curGraphicsVkCmdBuf->beginRenderPass(&_testVkRenderPass, _vkSwapchain.framebuffer(), fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 		#else
 		vkCmdBuf->beginRenderPass(&_testVkRenderPass, _vkSwapchain.framebuffer(), fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBuf->setViewport(fbufRect2);
-		vkCmdBuf->setScissor (fbufRect2);
+		//vkCmdBuf->setViewport(fbufRect2);
+		//vkCmdBuf->setScissor (fbufRect2);
 		#endif // TE
 	}
 

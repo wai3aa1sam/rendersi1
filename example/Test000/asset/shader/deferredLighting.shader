@@ -24,7 +24,7 @@ Shader {
 }
 #endif
 
-#include "common/rdsCommon.hlsl"
+#include "built-in/shader/common/rdsCommon.hlsl"
 
 struct VertexIn
 {
@@ -48,7 +48,7 @@ PixelIn vs_main(VertexIn i)
     
     //o.positionOS    = positions[i.vertexId];
     //o.color         = colors[i.vertexId];
-    o.positionHCS = mul(rds_matrix_mvp, i.positionOS);
+    o.positionHCS = mul(RDS_MATRIX_MVP, i.positionOS);
     o.normal      = i.normal;
     o.uv          = i.uv;
     

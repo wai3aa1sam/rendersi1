@@ -86,8 +86,6 @@ public:
 #endif // 0
 #if 1
 
-
-
 template<class T, class VALUE>
 class EcsVectorTable
 {

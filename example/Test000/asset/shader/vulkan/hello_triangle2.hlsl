@@ -17,7 +17,7 @@ struct PixelIn
 float4x4	rds_matrix_model;
 float4x4	rds_matrix_view;
 float4x4	rds_matrix_proj;
-float4x4	rds_matrix_mvp;
+float4x4	RDS_MATRIX_MVP;
 
 PixelIn vs_main(VertexIn i)
 {
@@ -25,7 +25,7 @@ PixelIn vs_main(VertexIn i)
     
     //o.positionOS    = positions[i.vertexId];
     //o.color         = colors[i.vertexId];
-    o.positionHCS = mul(rds_matrix_mvp, i.positionOS);
+    o.positionHCS = mul(RDS_MATRIX_MVP, i.positionOS);
     o.color       = i.color;
     o.uv          = i.uv;
     

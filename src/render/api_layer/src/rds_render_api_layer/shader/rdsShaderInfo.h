@@ -3,17 +3,13 @@
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/vertex/rdsVertex.h"
 #include "rds_render_api_layer/shader/rdsRenderState.h"
+#include "rds_render_api_layer/shader/rdsShaderInterop.h"
 
 namespace rds
 {
 using ShaderParamId = int;
 
 class Texture2D;
-
-struct PerObjectParam
-{
-	u32 id = 0;
-};
 
 #define ShaderStageFlag_ENUM_LIST(E) \
 	E(None, = 0) \

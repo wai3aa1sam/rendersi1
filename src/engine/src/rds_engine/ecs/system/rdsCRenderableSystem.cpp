@@ -3,6 +3,7 @@
 #include "rds_engine/ecs/component/rdsCRenderable.h"
 
 #include "../rdsEntity.h"
+#include "../rdsScene.h"
 
 namespace rds
 {
@@ -40,11 +41,13 @@ CRenderableSystem::destroy()
 }
 
 void 
-CRenderableSystem::update()
+CRenderableSystem::update(DrawData& drawData)
 {
 	// transform system update
 	{
 		_objTransformBuf.resize(renderables().size() + 1);
+
+		auto mat_vp = drawData.camera->viewProjMatrix();
 
 		// or loop dirty transform only
 		for (auto* rdable : renderables())
@@ -53,10 +56,17 @@ CRenderableSystem::update()
 			auto& transform = ent.transform();
 
 			auto idx = ent.id();
-			_objTransformBuf.setValue(idx, transform.localMatrix());
+			auto& objTransform = _objTransformBuf.at(idx);
+			objTransform.matrix_model	= transform.localMatrix();
+			objTransform.matrix_mvp		= mat_vp * objTransform.matrix_model;
 		}
 		// for all materials and setParam
 		_objTransformBuf.uploadToGpu();
+	}
+	{
+		_drawPramBuf.resize(1);
+		auto& drawParam = _drawPramBuf.at(0);
+		drawData.setupDrawParam(&drawParam);
 	}
 
 	// record command
@@ -81,7 +91,7 @@ CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle,
 	// rdGraph.execute(); // execute in render thread, then later need to copy struct renderableObject list to render thread, keep simple first
 	rdGraph.commit();
 
-	// present
+	// record present
 	{
 		auto* rdCtx = rdGraph.renderContext();
 		auto& rdReq = renderRequest();
@@ -104,24 +114,61 @@ CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle,
 }
 
 void 
-CRenderableSystem::drawRenderables(RenderRequest& rdReq, Material* mtl)
+CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh& fullScreenTriangle, Material* mtlPresent)
 {
-	for (auto* e : renderables())
-	{
-		e->render(rdReq, mtl);
-	}
-}
+	// present pass
 
-void 
-CRenderableSystem::drawRenderables(RenderRequest& rdReq)
-{
-	for (auto* e : renderables())
-	{
-		e->render(rdReq);
-	}
-}
+	auto texPresent		= drawData.oTexPresent;
+	//auto backBufferRt	= rdGraph.importTexture("back_buffer", rdCtx.backBuffer()); RDS_UNUSED(backBufferRt);
 
+	auto& finalComposePass = rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
+	finalComposePass.readTexture(texPresent);
+	//finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+	finalComposePass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			auto* clearValue = rdReq.clearFramebuffers();
+			clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
+			clearValue->setClearDepth(1.0f);
+
+			//mtlPresent->setParam("texPresent",			texPresent.texture2D());
+			//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, mtlPresent, Mat4f::s_identity());
+			//rdGraph->renderContext()->drawUI(rdReq);
+			//rdReq.swapBuffers();
+		}
+	);
+}
 
 #endif
 
+#if 0
+#pragma mark --- rdsDrawData-Impl ---
+#endif // 0
+#if 1
+
+void 
+DrawData::setupDrawParam(DrawParam* oDrawParam)
+{
+	auto& drawParam = *oDrawParam;
+	drawParam.matrix_proj		= camera->projMatrix();
+	drawParam.matrix_view		= camera->viewMatrix();
+	drawParam.matrix_proj_inv	= drawParam.matrix_proj.inverse();
+	drawParam.matrix_view_inv	= drawParam.matrix_view.inverse();
+	drawParam.camera_pos		= camera->pos();
+	drawParam.resolution		= resolution;
+	drawParam.delta_time		= Tuple2f(deltaTime, deltaTime);
+}
+
+void 
+DrawData::setupMaterial(Material* oMtl)
+{
+	auto& mtl = oMtl;
+	auto& rdableSys = sceneView->renderableSystem();
+
+	mtl->setParam("rds_objTransforms",		&rdableSys._objTransformBuf.gpuBuffer());
+	mtl->setParam("rds_drawParams",			&rdableSys._objTransformBuf.gpuBuffer());
+	mtl->setParam("rds_drawParamIdx",		drawParamIdx);
+}
+
+#endif
 }

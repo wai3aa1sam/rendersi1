@@ -8,6 +8,7 @@ references:
 */
 
 #include "rdsMarco_Common.hlsl"
+#include "rdsShaderInterop.hlsl"
 
 #if 0
 #pragma mark --- rdsCommonDefine-Impl ---
@@ -109,50 +110,32 @@ references:
 #endif
 #if 1
 
-struct PerObjectParam
-{
-    uint id;
-};
 [[vk::push_constant]] ConstantBuffer<PerObjectParam> rds_perObjectParam;
 
-RDS_BUFFER(float4x4, rds_transforms);
-#define RDS_MATRIX_MODEL RDS_BUFFER_LOAD_I(float4x4, rds_transforms, rds_perObjectParam.id)
+RDS_BUFFER(DrawParam,           rds_drawParams);
+RDS_BUFFER(ObjectTransform,     rds_objTransforms);
+uint rds_drawParamIdx;
 
-float4x4 rds_get_matrix_model()
+#define RDS_DRAW_PARAM_GET(IDX)     RDS_BUFFER_LOAD_I(DrawParam,           rds_drawParams,      rds_drawParamIdx)
+#define RDS_OBJ_TRANSFORM_GET()     RDS_BUFFER_LOAD_I(ObjectTransform,     rds_objTransforms,   rds_perObjectParam.id)
+
+#define RDS_MATRIX_VIEW         RDS_DRAW_PARAM_GET(IDX).matrix_view
+#define RDS_MATRIX_PROJ         RDS_DRAW_PARAM_GET(IDX).matrix_proj
+#define RDS_MATRIX_VIEW_INV     RDS_DRAW_PARAM_GET(IDX).matrix_view_inv
+#define RDS_MATRIX_PROJ_INV     RDS_DRAW_PARAM_GET(IDX).matrix_proj_inv
+
+#define RDS_MATRIX_MODEL        RDS_OBJ_TRANSFORM_GET().matrix_model
+#define RDS_MATRIX_MVP          RDS_OBJ_TRANSFORM_GET().matrix_mvp
+
+ObjectTransform rds_ObjectTransform_get()
 {
-    return RDS_MATRIX_MODEL;
+    return RDS_OBJ_TRANSFORM_GET();
 }
 
-// cbuffer rds_CommonParam : register(RDS_CONSTANT_BUFFER_BINDING(15), RDS_CONSTANT_BUFFER_SPACE)
-// {
-    
-// };
-//RDS_CONSTANT_BUFFER(rds_CommonParam, );
-
-float4x4	rds_matrix_model;
-float4x4	rds_matrix_view;
-float4x4	rds_matrix_proj;
-float4x4	rds_matrix_mvp;
-float4x4	rds_matrix_vp;
-
-float3      rds_camera_pos;
-
-
-struct rds_Surface 
+DrawParam rds_DrawParam_get(uint idx = 0)
 {
-	float3 posWS;
-	float3 normal;	
-	float3 color;
-	float3 ambient;
-	float3 diffuse;
-	float3 specular;
-	float  shininess;
-
-    float  roughness;
-    float  metallic;
-
-    float  ambientOcclusion;
-};
+    return RDS_DRAW_PARAM_GET(idx);
+}
 
 static const float rds_pi = 3.14159265359;
 

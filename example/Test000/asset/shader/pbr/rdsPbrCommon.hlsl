@@ -6,7 +6,7 @@ references:
 #ifndef __rdsPbrCommon_HLSL__
 #define __rdsPbrCommon_HLSL__
 
-#include "../common/rdsCommon.hlsl"
+#include "built-in/shader/common/rdsCommon.hlsl"
 
 float3 Pbr_fresnelSchlick(float cosTheta, float3 baseRefl)
 {
@@ -70,7 +70,7 @@ float Pbr_geometrySmith_ibl(float dotNV, float dotNL, float roughness)
     return ggx1 * ggx2;
 }
 
-float3 Pbr_basic_lighting(rds_Surface surface, float3 dirView, float3 posLight, float3 colorLight)
+float3 Pbr_basic_lighting(Surface surface, float3 dirView, float3 posLight, float3 colorLight)
 {
     float3 posWs    = surface.posWS;
     float3 normal   = surface.normal;
@@ -112,7 +112,7 @@ float3 Pbr_basic_lighting(rds_Surface surface, float3 dirView, float3 posLight, 
     return o;
 }
 
-float3 Pbr_indirectDiffuse_ibl(rds_Surface surface, float3 dirView, float3 irradianceEnv, float ao)
+float3 Pbr_indirectDiffuse_ibl(Surface surface, float3 dirView, float3 irradianceEnv, float ao)
 {
     float3 baselRefl = float3(0.04, 0.04, 0.04); 
     baselRefl = lerp(baselRefl, surface.color, surface.metallic);
@@ -186,7 +186,7 @@ float2 Pbr_integrateBrdf(float dotNV, float roughness, uint sampleCount)
     return o;
 }
 
-float3 Pbr_indirectLighting(rds_Surface surface, float3 irradianceEnv, float3 prefilteredRefl, float2 brdf, float dotNV)
+float3 Pbr_indirectLighting(Surface surface, float3 irradianceEnv, float3 prefilteredRefl, float2 brdf, float dotNV)
 {
     float3 o = float3(0.0, 0.0, 0.0);
 

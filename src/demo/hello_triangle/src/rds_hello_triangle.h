@@ -14,8 +14,8 @@ public:
 public:
 	virtual void onCreate()								override;
 	virtual void onCreateScene(Scene* oScene)			override;
-	virtual void onPrepareRender(RenderGraph* oRdGraph, RenderData& rdData) override;
-	virtual void onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData) override;
+	virtual void onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData) override;
+	virtual void onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData) override;
 
 	virtual void onUiMouseEvent(	UiMouseEvent&		ev) override;
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;

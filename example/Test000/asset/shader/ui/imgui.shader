@@ -19,7 +19,7 @@ Shader {
 }
 #endif
 
-#include "../common/rdsCommon.hlsl"
+#include "built-in/shader/common/rdsCommon.hlsl"
 
 struct VertexIn {
 	float2 pos : POSITION;
@@ -34,6 +34,7 @@ struct PixelIn {
 };
 
 RDS_TEXTURE_2D(texture0);
+float4x4 rds_matrix_proj;
 
 PixelIn vs_main(VertexIn i) 
 {

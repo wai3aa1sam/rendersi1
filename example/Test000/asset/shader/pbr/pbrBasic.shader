@@ -24,7 +24,7 @@ Shader {
 }
 #endif
 
-//#include "common/rdsCommon.hlsl"
+//#include "built-in/shader/common/rdsCommon.hlsl"
 #include "rdsPbrCommon.hlsl"
 
 struct VertexIn
@@ -62,9 +62,9 @@ RDS_TEXTURE_2D(texture1);
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
-    o.positionHCS = mul(rds_matrix_mvp,     i.positionOS);
-    o.positionWS  = mul(rds_matrix_model,   i.positionOS);
-    o.normal      = normalize(mul((float3x3)rds_matrix_model, i.normal));
+    o.positionHCS = mul(RDS_MATRIX_MVP,     i.positionOS);
+    o.positionWS  = mul(RDS_MATRIX_MODEL,   i.positionOS);
+    o.normal      = normalize(mul((float3x3)RDS_MATRIX_MODEL, i.normal));
     o.uv          = i.uv;
     
     o.uv.x = roughness;     // temp solution for match same descriptor set layout
@@ -76,17 +76,16 @@ PixelIn vs_main(VertexIn i)
 float4 ps_main(PixelIn i) : SV_TARGET
 {
     float3 o = float3(1.0, 1.0, 1.0);
+	DrawParam drawParam = rds_DrawParam_get();
 
-    o.r = rds_camera_pos.x;
-
-    rds_Surface surface;
+    Surface surface;
     surface.posWS       = i.positionWS.xyz;
     surface.normal      = normalize(i.normal);
     surface.color       = albedo;
     surface.roughness   = roughness;
     surface.metallic    = metallic;
 
-    float3 posView = rds_camera_pos;
+    float3 posView = drawParam.camera_pos;
     float3 dirView  = normalize(posView - surface.posWS);
 
     o = Pbr_basic_lighting(surface, dirView, posLight, colorLight);

@@ -184,6 +184,8 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/terrain")));
 	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/test")));
 	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/ui")));
+	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "../../")));
+
 
 	// Load the shader source file to a blob.
 	ComPtr<IDxcBlobEncoding> sourceBlob = {};

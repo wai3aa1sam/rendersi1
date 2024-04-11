@@ -7,86 +7,32 @@
 #include "rdsCSystem.h"
 #include "rds_engine/ecs/component/rdsCRenderable.h"
 
+#include <rds_render_api_layer/buffer/rdsParamBuffer.h>
 
 namespace rds
 {
 
-class Scene;
-class ObjectTransformBuffer
+class	Scene;
+class	SceneView;
+class	CRenderable;
+struct	DrawParam;
+
+struct DrawData
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	using T = Mat4f;
+	u32 drawParamIdx = 0;
+
+	float			deltaTime   = 0.0f;
+	Tuple2f			resolution  = Tuple2f::s_zero();
+	SceneView*		sceneView	= nullptr;
+	math::Camera3f*	camera		= nullptr;
+
+	RdgTextureHnd oTexPresent;
 
 public:
-	ObjectTransformBuffer()
-	{
-		_cpuBufs.resize(s_kFrameInFlightCount);
-		
-	}
-
-	void resize(SizeType n)
-	{
-		auto bufSize = n * sizeof(T);
-
-		if (!_gpuBufs)
-		{
-			auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
-			cDesc.bufSize	= bufSize;
-			cDesc.stride	= sizeof(T);
-			cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute;
-			_gpuBufs = Renderer::rdDev()->createRenderGpuMultiBuffer(cDesc);
-		}
-		
-		cpuBuffer().resize(bufSize);
-	}
-
-	void setValue(SizeType i, const T& v)
-	{
-		at(i) = v;
-	}
-
-	void uploadToGpu()
-	{
-		if (cpuBuffer().is_empty())
-		{
-			return;
-		}
-
-		_gpuBufs->uploadToGpu(cpuBuffer());
-
-		auto prevSize = prevCpuBuffer().size();
-		cpuBuffer().resize(prevSize);
-		memory_copy(cpuBuffer().data(), prevCpuBuffer().data(), prevSize);
-	}
-
-public:
-			T& at(SizeType i)						{ checkIsInBoundary(i); return reinCast<			T&>(cpuBuffer()[i * sizeof(T)]); }
-	const	T& at(SizeType i) const					{ checkIsInBoundary(i); return reinCast<const		T&>(cpuBuffer()[i * sizeof(T)]); }
-
-			RenderGpuBuffer& gpuBuffer()			{ return *_gpuBufs->renderGpuBuffer(); }
-	const	RenderGpuBuffer& gpuBuffer() const		{ return *_gpuBufs->renderGpuBuffer(); }
-	
-			RenderGpuBuffer& prevGpuBuffer()		{ return *_gpuBufs->previousBuffer(); }
-	const	RenderGpuBuffer& prevGpuBuffer() const	{ return *_gpuBufs->previousBuffer(); }
-
-			Vector<u8>& cpuBuffer()					{ return _cpuBufs[_gpuBufs->iFrame()]; }
-	const	Vector<u8>& cpuBuffer() const			{ return _cpuBufs[_gpuBufs->iFrame()]; }
-
-			Vector<u8>& prevCpuBuffer()				{ auto iPrevFrame = (sCast<int>(iFrame()) - 1) % s_kFrameInFlightCount; return _cpuBufs[iPrevFrame]; }
-	const	Vector<u8>& prevCpuBuffer() const		{ auto iPrevFrame = (sCast<int>(iFrame()) - 1) % s_kFrameInFlightCount; return _cpuBufs[iPrevFrame]; }
-
-	u32 iFrame() const { return _gpuBufs->iFrame(); }
-
-protected:
-	bool checkIsInBoundary(SizeType i) const { bool isInBoundary = i < cpuBuffer().size() / sizeof(T); RDS_CORE_ASSERT(isInBoundary, "out of boundary"); return isInBoundary;  }
-
-private:
-	SPtr<RenderGpuMultiBuffer>					_gpuBufs;
-	Vector<Vector<u8>, s_kFrameInFlightCount>	_cpuBufs;
+	void setupDrawParam(DrawParam*	oDrawParam);
+	void setupMaterial(	Material*	oMtl);
 };
 
-class CRenderable;
 #if 0
 #pragma mark --- rdsCRenderableSystem-Decl ---
 #endif // 0
@@ -94,7 +40,8 @@ class CRenderable;
 
 class CRenderableSystem : public CSystemT<CRenderable> // Singleton<CRenderableSystem, CSystem>
 {
-	friend class CRenderable;
+	friend class	CRenderable;
+	friend struct	DrawData;		// temporary
 	RDS_ENGINE_COMMON_BODY();
 public:
 	using RenderableTable		= VectorMap<EntityId, SPtr<CRenderable> >;
@@ -107,12 +54,9 @@ public:
 	void create(EngineContext* egCtx);
 	void destroy();
 
-	void update();
+	void update(DrawData& drawData);
 	void render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent);
-	void present();
-
-	void drawRenderables(RenderRequest& rdReq, Material* mtl);
-	void drawRenderables(RenderRequest& rdReq);
+	void present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh& fullScreenTriangle, Material* mtlPresent);
 
 public:
 	Vector<CRenderable*>& renderables();
@@ -125,9 +69,18 @@ protected:
 
 
 protected:
-	RenderGraph				_rdGraph;
-	FramedT<RenderRequest>	_framedRdReq;
-	ObjectTransformBuffer	_objTransformBuf;		// maybe use a two level index table to prevent empty space
+
+	/*
+		all of this should have a Vector<Data>, for multi cameras
+	*/
+	RenderGraph						_rdGraph;
+	FramedT<RenderRequest>			_framedRdReq;
+	/*
+		maybe use a two level index table to prevent empty space, since not all ent has Renderable
+		, also, maybe separate mvp and model, since when have two camera, the model since redundant
+	*/
+	ParamBuffer<ObjectTransform>	_objTransformBuf;		
+	ParamBuffer<DrawParam>			_drawPramBuf;
 };
 
 inline RenderGraph&				CRenderableSystem::renderGraph()	{ return _rdGraph; }

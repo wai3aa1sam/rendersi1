@@ -63,14 +63,17 @@ class SceneView
 public:
 	void create(CRenderableSystem* sys);
 
-	void drawScene(RenderRequest& rdReq, Material* mtl);
-	void drawScene(RenderRequest& rdReq);
+	void drawScene(RenderRequest& rdReq, Material* mtl, DrawData* drawData);
+	void drawScene(RenderRequest& rdReq, DrawData* drawData);
+
+public:
+	CRenderableSystem& renderableSystem();
 
 private:
 	CRenderableSystem* _rdableSys = nullptr;
 };
 
-inline void SceneView::create(CRenderableSystem* sys) { _rdableSys = sys; }
+inline CRenderableSystem& SceneView::renderableSystem() { return *_rdableSys; }
 
 
 #endif

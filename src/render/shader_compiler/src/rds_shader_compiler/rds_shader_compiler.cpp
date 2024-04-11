@@ -43,7 +43,6 @@ protected:
 
 		opt.isNoOffset	= true;
 		compile("asset/shader/ui/imgui.shader",					opt);
-		compile("asset/shader/terrain/my_terrain.shader",		opt);
 		compile("asset/shader/present.shader",					opt);
 		compile("asset/shader/preDepth.shader",					opt);
 		compile("asset/shader/gBuffer.shader",					opt);

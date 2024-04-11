@@ -7,9 +7,10 @@
 namespace rds
 {
 
-class RenderMesh;
-class RenderSubMesh;
-class RenderContext;
+class	RenderMesh;
+class	RenderSubMesh;
+class	RenderContext;
+struct	DrawData;
 
 #if 0
 #pragma mark --- rdsRenderCommand-Impl ---
@@ -35,15 +36,17 @@ class RenderRequest : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
+	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
+	template<class T>	static void drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData);
+						static void drawSubMesh (RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl);
+
+public:
+	#if 0
 	Mat4f matrix_view = Mat4f::s_identity();
 	Mat4f matrix_proj = Mat4f::s_identity();
 
 	Vec3f cameraPos;
-
-public:
-	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
-	template<class T>	static void drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData);
-						static void drawSubMesh (RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl);
+	#endif // 0
 
 public:
 	RenderRequest();
@@ -52,12 +55,8 @@ public:
 	RenderRequest	(const RenderRequest& rhs) { throwIf(true, ""); }
 	void operator=	(const RenderRequest& rhs) { throwIf(true, ""); }
 
+	void reset(RenderContext* rdCtx, DrawData& drawData);
 	void reset(RenderContext* rdCtx);
-	void reset(RenderContext* rdCtx, math::Camera3f& camera);
-	void setCamera(math::Camera3f& camera);
-
-	//TODO: move to separate cbuffer
-	void setMaterialCommonParams(Material* mtl, const Mat4f& transform);
 
 	RenderCommandBuffer& renderCommandBuffer();
 
@@ -70,8 +69,6 @@ public:
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color);
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color, float depth, u32 stencil = 0);
 
-	void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const Mat4f& transform);
-	void drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const Mat4f& transform);
 
 	template<class T>	void drawSubMeshT	(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const T& extraData);
 	template<class T>	void drawMeshT		(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const T& extraData);
@@ -92,7 +89,7 @@ public:
 	void copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 width, u32 height, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip);
 	void copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip);
 
-	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, const Mat4f& transform = Mat4f::s_identity());
+	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl);
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY);
 
 public:
@@ -103,6 +100,19 @@ public:
 	RenderCommand_SwapBuffers*	swapBuffers();
 	RenderCommand_DrawCall*		addDrawCall();
 	RenderCommand_DrawCall*		addDrawCall(SizeType extraDataSize);
+
+public:
+	#if 0
+	void reset(RenderContext* rdCtx, math::Camera3f& camera);
+	void setCamera(math::Camera3f& camera);
+
+	//TODO: move to separate cbuffer
+	void setMaterialCommonParams(Material* mtl, const Mat4f& transform);
+
+	void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const Mat4f& transform);
+	void drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const Mat4f& transform);
+
+	#endif // 0
 
 private:
 	RenderContext*		_rdCtx = nullptr;

@@ -21,7 +21,7 @@ CRenderableMesh::~CRenderableMesh()
 }
 
 void 
-CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl)
+CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawData)
 {
 	if (!meshAsset) return;
 	if (!mtl)
@@ -31,12 +31,13 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl)
 		mtl = material;
 	}
 
+	if (drawData)
+		setMaterialCommonParam(mtl, *drawData);
+
 	auto id = entity().id();
 	PerObjectParam perObjParam;
 	perObjParam.id = sCast<u32>(id);
 
-	// temporary
-	setMaterialCommonParam(mtl);
 	rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, meshAsset->rdMesh, mtl, perObjParam);
 }
 

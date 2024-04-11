@@ -26,7 +26,7 @@ Shader {
 }
 #endif
 
-#include "common/rdsCommon.hlsl"
+#include "built-in/shader/common/rdsCommon.hlsl"
 
 struct VertexIn
 {
@@ -48,8 +48,7 @@ bool test_bool;
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
-	float4x4 mvp  = mul(rds_matrix_vp, rds_get_matrix_model());
-	o.positionHCS = mul(mvp, i.positionOS);
+	o.positionHCS = mul(RDS_MATRIX_MVP, i.positionOS);
     o.uv          = i.uv;
     
     return o;
@@ -57,6 +56,8 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-	float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv) * color;
+	//float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv) * color;
+	float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv);
+
     return o;
 }

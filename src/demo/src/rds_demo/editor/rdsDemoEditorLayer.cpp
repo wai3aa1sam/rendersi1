@@ -62,10 +62,11 @@ DemoEditorLayer::onCreate()
 
 		rdCtx.beginRender();
 
-		RenderData rdData;
-		rdData.sceneView = &_sceneView;
-		rdData.camera	 = &mainWnd.camera();
-		_gfxDemo->onPrepareRender(&rdGraph, rdData);
+		DrawData drawData;
+		drawData.sceneView	= &_sceneView;
+		drawData.camera		= &mainWnd.camera();
+		drawData.resolution = mainWnd.clientRect().size;
+		_gfxDemo->onPrepareRender(&rdGraph, &drawData);
 
 		RenderRequest rdReq;
 		rdCtx.drawUI(rdReq);
@@ -106,37 +107,17 @@ DemoEditorLayer::onUpdate()
 		auto& rdGraph	= renderableSystem().renderGraph();
 		rdGraph.reset();
 
-		RenderData rdData;
-		rdData.sceneView = &_sceneView;
-		rdData.camera	 = &mainWnd.camera();
-		_gfxDemo->onExecuteRender(&rdGraph, rdData);
-		RDS_CORE_ASSERT(rdData.oTexPresent, "invalid present tex");
-		_texHndPresent = rdData.oTexPresent;
+		DrawData drawData;
+		drawData.sceneView	= &_sceneView;
+		drawData.camera		= &mainWnd.camera();
+		drawData.resolution = mainWnd.clientRect().size;
+		_gfxDemo->onExecuteRender(&rdGraph, &drawData);
+		RDS_CORE_ASSERT(drawData.oTexPresent, "invalid present tex");
+		_texHndPresent = drawData.oTexPresent;
 
 		// present
-		{
-			auto texPresent		= rdData.oTexPresent;
-			auto backBufferRt	= rdGraph.importTexture("back_buffer", rdCtx.backBuffer()); RDS_UNUSED(backBufferRt);
-
-			auto& finalComposePass = rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
-			finalComposePass.readTexture(texPresent);
-			//finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-			finalComposePass.setExecuteFunc(
-				[=](RenderRequest& rdReq)
-				{
-					auto* clearValue = rdReq.clearFramebuffers();
-					clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
-					clearValue->setClearDepth(1.0f);
-
-					_mtlPresent->setParam("texPresent",			texPresent.texture2D());
-
-					//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _mtlPresent, Mat4f::s_identity());
-					//rdGraph->renderContext()->drawUI(rdReq);
-					//rdReq.swapBuffers();
-				}
-			);
-		}
-		renderableSystem().update();
+		renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
+		renderableSystem().update(drawData);
 	}
 }
 

@@ -49,13 +49,13 @@ GraphicsDemo::onCreateScene(Scene* oScene)
 }
 
 void 
-GraphicsDemo::onPrepareRender(RenderGraph* oRdGraph, RenderData& rdData)
+GraphicsDemo::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
 
 }
 
 void 
-GraphicsDemo::onExecuteRender(RenderGraph* oRdGraph, RenderData& rdData)
+GraphicsDemo::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
 	//auto& rdGraph = *oRdGraph;
 }

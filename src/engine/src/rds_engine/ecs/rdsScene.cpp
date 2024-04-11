@@ -87,15 +87,35 @@ Scene::findEntity(EntityId id) const
 #if 1
 
 void 
-SceneView::drawScene(RenderRequest& rdReq, Material* mtl)
-{
-	_rdableSys->drawRenderables(rdReq, mtl);
+SceneView::SceneView::create(CRenderableSystem* sys) 
+{ 
+	_rdableSys = sys; 
 }
 
 void 
-SceneView::drawScene(RenderRequest& rdReq)
+SceneView::drawScene(RenderRequest& rdReq, Material* mtl, DrawData* drawData)
 {
-	_rdableSys->drawRenderables(rdReq);
+	RDS_CORE_ASSERT(mtl && drawData, "draw scene fail");
+	auto& rdableSys = renderableSystem();
+
+	drawData->setupMaterial(mtl);
+	for (auto* e : rdableSys.renderables())
+	{
+		e->render(rdReq, mtl, nullptr);
+	}
+}
+
+void 
+SceneView::drawScene(RenderRequest& rdReq, DrawData* drawData)
+{
+	RDS_CORE_ASSERT(drawData, "draw scene fail");
+
+	auto& rdableSys = renderableSystem();
+
+	for (auto* e : rdableSys.renderables())
+	{
+		e->render(rdReq, drawData);
+	}
 }
 
 #endif
