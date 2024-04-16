@@ -14,10 +14,12 @@ EditorApp_Base* EditorApp_Base::s_instance = nullptr;
 
 EditorApp_Base::EditorApp_Base()
 {
+	ProjectSetting::init();
 }
 
 EditorApp_Base::~EditorApp_Base()
 {
+	ProjectSetting::terminate();
 }
 
 void 
@@ -41,25 +43,8 @@ EditorApp_Base::onCreate	(const CreateDesc_Base& cd)
 	_log("currently off NMSP_CUSTOM_ALLOC, since it will crash in Release mode after this line (ProjectSetting::init()), further debug is needed, also the NMSP_CUSTOM_ALLOC should be revisited too");
 	_log("NMSP_DEVELOPMENT should be off when shipped");
 	_log("---");
-	ProjectSetting::init();
-
-	{
-		String file = getExecutableFilename();
-		String path = Path::dirname(file);
-
-		auto* proj = ProjectSetting::instance();
-
-		path.append("/../../../../../..");
-		proj->setProjectRoot(path);
-
-		path.append("/example/Test000");
-		proj->setProjectRoot(path);
-
-		//Directory::create(proj->importedPath());
-	}
 
 	Base::onCreate(thisCDesc);
-
 }
 
 void 
@@ -81,7 +66,6 @@ EditorApp_Base::willQuit	()
 {
 	Base::willQuit();
 	_appLayerStack.clear();
-	ProjectSetting::terminate();
 }
 
 #endif

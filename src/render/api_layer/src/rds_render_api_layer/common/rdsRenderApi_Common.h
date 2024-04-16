@@ -6,6 +6,17 @@
 namespace rds
 {
 
+#define ShaderStageFlag_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(Vertex,	= BitUtil::bit(0)) \
+	E(Pixel,	= BitUtil::bit(1)) \
+	E(Compute,	= BitUtil::bit(2)) \
+	E(All,		= BitUtil::bit(3)) \
+	E(_kCount,	= 3) \
+//---
+RDS_ENUM_CLASS(ShaderStageFlag, u8);
+RDS_ENUM_ALL_OPERATOR(ShaderStageFlag);
+
 #if 0
 #pragma mark --- rdsRenderApiUtil-Decl ---
 #endif // 0
@@ -16,6 +27,8 @@ struct RenderApiUtil
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	static void createTempWindow(NativeUIWindow& out);
+
+	static const char* toVkShaderStageProfile(ShaderStageFlag v);
 
 private:
 

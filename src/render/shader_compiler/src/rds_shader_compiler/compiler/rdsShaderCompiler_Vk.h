@@ -8,7 +8,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 
-#if RDS_RENDER_HAS_VULKAN
+//#if RDS_RENDER_HAS_VULKAN
 
 namespace rds
 {
@@ -57,4 +57,4 @@ protected:
 
 }
 
-#endif
+//#endif

@@ -95,8 +95,10 @@ Shader::onDestroy()
 void 
 Shader::onReset()
 {
+	auto& ps = projectSetting();
+
 	TempString temp;
-	fmtTo(temp, "{}/{}/info.json", Traits::s_defaultShaderOutPath, _filename);
+	fmtTo(temp, "{}/{}/info.json", ps.importedShaderPath(), _filename);
 	JsonUtil::readFile(temp, _info);
 }
 

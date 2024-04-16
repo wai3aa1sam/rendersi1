@@ -37,7 +37,7 @@ public:
 	void create(ShaderPass_Vk* pass, StrView passPath)
 	{
 		TempString binPath;
-		fmtTo(binPath, "{}/{}.bin", passPath, Util::toShaderStageProfile(stageFlag()));
+		fmtTo(binPath, "{}/{}.bin", passPath, Util::toVkShaderStageProfile(stageFlag()));
 
 		auto* rdDevVk = pass->renderDeviceVk();
 		_vkModule.create(binPath, rdDevVk);

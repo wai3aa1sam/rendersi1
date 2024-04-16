@@ -2,6 +2,7 @@
 
 #include "rds_editor/common/rds_editor_common.h"
 #include <rds_core/app/rdsAppLayerStack.h>
+#include <rds_core/app/rdsProjectSetting.h>
 
 namespace rds
 {

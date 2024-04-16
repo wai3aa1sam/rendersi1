@@ -215,7 +215,7 @@ public:
 
 	static VkShaderStageFlagBits	toVkShaderStageBit	(ShaderStageFlag v);
 	static VkShaderStageFlagBits	toVkShaderStageBits	(ShaderStageFlag v);
-	static StrView					toShaderStageProfile(ShaderStageFlag v);
+	//static const char*				toShaderStageProfile(ShaderStageFlag v);
 	static VkDescriptorType			toVkDescriptorType	(ShaderResourceType v);
 
 	static VkImageSubresourceRange	toVkImageSubresourceRange(const Texture_Desc& desc, u32 baseMip, u32 baseLayer);

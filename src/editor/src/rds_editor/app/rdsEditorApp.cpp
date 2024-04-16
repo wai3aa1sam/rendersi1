@@ -27,7 +27,7 @@ EditorApp::~EditorApp()
 }
 
 void 
-EditorApp::onCreate	(const CreateDesc_Base& cd)
+EditorApp::onCreate(const CreateDesc_Base& cd)
 {
 	auto thisCDesc = sCast<const CreateDesc&>(cd);
 	Base::onCreate(thisCDesc);
@@ -116,6 +116,7 @@ EditorApp::willQuit	()
 	Renderer::terminate();
 	JobSystem::terminate();
 	Logger::terminate();
+	//ProjectSetting::terminate();
 }
 
 #endif

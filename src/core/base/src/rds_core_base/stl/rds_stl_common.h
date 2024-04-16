@@ -9,6 +9,9 @@
 
 namespace rds
 {
+
+template<class T> using InitList = ::nmsp::InitList_T<T>;
+
 #if 0
 #pragma mark --- rds_stl-Impl ---
 #endif // 0

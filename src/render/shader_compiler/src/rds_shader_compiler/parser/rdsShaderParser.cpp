@@ -9,17 +9,18 @@ namespace rds
 #endif // 0
 #if 1
 void 
-ShaderParser::parse(ShaderInfo& outInfo, StrView filename)
+ShaderParser::parse(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, StrView filename)
 {
 	_mmfile.open(filename);
-	parse(outInfo, _mmfile.span(), filename);
+	parse(oCReq, outInfo, _mmfile.span(), filename);
 }
 
-void ShaderParser::parse(ShaderInfo& outInfo, ByteSpan data, StrView filename)
+void ShaderParser::parse(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, ByteSpan data, StrView filename)
 {
-	_outInfo = &outInfo;
+	_oCReq	 = oCReq;
+	_outInfo = outInfo;
 
-	outInfo.clear();
+	outInfo->clear();
 	reset(data, filename);
 
 	skipNewline();
@@ -115,7 +116,7 @@ void ShaderParser::_parseProperty()
 
 	{
 		// prop type
-		_parseEnum(prop.type);
+		readEnum(prop.type);
 
 		// prop name
 		readIdentifier(prop.name);
@@ -172,8 +173,8 @@ void ShaderParser::_parsePass()
 
 		if (token.isIdentifier("Wireframe"))	{ nextToken(); readBool(o.renderState.wireframe); continue; }
 
-		if (token.isIdentifier("BlendRGB")   )	{ nextToken(); _readBlendFunc(o.renderState.blend.rgb); continue; }
-		if (token.isIdentifier("BlendAlpha") )	{ nextToken(); _readBlendFunc(o.renderState.blend.alpha); continue; }
+		if (token.isIdentifier("BlendRGB")   )	{ nextToken(); readBlendFunc(o.renderState.blend.rgb);		continue; }
+		if (token.isIdentifier("BlendAlpha") )	{ nextToken(); readBlendFunc(o.renderState.blend.alpha);	continue; }
 
 
 		RDS_TODO("remove");
@@ -186,15 +187,66 @@ void ShaderParser::_parsePass()
 void 
 ShaderParser::_parsePermutation()
 {
+	nextToken();
+	skipNewline();
+	expected(TokenType::Operator, "{");
+
+	for (;;) 
+	{
+		skipNewline();
+		if (token().isOperator("}")) { nextToken(); break; }
+
+		if (!token().isIdentifier())
+			errorUnexpectedToken();
+
+		auto& permut = info().permuts.emplace_back();
+		readIdentifier(permut.name);
+		_parsePermutation_Value();
+	}
 }
 
 void 
 ShaderParser::_parsePermutation_Value()
 {
+	if (token().isOperator("=")) 
+	{
+		nextToken();
+		expected(TokenType::Operator, "{");
+
+		auto& tk = token();
+
+		while (!tk.isNone()) 
+		{
+			if (tk.isOperator("}")) { nextToken(); break; }
+			if (tk.isNewline())		{ break; }
+
+			auto& values = info().permuts.back().values;
+
+			skipNewline();
+
+			auto& value = values.emplace_back();
+			value += tk.value();
+			nextToken();
+			if (tk.isIdentifier("f"))
+				nextToken();
+
+			if (tk.isOperator(","))
+			{
+				nextToken();
+				continue;
+			}
+		}
+	}
 }
 
 void 
-ShaderParser::_readBlendFunc(RenderState::BlendFunc& v)
+ShaderParser::_parseInclude()
+{
+
+}
+
+void 
+ShaderParser::readBlendFunc(RenderState::BlendFunc& v)
 {
 	readEnum(v.op);
 	readEnum(v.srcFactor);

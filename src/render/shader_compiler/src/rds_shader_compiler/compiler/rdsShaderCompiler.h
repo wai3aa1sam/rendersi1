@@ -2,35 +2,17 @@
 
 #include "rds_shader_compiler/common/rds_shader_compiler_common.h"
 #include "rds_render_api_layer/shader/rdsShaderInfo.h"
+#include "../rdsShaderCompileRequest.h"
 
 namespace rds
 {
+
+class ShaderCompileRequest;
 
 #if 0
 #pragma mark --- rdsShaderCompiler-Decl ---
 #endif // 0
 #if 1
-
-struct ShaderCompileOption
-{
-public:
-	ShaderCompileOption()
-		: isDebug(false), isToSpirv(false), enableLog(false), isNoOffset(false), isCompileBinary(true), isReflect(true)
-	{
-
-	}
-
-	bool isDebug	: 1;
-	bool enableLog	: 1;
-	bool isToSpirv	: 1;
-
-	bool isNoOffset : 1;
-
-	bool isCompileBinary	: 1;
-	bool isReflect			: 1;
-
-	RenderApiType apiType = RenderApiType::Vulkan;
-};
 
 struct ShaderCompileDesc
 {
@@ -41,6 +23,8 @@ struct ShaderCompileDesc
 	ShaderStageFlag stage;
 	StrView			entry;
 	const Option*	opt = nullptr;
+	
+	const ShaderCompileRequest* compileRequest = nullptr;
 };
 
 class ShaderCompiler : public NonCopyable
@@ -56,7 +40,7 @@ public:
 	virtual ~ShaderCompiler() = default;
 
 	void compile(const CompileDesc& desc);
-	void compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt);
+	void compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt, const ShaderCompileRequest& compileReq);
 	
 	template<class STR> void toBinFilepath(STR& dst, StrView filename, StrView outpath, ShaderStageFlag stage);
 

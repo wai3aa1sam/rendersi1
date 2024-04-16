@@ -501,8 +501,8 @@ Vk_RenderApiUtil::toVkShaderStageBits(ShaderStageFlag flag)
 	return sCast<VkShaderStageFlagBits>(o);
 }
 
-
-StrView 
+#if 0
+const char*
 Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag v)
 {
 	using SRC = rds::ShaderStageFlag;
@@ -514,7 +514,7 @@ Vk_RenderApiUtil::toShaderStageProfile(ShaderStageFlag v)
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 }
-
+#endif // 0
 
 VkDescriptorType			
 Vk_RenderApiUtil::toVkDescriptorType(ShaderResourceType v)

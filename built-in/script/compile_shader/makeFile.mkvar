@@ -1,0 +1,45 @@
+.PHONY: all clean
+
+# -include xxxx would override same name variable and don't follow order
+# file path should not use ../ or relative, since it will base on the includer
+# include would append MAKEFILE_LIST, firstword will be current, lastword would be just included file
+
+# CURRENT_MAKEFILE:=$(lastword $(MAKEFILE_LIST))
+# CUR_DIR  := $(dir $(CURRENT_MAKEFILE))
+# CUR_ROOT := $(realpath $(CUR_DIR))
+
+# TODO: do not hardcode
+
+BUILT_IN_PATH 			:= built-in
+BUILT_IN_SHADER_PATH 	:= built-in/shader
+
+IMPORTED_PATH 	:= local_temp/imported
+
+BUILD_CONFIG = Release
+
+DX11 := dx11
+SPIRV := spirv
+
+BUILD_DX11 	:= 1
+BUILD_SPIRV := 1
+
+RDS_MAKE := make
+RDS_MAKEFILE := makeFile
+
+export BUILT_IN_PATH BUILT_IN_SHADER_PATH IMPORTED_PATH \
+DX11 SPIRV \
+BUILD_DX11 BUILD_SPIRV \
+RDS_MAKE
+#
+
+TEST_RDS_ROOT_COMPILE_SHADER_MAKE := 0
+ifeq ($(TEST_RDS_ROOT_COMPILE_SHADER_MAKE), 1)
+
+all: _RDS_ROOT_COMPILE_SHADER_MAKE
+
+_RDS_ROOT_COMPILE_SHADER_MAKE:
+	@echo --- _RDS_ROOT_COMPILE_SHADER_MAKE
+	@echo BUILT_IN_PATH --- $(BUILT_IN_PATH)
+	@echo --- 
+
+endif

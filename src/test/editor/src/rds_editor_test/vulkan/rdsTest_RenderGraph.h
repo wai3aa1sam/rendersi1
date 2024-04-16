@@ -208,7 +208,7 @@ public:
 					PerObjectParam perObjectParam;
 					perObjectParam.id = sCast<u32>(i);
 					rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, perObjectParam);
-					rdReq.setMaterialCommonParams(srcMtl, matModel);
+					//rdReq.setMaterialCommonParams(srcMtl, matModel);
 				}
 			}
 		}
@@ -336,7 +336,7 @@ public:
 				rdReq.setViewport(viewport);
 				rdReq.setScissorRect(viewport);
 
-				rdReq.setMaterialCommonParams(mtl, Mat4f::s_identity());
+				//rdReq.setMaterialCommonParams(mtl, Mat4f::s_identity());
 				rdReq.drawMesh(RDS_SRCLOC, meshAssets.fullScreenTriangle, mtl);
 			});
 
@@ -421,8 +421,8 @@ public:
 
 							rdReq.setViewport(viewport);
 							rdReq.setScissorRect(viewport);
-							rdReq.matrix_proj = matProj;
-							rdReq.matrix_view = matView;
+							//rdReq.matrix_proj = matProj;
+							//rdReq.matrix_view = matView;
 							rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
 						});
 
@@ -509,7 +509,7 @@ public:
 
 			_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test/test_compute_bindless.shader");
 			_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
-			testCompute(&_rdGraph, nullptr, true);
+			//testCompute(&_rdGraph, nullptr, true);
 
 			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
@@ -633,13 +633,13 @@ public:
 		//oTex = testCompute(&_rdGraph, &oTexDepth, false);
 		//oTex = testDeferred(&_rdGraph, &oTexDepth);
 		//oTex = testPbr(&_rdGraph, &oTexDepth, &oTexEnvIrradianceCube);
-		oTex = testBindless(&_rdGraph, &oTexDepth);
+		//oTex = testBindless(&_rdGraph, &oTexDepth);
 
 		auto* texSkybox = 0 ? &oTexEnvIrradianceCube : nullptr; RDS_UNUSED(texSkybox);
 
 		RDS_TODO("has bug in render graph, when testCompute + testSkybox");
-		oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
-		finalComposite(&_rdGraph, oTex);
+		//oTex = testSkybox(&_rdGraph, oTex, oTexDepth, texSkybox);
+		//finalComposite(&_rdGraph, oTex);
 
 		s_presentTex = oTex;
 
@@ -651,6 +651,7 @@ public:
 	{
 		_rdGraph.commit();
 	}
+	#if 0
 
 	RdgTextureHnd testDeferred(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
 	{
@@ -744,7 +745,7 @@ public:
 		{
 			std::default_random_engine rndEngine((unsigned)time(nullptr));
 			std::uniform_real_distribution<float> rndDist(0.0f, 1.0f);
-			
+
 			// Initial particle positions on a circle
 			Vector<Particle> particles(s_kMaxParticleCount);
 			for (auto& particle : particles) 
@@ -786,7 +787,7 @@ public:
 				rdReq.dispatch(RDS_SRCLOC, _testComputeMtl, s_kMaxParticleCount / RDS_TEST_COMPUTE_GROUP_THREAD, 1, 1);
 			}
 		);
-		
+
 		rdGraph->exportBuffer(&_testComputeLastFrameParticles, particlesWrite, RenderGpuBufferTypeFlags::Compute, RenderAccess::Read);
 
 		auto screenSize = Vec2u::s_cast(_rdCtx->framebufferSize()).toTuple2();
@@ -854,7 +855,7 @@ public:
 
 				auto& mtl = _mtlSkybox;
 				mtl->setParam("skybox", _texDefaultSkybox, s);
-				
+
 				//mtl->setParam("skybox", texSkybox ? texSkybox->textureCube() : _texDefaultSkybox);
 				mtl->setParam("skybox", _texCubeEnvMap);
 				//mtl->setParam("skybox", _texCubeIrradianceEnvMap);
@@ -977,7 +978,7 @@ public:
 
 		return texPbrColor;
 	}
-	
+
 	RdgTextureHnd testBindless(RenderGraph* outRdGraph, RdgTextureHnd* outTexDepth)
 	{
 		auto*	rdGraph		= outRdGraph;
@@ -1014,7 +1015,7 @@ public:
 						mtl->setParam("texture0",		_uvCheckerTex, s);
 						mtl->setParam("testBuffer",		_testBindlessBuffer);
 						mtl->setParam("testRwBuffer",	_testBindlessRwBuffer);
-						
+
 					};
 				scene()->drawScene(rdReq, mtl, &fn);
 			}
@@ -1054,6 +1055,8 @@ public:
 		);
 	}
 
+	#endif // 0
+
 	void present(RenderContext* rdCtx, RenderRequest& rdReq, TransferRequest& tsfReq, bool isPresent = true)
 	{
 		#if 1
@@ -1067,7 +1070,7 @@ public:
 			clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 			clearValue->setClearDepth(1.0f);
 
-			rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl, Mat4f::s_identity());
+			//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl, Mat4f::s_identity());
 			rdReq.swapBuffers();
 		}
 		RDS_TODO("move to endRender when upload buffer is cpu prefered");

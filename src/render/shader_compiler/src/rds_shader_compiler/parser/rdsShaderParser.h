@@ -2,6 +2,7 @@
 
 #include "rds_shader_compiler/common/rds_shader_compiler_common.h"
 #include "rds_render_api_layer/shader/rdsShaderInfo.h"
+#include "../rdsShaderCompileRequest.h"
 
 /*
 references:
@@ -19,8 +20,8 @@ namespace rds
 class ShaderParser : public Lexer
 {
 public:
-	void parse(ShaderInfo& outInfo, StrView filename);
-	void parse(ShaderInfo& outInfo, ByteSpan data, StrView filename);
+	void parse(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, StrView filename);
+	void parse(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, ByteSpan data, StrView filename);
 
 	void dump(StrView filename);
 
@@ -33,26 +34,26 @@ protected:
 	void _parsePermutation();
 	void _parsePermutation_Value();
 
-	void _readBlendFunc(RenderState::BlendFunc& v);
-
-	template<class E> void _parseEnum(E& v_);
+	void _parseInclude();
 
 protected:
-	MemMapFile	_mmfile;
-	ShaderInfo* _outInfo = nullptr;
+	void readBlendFunc(RenderState::BlendFunc& v);
+
+protected:
+	ShaderInfo&				info();
+	ShaderCompileRequest&	compileRequest();
+
+protected:
+	MemMapFile				_mmfile;
+	ShaderInfo*				_outInfo = nullptr;
+	ShaderCompileRequest*	_oCReq	 = nullptr;
 
 private:
 
 };
 
-template<class E> inline
-void 
-ShaderParser::_parseEnum(E& v)
-{
-	errorIf(!enumTryParse(v, token().value()), "ShaderParse parse enum failed");
-	nextToken();
-}
-
+inline ShaderInfo&				ShaderParser::info()			{ return *_outInfo; }
+inline ShaderCompileRequest&	ShaderParser::compileRequest()	{ return *_oCReq; }
 
 #endif
 

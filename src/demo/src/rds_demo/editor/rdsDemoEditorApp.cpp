@@ -28,10 +28,22 @@ DemoEditorApp::onCreate(const CreateDesc_Base& cDesc)
 {
 	auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 
+	{
+		auto& ps = *ProjectSetting::instance();
+		String file = getExecutableFilename();
+		String path = Path::dirname(file);
+
+		path.append("/../../../../../..");
+		ps.setRdsRoot(path);
+
+		path.append("/example/Test000");
+		ps.setProjectRoot(path);
+	}
+
 	Base::onCreate(thisCDesc);
 	//JobSystem::instance()->setSingleThreadMode(true);
 
-	{ Process sh = { "compile_shader.bat" }; }
+	//{ Process sh = { "compile_shaders.bat" }; }
 
 	{
 		_mainWnd = makeUPtr<DemoEditorMainWindow>();

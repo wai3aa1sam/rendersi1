@@ -1,0 +1,78 @@
+.PHONY: all clean
+
+# -include xxxx would override same name variable and don't follow order
+# file path should not use ../ or relative, since it will base on the includer
+# include would append MAKEFILE_LIST, firstword will be current, lastword would be just included file
+
+# CURRENT_MAKEFILE:=$(lastword $(MAKEFILE_LIST))
+# CUR_DIR  := $(dir $(CURRENT_MAKEFILE))
+# CUR_ROOT := $(realpath $(CUR_DIR))
+
+include makeFile.mkvar
+
+RDS_ROOT 			:= 
+PROJECT_ROOT 		:=
+SHADER_FILE_PATH 	:=
+
+BUILT_IN_ROOT			:= $(RDS_ROOT)/$(BUILT_IN_PATH)
+BUILT_IN_SHADER_ROOT	:= $(RDS_ROOT)/$(BUILT_IN_SHADER_PATH)
+
+SHADER_FILE_ROOT 	:= $(PROJECT_ROOT)/$(SHADER_FILE_PATH)
+SHADER_BIN_ROOT		:= $(PROJECT_ROOT)/$(IMPORTED_PATH)/$(SHADER_FILE_PATH)
+SHADER_MAKE_ROOT	:= $(SHADER_BIN_ROOT)/$(RDS_MAKEFILE)
+
+RDS_SHADER_COMPILER_PATH:=build/rendersi1-x64-windows/src/render/shader_compiler/$(BUILD_CONFIG)/rds_shader_compiler.exe
+
+rdsShaderCompiler:=$(RDS_ROOT)/$(RDS_SHADER_COMPILER_PATH)
+glslc:=glslc
+
+export RDS_ROOT PROJECT_ROOT SHADER_FILE_PATH \
+BUILT_IN_ROOT BUILT_IN_SHADER_ROOT \
+SHADER_FILE_ROOT SHADER_BIN_ROOT SHADER_MAKE_ROOT \
+RDS_SHADER_COMPILER_PATH \
+rdsShaderCompiler glslc \
+#
+
+ifneq ("$(wildcard $(SHADER_MAKE_ROOT))", "")
+# if exist
+
+all: project_compile_shader_make
+project_compile_shader_make: $(SHADER_FILE_ROOT) $(SHADER_MAKE_ROOT)
+#@	@echo === project_compile_shader_make
+	@echo --- compile shader --- $(SHADER_FILE_PATH)
+	$(RDS_MAKE) -C $(SHADER_BIN_ROOT)
+#@echo SHADER_MAKE_ROOT --- $(SHADER_MAKE_ROOT)
+
+else
+# if not exist
+
+all: $(SHADER_MAKE_ROOT)
+$(SHADER_MAKE_ROOT): $(SHADER_FILE_ROOT)
+#@	@echo === rdsShaderCompiler
+	@echo --- compile shader --- $(SHADER_FILE_PATH)
+	$(rdsShaderCompiler) -cwd="$(PROJECT_ROOT)" -file="$(SHADER_FILE_PATH)" -generateMake
+#$(RDS_MAKE) -C $(SHADER_BIN_ROOT)
+#@echo SHADER_MAKE_ROOT --- $(SHADER_MAKE_ROOT)
+
+endif
+
+TEST_PROJECT_ROOT_COMPILE_SHADER_MAKE := 0
+ifeq ($(TEST_PROJECT_ROOT_COMPILE_SHADER_MAKE), 1)
+
+all: _PROJECT_ROOT_COMPILE_SHADER_MAKE
+
+all: test_print
+test_print:
+	@echo SHADER_MAKE_ROOT exist
+	@echo ===
+
+_PROJECT_ROOT_COMPILE_SHADER_MAKE:
+	@echo --- _PROJECT_ROOT_COMPILE_SHADER_MAKE
+	@echo DX11 --- $(DX11)
+	@echo RDS_ROOT --- $(RDS_ROOT)
+	@echo PROJECT_ROOT --- $(PROJECT_ROOT)
+	@echo SHADER_BIN_ROOT --- $(SHADER_BIN_ROOT)
+
+	@echo ---
+	$(RDS_MAKE) -C $(SHADER_BIN_ROOT)
+endif

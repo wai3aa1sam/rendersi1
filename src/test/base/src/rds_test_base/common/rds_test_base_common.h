@@ -59,19 +59,19 @@ public:
 
 		if (_enableProjectSetting)
 		{
-			ProjectSetting::init();
+			//ProjectSetting_T::init();
 
 			App_Base app;
 			String file = app.getExecutableFilename();
 			String path = Path::dirname(file);
 
-			auto* proj = ProjectSetting::instance();
+			auto& proj = ProjectSetting_T {};
 
 			path.append("/../../../../../..");
-			proj->setProjectRoot(path);
+			proj.setProjectRoot(path);
 
 			path.append("/example/Test000");
-			proj->setProjectRoot(path);
+			proj.setProjectRoot(path);
 		}
 		
 		_unitTestManager.create();
@@ -87,8 +87,8 @@ public:
 		_log("Profiler will continue increase process memory, Sanitizer will use many cpu rate");
 
 		_unitTestManager.destroy();
-		if (_enableProjectSetting)
-			ProjectSetting::terminate();
+		/*if (_enableProjectSetting)
+			ProjectSetting_T::terminate();*/
 		if (_enableLog)
 			Logger::terminate();
 		MemoryContext::terminate();

@@ -159,9 +159,11 @@ public:
 	RenderResourceStateFlags renderResourceStateFlags(u32 subResource = RenderResourceState::s_kAllSubResource) const;
 
 public:
-	void setSubResourceCount(SizeType n);
-	void _internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
+	ProjectSetting& projectSetting();
 
+public:
+	void _internal_setSubResourceCount(SizeType n);
+	void _internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
 
 protected:
 	RDS_DEBUG_SRCLOC_DECL;
@@ -200,6 +202,8 @@ RenderResource::debugName() const
 }
 
 inline RenderResourceStateFlags RenderResource::renderResourceStateFlags(u32 subResource) const { return _rdState.state(subResource); }
+
+inline ProjectSetting& RenderResource::projectSetting() { return *ProjectSetting::instance(); }
 
 #endif
 

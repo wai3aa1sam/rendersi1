@@ -60,7 +60,7 @@ RenderResource::setDebugName(StrView name)
 }
 
 void 
-RenderResource::setSubResourceCount(SizeType n)
+RenderResource::_internal_setSubResourceCount(SizeType n)
 {
 	_rdState.setSubResourceCount(n);
 }

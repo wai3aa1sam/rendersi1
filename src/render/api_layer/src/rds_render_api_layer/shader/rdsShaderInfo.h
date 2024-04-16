@@ -11,17 +11,6 @@ using ShaderParamId = int;
 
 class Texture2D;
 
-#define ShaderStageFlag_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(Vertex,	= BitUtil::bit(0)) \
-	E(Pixel,	= BitUtil::bit(1)) \
-	E(Compute,	= BitUtil::bit(2)) \
-	E(All,		= BitUtil::bit(3)) \
-	E(_kCount,	= 3) \
-//---
-RDS_ENUM_CLASS(ShaderStageFlag, u8);
-RDS_ENUM_ALL_OPERATOR(ShaderStageFlag);
-
 #define ShaderPropType_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(Bool,) \
@@ -521,6 +510,37 @@ public:
 	}
 };
 
+struct ShaderPermutationInfo
+{
+public:
+	String name;
+	Vector<String, 2> values;
+
+public:
+	bool isValueExist(StrView val) const
+	{
+		return findValueIdx(val) != -1;
+	}
+
+	int findValueIdx(StrView val) const
+	{
+		for (int i = 0; i < values.size(); ++i)
+		{
+			if (val.compare(values[i]) == 0)
+				return i;
+		}
+		return -1;
+	}
+
+	template<class SE>
+	void onJsonIo(SE& se) 
+	{
+		RDS_NAMED_FIXED_IO(se, name);
+		RDS_NAMED_FIXED_IO(se, values);
+	}
+};
+
+
 
 struct ShaderInfo : public NonCopyable
 {
@@ -529,21 +549,25 @@ public:
 	using Prop		= ShaderPropInfo;
 	using Pass		= ShaderPassInfo;
 	using Stage		= ShaderStageInfo;
+	using Permut	= ShaderPermutationInfo;
 
 public:
 	static constexpr SizeType s_kShaderStageCount	= enumInt(ShaderStageFlag::_kCount);
 	static constexpr SizeType s_kLocalPassSize		= 2;
 	static constexpr SizeType s_kLocalPropSize		= 12;
+	static constexpr SizeType s_kLocalPermutSize	= 4;
 
 public:
-	Vector<Prop, s_kLocalPropSize>	props;
-	Vector<Pass, s_kLocalPassSize>	passes;
+	Vector<Prop,	s_kLocalPropSize>	props;
+	Vector<Pass,	s_kLocalPassSize>	passes;
+	Vector<Permut,	s_kLocalPassSize>	permuts;
 
 public:
 	void clear()
 	{
 		props.clear();
 		passes.clear();
+		permuts.clear();
 	}
 
 public:
@@ -552,6 +576,7 @@ public:
 	{
 		RDS_NAMED_FIXED_IO(se, props);
 		RDS_NAMED_FIXED_IO(se, passes);
+		RDS_NAMED_FIXED_IO(se, permuts);
 	}
 };
 

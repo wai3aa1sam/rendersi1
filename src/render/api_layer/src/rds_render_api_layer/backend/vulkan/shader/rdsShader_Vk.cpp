@@ -263,6 +263,8 @@ Shader_Vk::onReset()
 {
 	Base::onReset();
 
+	auto& ps = projectSetting();
+
 	_passes.clear();
 	SizeType passCount = _info.passes.size();
 	_passes.reserve(passCount);
@@ -273,7 +275,7 @@ Shader_Vk::onReset()
 		PassInfo& passInfo = _info.passes[i];
 
 		TempString passPath;
-		fmtTo(passPath, "{}/{}/{}/pass{}", Traits::s_defaultShaderOutPath, filename(), Traits::s_spirvPath, i);
+		fmtTo(passPath, "{}/{}/{}/pass{}", ps.importedShaderPath(), filename(), ps.spirvPath(), i);
 
 		TempString allStageUnionInfoPath;
 		fmtTo(allStageUnionInfoPath, "{}/pass{}.json", passPath, i);

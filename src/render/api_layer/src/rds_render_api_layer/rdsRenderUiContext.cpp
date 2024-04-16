@@ -37,7 +37,7 @@ RenderUiContext::create(RenderContext* renderContext)
 	io.ConfigViewportsNoDefaultParent = true;
 
 	//_setDarkTheme();
-
+	RDS_DUMP_VAR(Path::getCurrentDir());
 	auto* rdDev = _rdCtx->renderDevice();
 	_shader   = rdDev->createShader("asset/shader/ui/imgui.shader");
 	_material = rdDev->createMaterial();

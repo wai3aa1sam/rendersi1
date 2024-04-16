@@ -52,7 +52,7 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 {
 	_desc = cDesc;
 	
-	setSubResourceCount(desc().mipCount);
+	_internal_setSubResourceCount(desc().mipCount);
 	if (BitUtil::has(desc().usageFlags, TextureUsageFlags::TransferDst))
 	{
 		_internal_setRenderResourceState(RenderResourceStateFlags::Transfer_Dst);

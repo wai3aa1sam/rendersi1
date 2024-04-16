@@ -7,8 +7,10 @@
 
 #if _DEBUG
 	#define RDS_DEBUG 1
+	#define RDS_BUILD_CONFIG_STR "Debug"
 #else
 	#define RDS_DEBUG 0
+	#define RDS_BUILD_CONFIG_STR "Release"
 #endif // _DEBUG
 
 #define RDS_DEVELOPMENT		1

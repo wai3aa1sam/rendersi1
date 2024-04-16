@@ -2,7 +2,7 @@
 #include "rdsShaderCompiler_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
-#if RDS_RENDER_HAS_VULKAN
+//#if RDS_RENDER_HAS_VULKAN
 
 
 namespace rds
@@ -42,25 +42,24 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 	String			srcPath = desc.filename;		// shoulde be realpath
 	ShaderStageFlag stage	= desc.stage; 
 	TempString		dstpath;
-	fmtTo(dstpath, "{}/{}.bin", desc.outpath, Util::toShaderStageProfile(stage));
+	fmtTo(dstpath, "{}/{}.bin", desc.outpath, toShaderStageProfile(stage));
 
 	//u32 uboStartIdx = 0; u32 texStartIdx = 4; u32 ssboStartIdx = 10; u32 imageStartIdx = 13; u32 samplerStartIdx = 16;
 
 	RDS_TODO("check vulkan extension whether existed then add the compile option, eg. -fhlsl-functionality1");
 	RDS_TODO("cbuffer only for hlsl, use ubo for glsl, same for uav, use ssbo");
 
-	u32 stageOffset = 0;
-	if (BitUtil::has(desc.stage, ShaderStageFlag::Pixel)) stageOffset = 0;
-
 	if (_opt->isCompileBinary)
 	{
+		u32 stageOffset = 0;
+		if (BitUtil::has(desc.stage, ShaderStageFlag::Pixel)) stageOffset = 0;
+
 		// 16 is minimum spec in vulkan
 		u32 cbufferOffset	= stageOffset + 0;
 		u32 textureOffset	= stageOffset + 4;
 		u32 samplerOffset	= stageOffset + 8;
 		u32 uavOffset		= stageOffset + 12;
 		u32 imageOffset		= stageOffset + 14;
-
 
 		TempString args;
 		fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, dstpath);
@@ -99,7 +98,7 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 StrView
 ShaderCompiler_Vk::toShaderStageProfile(ShaderStageFlag stage)
 {
-	return Util::toShaderStageProfile(stage);
+	return Util::toVkShaderStageProfile(stage);
 }
 
 void 
@@ -569,4 +568,4 @@ SpirvUtil::toRenderDataType(SPIRType type)
 
 }
 
-#endif
+//#endif

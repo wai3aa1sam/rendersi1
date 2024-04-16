@@ -36,7 +36,7 @@ reference:
 namespace rds
 {
 
-template<class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
+template<class T> using ComPtr = ShaderCompiler_Dx12::ComPtr<T>;
 
 struct Dx12Util
 {
@@ -77,11 +77,6 @@ struct Dx12Util
 	}
 };
 
-struct VkUtil : Vk_RenderApiUtil
-{
-
-};
-
 #if 0
 #pragma mark --- rdsShaderCompiler_Dx12-Impl ---
 #endif // 0
@@ -101,7 +96,8 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	ComPtr<IDxcUtils>			utils;
 	ComPtr<IDxcIncludeHandler>	includeHandler;
 
-	auto ret = ::DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&utils));
+	HRESULT ret = 0;
+	ret = ::DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&utils));
 	Util::throwIfError(ret);
 	
 	ret = ::DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler));
@@ -110,95 +106,162 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	ret = utils->CreateDefaultIncludeHandler(&includeHandler);
 	Util::throwIfError(ret);
 
-	auto entryW = UtfUtil::toTempStringW(desc.entry);
-
-	Vector<TempStringW, 64> compileArgs;
-
-	compileArgs.emplace_back(L"-E");	compileArgs.emplace_back(entryW);
-	compileArgs.emplace_back(L"-T");	compileArgs.emplace_back(UtfUtil::toTempStringW(toShaderStageProfile(desc.stage)));
-	compileArgs.emplace_back(L"-HV");	compileArgs.emplace_back(L"2021");							// 2021 has change vector ternary op to select/any/...
-	
-	compileArgs.emplace_back(DXC_ARG_WARNINGS_ARE_ERRORS);
-	compileArgs.emplace_back(DXC_ARG_ALL_RESOURCES_BOUND);
-	compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
-
-	compileArgs.emplace_back(L"-Qstrip_debug");			// adding this then can extract DXC_OUT_PDB
-
-	bool isBypassReflection = false;
-	if (opt->isToSpirv)
+	TempString binFilepath;
+	switch (opt->apiType)
 	{
-		//compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
-		compileArgs.emplace_back(L"-spirv");
-		compileArgs.emplace_back(L"-fspv-target-env=vulkan1.2");	// 1.3 cannot read by spirv-cross
-		compileArgs.emplace_back(L"-fspv-reflect");
-		compileArgs.emplace_back(L"-fvk-auto-shift-bindings");
-
-		if (!opt->isNoOffset)
-		{
-			u32 stageOffset = 0;
-			// 16 is minimum spec in vulkan
-			u32 cbufferOffset	= stageOffset + 0;		RDS_UNUSED(cbufferOffset);
-			u32 textureOffset	= stageOffset + 4;		RDS_UNUSED(textureOffset);
-			u32 samplerOffset	= stageOffset + 8;		RDS_UNUSED(samplerOffset);
-			u32 uavOffset		= stageOffset + 12;		RDS_UNUSED(uavOffset	);
-			u32 imageOffset		= stageOffset + 14;		RDS_UNUSED(imageOffset	);
-			// <shift> <space>
-			compileArgs.emplace_back(L"-fvk-b-shift"); compileArgs.emplace_back(StrUtil::toStrW(cbufferOffset));	compileArgs.emplace_back(L"0");
-			compileArgs.emplace_back(L"-fvk-t-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");	// temporary
-			compileArgs.emplace_back(L"-fvk-s-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");
-			compileArgs.emplace_back(L"-fvk-u-shift"); compileArgs.emplace_back(StrUtil::toStrW(imageOffset));		compileArgs.emplace_back(L"0");
-		}
-
-		// rds_define
-		if (true)
-		{
-			auto& bindlessRsc = Renderer::rdDev()->bindlessResource();
-
-			compileArgs.emplace_back(L"-fvk-bind-globals"); compileArgs.emplace_back(StrUtil::toStrW(14));	compileArgs.emplace_back(StrUtil::toStrW(bindlessRsc.bindlessTypeCount()));
-			
-			compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}",				bindlessRsc.samplerCount())));
-			compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_CONSTANT_BUFFER_SPACE=space{}",	bindlessRsc.bindlessTypeCount())));
-		}
-
-		isBypassReflection = true;	// dxc does not support spirv reflection (Qstrip_reflect), use spirv-cross instead
-	}
-	else		// only available in dx12
-	{
-		//compileArgs.emplace_back(L"DXC_ARG_PACK_MATRIX_ROW_MAJOR");
-		compileArgs.emplace_back(L"-Qstrip_reflect");		// adding this then can extract DXC_OUT_REFLECTION, spv do not support it
+		case RenderApiType::Dx12:	{ toBinFilepath(binFilepath, filename, outpath, stage); }								break;
+		case RenderApiType::Vulkan: { toBinFilepath(binFilepath, outpath, RenderApiUtil::toVkShaderStageProfile(stage)); }	break;
 	}
 
-	if (opt->isDebug)
-	{
-		compileArgs.emplace_back(DXC_ARG_DEBUG);
-	}
-	else
-	{
-		compileArgs.emplace_back(DXC_ARG_OPTIMIZATION_LEVEL3);
-	}
-
-	auto curDir = Path::getCurrentDir();
-	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader")));
-	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/common")));
-	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/pbr")));
-	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/terrain")));
-	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/test")));
-	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "asset/shader/ui")));
-	compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}/{}", curDir, "../../")));
-
+	auto entryW			= UtfUtil::toTempStringW(desc.entry);
+	auto stageW			= UtfUtil::toTempStringW(toShaderStageProfile(desc.stage));
+	auto inputW			= UtfUtil::toTempStringW(filename);
+	auto binFilepathW	= UtfUtil::toTempStringW(binFilepath);
 
 	// Load the shader source file to a blob.
 	ComPtr<IDxcBlobEncoding> sourceBlob = {};
-	auto temp = UtfUtil::toTempStringW(filename);
-	ret = utils->LoadFile(temp.data(), nullptr, &sourceBlob);
-	Util::throwIfError(ret);
-
 	DxcBuffer sourceBuffer;
-	sourceBuffer.Ptr		= sourceBlob->GetBufferPointer();
-	sourceBuffer.Size		= sourceBlob->GetBufferSize();
-	sourceBuffer.Encoding	= 0;
+	{
+		ret = utils->LoadFile(inputW.data(), nullptr, &sourceBlob);
+		Util::throwIfError(ret);
 
-	Vector<const wchar_t*, 64> compileArgs_wc;
+		sourceBuffer.Ptr		= sourceBlob->GetBufferPointer();
+		sourceBuffer.Size		= sourceBlob->GetBufferSize();
+		sourceBuffer.Encoding	= 0;
+	}
+
+	DxcCompileDesc dxcCmpDesc;
+	dxcCmpDesc.dxcCompiler	= compiler.Get();
+	dxcCmpDesc.dxcUtils		= utils.Get();
+	dxcCmpDesc.dxcIncHandler	= includeHandler.Get();
+	dxcCmpDesc.dxcSrcBuf		= &sourceBuffer;
+
+	dxcCmpDesc.outFilename	= binFilepath;
+
+	// compile for binary
+	{
+		auto& compileArgs = dxcCmpDesc.compileArgs;
+		compileArgs.clear();
+
+		compileArgs.emplace_back(L"-E");	compileArgs.emplace_back(entryW);
+		compileArgs.emplace_back(L"-T");	compileArgs.emplace_back(UtfUtil::toTempStringW(toShaderStageProfile(desc.stage)));
+		compileArgs.emplace_back(L"-HV");	compileArgs.emplace_back(L"2021");							// 2021 has change vector ternary op to select/any/...
+		
+		compileArgs.emplace_back(DXC_ARG_WARNINGS_ARE_ERRORS);
+		compileArgs.emplace_back(DXC_ARG_ALL_RESOURCES_BOUND);
+		compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
+
+		compileArgs.emplace_back(L"-Qstrip_debug");			// adding this then can extract DXC_OUT_PDB
+
+		bool isBypassReflection = false;
+		if (opt->isToSpirv)
+		{
+			//compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
+			compileArgs.emplace_back(L"-spirv");
+			compileArgs.emplace_back(L"-fspv-target-env=vulkan1.2");	// 1.3 cannot read by spirv-cross
+			compileArgs.emplace_back(L"-fspv-reflect");
+			compileArgs.emplace_back(L"-fvk-auto-shift-bindings");
+
+			if (!opt->isNoOffset)
+			{
+				u32 stageOffset = 0;
+				// 16 is minimum spec in vulkan
+				u32 cbufferOffset	= stageOffset + 0;		RDS_UNUSED(cbufferOffset);
+				u32 textureOffset	= stageOffset + 4;		RDS_UNUSED(textureOffset);
+				u32 samplerOffset	= stageOffset + 8;		RDS_UNUSED(samplerOffset);
+				u32 uavOffset		= stageOffset + 12;		RDS_UNUSED(uavOffset	);
+				u32 imageOffset		= stageOffset + 14;		RDS_UNUSED(imageOffset	);
+				// <shift> <space>
+				compileArgs.emplace_back(L"-fvk-b-shift"); compileArgs.emplace_back(StrUtil::toStrW(cbufferOffset));	compileArgs.emplace_back(L"0");
+				compileArgs.emplace_back(L"-fvk-t-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");	// temporary
+				compileArgs.emplace_back(L"-fvk-s-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");
+				compileArgs.emplace_back(L"-fvk-u-shift"); compileArgs.emplace_back(StrUtil::toStrW(imageOffset));		compileArgs.emplace_back(L"0");
+			}
+
+			// rds_define
+			if (true)
+			{
+				auto& bindlessRsc = Renderer::rdDev()->bindlessResource();
+
+				compileArgs.emplace_back(L"-fvk-bind-globals"); compileArgs.emplace_back(StrUtil::toStrW(14));	compileArgs.emplace_back(StrUtil::toStrW(bindlessRsc.bindlessTypeCount()));
+
+				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}",				bindlessRsc.samplerCount())));
+				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_CONSTANT_BUFFER_SPACE=space{}",	bindlessRsc.bindlessTypeCount())));
+			}
+
+			isBypassReflection = true;	// dxc does not support spirv reflection (Qstrip_reflect), use spirv-cross instead
+		}
+		else		// only available in dx12
+		{
+			//compileArgs.emplace_back(L"DXC_ARG_PACK_MATRIX_ROW_MAJOR");
+			compileArgs.emplace_back(L"-Qstrip_reflect");		// adding this then can extract DXC_OUT_REFLECTION, spv do not support it
+		}
+
+		if (opt->isDebug)
+		{
+			compileArgs.emplace_back(DXC_ARG_DEBUG);
+		}
+		else
+		{
+			compileArgs.emplace_back(DXC_ARG_OPTIMIZATION_LEVEL3);
+		}
+
+		compileArgs.appendIncludes(desc.compileRequest->includes);
+
+		ComPtr<IDxcResult> compiledShaderBuffer;
+		_compile(compiledShaderBuffer, dxcCmpDesc, desc);
+
+		if (_opt->isReflect)
+		{
+			if (!isBypassReflection)
+			{
+				reflect(outpath, compiledShaderBuffer.Get(), utils.Get(), stage);
+			}
+		}
+	}
+
+	// preprocess for dependency
+	{
+		TempString buf;
+		fmtTo(buf, "{}.dep", binFilepath);
+		dxcCmpDesc.outFilename = buf;
+
+		auto& compileArgs = dxcCmpDesc.compileArgs;
+		compileArgs.clear();
+
+		compileArgs.emplace_back(L"-T");	compileArgs.emplace_back(stageW); compileArgs.emplace_back(inputW);
+		compileArgs.emplace_back(L"-Fo");	compileArgs.emplace_back(UtfUtil::toTempStringW(binFilepathW));
+		compileArgs.emplace_back(L"-M"); 
+		compileArgs.emplace_back(L"-MD");   //compileArgs.emplace_back(L"1231.ini abcd.ddd");	-MD will also override the input file (-T <stage> <input>)
+		//compileArgs.emplace_back(L"-MF"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("{}.dep", binFilepath)));	// MF is fake???
+
+		compileArgs.appendIncludes(desc.compileRequest->includes);
+
+		ComPtr<IDxcResult> compiledShaderBuffer;
+		_compile(compiledShaderBuffer, dxcCmpDesc, desc);
+	}
+}
+
+void 
+ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDesc, const CompileDesc& desc)
+{
+	auto srcPath = Path::realpath(desc.filename);
+
+	//const auto& opt			= desc.opt;
+	const auto& filename	= desc.filename;
+	//const auto& outpath		= desc.outpath;
+	//ShaderStageFlag stage	= desc.stage;
+
+	auto* compiler		= dxcCmpDesc.dxcCompiler;
+	auto* incHandler	= dxcCmpDesc.dxcIncHandler;
+	auto* srcBuf		= dxcCmpDesc.dxcSrcBuf;
+
+	HRESULT ret = 0;
+
+	auto entryW = UtfUtil::toTempStringW(desc.entry);
+
+	auto&	compileArgs		= dxcCmpDesc.compileArgs;
+	auto	compileArgs_wc	= Vector<const wchar_t*, 64>{};
 	compileArgs_wc.reserve(compileArgs.size());
 	for (const auto& e : compileArgs)
 	{
@@ -206,11 +269,11 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	}
 
 	// Compile the shader.
-	ComPtr<IDxcResult> compiledShaderBuffer = {};
-	ret = compiler->Compile(&sourceBuffer,
+	auto& compiledShaderBuffer = oRes;
+	ret = compiler->Compile(srcBuf,
 							compileArgs_wc.data(),
 							sCast<u32>(compileArgs_wc.size()),
-							includeHandler.Get(),   
+							incHandler,   
 							IID_PPV_ARGS(&compiledShaderBuffer));
 	//Util::throwIfError(ret);
 
@@ -232,21 +295,7 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	bin.resize(size);
 	memory_copy(bin.data(), sCast<u8*>(pResult->GetBufferPointer()), bin.size());
 	
-	TempString binFilepath;
-	switch (opt->apiType)
-	{
-		case RenderApiType::Dx12:	{ toBinFilepath(binFilepath, filename, outpath, stage); }						break;
-		case RenderApiType::Vulkan: { toBinFilepath(binFilepath, outpath, VkUtil::toShaderStageProfile(stage)); }	break;
-	}
-	File::writeFile(binFilepath, bin.byteSpan(), true);
-
-	if (_opt->isReflect)
-	{
-		if (!isBypassReflection)
-		{
-			reflect(outpath, compiledShaderBuffer.Get(), utils.Get(), stage);
-		}
-	}
+	File::writeFile(dxcCmpDesc.outFilename, bin.byteSpan(), false);
 }
 
 StrView
@@ -319,7 +368,7 @@ ShaderCompiler_Dx12::reflect(StrView outpath, IDxcResult* compiledShaderBuffer, 
 	//String outDir = Path::dirname(outpath);
 	String outInfoPath;
 	fmtTo(outInfoPath, "{}.json", outpath);
-	JsonUtil::writeFileIfChanged(outInfoPath, outInfo, true);
+	JsonUtil::writeFileIfChanged(outInfoPath, outInfo, false, false);
 }
 
 #endif

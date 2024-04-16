@@ -207,7 +207,6 @@ DemoEditorLayer::drawEditorUi(RdgTextureHnd texHndPresent)
 	}
 	#endif // 0
 
-
 	_edtViewportWnd.draw(&uiDrawReq, texHndPresent.renderResource(), &mainWindow().camera(), mainWindow().uiMouseEv);
 	_edtProjectWnd.draw(&uiDrawReq);
 	_edtConsoleWnd.draw(&uiDrawReq);

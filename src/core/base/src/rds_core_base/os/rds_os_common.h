@@ -34,7 +34,7 @@ using OsUtil = ::nmsp::OsUtil;
 
 using App_Base			= ::nmsp::AppBase_T;
 using ConsoleApp_Base	= ::nmsp::ConsoleApp_T;
-using ProjectSetting	= ::nmsp::ProjectSetting_T;
+using ProjectSetting_T	= ::nmsp::ProjectSetting_T;
 
 #endif
 

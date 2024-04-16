@@ -10,14 +10,15 @@ namespace rds
 #if 1
 
 void 
-ShaderCompiler::compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt)
+ShaderCompiler::compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt, const ShaderCompileRequest& compileReq)
 {
 	CompileDesc desc;
-	desc.outpath	= outpath;
-	desc.filename	= filename;
-	desc.stage		= stage;
-	desc.entry		= entry;
-	desc.opt		= &opt;
+	desc.outpath		= outpath;
+	desc.filename		= filename;
+	desc.stage			= stage;
+	desc.entry			= entry;
+	desc.opt			= &opt;
+	desc.compileRequest = &compileReq;
 
 	if (entry.is_empty())
 	{
@@ -122,7 +123,7 @@ ShaderCompiler::_writeShaderStageInfo(StrView outpath, ShaderStageInfo& info)
 {
 	TempString dstpath;
 	fmtTo(dstpath, "{}.json", outpath);
-	JsonUtil::writeFileIfChanged(dstpath, info, true);
+	JsonUtil::writeFileIfChanged(dstpath, info, false, false);
 }
 
 #endif
