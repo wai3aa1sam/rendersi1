@@ -149,7 +149,14 @@ class CmdLineArg(Enum):
     Program = 0
     Project_root = 1
 
-class CompileShader:
+class CompileShaders:
+    
+    @staticmethod
+    def printProcOutput(proc, timeoutSec):
+        stdout, stderr = proc.communicate(timeout = timeoutSec)
+        print(stdout.decode())
+        #print(stderr.decode())
+
     def main(args):
         cur_dir = os.getcwd()
 
@@ -164,8 +171,8 @@ class CompileShader:
             raise Exception("in correct rds_root")
             return
 
-        shaders_src_path    = MyPathLib.getListOfFiles_Ext(project_root, ".shader")
-        shaders_path        = MyPathLib.getRelativePath(shaders_src_path, project_root)
+        shader_src_paths   = MyPathLib.getListOfFiles_Ext(project_root, ".shader")
+        shader_paths       = MyPathLib.getRelativePath(shader_src_paths, project_root)
 
         #print(os.path.abspath(project_root))
         #print(shaders_src_path)
@@ -178,30 +185,50 @@ class CompileShader:
         mk_project_root     = "PROJECT_ROOT"        + "=" + project_root
         mk_shader_file_path = "SHADER_FILE_PATH"    + "=" + ""
         # ===
-        
-        print("====")
+
+        procs           = []
+        timeoutSec      = 10 # sec
+
+        #shader_paths    = ["asset/shader/demo/hello_triangle/hello_triangle.shader"]
+
+        print("=== Compile Shaders Begin ===")
         #bin_path_base = project_root + "/" + imported_path + "/"
-        for idx, path in enumerate(shaders_path):
+        for i, path in enumerate(shader_paths):
+
+            # if (i > 1):
+            #     break
             
-            #bin_path = bin_path_base + path
-            #print("bin path:", bin_path)
-            #print("shader path:", path)
-
             shader_file_path = mk_shader_file_path + path
+            
+            # print("mk_rds_root:         {}".format(mk_rds_root))
+            # print("mk_project_root:     {}".format(mk_project_root))
+            # print("shader_file_path:    {}".format(shader_file_path))
+            # print("shader path:         {}".format(path))
+            
+            proc = subprocess.Popen(
+                args = [rds_make, mk_rds_root, mk_project_root, shader_file_path, ]
+                #, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE
+                , stdout = subprocess.PIPE, stderr = subprocess.STDOUT
+            )
 
-            if True:    # faster, since no wait, but need to handle the output for atomic stdout
-                res = subprocess.Popen(
-                [rds_make, mk_rds_root, mk_project_root, shader_file_path, ],)
-            else:
-                res = subprocess.run(
-                [rds_make, mk_rds_root, mk_project_root, shader_file_path, ], 
-                cwd = cur_dir, capture_output = True, shell = True)
+            procs.append(proc)
+            #proc.wait()
 
-                print(res.returncode)
-                print(res.stdout.decode())
-                print(res.stderr.decode())
+        for i, proc in enumerate(procs):
+            print("\t === Begin Wait {} ===".format(shader_paths[i]))
+            try:
+                # proc.wait(timeout = timeoutSec) # this will deadlock when using subprocess.PIPE ...., see doc.......
+                CompileShaders.printProcOutput(proc, timeoutSec)
+                pass
+            except:
+                proc.kill()
+                CompileShaders.printProcOutput(proc, timeoutSec)
+            print("\t === End ===")
 
+        print("=== Compile Shaders End ===")
+            
         return
+    
         
 
-CompileShader.main(sys.argv)
+CompileShaders.main(sys.argv)

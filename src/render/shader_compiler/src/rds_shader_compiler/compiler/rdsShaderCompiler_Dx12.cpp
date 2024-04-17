@@ -89,7 +89,6 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 
 	const auto& opt			= desc.opt;
 	const auto& filename	= desc.filename;
-	const auto& outpath		= desc.outpath;
 	ShaderStageFlag stage	= desc.stage;
 
 	ComPtr<Dxc_Compiler>		compiler;
@@ -107,14 +106,10 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	Util::throwIfError(ret);
 
 	TempString binFilepath;
-	switch (opt->apiType)
-	{
-		case RenderApiType::Dx12:	{ toBinFilepath(binFilepath, filename, outpath, stage); }								break;
-		case RenderApiType::Vulkan: { toBinFilepath(binFilepath, outpath, RenderApiUtil::toVkShaderStageProfile(stage)); }	break;
-	}
+	desc.getBinFilepath(binFilepath);
 
 	auto entryW			= UtfUtil::toTempStringW(desc.entry);
-	auto stageW			= UtfUtil::toTempStringW(toShaderStageProfile(desc.stage));
+	auto stageW			= UtfUtil::toTempStringW(RenderApiUtil::toDx12ShaderStageProfile(desc.stage));
 	auto inputW			= UtfUtil::toTempStringW(filename);
 	auto binFilepathW	= UtfUtil::toTempStringW(binFilepath);
 
@@ -131,12 +126,11 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	}
 
 	DxcCompileDesc dxcCmpDesc;
-	dxcCmpDesc.dxcCompiler	= compiler.Get();
-	dxcCmpDesc.dxcUtils		= utils.Get();
+	dxcCmpDesc.dxcCompiler		= compiler.Get();
+	dxcCmpDesc.dxcUtils			= utils.Get();
 	dxcCmpDesc.dxcIncHandler	= includeHandler.Get();
 	dxcCmpDesc.dxcSrcBuf		= &sourceBuffer;
-
-	dxcCmpDesc.outFilename	= binFilepath;
+	dxcCmpDesc.outFilename		= binFilepath;
 
 	// compile for binary
 	{
@@ -144,7 +138,7 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 		compileArgs.clear();
 
 		compileArgs.emplace_back(L"-E");	compileArgs.emplace_back(entryW);
-		compileArgs.emplace_back(L"-T");	compileArgs.emplace_back(UtfUtil::toTempStringW(toShaderStageProfile(desc.stage)));
+		compileArgs.emplace_back(L"-T");	compileArgs.emplace_back(stageW);
 		compileArgs.emplace_back(L"-HV");	compileArgs.emplace_back(L"2021");							// 2021 has change vector ternary op to select/any/...
 		
 		compileArgs.emplace_back(DXC_ARG_WARNINGS_ARE_ERRORS);
@@ -181,12 +175,20 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 			// rds_define
 			if (true)
 			{
+				#if RDS_USE_RENDERER
 				auto& bindlessRsc = Renderer::rdDev()->bindlessResource();
 
-				compileArgs.emplace_back(L"-fvk-bind-globals"); compileArgs.emplace_back(StrUtil::toStrW(14));	compileArgs.emplace_back(StrUtil::toStrW(bindlessRsc.bindlessTypeCount()));
-
+				auto minBinding_vkSpec = 16;
+				compileArgs.emplace_back(L"-fvk-bind-globals"); compileArgs.emplace_back(StrUtil::toStrW(minBinding_vkSpec - 2));	compileArgs.emplace_back(StrUtil::toStrW(bindlessRsc.bindlessTypeCount()));
 				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}",				bindlessRsc.samplerCount())));
 				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_CONSTANT_BUFFER_SPACE=space{}",	bindlessRsc.bindlessTypeCount())));
+				
+				#else
+
+				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}",				1)));
+				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_CONSTANT_BUFFER_SPACE=space{}",	3)));
+
+				#endif // 0
 			}
 
 			isBypassReflection = true;	// dxc does not support spirv reflection (Qstrip_reflect), use spirv-cross instead
@@ -209,13 +211,13 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 		compileArgs.appendIncludes(desc.compileRequest->includes);
 
 		ComPtr<IDxcResult> compiledShaderBuffer;
-		_compile(compiledShaderBuffer, dxcCmpDesc, desc);
+		_compile(compiledShaderBuffer, dxcCmpDesc, desc, false);
 
 		if (_opt->isReflect)
 		{
 			if (!isBypassReflection)
 			{
-				reflect(outpath, compiledShaderBuffer.Get(), utils.Get(), stage);
+				reflect(binFilepath, compiledShaderBuffer.Get(), utils.Get(), stage);
 			}
 		}
 	}
@@ -238,12 +240,12 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 		compileArgs.appendIncludes(desc.compileRequest->includes);
 
 		ComPtr<IDxcResult> compiledShaderBuffer;
-		_compile(compiledShaderBuffer, dxcCmpDesc, desc);
+		_compile(compiledShaderBuffer, dxcCmpDesc, desc, true);
 	}
 }
 
 void 
-ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDesc, const CompileDesc& desc)
+ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDesc, const CompileDesc& desc, bool isStripLastByte)
 {
 	auto srcPath = Path::realpath(desc.filename);
 
@@ -271,10 +273,10 @@ ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDe
 	// Compile the shader.
 	auto& compiledShaderBuffer = oRes;
 	ret = compiler->Compile(srcBuf,
-							compileArgs_wc.data(),
-							sCast<u32>(compileArgs_wc.size()),
-							incHandler,   
-							IID_PPV_ARGS(&compiledShaderBuffer));
+		compileArgs_wc.data(),
+		sCast<u32>(compileArgs_wc.size()),
+		incHandler,   
+		IID_PPV_ARGS(&compiledShaderBuffer));
 	//Util::throwIfError(ret);
 
 	ComPtr<IDxcBlobUtf8> dxcError = {};
@@ -283,7 +285,7 @@ ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDe
 	bool isFailed = dxcError && dxcError->GetStringLength() > 0;
 	if (isFailed)
 	{
-		RDS_LOG_ERROR("Dxc Compile shader failed \n path: \t{} \n msg: \t{}", filename, (const char*)dxcError->GetBufferPointer());
+		throwIf(isFailed, "Dxc Compile shader failed \n path: \t{} \n msg: \t{}", filename, (const char*)dxcError->GetBufferPointer());
 		return;
 	}
 
@@ -291,26 +293,16 @@ ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDe
 	compiledShaderBuffer->GetResult(&pResult);
 
 	Vector<u8, 1024> bin;
-	const size_t size = pResult->GetBufferSize();
+	size_t size = pResult->GetBufferSize();
+	if (isStripLastByte)	// strip the NULL, dxc will generate NULL in .dep ...
+		size -= 1;
 	bin.resize(size);
 	memory_copy(bin.data(), sCast<u8*>(pResult->GetBufferPointer()), bin.size());
 	
 	File::writeFile(dxcCmpDesc.outFilename, bin.byteSpan(), false);
 }
 
-StrView
-ShaderCompiler_Dx12::toShaderStageProfile(ShaderStageFlag stage)
-{
-	using SRC = ShaderStageFlag;
-	switch (stage)
-	{
-		case SRC::Vertex:	{ return "vs_6_0"; } break;
-		case SRC::Pixel:	{ return "ps_6_0"; } break;
-		case SRC::Compute:	{ return "cs_6_0"; } break;
-	}
-	RDS_CORE_ASSERT(false);
-	return "";
-}
+
 
 void 
 ShaderCompiler_Dx12::reflect(StrView outpath, IDxcResult* compiledShaderBuffer, IDxcUtils* utils, ShaderStageFlag stage)

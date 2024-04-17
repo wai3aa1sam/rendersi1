@@ -1,5 +1,7 @@
 #include "rds_shader_compiler-pch.h"
 
+#include "common/rds_shader_compiler_common.h"
+
 #include "parser/rdsShaderParser.h"
 #include "compiler/rdsShaderCompiler_Vk.h"
 #include "compiler/rdsShaderCompiler_Dx12.h"
@@ -52,7 +54,7 @@ protected:
 	*	if oStr is not empty, then it means that cmdLineParser has a output path,
 	*	if oStr is empty, then go default compile path
 	*/
-	void createOutpathTo(String& oStr, StrView filename);
+	void createDstDirTo(TempString& oStr, StrView filename);
 
 	//void createBinpath(const ShaderInfo& info, StrView outputPath, RenderApiType type);
 

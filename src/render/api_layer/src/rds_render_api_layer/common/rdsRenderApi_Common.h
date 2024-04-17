@@ -29,6 +29,7 @@ public:
 	static void createTempWindow(NativeUIWindow& out);
 
 	static const char* toVkShaderStageProfile(ShaderStageFlag v);
+	static const char* toDx12ShaderStageProfile(ShaderStageFlag v);
 
 private:
 

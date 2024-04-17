@@ -10,10 +10,10 @@ namespace rds
 #if 1
 
 void 
-ShaderCompiler::compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt, const ShaderCompileRequest& compileReq)
+ShaderCompiler::compile(StrView dstDir, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt, const ShaderCompileRequest& compileReq)
 {
 	CompileDesc desc;
-	desc.outpath		= outpath;
+	desc.dstDir			= dstDir;
 	desc.filename		= filename;
 	desc.stage			= stage;
 	desc.entry			= entry;

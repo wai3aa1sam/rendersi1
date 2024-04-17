@@ -2,6 +2,7 @@
 #include "rdsShaderCompilerConsoleApp.h"
 #include "file/gnu_make/rdsShaderGnuMakeSerializer.h"
 
+
 namespace rds
 {
 
@@ -29,19 +30,29 @@ ShaderCompilerConsoleApp::create()
 		ProjectSetting::init();
 
 		Logger::init();
+		#if RDS_USE_JOB_SYSTEM
 		JobSystem::init();
+		#endif // RDS_JOB_SYSTEM
+		#if RDS_USE_RENDERER
 		Renderer::init();
+		#endif // RDS_USE_RENDERER
+
 
 		Logger::instance()->create(Logger::makeCDesc());
+		#if RDS_USE_JOB_SYSTEM
 		{
 			auto cDesc = JobSystem::makeCDesc();
-			cDesc.workerCount = OsTraits::logicalThreadCount();
+			cDesc.workerCount = 0;
 			JobSystem::instance()->create(cDesc);
 		}
+		#endif
+
+		#if RDS_USE_RENDERER
 		{
 			auto cDesc = Renderer::makeCDesc();
 			Renderer::instance()->create(cDesc);
 		}
+		#endif
 	}
 
 	setRootPath();
@@ -59,8 +70,14 @@ ShaderCompilerConsoleApp::create()
 void 
 ShaderCompilerConsoleApp::destroy()
 {
+	#if RDS_USE_RENDERER
 	Renderer::terminate();
+	#endif // RDS_USE_RENDERER
+
+	#if RDS_USE_JOB_SYSTEM
 	JobSystem::terminate();
+	#endif
+
 	Logger::terminate();
 
 	ProjectSetting::terminate();
@@ -87,8 +104,15 @@ ShaderCompilerConsoleApp::compile(StrView filename, const ShaderCompileOption& o
 	Path::realpathTo(srcpath, filename);
 	throwIf(!checkValid(srcpath), "invalid filename / path {}", srcpath);
 
-	createOutpathTo(cReq.outputFilename, filename);
-	TempString dstDir = cReq.outputFilename;		// need to copy
+	TempString dstDir;
+	if (cReq.outputFilename.is_empty())
+	{
+		createDstDirTo(dstDir, filename);
+	}
+	else
+	{
+		dstDir = Path::basename(cReq.outputFilename);
+	}
 
 	ShaderInfo& info = cReq.shaderInfo;
 	createShaderInfo(&cReq, &info, filename, dstDir);
@@ -108,7 +132,7 @@ ShaderCompilerConsoleApp::compile(StrView filename, const ShaderCompileOption& o
 	if (cReq.isGenerateMake)
 	{
 		TempString buf;
-		fmtTo(buf, "{}/makeFile", cReq.outputFilename);
+		fmtTo(buf, "{}/makeFile", dstDir);
 		ShaderGnuMakeSerializer::dump(buf, cReq);
 	}
 }
@@ -122,9 +146,8 @@ ShaderCompilerConsoleApp::compile(const ShaderCompileRequest& cReq)
 void 
 ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcpath, StrView dstDir, const ShaderCompileOption& opt)
 {
-	auto& ps = projectSetting();
+	RDS_CORE_ASSERT(opt.apiType == RenderApiType::Vulkan, "");
 
-	StrView				binpath = ps.spirvPath();
 	ShaderCompiler_Vk	compilerVk;
 	ShaderCompiler_Dx12	compilerDx12;
 
@@ -132,24 +155,24 @@ ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcpa
 	{
 		const auto& pass = info.passes[iPass];
 
-		TempString dstBinPath;
-		fmtTo(dstBinPath, "{}/{}/pass{}", dstDir, binpath, iPass);
-		Path::create(dstBinPath);
+		TempString binDir;
+		ShaderCompileUtil::getBinDirTo(binDir, dstDir, iPass, opt.apiType);
+		Path::create(binDir);
 
-		compilerDx12.compile(dstBinPath, srcpath, ShaderStageFlag::Compute,	pass.csFunc, opt, compileRequest);
-		compilerDx12.compile(dstBinPath, srcpath, ShaderStageFlag::Vertex,	pass.vsFunc, opt, compileRequest);
-		compilerDx12.compile(dstBinPath, srcpath, ShaderStageFlag::Pixel,	pass.psFunc, opt, compileRequest);
+		compilerDx12.compile(binDir, srcpath, ShaderStageFlag::Compute,		pass.csFunc, opt, compileRequest);
+		compilerDx12.compile(binDir, srcpath, ShaderStageFlag::Vertex,		pass.vsFunc, opt, compileRequest);
+		compilerDx12.compile(binDir, srcpath, ShaderStageFlag::Pixel,		pass.psFunc, opt, compileRequest);
 
 		auto opt2 = opt;
 		opt2.isCompileBinary	= false;
 		opt2.isReflect			= true;
 
-		compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Compute,	pass.csFunc, opt2, compileRequest);
-		compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Vertex,	pass.vsFunc, opt2, compileRequest);
-		compilerVk.compile(dstBinPath, srcpath, ShaderStageFlag::Pixel,		pass.psFunc, opt2, compileRequest);
+		compilerVk.compile(binDir, srcpath, ShaderStageFlag::Compute,		pass.csFunc, opt2, compileRequest);
+		compilerVk.compile(binDir, srcpath, ShaderStageFlag::Vertex,		pass.vsFunc, opt2, compileRequest);
+		compilerVk.compile(binDir, srcpath, ShaderStageFlag::Pixel,			pass.psFunc, opt2, compileRequest);
 
 		TempString dstAllStageUnionInfoPath;
-		fmtTo(dstAllStageUnionInfoPath, "{}/pass{}", dstBinPath, iPass);
+		fmtTo(dstAllStageUnionInfoPath, "{}/pass{}", binDir, iPass);
 		compilerVk.writeAllStageUnionInfo(dstAllStageUnionInfoPath);
 	}
 }
@@ -218,14 +241,15 @@ ShaderCompilerConsoleApp::createShaderInfo(ShaderCompileRequest* oCReq, ShaderIn
 }
 
 void 
-ShaderCompilerConsoleApp::createOutpathTo(String& oStr, StrView filename)
+ShaderCompilerConsoleApp::createDstDirTo(TempString& oStr, StrView filename)
 {
 	auto& ps	= projectSetting();
 	auto& out	= oStr;
 
+	out.reserve(filename.size());
 	if (out.is_empty())
 	{
-		fmtTo(out, "{}/{}/{}", ps.projectRoot(), ps.importedShaderPath(), filename);
+		ShaderCompileUtil::getDstDirTo(oStr, filename, ps);
 	}
 	Path::create(out);
 }
@@ -256,6 +280,9 @@ ShaderCompilerConsoleApp::setRootPath()
 
 		path.append("/../../../../../..");
 		ps.setRdsRoot(path);
+		RDS_DUMP_VAR(Path::getCurrentDir());
+		RDS_DUMP_VAR(compileInfo.cwd);
+
 		ps.setProjectRoot(compileInfo.cwd);
 
 		compileInfo.rdsRoot = ps.rdsRoot();
@@ -267,13 +294,7 @@ ShaderCompilerConsoleApp::markForHotReload(StrView inputFilename)
 {
 	auto& ps=  projectSetting();
 
-	FileStream fs;
-	fs.openWrite(ps.shaderRecompileListPath(), false);
-
 	TempString tmp;
-
-	//tmp += "\"";
-
 	auto pair = StrUtil::splitByChar(inputFilename, "\\");
 	while (pair.first.size() != 0)
 	{
@@ -282,8 +303,11 @@ ShaderCompilerConsoleApp::markForHotReload(StrView inputFilename)
 			tmp += "/";
 		pair = StrUtil::splitByChar(pair.second, "\\");
 	}
-	
 	tmp += "\n";
+
+	FileStream fs;
+	fs.openWrite(ps.shaderRecompileListPath(), false);
+	auto lock = fs.scopedLock();
 	fs.setPos(fs.fileSize());
 	fs.writeBytes(makeByteSpan(tmp));
 }

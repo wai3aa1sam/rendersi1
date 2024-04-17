@@ -8,7 +8,7 @@ set COMPILE_SHADER_PATH=%RDS_ROOT%\built-in\script\compile_shader
 
 pushd %COMPILE_SHADER_PATH%
 
-python rds_compile_shader.py %PROJECT_ROOT%
+python rds_compile_shaders.py %PROJECT_ROOT%
 
 popd
 

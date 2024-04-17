@@ -24,11 +24,25 @@ RenderApiUtil::toVkShaderStageProfile(ShaderStageFlag v)
 	using SRC = rds::ShaderStageFlag;
 	switch (v)
 	{
-		case SRC::Vertex:		{ return "vs_1.5"; } break;
-		case SRC::Pixel:		{ return "ps_1.5"; } break;
-		case SRC::Compute:		{ return "cs_1.5"; } break;
+		case SRC::Vertex:		{ return "vs_1_5"; } break;
+		case SRC::Pixel:		{ return "ps_1_5"; } break;
+		case SRC::Compute:		{ return "cs_1_5"; } break;
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
+}
+
+const char* 
+RenderApiUtil::toDx12ShaderStageProfile(ShaderStageFlag stage)
+{
+	using SRC = ShaderStageFlag;
+	switch (stage)
+	{
+		case SRC::Vertex:	{ return "vs_6_0"; } break;
+		case SRC::Pixel:	{ return "ps_6_0"; } break;
+		case SRC::Compute:	{ return "cs_6_0"; } break;
+	}
+	RDS_CORE_ASSERT(false);
+	return "";
 }
 
 #endif

@@ -20,6 +20,7 @@ RenderDevice_Vk::RenderDevice_Vk()
 RenderDevice_Vk::~RenderDevice_Vk()
 {
 	destroy();
+	RDS_LOG_DEBUG("~RenderDevice_Vk()");
 }
 
 void

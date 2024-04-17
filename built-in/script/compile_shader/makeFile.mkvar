@@ -8,13 +8,15 @@
 # CUR_DIR  := $(dir $(CURRENT_MAKEFILE))
 # CUR_ROOT := $(realpath $(CUR_DIR))
 
-# TODO: do not hardcode
+# TODO: this file should be generate for first time too, currently hardcode
 
 BUILT_IN_PATH 			:= built-in
 BUILT_IN_SHADER_PATH 	:= built-in/shader
 
-IMPORTED_PATH 	:= local_temp/imported
+IMPORTED_PATH 			:= local_temp/imported
+IMPORTED_SHADER_PATH 	:= local_temp/imported/shader
 
+# Release Debug
 BUILD_CONFIG = Release
 
 DX11 := dx11

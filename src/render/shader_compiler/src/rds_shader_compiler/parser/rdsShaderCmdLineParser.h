@@ -90,12 +90,12 @@ class CmdLineParser : public Lexer
 {
 protected:
 	template<class... ARGS>
-	void error(StrView fmt, ARGS&&... args);
+	void error(const char* fmt = "", ARGS&&... args);
 };
 
 template<class... ARGS> inline
 void 
-CmdLineParser::error(StrView fmt, ARGS&&... args)
+CmdLineParser::error(const char* fmt, ARGS&&... args)
 {
 	TempString buf;
 	fmtTo(buf, fmt, rds::forward<ARGS>(args)...);

@@ -82,21 +82,21 @@ ShaderCompileUtil::getGlslcStageProfile(ShaderStageFlag stage)
 		default: { RDS_THROW("unknow ShaderStageFlag, getGlslcStageProfile()"); }
 	}
 }
- 
-StrView
-ShaderCompileUtil::getBuildApiPath(ApiType type)
-{
-	auto& ps = *ProjectSetting::instance();
 
+const char* 
+ShaderCompileUtil::getShaderFormat(ApiType v)
+{
 	using SRC = ApiType;
-	switch (type)
+
+	//const char* stageProfile = nullptr;
+	switch (v)
 	{
-		//case SRC::Dx11:		{ return "dx11"; }
-					  //case SRC::Dx12:		{ return ""; }
-					  //case SRC::OpenGL:	{ return ""; }
-		case SRC::Vulkan:	{ return ps.spirvPath(); }
-						//case SRC::Metal:	{ return ""; }
-		default: { RDS_THROW("unknow api type"); }
+		//case SRC::OpenGL:	{} break;
+		//case SRC::Dx11:		{} break;
+		//case SRC::Metal:	{} break;
+		case SRC::Vulkan:	{ return "spirv"; } break;
+		case SRC::Dx12:		{ return "dx12"; }	break;
+		default: { RDS_THROW("getShaderFormat failed"); } break;
 	}
 }
 

@@ -43,7 +43,7 @@ ShaderCmdLineParser::_readCmdLine()
 			break;
 
 		if (ch != '-')
-			("{} in correct syntax, - is missing", cmd());
+			error("{} in correct syntax, - is missing", cmd());
 
 		nextCmdChar();
 		ch = getCmdCh();
@@ -184,6 +184,7 @@ void
 ShaderCmdLineParser::_skipProgramName()
 {
 	auto programName = nextCmd(); RDS_UNUSED(programName);
+	nextCmd();
 	/*info().cwd = Path::dirname(programName);
 	if (!info().cwd.size())
 	{

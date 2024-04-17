@@ -5,6 +5,9 @@
 
 #include "rdsShaderCompileUtil.h"
 
+#define RDS_USE_JOB_SYSTEM 1
+#define RDS_USE_RENDERER 1
+
 namespace rds
 {
 

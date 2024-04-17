@@ -79,10 +79,8 @@ protected:
 	/* .hlsl -> .spv */ 
 	virtual void onCompile(const CompileDesc& desc);
 
-	virtual StrView toShaderStageProfile(ShaderStageFlag stage) override;
-
 private:
-	void _compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpReq, const CompileDesc& desc);
+	void _compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpReq, const CompileDesc& desc, bool isStripLastByte);
 
 protected:
 	// reflect .spv by spirv_cross

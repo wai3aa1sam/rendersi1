@@ -29,7 +29,9 @@ ShaderGnuMakeSerializer::dump(StrView filename, const ShaderCompileRequest& cReq
 	//make._init_build_target(request, ApiType::Dx11);	make.nextLine();
 	make._init_build_target(request, ApiType::Vulkan);	make.nextLine();
 
+	RDS_LOG_DEBUG("=== Begin ShaderGnuMakeSerializer::dump-filename: {}", filename);
 	make.flush(filename);
+	RDS_LOG_DEBUG("=== End ShaderGnuMakeSerializer::dump-filename: {}", filename);
 }
 
 ShaderGnuMakeSerializer::ShaderGnuMakeSerializer(const ShaderCompileRequest& cReq)
@@ -115,15 +117,27 @@ ShaderGnuMakeSerializer::_init_bin(Request& request, BuildRequest& buildReq)
 	bool isLastBin = false;
 	const auto* apiName = ShaderCompileUtil::getBuildBinName(apiType);
 
-	if (entry.size()) {
+	if (entry.size()) 
+	{
 		auto profile = ShaderCompileUtil::getStageProfile(stage, apiType);
-		auto binName = fmtAs_T<TempString>("$({})/pass{}/{}.bin", apiName, passIndex, profile);
-		tmp.assign(binName);
+		//auto binName = fmtAs_T<TempString>("$({})/pass{}/{}.bin", apiName, passIndex, profile);
+		auto binVarName = fmtAs_T<TempString>("{}_pass{}_{}_bin", apiName, passIndex, profile);
 
-		{ auto target0 = Target::ctor(request, "all", { binName });  }
-		{ tmp += ".dep";  includePath(tmp); }
+		TempString dstDir;
+		TempString binDir;
+		TempString binVar;
+
+		ShaderCompileUtil::getDstDirTo(dstDir, cReq.inputFilename, *ProjectSetting::instance());
+		ShaderCompileUtil::getBinDirTo(binDir, dstDir, passIndex, apiType);
+		ShaderCompileUtil::getBinFilepathTo(tmp, binDir, stage, apiType);
+
+		assignVariable(binVarName,	":=", tmp);
+		getVariableTo(binVar, binVarName);
+
+		{ auto target0 = Target::ctor(request, "all", { binVar });  }
+		{ tmp = binVar; tmp += ".dep";  includePath(tmp); }
 		{
-			auto target1 = Target::ctor(request, binName);
+			auto target1 = Target::ctor(request, binVar);
 			write(" "); write(toVariable(names.currentMakeFile));
 			write(" "); write(toVariable(names.shaderFileRoot));
 			if (compilerName) { write(" "); write(toVariable(compilerName)); }
@@ -258,14 +272,14 @@ ShaderGnuMakeSerializer::generateDepdency(Request& request, BuildRequest& buildR
 
 	StrView apiName = ShaderCompileUtil::getBuildBinName(apiType);
 	StrView profile	= ShaderCompileUtil::getStageProfile(stage, apiType);
-	StrView apiPath = ShaderCompileUtil::getBuildApiPath(apiType);
+	StrView format	= ShaderCompileUtil::getShaderFormat(apiType);
 
 	TempString tmp;
 	TempString content;
 	TempString binName = fmtAs_T<TempString>("$({})/pass{}/{}.bin", apiName, passIndex, profile);
 
 	content.reserve(4096);
-	fmtTo(tmp, "local_temp/Imported/{}/{}/pass{}/{}.bin.dep", cReq.inputFilename, apiPath, passIndex, profile);
+	fmtTo(tmp, "local_temp/Imported/{}/{}/pass{}/{}.bin.dep", cReq.inputFilename, format, passIndex, profile);
 
 	content += binName; content += ":\\\n";
 

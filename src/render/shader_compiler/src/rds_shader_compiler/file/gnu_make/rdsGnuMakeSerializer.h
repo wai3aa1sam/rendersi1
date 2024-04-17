@@ -17,8 +17,9 @@ public:
 	using Request = RequestBase;
 	
 public:
-	template<class STR> static void			getVariableTo(STR& str, const char* name)	{ str.clear(); str.append("$("); str.append(name); str.append(")"); }
+	template<class STR> static void			getVariableTo(STR& str, StrView name)		{ str.clear(); str.append("$("); str.append(name.data()); str.append(")"); }
 						static TempString	toVariable(const char* name)				{ TempString tmp; getVariableTo(tmp, name); return tmp.c_str(); }
+						static TempString	toVariable(StrView name)					{ TempString tmp; getVariableTo(tmp, name); return tmp.c_str(); }
 	
 protected:
 	GnuMakeSerializer(Request& req);

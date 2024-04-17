@@ -13,7 +13,7 @@ namespace rds
 
 struct Renderer_CreateDesc : public RenderDevice_CreateDesc
 {
-	SizeType gpuCount = 1;
+	SizeType		gpuCount	= 1;
 };
 
 class Renderer : public Singleton<Renderer>

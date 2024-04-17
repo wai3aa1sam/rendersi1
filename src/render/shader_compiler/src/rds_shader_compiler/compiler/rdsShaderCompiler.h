@@ -18,13 +18,29 @@ struct ShaderCompileDesc
 {
 	using Option = ShaderCompileOption;
 
-	StrView			outpath;
+	StrView			output;
+	StrView			dstDir;
 	StrView			filename;
 	ShaderStageFlag stage;
 	StrView			entry;
 	const Option*	opt = nullptr;
 	
 	const ShaderCompileRequest* compileRequest = nullptr;
+
+public:
+	void getBinFilepath(TempString& o) const
+	{
+		auto& binFilepath = o;
+		if (!dstDir.is_empty())
+		{
+			ShaderCompileUtil::getBinFilepathTo(binFilepath, dstDir, stage, opt->apiType);
+		}
+		else if (!output.is_empty())
+		{
+			binFilepath = output;
+		}
+		throwIf(binFilepath.is_empty(), "invalid output name / dstDir");
+	}
 };
 
 class ShaderCompiler : public NonCopyable
@@ -34,16 +50,11 @@ public:
 	using Option		= CompileDesc::Option;
 
 public:
-	template<class STR> void toBinFilepath(STR& dst, StrView outpath, StrView stageProfile);
-
-public:
 	virtual ~ShaderCompiler() = default;
 
 	void compile(const CompileDesc& desc);
-	void compile(StrView outpath, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt, const ShaderCompileRequest& compileReq);
+	void compile(StrView dstDir, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt, const ShaderCompileRequest& compileReq);
 	
-	template<class STR> void toBinFilepath(STR& dst, StrView filename, StrView outpath, ShaderStageFlag stage);
-
 	void writeAllStageUnionInfo(StrView outpath);
 
 protected:
@@ -62,8 +73,6 @@ protected:
 protected:
 	virtual void onCompile(const CompileDesc& desc) = 0;
 
-	virtual StrView toShaderStageProfile(ShaderStageFlag stage) = 0;
-
 protected:
 	template<class... ARGS> void log(const char* fmt, ARGS&&... args);
 	template<class... ARGS> void _log(const char* fmt, ARGS&&... args);
@@ -79,22 +88,6 @@ protected:
 };
 
 inline const ShaderCompiler::Option& ShaderCompiler::opt() const { return *_opt; }
-
-template<class STR> inline
-void 
-ShaderCompiler::toBinFilepath(STR& dst, StrView outpath, StrView stageProfile)
-{
-	fmtTo(dst, "{}/{}.bin", outpath, stageProfile);
-}
-
-template<class STR> inline
-void 
-ShaderCompiler::toBinFilepath(STR& dst, StrView filename, StrView outpath, ShaderStageFlag stage_)
-{
-	//TempString		srcPath = filename;		// shoulde be realpath
-	ShaderStageFlag stage	= stage_; 
-	toBinFilepath(dst, outpath, toShaderStageProfile(stage));
-}
 
 template<class... ARGS> inline
 void 

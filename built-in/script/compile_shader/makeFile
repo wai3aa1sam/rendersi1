@@ -8,6 +8,8 @@
 # CUR_DIR  := $(dir $(CURRENT_MAKEFILE))
 # CUR_ROOT := $(realpath $(CUR_DIR))
 
+# TODO: this file should be generate for first time too, currently hardcode
+
 include makeFile.mkvar
 
 RDS_ROOT 			:= 
@@ -18,7 +20,7 @@ BUILT_IN_ROOT			:= $(RDS_ROOT)/$(BUILT_IN_PATH)
 BUILT_IN_SHADER_ROOT	:= $(RDS_ROOT)/$(BUILT_IN_SHADER_PATH)
 
 SHADER_FILE_ROOT 	:= $(PROJECT_ROOT)/$(SHADER_FILE_PATH)
-SHADER_BIN_ROOT		:= $(PROJECT_ROOT)/$(IMPORTED_PATH)/$(SHADER_FILE_PATH)
+SHADER_BIN_ROOT		:= $(PROJECT_ROOT)/$(IMPORTED_SHADER_PATH)/$(SHADER_FILE_PATH)
 SHADER_MAKE_ROOT	:= $(SHADER_BIN_ROOT)/$(RDS_MAKEFILE)
 
 RDS_SHADER_COMPILER_PATH:=build/rendersi1-x64-windows/src/render/shader_compiler/$(BUILD_CONFIG)/rds_shader_compiler.exe

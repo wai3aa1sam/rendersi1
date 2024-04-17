@@ -27,6 +27,7 @@ Shader {
 #endif
 
 #include "built-in/shader/common/rdsCommon.hlsl"
+#include "test.hlsl" 
 
 struct VertexIn
 {
