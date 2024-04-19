@@ -2,7 +2,7 @@
 
 #include "rds_shader_compiler/common/rds_shader_compiler_common.h"
 #include "rds_render_api_layer/shader/rdsShaderInfo.h"
-#include "../rdsShaderCompileRequest.h"
+#include "../rdsShaderCompileDesc.h"
 
 /*
 references:
@@ -20,8 +20,8 @@ namespace rds
 class ShaderParser : public Lexer
 {
 public:
-	void parse(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, StrView filename);
-	void parse(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, ByteSpan data, StrView filename);
+	void parse(ShaderCompileDesc* oCmpDesc, ShaderInfo* outInfo, StrView filename);
+	void parse(ShaderCompileDesc* oCmpDesc, ShaderInfo* outInfo, ByteSpan data, StrView filename);
 
 	void dump(StrView filename);
 
@@ -40,20 +40,20 @@ protected:
 	void readBlendFunc(RenderState::BlendFunc& v);
 
 protected:
-	ShaderInfo&				info();
-	ShaderCompileRequest&	compileRequest();
+	ShaderInfo&			info();
+	ShaderCompileDesc&	compileDesc();
 
 protected:
-	MemMapFile				_mmfile;
-	ShaderInfo*				_outInfo = nullptr;
-	ShaderCompileRequest*	_oCReq	 = nullptr;
+	MemMapFile			_mmfile;
+	ShaderInfo*			_outInfo	= nullptr;
+	ShaderCompileDesc*	_oCmpDesc	= nullptr;
 
 private:
 
 };
 
-inline ShaderInfo&				ShaderParser::info()			{ return *_outInfo; }
-inline ShaderCompileRequest&	ShaderParser::compileRequest()	{ return *_oCReq; }
+inline ShaderInfo&			ShaderParser::info()		{ return *_outInfo; }
+inline ShaderCompileDesc&	ShaderParser::compileDesc()	{ return *_oCmpDesc; }
 
 #endif
 

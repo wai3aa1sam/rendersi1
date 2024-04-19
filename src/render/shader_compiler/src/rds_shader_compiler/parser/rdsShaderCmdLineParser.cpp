@@ -57,7 +57,7 @@ ShaderCmdLineParser::_readCmdLine()
 
 		if (isCmd("makeCompile"))	{ req().isGNUMakeCompile = true; continue; }
 		if (isCmd("generateMake"))	{ req().isGenerateMake   = true; continue; }
-		if (isCmd("permutName"))	{ cmdRead(req().permutName); continue; }
+		//if (isCmd("permutName"))	{ cmdRead(req().permutName); continue; }
 
 		if (isCmd("cwd"))		{ _readCwd();			continue; }
 

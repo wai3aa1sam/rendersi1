@@ -34,24 +34,24 @@ struct SpirvUtil
 #if 1
 
 void 
-ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
+ShaderCompiler_Vk::onCompile(const CompileDescView& descView)
 {
-	if (desc.entry.is_empty())
-		return;
+	auto			srcFilepath	= descView.srcFilepath;
+	const auto&		opt			= descView.opt;
+	ShaderStageFlag stage		= descView.stage;
+	auto			entry		= descView.entry;
+	const auto&		includes	= descView.compileDesc->includes;		RDS_UNUSED(includes);
 
-	String			srcPath = desc.filename;		// shoulde be realpath
-	ShaderStageFlag stage	= desc.stage;
 	TempString binFilepath;
-	desc.getBinFilepath(binFilepath);
-
+	descView.getBinFilepathTo(binFilepath);
 
 	RDS_TODO("check vulkan extension whether existed then add the compile option, eg. -fhlsl-functionality1");
 	RDS_TODO("cbuffer only for hlsl, use ubo for glsl, same for uav, use ssbo");
 
-	if (_opt->isCompileBinary)
+	if (opt.isCompileBinary)
 	{
 		u32 stageOffset = 0;
-		if (BitUtil::has(desc.stage, ShaderStageFlag::Pixel)) stageOffset = 0;
+		if (BitUtil::has(stage, ShaderStageFlag::Pixel)) stageOffset = 0;
 
 		//u32 uboStartIdx = 0; u32 texStartIdx = 4; u32 ssboStartIdx = 10; u32 imageStartIdx = 13; u32 samplerStartIdx = 16;
 		// 16 is minimum spec in vulkan
@@ -62,10 +62,10 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 		u32 imageOffset		= stageOffset + 14;
 
 		TempString args;
-		fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), desc.entry, srcPath, binFilepath);
+		fmtTo(args, "glslc -x hlsl -fshader-stage={} -fentry-point={} -c \"{}\" -o \"{}\" -fhlsl-functionality1 -fhlsl-iomap", SpirvUtil::toStr(stage), entry, srcFilepath, binFilepath);
 		fmtTo(args, " --target-env=vulkan1.2 --target-spv=spv1.5");	//  --target-spv=spv1.5
 		fmtTo(args, " -fauto-bind-uniforms");	// auto bind all uniform variable
-		if (!desc.opt->isNoOffset)
+		if (!opt.isNoOffset)
 		{
 			fmtTo(args, " -fcbuffer-binding-base {} -ftexture-binding-base {} -fsampler-binding-base {} -fuav-binding-base {} -fimage-binding-base {}"
 				, cbufferOffset, textureOffset, samplerOffset, uavOffset, imageOffset);
@@ -82,7 +82,7 @@ ShaderCompiler_Vk::onCompile(const CompileDesc& desc)
 		}
 	}
 
-	if (_opt->isReflect)
+	if (opt.isReflect)
 	{
 		Vector<u8> spvBin;
 		File::readFile(binFilepath, spvBin);
@@ -117,7 +117,7 @@ ShaderCompiler_Vk::reflect(StrView outpath, ByteSpan spvBytes, ShaderStageFlag s
 
 	_reflect_threadGroups	(outInfo, compiler);
 
-	_writeShaderStageInfo(outpath, outInfo);
+	writeStageInfo(outpath, outInfo);
 }
 
 void 

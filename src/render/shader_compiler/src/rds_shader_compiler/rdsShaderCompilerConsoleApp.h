@@ -27,8 +27,6 @@ public:
 public:
 	template<class STR> static void toOutpath(STR& out, StrView fileBasename);
 
-public:
-	ShaderCompileRequest compileRequest;
 
 public:
 	~ShaderCompilerConsoleApp();
@@ -43,18 +41,18 @@ protected:
 	virtual void onRun();
 	
 	void compile(StrView filename, const ShaderCompileOption& opt);
-	void compile(const ShaderCompileRequest& cReq);
-	void compileForVulkan(const ShaderInfo& info, StrView srcpath, StrView dstDir, const ShaderCompileOption& opt);
+	void compile(const ShaderCompileDesc& cmpDesc);
+	void compileForVulkan(const ShaderInfo& info, StrView srcFileRoot, StrView dstDirRoot, const ShaderCompileOption& opt);
 
-	void permutationOutputPathTo(TempString& outputPath);
 
-	void createShaderInfo(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, StrView filename, StrView outDir);
+	void createShaderInfo(ShaderCompileDesc* oCmpDesc, ShaderInfo* outInfo, StrView filename, StrView outDir);
 
 	/*
 	*	if oStr is not empty, then it means that cmdLineParser has a output path,
 	*	if oStr is empty, then go default compile path
 	*/
-	void createDstDirTo(TempString& oStr, StrView filename);
+	void createImportedShaderDirTo(TempString& oStr, StrView filename);
+	void createShaderPermutationDirTo(TempString& outDir);
 
 	//void createBinpath(const ShaderInfo& info, StrView outputPath, RenderApiType type);
 
@@ -63,10 +61,14 @@ protected:
 	void markForHotReload(StrView inputFilename);
 
 public:
-	ProjectSetting& projectSetting();
+	ProjectSetting&		projectSetting();
+	ShaderCompileDesc&	compileDesc();
 
 protected:
 	bool checkValid(StrView filename) const;
+
+protected:
+	ShaderCompileDesc _compileDesc;
 };
 
 template<class STR> inline
@@ -76,7 +78,8 @@ ShaderCompilerConsoleApp::toOutpath(STR& out, StrView fileBasename)
 	fmtTo(out, "{}/{}", Traits::s_defaultShaderOutPath, fileBasename);
 }
 
-inline ProjectSetting& ShaderCompilerConsoleApp::projectSetting() { return *ProjectSetting::instance(); }
+inline ProjectSetting&		ShaderCompilerConsoleApp::projectSetting()	{ return *ProjectSetting::instance(); }
+inline ShaderCompileDesc&	ShaderCompilerConsoleApp::compileDesc()		{ return _compileDesc; }
 
 
 #endif

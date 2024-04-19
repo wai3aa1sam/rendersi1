@@ -90,13 +90,6 @@ private:
 	Vector<String, 4>	_dirs;
 };
 
-struct ShaderMarco 
-{ 
-public:
-	String name; 
-	String value; 
-};
-
 struct ShaderCompileInfo
 {
 	String cwd;
@@ -119,12 +112,11 @@ struct ShaderCompileInfo
 #endif
 
 #if 0
-#pragma mark --- rdsShaderCompileRequest-Decl ---
+#pragma mark --- rdsShaderCompileDesc-Decl ---
 #endif // 0
 #if 1
 
-
-class ShaderCompileRequest : public NonCopyable
+class ShaderCompileDesc : public NonCopyable
 {
 public:
 	String language;
@@ -134,6 +126,8 @@ public:
 
 	String profile;
 	String entry;
+
+	ShaderStageFlag stage;
 
 	ShaderCompileInfo	compileInfo;
 	ShaderInfo			shaderInfo;
@@ -148,14 +142,28 @@ public:
 
 public:
 	template<class STR>
-	void outputPathTo(STR& o)
+	void getOutputPathTo(STR& o) const
 	{
 		auto& ps = *ProjectSetting::instance();
 		fmtTo(o, "{}/{}/makeFile", ps.importedShaderPath(), inputFilename);
 	}
 
-public:
-	//static void 
+	template<class STR>
+	void getBinFilepath(STR& o, StrView dstDir, ShaderStageFlag stage, RenderApiType apiType) const
+	{
+		auto& binFilepath	= o;
+		auto& output		= outputFilename;
+
+		if (!dstDir.is_empty())
+		{
+			ShaderCompileUtil::getBinFilepathTo(binFilepath, dstDir, stage, apiType);
+		}
+		else if (!output.is_empty())
+		{
+			binFilepath = output;
+		}
+		throwIf(binFilepath.is_empty(), "invalid output name / dstDir");
+	}
 
 private:
 

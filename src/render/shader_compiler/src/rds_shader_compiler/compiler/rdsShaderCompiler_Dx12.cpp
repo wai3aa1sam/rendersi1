@@ -83,13 +83,16 @@ struct Dx12Util
 #if 1
 
 void 
-ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
+ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 {
-	auto srcPath = Path::realpath(desc.filename);
+	auto			srcFilepath	= descView.srcFilepath;
+	const auto&		opt			= descView.opt;
+	ShaderStageFlag stage		= descView.stage;
+	auto			entry		= descView.entry;
+	const auto&		includes	= descView.compileDesc->includes;
 
-	const auto& opt			= desc.opt;
-	const auto& filename	= desc.filename;
-	ShaderStageFlag stage	= desc.stage;
+	TempString binFilepath;
+	descView.getBinFilepathTo(binFilepath);
 
 	ComPtr<Dxc_Compiler>		compiler;
 	ComPtr<IDxcUtils>			utils;
@@ -105,12 +108,9 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	ret = utils->CreateDefaultIncludeHandler(&includeHandler);
 	Util::throwIfError(ret);
 
-	TempString binFilepath;
-	desc.getBinFilepath(binFilepath);
-
-	auto entryW			= UtfUtil::toTempStringW(desc.entry);
-	auto stageW			= UtfUtil::toTempStringW(RenderApiUtil::toDx12ShaderStageProfile(desc.stage));
-	auto inputW			= UtfUtil::toTempStringW(filename);
+	auto entryW			= UtfUtil::toTempStringW(entry);
+	auto stageW			= UtfUtil::toTempStringW(RenderApiUtil::toDx12ShaderStageProfile(stage));
+	auto inputW			= UtfUtil::toTempStringW(srcFilepath);
 	auto binFilepathW	= UtfUtil::toTempStringW(binFilepath);
 
 	// Load the shader source file to a blob.
@@ -130,7 +130,7 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	dxcCmpDesc.dxcUtils			= utils.Get();
 	dxcCmpDesc.dxcIncHandler	= includeHandler.Get();
 	dxcCmpDesc.dxcSrcBuf		= &sourceBuffer;
-	dxcCmpDesc.outFilename		= binFilepath;
+	dxcCmpDesc.outputFilePath	= binFilepath;
 
 	// compile for binary
 	{
@@ -148,7 +148,7 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 		compileArgs.emplace_back(L"-Qstrip_debug");			// adding this then can extract DXC_OUT_PDB
 
 		bool isBypassReflection = false;
-		if (opt->isToSpirv)
+		if (opt.isToSpirv)
 		{
 			//compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
 			compileArgs.emplace_back(L"-spirv");
@@ -156,7 +156,7 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 			compileArgs.emplace_back(L"-fspv-reflect");
 			compileArgs.emplace_back(L"-fvk-auto-shift-bindings");
 
-			if (!opt->isNoOffset)
+			if (!opt.isNoOffset)
 			{
 				u32 stageOffset = 0;
 				// 16 is minimum spec in vulkan
@@ -199,7 +199,7 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 			compileArgs.emplace_back(L"-Qstrip_reflect");		// adding this then can extract DXC_OUT_REFLECTION, spv do not support it
 		}
 
-		if (opt->isDebug)
+		if (opt.isDebug)
 		{
 			compileArgs.emplace_back(DXC_ARG_DEBUG);
 		}
@@ -208,12 +208,12 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 			compileArgs.emplace_back(DXC_ARG_OPTIMIZATION_LEVEL3);
 		}
 
-		compileArgs.appendIncludes(desc.compileRequest->includes);
+		compileArgs.appendIncludes(includes);
 
 		ComPtr<IDxcResult> compiledShaderBuffer;
-		_compile(compiledShaderBuffer, dxcCmpDesc, desc, false);
+		_compile(compiledShaderBuffer, dxcCmpDesc, descView, false);
 
-		if (_opt->isReflect)
+		if (opt.isReflect)
 		{
 			if (!isBypassReflection)
 			{
@@ -225,8 +225,8 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 	// preprocess for dependency
 	{
 		TempString buf;
-		fmtTo(buf, "{}.dep", binFilepath);
-		dxcCmpDesc.outFilename = buf;
+		ShaderCompileRequest::getBinDependencyFilepathTo(buf, binFilepath);
+		dxcCmpDesc.outputFilePath = buf;
 
 		auto& compileArgs = dxcCmpDesc.compileArgs;
 		compileArgs.clear();
@@ -237,30 +237,24 @@ ShaderCompiler_Dx12::onCompile(const CompileDesc& desc)
 		compileArgs.emplace_back(L"-MD");   //compileArgs.emplace_back(L"1231.ini abcd.ddd");	-MD will also override the input file (-T <stage> <input>)
 		//compileArgs.emplace_back(L"-MF"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("{}.dep", binFilepath)));	// MF is fake???
 
-		compileArgs.appendIncludes(desc.compileRequest->includes);
+		compileArgs.appendIncludes(includes);
 
 		ComPtr<IDxcResult> compiledShaderBuffer;
-		_compile(compiledShaderBuffer, dxcCmpDesc, desc, true);
+		_compile(compiledShaderBuffer, dxcCmpDesc, descView, true);
 	}
 }
 
 void 
-ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDesc, const CompileDesc& desc, bool isStripLastByte)
+ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDesc, const CompileDescView& descView, bool isStripLastByte)
 {
-	auto srcPath = Path::realpath(desc.filename);
+	auto srcFilepath	= descView.srcFilepath;
 
-	//const auto& opt			= desc.opt;
-	const auto& filename	= desc.filename;
-	//const auto& outpath		= desc.outpath;
-	//ShaderStageFlag stage	= desc.stage;
 
 	auto* compiler		= dxcCmpDesc.dxcCompiler;
 	auto* incHandler	= dxcCmpDesc.dxcIncHandler;
 	auto* srcBuf		= dxcCmpDesc.dxcSrcBuf;
 
 	HRESULT ret = 0;
-
-	auto entryW = UtfUtil::toTempStringW(desc.entry);
 
 	auto&	compileArgs		= dxcCmpDesc.compileArgs;
 	auto	compileArgs_wc	= Vector<const wchar_t*, 64>{};
@@ -285,7 +279,7 @@ ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDe
 	bool isFailed = dxcError && dxcError->GetStringLength() > 0;
 	if (isFailed)
 	{
-		throwIf(isFailed, "Dxc Compile shader failed \n path: \t{} \n msg: \t{}", filename, (const char*)dxcError->GetBufferPointer());
+		throwIf(isFailed, "Dxc Compile shader failed \n path: \t{} \n msg: \t{}", srcFilepath, (const char*)dxcError->GetBufferPointer());
 		return;
 	}
 
@@ -299,10 +293,8 @@ ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDe
 	bin.resize(size);
 	memory_copy(bin.data(), sCast<u8*>(pResult->GetBufferPointer()), bin.size());
 	
-	File::writeFile(dxcCmpDesc.outFilename, bin.byteSpan(), false);
+	File::writeFile(dxcCmpDesc.outputFilePath, bin.byteSpan(), false);
 }
-
-
 
 void 
 ShaderCompiler_Dx12::reflect(StrView outpath, IDxcResult* compiledShaderBuffer, IDxcUtils* utils, ShaderStageFlag stage)

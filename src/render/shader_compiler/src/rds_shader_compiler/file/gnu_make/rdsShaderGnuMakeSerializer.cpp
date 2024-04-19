@@ -1,6 +1,6 @@
 #include "rds_shader_compiler-pch.h"
 #include "rdsShaderGnuMakeSerializer.h"
-
+#include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
 namespace rds
 {
@@ -11,7 +11,7 @@ namespace rds
 #if 1
 
 void 
-ShaderGnuMakeSerializer::dump(StrView filename, const ShaderCompileRequest& cReq)
+ShaderGnuMakeSerializer::dump(StrView filename, const ShaderCompileDesc& cReq)
 {
 	//auto& ps = *ProjectSetting::instance();
 
@@ -20,21 +20,24 @@ ShaderGnuMakeSerializer::dump(StrView filename, const ShaderCompileRequest& cReq
 	auto& request	= make._request;
 	auto& names		= gnuMakeVarName;			RDS_UNUSED(names);
 
+	TempString importedShaderDir;
+	ShaderCompileRequest::getImportedShaderDirTo(importedShaderDir, cReq.inputFilename, *ProjectSetting::instance());
+	Path::realpathTo(request.importedShaderDirRoot, importedShaderDir);
+
 	make.phony({"all", "clean"});
 
 	make._init_includes(request);
-
 	make._init_variables(request);
 
 	//make._init_build_target(request, ApiType::Dx11);	make.nextLine();
 	make._init_build_target(request, ApiType::Vulkan);	make.nextLine();
 
-	RDS_LOG_DEBUG("=== Begin ShaderGnuMakeSerializer::dump-filename: {}", filename);
+	//RDS_LOG_DEBUG("=== Begin ShaderGnuMakeSerializer::dump-filename: {}", filename);
 	make.flush(filename);
-	RDS_LOG_DEBUG("=== End ShaderGnuMakeSerializer::dump-filename: {}", filename);
+	//RDS_LOG_DEBUG("=== End ShaderGnuMakeSerializer::dump-filename: {}", filename);
 }
 
-ShaderGnuMakeSerializer::ShaderGnuMakeSerializer(const ShaderCompileRequest& cReq)
+ShaderGnuMakeSerializer::ShaderGnuMakeSerializer(const ShaderCompileDesc& cReq)
 	: Base(_request)
 {
 	_request.compileRequest = &cReq;
@@ -83,14 +86,21 @@ ShaderGnuMakeSerializer::_init_build_target(Request& request, ApiType apiType)
 	auto ifeq = Ifeq::ctor(request, target, "1");
 	nextLine();
 
+	auto&		importedShaderDirRoot = request.importedShaderDirRoot;
+	TempString	binDir;
+	ShaderCompileRequest::getBinDirTo(binDir, importedShaderDirRoot, apiType);
+
 	size_t passIndex = 0;
 	for (auto& pass : cReq.shaderInfo.passes) {
 
-		BuildRequest bReq(pass.vsFunc, ShaderStageFlag::Vertex, passIndex, apiType);
+		BuildRequest bReq; // (pass.vsFunc, ShaderStageFlag::Vertex, passIndex, apiType);
 
-		if (bReq.build(this, request, pass.csFunc, ShaderStageFlag::Compute,	passIndex, apiType)) continue;
-		if (bReq.build(this, request, pass.vsFunc, ShaderStageFlag::Vertex,		passIndex, apiType)) continue;
-		if (bReq.build(this, request, pass.psFunc, ShaderStageFlag::Pixel,		passIndex, apiType)) continue;
+		TempString binPassDir;
+		ShaderCompileRequest::getBinPassDirTo(binPassDir, binDir, passIndex);
+
+		if (bReq.build(this, request, binPassDir, pass.csFunc, ShaderStageFlag::Compute,	passIndex, apiType)) continue;
+		if (bReq.build(this, request, binPassDir, pass.vsFunc, ShaderStageFlag::Vertex,		passIndex, apiType)) continue;
+		if (bReq.build(this, request, binPassDir, pass.psFunc, ShaderStageFlag::Pixel,		passIndex, apiType)) continue;
 
 		passIndex++;
 	}
@@ -102,40 +112,36 @@ ShaderGnuMakeSerializer::_init_bin(Request& request, BuildRequest& buildReq)
 	auto& cReq	  = *request.compileRequest;	RDS_UNUSED(cReq);
 	auto& names	  = gnuMakeVarName;				RDS_UNUSED(names);
 
-	auto& entry		= *buildReq._entry;		RDS_UNUSED(entry);
-	auto& stage		=  buildReq._stage;		RDS_UNUSED(stage);
-	auto& passIndex	=  buildReq._passIndex;	RDS_UNUSED(passIndex);
-	auto& apiType	=  buildReq._apiType;	RDS_UNUSED(apiType);
+	auto& binPassDir	=  buildReq._binPassDir;	RDS_UNUSED(binPassDir);
+	auto& entry			= *buildReq._entry;			RDS_UNUSED(entry);
+	auto& stage			=  buildReq._stage;			RDS_UNUSED(stage);
+	auto& passIndex		=  buildReq._passIndex;		RDS_UNUSED(passIndex);
+	auto& apiType		=  buildReq._apiType;		RDS_UNUSED(apiType);
 
 	const char* compilerName = ShaderCompileUtil::getCompilerName(apiType);
 
 	generateDepdency(request, buildReq);
 
-	TempString tmp;
-	tmp.clear();
+	TempString binVar;
+	TempString binFilepath;
+	TempString binDependencyFilepath;
 
 	bool isLastBin = false;
-	const auto* apiName = ShaderCompileUtil::getBuildBinName(apiType);
 
 	if (entry.size()) 
 	{
+		const char* apiName = ShaderCompileUtil::getBuildBinName(apiType);
 		auto profile = ShaderCompileUtil::getStageProfile(stage, apiType);
 		//auto binName = fmtAs_T<TempString>("$({})/pass{}/{}.bin", apiName, passIndex, profile);
 		auto binVarName = fmtAs_T<TempString>("{}_pass{}_{}_bin", apiName, passIndex, profile);
 
-		TempString dstDir;
-		TempString binDir;
-		TempString binVar;
+		ShaderCompileRequest::getBinFilepathTo(binFilepath, binPassDir, stage, apiType);
 
-		ShaderCompileUtil::getDstDirTo(dstDir, cReq.inputFilename, *ProjectSetting::instance());
-		ShaderCompileUtil::getBinDirTo(binDir, dstDir, passIndex, apiType);
-		ShaderCompileUtil::getBinFilepathTo(tmp, binDir, stage, apiType);
-
-		assignVariable(binVarName,	":=", tmp);
+		assignVariable(binVarName,	":=", binFilepath);
 		getVariableTo(binVar, binVarName);
-
+		
 		{ auto target0 = Target::ctor(request, "all", { binVar });  }
-		{ tmp = binVar; tmp += ".dep";  includePath(tmp); }
+		{ ShaderCompileRequest::getBinDependencyFilepathTo(binDependencyFilepath, binVar); includePath(binDependencyFilepath); }
 		{
 			auto target1 = Target::ctor(request, binVar);
 			write(" "); write(toVariable(names.currentMakeFile));
@@ -272,7 +278,7 @@ ShaderGnuMakeSerializer::generateDepdency(Request& request, BuildRequest& buildR
 
 	StrView apiName = ShaderCompileUtil::getBuildBinName(apiType);
 	StrView profile	= ShaderCompileUtil::getStageProfile(stage, apiType);
-	StrView format	= ShaderCompileUtil::getShaderFormat(apiType);
+	StrView format	= RenderApiUtil::toShaderFormat(apiType);
 
 	TempString tmp;
 	TempString content;

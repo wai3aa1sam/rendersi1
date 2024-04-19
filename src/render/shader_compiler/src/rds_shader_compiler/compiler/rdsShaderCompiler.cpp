@@ -10,37 +10,36 @@ namespace rds
 #if 1
 
 void 
-ShaderCompiler::compile(StrView dstDir, StrView filename, ShaderStageFlag stage, StrView entry, const Option& opt, const ShaderCompileRequest& compileReq)
+ShaderCompiler::compile(ShaderStageFlag stage, StrView srcFilepath, StrView dstDir, StrView entry, const Option& opt, const ShaderCompileDesc& compileDesc)
 {
-	CompileDesc desc;
-	desc.dstDir			= dstDir;
-	desc.filename		= filename;
-	desc.stage			= stage;
-	desc.entry			= entry;
-	desc.opt			= &opt;
-	desc.compileRequest = &compileReq;
-
 	if (entry.is_empty())
 	{
 		return;
 	}
+	auto descView = CompileDescView{stage, srcFilepath, dstDir, entry, opt, compileDesc};
+	compile(descView);
+}
 
+void 
+ShaderCompiler::compile(const CompileDescView& descView)
+{
+	_compileDescView = &descView;
 	_allStageUnionInfo.stageFlag = ShaderStageFlag::All;
-	compile(desc);
+	onCompile(descView);
 }
 
 void 
-ShaderCompiler::compile(const CompileDesc& desc)
+ShaderCompiler::writeAllStageUnionInfo(StrView filename)
 {
-	_opt = desc.opt;
-
-	onCompile(desc);
+	_writeShaderStageInfo(filename, _allStageUnionInfo);
 }
 
 void 
-ShaderCompiler::writeAllStageUnionInfo(StrView outpath)
+ShaderCompiler::writeStageInfo(StrView filename, ShaderStageInfo& stageInfo)
 {
-	_writeShaderStageInfo(outpath, _allStageUnionInfo);
+	TempString buf;
+	ShaderCompileRequest::getShaderStageInfoFilepathTo(buf, filename);
+	_writeShaderStageInfo(buf, stageInfo);
 }
 
 bool 
@@ -119,11 +118,9 @@ ShaderCompiler::_appendStageUnionInfo_storageImages(ShaderStageInfo& outInfo, co
 }
 
 void 
-ShaderCompiler::_writeShaderStageInfo(StrView outpath, ShaderStageInfo& info)
+ShaderCompiler::_writeShaderStageInfo(StrView filename, ShaderStageInfo& info)
 {
-	TempString dstpath;
-	fmtTo(dstpath, "{}.json", outpath);
-	JsonUtil::writeFileIfChanged(dstpath, info, false, false);
+	JsonUtil::writeFileIfChanged(filename, info, false, false);
 }
 
 #endif

@@ -20,7 +20,7 @@ void
 ShaderCompilerConsoleApp::parseCmdLine(const CmdLineArgs& cmdArgs) 
 {
 	ShaderCmdLineParser parser;
-	parser.readCmdLineArgs(&compileRequest, cmdArgs);
+	parser.readCmdLineArgs(&_compileDesc, cmdArgs);
 }
 
 void 
@@ -36,7 +36,6 @@ ShaderCompilerConsoleApp::create()
 		#if RDS_USE_RENDERER
 		Renderer::init();
 		#endif // RDS_USE_RENDERER
-
 
 		Logger::instance()->create(Logger::makeCDesc());
 		#if RDS_USE_JOB_SYSTEM
@@ -57,13 +56,14 @@ ShaderCompilerConsoleApp::create()
 
 	setRootPath();
 
+	auto& cmpDesc = _compileDesc;
 	{
 		auto& ps = projectSetting();
-		auto& includes = compileRequest.includes;
+		auto& includes = cmpDesc.includes;
 		includes.emplaceBackDir() = ps.rdsRoot();
 		includes.emplaceBackDir() = ps.buildInRoot();
 		includes.emplaceBackDir() = ps.buildInShaderRoot();
-		includes.emplaceBackDir() = Path::dirname(compileRequest.inputFilename);
+		includes.emplaceBackDir() = Path::dirname(cmpDesc.inputFilename);
 	}
 }
 
@@ -87,66 +87,74 @@ void
 ShaderCompilerConsoleApp::onRun()
 {
 	create();
-	compile(compileRequest);
+	compile(_compileDesc);
 }
 
 void 
 ShaderCompilerConsoleApp::compile(StrView filename, const ShaderCompileOption& opt)
 {
-	auto& cReq = compileRequest;
+	auto& cmpDesc = compileDesc();
 
 	if (filename.is_empty())
 	{
 		return;
 	}
 	
-	TempString srcpath;
-	Path::realpathTo(srcpath, filename);
-	throwIf(!checkValid(srcpath), "invalid filename / path {}", srcpath);
+	TempString srcFileRoot;
+	Path::realpathTo(srcFileRoot, filename);
+	throwIf(!checkValid(srcFileRoot), "invalid filename / path {}", srcFileRoot);
 
 	TempString dstDir;
-	if (cReq.outputFilename.is_empty())
+	if (cmpDesc.outputFilename.is_empty())
 	{
-		createDstDirTo(dstDir, filename);
+		createImportedShaderDirTo(dstDir, filename);
 	}
 	else
 	{
-		dstDir = Path::basename(cReq.outputFilename);
+		dstDir = Path::basename(cmpDesc.outputFilename);
 	}
 
-	ShaderInfo& info = cReq.shaderInfo;
-	createShaderInfo(&cReq, &info, filename, dstDir);
+	ShaderInfo& info = cmpDesc.shaderInfo;
+	createShaderInfo(&cmpDesc, &info, filename, dstDir);
 
-	permutationOutputPathTo(dstDir);
+	createShaderPermutationDirTo(dstDir);
 
-	if (cReq.isGNUMakeCompile)
+	TempString dstDirRoot;
+	Path::realpathTo(dstDirRoot, dstDir);
+
+	if (cmpDesc.isGNUMakeCompile)
 	{
-		compileForVulkan(info, srcpath, dstDir, opt);
-		markForHotReload(srcpath);
+		compileForVulkan(info, srcFileRoot, dstDirRoot, opt);
+		markForHotReload(srcFileRoot);
 	}
 	else
 	{
-		compileForVulkan(info, srcpath, dstDir, opt);
+		compileForVulkan(info, srcFileRoot, dstDirRoot, opt);
 	}
 
-	if (cReq.isGenerateMake)
+	if (cmpDesc.isGenerateMake)
 	{
 		TempString buf;
-		fmtTo(buf, "{}/makeFile", dstDir);
-		ShaderGnuMakeSerializer::dump(buf, cReq);
+		ShaderCompileRequest::getMakefilePathTo(buf, dstDir);
+		ShaderGnuMakeSerializer::dump(buf, cmpDesc);
 	}
 }
 
 void 
-ShaderCompilerConsoleApp::compile(const ShaderCompileRequest& cReq)
+ShaderCompilerConsoleApp::compile(const ShaderCompileDesc& cReq)
 {
 	compile(cReq.inputFilename, cReq.compileOption);
 }
 
 void 
-ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcpath, StrView dstDir, const ShaderCompileOption& opt)
+ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcFileRoot, StrView dstDirRoot, const ShaderCompileOption& opt)
 {
 	RDS_CORE_ASSERT(opt.apiType == RenderApiType::Vulkan, "");
+
+	auto& cmpDesc = compileDesc();
+
+	TempString binDir;
+	ShaderCompileRequest::getBinDirTo(binDir, dstDirRoot, RenderApiType::Vulkan);
 
 	ShaderCompiler_Vk	compilerVk;
 	ShaderCompiler_Dx12	compilerDx12;
@@ -155,93 +163,41 @@ ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcpa
 	{
 		const auto& pass = info.passes[iPass];
 
-		TempString binDir;
-		ShaderCompileUtil::getBinDirTo(binDir, dstDir, iPass, opt.apiType);
-		Path::create(binDir);
+		TempString binPassDir;
+		ShaderCompileRequest::getBinPassDirTo(binPassDir, binDir, iPass);
+		Path::create(binPassDir);
 
-		compilerDx12.compile(binDir, srcpath, ShaderStageFlag::Compute,		pass.csFunc, opt, compileRequest);
-		compilerDx12.compile(binDir, srcpath, ShaderStageFlag::Vertex,		pass.vsFunc, opt, compileRequest);
-		compilerDx12.compile(binDir, srcpath, ShaderStageFlag::Pixel,		pass.psFunc, opt, compileRequest);
+		compilerDx12.compile(ShaderStageFlag::Compute,	srcFileRoot, binPassDir, pass.csFunc, opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::Vertex,	srcFileRoot, binPassDir, pass.vsFunc, opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::Pixel,	srcFileRoot, binPassDir, pass.psFunc, opt, cmpDesc);
 
 		auto opt2 = opt;
 		opt2.isCompileBinary	= false;
 		opt2.isReflect			= true;
 
-		compilerVk.compile(binDir, srcpath, ShaderStageFlag::Compute,		pass.csFunc, opt2, compileRequest);
-		compilerVk.compile(binDir, srcpath, ShaderStageFlag::Vertex,		pass.vsFunc, opt2, compileRequest);
-		compilerVk.compile(binDir, srcpath, ShaderStageFlag::Pixel,			pass.psFunc, opt2, compileRequest);
+		compilerVk.compile(ShaderStageFlag::Compute,	srcFileRoot, binPassDir, pass.csFunc, opt2, cmpDesc);
+		compilerVk.compile(ShaderStageFlag::Vertex,		srcFileRoot, binPassDir, pass.vsFunc, opt2, cmpDesc);
+		compilerVk.compile(ShaderStageFlag::Pixel,		srcFileRoot, binPassDir, pass.psFunc, opt2, cmpDesc);
 
-		TempString dstAllStageUnionInfoPath;
-		fmtTo(dstAllStageUnionInfoPath, "{}/pass{}", binDir, iPass);
-		compilerVk.writeAllStageUnionInfo(dstAllStageUnionInfoPath);
-	}
-}
-
-bool permutNameTo(String& o, const ShaderCompileRequest& compileRequest)
-{
-	const ShaderInfo& info	= compileRequest.shaderInfo;
-	const auto& cReq		= compileRequest;
-
-	if (info.permuts.size() == 0)
-		return false;
-
-	TempString tmp;
-	//tmp += "_";
-	for (size_t i = 0; i < info.permuts.size(); i++)
-	{
-		const auto& permut = info.permuts[i];
-		int valueIdx = -1;
-		const ShaderMarco* targetMar = nullptr;
-		for (auto& mar : cReq.marcos)
-		{
-			if (mar.name == permut.name)
-			{
-				targetMar = &mar;
-				break;
-			}
-		}
-		if (!targetMar)
-			return false;
-		valueIdx = permut.findValueIdx(targetMar->value);
-		if (valueIdx == -1)
-			return false;
-		tmp += StrUtil::toStr(valueIdx);
-	}
-
-	o = tmp;
-	return true;
-}
-
-void 
-ShaderCompilerConsoleApp::permutationOutputPathTo(TempString& outputPath)
-{
-	auto& ps = projectSetting();
-	auto& cReq = compileRequest;
-
-	if (cReq.marcos.size() > 0)
-	{
-		if (cReq.permutName.size() == 0)
-			permutNameTo(cReq.permutName, cReq);
-		if (cReq.permutName.size() == 0)
-			return;
-		fmtTo(outputPath, "/{}/{}", ps.shaderPermutationPath(), cReq.permutName);
-		Path::create(outputPath);
+		TempString allStageUnionInfoFilepath;
+		ShaderCompileRequest::getAllStageUnionInfoFilepathTo(allStageUnionInfoFilepath, binPassDir, iPass);
+		compilerVk.writeAllStageUnionInfo(allStageUnionInfoFilepath);
 	}
 }
 
 void 
-ShaderCompilerConsoleApp::createShaderInfo(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, StrView filename, StrView outDir)
+ShaderCompilerConsoleApp::createShaderInfo(ShaderCompileDesc* oCmpDesc, ShaderInfo* outInfo, StrView filename, StrView outDir)
 {
 	ShaderParser parser;
-	parser.parse(oCReq, outInfo, filename);
+	parser.parse(oCmpDesc, outInfo, filename);
 
 	TempString outpath;
-	fmtTo(outpath, "{}/info.json", outDir);
+	ShaderCompileRequest::getShaderInfoFilepathTo(outpath, outDir);
 	parser.dump(outpath);
 }
 
 void 
-ShaderCompilerConsoleApp::createDstDirTo(TempString& oStr, StrView filename)
+ShaderCompilerConsoleApp::createImportedShaderDirTo(TempString& oStr, StrView filename)
 {
 	auto& ps	= projectSetting();
 	auto& out	= oStr;
@@ -249,29 +205,32 @@ ShaderCompilerConsoleApp::createDstDirTo(TempString& oStr, StrView filename)
 	out.reserve(filename.size());
 	if (out.is_empty())
 	{
-		ShaderCompileUtil::getDstDirTo(oStr, filename, ps);
+		ShaderCompileRequest::getImportedShaderDirTo(oStr, filename, ps);
 	}
 	Path::create(out);
 }
 
-//void 
-//ShaderCompilerConsoleApp::createBinpath(const ShaderInfo& info, StrView outputPath, RenderApiType type)
-//{
-//	auto apiPath = ShaderCompileUtil::getBuildApiPath(type);
-//	TempString passOutPath;
-//
-//	for (size_t iPass = 0; info.passes.size(); ++iPass) 
-//	{
-//		passOutPath.clear();
-//		fmtTo(passOutPath, "{}/{}/pass{}", outputPath, apiPath, iPass);
-//		Path::create(passOutPath);
-//	}
-//}
+void 
+ShaderCompilerConsoleApp::createShaderPermutationDirTo(TempString& outDir)
+{
+	auto& ps		= projectSetting();
+	auto& cmpDesc	= compileDesc();
+
+	if (cmpDesc.marcos.size() > 0)
+	{
+		TempString impShaderDir;
+		ShaderCompileRequest::getImportedShaderDirTo(impShaderDir, cmpDesc.inputFilename, ps);
+
+		ShaderPermutations::getNameTo(cmpDesc.permutName, cmpDesc.shaderInfo.permuts, cmpDesc.marcos);
+		ShaderCompileRequest::getShaderPermutationDirTo(outDir, impShaderDir, cmpDesc.permutName, ps);
+		Path::create(outDir);
+	}
+}
 
 void 
 ShaderCompilerConsoleApp::setRootPath()
 {
-	auto& compileInfo = compileRequest.compileInfo;
+	auto& compileInfo = compileDesc().compileInfo;
 
 	auto& ps = projectSetting();
 	{
@@ -280,8 +239,8 @@ ShaderCompilerConsoleApp::setRootPath()
 
 		path.append("/../../../../../..");
 		ps.setRdsRoot(path);
-		RDS_DUMP_VAR(Path::getCurrentDir());
-		RDS_DUMP_VAR(compileInfo.cwd);
+		//RDS_DUMP_VAR(Path::getCurrentDir());
+		//RDS_DUMP_VAR(compileInfo.cwd);
 
 		ps.setProjectRoot(compileInfo.cwd);
 

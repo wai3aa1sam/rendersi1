@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_shader_compiler/common/rds_shader_compiler_common.h"
-#include "../rdsShaderCompileRequest.h"
+#include "../rdsShaderCompileDesc.h"
 
 namespace rds
 {
@@ -105,7 +105,7 @@ CmdLineParser::error(const char* fmt, ARGS&&... args)
 class ShaderCmdLineParser : public CmdLineParser
 {
 public:
-	using Request	= ShaderCompileRequest;
+	using Request	= ShaderCompileDesc;
 	using Info		= ShaderCompileInfo;
 
 	using Token		= Lexer::Token;

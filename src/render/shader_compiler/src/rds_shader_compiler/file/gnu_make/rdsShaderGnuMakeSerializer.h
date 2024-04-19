@@ -2,7 +2,7 @@
 
 #include "rds_shader_compiler/common/rds_shader_compiler_common.h"
 #include "rdsGnuMakeSerializer.h"
-#include "../../rdsShaderCompileRequest.h"
+#include "../../rdsShaderCompileDesc.h"
 
 namespace rds
 {
@@ -16,22 +16,23 @@ class ShaderGnuMakeSerializer : public GnuMakeSerializer
 {
 public:
 	using Base = GnuMakeSerializer;
-	//using ShaderCompileRequest = ShaderCompileRequest;
+	//using ShaderCompileDesc = ShaderCompileDesc;
 	struct Request;
 	
 public:
 	using ApiType = RenderApiType;
 
 public:
-	static void dump(StrView filename, const ShaderCompileRequest& cReq);
+	static void dump(StrView filename, const ShaderCompileDesc& cReq);
 
 public:
-	ShaderGnuMakeSerializer(const ShaderCompileRequest& cReq);
+	ShaderGnuMakeSerializer(const ShaderCompileDesc& cReq);
 
 private:
 	struct BuildRequest
 	{
 		BuildRequest() = default;
+		#if 0
 		BuildRequest(const String& entry, ShaderStageFlag stage, size_t passIndex, ApiType apiType)
 			: _entry(&entry), _stage(stage), _passIndex(passIndex), _apiType(apiType)
 		{
@@ -42,9 +43,11 @@ private:
 			this->_entry	= &entry;
 			this->_stage	= stage;
 		}
+		#endif // 0
 
-		bool build(ShaderGnuMakeSerializer* gnu, Request& request, const String& entry, ShaderStageFlag stage, size_t passIndex, ApiType apiType)
+		bool build(ShaderGnuMakeSerializer* gnu, Request& request, StrView binPassDir, const String& entry, ShaderStageFlag stage, size_t passIndex, ApiType apiType)
 		{
+			_binPassDir = binPassDir;
 			_entry		= &entry;
 			_stage		= stage;
 			_passIndex	= passIndex;
@@ -54,6 +57,7 @@ private:
 		}
 
 		const String*	_entry = nullptr;
+		StrView			_binPassDir;
 		ShaderStageFlag _stage;
 		size_t			_passIndex;
 		ApiType			_apiType;
@@ -71,19 +75,20 @@ private:
 	void _init_cli_marco(				Request& request, BuildRequest& buildReq, StrView syntax);
 
 public:
-	const ShaderCompileRequest& compileRequest() const;
+	const ShaderCompileDesc& compileRequest() const;
 
 public:
 	struct Request : public RequestBase
 	{
-		const ShaderCompileRequest* compileRequest = nullptr;
+		const ShaderCompileDesc* compileRequest = nullptr;
+		TempString importedShaderDirRoot;
 	};
 
 protected:
 	Request _request;
 };
 
-inline const ShaderCompileRequest& ShaderGnuMakeSerializer::compileRequest() const { return *_request.compileRequest; }
+inline const ShaderCompileDesc& ShaderGnuMakeSerializer::compileRequest() const { return *_request.compileRequest; }
 
 #endif
 

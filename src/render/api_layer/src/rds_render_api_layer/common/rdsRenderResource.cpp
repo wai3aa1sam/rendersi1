@@ -77,13 +77,15 @@ RenderResource::hasCreated() const
 	return _rdDev != nullptr;
 }
 
-Renderer*			RenderResource::renderer()			{ return Renderer::instance(); }
-RenderDevice*		RenderResource::renderDevice()		{ return _rdDev; }
-RenderFrame&		RenderResource::renderFrame()		{ return renderDevice()->renderFrame(); }
+RenderApiType			RenderResource::apiType() const			{ return renderDevice()->apiType(); }
 
-TransferContext&	RenderResource::transferContext()	{ return renderDevice()->transferContext(); }
+Renderer*				RenderResource::renderer()				{ return Renderer::instance(); }
 
-TransferRequest&	RenderResource::transferRequest()	{ return renderDevice()->transferRequest(); }
+RenderFrame&			RenderResource::renderFrame()			{ return renderDevice()->renderFrame(); }
+
+TransferContext&		RenderResource::transferContext()		{ return renderDevice()->transferContext(); }
+
+TransferRequest&		RenderResource::transferRequest()		{ return renderDevice()->transferRequest(); }
 
 
 #endif

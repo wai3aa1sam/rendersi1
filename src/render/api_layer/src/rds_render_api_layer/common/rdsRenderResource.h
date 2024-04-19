@@ -146,10 +146,12 @@ public:
 public:
 	bool			hasCreated()	const;
 	const char*		debugName()		const;
+	RenderApiType	apiType()		const;
 
 public:
 	Renderer*		renderer();
 	RenderDevice*	renderDevice();
+	RenderDevice*	renderDevice() const;
 
 	RenderFrame&		renderFrame();
 
@@ -160,6 +162,7 @@ public:
 
 public:
 	ProjectSetting& projectSetting();
+
 
 public:
 	void _internal_setSubResourceCount(SizeType n);
@@ -200,6 +203,9 @@ RenderResource::debugName() const
 	return "";
 	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 }
+
+inline RenderDevice*			RenderResource::renderDevice()			{ return _rdDev; }
+inline RenderDevice*			RenderResource::renderDevice() const	{ return _rdDev; }
 
 inline RenderResourceStateFlags RenderResource::renderResourceStateFlags(u32 subResource) const { return _rdState.state(subResource); }
 

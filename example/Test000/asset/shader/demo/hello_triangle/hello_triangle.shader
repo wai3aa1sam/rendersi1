@@ -44,7 +44,7 @@ struct PixelIn
 
 RDS_TEXTURE_2D(texture0);
 float4 color;
-bool test_bool;
+bool test_bool; 
 
 PixelIn vs_main(VertexIn i)
 {

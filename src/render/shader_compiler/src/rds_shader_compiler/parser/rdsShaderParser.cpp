@@ -9,16 +9,16 @@ namespace rds
 #endif // 0
 #if 1
 void 
-ShaderParser::parse(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, StrView filename)
+ShaderParser::parse(ShaderCompileDesc* oCmpDesc, ShaderInfo* outInfo, StrView filename)
 {
 	_mmfile.open(filename);
-	parse(oCReq, outInfo, _mmfile.span(), filename);
+	parse(oCmpDesc, outInfo, _mmfile.span(), filename);
 }
 
-void ShaderParser::parse(ShaderCompileRequest* oCReq, ShaderInfo* outInfo, ByteSpan data, StrView filename)
+void ShaderParser::parse(ShaderCompileDesc* oCmpDesc, ShaderInfo* outInfo, ByteSpan data, StrView filename)
 {
-	_oCReq	 = oCReq;
-	_outInfo = outInfo;
+	_oCmpDesc	= oCmpDesc;
+	_outInfo	= outInfo;
 
 	outInfo->clear();
 	reset(data, filename);

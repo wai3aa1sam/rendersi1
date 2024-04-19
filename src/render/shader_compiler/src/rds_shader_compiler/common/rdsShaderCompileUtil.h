@@ -63,50 +63,10 @@ public:
 	static const char* getCompilerName(		ApiType type);
 	static const char* getStageProfile(		ShaderStageFlag stage, ApiType type);
 	static const char* getGlslcStageProfile(ShaderStageFlag stage);
-	static const char* getShaderFormat(		ApiType v);
-
 	
-	template<class STR> static void getDstDirTo(		STR& o, StrView filename, const ProjectSetting& ps);
-	template<class STR> static void getBinDirTo(		STR& o, StrView dstDir, SizeType iPass, RenderApiType apiType);
-	template<class STR> static void getBinFilepathTo(	STR& o, StrView binDir, ShaderStageFlag stageProfile, RenderApiType apiType);
-
 
 public:
 };
-
-template<class STR> inline
-void 
-ShaderCompileUtil::getDstDirTo(STR& o, StrView filename, const ProjectSetting& ps)
-{
-	fmtTo(o, "{}/{}/{}", ps.projectRoot(), ps.importedShaderPath(), filename);
-}
-
-template<class STR> inline
-void 
-ShaderCompileUtil::getBinDirTo(STR& o, StrView dstDir, SizeType iPass, RenderApiType apiType)
-{
-	fmtTo(o, "{}/{}/pass{}", dstDir, getShaderFormat(apiType), iPass);
-}
-
-template<class STR> inline
-void 
-ShaderCompileUtil::getBinFilepathTo(STR& o, StrView binDir, ShaderStageFlag stage, RenderApiType apiType)
-{
-	using SRC = rds::RenderApiType;
-
-	const char* stageProfile = nullptr;
-	switch (apiType)
-	{
-		//case SRC::OpenGL:	{} break;
-		//case SRC::Dx11:		{} break;
-		//case SRC::Metal:	{} break;
-		case SRC::Vulkan:	{ stageProfile = RenderApiUtil::toVkShaderStageProfile(stage); }	break;
-		case SRC::Dx12:		{ stageProfile = RenderApiUtil::toDx12ShaderStageProfile(stage); }	break;
-		default: { RDS_THROW("getBinFilepathTo failed"); } break;
-	}
-	fmtTo(o, "{}/{}.bin", binDir, stageProfile);
-}
-
 
 #endif
 

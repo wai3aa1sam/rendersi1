@@ -46,24 +46,8 @@ public:
 	IDxcIncludeHandler* dxcIncHandler	= nullptr;
 	DxcBuffer*			dxcSrcBuf		= nullptr;
 
-	StrView inputFilename;
-	StrView outFilename;
-
+	StrView		outputFilePath;
 	CompileArgs	compileArgs;
-
-	#if 0
-	template<size_t N>
-	void setArgs(Vector<const wchar_t*, N>& args)
-	{
-		argsData	= args.data();
-		argsCount	= args.size();
-	}
-
-protected:
-	const wchar_t** argsData;
-	size_t			argsCount;
-	#endif // 0
-
 };
 
 class ShaderCompiler_Dx12: public ShaderCompiler
@@ -77,10 +61,10 @@ public:
 
 protected:
 	/* .hlsl -> .spv */ 
-	virtual void onCompile(const CompileDesc& desc);
+	virtual void onCompile(const CompileDescView& descView);
 
 private:
-	void _compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpReq, const CompileDesc& desc, bool isStripLastByte);
+	void _compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpReq, const CompileDescView& descView, bool isStripLastByte);
 
 protected:
 	// reflect .spv by spirv_cross

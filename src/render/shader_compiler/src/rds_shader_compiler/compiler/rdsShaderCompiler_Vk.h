@@ -32,7 +32,7 @@ public:
 	/* .hlsl -> .spv */ 
 
 protected:
-	virtual void onCompile(const CompileDesc& desc) override;
+	virtual void onCompile(const CompileDescView& descView) override;
 
 protected:
 	// reflect .spv by spirv_cross
