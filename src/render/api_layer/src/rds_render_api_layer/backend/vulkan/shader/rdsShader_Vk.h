@@ -3,6 +3,8 @@
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
 #include "rds_render_api_layer/shader/rdsShader.h"
+#include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
+
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -36,18 +38,17 @@ public:
 
 	void create(ShaderPass_Vk* pass, StrView passPath)
 	{
-		TempString binPath;
-		fmtTo(binPath, "{}/{}.bin", passPath, Util::toVkShaderStageProfile(stageFlag()));
+		destroy(pass);	// actually should have a previous pass (renderDevice)
+
+		TempString binFilepath;
+		ShaderCompileRequest::getBinFilepathTo(binFilepath, passPath, stageFlag(), pass->shader()->apiType());
+
+		createInfo(binFilepath);
 
 		auto* rdDevVk = pass->renderDeviceVk();
-		_vkModule.create(binPath, rdDevVk);
+		_vkModule.create(binFilepath, rdDevVk);
 
-		binPath += ".json";
-		//JsonUtil::readFile(binPath, _info);
-		bool isLoadDefaultPushConst = false;
-		_info.create(binPath, isLoadDefaultPushConst);
-
-		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(_vkModule, rdDevVk, "{}-{}", pass->shader()->filename(), stageFlag());
+		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(_vkModule, rdDevVk, "{}-{}", pass->shader()->shadername(), stageFlag());
 	}
 
 	void destroy(ShaderPass_Vk* pass)
@@ -175,18 +176,27 @@ public:
 	Shader_Vk();
 	~Shader_Vk();
 
-	virtual void onReset() override;
 
 protected:
 	virtual void onCreate		(const CreateDesc& cDesc);
 	virtual void onPostCreate	(const CreateDesc& cDesc);
 	virtual void onDestroy		();
 
-	//virtual UPtr<ShaderPass> onMakePass(Shader* shader, const ShaderPass::Info* info) override;
+	virtual void onReset() override;
+
+	virtual UPtr<ShaderPass> onMakePass(Shader* shader, const ShaderPass::Info& info) override;
 
 protected:
 
 };
+
+inline
+UPtr<ShaderPass> 
+Shader_Vk::onMakePass(Shader* shader, const ShaderPass::Info& info)
+{
+	return makeUPtr<Pass>();
+}
+
 
 #endif
 

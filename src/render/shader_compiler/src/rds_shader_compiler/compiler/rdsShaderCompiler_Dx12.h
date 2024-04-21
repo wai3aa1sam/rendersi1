@@ -31,6 +31,15 @@ public:
 			emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("-I{}", e)));
 		}
 	}
+
+	void appendMarcos(Span<const ShaderMarco> marcos)
+	{
+		for (const auto& e : marcos)
+		{
+			emplace_back(L"-D");
+			emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("{}={}", e.name, e.value)));
+		}
+	}
 };
 
 struct DxcCompileDesc

@@ -182,7 +182,7 @@ ShaderResources::clear()
 void 
 ShaderResources::copy(const ShaderResources& rsc)
 {
-	RDS_CORE_ASSERT(&rsc.info() == &info(), "all ShaderResources must be created");
+	//RDS_CORE_ASSERT(&rsc.info() == &info(), "all ShaderResources must be created");
 	
 	// simple assign will call ctor instead of operator=(), _info will be invalid
 	#if 0
@@ -193,11 +193,17 @@ ShaderResources::copy(const ShaderResources& rsc)
 	_imageParams	= rsc._imageParams;
 	#endif // 0
 
-	for (size_t i = 0; i < _constBufs.size();		++i) { auto& src = rsc._constBufs[i];		auto& dst = _constBufs[i];		dst.copy(src); }
-	for (size_t i = 0; i < _texParams.size();		++i) { auto& src = rsc._texParams[i];		auto& dst = _texParams[i];		dst.copy(src); }
-	for (size_t i = 0; i < _samplerParams.size();	++i) { auto& src = rsc._samplerParams[i];	auto& dst = _samplerParams[i];	dst.copy(src); }
-	for (size_t i = 0; i < _bufferParams.size();	++i) { auto& src = rsc._bufferParams[i];	auto& dst = _bufferParams[i];	dst.copy(src); }
-	for (size_t i = 0; i < _imageParams.size();		++i) { auto& src = rsc._imageParams[i];		auto& dst = _imageParams[i];	dst.copy(src); }
+	auto nCopyConstBuf		= math::min(constBufs().size(),		rsc.constBufs().size());
+	auto nCopyTexParam		= math::min(texParams().size(),		rsc.texParams().size());
+	auto nCopySamplerParam	= math::min(samplerParams().size(), rsc.samplerParams().size());
+	auto nCopyBufferParam	= math::min(bufferParams().size(),	rsc.bufferParams().size());
+	auto nCopyImageParam	= math::min(imageParams().size(),	rsc.imageParams().size());
+
+	for (size_t i = 0; i < nCopyConstBuf;		++i) { auto& src = rsc._constBufs[i];		auto& dst = _constBufs[i];		dst.copy(src); }
+	for (size_t i = 0; i < nCopyTexParam;		++i) { auto& src = rsc._texParams[i];		auto& dst = _texParams[i];		dst.copy(src); }
+	for (size_t i = 0; i < nCopySamplerParam;	++i) { auto& src = rsc._samplerParams[i];	auto& dst = _samplerParams[i];	dst.copy(src); }
+	for (size_t i = 0; i < nCopyBufferParam;	++i) { auto& src = rsc._bufferParams[i];	auto& dst = _bufferParams[i];	dst.copy(src); }
+	for (size_t i = 0; i < nCopyImageParam;		++i) { auto& src = rsc._imageParams[i];		auto& dst = _imageParams[i];	dst.copy(src); }
 
 	#if 0
 	for (size_t i = 0; i < rsc.constBufs().size(); ++i)

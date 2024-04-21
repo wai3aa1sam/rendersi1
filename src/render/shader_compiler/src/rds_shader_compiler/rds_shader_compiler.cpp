@@ -68,8 +68,8 @@ int main(int argc, char* argv[])
 	MemoryContext::init();
 	{
 		rds::ShaderCompilerConsoleApp app;
-		app.parseCmdLine(CmdLineArgs{argc, argv});
-		//app.parseCmdLine(CmdLineArgs{argvs});
+		app.parseCmdLine(CmdLineArgsView{argc, argv});
+		//app.parseCmdLine(CmdLineArgsView{argvs});
 		app.run();
 	}
 	MemoryContext::terminate();

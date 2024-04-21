@@ -77,6 +77,13 @@ Material::create(const CreateDesc& cDesc)
 void 
 Material::destroy()
 {
+	if (!_shader || _passes.is_empty())
+		return;
+
+	checkMainThreadExclusive(RDS_SRCLOC);
+
+	renderDevice()->shaderStock().removeMaterial(this);
+
 	_passes.clear();
 	_shader.reset(nullptr);
 
@@ -87,9 +94,35 @@ Material::destroy()
 void 
 Material::setShader(Shader* shader)
 {
+	checkMainThreadExclusive(RDS_SRCLOC);
+
+	Vector<ShaderResources, s_kLocalPassSize> prevShaderRscs;
+	if (shader && _shader)
+	{
+		/*
+		* materialPasses maybe reference to a destroyed shader, so need to get the non permutated shader
+		* copy for restore the previous value
+		*/
+		Shader* nonPermutatedShader = renderDevice()->shaderStock().findShader(filename());
+		if (nonPermutatedShader)
+		{
+			prevShaderRscs.reserve(_passes.size());
+
+			auto nCopyPass = math::min(nonPermutatedShader->passes().size(), _passes.size());
+			for (size_t i = 0; i < nCopyPass; i++)
+			{
+				auto* shaderPass = nonPermutatedShader->passes()[i].ptr();
+				auto& dst = prevShaderRscs.emplace_back();
+				dst.create(shaderPass->info().allStageUnionInfo, shaderPass, 0);
+				dst.copy(_passes[i]->shaderResources());
+			}
+		}
+	}
+
+	destroy();
+
 	if (!shader)
 	{
-		destroy();
 		return;
 	}
 
@@ -103,6 +136,16 @@ Material::setShader(Shader* shader)
 	{
 		UPtr<Pass>& e = _passes.emplace_back(onMakePass());
 		e->create(this, shader->passes()[i]);
+	}
+
+	resetPermutation(shader->info().permuts);
+	renderDevice()->shaderStock().appendUniqueMaterial(this, shader);
+	
+	auto nCopyPass = math::min(prevShaderRscs.size(), passCount);
+	for (size_t i = 0; i < nCopyPass; i++)
+	{
+		auto& prevShaderRsc = prevShaderRscs[i];
+		_passes[i]->shaderResources().copy(prevShaderRsc);
 	}
 }
 
@@ -120,7 +163,6 @@ void
 Material::onDestroy()
 {
 }
-
 
 ShaderParamId 
 Material::getParamId(StrView name) const
@@ -140,7 +182,53 @@ Material::_setSamplerParam(StrView name, const SamplerState& v)
 	setParam(name, renderDevice()->bindlessResource().findSamplerIndex(v));
 }
 
-const ShaderInfo&	Material::info() const	{ return _shader->info(); }
+void 
+Material::setPermutation(StrView name, StrView value)						
+{
+	checkMainThreadExclusive(RDS_SRCLOC);
+
+	auto& info = shader()->info();
+	if (_permuts.isEmpty())
+	{
+		resetPermutation(info.permuts);
+		return;
+	}
+	_setPermutation(name, value); 
+
+	auto& shaderStock = renderDevice()->shaderStock();
+	shaderStock.sendPermutationRequest(this); 
+}
+
+void 
+Material::resetPermutation(const ShaderInfo::Permuts& permutations)	
+{ 
+	checkMainThreadExclusive(RDS_SRCLOC);
+
+	_permuts.create(permutations); 
+}
+
+void Material::clearPermutation()
+{
+	checkMainThreadExclusive(RDS_SRCLOC);
+
+	_permuts.clear();
+
+	const auto& filename = shader()->filename();
+	auto shader = renderDevice()->createShader(filename);
+	setShader(shader);
+}
+
+void 
+Material::_setPermutation(StrView name, StrView value)
+{
+	auto& info = shader()->info();
+	bool isExist = info.isPermutationValid(name, value);
+	throwIf(!isExist, "unknow Permutation name");
+	_permuts.set(name, value);
+}
+
+const ShaderInfo&		Material::info()		const { return _shader->info(); }
+const String&			Material::filename()	const { return _shader->filename(); }
 
 #endif
 

@@ -85,7 +85,7 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 		{
 			auto& mtl = *comp.material.ptr();
 
-			edtDrawReq.showText(mtl.shader()->filename());
+			edtDrawReq.showText(mtl.shader()->shadername());
 
 			for (size_t iPass = 0; iPass < mtl.passes().size(); iPass++)
 			{

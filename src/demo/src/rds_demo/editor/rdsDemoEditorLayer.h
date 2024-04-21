@@ -38,7 +38,7 @@ protected:
 	virtual void onUiMouseEvent(    UiMouseEvent& ev)		override;
 	virtual void onUiKeyboardEvent( UiKeyboardEvent& ev)	override;
 
-	void drawEditorUi(RdgTextureHnd texHndPresent);		// should be copied from ImGui
+	void drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texHndPresent);		// should be copied from ImGui
 
 private:
 	CRenderableSystem& renderableSystem();

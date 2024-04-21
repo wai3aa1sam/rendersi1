@@ -7,26 +7,26 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsCmdLineArgs-Decl ---
+#pragma mark --- rdsCmdLineArgsView-Decl ---
 #endif // 0
 #if 1
 
-struct CmdLineArgs
+struct CmdLineArgsView
 {
 public:
 	int		argc = 0;
 	char**	argv = nullptr;
 
 public:
-	CmdLineArgs() = default;
+	CmdLineArgsView() = default;
 
 	template<size_t N>
-	CmdLineArgs(char*(&argv)[N])
+	CmdLineArgsView(char*(&argv)[N])
 		: argc(sCast<int>(N)), argv(argv)
 	{
 	}
 
-	CmdLineArgs(int argc, char** argv)
+	CmdLineArgsView(int argc, char** argv)
 		: argc(argc), argv(argv)
 	{
 	}
@@ -111,7 +111,7 @@ public:
 	using Token		= Lexer::Token;
 
 public:
-	void readCmdLineArgs(Request* oReq, const CmdLineArgs& cmdArgs);
+	void readCmdLineArgsView(Request* oReq, const CmdLineArgsView& cmdArgs);
 
 private:
 	void _readCmdLine();
@@ -157,7 +157,7 @@ public:
 
 protected:
 	Request*	_req = nullptr;
-	CmdLineArgs _cmdArgs;
+	CmdLineArgsView _cmdArgs;
 	StrView		_cmd;
 	const char* _curCmd = nullptr;
 

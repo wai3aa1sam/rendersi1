@@ -103,12 +103,50 @@ HelloTriangle::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 	drawData->oTexPresent = texColor;
 }
 
-void HelloTriangle::onUiMouseEvent(UiMouseEvent& ev)
+void 
+HelloTriangle::onDrawGui(EditorUiDrawRequest& uiDrawReq)
+{
+	#if 0
+	{
+		ImGui::Begin("Permutation Test");
+
+		static bool isCheckBox = false;
+		static bool isENABLE_feature = false;
+		static bool isClearPermutation = false;
+		ImGui::Checkbox("ENABLE_permutation", &isCheckBox);
+		ImGui::Checkbox("RDS_ENABLE_FEATURE_1", &isENABLE_feature);
+		ImGui::Checkbox("isClearPermutation", &isClearPermutation);
+
+		auto& mtl = _mtlHelloTriangle;
+
+		if (isCheckBox)
+		{
+			if (isENABLE_feature)
+				mtl->setPermutation("RDS_ENABLE_FEATURE_1", "1");
+			else
+				mtl->setPermutation("RDS_ENABLE_FEATURE_2", "0");
+		}
+		if (isClearPermutation)
+		{
+			Renderer::rdDev()->waitIdle();
+			mtl->clearPermutation();
+			isClearPermutation = false;
+		}
+
+		ImGui::End();
+	}
+	#endif // 0
+
+}
+
+void 
+HelloTriangle::onUiMouseEvent(UiMouseEvent& ev)
 {
 	Base::onUiMouseEvent(ev);
 }
 
-void HelloTriangle::onUiKeyboardEvent(UiKeyboardEvent& ev)
+void 
+HelloTriangle::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
 	Base::onUiKeyboardEvent(ev);
 }

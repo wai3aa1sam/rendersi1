@@ -119,6 +119,9 @@ struct ShaderCompileInfo
 class ShaderCompileDesc : public NonCopyable
 {
 public:
+	static constexpr int s_kInvalid = -1;
+
+public:
 	String language;
 	String inputFilename;
 	String outputFilename;
@@ -139,6 +142,12 @@ public:
 
 	bool   isGNUMakeCompile : 1;
 	bool   isGenerateMake	: 1;
+	
+	int globalBinding	= s_kInvalid;
+	int globalSet		= s_kInvalid;
+
+public:
+	bool isValidGlobalBinding() const { return globalBinding != s_kInvalid && globalSet != s_kInvalid; }
 
 public:
 	template<class STR>

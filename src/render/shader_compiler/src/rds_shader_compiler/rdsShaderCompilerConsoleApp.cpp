@@ -17,10 +17,10 @@ ShaderCompilerConsoleApp::~ShaderCompilerConsoleApp()
 }
 
 void 
-ShaderCompilerConsoleApp::parseCmdLine(const CmdLineArgs& cmdArgs) 
+ShaderCompilerConsoleApp::parseCmdLine(const CmdLineArgsView& cmdArgs) 
 {
 	ShaderCmdLineParser parser;
-	parser.readCmdLineArgs(&_compileDesc, cmdArgs);
+	parser.readCmdLineArgsView(&_compileDesc, cmdArgs);
 }
 
 void 
@@ -64,6 +64,19 @@ ShaderCompilerConsoleApp::create()
 		includes.emplaceBackDir() = ps.buildInRoot();
 		includes.emplaceBackDir() = ps.buildInShaderRoot();
 		includes.emplaceBackDir() = Path::dirname(cmpDesc.inputFilename);
+	}
+	{
+		auto& bindlessRsc = Renderer::rdDev()->bindlessResource();
+		auto& marcos = cmpDesc.marcos;
+
+		_isPermutationCompile = !marcos.is_empty();
+
+		marcos.emplace_back("RDS_K_SAMPLER_COUNT",			StrUtil::toTempStr(bindlessRsc.samplerCount()));
+		marcos.emplace_back("RDS_CONSTANT_BUFFER_SPACE",	fmtAs_T<TempString>("space{}",	bindlessRsc.bindlessTypeCount()));
+
+		auto minBinding_vkSpec = 16;
+		cmpDesc.globalBinding	= minBinding_vkSpec - 2;
+		cmpDesc.globalSet		= sCast<int>(bindlessRsc.bindlessTypeCount());
 	}
 }
 
@@ -125,7 +138,7 @@ ShaderCompilerConsoleApp::compile(StrView filename, const ShaderCompileOption& o
 	if (cmpDesc.isGNUMakeCompile)
 	{
 		compileForVulkan(info, srcFileRoot, dstDirRoot, opt);
-		markForHotReload(srcFileRoot);
+		markForHotReload(filename);
 	}
 	else
 	{
@@ -216,12 +229,16 @@ ShaderCompilerConsoleApp::createShaderPermutationDirTo(TempString& outDir)
 	auto& ps		= projectSetting();
 	auto& cmpDesc	= compileDesc();
 
-	if (cmpDesc.marcos.size() > 0)
+	if (_isPermutationCompile)
 	{
 		TempString impShaderDir;
 		ShaderCompileRequest::getImportedShaderDirTo(impShaderDir, cmpDesc.inputFilename, ps);
 
 		ShaderPermutations::getNameTo(cmpDesc.permutName, cmpDesc.shaderInfo.permuts, cmpDesc.marcos);
+		if (cmpDesc.permutName.is_empty())
+		{
+			return;
+		}
 		ShaderCompileRequest::getShaderPermutationDirTo(outDir, impShaderDir, cmpDesc.permutName, ps);
 		Path::create(outDir);
 	}

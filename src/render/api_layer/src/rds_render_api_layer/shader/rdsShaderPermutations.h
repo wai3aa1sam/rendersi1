@@ -8,10 +8,16 @@ namespace rds
 struct ShaderInfo;
 
 struct ShaderMarco 
-{ 
+{
 public:
 	String name; 
-	String value; 
+	String value;
+
+public:
+	ShaderMarco() = default;
+	ShaderMarco(StrView name, StrView value)
+		: name(name), value(value)
+	{}
 };
 
 #if 0
@@ -63,7 +69,7 @@ public:
 	using Info	= Vector<ShaderPermutationInfo,	s_kLocalPermutSize>;
 
 public:
-	template<class STR> static  bool getNameTo(STR& o, Span<ShaderPermutationInfo> permutInfos, Span<ShaderMarco> marcos);
+	template<class STR> static bool getNameTo(STR& o, Span<ShaderPermutationInfo> permutInfos, Span<ShaderMarco> marcos);
 
 public:
 	struct PermutationParam
@@ -96,7 +102,7 @@ public:
 	void set(StrView name, StrView value);
 
 public:
-	template<class STR> void getNameTo(STR& o) const;
+	template<class STR> void appendNameTo(STR& o) const;
 
 public:
 	bool operator==(const ShaderPermutations& permuts) const;
@@ -121,7 +127,7 @@ private:
 
 template<class STR> inline
 void 
-ShaderPermutations::getNameTo(STR& o) const
+ShaderPermutations::appendNameTo(STR& o) const
 {
 	TempString temp;
 	if (!_permutParams.is_empty())

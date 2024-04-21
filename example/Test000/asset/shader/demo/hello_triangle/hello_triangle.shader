@@ -23,6 +23,12 @@ Shader {
 		VsFunc		vs_main
 		PsFunc		ps_main
 	}
+
+	Permutation
+	{
+		RDS_ENABLE_FEATURE_1 	= { 0, 1, }
+		RDS_ENABLE_FEATURE_2 	= { 0, 1, }
+	}
 }
 #endif
 
@@ -60,5 +66,15 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	//float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv) * color;
 	float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv);
 
+	#if RDS_ENABLE_FEATURE_1
+	o.r = 0;
+	//o = color;
+	#endif
+
+	#if RDS_ENABLE_FEATURE_2
+	o.g = 0;
+	#endif
+
+	float4 white = {1.0, 1.0, 1.0, 1.0};
     return o;
 }

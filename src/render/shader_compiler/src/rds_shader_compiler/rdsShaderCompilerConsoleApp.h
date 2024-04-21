@@ -31,7 +31,7 @@ public:
 public:
 	~ShaderCompilerConsoleApp();
 
-	void parseCmdLine(const CmdLineArgs& cmdArgs);
+	void parseCmdLine(const CmdLineArgsView& cmdArgs);
 
 protected:
 	void create();
@@ -68,7 +68,8 @@ protected:
 	bool checkValid(StrView filename) const;
 
 protected:
-	ShaderCompileDesc _compileDesc;
+	ShaderCompileDesc	_compileDesc;
+	bool				_isPermutationCompile = false;
 };
 
 template<class STR> inline

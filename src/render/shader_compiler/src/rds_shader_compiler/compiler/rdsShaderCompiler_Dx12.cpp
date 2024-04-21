@@ -90,6 +90,7 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 	ShaderStageFlag stage		= descView.stage;
 	auto			entry		= descView.entry;
 	const auto&		includes	= descView.compileDesc->includes;
+	const auto&		marcos		= descView.compileDesc->marcos;
 
 	TempString binFilepath;
 	descView.getBinFilepathTo(binFilepath);
@@ -166,29 +167,10 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 				u32 uavOffset		= stageOffset + 12;		RDS_UNUSED(uavOffset	);
 				u32 imageOffset		= stageOffset + 14;		RDS_UNUSED(imageOffset	);
 				// <shift> <space>
-				compileArgs.emplace_back(L"-fvk-b-shift"); compileArgs.emplace_back(StrUtil::toStrW(cbufferOffset));	compileArgs.emplace_back(L"0");
-				compileArgs.emplace_back(L"-fvk-t-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");	// temporary
-				compileArgs.emplace_back(L"-fvk-s-shift"); compileArgs.emplace_back(StrUtil::toStrW(textureOffset));	compileArgs.emplace_back(L"1");
-				compileArgs.emplace_back(L"-fvk-u-shift"); compileArgs.emplace_back(StrUtil::toStrW(imageOffset));		compileArgs.emplace_back(L"0");
-			}
-
-			// rds_define
-			if (true)
-			{
-				#if RDS_USE_RENDERER
-				auto& bindlessRsc = Renderer::rdDev()->bindlessResource();
-
-				auto minBinding_vkSpec = 16;
-				compileArgs.emplace_back(L"-fvk-bind-globals"); compileArgs.emplace_back(StrUtil::toStrW(minBinding_vkSpec - 2));	compileArgs.emplace_back(StrUtil::toStrW(bindlessRsc.bindlessTypeCount()));
-				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}",				bindlessRsc.samplerCount())));
-				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_CONSTANT_BUFFER_SPACE=space{}",	bindlessRsc.bindlessTypeCount())));
-				
-				#else
-
-				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_K_SAMPLER_COUNT={}",				1)));
-				compileArgs.emplace_back(L"-D"); compileArgs.emplace_back(UtfUtil::toTempStringW(fmtAs_T<TempString>("RDS_CONSTANT_BUFFER_SPACE=space{}",	3)));
-
-				#endif // 0
+				compileArgs.emplace_back(L"-fvk-b-shift"); compileArgs.emplace_back(StrUtil::toTempStrW(cbufferOffset));	compileArgs.emplace_back(L"0");
+				compileArgs.emplace_back(L"-fvk-t-shift"); compileArgs.emplace_back(StrUtil::toTempStrW(textureOffset));	compileArgs.emplace_back(L"1");	// temporary
+				compileArgs.emplace_back(L"-fvk-s-shift"); compileArgs.emplace_back(StrUtil::toTempStrW(textureOffset));	compileArgs.emplace_back(L"1");
+				compileArgs.emplace_back(L"-fvk-u-shift"); compileArgs.emplace_back(StrUtil::toTempStrW(imageOffset));		compileArgs.emplace_back(L"0");
 			}
 
 			isBypassReflection = true;	// dxc does not support spirv reflection (Qstrip_reflect), use spirv-cross instead
@@ -209,6 +191,14 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 		}
 
 		compileArgs.appendIncludes(includes);
+
+		// marcos
+		{
+			auto& compileDesc = *descView.compileDesc;
+			if (compileDesc.isValidGlobalBinding())
+				compileArgs.emplace_back(L"-fvk-bind-globals"); compileArgs.emplace_back(StrUtil::toTempStrW(compileDesc.globalBinding));	compileArgs.emplace_back(StrUtil::toStrW(compileDesc.globalSet));
+			compileArgs.appendMarcos(marcos);
+		}
 
 		ComPtr<IDxcResult> compiledShaderBuffer;
 		_compile(compiledShaderBuffer, dxcCmpDesc, descView, false);

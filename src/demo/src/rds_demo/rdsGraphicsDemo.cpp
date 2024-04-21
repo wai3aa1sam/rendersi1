@@ -61,6 +61,12 @@ GraphicsDemo::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 }
 
 void 
+GraphicsDemo::onDrawGui(EditorUiDrawRequest& uiDrawReq)
+{
+
+}
+
+void 
 GraphicsDemo::onUiMouseEvent(UiMouseEvent& ev)
 {
 

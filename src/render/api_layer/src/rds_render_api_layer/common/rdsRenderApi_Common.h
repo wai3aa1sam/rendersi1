@@ -17,6 +17,17 @@ namespace rds
 RDS_ENUM_CLASS(ShaderStageFlag, u8);
 RDS_ENUM_ALL_OPERATOR(ShaderStageFlag);
 
+#define RenderApiType_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(OpenGL,) \
+	E(Dx11,) \
+	E(Metal,) \
+	E(Vulkan,) \
+	E(Dx12,) \
+	E(_kCount,) \
+//---
+RDS_ENUM_CLASS(RenderApiType, u8);
+
 #if 0
 #pragma mark --- rdsRenderApiUtil-Decl ---
 #endif // 0
@@ -28,9 +39,9 @@ struct RenderApiUtil
 public:
 	static void createTempWindow(NativeUIWindow& out);
 
-	static const char* toVkShaderStageProfile(ShaderStageFlag v);
+	static const char* toVkShaderStageProfile(	ShaderStageFlag v);
 	static const char* toDx12ShaderStageProfile(ShaderStageFlag v);
-
+	static const char* toShaderFormat(			RenderApiType v);
 private:
 
 };

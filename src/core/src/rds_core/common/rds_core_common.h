@@ -17,4 +17,7 @@ namespace rds
 
 
 #endif
+
+void checkMainThreadExclusive(RDS_DEBUG_SRCLOC_PARAM);
+
 }

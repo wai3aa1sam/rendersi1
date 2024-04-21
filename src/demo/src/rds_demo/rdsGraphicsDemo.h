@@ -27,6 +27,8 @@ public:
 	virtual void onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData);
 	virtual void onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData);
 
+	virtual void onDrawGui(EditorUiDrawRequest& uiDrawReq);
+
 	virtual void onUiMouseEvent(	UiMouseEvent&		ev);
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 

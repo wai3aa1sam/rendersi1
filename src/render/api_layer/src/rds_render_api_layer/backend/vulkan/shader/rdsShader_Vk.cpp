@@ -3,6 +3,8 @@
 
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
+#include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
+
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {
@@ -243,7 +245,6 @@ Shader_Vk::onCreate(const CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
 	
-	onReset();
 }
 
 void 
@@ -263,28 +264,6 @@ Shader_Vk::onReset()
 {
 	Base::onReset();
 
-	auto& ps = projectSetting();
-
-	_passes.clear();
-	SizeType passCount = _info.passes.size();
-	_passes.reserve(passCount);
-
-	using PassInfo = ShaderPassInfo;
-	for (size_t i = 0; i < passCount; i++)
-	{
-		PassInfo& passInfo = _info.passes[i];
-
-		TempString passPath;
-		fmtTo(passPath, "{}/{}/{}/pass{}", ps.importedShaderPath(), filename(), ps.spirvPath(), i);
-
-		TempString allStageUnionInfoPath;
-		fmtTo(allStageUnionInfoPath, "{}/pass{}.json", passPath, i);
-		passInfo.allStageUnionInfo.create(allStageUnionInfoPath, true);
-
-		auto pass = makeUPtr<Pass>();
-		pass->create(this, &passInfo, passPath);
-		_passes.emplace_back(rds::move(pass));
-	}
 }
 
 #endif

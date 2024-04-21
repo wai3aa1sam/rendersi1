@@ -399,6 +399,8 @@ Vk_ShaderModule::create(StrView filename, RenderDevice_Vk* rdDevVk)
 	auto* vkDev			= rdDevVk->vkDevice();
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
+	destroy(rdDevVk);
+
 	Vector<u8> bin;
 	File::readFile(filename, bin);
 
@@ -415,7 +417,11 @@ void
 Vk_ShaderModule::destroy(RenderDevice_Vk* rdDevVk)
 {
 	RDS_CORE_ASSERT(rdDevVk, "rdDevVk == nullptr");
-	RDS_CORE_ASSERT(hnd(), "");
+	//RDS_CORE_ASSERT(hnd(), "");
+	if (!hnd())
+	{
+		return;
+	}
 
 	auto* vkDev			= rdDevVk->vkDevice();
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();

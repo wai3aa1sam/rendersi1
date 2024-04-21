@@ -1,6 +1,7 @@
 #include "rds_demo-pch.h"
 #include "rdsDemoEditoMainWindow.h"
 #include "rdsDemoEditorApp.h"
+#include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
 namespace rds
 {
@@ -23,6 +24,16 @@ DemoEditorMainWindow::onCreate(const CreateDesc_Base& cDesc)
 
 	_camera.setPos(0, 20, -30);
 	_camera.setAim(0, 0, 0);
+}
+
+void 
+DemoEditorMainWindow::onActive(bool isActive)
+{
+	if (isActive)
+	{
+		{ Process prco = { "compile_shaders.bat" }; }
+		ShaderCompileRequest::hotReload(Renderer::instance(), JobSystem::instance(), ProjectSetting::instance());
+	}
 }
 
 void 

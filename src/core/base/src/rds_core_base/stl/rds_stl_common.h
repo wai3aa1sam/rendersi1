@@ -57,6 +57,7 @@ using ::nmsp::memory_set;
 #endif
 #if 1
 
+using ::nmsp::find;
 using ::nmsp::find_if;
 using ::nmsp::reverse;
 

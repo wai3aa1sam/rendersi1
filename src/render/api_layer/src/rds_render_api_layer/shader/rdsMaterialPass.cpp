@@ -99,7 +99,7 @@ MaterialPass::onCreate(Material* material, ShaderPass* shaderPass)
 void 
 MaterialPass::onDestroy()
 {
-
+	_framedShaderRscs.destroy();
 }
 
 #endif

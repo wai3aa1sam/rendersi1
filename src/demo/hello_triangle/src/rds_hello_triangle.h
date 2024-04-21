@@ -17,6 +17,8 @@ public:
 	virtual void onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData) override;
 	virtual void onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData) override;
 
+	virtual void onDrawGui(EditorUiDrawRequest& uiDrawReq) override;
+
 	virtual void onUiMouseEvent(	UiMouseEvent&		ev) override;
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
 

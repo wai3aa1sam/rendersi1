@@ -19,11 +19,8 @@ class ShaderCompileRequest : public NonCopyable
 public:
 	using Permutations = ShaderPermutations;
 
-	static void hotReload();
-
-	static SPtr<Shader> compileIfNotExist(Shader* shader, const Permutations& permuts);
-
-	static void reloadPermutation();
+public:
+	static void hotReload(Renderer* renderer, JobSystem* jobSystem, const ProjectSetting* projectSetting);
 
 public:
 	template<class STR> static void getImportedShaderDirTo(			STR& o, StrView filename,		const ProjectSetting& ps);
@@ -38,10 +35,10 @@ public:
 	template<class STR> static void getBinDependencyFilepathTo(		STR& o, StrView binFilepath);
 	template<class STR> static void getMakefilePathTo(				STR& o, StrView binFilepath);
 
-
 private:
-	static void _hotReloadShader(StrView filename);
-
+	static void			_hotReloadShader(StrView filename, RenderDevice* renderDevice, const ProjectSetting& projectSetting);
+	static void			reloadPermutation(RenderDevice* renderDevice, const ProjectSetting& projectSetting);
+	static SPtr<Shader> compilePermutationShader(StrView filename, StrView impShaderDir, const Permutations& permuts, RenderDevice& renderDevice, const ProjectSetting& projectSetting);
 };
 
 template<class STR> inline
@@ -80,8 +77,8 @@ ShaderCompileRequest::getImportedBinDirTo(STR& o, StrView impShaderDir, RenderAp
 	else
 	{
 		TempString permutName;
-		permuts.getNameTo(permutName);
-		fmtTo(shaderImportedDir, "{}/{}/{}", impShaderDir, ps.shaderPermutationPath(), permutName, formatPath);
+		permuts.appendNameTo(permutName);
+		fmtTo(shaderImportedDir, "{}/{}/{}/{}", impShaderDir, ps.shaderPermutationPath(), permutName, formatPath);
 	}
 }
 

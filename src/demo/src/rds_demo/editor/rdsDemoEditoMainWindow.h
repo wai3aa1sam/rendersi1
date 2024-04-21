@@ -37,8 +37,10 @@ public:
 
 protected:
 	virtual void onCreate(const CreateDesc_Base& cDesc) override;
+	virtual void onActive(			bool isActive)			override;
 	virtual void onUiMouseEvent(	UiMouseEvent&		ev)	override;
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev)	override;
+
 
 private:
 	math::Camera3f _camera;

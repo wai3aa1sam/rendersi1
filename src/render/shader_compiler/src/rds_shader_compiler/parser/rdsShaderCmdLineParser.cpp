@@ -10,7 +10,7 @@ namespace rds
 #if 1
 
 void
-ShaderCmdLineParser::readCmdLineArgs(Request* oReq, const CmdLineArgs& cmdArgs)
+ShaderCmdLineParser::readCmdLineArgsView(Request* oReq, const CmdLineArgsView& cmdArgs)
 {
 	TempString cmdStream;
 	cmdArgs.toStream(cmdStream);

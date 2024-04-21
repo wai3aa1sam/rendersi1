@@ -140,7 +140,9 @@ DemoEditorLayer::onRender()
 
 	rdCtx.beginRender();
 
-	drawEditorUi(_texHndPresent);
+	auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
+	_gfxDemo->onDrawGui(uiDrawReq);
+	drawEditorUi(uiDrawReq, _texHndPresent);
 
 	//renderableSystem().render(&rdCtx, _fullScreenTriangle, _mtlPresent);
 	renderableSystem().render(&rdCtx, _fullScreenTriangle, nullptr);
@@ -151,7 +153,7 @@ DemoEditorLayer::onRender()
 }
 
 void 
-DemoEditorLayer::drawEditorUi(RdgTextureHnd texHndPresent)
+DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texHndPresent)
 {
 	#if 0
 	static bool isRequestFullViewport	= false;
@@ -165,7 +167,6 @@ DemoEditorLayer::drawEditorUi(RdgTextureHnd texHndPresent)
 	}
 	#endif // 0
 
-	auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
 	{
 		static bool isShowDemoWindow = true;
 		//ImGui::ShowDemoWindow(&isShowDemoWindow);

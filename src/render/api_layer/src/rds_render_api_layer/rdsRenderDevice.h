@@ -6,19 +6,11 @@
 #include "rds_render_api_layer/transfer/rdsTransferFrame.h"
 #include "rds_render_api_layer/shader/rdsBindlessResources.h"
 
+#include "texture/rdsTextureStock.h"
+#include "shader/rdsShaderStock.h"
+
 namespace rds
 {
-
-#define RenderApiType_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(OpenGL,) \
-	E(Dx11,) \
-	E(Metal,) \
-	E(Vulkan,) \
-	E(Dx12,) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(RenderApiType, u8);
 
 #if 0
 #pragma mark --- rdsRenderDevice-Decl ---
@@ -54,85 +46,14 @@ struct	TextureCube_CreateDesc;
 
 class	Shader;
 struct	Shader_CreateDesc;
+class	ShaderPermutations;
 class	Material;
 struct	Material_CreateDesc;
-
-struct TextureStock
-{
-	SPtr<Texture2D>	white;
-	SPtr<Texture2D>	black;
-	SPtr<Texture2D>	red;
-	SPtr<Texture2D>	green;
-	SPtr<Texture2D>	blue;
-	SPtr<Texture2D>	magenta;
-	SPtr<Texture2D>	error;
-
-	struct Textures
-	{
-	public:
-		using Table = VectorMap<BindlessResourceHandle::IndexT, Texture*>;
-
-	public:
-		~Textures()
-		{
-			clear();
-		}
-
-		Texture* add(Texture* v)
-		{
-			RDS_CORE_ASSERT(v, "invalid texture");
-			auto& table = _table;
-			auto lock	= table.scopedULock();
-			auto& data	= *lock;
-			auto rscIdx = v->bindlessHandle().getResourceIndex();
-			data[rscIdx] = v;
-			return v;
-		}
-
-		void remove(Texture* v)
-		{
-			if (!v || !find(v->bindlessHandle().getResourceIndex()))
-				return;
-
-			RDS_CORE_ASSERT(v, "invalid texture");
-			auto& table = _table;
-			auto lock	= table.scopedULock();
-			auto& data	= *lock;
-			auto rscIdx = v->bindlessHandle().getResourceIndex();
-			data.erase(rscIdx);
-		}
-
-		void clear()
-		{
-			auto& table = _table;
-			auto lock	= table.scopedULock();
-			auto& data	= *lock;
-			data.clear();
-		}
-
-		Texture* find(u32 rscIdx)
-		{
-			auto& table = _table;
-			auto lock	= table.scopedULock();
-			auto& data	= *lock;
-			auto it = data.find(rscIdx);
-			if (it == data.end())
-			{
-				return nullptr;
-			}
-			return it->second;
-		}
-
-	protected:
-		MutexProtected<Table> _table;
-	};
-
-	Textures textures;
-};
 
 class RenderDevice : public RenderResource
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
+	friend class ShaderStock;
 public:
 	using Base			= RenderResource;
 	using CreateDesc	= RenderDevice_CreateDesc;
@@ -157,9 +78,10 @@ public:
 	SPtr<Texture2D>				createTexture2D				(		Texture2D_CreateDesc&			cDesc);
 	SPtr<TextureCube>			createTextureCube			(		TextureCube_CreateDesc&			cDesc);
 	SPtr<Shader>				createShader				(const	Shader_CreateDesc&				cDesc);
-	SPtr<Shader>				createShader				(StrView								filename);
+	SPtr<Shader>				createShader				(		StrView							filename);
+	SPtr<Shader>				createShader				(		StrView							filename, const ShaderPermutations& permuts);
 	SPtr<Material>				createMaterial				(const	Material_CreateDesc&			cDesc);
-	SPtr<Material>				createMaterial				(Shader*								shader);
+	SPtr<Material>				createMaterial				(		Shader*							shader);
 	SPtr<Material>				createMaterial				();
 
 public:
@@ -167,6 +89,7 @@ public:
 
 public:
 	const	RenderAdapterInfo&	adapterInfo() const;
+			ShaderStock&		shaderStock();
 			TextureStock&		textureStock();
 			RenderFrame&		renderFrame();
 			TransferFrame&		transferFrame();
@@ -175,8 +98,9 @@ public:
 
 			BindlessResources&	bindlessResource();
 
+	RenderApiType	apiType()	const;
+	u32				iFrame()	const;
 
-	u32 iFrame() const;
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
@@ -192,6 +116,8 @@ protected:
 	virtual SPtr<Material>				onCreateMaterial			(const	Material_CreateDesc&		cDesc)	= 0;
 
 protected:
+	RenderApiType		_apiType = RenderApiType::Vulkan;
+
 	RenderAdapterInfo	_adapterInfo;
 	VertexLayoutManager _vertexLayoutManager;
 
@@ -202,11 +128,14 @@ protected:
 	TransferContext* _tsfCtx = nullptr;
 	TransferRequest	 _tsfReq;
 
+	ShaderStock			_shaderStock;
 	TextureStock		_textureStock;
 	BindlessResources*	_bindlessRscs = nullptr;
 };
 
 inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const	{ return _adapterInfo; }
+
+inline			ShaderStock&			RenderDevice::shaderStock()				{ return _shaderStock; }
 inline			TextureStock&			RenderDevice::textureStock()			{ return _textureStock; }
 
 inline			RenderFrame&			RenderDevice::renderFrame()				{ return _rdFrames[iFrame()]; }
@@ -217,7 +146,8 @@ inline			TransferRequest&		RenderDevice::transferRequest()			{ return _tsfReq; }
 
 inline			BindlessResources&		RenderDevice::bindlessResource()		{ return *_bindlessRscs; }
 
-inline			u32						RenderDevice::iFrame() const			{ return _iFrame; }
+inline			RenderApiType			RenderDevice::apiType() const			{ return _apiType; }
+inline			u32						RenderDevice::iFrame()	const			{ return _iFrame; }
 
 #endif
 

@@ -4,6 +4,7 @@
 #include "rds_render_api_layer/vertex/rdsVertex.h"
 #include "rds_render_api_layer/shader/rdsRenderState.h"
 #include "rds_render_api_layer/shader/rdsShaderInterop.h"
+#include "rdsShaderPermutations.h"
 
 namespace rds
 {
@@ -510,38 +511,6 @@ public:
 	}
 };
 
-struct ShaderPermutationInfo
-{
-public:
-	String name;
-	Vector<String, 2> values;
-
-public:
-	bool isValueExist(StrView val) const
-	{
-		return findValueIdx(val) != -1;
-	}
-
-	int findValueIdx(StrView val) const
-	{
-		for (int i = 0; i < values.size(); ++i)
-		{
-			if (val.compare(values[i]) == 0)
-				return i;
-		}
-		return -1;
-	}
-
-	template<class SE>
-	void onJsonIo(SE& se) 
-	{
-		RDS_NAMED_FIXED_IO(se, name);
-		RDS_NAMED_FIXED_IO(se, values);
-	}
-};
-
-
-
 struct ShaderInfo : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
@@ -555,20 +524,23 @@ public:
 	static constexpr SizeType s_kShaderStageCount	= enumInt(ShaderStageFlag::_kCount);
 	static constexpr SizeType s_kLocalPassSize		= 2;
 	static constexpr SizeType s_kLocalPropSize		= 12;
-	static constexpr SizeType s_kLocalPermutSize	= 4;
+	static constexpr SizeType s_kLocalPermutSize	= ShaderPermutations::s_kLocalPermutSize;
 
 public:
-	Vector<Prop,	s_kLocalPropSize>	props;
-	Vector<Pass,	s_kLocalPassSize>	passes;
-	Vector<Permut,	s_kLocalPassSize>	permuts;
+	using Props		= Vector<Prop, s_kLocalPropSize>;
+	using Passes	= Vector<Pass, s_kLocalPassSize>;
+	using Permuts	= ShaderPermutations::Info;
 
 public:
-	void clear()
-	{
-		props.clear();
-		passes.clear();
-		permuts.clear();
-	}
+	Props	props;
+	Passes	passes;
+	Permuts	permuts;
+
+public:
+	void clear();
+
+	bool isPermutationValid(	StrView name, StrView value)	const;
+	int  findPermutationNameIdx(StrView name)					const;
 
 public:
 	template<class JSON_SE>

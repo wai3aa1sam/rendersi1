@@ -44,6 +44,9 @@ public:
 	static constexpr SizeType s_kLocalPassSize		= 2;
 
 public:
+	using Passes = Vector<UPtr<MaterialPass>, s_kLocalPassSize>;
+
+public:
 	static CreateDesc		makeCDesc();
 	static SPtr<Material>	make(const CreateDesc& cDesc);
 	static SPtr<Material>	make(Shader* shader);
@@ -73,12 +76,22 @@ public:
 	void setParam(StrView name, RenderGpuBuffer* v);
 
 public:
+	void setPermutation(StrView name, StrView value)					;
+	void resetPermutation(const ShaderInfo::Permuts& permuts) ;
+	void clearPermutation()												;
+
+public:
 	Pass*			getPass		(SizeType i);
 	ShaderParamId	getParamId	(StrView name) const;
 
 	Span<UPtr<Pass> >	passes();
-	Shader*				shader();
+			Shader*		shader();
+	const	Shader*		shader() const;
+
 	const ShaderInfo&	info() const;
+	const String&		filename() const;
+
+	const ShaderPermutations& permutations() const;
 
 protected:
 	virtual void onCreate		(const CreateDesc& cDesc);
@@ -93,9 +106,12 @@ protected:
 						void _setSamplerParam	(StrView name, const	SamplerState&		v);
 						void _setBufferParam	(StrView name,			RenderGpuBuffer*	v);
 
+						void _setPermutation(StrView name, StrView value);
+
 protected:
-	SPtr<Shader> _shader;
-	Vector<UPtr<MaterialPass>, s_kLocalPassSize> _passes;
+	SPtr<Shader>		_shader;
+	Passes				_passes;
+	ShaderPermutations	_permuts;
 };
 
 inline void Material::setParam(StrView name,		Texture2D*		v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
@@ -125,7 +141,9 @@ Material::getPass(SizeType i)
 	return _passes[i].ptr();
 }
 
-inline Shader*						Material::shader() { return _shader; }
+inline			Shader*		Material::shader()			{ return _shader; }
+inline const	Shader*		Material::shader() const	{ return _shader; }
+
 inline Span<UPtr<Material::Pass>>	Material::passes() { return _passes; }
 
 template<class T> inline
@@ -165,6 +183,8 @@ Material::_setBufferParam(StrView name, RenderGpuBuffer* v)
 
 	setParam(name, v->bindlessHandle().getResourceIndex());
 }
+
+inline const ShaderPermutations&	Material::permutations()	const { return _permuts; }
 
 #endif
 

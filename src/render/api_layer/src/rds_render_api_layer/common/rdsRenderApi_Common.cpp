@@ -45,6 +45,24 @@ RenderApiUtil::toDx12ShaderStageProfile(ShaderStageFlag stage)
 	return "";
 }
 
+
+const char* 
+RenderApiUtil::toShaderFormat(RenderApiType v)
+{
+	using SRC = RenderApiType;
+
+	//const char* stageProfile = nullptr;
+	switch (v)
+	{
+		//case SRC::OpenGL:	{} break;
+		//case SRC::Dx11:		{} break;
+		//case SRC::Metal:	{} break;
+		case SRC::Vulkan:	{ return "spirv"; } break;
+		case SRC::Dx12:		{ return "dx12"; }	break;
+		default: { RDS_THROW("getShaderFormat failed"); } break;
+	}
+}
+
 #endif
 }
 

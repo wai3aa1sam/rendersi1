@@ -6,6 +6,8 @@
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
 
 #include "rds_render_api_layer/texture/rdsTexture.h"
+#include "rds_render_api_layer/shader/rdsShader.h"
+
 
 namespace rds
 {
@@ -19,11 +21,7 @@ RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 	apiType		= RenderApiType::Vulkan;
 	isPresent	= true;
 
-	#if RDS_DEBUG
-	isDebug = true;
-	#else
-	isDebug = false;
-	#endif // RDS_DEBUG
+	isDebug = RDS_DEBUG;
 }
 
 RenderDevice::CreateDesc RenderDevice::makeCDesc() { return CreateDesc{}; }
@@ -41,6 +39,8 @@ RenderDevice::~RenderDevice()
 void 
 RenderDevice::create(const CreateDesc& cDesc)
 {
+	_apiType = cDesc.apiType;
+
 	onCreate(cDesc);
 
 	_tsfCtx->transferRequest().reset(_tsfCtx);
@@ -65,6 +65,8 @@ RenderDevice::destroy()
 {
 	waitIdle();
 
+	_shaderStock.destroy();
+
 	onDestroy();
 
 	RDS_LOG_DEBUG("{}", RDS_SRCLOC);
@@ -88,12 +90,13 @@ RenderDevice::onCreate(const CreateDesc& cDesc)
 	{
 		e.create();
 	}
+
+	_shaderStock.create(this);
 }
 
 void 
 RenderDevice::onDestroy()
 {
-	
 }
 
 void 
@@ -150,4 +153,6 @@ RenderDevice::createSolidColorTexture2D(const Color4b& color)
 }
 
 #endif
+
+
 }

@@ -34,6 +34,17 @@ ShaderPermutationInfo::findValueIdx(StrView val) const
 #if 1
 
 void 
+ShaderPermutations::create(const Info& info)
+{
+	_info = &info;
+	_permutParams.resize(info.size());
+	for (size_t i = 0; i < _permutParams.size(); i++)
+	{
+		_permutParams[i].create(info[i]);
+	}
+}
+
+void 
 ShaderPermutations::set(StrView name, StrView value)
 {
 	int nameIdx		= -1;
@@ -48,22 +59,11 @@ ShaderPermutations::set(StrView name, StrView value)
 	_permutParams[nameIdx].set(valueIdx);
 }
 
-void 
-ShaderPermutations::create(const Info& info)
-{
-	_info = &info;
-	_permutParams.resize(info.size());
-	for (size_t i = 0; i < _permutParams.size(); i++)
-	{
-		_permutParams[i].create(info[i]);
-	}
-}
-
 bool 
 ShaderPermutations::operator==(const ShaderPermutations& permuts) const
 {
-	RDS_CORE_ASSERT(_permutParams.size() == permuts.size(), "wrong ShaderPermutations size");
-	if (_permutParams.size() == 0)
+	//RDS_CORE_ASSERT(_permutParams.size() == permuts.size(), "wrong ShaderPermutations size");
+	if (_permutParams.is_empty() || permuts.size() != permuts.size())
 		return false;
 	for (size_t i = 0; i < _permutParams.size(); i++)
 	{

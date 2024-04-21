@@ -21,6 +21,10 @@ struct ShaderStage
 public:
 	using Info = ShaderStageInfo;
 	
+public:
+	void createInfo(StrView binFilepath);
+
+public:
 	const Info& info() const;
 
 protected:
