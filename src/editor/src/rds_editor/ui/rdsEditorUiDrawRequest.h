@@ -50,11 +50,11 @@ public:
 							i32					v_max	= NumLimit<i32>::max(),
 							ImGuiSliderFlags	flags	= 0);
 
-	float inputFloat(	const char* label, float*	v);
-	float inputInt(		const char* label, i32*		v);
+	bool inputFloat(	const char* label, float*	v);
+	bool inputInt(		const char* label, i32*		v);
 
 
-	float								makeCheckbox(			const char* label, bool* v);
+	bool								makeCheckbox(			const char* label, bool* v);
 	RDS_NODISCARD Window				makeWindow(				const char* label, bool* p_open = nullptr,		ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar);
 	RDS_NODISCARD TreeNode				makeTreeNode(			const char* label, ImGuiTreeNodeFlags flags = 0);
 	RDS_NODISCARD CollapsingHeader		makeCollapsingHeader(	const char* label);
@@ -72,8 +72,9 @@ public:
 	/*
 		temporary
 	*/
-	void drawVec2f(StrView lable, Tuple2f v);
-	void drawVec3f(StrView lable, Tuple3f v);
+	bool drawVec2f(StrView lable, Vec2f* v);
+	bool drawVec3f(StrView lable, Vec3f* v);
+	bool drawVec4f(StrView lable, Vec4f* v);
 
 public:
 	EditorContext& editorContext();

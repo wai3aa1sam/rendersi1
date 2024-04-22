@@ -217,6 +217,22 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	{
 		
 	}
+
+	{
+		auto& camera = app().mainWindow().camera();
+		auto pos = camera.pos();
+		auto aim = camera.aim();
+		auto fov = camera.fov();
+
+		auto wnd = uiDrawReq.makeWindow("Camera");
+		uiDrawReq.drawVec3f("position",	&pos);
+		uiDrawReq.drawVec3f("aim",		&aim);
+		uiDrawReq.dragFloat("fov",		&fov);
+
+		camera.setPos(pos);
+		camera.setAim(aim);
+		camera.setFov(fov);
+	}
 }
 
 void 
@@ -232,8 +248,8 @@ DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 }
 
 
-inline DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }
-inline DemoEditorMainWindow&	DemoEditorLayer::mainWindow()	{ return app().mainWindow(); }
+DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }
+DemoEditorMainWindow&	DemoEditorLayer::mainWindow()	{ return app().mainWindow(); }
 
 
 #endif

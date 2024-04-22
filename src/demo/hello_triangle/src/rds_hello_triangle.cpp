@@ -136,7 +136,6 @@ HelloTriangle::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 		ImGui::End();
 	}
 	#endif // 0
-
 }
 
 void 

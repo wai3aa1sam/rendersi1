@@ -78,7 +78,8 @@ GraphicsDemo::onUiKeyboardEvent(UiKeyboardEvent& ev)
 
 }
 
-EngineContext& GraphicsDemo::engineContext() { return _demoLayer->engineContext(); }
+DemoEditorApp& GraphicsDemo::app()				{ return _demoLayer->app(); }
+EngineContext& GraphicsDemo::engineContext()	{ return _demoLayer->engineContext(); }
 
 
 #endif

@@ -153,6 +153,10 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 		{
 			//compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
 			compileArgs.emplace_back(L"-spirv");
+			if (stage == ShaderStageFlag::Vertex /*|| stage == ShaderStageFlag::Geometry*/)
+			{
+				compileArgs.emplace_back(L"-fvk-invert-y");
+			}
 			compileArgs.emplace_back(L"-fspv-target-env=vulkan1.2");	// 1.3 cannot read by spirv-cross
 			compileArgs.emplace_back(L"-fspv-reflect");
 			compileArgs.emplace_back(L"-fvk-auto-shift-bindings");

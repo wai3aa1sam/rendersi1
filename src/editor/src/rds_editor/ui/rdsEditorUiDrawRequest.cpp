@@ -42,7 +42,7 @@ EditorUiDrawRequest::dragInt(const	char*				label,
 							flags);
 }
 
-float 
+bool 
 EditorUiDrawRequest::inputFloat(const char* label, float* v)
 {
 	return ImGui::InputFloat(		label, v, 0, 0, 
@@ -50,14 +50,32 @@ EditorUiDrawRequest::inputFloat(const char* label, float* v)
 									ImGuiInputTextFlags_EnterReturnsTrue);
 }
 
-float 
+bool 
 EditorUiDrawRequest::inputInt(const char* label, i32* v)
 {
 	return ImGui::InputInt(	label, v, 0, 0, 
 							ImGuiInputTextFlags_EnterReturnsTrue);
 }
 
-float				
+bool 
+EditorUiDrawRequest::drawVec2f(StrView lable, Vec2f* v)
+{
+	return ImGui::DragFloat2(lable.data(), &v->x);
+}
+
+bool 
+EditorUiDrawRequest::drawVec3f(StrView lable, Vec3f* v)
+{
+	return ImGui::DragFloat3(lable.data(), &v->x);
+}
+
+bool 
+EditorUiDrawRequest::drawVec4f(StrView lable, Vec4f* v)
+{
+	return ImGui::DragFloat4(lable.data(), &v->x);
+}
+
+bool				
 EditorUiDrawRequest::makeCheckbox(const char* label, bool* v)
 {
 	return ImGui::Checkbox(label, v);

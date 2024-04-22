@@ -22,7 +22,6 @@ public:
 	virtual void onUiMouseEvent(	UiMouseEvent&		ev) override;
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
 
-
 protected:
 	SPtr<Shader>	_shaderHelloTriangle;
 	SPtr<Material>	_mtlHelloTriangle;

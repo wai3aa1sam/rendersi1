@@ -76,7 +76,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	#endif
 	if (test_bool)
 	{
-		o.g = 0;
+		//o.g = 0;
 	}
 	else
 	{

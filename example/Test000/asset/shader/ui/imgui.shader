@@ -36,6 +36,9 @@ struct PixelIn {
 RDS_TEXTURE_2D(texture0);
 float4x4 rds_matrix_proj;
 
+// TODO: temporary
+#define RDS_VULKAN 1
+
 PixelIn vs_main(VertexIn i) 
 {
 	PixelIn o;
@@ -43,6 +46,10 @@ PixelIn vs_main(VertexIn i)
 	o.col = i.col;
 	o.uv  = i.uv;
 	//o.uv.y = -o.uv.y;		// flip viewport in application side
+	
+	#if RDS_VULKAN
+	o.pos.y = - o.pos.y;
+	#endif
 
 	return o;
 }

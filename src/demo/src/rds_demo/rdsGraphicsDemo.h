@@ -6,6 +6,7 @@
 namespace rds
 {
 
+class DemoEditorApp;
 class DemoEditorLayer;
 class GraphicsDemo;
 extern UPtr<GraphicsDemo> makeDemo();
@@ -33,6 +34,7 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 
 public:
+	DemoEditorApp& app();
 	EngineContext& engineContext();
 
 private:
