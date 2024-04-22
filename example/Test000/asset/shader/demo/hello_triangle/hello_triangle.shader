@@ -5,7 +5,7 @@ Shader {
 		Color4f	color = {1,1,1,1}
 		
 		Texture2D 	texture0
-		Bool		test_bool
+		Bool		test_bool = true
 	}
 	
 	Pass {
@@ -26,8 +26,8 @@ Shader {
 
 	Permutation
 	{
-		RDS_ENABLE_FEATURE_1 	= { 0, 1, }
-		RDS_ENABLE_FEATURE_2 	= { 0, 1, }
+		//RDS_ENABLE_FEATURE_1 	= { 0, 1, }
+		//RDS_ENABLE_FEATURE_2 	= { 0, 1, }
 	}
 }
 #endif
@@ -74,6 +74,14 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	#if RDS_ENABLE_FEATURE_2
 	o.g = 0;
 	#endif
+	if (test_bool)
+	{
+		o.g = 0;
+	}
+	else
+	{
+		o = color;
+	}
 
 	float4 white = {1.0, 1.0, 1.0, 1.0};
     return o;

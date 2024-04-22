@@ -513,6 +513,7 @@ SpirvUtil::toStr(SPIRType::BaseType baseType)
 	switch (baseType)
 	{
 		using SRC = SPIRType::BaseType;
+		case SRC::Boolean:	{ return "Bool";		} break;
 		case SRC::SByte:	{ return "SNorm8";		} break;
 		case SRC::UByte:	{ return "UNorm8";		} break;
 		case SRC::Short:	{ return "Int16";		} break;

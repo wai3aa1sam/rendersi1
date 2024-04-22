@@ -96,6 +96,7 @@ Material::setShader(Shader* shader)
 {
 	checkMainThreadExclusive(RDS_SRCLOC);
 
+	bool isFirstShader = !_shader && shader;
 	Vector<ShaderResources, s_kLocalPassSize> prevShaderRscs;
 	if (shader && _shader)
 	{
@@ -146,6 +147,11 @@ Material::setShader(Shader* shader)
 	{
 		auto& prevShaderRsc = prevShaderRscs[i];
 		_passes[i]->shaderResources().copy(prevShaderRsc);
+	}
+
+	if (isFirstShader)
+	{
+		setParamsToDefault();
 	}
 }
 
@@ -226,6 +232,238 @@ Material::_setPermutation(StrView name, StrView value)
 	throwIf(!isExist, "unknow Permutation name");
 	_permuts.set(name, value);
 }
+
+
+/*
+* temporary
+*/
+#if 1
+
+template<class T>
+struct TypeIo
+{
+	bool onParseStr(StrView str)
+	{
+
+	}
+};
+
+class TypeDeserializer
+{
+public:
+	template<class T>
+	bool tryParse(T& oValue, StrView str);
+};
+
+bool tryParse(bool& oValue, StrView str)
+{
+	RDS_TODO("TypeDeserializer");
+
+	using TokenType = Lexer::TokenType;
+
+	Lexer lexer;
+	lexer.reset(str, "");
+
+	const auto& token = lexer.token();
+	if (token.type() == TokenType::Identifier)
+	{
+		if (StrUtil::isSame(token.value(), "false"))
+		{
+			oValue = false;
+		}
+		else if (StrUtil::isSame(token.value(), "true"))
+		{
+			oValue = true;
+		}
+		else return false;
+		return true;
+	}
+	else if (token.type() == TokenType::Number)
+	{
+		u64 v = 0;
+		StrUtil::tryParse(str, v);
+		oValue = v;
+		return true;
+	}
+
+	return false;
+}
+
+
+bool tryParse(Vec2f& oValue, StrView str)
+{
+	RDS_TODO("TypeDeserializer");
+
+	using TokenType = Lexer::TokenType;
+
+	Lexer lexer;
+	lexer.reset(str, "");
+
+	bool isValid = false;
+	const auto& token = lexer.token();
+	if (token.type() == TokenType::Operator)
+	{
+		isValid = StrUtil::hasAny(token.value(), "{(");
+		if (!isValid) return false;
+
+		lexer.nextToken();
+		StrUtil::tryParse(token.value(), oValue.x);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ",");
+
+		lexer.nextToken();
+		StrUtil::tryParse(token.value(), oValue.y);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ")}");
+	}
+	return false;
+}
+
+bool tryParse(Vec3f& oValue, StrView str)
+{
+	RDS_TODO("TypeDeserializer");
+
+	using TokenType = Lexer::TokenType;
+
+	Lexer lexer;
+	lexer.reset(str, "");
+
+	bool isValid = false;
+	const auto& token = lexer.token();
+	if (token.type() == TokenType::Operator)
+	{
+		isValid = StrUtil::hasAny(token.value(), "{(");
+		if (!isValid) return isValid;
+
+		lexer.nextToken();
+		isValid = StrUtil::tryParse(token.value(), oValue.x);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ",");
+
+		lexer.nextToken();
+		StrUtil::tryParse(token.value(), oValue.y);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ",");
+
+		lexer.nextToken();
+		StrUtil::tryParse(token.value(), oValue.z);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ")}");
+	}
+	return isValid;
+}
+
+bool tryParse(Vec4f& oValue, StrView str)
+{
+	RDS_TODO("TypeDeserializer");
+
+	using TokenType = Lexer::TokenType;
+
+	Lexer lexer;
+	lexer.reset(str, "");
+
+	bool isValid = false;
+	const auto& token = lexer.token();
+	if (token.type() == TokenType::Operator)
+	{
+		isValid = StrUtil::hasAny(token.value(), "{(");
+		if (!isValid) return false;
+
+		lexer.nextToken();
+		StrUtil::tryParse(token.value(), oValue.x);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ",");
+
+		lexer.nextToken();
+		StrUtil::tryParse(token.value(), oValue.y);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ",");
+
+		lexer.nextToken();
+		StrUtil::tryParse(token.value(), oValue.z);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ",");
+
+		lexer.nextToken();
+		StrUtil::tryParse(token.value(), oValue.w);
+
+		lexer.nextToken();
+		isValid = StrUtil::hasAny(token.value(), ")}");
+	}
+	return isValid;
+}
+
+template<class T>
+bool tryParse(T& v, StrView str)
+{
+	return StrUtil::tryParse(str, v);
+}
+
+#endif // 1
+
+void 
+Material::setParamsToDefault()
+{
+	RDS_TODO("modify parse and find texture st, maybe have a separate cache");
+	if (!shader())
+		return;
+
+	for (const ShaderPropInfo& prop : info().props)
+	{
+		StrView defaultValue = prop.defaultValue;
+		if (defaultValue.is_empty())
+			continue;
+
+		StrView			name = prop.name;
+		ShaderPropType	type = prop.type;
+
+		switch (type)
+		{
+			case ShaderPropType::Bool:		{ bool		v; if (tryParse(v, defaultValue)) { setParam(name, u32(v)); } } break;
+			case ShaderPropType::Int:		{ int		v; if (tryParse(v, defaultValue)) { setParam(name, v); } } break;
+			case ShaderPropType::Float:		{ float		v; if (tryParse(v, defaultValue)) { setParam(name, v); } } break;
+			case ShaderPropType::Vec2f:		{ Vec2f		v; if (tryParse(v, defaultValue)) { setParam(name, v); } } break;
+			case ShaderPropType::Vec3f:		{ Vec3f		v; if (tryParse(v, defaultValue)) { setParam(name, v); } } break;
+			case ShaderPropType::Vec4f:		{ Vec4f		v; if (tryParse(v, defaultValue)) { setParam(name, v); } } break;
+			case ShaderPropType::Color4f:	{ Vec4f		v; if (tryParse(v, defaultValue)) { setParam(name, v); } } break;
+			default: { RDS_THROW("undefine type {}", type); }
+		}
+	}
+
+	for (const auto& pass : passes())
+	{
+		for (auto& cbuf : pass->info().allStageUnionInfo.constBufs)
+		{
+			for (auto& var : cbuf.variables)
+			{
+				bool isTexStType = var.dataType == RenderDataType::Float32x4;
+				if (!isTexStType)
+					continue;
+
+				StrView texStName = var.name;
+
+				auto pos = texStName.rfind(ShaderResources::s_kAutoTextureStNameSuffix);
+				if (pos == String::npos)
+					continue;
+
+				auto tiling		= Vec2f::s_one();
+				auto offset		= Vec2f::s_zero();
+				
+				auto texStValue = Vec4f{ tiling, offset };
+				setParam(texStName, texStValue);
+			}
+		}
+	}
+}
+
 
 const ShaderInfo&		Material::info()		const { return _shader->info(); }
 const String&			Material::filename()	const { return _shader->filename(); }

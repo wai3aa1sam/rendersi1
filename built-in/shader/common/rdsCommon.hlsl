@@ -55,8 +55,11 @@ references:
     /* 
     --- define Texture
     */
+
+    #define RDS_TEXTURE_ST_SUFFIX _ST_
+
     #define RDS_TEXTURE_NAME(NAME) NAME
-    #define RDS_TEXTURE_ST(NAME)   RDS_CONCAT(NAME, _ST)
+    #define RDS_TEXTURE_ST(NAME)   RDS_CONCAT(NAME, RDS_TEXTURE_ST_SUFFIX)
     #define RDS_SAMPLER_NAME(NAME) RDS_CONCAT(RDS_CONCAT(_rds_, NAME), _sampler)
     #define RDS_TEXTURE_2D(NAME)    uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME); float4 RDS_TEXTURE_ST(NAME)
     #define RDS_TEXTURE_CUBE(NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)

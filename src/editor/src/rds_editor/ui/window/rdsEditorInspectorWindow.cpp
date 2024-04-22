@@ -158,8 +158,6 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 									auto tiling = Vec2f{ texSt->x, texSt->y };
 									auto offset = Vec2f{ texSt->z, texSt->w };
 									
-									tiling = Vec2f::s_one();
-
 									hasChanged = drawer->draw(propDrawReq, "tiling", &tiling);
 									hasChanged = drawer->draw(propDrawReq, "offset", &offset);
 									*texSt = Vec4f{ tiling.x, tiling.y, offset.x, offset.y };

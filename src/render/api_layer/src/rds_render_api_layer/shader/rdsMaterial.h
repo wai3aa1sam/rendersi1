@@ -64,6 +64,7 @@ public:
 	void setParam(StrView name,			TextureCube*	v, const SamplerState& samplerState = {});
 	void setParam(StrView name, const	SamplerState&	v);
 
+	void setParam(StrView name, const bool&		v);
 	void setParam(StrView name, const i32&		v);
 	void setParam(StrView name, const u32&		v);
 	void setParam(StrView name, const f32&		v);
@@ -74,6 +75,8 @@ public:
 	void setParam(StrView name, const Mat4f&	v);
 
 	void setParam(StrView name, RenderGpuBuffer* v);
+
+	void setParamsToDefault();
 
 public:
 	void setPermutation(StrView name, StrView value)					;
@@ -118,6 +121,7 @@ inline void Material::setParam(StrView name,		Texture2D*		v, const SamplerState&
 inline void Material::setParam(StrView name,		TextureCube*	v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
 inline void Material::setParam(StrView name, const	SamplerState&	v)										{ return _setSamplerParam(name, v); }
 
+inline void Material::setParam(StrView name, const bool&	v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const i32&		v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const u32&		v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const f32&		v)		{ return _setParam(name, v); }

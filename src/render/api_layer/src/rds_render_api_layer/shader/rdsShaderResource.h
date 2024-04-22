@@ -246,7 +246,7 @@ public:
 	static constexpr const char* s_kAutoTextureNamePrefix = "_rds_";
 	static constexpr const char* s_kAutoTextureNameSuffix = "_texture";
 
-	static constexpr const char* s_kAutoTextureStNameSuffix = "_ST";
+	static constexpr const char* s_kAutoTextureStNameSuffix = "_ST_";
 
 public:
 	static void getSamplerNameTo(TempString& out, StrView name);
@@ -362,6 +362,7 @@ public:
 		//}
 
 	protected:
+		bool _setParam(const VarInfo& varInfo, const bool&		v)	{ return _setParamCheckType(varInfo, v); }
 		bool _setParam(const VarInfo& varInfo, const i32&		v)	{ return _setParamCheckType(varInfo, v); }
 		bool _setParam(const VarInfo& varInfo, const u32&		v)	{ return _setParamCheckType(varInfo, v); }
 		bool _setParam(const VarInfo& varInfo, const f32&		v)	{ return _setParamCheckType(varInfo, v); }
@@ -686,7 +687,7 @@ template<class T> inline
 bool 
 ShaderResources::ConstBuffer::_setParamCheckType(const VarInfo& varInfo, const T& v)
 {
-	throwIf(!_checkType<T>(varInfo), "material set param failed, in valid type");
+	throwIf(!_checkType<T>(varInfo), "material set param failed, in valid type {}", RenderDataTypeUtil::get<T>());
 	return _setValue(varInfo, v);
 }
 
