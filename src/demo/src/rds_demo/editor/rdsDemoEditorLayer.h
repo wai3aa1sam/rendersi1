@@ -10,6 +10,8 @@ class GraphicsDemo;
 class DemoEditorApp;
 class DemoEditorMainWindow;
 
+struct MeshAssets;
+
 #if 0
 #pragma mark --- rdsDemoEditorLayer-Decl ---
 #endif // 0
@@ -29,6 +31,8 @@ public:
 	EditorContext&			editorContext();
 
 	Scene&					scene();
+
+	MeshAssets&				meshAssets();
 
 protected:
 	virtual void onCreate() override;
@@ -63,6 +67,8 @@ private:
 
 	UPtr<GraphicsDemo>	_gfxDemo;
 	RdgTextureHnd		_texHndPresent;
+
+	UPtr<MeshAssets> _meshAssets;
 };
 
 inline EngineContext&		DemoEditorLayer::engineContext()	{ return _egCtx; }
@@ -73,7 +79,10 @@ inline EditorContext&		DemoEditorLayer::editorContext()	{ return _edtCtx; }
 
 inline Scene&				DemoEditorLayer::scene()			{ return _scene; }
 
+inline MeshAssets&			DemoEditorLayer::meshAssets()		{ return *_meshAssets; }
+
 
 #endif
+
 
 }

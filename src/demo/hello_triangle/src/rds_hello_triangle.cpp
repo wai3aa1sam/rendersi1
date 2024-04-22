@@ -10,65 +10,22 @@ namespace rds
 void 
 HelloTriangle::onCreate()
 {
-	auto texCDesc = Texture2D::makeCDesc();
-
-	texCDesc.create("asset/texture/uvChecker.png");
-	_texUvChecker = Renderer::rdDev()->createTexture2D(texCDesc);
-	_texUvChecker->setDebugName("uvChecker");
-
-	{
-		auto& shader	= _shaderHelloTriangle;
-		auto& mtl		= _mtlHelloTriangle;
-
-		shader	= Renderer::rdDev()->createShader("asset/shader/demo/hello_triangle/hello_triangle.shader");
-		mtl		= Renderer::rdDev()->createMaterial();
-		mtl->setShader(_shaderHelloTriangle);
-		mtl->setParam("texture0", _texUvChecker);
-	}
+	Base::onCreate();
+	createMaterial(&_shaderHelloTriangle, &_mtlHelloTriangle, "asset/shader/demo/hello_triangle/hello_triangle.shader"
+					, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
 }
 
 void 
 HelloTriangle::onCreateScene(Scene* oScene)			
 {
 	Base::onCreateScene(oScene);
-
-	auto& scene = *oScene;
-
-	EditMesh mesh;
-	WavefrontObjLoader::loadFile(mesh, "asset/mesh/box.obj");
-	WavefrontObjLoader::loadFile(mesh, "asset/mesh/suzanne.obj");
-
-	auto n = 25;
-	auto row = math::sqrt(sCast<int>(n));
-	auto col = row;
-	auto stepPos	= Tuple2f{ 3.0f, 3.0f};
-	auto startPos	= Tuple2f{-0.0f, 0.0f};
-	for (size_t r = 0; r < row; r++)
-	{
-		for (size_t c = 0; c < col; c++)
-		{
-			auto* ent = scene.addEntity("");
-
-			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-			rdableMesh->material = _mtlHelloTriangle;
-			rdableMesh->meshAsset = makeSPtr<MeshAsset>();
-			rdableMesh->meshAsset->rdMesh.create(mesh);
-
-			auto* transform	= ent->getComponent<CTransform>();
-			transform->setLocalPosition(startPos.x + stepPos.x * c, 0.0f, startPos.y + stepPos.y * r);
-
-			TempString buf;
-			fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
-			ent->setName(buf);
-		}
-	}
+	createDefaultScene(oScene, _mtlHelloTriangle, meshAssets().suzanne, 25);
 }
 
 void 
 HelloTriangle::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
 	Base::onPrepareRender(oRdGraph, drawData);
-
 }
 
 void 

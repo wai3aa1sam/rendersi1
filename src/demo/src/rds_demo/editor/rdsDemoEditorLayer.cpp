@@ -50,6 +50,8 @@ DemoEditorLayer::onCreate()
 	_mtlPresent		= Renderer::rdDev()->createMaterial(_shaderPresent);
 	#endif // 1
 
+	_meshAssets = makeUPtr<MeshAssets>();
+
 	RDS_CORE_ASSERT(_gfxDemo, "");
 	_gfxDemo->onCreate();
 	_gfxDemo->onCreateScene(&_scene);
@@ -253,6 +255,7 @@ DemoEditorMainWindow&	DemoEditorLayer::mainWindow()	{ return app().mainWindow();
 
 
 #endif
+
 
 
 }

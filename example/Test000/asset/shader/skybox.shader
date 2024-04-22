@@ -37,11 +37,8 @@ struct PixelIn
 
 RDS_TEXTURE_CUBE(skybox);
 
-
 PixelIn vs_main(VertexIn i)
 {
-    PixelIn o;
-
 	DrawParam drawParam = rds_DrawParam_get();
 
     float4x4 matView = drawParam.matrix_view;
@@ -50,6 +47,7 @@ PixelIn vs_main(VertexIn i)
 	matView[2][3] = 0.0;
     float4x4 matVp  = mul(drawParam.matrix_proj, matView);
 
+    PixelIn o;
     o.positionHCS   = mul(matVp, i.positionOS);              // view mat is camera translation only
     o.positionHCS   = o.positionHCS.xyww;
     o.uv            = i.positionOS.xyz;

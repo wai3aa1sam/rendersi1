@@ -6,9 +6,12 @@
 namespace rds
 {
 
-class DemoEditorApp;
-class DemoEditorLayer;
-class GraphicsDemo;
+class	DemoEditorApp;
+class	DemoEditorLayer;
+class	GraphicsDemo;
+
+struct	MeshAssets;
+
 extern UPtr<GraphicsDemo> makeDemo();
 
 
@@ -34,13 +37,49 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 
 public:
+	void createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAsset, int n, Tuple2f startPos = Tuple2f{0.0f, 0.0f}, Tuple2f step = Tuple2f{3.0f, 3.0f});
+	void createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam = {});
+
+public:
 	DemoEditorApp& app();
 	EngineContext& engineContext();
 
+	MeshAssets& meshAssets();
+
+	Texture2D*		texUvChecker();
+	TextureCube*	skyboxDefault();
+
 private:
-	DemoEditorLayer* _demoLayer = nullptr;
+	DemoEditorLayer*	_demoLayer = nullptr;
+	SPtr<Texture2D>		_texUvChecker;
+	SPtr<TextureCube>	_texDefaultSkybox;
 };
 
+inline Texture2D*	GraphicsDemo::texUvChecker()	{ return _texUvChecker; }
+inline TextureCube* GraphicsDemo::skyboxDefault()	{ return _texDefaultSkybox; }
+
 #endif
+
+#if 0
+#pragma mark --- rdsMeshAssets-Decl ---
+#endif // 0
+#if 1
+
+struct MeshAssets
+{
+public:
+	SPtr<MeshAsset> box;
+	SPtr<MeshAsset> sphere;
+	SPtr<MeshAsset> suzanne;	
+
+public:
+	MeshAssets();
+	~MeshAssets();
+
+	void create();
+	void destroy();
+};
+
+#endif // 1
 
 }

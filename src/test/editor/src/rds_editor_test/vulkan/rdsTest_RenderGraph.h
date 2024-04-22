@@ -55,7 +55,6 @@ struct MeshAssets
 	RenderMesh sphere;
 
 	RenderMesh fullScreenTriangle;
-
 };
 
 

@@ -60,6 +60,7 @@ add_subdirectory(src/editor/editor_app)
 #-- demo
 add_subdirectory(src/demo)
 add_subdirectory(src/demo/hello_triangle)
+add_subdirectory(src/demo/forward_plus)
 
 message("--- rendersi1_test ---")
 #test

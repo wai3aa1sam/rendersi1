@@ -135,7 +135,7 @@ ObjectTransform rds_ObjectTransform_get()
     return RDS_OBJ_TRANSFORM_GET();
 }
 
-DrawParam rds_DrawParam_get(uint idx = 0)
+DrawParam rds_DrawParam_get(uint idx = rds_drawParamIdx)
 {
     return RDS_DRAW_PARAM_GET(idx);
 }

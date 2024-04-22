@@ -64,9 +64,15 @@ CRenderableSystem::update(DrawData& drawData)
 		_objTransformBuf.uploadToGpu();
 	}
 	{
-		_drawPramBuf.resize(1);
-		auto& drawParam = _drawPramBuf.at(0);
-		drawData.setupDrawParam(&drawParam);
+		auto n = 1;
+		for (size_t i = 0; i < n; i++)
+		{
+			_drawPramBuf.resize(1);
+			auto& drawParam = _drawPramBuf.at(i);
+			drawData.setupDrawParam(&drawParam);
+		}
+
+		_drawPramBuf.uploadToGpu();
 	}
 
 	// record command
@@ -166,7 +172,7 @@ DrawData::setupMaterial(Material* oMtl)
 	auto& rdableSys = sceneView->renderableSystem();
 
 	mtl->setParam("rds_objTransforms",		&rdableSys._objTransformBuf.gpuBuffer());
-	mtl->setParam("rds_drawParams",			&rdableSys._objTransformBuf.gpuBuffer());
+	mtl->setParam("rds_drawParams",			&rdableSys._drawPramBuf.gpuBuffer());
 	mtl->setParam("rds_drawParamIdx",		drawParamIdx);
 }
 
