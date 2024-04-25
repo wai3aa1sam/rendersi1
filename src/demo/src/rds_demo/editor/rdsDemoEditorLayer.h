@@ -69,6 +69,9 @@ private:
 	RdgTextureHnd		_texHndPresent;
 
 	UPtr<MeshAssets> _meshAssets;
+
+	SPtr<Shader>	_shaderLine;
+	SPtr<Material>	_mtlLine;
 };
 
 inline EngineContext&		DemoEditorLayer::engineContext()	{ return _egCtx; }

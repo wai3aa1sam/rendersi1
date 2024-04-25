@@ -46,8 +46,14 @@ DemoEditorLayer::onCreate()
 	auto fullScreenTriangleMesh = EditMeshUtil::getFullScreenTriangle();
 	_fullScreenTriangle.create(fullScreenTriangleMesh);
 
-	_shaderPresent	= Renderer::rdDev()->createShader("asset/shader/present.shader");
-	_mtlPresent		= Renderer::rdDev()->createMaterial(_shaderPresent);
+	auto* rdDev		= Renderer::rdDev();
+
+	_shaderPresent	= rdDev->createShader("asset/shader/present.shader");
+	_mtlPresent		= rdDev->createMaterial(_shaderPresent);
+
+	// TODO: temporary
+	_shaderLine		= rdDev->createShader("asset/shader/line.shader");
+	_mtlLine		= rdDev->createMaterial(_shaderLine);		
 	#endif // 1
 
 	_meshAssets = makeUPtr<MeshAssets>();
@@ -67,11 +73,11 @@ DemoEditorLayer::onCreate()
 		DrawData drawData;
 		drawData.sceneView	= &_sceneView;
 		drawData.camera		= &mainWnd.camera();
-		drawData.resolution = mainWnd.clientRect().size;
 		_gfxDemo->onPrepareRender(&rdGraph, &drawData);
 
 		RenderRequest rdReq;
-		rdCtx.drawUI(rdReq);
+		rdReq.reset(&rdCtx);
+		//rdCtx.drawUI(rdReq);
 		rdCtx.commit(rdReq);
 		
 		rdCtx.transferRequest().commit();
@@ -103,7 +109,7 @@ DemoEditorLayer::onUpdate()
 	#endif // 0
 
 	rdCtx.setFramebufferSize(mainWnd.clientRect().size);		// this will invalidate the swapchain
-	mainWnd.camera().setViewport(mainWnd.clientRect());
+	mainWnd.camera().setViewport(_edtViewportWnd.clientRect());
 
 	{
 		auto& rdGraph	= renderableSystem().renderGraph();
@@ -112,14 +118,27 @@ DemoEditorLayer::onUpdate()
 		DrawData drawData;
 		drawData.sceneView	= &_sceneView;
 		drawData.camera		= &mainWnd.camera();
-		drawData.resolution = mainWnd.clientRect().size;
+		drawData._mtlLine   = _mtlLine;		// TODO: temporary
+
 		_gfxDemo->onExecuteRender(&rdGraph, &drawData);
 		RDS_CORE_ASSERT(drawData.oTexPresent, "invalid present tex");
 		_texHndPresent = drawData.oTexPresent;
 
-		// present
-		renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
-		renderableSystem().update(drawData);
+		{
+			auto& rdUiCtx = rdCtx.renderdUiContex();
+			rdUiCtx.onBeginRender(&rdCtx);
+			auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
+
+			drawEditorUi(uiDrawReq, _texHndPresent);
+			_gfxDemo->onDrawGui(uiDrawReq);
+
+			// present
+			renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
+			renderableSystem().update(drawData);
+			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent.renderResource(), &mainWindow().camera(), mainWindow().uiMouseEv);
+
+			rdUiCtx.onEndRender(&rdCtx);
+		}
 	}
 }
 
@@ -141,10 +160,6 @@ DemoEditorLayer::onRender()
 	auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
 
 	rdCtx.beginRender();
-
-	auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
-	_gfxDemo->onDrawGui(uiDrawReq);
-	drawEditorUi(uiDrawReq, _texHndPresent);
 
 	//renderableSystem().render(&rdCtx, _fullScreenTriangle, _mtlPresent);
 	renderableSystem().render(&rdCtx, _fullScreenTriangle, nullptr);
@@ -210,11 +225,10 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	}
 	#endif // 0
 
-	_edtViewportWnd.draw(&uiDrawReq, texHndPresent.renderResource(), &mainWindow().camera(), mainWindow().uiMouseEv);
+	_edtInspectorWnd.draw(&uiDrawReq, scene());
 	_edtProjectWnd.draw(&uiDrawReq);
 	_edtConsoleWnd.draw(&uiDrawReq);
 	_edtHierarchyWnd.draw(&uiDrawReq, scene());
-	_edtInspectorWnd.draw(&uiDrawReq, scene());
 	//if (!_edtViewportWnd.isFullScreen())
 	{
 		
@@ -222,18 +236,24 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 
 	{
 		auto& camera = app().mainWindow().camera();
-		auto pos = camera.pos();
-		auto aim = camera.aim();
-		auto fov = camera.fov();
+		auto pos		= camera.pos();
+		auto aim		= camera.aim();
+		auto fov		= camera.fov();
+		auto nearClip	= camera.nearClip();
+		auto farClip	= camera.farClip();
 
 		auto wnd = uiDrawReq.makeWindow("Camera");
 		uiDrawReq.drawVec3f("position",	&pos);
 		uiDrawReq.drawVec3f("aim",		&aim);
 		uiDrawReq.dragFloat("fov",		&fov);
+		uiDrawReq.dragFloat("nearClip",	&nearClip, 0.01f);
+		uiDrawReq.dragFloat("farClip",	&farClip);
 
 		camera.setPos(pos);
 		camera.setAim(aim);
 		camera.setFov(fov);
+		camera.setNearClip(nearClip);
+		camera.setFarClip(farClip);
 	}
 }
 

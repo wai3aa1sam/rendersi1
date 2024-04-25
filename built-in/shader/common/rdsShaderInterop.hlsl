@@ -9,6 +9,7 @@ struct DrawParam
     RDS_PADDING;    
     float4x4 matrix_view;
     float4x4 matrix_proj;
+    float4x4 matrix_vp;
     float4x4 matrix_view_inv;
     float4x4 matrix_proj_inv;
 
@@ -19,6 +20,7 @@ struct DrawParam
 struct PerObjectParam
 {
     uint id;
+    //uint drawParamIdx;        // keep it to 32bits is better
 };
 
 struct ObjectTransform

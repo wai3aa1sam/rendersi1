@@ -22,11 +22,18 @@ struct DrawData
 	u32 drawParamIdx = 0;
 
 	float			deltaTime   = 0.0f;
-	Tuple2f			resolution  = Tuple2f::s_zero();
 	SceneView*		sceneView	= nullptr;
 	math::Camera3f*	camera		= nullptr;
 
 	RdgTextureHnd oTexPresent;
+
+public:
+	const Tuple2f& resolution() const;
+
+	Material* mtlLine();
+
+public:
+	SPtr<Material> _mtlLine;
 
 public:
 	void setupDrawParam(DrawParam*	oDrawParam);

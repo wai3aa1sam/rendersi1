@@ -10,6 +10,12 @@ EditorUiWidget_EditorUiWindow::EditorUiWidget_EditorUiWindow(EditorWindow* edtWn
 	: EditorUiWidget_Window(label)
 {
 	edtWnd->_isFocused = isFocused();
+	auto screenSize = makeVec2f(ImGui::GetContentRegionAvail());
+	if (screenSize.x < 0.0f || screenSize.y < 0.0f)
+	{
+		screenSize = Vec2f::s_zero();
+	}
+	edtWnd->_clientRect.size = screenSize;
 }
 
 #if 0

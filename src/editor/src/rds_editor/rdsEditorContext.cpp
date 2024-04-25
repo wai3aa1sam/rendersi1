@@ -37,6 +37,7 @@ EditorContext::create()
 	RDS_registerEditorPropertyDrawerT(bool);
 	RDS_registerEditorPropertyDrawerT(i32);
 	RDS_registerEditorPropertyDrawerT(u64);
+	RDS_registerEditorPropertyDrawerT(float);
 	RDS_registerEditorPropertyDrawerT(Vec2f);
 	RDS_registerEditorPropertyDrawerT(Vec3f);
 	RDS_registerEditorPropertyDrawerT(Vec4f);

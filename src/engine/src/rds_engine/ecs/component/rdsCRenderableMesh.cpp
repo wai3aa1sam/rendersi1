@@ -36,7 +36,8 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawDat
 
 	auto id = entity().id();
 	PerObjectParam perObjParam;
-	perObjParam.id = sCast<u32>(id);
+	perObjParam.id				= sCast<u32>(id);
+	//perObjParam.drawParamIdx	= drawData ? sCast<u32>(drawData->drawParamIdx) : 0;
 
 	rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, meshAsset->rdMesh, mtl, perObjParam);
 }

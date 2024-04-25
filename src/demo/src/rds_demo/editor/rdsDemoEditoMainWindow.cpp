@@ -22,7 +22,7 @@ DemoEditorMainWindow::onCreate(const CreateDesc_Base& cDesc)
 	auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 	Base::onCreate(thisCDesc);
 
-	_camera.setPos(0, 20, 30);
+	_camera.setPos(0, 10, 35);
 	_camera.setAim(0, 0, 0);
 }
 

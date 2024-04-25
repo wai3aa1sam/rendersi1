@@ -31,6 +31,11 @@ CRenderableSystem::create(EngineContext* egCtx)
 {
 	Base::create(&engineContext());
 	_framedRdReq.resize(s_kFrameInFlightCount);
+
+	_objTransformBuf.resize(1);
+	_drawPramBuf.resize(1);
+	_objTransformBuf.setDebugName("objTransformBuf");
+	_drawPramBuf.setDebugName("drawPramBuf");
 }
 
 void 
@@ -65,15 +70,16 @@ CRenderableSystem::update(DrawData& drawData)
 	}
 	{
 		auto n = 1;
+		_drawPramBuf.resize(n);
 		for (size_t i = 0; i < n; i++)
 		{
-			_drawPramBuf.resize(1);
 			auto& drawParam = _drawPramBuf.at(i);
 			drawData.setupDrawParam(&drawParam);
 		}
 
 		_drawPramBuf.uploadToGpu();
 	}
+	drawData.setupMaterial(drawData._mtlLine);
 
 	// record command
 	{
@@ -123,6 +129,7 @@ void
 CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh& fullScreenTriangle, Material* mtlPresent)
 {
 	// present pass
+	auto* rdCtx = rdGraph.renderContext();
 
 	auto texPresent		= drawData.oTexPresent;
 	//auto backBufferRt	= rdGraph.importTexture("back_buffer", rdCtx.backBuffer()); RDS_UNUSED(backBufferRt);
@@ -133,9 +140,10 @@ CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh&
 	finalComposePass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
+			rdReq.reset(rdCtx);
 			auto* clearValue = rdReq.clearFramebuffers();
-			clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
-			clearValue->setClearDepth(1.0f);
+			clearValue->setClearColor();
+			clearValue->setClearDepth();
 
 			//mtlPresent->setParam("texPresent",			texPresent.texture2D());
 			//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, mtlPresent, Mat4f::s_identity());
@@ -158,10 +166,11 @@ DrawData::setupDrawParam(DrawParam* oDrawParam)
 	auto& drawParam = *oDrawParam;
 	drawParam.matrix_proj		= camera->projMatrix();
 	drawParam.matrix_view		= camera->viewMatrix();
+	drawParam.matrix_vp			= camera->viewProjMatrix();
 	drawParam.matrix_proj_inv	= drawParam.matrix_proj.inverse();
 	drawParam.matrix_view_inv	= drawParam.matrix_view.inverse();
 	drawParam.camera_pos		= camera->pos();
-	drawParam.resolution		= resolution;
+	drawParam.resolution		= camera->viewport().size;
 	drawParam.delta_time		= Tuple2f(deltaTime, deltaTime);
 }
 
@@ -173,7 +182,20 @@ DrawData::setupMaterial(Material* oMtl)
 
 	mtl->setParam("rds_objTransforms",		&rdableSys._objTransformBuf.gpuBuffer());
 	mtl->setParam("rds_drawParams",			&rdableSys._drawPramBuf.gpuBuffer());
-	mtl->setParam("rds_drawParamIdx",		drawParamIdx);
+}
+
+const Tuple2f& DrawData::resolution() const { return camera->viewport().size; }
+
+Material* 
+DrawData::mtlLine()
+{
+	/*if (!_mtlLine)
+	{
+		auto* rdDev = Renderer::rdDev();
+		_mtlLine	= Renderer::rdDev()->createMaterial(rdDev->shaderStock().shaderLine);
+	}*/
+	RDS_CORE_ASSERT(_mtlLine, "no line material");
+	return _mtlLine;
 }
 
 #endif

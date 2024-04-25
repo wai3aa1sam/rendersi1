@@ -168,7 +168,7 @@ using NativeUIApp				= ::nmsp::NativeUIApp_T;
 
 
 #if 0
-#pragma mark --- rds_os_native_ui-Impl ---
+#pragma mark --- rds_os_process-Impl ---
 #endif // 0
 #if 1
 
@@ -177,6 +177,15 @@ using CmdLine               = ::nmsp::CmdLine_T;
 
 using Process_CreateDesc    = ::nmsp::Process_CreateDesc;
 using Process               = ::nmsp::Process_T;
+
+#endif
+
+#if 0
+#pragma mark --- rds_os_utility-Impl ---
+#endif // 0
+#if 1
+
+using HiResTimer = ::nmsp::HiResTimer_T;
 
 #endif
 

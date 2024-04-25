@@ -67,7 +67,7 @@ bool
 	auto pushId = uiDrawReq.makePushID(&value);
 
 	sameLineWithText(label);
-	hasValueChanged = uiDrawReq.dragFloat("", &value, 0.1f, 0.0f, 0.0f);
+	hasValueChanged = uiDrawReq.dragFloat("", &value, 0.001f, 0.0f, 0.0f);
 
 	return hasValueChanged;
 }

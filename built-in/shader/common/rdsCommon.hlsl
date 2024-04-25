@@ -117,25 +117,25 @@ references:
 
 RDS_BUFFER(DrawParam,           rds_drawParams);
 RDS_BUFFER(ObjectTransform,     rds_objTransforms);
-uint rds_drawParamIdx;
 
-#define RDS_DRAW_PARAM_GET(IDX)     RDS_BUFFER_LOAD_I(DrawParam,           rds_drawParams,      rds_drawParamIdx)
+#define RDS_DRAW_PARAM_GET(IDX)     RDS_BUFFER_LOAD_I(DrawParam,           rds_drawParams,      IDX)
 #define RDS_OBJ_TRANSFORM_GET()     RDS_BUFFER_LOAD_I(ObjectTransform,     rds_objTransforms,   rds_perObjectParam.id)
 
-#define RDS_MATRIX_VIEW         RDS_DRAW_PARAM_GET(IDX).matrix_view
-#define RDS_MATRIX_PROJ         RDS_DRAW_PARAM_GET(IDX).matrix_proj
-#define RDS_MATRIX_VIEW_INV     RDS_DRAW_PARAM_GET(IDX).matrix_view_inv
-#define RDS_MATRIX_PROJ_INV     RDS_DRAW_PARAM_GET(IDX).matrix_proj_inv
+#define RDS_MATRIX_VIEW         rds_DrawParam_get().matrix_view
+#define RDS_MATRIX_PROJ         rds_DrawParam_get().matrix_proj
+#define RDS_MATRIX_VP           rds_DrawParam_get().matrix_vp
+#define RDS_MATRIX_VIEW_INV     rds_DrawParam_get().matrix_view_inv
+#define RDS_MATRIX_PROJ_INV     rds_DrawParam_get().matrix_proj_inv
 
-#define RDS_MATRIX_MODEL        RDS_OBJ_TRANSFORM_GET().matrix_model
-#define RDS_MATRIX_MVP          RDS_OBJ_TRANSFORM_GET().matrix_mvp
+#define RDS_MATRIX_MODEL        rds_ObjectTransform_get().matrix_model
+#define RDS_MATRIX_MVP          rds_ObjectTransform_get().matrix_mvp
 
 ObjectTransform rds_ObjectTransform_get()
 {
     return RDS_OBJ_TRANSFORM_GET();
 }
 
-DrawParam rds_DrawParam_get(uint idx = rds_drawParamIdx)
+DrawParam rds_DrawParam_get(uint idx = 0)
 {
     return RDS_DRAW_PARAM_GET(idx);
 }
@@ -287,6 +287,41 @@ float4x4 inverse(float4x4 m)
 
     return ret;
 }
+
+#if 0
+#pragma mark --- SpaceTransformUtil-Impl ---
+#endif
+#if 1
+
+float4 SpaceTransformUtil_clipToView(float4 clip, DrawParam drawParam)
+{
+    float4 view = mul(drawParam.matrix_proj_inv, clip);
+    view = view / view.w;
+    return view;
+}
+
+float4 SpaceTransformUtil_clipToView(float4 clip)
+{
+    DrawParam drawParam = rds_DrawParam_get();
+    return SpaceTransformUtil_clipToView(clip);
+}
+
+float4 SpaceTransformUtil_screenToView(float4 screen, DrawParam drawParam)
+{
+    float2 uv = screen.xy / drawParam.resolution;
+
+    float4 clip = float4(float2(uv.x, 1.0 - uv.y) * 2.0 - 1.0, screen.z, screen.w);
+    return SpaceTransformUtil_clipToView(clip, drawParam);
+}
+
+float4 SpaceTransformUtil_screenToView(float4 screen)
+{
+    DrawParam drawParam = rds_DrawParam_get();
+    return SpaceTransformUtil_screenToView(screen, drawParam);
+}
+
+#endif
+
 
 
 

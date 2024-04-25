@@ -40,6 +40,9 @@ GraphicsDemo::onCreate()
 		_texDefaultSkybox = Renderer::rdDev()->createTextureCube(texCDesc);
 		_texDefaultSkybox->setDebugName("skybox_default");
 	}
+
+	createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/skybox.shader"
+		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 }
 
 void 
@@ -121,6 +124,79 @@ GraphicsDemo::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrVie
 
 	if (fnSetParam)
 		fnSetParam(mtl);
+}
+
+RdgPass*
+GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCube* texSkybox, RdgTextureHnd texColor, RdgTextureHnd texDepth)
+{
+	auto*	rdGraph		= oRdGraph;
+
+	auto& skyboxPass = rdGraph->addPass("skybox", RdgPassTypeFlags::Graphics);
+	skyboxPass.setRenderTarget(texColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+	if (texDepth)
+		skyboxPass.setDepthStencil(texDepth, RenderAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+	skyboxPass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			rdReq.reset(rdGraph->renderContext(), *drawData);
+			auto mtl = _mtlSkybox;
+
+			mtl->setParam("skybox", texSkybox);
+			drawData->setupMaterial(mtl);
+			rdReq.drawMesh(RDS_SRCLOC, meshAssets().box->rdMesh, mtl);
+		});
+	return &skyboxPass;
+}
+
+void addDrawLineTest()
+{
+	#if 0
+	{
+		auto& passDrawLine = rdGraph->addPass("draw_line", RdgPassTypeFlags::Graphics);
+		passDrawLine.setRenderTarget(texColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+		passDrawLine.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), *drawData);
+				auto mtl = drawData->mtlLine();	RDS_UNUSED(mtl);
+				mtl->setParam("rds_matrix_vp", drawData->camera->viewProjMatrix());
+				{
+					RenderRequest::LineVtxType v0;
+					v0.position		= Tuple3f{0.0, 0.0, 0.0};
+					v0.colors[0]	= Color4b{255, 0, 0, 255};
+
+					RenderRequest::LineVtxType v1;
+					v1.position		= Tuple3f{10.0, 0.0, 0.0};
+					v1.colors[0]	= Color4b{255, 0, 0, 255};
+
+					rdReq.drawLine(v0, v1, mtl);
+				}
+
+				{
+					RenderRequest::LineVtxType v0;
+					v0.position		= Tuple3f{0.0, 0.0, 0.0};
+					v0.colors[0]	= Color4b{255, 0, 0, 255};
+
+					RenderRequest::LineVtxType v1;
+					v1.position		= Tuple3f{0.0, 10.0, 0.0};
+					v1.colors[0]	= Color4b{255, 0, 0, 255};
+
+					rdReq.drawLine(v0, v1, mtl);
+				}
+				{
+					RenderRequest::LineVtxType v0;
+					v0.position		= Tuple3f{0.0, 0.0, 0.0};
+					v0.colors[0]	= Color4b{255, 0, 0, 255};
+
+					RenderRequest::LineVtxType v1;
+					v1.position		= Tuple3f{0.0, 0.0, 10.0};
+					v1.colors[0]	= Color4b{255, 0, 0, 255};
+
+					rdReq.drawLine(v0, v1, mtl);
+				}
+			});
+	}
+	#endif // 0
 }
 
 DemoEditorApp&	GraphicsDemo::app()				{ return _demoLayer->app(); }

@@ -24,6 +24,10 @@ class GraphicsDemo : public NonCopyable
 {
 	friend class DemoEditorLayer;
 public:
+	static void createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAsset, int n, Tuple2f startPos = Tuple2f{0.0f, 0.0f}, Tuple2f step = Tuple2f{3.0f, 3.0f});
+	static void createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam = {});
+
+public:
 	virtual ~GraphicsDemo();
 
 	virtual void onCreate();
@@ -37,8 +41,7 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 
 public:
-	void createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAsset, int n, Tuple2f startPos = Tuple2f{0.0f, 0.0f}, Tuple2f step = Tuple2f{3.0f, 3.0f});
-	void createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam = {});
+	RdgPass* addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCube* texSkybox, RdgTextureHnd texColor, RdgTextureHnd texDepth);
 
 public:
 	DemoEditorApp& app();
@@ -53,6 +56,9 @@ private:
 	DemoEditorLayer*	_demoLayer = nullptr;
 	SPtr<Texture2D>		_texUvChecker;
 	SPtr<TextureCube>	_texDefaultSkybox;
+
+	SPtr<Shader>	_shaderSkybox;
+	SPtr<Material>	_mtlSkybox;
 };
 
 inline Texture2D*	GraphicsDemo::texUvChecker()	{ return _texUvChecker; }

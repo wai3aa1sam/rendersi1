@@ -7,6 +7,10 @@
 namespace rds
 {
 
+#if 0
+#pragma mark --- rdsHelloTriangle-Impl ---
+#endif // 0
+#if 1
 void 
 HelloTriangle::onCreate()
 {
@@ -106,5 +110,6 @@ HelloTriangle::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
 	Base::onUiKeyboardEvent(ev);
 }
+#endif
 
 }

@@ -33,17 +33,21 @@ public:
 	bool isFocused()	const;
 	bool isFullScreen() const;
 
+	const Rect2f& clientRect() const;
+
 protected:
 	RDS_NODISCARD EditorUiWindow window(EditorUiDrawRequest* edtDrawReq, const char* label);
 
 protected:
-	bool _isFocused		: 1;
-	bool _isFullScreen	: 1;
+	bool	_isFocused		: 1;
+	bool	_isFullScreen	: 1;
+	Rect2f	_clientRect;
 };
 
 inline bool EditorWindow::isFocused()		const { return _isFocused; }
 inline bool EditorWindow::isFullScreen()	const { return _isFullScreen; }
 
+inline const Rect2f& EditorWindow::clientRect() const { return _clientRect; }
 
 #endif
 

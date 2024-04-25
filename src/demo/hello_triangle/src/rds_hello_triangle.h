@@ -6,6 +6,10 @@
 namespace rds
 {
 
+#if 0
+#pragma mark --- rdsHelloTriangle-Decl ---
+#endif // 0
+#if 1
 class HelloTriangle : public GraphicsDemo
 {
 public:
@@ -28,5 +32,6 @@ protected:
 	SPtr<Texture2D>	_texUvChecker;
 };
 RDS_DEMO(HelloTriangle);
+#endif
 
 }
