@@ -367,6 +367,9 @@ public:
 		bool _setParam(const VarInfo& varInfo, const u32&		v)	{ return _setParamCheckType(varInfo, v); }
 		bool _setParam(const VarInfo& varInfo, const f32&		v)	{ return _setParamCheckType(varInfo, v); }
 		bool _setParam(const VarInfo& varInfo, const Color4b&	v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple2u&	v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple3u&	v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple4u&	v)	{ return _setParamCheckType(varInfo, v); }
 		bool _setParam(const VarInfo& varInfo, const Tuple2f&	v)	{ return _setParamCheckType(varInfo, v); }
 		bool _setParam(const VarInfo& varInfo, const Tuple3f&	v)	{ return _setParamCheckType(varInfo, v); }
 		bool _setParam(const VarInfo& varInfo, const Tuple4f&	v)	{ return _setParamCheckType(varInfo, v); }

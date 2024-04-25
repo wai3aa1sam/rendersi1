@@ -107,9 +107,9 @@ public:
 	RenderCommand_ClearFramebuffers() : Base(Type::ClearFramebuffers) {}
 	virtual ~RenderCommand_ClearFramebuffers() {};
 
-	This& setClearColor			(const Color4f& color_)			{ color.emplace(color_);	return *this; }
-	This& setClearDepth			(float depth)					{ depthStencil.emplace();	depthStencil.value().first	= depth;			return *this; }
-	This& setClearDepthStencil	(float depth, u32 stencil)		{ auto& ret = setClearDepth(depth);	depthStencil.value().second = stencil;	return ret; }
+	This& setClearColor			(const Color4f& color_ = Color4f{0.1f, 0.2f, 0.3f, 1.0f})	{ color.emplace(color_);	return *this; }
+	This& setClearDepth			(float depth = 1.0f)										{ depthStencil.emplace();	depthStencil.value().first	= depth;			return *this; }
+	This& setClearDepthStencil	(float depth, u32 stencil)									{ auto& ret = setClearDepth(depth);	depthStencil.value().second = stencil;	return ret; }
 
 	This& dontClearColor() { color.reset(); }
 	This& dontClearDepth() { depthStencil.reset(); }

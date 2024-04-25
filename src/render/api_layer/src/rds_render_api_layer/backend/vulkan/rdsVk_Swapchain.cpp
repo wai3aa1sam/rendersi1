@@ -58,6 +58,8 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	}
 
 	createSwapchainInfo(_swapchainInfo, cDesc.imageCount, rdDevVk->swapchainAvailableInfo(), framebufferRect2f, cDesc.colorFormat, cDesc.colorSpace, cDesc.depthFormat);
+	_swapchainInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR; // vsync
+
 	createSwapchain(*cDesc.outBackbuffers, info().rect2f, cDesc.vkRdPass);
 }
 

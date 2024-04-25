@@ -22,7 +22,7 @@ RenderDevice::createRenderGpuMultiBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 #if 1
 
 RenderGpuMultiBuffer::CreateDesc 
-RenderGpuMultiBuffer::makeCDesc() 
+RenderGpuMultiBuffer::makeCDesc(RDS_DEBUG_SRCLOC_PARAM) 
 { 
 	return CreateDesc{}; 
 }
@@ -99,6 +99,8 @@ void RenderGpuMultiBuffer::rotate()
 SPtr<RenderGpuBuffer>& 
 RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 {
+	RDS_CORE_ASSERT(StrUtil::len(debugName()) > 0, "set a debug name for gpu buffer");
+
 	// do acutal rotate in this function, then tsfFrame / ctx no need to update the frame separately
 	//auto idx = (_iFrame + 1) % s_kFrameInFlightCount;
 	auto idx = _iFrame % s_kFrameInFlightCount;;
@@ -106,6 +108,7 @@ RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 	if (!_renderGpuBuffers[idx] || _renderGpuBuffers[idx]->bufSize() < bufSize)
 	{
 		_renderGpuBuffers[idx] = _makeNewBuffer(bufSize);
+		_renderGpuBuffers[idx]->setDebugName(fmtAs_T<TempString>("{}-{}", debugName(), idx));
 	}
 	return _renderGpuBuffers[idx];
 }
@@ -113,7 +116,7 @@ RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 SPtr<RenderGpuBuffer> 
 RenderGpuMultiBuffer::_makeNewBuffer(SizeType bufSize)
 {
-	auto newCDesc = makeCDesc();
+	auto newCDesc = makeCDesc(RDS_DEBUG_SRCLOC);
 	newCDesc.typeFlags	= _desc.typeFlags;
 	newCDesc.stride		= _desc.stride;
 	newCDesc.bufSize	= bufSize;

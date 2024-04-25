@@ -103,7 +103,8 @@ public:
 	const Vec2f&	framebufferSize() const;
 	float			aspectRatio() const;
 
-	NativeUIWindow* nativeUIWindow();
+	NativeUIWindow*		nativeUIWindow();
+	RenderUiContext&	renderdUiContex();
 
 protected:
 	virtual void onCreate		(const CreateDesc& cDesc);
@@ -137,6 +138,7 @@ private:
 
 inline const Vec2f&		RenderContext::framebufferSize() const	{ return _framebufferSize; }
 inline NativeUIWindow*	RenderContext::nativeUIWindow()			{ return _nativeUIWindow; }
+inline RenderUiContext&	RenderContext::renderdUiContex()		{ return _rdUiCtx; }
 
 inline Texture2D*		RenderContext::backBuffer()				{ return _backbuffers.backbuffer(); }
 

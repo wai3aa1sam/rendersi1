@@ -114,7 +114,7 @@ RenderContext::beginRender()
 {
 	RDS_PROFILE_SCOPED();
 
-	_rdUiCtx.onBeginRender(this);
+	//_rdUiCtx.onBeginRender(this);
 	onBeginRender();
 }
 
@@ -124,7 +124,7 @@ RenderContext::endRender()
 	RDS_PROFILE_SCOPED();
 	
 	onEndRender();
-	_rdUiCtx.onEndRender(this);
+	//_rdUiCtx.onEndRender(this);
 }
 
 void 
@@ -136,7 +136,7 @@ RenderContext::commit(RenderCommandBuffer& rdCmdBuf)
 void 
 RenderContext::commit(RenderRequest& rdReq)
 {
-	commit(rdReq.renderCommandBuffer());
+	rdReq._internal_commit();
 }
 
 void 

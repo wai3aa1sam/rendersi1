@@ -94,6 +94,7 @@ RDS_ENUM_ALL_OPERATOR(RenderAllocFlags);
 	\
 	E(Triangle,) \
 	E(Point,) \
+	E(Line,) \
 	\
 	E(_kCount,) \
 //---

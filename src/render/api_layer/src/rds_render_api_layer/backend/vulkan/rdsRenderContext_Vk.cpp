@@ -865,7 +865,8 @@ RenderContext_Vk::onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, void* us
 void 
 RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd)
 {
-	if (!cmd->vertexLayout) { RDS_CORE_ASSERT(false, "drawcall no vertexLayout"); return; }
+	auto* vtxLayout = cmd->vertexLayout;
+	if (!vtxLayout) { RDS_CORE_ASSERT(false, "drawcall no vertexLayout"); return; }
 
 	auto* vkCmdBufHnd = cmdBuf->hnd();
 
@@ -886,8 +887,8 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 	if (auto* pass = cmd->getMaterialPass())
 	{
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
-		
-		vkMtlPass->onBind(this, cmd->vertexLayout, cmdBuf, cmd->materialFrameIndex());
+
+		vkMtlPass->onBind(this, vtxLayout, cmdBuf, cmd->materialFrameIndex());
 
 		for (const auto& e : vkMtlPass->info().allStageUnionInfo.pushConstants)
 		{

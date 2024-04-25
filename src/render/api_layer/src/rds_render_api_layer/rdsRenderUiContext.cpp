@@ -53,6 +53,7 @@ RenderUiContext::create(RenderContext* renderContext)
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 		desc.bufSize	= totalVertexDataSize;
 		_vtxBuf = rdDev->createRenderGpuMultiBuffer(desc);
+		_vtxBuf->setDebugName("ui-vtxBuf");
 	}
 
 	if (!_idxBuf /*|| _idxBuf->bufSize() < totalIndexDataSize*/) 
@@ -61,6 +62,7 @@ RenderUiContext::create(RenderContext* renderContext)
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
 		desc.bufSize	= totalIndexDataSize;
 		_idxBuf = rdDev->createRenderGpuMultiBuffer(desc);
+		_idxBuf->setDebugName("ui-idxBuf");
 	}
 }
 
@@ -197,7 +199,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		
 		Rect2f viewport = {};
 		viewport.set(makeVec2f(clip_off), _rdCtx->framebufferSize());
-		req.setViewportReverse(viewport);
+		req.setViewport(viewport);
 
 		// upload data to vtx and idx buf first, since it is using multi-buffer
 		{
@@ -249,7 +251,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 					req.setScissorRect(Rect2f{a, b - a});
 
-					auto* cmd = req.renderCommandBuffer().addDrawCall(sizeof(PerObjectParam));
+					auto* cmd = req.commandBuffer().addDrawCall(sizeof(PerObjectParam));
 
 					#if RDS_DEVELOPMENT
 					cmd->setDebugSrcLoc(RDS_SRCLOC);

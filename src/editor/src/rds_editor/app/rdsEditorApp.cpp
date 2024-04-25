@@ -69,7 +69,6 @@ EditorApp::onRun		()
 	RDS_TODO("nmsp::UtfUtil to nmsp::UtfUtil<UtfUtil_Traits>");
 	RDS_TODO("do not use auto in general");
 
-
 	while (!_shouldQuit)
 	{
 		onExecuteRun();

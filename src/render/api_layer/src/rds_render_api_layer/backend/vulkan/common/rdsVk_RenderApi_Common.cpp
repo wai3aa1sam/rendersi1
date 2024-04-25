@@ -912,6 +912,7 @@ Vk_RenderApiUtil::toVkPrimitiveTopology(RenderPrimitiveType v)
 	{
 		case SRC::Triangle: { return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; }	break;
 		case SRC::Point:	{ return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST; }		break;
+		case SRC::Line:		{ return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST; }		break;
 
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}

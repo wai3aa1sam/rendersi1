@@ -246,11 +246,13 @@ RenderGraph::execute()
 {
 	RDS_CORE_ASSERT(_rdCtx, "");
 
-	for (auto& e : resultPasses())
+	for (auto& pass : resultPasses())
 	{
-		if (e->isCulled())
+		const auto& name = pass->name(); RDS_UNUSED(name);
+		if (pass->isCulled())
 			continue;
-		e->execute();
+		pass->execute();
+		pass->_rdReq.uploadToGpu();
 	}
 }
 

@@ -19,6 +19,9 @@ public:
 	void uploadToGpu();
 
 public:
+	void setDebugName(StrView name);
+
+public:
 			T& at(SizeType i)						{ checkIsInBoundary(i); return reinCast<			T&>(cpuBuffer()[i * sizeof(T)]); }
 	const	T& at(SizeType i) const					{ checkIsInBoundary(i); return reinCast<const		T&>(cpuBuffer()[i * sizeof(T)]); }
 
@@ -66,6 +69,13 @@ ParamBuffer<T>::resize(SizeType n)
 	}
 
 	cpuBuffer().resize(bufSize);
+}
+
+template<class T> inline
+void 
+ParamBuffer<T>::setDebugName(StrView name)
+{
+	_gpuBufs->setDebugName(name);
 }
 
 template<class T> inline

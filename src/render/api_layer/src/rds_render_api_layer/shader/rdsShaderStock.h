@@ -31,7 +31,6 @@ public:
 	/*
 	* _shaders should use a StrHashVectorMap<Shaders>;		// using Shaders = HashedPermutationVectorMap
 	*/
-
 public:
 	ShaderStock();
 	~ShaderStock();

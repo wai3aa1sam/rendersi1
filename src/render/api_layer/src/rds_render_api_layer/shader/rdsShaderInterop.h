@@ -24,4 +24,3 @@ using shaderInterop::ObjectTransform;
 using shaderInterop::DrawParam;
 
 }
-

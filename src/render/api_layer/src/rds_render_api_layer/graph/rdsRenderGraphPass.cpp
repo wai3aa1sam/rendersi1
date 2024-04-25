@@ -182,6 +182,8 @@ RdgPass::accessResource(RdgResourceHnd hnd, RenderResourceStateFlags state, bool
 	RDS_TODO("check unique resource");
 	using SRC		= RenderAccess;
 
+	RDS_CORE_ASSERT(hnd._rdgRsc, "invalid hnd");
+
 	auto* rdgRsc = hnd._rdgRsc;
 
 	auto& rscAccess = _rscAccesses.emplace_back();

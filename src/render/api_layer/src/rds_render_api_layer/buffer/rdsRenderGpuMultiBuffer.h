@@ -20,7 +20,7 @@ public:
 	using Desc			= RenderGpuBuffer::Desc;
 
 public:
-	static CreateDesc					makeCDesc();
+	static CreateDesc					makeCDesc(RDS_DEBUG_SRCLOC_PARAM);
 	static SPtr<RenderGpuMultiBuffer>	make(CreateDesc& cDesc);
 
 public:

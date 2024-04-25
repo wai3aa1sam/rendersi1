@@ -14,6 +14,11 @@ namespace rds
 
 class TransferContext;
 
+#if 0
+#pragma mark --- rdsVk_LinearStagingBuffer-Decl ---
+#endif // 0
+#if 1
+
 class Vk_LinearStagingBuffer : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
@@ -73,6 +78,9 @@ public:
 	class Chunks : public NonCopyable
 	{
 	public:
+		Chunks();
+		~Chunks();
+
 		StagingHandle alloc(SizeType n, Vk_Allocator* vkAlloc, RenderDevice_Vk* rdDevVk)
 		{
 			if (_chunks.is_empty())
@@ -131,7 +139,7 @@ public:
 
 	private:
 		Vector<UPtr<Chunk>, 8>	_chunks;
-		u32						_chunkSize	= 256 * 1024 * 1024;
+		u32						_chunkSize		= 0;
 		u32						_curChunkIdx	= 0;
 	};
 
@@ -208,6 +216,7 @@ private:
 	SMutexProtected<Chunks>	_chunks;
 };
 
+#endif
 
 #if 0
 #pragma mark --- rdsVk_TransferFrame-Decl ---

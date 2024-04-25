@@ -40,6 +40,8 @@ VertexLayoutManager::VertexLayoutManager()
 
 	registerLayout<Vertex_ImGui>();
 	registerLayout<Vectex_Pos2fUvColor4f<1> >();
+	registerLayout<Vertex_Pos>();
+	registerLayout<VertexT_Pos<Tuple4f> >();
 }
 
 VertexLayoutManager::~VertexLayoutManager()

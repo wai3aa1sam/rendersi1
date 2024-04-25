@@ -99,6 +99,10 @@ template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tup
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple3i>()	{ return Type::Int32x3; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple4i>()	{ return Type::Int32x4; };
 
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple2u>()	{ return Type::UInt32x2; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple3u>()	{ return Type::UInt32x3; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple4u>()	{ return Type::UInt32x4; };
+
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple2f>()	{ return Type::Float32x2; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple3f>()	{ return Type::Float32x3; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Tuple4f>()	{ return Type::Float32x4; };

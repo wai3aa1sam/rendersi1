@@ -4,6 +4,11 @@
 #include "rdsRenderCommand.h"
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 
+/*
+	references:
+	~ RenderRequest.h in https://github.com/SimpleTalkCpp/SimpleGameEngine
+*/
+
 namespace rds
 {
 
@@ -36,10 +41,15 @@ class RenderRequest : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
+	using LineVtxType = Vertex_PosColor<1>;
+	using LineIdxType = u16;
+
+public:
 	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
 	template<class T>	static void drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData);
 						static void drawSubMesh (RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl);
 
+	
 public:
 	#if 0
 	Mat4f matrix_view = Mat4f::s_identity();
@@ -58,7 +68,7 @@ public:
 	void reset(RenderContext* rdCtx, DrawData& drawData);
 	void reset(RenderContext* rdCtx);
 
-	RenderCommandBuffer& renderCommandBuffer();
+	void uploadToGpu();
 
 	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32		materialPassIdx,	u32		threadGrpsX, u32 threadGrpsY, u32 threadGrpsZ);
 	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32		materialPassIdx,	Tuple3u	threadGrps);
@@ -91,10 +101,15 @@ public:
 
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl);
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY);
+	
+public:
+	void drawLine(LineVtxType pt0, LineVtxType pt1, Material* mtlLine);
+	void drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices, Material* mtlLine);
 
 public:
-	Span<RenderCommand*>		commands();
-	const RenderCommandBuffer&	commandBuffer() const;
+	Span<RenderCommand*>			commands();
+			RenderCommandBuffer&	commandBuffer();
+	const	RenderCommandBuffer&	commandBuffer() const;
 
 public:
 	RenderCommand_SwapBuffers*	swapBuffers();
@@ -114,10 +129,35 @@ public:
 
 	#endif // 0
 
+public:
+	/*
+	* will cause the user use the api incorrectly, intended to be protected
+	*/
+	void _internal_commit();
+
 private:
 	RenderContext*		_rdCtx = nullptr;
 	RenderCommandBuffer _rdCmdBuf;		// render frame
 	//Vector<RenderCommandBuffer, s_kThreadCount>	_RenderCommandBuffers;
+
+private:
+	struct InlineDraw 
+	{
+		Vector<u8>	vertexData;
+		Vector<u8>	indexData;
+		SPtr<RenderGpuBuffer> vertexBuffer;
+		SPtr<RenderGpuBuffer> indexBuffer;
+
+		void reset(RenderContext* rdCtx);
+		void uploadToGpu(RenderContext* rdCtx);
+	private:
+		void _uploadToGpu(SPtr<RenderGpuBuffer>& buf, const Vector<u8>& data, RenderGpuBufferTypeFlags type, RenderContext* rdCtx);
+
+	public:
+		Vector<RenderCommand_DrawCall*, 64> _drawCalls;
+	};
+
+	InlineDraw	_inlineDraw;
 };
 
 #if 1
@@ -152,12 +192,10 @@ RenderRequest::drawMeshT(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Mater
 
 #endif // 1
 
-inline RenderCommandBuffer& RenderRequest::renderCommandBuffer() { return _rdCmdBuf; }
-
-inline RenderCommand_ClearFramebuffers* RenderRequest::clearFramebuffers()						{ return renderCommandBuffer().clearFramebuffers(); }
-inline RenderCommand_SwapBuffers*		RenderRequest::swapBuffers()							{ return renderCommandBuffer().swapBuffers(); }
-inline RenderCommand_DrawCall*			RenderRequest::addDrawCall()							{ return renderCommandBuffer().addDrawCall(); }
-inline RenderCommand_DrawCall*			RenderRequest::addDrawCall(SizeType extraDataSize)		{ return renderCommandBuffer().addDrawCall(extraDataSize); }
+inline RenderCommand_ClearFramebuffers* RenderRequest::clearFramebuffers()						{ return commandBuffer().clearFramebuffers(); }
+inline RenderCommand_SwapBuffers*		RenderRequest::swapBuffers()							{ return commandBuffer().swapBuffers(); }
+inline RenderCommand_DrawCall*			RenderRequest::addDrawCall()							{ return commandBuffer().addDrawCall(); }
+inline RenderCommand_DrawCall*			RenderRequest::addDrawCall(SizeType extraDataSize)		{ return commandBuffer().addDrawCall(extraDataSize); }
 
 inline RenderScissorRectScope		RenderRequest::scissorRectScope		()						{ return RenderScissorRectScope(&_rdCmdBuf); }
 inline void							RenderRequest::setScissorRect		(const Rect2f& rect)	{ _rdCmdBuf.setScissorRect(rect); }
@@ -166,8 +204,10 @@ inline RenderViewportScope			RenderRequest::viewportScope		()						{ return Rend
 inline void							RenderRequest::setViewport			(const Rect2f& rect)	{ _rdCmdBuf.setViewport(rect); }	
 inline void							RenderRequest::setViewportReverse	(const Rect2f& rect)	{ _rdCmdBuf.setViewportReverse(rect); }			
 
-inline Span<RenderCommand*>			RenderRequest::commands()								{ return _rdCmdBuf.commands(); }
-inline const RenderCommandBuffer&	RenderRequest::commandBuffer() const					{ return _rdCmdBuf; }
+inline Span<RenderCommand*>			RenderRequest::commands()									{ return _rdCmdBuf.commands(); }
+
+inline			RenderCommandBuffer&	RenderRequest::commandBuffer()							{ return _rdCmdBuf; }
+inline const	RenderCommandBuffer&	RenderRequest::commandBuffer() const					{ return _rdCmdBuf; }
 
 
 // inline

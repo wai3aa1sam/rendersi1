@@ -5,8 +5,15 @@
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
 
+#include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
+
 namespace rds
 {
+
+#if 0
+#pragma mark --- rdsRenderRequest-Impl ---
+#endif // 0
+#if 1
 
 RenderRequest::RenderRequest()
 {
@@ -34,6 +41,24 @@ RenderRequest::reset(RenderContext* rdCtx)
 		_rdCmdBuf.setViewport	(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
 		_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()}); 
 	}
+
+	_inlineDraw.reset(rdCtx);
+}
+
+void 
+RenderRequest::_internal_commit()
+{
+	if (!_rdCtx)
+		return;
+
+	uploadToGpu();
+	_rdCtx->commit(commandBuffer());
+}
+
+void 
+RenderRequest::uploadToGpu()
+{
+	_inlineDraw.uploadToGpu(_rdCtx);
 }
 
 void 
@@ -85,7 +110,7 @@ RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
 	throwIf(true, "store rdCtx");
 	auto* drawCalls = Renderer::rdDev()->renderFrame().renderQueue().drawRenderables(settings);
-	auto* cmd = renderCommandBuffer().newCommand<RenderCommand_DrawRenderables>();
+	auto* cmd = commandBuffer().newCommand<RenderCommand_DrawRenderables>();
 	cmd->hashedDrawCallCmds = drawCalls;
 }
 
@@ -134,7 +159,7 @@ void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* s
 {
 	RDS_CORE_ASSERT(extent.x <= src->size().x && extent.y <= src->size().y && extent.z <= src->size().z, "invalid extent");
 
-	auto* cmd = renderCommandBuffer().copyTexture();
+	auto* cmd = commandBuffer().copyTexture();
 	cmd->src = src;
 	cmd->dst = dst;
 
@@ -169,6 +194,49 @@ void
 RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY)
 {
 	_notYetSupported(RDS_SRCLOC);
+}
+
+void 
+RenderRequest::drawLine(LineVtxType pt0, LineVtxType pt1, Material* mtlLine)
+{
+	Vector<LineVtxType, 2> pts;
+	pts.emplace_back(pt0);
+	pts.emplace_back(pt1);
+
+	Vector<LineIdxType, 2> indices;
+	indices.emplace_back(0);
+	indices.emplace_back(1);
+
+	drawLines(pts, indices, mtlLine);
+}
+
+void 
+RenderRequest::drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices, Material* mtlLine)
+{
+	if (indices.size() <= 0) 
+		return;
+
+	RDS_TODO("this should be optimized, use one draw call for all lines only");
+	//RDS_CORE_ASSERT(mtlLine->shader() == _rdCtx->renderDevice()->shaderStock().shaderLine, "material is not with a line shader, use DrawParam::materialLine()");
+
+	auto* cmd = addDrawCall();
+
+	cmd->vertexOffset = _inlineDraw.vertexData.size();
+	cmd->indexOffset  = _inlineDraw.indexData.size();
+
+	_inlineDraw.vertexData.appendRange(spanCast<const u8>(pts));
+	_inlineDraw.indexData.appendRange( spanCast<const u8>(indices));
+
+	cmd->setMaterial(mtlLine);
+	cmd->renderPrimitiveType	= RenderPrimitiveType::Line;
+	cmd->vertexLayout			= LineVtxType::vertexLayout();
+	cmd->indexType				= RenderDataTypeUtil::get<LineIdxType>();
+	//cmd->vertexBuffer			= _inlineDraw.vertexBuffer;
+	//cmd->indexBuffer			= _inlineDraw.indexBuffer;
+	cmd->vertexCount			= pts.size();
+	cmd->indexCount				= indices.size();
+
+	_inlineDraw._drawCalls.emplace_back(cmd);
 }
 
 #if 0
@@ -231,5 +299,78 @@ RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Materi
 }
 #endif // 0
 
+#endif
+
+
+#if 0
+#pragma mark --- rdsRenderRequest::InlineDraw-Impl ---
+#endif // 0
+#if 1
+
+void RenderRequest::InlineDraw::reset(RenderContext* rdCtx)
+{
+	RDS_CORE_ASSERT(vertexData.is_empty() && indexData.is_empty(), "not yet upload line buffer, please upload in update thread");
+
+	/*
+	auto* rdDev = rdCtx->renderDevice();
+	if (!vertexBuffer) 
+	{
+		RenderGpuBuffer::CreateDesc desc;
+		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
+		desc.bufSize	= 16;
+		desc.stride		= sizeof(LineVtxType);
+		vertexBuffer = rdDev->createRenderGpuBuffer(desc);
+	}
+
+	if (!indexBuffer) 
+	{
+		RenderGpuBuffer::CreateDesc desc;
+		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
+		desc.bufSize	= 16;
+		desc.stride		= sizeof(LineIdxType);
+		indexBuffer = rdDev->createRenderGpuBuffer(desc);
+	}*/
+}
+
+void 
+RenderRequest::InlineDraw::uploadToGpu(RenderContext* rdCtx) 
+{
+	if (!rdCtx)
+		return;
+
+	_uploadToGpu(vertexBuffer, vertexData,	RenderGpuBufferTypeFlags::Vertex, rdCtx);
+	_uploadToGpu(indexBuffer,  indexData,	RenderGpuBufferTypeFlags::Index , rdCtx);
+
+	for (auto* cmd : _drawCalls)
+	{
+		cmd->vertexBuffer	= vertexBuffer;
+		cmd->indexBuffer	= indexBuffer;
+	}
+
+	vertexData.clear();
+	indexData.clear();
+}
+
+void 
+RenderRequest::InlineDraw::_uploadToGpu(SPtr<RenderGpuBuffer>& buf, const Vector<u8>& data, RenderGpuBufferTypeFlags type, RenderContext* rdCtx) 
+{
+	auto*	rdDev	= rdCtx->renderDevice();
+	auto	n		= data.size();
+
+	if (n <= 0) 
+		return;
+	if (!buf || buf->bufSize() < n)
+	{
+		auto newSize = math::nextPow2(n);
+		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+		cDesc.bufSize	= newSize;
+		cDesc.typeFlags = type;
+		buf = rdDev->createRenderGpuBuffer(cDesc);
+		buf->setDebugName(BitUtil::has(cDesc.typeFlags, RenderGpuBufferTypeFlags::Vertex) ? "draw_line_vtxBuf" : "draw_line_idxBuf");
+	}
+	buf->uploadToGpu(data);
+}
+
+#endif
 
 }
