@@ -464,6 +464,19 @@ Material::setParamsToDefault()
 	}
 }
 
+void 
+Material::_internal_resetFrame()
+{
+	RDS_TODO("putting on RenderCommand::setMaterial() may not be good (cache and loop to reset seems bad too)"
+			", since user may setParam()->draw(record)->setParam() in the same frame, maybe add a checking for not allowing doing that is ok");
+
+
+	for (auto& pass : _passes)
+	{
+		pass->_framedShaderRscs.uploadToGpu(&pass->shaderPass());		// this will reset dirty
+		pass->_framedShaderRscs._isRotated = false;
+	}
+}
 
 const ShaderInfo&		Material::info()		const { return _shader->info(); }
 const String&			Material::filename()	const { return _shader->filename(); }

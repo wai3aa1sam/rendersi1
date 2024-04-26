@@ -845,13 +845,15 @@ public:
 	ShaderResources&	shaderResource(u32 iFrame);
 	u32					iFrame() const;
 
+public:
+	bool _isRotated = false;
+
 protected:
 	void rotate();
 
 protected:
 	u32							_iFrame = 0;
 	FramedT<ShaderResources>	_shaderRscs;
-	bool _isRotated = false;
 };
 
 template<class T> inline

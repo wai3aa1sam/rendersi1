@@ -665,7 +665,7 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 			maybe move to RenderCommand_DrawCall::setMaterial(), but it will have problem too (maybe setParam() then setMaterial twice, will have two rotate in same frame)
 			, upload in Render thread will have sync problem
 		*/
-		shaderRsc.uploadToGpu(shaderPass());		// this will reset dirty
+		//shaderRsc.uploadToGpu(shaderPass());		// this will reset dirty
 
 		auto& vkDescrSet = vkDescriptorSet();
 		if (!vkDescrSet)

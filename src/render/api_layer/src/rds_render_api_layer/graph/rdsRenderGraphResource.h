@@ -252,26 +252,12 @@ public:
 
 public:
 	RdgResource() = default;
-	RdgResource(Type type, StrView name, RdgId id, bool isImported = false, bool isExported = false)
-		//: _name(name), _id(id), _type(type), _isImported(isImported), _isExported(isExported)
-	{
-		create(type, name, id, isImported, isExported);
-	}
+	RdgResource(const RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported = false, bool isExported = false);
+	~RdgResource();
 
-	~RdgResource()
-	{
+	void create(const RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported);
 
-	}
-
-	void create(Type type, StrView name, RdgId id, bool isImported, bool isExported)
-	{
-		_name		= name;
-		_id			= id;
-		_type		= type;
-		_isImported = isImported;
-		_isExported = isExported;
-	}
-
+public:
 	StrView name() const;
 	RdgId	id	() const;
 	Type	type() const;
@@ -317,18 +303,6 @@ protected:
 	SPtr<RenderResource>	_spRdRsc;
 };
 
-inline
-bool 
-RdgResource::isUniqueProducer(RdgPass* producer) const
-{
-	//bool isUnique = true;
-	for (auto* pass : _producers)
-	{
-		if (pass == producer)
-			return false;
-	}
-	return true;
-}
 
 inline void RdgResource::setImport(bool v) { _isImported = v; }
 inline void RdgResource::setExport(bool v) { _isExported = v; }
@@ -382,15 +356,15 @@ public:
 public:
 	RdgResourceT() = default;
 
-	RdgResourceT(const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
+	RdgResourceT(const RenderGraph& rdGraph, const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
 		//: Base(ResourceTraits::s_kType, name, id, isImport, isExport)
 	{
-		create(cDesc, name, id, isImport, isExport);
+		create(rdGraph, cDesc, name, id, isImport, isExport);
 	}
 
-	void create(const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
+	void create(const RenderGraph& rdGraph, const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
 	{
-		Base::create(ResourceTraits::s_kType, name, id, isImport, isExport);
+		Base::create(rdGraph, ResourceTraits::s_kType, name, id, isImport, isExport);
 		_desc = cDesc;
 	}
 

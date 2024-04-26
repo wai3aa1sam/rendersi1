@@ -84,6 +84,7 @@ BindlessResources_Vk::onDestroy()
 void 
 BindlessResources_Vk::onCommit()
 {
+	RDS_TODO("currently texture and image is using same Alloc, should be separate, then the bindless handle need to modify too, keep simple first");
 	// update descriptor set
 	{
 		Vector<VkWriteDescriptorSet,	64>	writeDescs;
@@ -102,28 +103,54 @@ BindlessResources_Vk::onCommit()
 			for (auto& rsc : rscs)
 			{
 				{
-					auto& dstSet = descrSetTex();
 
 					RDS_CORE_ASSERT(Vk_Texture::getVkImageViewHnd(rsc), "_vkImageView == nullptr");
+					bool isTexture	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil);
+					bool isImage	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::UnorderedAccess);
+					RDS_CORE_ASSERT(isImage || isTexture, "invalid Texture usage");
 
-					auto& info	= imgInfos.emplace_back();
+					VkDescriptorImageInfo& info	= imgInfos.emplace_back();
 					info = {};
-					info.imageLayout	= BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 					info.imageView		= Vk_Texture::getVkImageViewHnd(rsc);
 					info.sampler		=  nullptr;
 					//info.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
 
-					auto& out = writeDescs.emplace_back();
+					VkWriteDescriptorSet out;
 					out = {};
 					out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					out.dstSet				= dstSet.hnd();
-					out.dstBinding			= sCast<u32>(_vkSamplers.size());
+					//out.dstBinding			= isImage ? 0 : sCast<u32>(_vkSamplers.size());
 					out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
-					out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+					//out.descriptorType		= isImage ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 					out.descriptorCount		= 1;
 					out.pBufferInfo			= nullptr;
 					out.pImageInfo			= &info;
 					out.pTexelBufferView	= nullptr;
+
+					if (isTexture)
+					{
+						info.imageLayout = BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+						auto& dstSet = descrSetTex();
+						out.dstBinding		= sCast<u32>(_vkSamplers.size());
+						out.descriptorType	= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+						out.dstSet			= dstSet.hnd();
+
+						auto& dst = writeDescs.emplace_back();
+						dst = out;
+					}
+
+					if (isImage)
+					{
+						info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+						auto& dstSet = descrSetImg();
+						out.dstBinding		= 0;
+						out.descriptorType	= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+						out.dstSet			= dstSet.hnd();
+
+						auto& dst = writeDescs.emplace_back();
+						dst = out;
+					}
 				}
 			}
 		}

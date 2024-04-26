@@ -513,7 +513,7 @@ public:
 			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
 			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
 
-			auto bufCDesc = RenderGpuBuffer::makeCDesc();
+			auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
 			bufCDesc.typeFlags		= RenderGpuBufferTypeFlags::Compute;
 			bufCDesc.bufSize		= sizeof(TestBindlessBuffer) * RDS_TEST_BUFFER_ELEMENT_COUNT;
 

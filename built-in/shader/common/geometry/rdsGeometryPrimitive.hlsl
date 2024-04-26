@@ -21,15 +21,27 @@ struct Sphere
 // near and far is computed by depth value
 struct Frustum
 {
-    Plane topPlane;
-    Plane bottomPlane;
-    Plane leftPlane;
-    Plane rightPlane;
+    Plane planes[4];
+
+    /*
+    Plane[0] topPlane;
+    Plane[1] bottomPlane;
+    Plane[2] leftPlane;
+    Plane[3] rightPlane;
+    */
 };
 
 struct DebugFrustrumPts
 {
     float4 pts[4];
+};
+
+struct Cone
+{
+    float3  tip;
+    float   hieght;
+    float3  direction;      // center to tip
+    float   radius;
 };
 
 #endif

@@ -26,8 +26,11 @@ ForwardPlus::onCreate()
 {
 	Base::onCreate();
 
-	createMaterial(&_shaderForwardPlus, &_mtlForwardPlus, "asset/shader/demo/forward_plus/forward_plus_lighting.shader"
+	createMaterial(&_shaderForwardPlus, &_mtlForwardPlus, "asset/shader/demo/forward_plus/forward_plus.shader"
 					, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
+
+	createMaterial(&_shaderHelloTriangle, &_mtlHelloTriangle, "asset/shader/demo/hello_triangle/hello_triangle.shader"
+		, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
 
 	_fwpMakeFrustums = makeUPtr<ForwardPlus_MakeFrustums>();
 }
@@ -61,6 +64,32 @@ ForwardPlus::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
 	Base::onPrepareRender(oRdGraph, drawData);
 
+	#if 0
+	auto*	rdGraph		= oRdGraph;
+	auto*	rdCtx		= rdGraph->renderContext();
+	auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
+
+	RdgTextureHnd texCompute	= rdGraph->createTexture("forward_plus_texCompute-onPrepareRender"
+		,	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::UnorderedAccess	| TextureUsageFlags::ShaderResource});
+	#if 1
+	{
+		auto& pass = rdGraph->addPass("forward_plus", RdgPassTypeFlags::Compute);
+		pass.writeTexture(texCompute);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				auto mtl = _mtlForwardPlus;
+				rdReq.reset(rdGraph->renderContext(), *drawData);
+
+				mtl->setParam("oImage", texCompute.renderResource());
+				rdReq.dispatch(RDS_SRCLOC, mtl, 0, screenSize.x / 8, screenSize.y / 8, 1);
+			}
+		);
+	}
+	#endif // 1
+
+	rdGraph->exportTexture(&_tex, texCompute, TextureUsageFlags::ShaderResource);
+	#endif // 0
 }
 
 void 
@@ -72,26 +101,48 @@ ForwardPlus::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 	auto*	rdCtx		= rdGraph->renderContext();
 	auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
-	RdgBufferHnd bufFrustums = _fwpMakeFrustums->onExecuteRender(oRdGraph, drawData);
+	//RdgBufferHnd bufFrustums = _fwpMakeFrustums->onExecuteRender(oRdGraph, drawData);
 
-	RdgTextureHnd texColor	= rdGraph->createTexture("forward_plus_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
-	RdgTextureHnd texDepth	= rdGraph->createTexture("forward_plus_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
+	//Renderer::rdDev()->waitIdle();
+
+	RdgTextureHnd texColor		= rdGraph->createTexture("forward_plus_color",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget		| TextureUsageFlags::ShaderResource});
+	RdgTextureHnd texDepth		= rdGraph->createTexture("forward_plus_depth",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil		| TextureUsageFlags::ShaderResource});
+	RdgTextureHnd texCompute	= rdGraph->createTexture("forward_plus_texCompute",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::UnorderedAccess	| TextureUsageFlags::ShaderResource});
+	#if 1
+	{
+		auto& pass = rdGraph->addPass("forward_plus", RdgPassTypeFlags::Compute);
+		pass.writeTexture(texCompute);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				auto mtl = _mtlForwardPlus;
+				rdReq.reset(rdGraph->renderContext(), *drawData);
+
+				mtl->setParam("oImage", texCompute.renderResource());
+				rdReq.dispatch(RDS_SRCLOC, mtl, 0, screenSize.x / 8, screenSize.y / 8, 1);
+			}
+		);
+	}
+	#endif // 1
 
 	#if 1
 	{
 		auto& passHelloTriangle = rdGraph->addPass("hello_triangle", RdgPassTypeFlags::Graphics);
+		passHelloTriangle.readTexture(texCompute);
 		passHelloTriangle.setRenderTarget(texColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		passHelloTriangle.setDepthStencil(texDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
 		passHelloTriangle.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				auto mtl = _mtlForwardPlus;
+				auto mtl = _mtlHelloTriangle;
 				rdReq.reset(rdGraph->renderContext(), *drawData);
 
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor();
 				clearValue->setClearDepth();
 
+				mtl->setParam("texture0", texCompute.renderResource());
+				//mtl->setParam("texture0", _tex);
 				drawData->sceneView->drawScene(rdReq, mtl, drawData);
 			}
 		);
@@ -141,7 +192,7 @@ ForwardPlus_MakeFrustums::~ForwardPlus_MakeFrustums()
 void 
 ForwardPlus_MakeFrustums::create()
 {
-	GraphicsDemo::createMaterial(&shaderFwpMakeFrustum, &mtlFwpMakeFrustum, "asset/shader/demo/forward_plus/forward_plus.shader");
+	GraphicsDemo::createMaterial(&shaderFwpMakeFrustum, &mtlFwpMakeFrustum, "asset/shader/demo/forward_plus/forward_plus_makeFrustums.shader");
 }
 
 void 

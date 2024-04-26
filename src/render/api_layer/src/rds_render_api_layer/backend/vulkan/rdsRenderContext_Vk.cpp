@@ -181,16 +181,19 @@ RenderContext_Vk::onBeginRender()
 		}
 	}
 
-	rdDevVk->bindlessResourceVk().commit();
 }
 
 void
 RenderContext_Vk::onEndRender()
 {
 	RDS_PROFILE_SCOPED();
+
+	auto*		rdDevVk = renderDeviceVk();
+	rdDevVk->bindlessResourceVk().commit();
+
 	// submit
 	{
-		auto* rdDevVk = renderDeviceVk();
+		//auto* rdDevVk = renderDeviceVk();
 		vkRdFrame().inFlightFence()->reset(rdDevVk);
 
 		#if RDS_TEST_DUMMY_FOR_NO_SWAP_BUF
@@ -287,7 +290,7 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	// begin render pass
 	{
 		Vector<VkClearValue, 4> clearValues;
-		Util::getVkClearValuesTo(clearValues, renderCmdBuf.getClearValue(), 2, true);
+		Util::getVkClearValuesTo(clearValues, renderCmdBuf.getClearValue(), 1, true);
 
 		auto fbufRect2 = _vkSwapchain.framebufferRect2f(); RDS_UNUSED(fbufRect2);
 
@@ -344,7 +347,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 			//_curVkCmdBufCompute->beginRecord();
 
-			for (RdgPass* pass : rdGraph.resultPasses())
+			Span<RdgPass*> resultPasses = rdGraph.resultPasses();
+			for (RdgPass* pass : resultPasses)
 			{
 				_commitPass(pass);
 			}
@@ -509,8 +513,9 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			{
 				using SRC = RdgResourceType;
 
-				auto* rsc = rscAccess.rsc;
-				auto type = rsc->type();
+				auto*	rsc		= rscAccess.rsc;
+				auto	type	= rsc->type();
+				StrView name	= rsc->name(); RDS_UNUSED(name);
 
 				if (!RenderResourceState::isTransitionNeeded(rscAccess.srcState, rscAccess.dstState))
 					continue;

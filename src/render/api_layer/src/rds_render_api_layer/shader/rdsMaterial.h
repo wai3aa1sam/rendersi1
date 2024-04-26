@@ -114,6 +114,9 @@ protected:
 
 						void _setPermutation(StrView name, StrView value);
 
+public:
+	void _internal_resetFrame();
+
 protected:
 	SPtr<Shader>		_shader;
 	Passes				_passes;
@@ -175,7 +178,8 @@ Material::_setTexParam(StrView name, TEX* v, const SamplerState& samplerState)
 		pass->setTexParam(name, v);
 	}
 
-	setParam(name, v->bindlessHandle().getResourceIndex());
+	auto bindlessIdx = v->bindlessHandle().getResourceIndex();
+	setParam(name, bindlessIdx);
 
 	TempString samplerName;
 	ShaderResources::getSamplerNameTo(samplerName, name);
@@ -191,7 +195,8 @@ Material::_setBufferParam(StrView name, RenderGpuBuffer* v)
 		pass->setBufferParam(name, v);
 	}
 
-	setParam(name, v->bindlessHandle().getResourceIndex());
+	auto bindlessIdx = v->bindlessHandle().getResourceIndex();
+	setParam(name, bindlessIdx);
 }
 
 inline const ShaderPermutations&	Material::permutations()	const { return _permuts; }

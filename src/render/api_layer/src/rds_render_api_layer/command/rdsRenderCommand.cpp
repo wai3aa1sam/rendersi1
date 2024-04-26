@@ -80,6 +80,8 @@ RenderCommand_DrawCall::setMaterial(Material* mtl, SizeType mtlPassIdx)
 	_mtl			= mtl;
 	_mtlPassIdx		= sCast<u32>(mtlPassIdx);
 	_mtlRscFrameIdx = getMaterialPass()->iFrame();
+
+	_mtl->_internal_resetFrame();
 }
 
 void 
@@ -109,6 +111,8 @@ RenderCommand_Dispatch::setMaterial(Material* mtl, SizeType mtlPassIdx)
 	_mtl			= mtl;
 	_mtlPassIdx		= sCast<u32>(mtlPassIdx);
 	_mtlRscFrameIdx = getMaterialPass()->iFrame();
+
+	_mtl->_internal_resetFrame();
 }
 
 }

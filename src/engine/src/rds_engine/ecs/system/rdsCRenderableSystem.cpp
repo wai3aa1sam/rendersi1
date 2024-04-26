@@ -92,7 +92,6 @@ CRenderableSystem::update(DrawData& drawData)
 		rdGraph.compile();
 		rdGraph.execute();
 	}
-
 }
 
 void

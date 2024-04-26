@@ -395,8 +395,13 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 	vkPhyDevVkFeats12.descriptorBindingVariableDescriptorCount				= VK_TRUE;
 	vkPhyDevVkFeats12.runtimeDescriptorArray								= VK_TRUE;
 	vkPhyDevVkFeats12.shaderSampledImageArrayNonUniformIndexing				= VK_TRUE;
+	vkPhyDevVkFeats12.shaderStorageBufferArrayNonUniformIndexing			= VK_TRUE;
+	vkPhyDevVkFeats12.shaderStorageImageArrayNonUniformIndexing				= VK_TRUE;
 
 	vkPhyDevVkFeats12.pNext	= &vkPhyDevVkFeats13;
+
+	//VkPhysicalDeviceVulkan11Features& vkPhyDevVkFeats11 = _vkPhyDevVkFeats11;
+	//vkPhyDevVkFeats11.pNext	= &vkPhyDevVkFeats12;
 
 	VkPhysicalDeviceDescriptorIndexingFeatures vkDescrIdxFeats = {};		// already include in VkPhysicalDeviceVulkan12Features, only for checking
 	vkDescrIdxFeats.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;

@@ -34,6 +34,10 @@ protected:
 	SPtr<Material>	_mtlForwardPlus;
 	SPtr<Texture2D>	_texUvChecker;
 
+	SPtr<Shader>	_shaderHelloTriangle;
+	SPtr<Material>	_mtlHelloTriangle;
+
+	SPtr<Texture2D> _tex;
 
 	UPtr<ForwardPlus_MakeFrustums> _fwpMakeFrustums;
 	

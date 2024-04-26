@@ -83,10 +83,10 @@ void makeGridFrustums_csMain(ComputeIn i)
 	float3 viewSpaceFrustumFarVtx_bottomRight	= SpaceTransformUtil_screenToView(screenSpaceFrustumFarVtx_bottomRight, 	drawParam).xyz;
 
 	Frustum frustum;
-	frustum.topPlane 	= GeometryUtil_makePlane(cameraPos, viewSpaceFrustumFarVtx_topLeft, 		viewSpaceFrustumFarVtx_topRight);
-	frustum.bottomPlane = GeometryUtil_makePlane(cameraPos, viewSpaceFrustumFarVtx_bottomRight, 	viewSpaceFrustumFarVtx_bottomLeft);
-	frustum.leftPlane 	= GeometryUtil_makePlane(cameraPos, viewSpaceFrustumFarVtx_bottomLeft, 		viewSpaceFrustumFarVtx_topLeft);
-	frustum.rightPlane 	= GeometryUtil_makePlane(cameraPos, viewSpaceFrustumFarVtx_topRight, 		viewSpaceFrustumFarVtx_bottomRight);
+	frustum.planes[0] = GeometryUtil_makePlane(cameraPos, viewSpaceFrustumFarVtx_topLeft, 		viewSpaceFrustumFarVtx_topRight);	 /*topPlane*/
+	frustum.planes[1] = GeometryUtil_makePlane(cameraPos, viewSpaceFrustumFarVtx_bottomRight, 	viewSpaceFrustumFarVtx_bottomLeft);	 /*bottomPlane*/
+	frustum.planes[2] = GeometryUtil_makePlane(cameraPos, viewSpaceFrustumFarVtx_bottomLeft, 	viewSpaceFrustumFarVtx_topLeft);	 /*leftPlane*/
+	frustum.planes[3] = GeometryUtil_makePlane(cameraPos, viewSpaceFrustumFarVtx_topRight, 		viewSpaceFrustumFarVtx_bottomRight); /*rightPlane*/	
 
 	uint idx = i.dispatchThreadId.x + (i.dispatchThreadId.y * nThreads.x);
 	RDS_RW_BUFFER_STORE_I(Frustum, oFrustum, idx, frustum);

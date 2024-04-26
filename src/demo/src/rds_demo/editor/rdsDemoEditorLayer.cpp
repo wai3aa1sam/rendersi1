@@ -42,6 +42,7 @@ DemoEditorLayer::onCreate()
 
 	_edtCtx.create();
 
+	// load asset
 	#if 1
 	auto fullScreenTriangleMesh = EditMeshUtil::getFullScreenTriangle();
 	_fullScreenTriangle.create(fullScreenTriangleMesh);
@@ -67,6 +68,7 @@ DemoEditorLayer::onCreate()
 	{
 		auto& rdGraph = renderableSystem().renderGraph();
 		rdGraph.create(mainWindow().title(), &rdCtx);
+		rdGraph.reset();
 
 		rdCtx.beginRender();
 
@@ -74,6 +76,10 @@ DemoEditorLayer::onCreate()
 		drawData.sceneView	= &_sceneView;
 		drawData.camera		= &mainWnd.camera();
 		_gfxDemo->onPrepareRender(&rdGraph, &drawData);
+
+		rdGraph.compile();
+		rdGraph.execute();
+		rdGraph.commit();
 
 		RenderRequest rdReq;
 		rdReq.reset(&rdCtx);

@@ -126,7 +126,7 @@ public:
 		}
 
 		template<class T>
-		RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc)
+		RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc, const RenderGraph& rdGraph)
 		{
 			using Tratis	= RdgResourceTraits<T>;
 			using ResourceT = typename Tratis::ResourceT;
@@ -134,7 +134,7 @@ public:
 			auto id		= sCast<RdgId>(resources.size());
 			//auto* rdgRsc = newT<RdgResourceT<T> >(cDesc, name, id, false, false);
 			auto* rdgRsc = sCast<ResourceT*>(resources.emplace_back(newT<ResourceT>()));
-			rdgRsc->create(cDesc, name, id, false, false);
+			rdgRsc->create(rdGraph, cDesc, name, id, false, false);
 			return rdgRsc;
 		}
 
@@ -295,7 +295,7 @@ RenderGraph::createRdgResource(StrView name, const RdgResource_CreateDescT<T>& c
 	using ResourceT = typename Tratis::ResourceT;
 
 	HndT out	= {};
-	auto* rdgRsc = renderGraphFrame().createRdgResouce<T>(name, cDesc);
+	auto* rdgRsc = renderGraphFrame().createRdgResouce<T>(name, cDesc, *this);
 	out._rdgRsc = rdgRsc;
 	return out;
 }

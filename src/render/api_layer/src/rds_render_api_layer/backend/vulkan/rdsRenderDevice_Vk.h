@@ -163,6 +163,7 @@ private:
 	//VkPhysicalDeviceDescriptorIndexingFeatures			_vkDescrIdxFeats		= {};
 
 	mutable VkPhysicalDeviceFeatures2					_vkPhyDevFeats2			= {};
+	mutable VkPhysicalDeviceVulkan11Features			_vkPhyDevVkFeats11		= {};
 	mutable VkPhysicalDeviceVulkan12Features			_vkPhyDevVkFeats12		= {};
 	#if RDS_VK_VER_1_3
 	mutable VkPhysicalDeviceVulkan13Features			_vkPhyDevVkFeats13		= {};

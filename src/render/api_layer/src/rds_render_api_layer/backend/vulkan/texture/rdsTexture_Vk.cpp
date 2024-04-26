@@ -158,9 +158,11 @@ Vk_Image::create(RenderDevice_Vk* rdDevVk, const Texture_Desc& texDesc, QueueTyp
 
 	create(vkAlloc, &imageInfo, allocInfo, vkMemPropFlags);
 
+	// this wait immediately
 	auto& tsfCtxVk = rdDevVk->transferContextVk();
 	//if		(BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferSrc)) { tsfCtxVk.transitImageLayout(hnd(), vkFormat, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, queueTypeFlags); }
-	if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferDst)) { tsfCtxVk.transitImageLayout(hnd(), texDesc, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, queueTypeFlags); }
+	if		(BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferDst))		{ tsfCtxVk.transitImageLayout(hnd(), texDesc, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, queueTypeFlags); }
+	//else if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::UnorderedAccess))	{ tsfCtxVk.transitImageLayout(hnd(), texDesc, VK_IMAGE_LAYOUT_GENERAL,				queueTypeFlags); }
 }
 
 #endif

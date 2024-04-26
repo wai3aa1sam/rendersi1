@@ -782,7 +782,14 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		srcAccess	= VK_ACCESS_SHADER_WRITE_BIT;
 		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		}
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_GENERAL) // compute
+	{
+		srcStage	= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage	= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
+		dstAccess	= VK_ACCESS_SHADER_WRITE_BIT;
+	}
 	else 
 	{
 		throwError("");
@@ -1328,6 +1335,13 @@ Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, const Texture_Desc& des
 		srcAccessMask	= 0;
 		dstAccessMask	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	}
+	else if (dstLayout == VK_IMAGE_LAYOUT_GENERAL && srcLayout == VK_IMAGE_LAYOUT_UNDEFINED) 
+	{
+		srcStage		= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;			// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		dstStage		= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		srcAccessMask	= 0;
+		dstAccessMask	= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	}
 	else 
 	{
 		throwError("");
@@ -1649,7 +1663,7 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	emplaceIfExist(o, VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,		availablePhyDeviceExts());
 	emplaceIfExist(o, VK_GOOGLE_HLSL_FUNCTIONALITY_1_EXTENSION_NAME,	availablePhyDeviceExts());
 	emplaceIfExist(o, VK_GOOGLE_USER_TYPE_EXTENSION_NAME,				availablePhyDeviceExts());
-	emplaceIfExist(o, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,		availablePhyDeviceExts());
+	//emplaceIfExist(o, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,		availablePhyDeviceExts());
 	emplaceIfExist(o, VK_KHR_MAINTENANCE1_EXTENSION_NAME,				availablePhyDeviceExts());
 	
 	if (adapterInfo.isDebug)

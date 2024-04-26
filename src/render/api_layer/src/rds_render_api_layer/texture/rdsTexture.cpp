@@ -58,7 +58,7 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 		_internal_setRenderResourceState(RenderResourceStateFlags::Transfer_Dst);
 	}
 
-	if (BitUtil::has(desc().usageFlags, TextureUsageFlags::ShaderResource))
+	if (BitUtil::hasAny(desc().usageFlags, TextureUsageFlags::ShaderResource | TextureUsageFlags::UnorderedAccess))
 	{
 		_bindlessHnd = renderDevice()->bindlessResource().allocTexture(this);
 		renderDevice()->textureStock().textures.add(this);
