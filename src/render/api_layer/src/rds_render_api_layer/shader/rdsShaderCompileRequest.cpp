@@ -93,6 +93,8 @@ ShaderCompileRequest::hotReload(Renderer* renderer, JobSystem* jobSystem, const 
 	}
 
 	reloadPermutation(rdDev, ps);
+
+	//throwIf(true, "");
 }
 
 void 

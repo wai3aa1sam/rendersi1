@@ -464,7 +464,7 @@ Material::setParamsToDefault()
 	}
 }
 
-void 
+void
 Material::_internal_resetFrame()
 {
 	RDS_TODO("putting on RenderCommand::setMaterial() may not be good (cache and loop to reset seems bad too)"

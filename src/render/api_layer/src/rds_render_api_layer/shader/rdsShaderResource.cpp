@@ -622,7 +622,7 @@ void
 FramedShaderResources::uploadToGpu(ShaderPass* pass)
 {
 	shaderResource().uploadToGpu(pass);
-	_isRotated = false;
+	//_isRotated = false;
 }
 
 

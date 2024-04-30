@@ -290,7 +290,8 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	// begin render pass
 	{
 		Vector<VkClearValue, 4> clearValues;
-		Util::getVkClearValuesTo(clearValues, renderCmdBuf.getClearValue(), 1, true);
+		auto* clearValueCmd = renderCmdBuf.getClearValue();
+		Util::getVkClearValuesTo(clearValues, clearValueCmd, 1, true);
 
 		auto fbufRect2 = _vkSwapchain.framebufferRect2f(); RDS_UNUSED(fbufRect2);
 

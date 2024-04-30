@@ -443,8 +443,8 @@ Vk_RenderApiUtil::getVkClearValuesTo(Vector<VkClearValue, N>& out, const RenderC
 {
 	RDS_TODO("default clear values");
 	RenderCommand_ClearFramebuffers defaultValue;
-	defaultValue.color			= Color4f{ 0.1f, 0.1f, 0.1f, 1.0f };
-	defaultValue.depthStencil	= Pair<float, u32>{ { 1.0f }, { 0 } };
+	defaultValue.setClearColor();			// = Color4f{ 0.1f, 0.1f, 0.1f, 1.0f };
+	defaultValue.setClearDepthStencil(1.0f, 0);
 
 	auto* clearValue = value ? value : &defaultValue;
 	RDS_CORE_ASSERT(clearValue, "");
@@ -457,7 +457,7 @@ Vk_RenderApiUtil::getVkClearValuesTo(Vector<VkClearValue, N>& out, const RenderC
 		e = toVkClearValue(clearValue->color.value());
 	}
 
-	if (hasDepth)
+	if (hasDepth && clearValue->depthStencil.has_value())
 	{
 		auto& e = out.emplace_back();
 		const auto& v = clearValue->depthStencil.value();

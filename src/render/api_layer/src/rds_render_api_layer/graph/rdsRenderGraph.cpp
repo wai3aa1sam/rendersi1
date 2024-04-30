@@ -196,6 +196,8 @@ RenderGraph::compile()
 		if (e->_pRdRsc || e->_spRdRsc)
 			continue;
 
+		StrView name = e->name(); RDS_UNUSED(name);
+
 		switch (e->type())
 		{
 			case RdgResourceType::Texture:

@@ -435,6 +435,10 @@ public:
 	const	RdgResourceT<T>* resource() const	{ return sCast<const	RdgResourceT<T>*>(_rdgRsc); }
 	*/
 
+public:
+	explicit operator bool() const { return resource(); }
+
+public:
 	const Desc& desc() const			{ return resource()->desc(); }
 
 	RenderResourceT* renderResource()		{ return sCast<RenderResourceT*>(resource()->renderResource()); }
@@ -512,7 +516,6 @@ public:
 	TextureCube*	textureCube()			{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);	return sCast<TextureCube*>(resource()->renderResource()); }
 	TextureCube*	textureCube()	const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);	return sCast<TextureCube*>(resource()->renderResource()); }
 
-	explicit operator bool() const { return resource(); }
 };
 
 class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>
