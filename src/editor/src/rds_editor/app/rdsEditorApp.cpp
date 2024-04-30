@@ -71,7 +71,9 @@ EditorApp::onRun		()
 
 	while (!_shouldQuit)
 	{
+		//HiResTimer timer;
 		onExecuteRun();
+		//RDS_DUMP_VAR("fps: {}", 1.0 / (timer.get()));
 	}
 
 	willQuit();

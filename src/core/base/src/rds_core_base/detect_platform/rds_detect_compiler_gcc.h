@@ -9,6 +9,10 @@ references:
 	#error
 #endif
 
+#if __cplusplus > 0L
+	#define RDS_LANG_CPP		1
+#endif
+
 #if __cplusplus >= 199711L
 	#define RDS_CPLUSPLUS_03	1
 #endif
@@ -28,7 +32,6 @@ references:
 #if __cplusplus >= 202002L
 	#define RDS_CPLUSPLUS_20	1
 #endif
-
 
 
 #if RDS_COMPILER_CLANG

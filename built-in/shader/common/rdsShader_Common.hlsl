@@ -1,5 +1,5 @@
-#ifndef __rdsCommon_HLSL__
-#define __rdsCommon_HLSL__
+#ifndef __rdsShader_Common_HLSL__
+#define __rdsShader_Common_HLSL__
 
 /*
 references:
@@ -8,7 +8,8 @@ references:
 */
 
 #include "rdsMarco_Common.hlsl"
-#include "rdsShaderInterop.hlsl"
+#include "rdsConstant_Common.hlsl"
+#include "built-in/shader/rdsShaderInterop.hlsl"
 
 #if 0
 #pragma mark --- rdsCommonDefine-Impl ---
@@ -18,6 +19,8 @@ references:
 // typedef uint64_t u64; // this is ok
 #define u64 uint64_t
 
+#define UINT_MAX 0xffffffff
+
 #define RDS_BINDLESS 1
 #if RDS_BINDLESS
 
@@ -26,9 +29,8 @@ references:
     */
     #define RDS_BUFFER_SPACE 	space0
 
-    #define RDS_TEX_2D_SPACE 	space1
-    #define RDS_TEX_CUBE_SPACE 	RDS_TEX_2D_SPACE
-    #define RDS_SAMPLER_SPACE 	RDS_TEX_2D_SPACE
+    #define RDS_TEXURE_SPACE 	space1
+    #define RDS_SAMPLER_SPACE 	RDS_TEXURE_SPACE
 
     #define RDS_IMAGE_SPACE 	space2
 
@@ -40,18 +42,48 @@ references:
     /* 
     --- define bindless type
     */
+    SamplerState rds_sampler : register(s13, RDS_CONSTANT_BUFFER_SPACE);   // immutable sampler behave differently, so use this temp solution
+
     // ByteAddressBuffer
     ByteAddressBuffer 	    rds_bufferTable		    [] 						: register(t0, RDS_BUFFER_SPACE);
     RWByteAddressBuffer 	rds_rwBufferTable	    [] 						: register(u0, RDS_BUFFER_SPACE);
 
     SamplerState    	    rds_samplerTable	    [RDS_K_SAMPLER_COUNT] 	: register(s0, 					RDS_SAMPLER_SPACE);
-    Texture2D 			    rds_texture2DTable	    []  					: register(RDS_TEXTURE_BINDING, RDS_TEX_2D_SPACE);
-    TextureCube 		    rds_textureCubeTable    []  					: register(RDS_TEXTURE_BINDING, RDS_TEX_CUBE_SPACE);
+    Texture2D 			    rds_texture2DTable	    []  					: register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
+    TextureCube 		    rds_textureCubeTable    []  					: register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
+    
+    // Texture<T>
+    #define RDS_TEXTURE_T_NAME(ND, T) RDS_CONCAT(RDS_CONCAT(RDS_CONCAT(rds_texture, ND), Table), RDS_CONCAT(_, T))
+    #define RDS_TEXTURE_T_DECL(ND, T)      RDS_CONCAT(Texture, ND)<T> RDS_TEXTURE_T_NAME(ND, T)[] : register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE)
+    
+    #define RDS_TEXTURE_1D_T_DECL(T, ...)    RDS_TEXTURE_T_DECL(1D, T);
+    #define RDS_TEXTURE_2D_T_DECL(T, ...)    RDS_TEXTURE_T_DECL(2D, T);
+    #define RDS_TEXTURE_3D_T_DECL(T, ...)    RDS_TEXTURE_T_DECL(3D, T);
+    #define RDS_TEXTURE_CUBE_T_DECL(T, ...)  RDS_TEXTURE_T_DECL(Cube, T);
 
-    RWTexture2D<float>	    rds_image2DTable	    []						: register(u0, RDS_IMAGE_SPACE);
+    #define RDS_TEXTURE_DECL() \
+        RDS_TYPE_ITER_LIST(RDS_TEXTURE_1D_T_DECL) \
+        RDS_TYPE_ITER_LIST(RDS_TEXTURE_2D_T_DECL) \
+        RDS_TYPE_ITER_LIST(RDS_TEXTURE_3D_T_DECL) \
+        RDS_TYPE_ITER_LIST(RDS_TEXTURE_CUBE_T_DECL) \
+    // ---
+    RDS_TEXTURE_DECL();
 
-    SamplerState rds_sampler : register(s13, RDS_CONSTANT_BUFFER_SPACE);   // immutable sampler behave differently, so use this temp solution
+    // RWTexture<T>
+    #define RDS_IMAGE_T_NAME(ND, T) RDS_CONCAT(RDS_CONCAT(RDS_CONCAT(rds_image, ND), Table), RDS_CONCAT(_, T))
+    #define RDS_IMAGE_T_DECL(ND, T)      RDS_CONCAT(RWTexture, ND)<T> RDS_IMAGE_T_NAME(ND, T)[] : register(u0, RDS_IMAGE_SPACE)
+    
+    #define RDS_IMAGE_1D_T_DECL(T, ...)      RDS_IMAGE_T_DECL(1D, T);
+    #define RDS_IMAGE_2D_T_DECL(T, ...)      RDS_IMAGE_T_DECL(2D, T);
+    #define RDS_IMAGE_3D_T_DECL(T, ...)      RDS_IMAGE_T_DECL(3D, T);
 
+    #define RDS_IMAGE_DECL() \
+        RDS_TYPE_ITER_LIST(RDS_IMAGE_1D_T_DECL) \
+        RDS_TYPE_ITER_LIST(RDS_IMAGE_2D_T_DECL) \
+        RDS_TYPE_ITER_LIST(RDS_IMAGE_3D_T_DECL) \
+    // ---
+    RDS_IMAGE_DECL();
+    
     /* 
     --- define Texture
     */
@@ -78,7 +110,16 @@ references:
 
     #define RDS_TEXTURE_CUBE_SAMPLE(TEX, UV)                RDS_TEXTURE_CUBE_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), UV)
     #define RDS_TEXTURE_CUBE_SAMPLE_LOD(TEX, UV, LOD)       RDS_TEXTURE_CUBE_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), UV, LOD)
-    #define RDS_TEXTURE_CUBE_GET_DIMENSIONS(TEX, OUT_WH)    RDS_TEXTURE_CUBE_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+    #define RDS_TEXTURE_CUBE_GET_DIMENSIONS(TEX, OUT_WH)    RDS_TEXTURE_CUBE_GET(TEX).GetDimensions(OUT_WH.x,   OUT_WH.y)
+
+    #define RDS_TEXTURE_2D_T(T, NAME) RDS_TEXTURE_2D(NAME)
+
+    #define RDS_TEXTURE_1D_T_GET(  T, NAME) RDS_TEXTURE_T_NAME(1D,   T)[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_2D_T_GET(  T, NAME) RDS_TEXTURE_T_NAME(2D,   T)[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_3D_T_GET(  T, NAME) RDS_TEXTURE_T_NAME(3D,   T)[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_CUBE_T_GET(T, NAME) RDS_TEXTURE_T_NAME(Cube, T)[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+
+    #define RDS_TEXTURE_2D_T_SAMPLE(T, TEX, UV) RDS_TEXTURE_2D_T_GET(T, TEX).Sample(     RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, UV))
 
     /* 
     --- define ConstantBuffer Util
@@ -101,6 +142,18 @@ references:
     #define RDS_RW_BUFFER_LOAD(TYPE, NAME)                      RDS_RW_BUFFER_LOAD_I(TYPE, NAME, 0)
     #define RDS_RW_BUFFER_STORE(TYPE, NAME, VALUE)              RDS_RW_BUFFER_STORE_I(TYPE, NAME, 0, VALUE)
 
+    #define RDS_RW_BUFFER_ATM_ADD_I(TYPE, NAME, IDX, VAL, OUT) RDS_RW_BUFFER_GET(NAME).InterlockedAdd(sizeof(TYPE) * (IDX), VAL, OUT)
+
+    /* 
+    --- define Image
+    */
+    #define RDS_IMAGE_2D(        TYPE, NAME)                    uint NAME
+    #define RDS_IMAGE_2D_GET(    TYPE, NAME)                    RDS_IMAGE_T_NAME(2D, TYPE)[NonUniformResourceIndex(NAME)]
+    // #define RDS_IMAGE_2D_LOAD_I( TYPE, NAME, IDX)               RDS_IMAGE_2D_GET(TYPE, NAME)[IDX]
+    // #define RDS_IMAGE_2D_STORE_I(TYPE, NAME, IDX, VALUE)        RDS_IMAGE_2D_GET(TYPE, NAME)[IDX] = VALUE
+    // #define RDS_IMAGE_2D_LOAD(   TYPE, NAME)                    RDS_IMAGE_2D_LOAD_I(TYPE, NAME, 0)
+    // #define RDS_IMAGE_2D_STORE(  TYPE, NAME, VALUE)             RDS_IMAGE_2D_STORE_I(TYPE, NAME, 0, VALUE)
+
 #else
     #error "only support for bindless"
 #endif
@@ -117,6 +170,8 @@ references:
 
 RDS_BUFFER(DrawParam,           rds_drawParams);
 RDS_BUFFER(ObjectTransform,     rds_objTransforms);
+RDS_BUFFER(Light,               rds_lights);
+uint                            rds_nLights;
 
 #define RDS_DRAW_PARAM_GET(IDX)     RDS_BUFFER_LOAD_I(DrawParam,           rds_drawParams,      IDX)
 #define RDS_OBJ_TRANSFORM_GET()     RDS_BUFFER_LOAD_I(ObjectTransform,     rds_objTransforms,   rds_perObjectParam.id)
@@ -140,7 +195,10 @@ DrawParam rds_DrawParam_get(uint idx = 0)
     return RDS_DRAW_PARAM_GET(idx);
 }
 
-static const float rds_pi = 3.14159265359;
+Light rds_Lights_get(uint idx)
+{
+    return RDS_BUFFER_LOAD_I(Light, rds_lights, idx);
+}
 
 #endif
 
@@ -178,19 +236,6 @@ float3 Color_sRGB_to_Linear(float3 x) { return select(x < 0.04045, x / 12.92, -7
 
 #endif
 
-
-#endif
-
-
-#if 0
-#pragma mark --- LightingUtil-Impl ---
-#endif
-#if 1
-
-float Lighting_attenuation(float3 posWs, float3 posLight)
-{
-    return 1.0;
-}
 
 #endif
 
@@ -289,35 +334,35 @@ float4x4 inverse(float4x4 m)
 }
 
 #if 0
-#pragma mark --- SpaceTransformUtil-Impl ---
+#pragma mark --- SpaceTransform-Impl ---
 #endif
 #if 1
 
-float4 SpaceTransformUtil_clipToView(float4 clip, DrawParam drawParam)
+float4 SpaceTransform_clipToView(float4 clip, DrawParam drawParam)
 {
     float4 view = mul(drawParam.matrix_proj_inv, clip);
     view = view / view.w;
     return view;
 }
 
-float4 SpaceTransformUtil_clipToView(float4 clip)
+float4 SpaceTransform_clipToView(float4 clip)
 {
     DrawParam drawParam = rds_DrawParam_get();
-    return SpaceTransformUtil_clipToView(clip);
+    return SpaceTransform_clipToView(clip, drawParam);
 }
 
-float4 SpaceTransformUtil_screenToView(float4 screen, DrawParam drawParam)
+float4 SpaceTransform_screenToView(float4 screen, DrawParam drawParam)
 {
     float2 uv = screen.xy / drawParam.resolution;
 
     float4 clip = float4(float2(uv.x, 1.0 - uv.y) * 2.0 - 1.0, screen.z, screen.w);
-    return SpaceTransformUtil_clipToView(clip, drawParam);
+    return SpaceTransform_clipToView(clip, drawParam);
 }
 
-float4 SpaceTransformUtil_screenToView(float4 screen)
+float4 SpaceTransform_screenToView(float4 screen)
 {
     DrawParam drawParam = rds_DrawParam_get();
-    return SpaceTransformUtil_screenToView(screen, drawParam);
+    return SpaceTransform_screenToView(screen, drawParam);
 }
 
 #endif

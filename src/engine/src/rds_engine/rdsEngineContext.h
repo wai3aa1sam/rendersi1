@@ -9,6 +9,7 @@ class CSystem;
 
 class CTransformSystem;
 class CRenderableSystem;
+class CLightSystem;
 
 #if 0
 #pragma mark --- rdsEngineContext-Decl ---
@@ -56,6 +57,7 @@ public:
 public:
 	CTransformSystem&	transformSystem();
 	CRenderableSystem&	renderableSystem();
+	CLightSystem&		lightSystem();
 
 public:
 	EcsAllocator& entityAllocator();
@@ -77,10 +79,12 @@ protected:
 	// since no reflection now, but as a cache is also ok
 	CTransformSystem*	_transformSystem	= nullptr;
 	CRenderableSystem*	_renderableSystem	= nullptr;
+	CLightSystem*		_lightSystem		= nullptr;
 };
 
 inline CTransformSystem&	EngineContext::transformSystem()	{ return *_transformSystem; }
 inline CRenderableSystem&	EngineContext::renderableSystem()	{ return *_renderableSystem; }
+inline CLightSystem&		EngineContext::lightSystem()		{ return *_lightSystem; }
 
 template<class T> inline T* EngineContext::registerSystem(T* system) { _registerSystem(system); return system; }
 

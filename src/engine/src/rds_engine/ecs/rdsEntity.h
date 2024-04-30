@@ -4,9 +4,13 @@
 #include "component/rdsCTransform.h"
 #include "component/rdsCRenderable.h"
 
+/*
+	TODO: remove after having typeInfo
+*/
 #include "system/rdsCSystem.h"
 #include "system/rdsCTransformSystem.h"
 #include "system/rdsCRenderableSystem.h"
+#include "system/rdsCLightSystem.h"
 
 namespace rds
 {
@@ -29,8 +33,10 @@ public:
 	Entity();
 	~Entity();
 
-	template<class T, class... ARGS>	T* addComponent(ARGS&&... args);
-	template<class T>					T* getComponent();
+	template<class T, class... ARGS>	T*	 addComponent(ARGS&&... args);
+	//template<class T>					void removeComponent();
+	//									void removeComponent(CComponent* component);
+	template<class T>					T*	 getComponent();
 
 	void setName(StrView name);
 

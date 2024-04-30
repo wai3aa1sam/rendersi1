@@ -14,6 +14,8 @@ public:
 public:
 	ParamBuffer();
 
+	T&	 add();
+	void popBack();
 	void resize(SizeType n);
 	void setValue(SizeType i, const T& v);
 	void uploadToGpu();
@@ -22,6 +24,11 @@ public:
 	void setDebugName(StrView name);
 
 public:
+	SizeType size() const;
+
+	/*
+	* do not store the ptr, store the index instead, since it will rotate and the cpuBuffer will resize, all ptr will be invalid
+	*/
 			T& at(SizeType i)						{ checkIsInBoundary(i); return reinCast<			T&>(cpuBuffer()[i * sizeof(T)]); }
 	const	T& at(SizeType i) const					{ checkIsInBoundary(i); return reinCast<const		T&>(cpuBuffer()[i * sizeof(T)]); }
 
@@ -54,6 +61,23 @@ ParamBuffer<T>::ParamBuffer()
 }
 
 template<class T> inline
+T& 
+ParamBuffer<T>::add()
+{
+	auto size = this->size();
+	resize(size + 1);
+	return at(size);		// size is the last idx
+}
+
+template<class T> inline
+void
+ParamBuffer<T>::popBack()
+{
+	auto size = this->size();
+	resize(size - 1);
+}
+
+template<class T> inline
 void 
 ParamBuffer<T>::resize(SizeType n)
 {
@@ -75,7 +99,12 @@ template<class T> inline
 void 
 ParamBuffer<T>::setDebugName(StrView name)
 {
+	bool firstTime = !_gpuBufs;
+	if (firstTime)
+		resize(1);
 	_gpuBufs->setDebugName(name);
+	if (firstTime)
+		popBack();
 }
 
 template<class T> inline
@@ -100,5 +129,8 @@ ParamBuffer<T>::uploadToGpu()
 	cpuBuffer().resize(prevSize);
 	memory_copy(cpuBuffer().data(), prevCpuBuffer().data(), prevSize);
 }
+
+template<class T> inline typename ParamBuffer<T>::SizeType ParamBuffer<T>::size() const { return cpuBuffer().size() / sizeof(T); }
+
 
 }

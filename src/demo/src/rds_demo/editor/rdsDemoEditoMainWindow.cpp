@@ -31,8 +31,9 @@ DemoEditorMainWindow::onActive(bool isActive)
 {
 	if (isActive)
 	{
-		{ Process prco = { "compile_shaders.bat" }; }
+		{ Process proc = { "compile_shaders.bat" }; }
 		ShaderCompileRequest::hotReload(Renderer::instance(), JobSystem::instance(), ProjectSetting::instance());
+		//throwIf(true, "");
 	}
 }
 

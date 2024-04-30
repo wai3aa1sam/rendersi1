@@ -12,6 +12,10 @@ references:
 	#error
 #endif
 
+#if _MSVC_LANG > 0L
+	#define RDS_LANG_CPP		1
+#endif
+
 #if _MSVC_LANG >= 199711L
 	#define RDS_CPLUSPLUS_03	1
 #endif

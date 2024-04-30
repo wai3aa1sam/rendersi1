@@ -13,6 +13,11 @@ class CTransformSystem;
 #endif // 0
 #if 1
 
+/*
+	later, the after set TRS, the matrix will calculate immediately, after upload to ParamBuffer, then resetDirty ?
+	need to think more, since the position also will affect CLight
+*/
+
 class CTransform : public CComponent
 {
 public:
@@ -39,6 +44,8 @@ public:
 	const Vec3f&	localPosition() const;
 	const Vec3f&	localScale()	const;
 	const Quat4f&	localRotation() const;
+
+	bool			isDirty() const;
 
 protected:
 	void _setDirty();
@@ -93,6 +100,7 @@ inline const Vec3f&		CTransform::localPosition() const { return _localPosition; 
 inline const Vec3f&		CTransform::localScale()	const { return _localScale; }
 inline const Quat4f&	CTransform::localRotation() const { return _localRotation; }
 
+inline bool				CTransform::isDirty()		const { return _isDirty; }
 
 #endif
 

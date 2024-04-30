@@ -1,8 +1,8 @@
-#ifndef __rdsGeometry_HLSL__
-#define __rdsGeometry_HLSL__
+#ifndef __rds_geometry_HLSL__
+#define __rds_geometry_HLSL__
 
 #include "rdsGeometryPrimitive.hlsl"
-#include "rdsGeometryUtil.hlsl"
+#include "rdsGeometry.hlsl"
 
 #if 0
 #pragma mark --- Geometry-Impl ---

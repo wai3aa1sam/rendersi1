@@ -26,6 +26,7 @@ public:
 	*/
 	bool isTransform		= false;
 	bool isRenderableMesh	= false;
+	bool isLight			= false;
 	/*
 
 	*/

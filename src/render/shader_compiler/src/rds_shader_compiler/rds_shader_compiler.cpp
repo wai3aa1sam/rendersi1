@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
 		//"-file=asset/shader/demo/hello_triangle/hello_triangle.shader",
 		//"-file=asset/shader/test/test_compute_bindless.shader",
 		"-file=asset/shader/demo/forward_plus/forward_plus.shader",
+		//"-file=asset/shader/test/test_compute_bindless.shader",
 
 		//"-out=dx11/pass0/.bin",
 		//"-profile=vs_5_0",

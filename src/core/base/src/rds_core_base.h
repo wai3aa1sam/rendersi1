@@ -76,6 +76,7 @@ RDS_Define_TypeInfo(bool);
 RDS_Define_TypeInfo(i32);
 RDS_Define_TypeInfo(u32);
 RDS_Define_TypeInfo(u64);
+RDS_Define_TypeInfo(float);
 RDS_Define_TypeInfo(Vec2f);
 RDS_Define_TypeInfo(Vec3f);
 RDS_Define_TypeInfo(Vec4f);

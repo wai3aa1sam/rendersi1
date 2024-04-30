@@ -13,6 +13,7 @@ namespace rds
 
 class CSystem : public NonCopyable
 {
+	RDS_ENGINE_COMMON_BODY();
 public:
 	virtual ~CSystem() = default;
 
@@ -46,8 +47,10 @@ inline EngineContext& CSystem::engineContext() { return *_egCtx; }
 template<class T>
 class CSystemT : public CSystem
 {
+	friend class Entity;
 public:
 	using Base = CSystem;
+	using System = typename T::System;
 
 public:
 	void create(EngineContext* egCtx);
@@ -60,9 +63,14 @@ public:
 	template<class U>					U*		findComponent(EntityId	id);
 	T*											findComponent(EntityId	id);
 
-
 public:
-	Vector<T*>& components();
+			Vector<T*>& components();
+	const	Vector<T*>& components() const;
+
+
+protected:
+	template<class U> void onNewComponent(	 Entity*	entity, U* component) {}
+					  void onDeleteComponent(EntityId	id) {}
 
 protected:
 	EcsAllocator			_ecsAlloc;
@@ -90,7 +98,8 @@ template<class U, class... ARGS> inline
 U*		
 CSystemT<T>::newComponent(Entity* entity, ARGS&&... args)
 {
-	return _componentVecTable.newElement<U>(entity->id(), rds::forward<ARGS>(args)...);
+	U* p = _componentVecTable.newElement<U>(entity->id(), rds::forward<ARGS>(args)...);
+	return p;
 }
 
 template<class T> inline
@@ -115,7 +124,8 @@ CSystemT<T>::findComponent(EntityId id)
 	return _componentVecTable.findElement(id);
 }
 
-template<class T> inline Vector<T*>& CSystemT<T>::components() { return _componentVecTable.elements(); }
+template<class T> inline		Vector<T*>& CSystemT<T>::components()		{ return _componentVecTable.elements(); }
+template<class T> inline const	Vector<T*>& CSystemT<T>::components() const { return _componentVecTable.elements(); }
 
 
 #endif

@@ -8,6 +8,8 @@ Shader {
 		// Queue	"Transparent"
 		//Cull		None
 
+		DepthTest	Less
+
 //		DepthTest	Always
 //		DepthWrite	false
 
@@ -26,30 +28,24 @@ Shader {
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
-    float2 uv           : TEXCOORD0;
+    float4 positionOs   : SV_POSITION;
 };
 
 struct PixelIn 
 {
-	float4 positionHCS  : SV_POSITION;
-    float2 uv           : TEXCOORD0;
+	float4 positionHcs  : SV_POSITION;
 };
 
-
-RDS_TEXTURE_2D(texPresent);
-
-PixelIn vs_main(VertexIn i)
+PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
-    o.positionHCS = i.positionOS;
-    o.uv          = i.uv;
-    
+    o.positionHcs = mul(RDS_MATRIX_MVP, input.positionOs);
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float ps_main(PixelIn input) : SV_TARGET
 {
-	float4 o = RDS_TEXTURE_2D_SAMPLE(texPresent, i.uv);
-    return o;
+    //float4 color;
+    //color = float4(input.positionHcs.z, input.positionHcs.z, input.positionHcs.z, 1.0);
+    return input.positionHcs.z;
 }

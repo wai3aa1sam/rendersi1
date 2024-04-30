@@ -43,6 +43,8 @@ GraphicsDemo::onCreate()
 
 	createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/skybox.shader"
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
+
+	createMaterial(&_shaderPreDepth, &_mtlPreDepth, "asset/shader/pre_depth.shader");
 }
 
 void 
@@ -99,7 +101,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAs
 			auto* ent = scene.addEntity("");
 
 			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-			rdableMesh->material = mtl;
+			//rdableMesh->material = mtl;
 			rdableMesh->meshAsset = meshAsset;
 
 			auto* transform	= ent->getComponent<CTransform>();
@@ -110,6 +112,35 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAs
 			ent->setName(buf);
 		}
 	}
+
+	#if 1
+	for (size_t r = 0; r < row; r++)
+	{
+		for (size_t c = 0; c < col; c++)
+		{
+			auto* ent = scene.addEntity("");
+
+			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+			//rdableMesh->material = mtl;
+			rdableMesh->meshAsset = meshAssets().box;
+
+			auto* transform	= ent->getComponent<CTransform>();
+			transform->setLocalPosition(startPos.x + step.x * c, 20.0f, startPos.y + step.y * r);
+
+			auto* light = ent->addComponent<CLight>();
+			light->setType(r % 2 == 0 ? LightType::Point : LightType::Spot);
+			if (r == 0 && c == 0)
+			{
+				light->setType(LightType::Directional);
+			}
+
+			TempString buf;
+			fmtTo(buf, "{}-{}", enumStr(light->lightType()), sCast<u64>(ent->id()));
+			ent->setName(buf);
+		}
+	}
+	#endif // 1
+
 }
 
 void 
@@ -129,8 +160,11 @@ GraphicsDemo::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrVie
 RdgPass*
 GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCube* texSkybox, RdgTextureHnd texColor, RdgTextureHnd texDepth)
 {
-	auto*	rdGraph		= oRdGraph;
+	if (!texColor)
+		return nullptr;
 
+	auto*	rdGraph		= oRdGraph;
+	
 	auto& skyboxPass = rdGraph->addPass("skybox", RdgPassTypeFlags::Graphics);
 	skyboxPass.setRenderTarget(texColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
 	if (texDepth)
@@ -148,7 +182,50 @@ GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCu
 	return &skyboxPass;
 }
 
-void addDrawLineTest()
+RdgPass* 
+GraphicsDemo::addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* oDsBufHnd, RdgTextureHnd* oTexDepthHnd)
+{
+	auto* rdGraph		= oRdGraph;
+	auto& dsBuf			= *oDsBufHnd;
+	auto& texDepth		= *oTexDepthHnd;
+	auto& passPreDepth	= rdGraph->addPass("pre_depth", RdgPassTypeFlags::Graphics);
+
+	{
+		auto& pass = passPreDepth;
+		if (oTexDepthHnd)
+			pass.setRenderTarget(texDepth, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setDepthStencil(dsBuf, RenderAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), *drawData);
+				auto mtl = _mtlPreDepth;
+
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor();
+				clearValue->setClearDepth();
+
+				drawData->setupMaterial(mtl);
+				drawData->sceneView->drawScene(rdReq, mtl, drawData);
+			});
+	}
+
+	/*if (oTexDepthHnd)
+	{
+		auto& pass = rdGraph->addPass(fmtAs_T<TempString>("{}_transit", passPreDepth.name()), RdgPassTypeFlags::Graphics);
+		pass.readTexture(texDepth);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+			}
+		);
+	}*/
+
+	return &passPreDepth;
+}
+
+void 
+addDrawLineTest()
 {
 	#if 0
 	{

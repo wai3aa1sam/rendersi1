@@ -9,6 +9,7 @@
 
 #include "rds_engine/ecs/component/rdsCTransform.h"
 #include "rds_engine/ecs/component/rdsCRenderableMesh.h"
+#include "rds_engine/ecs/component/rdsCLight.h"
 
 #include "rds_engine/ecs/system/rdsCTransformSystem.h"
 #include "rds_engine/ecs/system/rdsCRenderableSystem.h"

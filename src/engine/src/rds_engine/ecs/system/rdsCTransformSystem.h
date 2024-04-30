@@ -10,7 +10,7 @@ namespace rds
 {
 
 class Scene;
-//class CTransform;
+class CTransform;
 
 #if 0
 #pragma mark --- rdsCTransformSystem-Decl ---

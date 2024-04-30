@@ -3,6 +3,7 @@
 
 #include "ecs/system/rdsCTransformSystem.h"
 #include "ecs/system/rdsCRenderableSystem.h"
+#include "ecs/system/rdsCLightSystem.h"
 
 namespace rds
 {
@@ -27,6 +28,7 @@ EngineContext::create()
 {
 	_transformSystem	= registerSystem(newSystem<CTransformSystem>());
 	_renderableSystem	= registerSystem(newSystem<CRenderableSystem>());
+	_lightSystem		= registerSystem(newSystem<CLightSystem>());
 }
 
 void 

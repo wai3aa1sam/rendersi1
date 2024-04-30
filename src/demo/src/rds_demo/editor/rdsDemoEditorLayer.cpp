@@ -127,7 +127,7 @@ DemoEditorLayer::onUpdate()
 		drawData._mtlLine   = _mtlLine;		// TODO: temporary
 
 		_gfxDemo->onExecuteRender(&rdGraph, &drawData);
-		RDS_CORE_ASSERT(drawData.oTexPresent, "invalid present tex");
+		//RDS_CORE_ASSERT(drawData.oTexPresent, "invalid present tex");
 		_texHndPresent = drawData.oTexPresent;
 
 		{
@@ -141,7 +141,7 @@ DemoEditorLayer::onUpdate()
 			// present
 			renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
 			renderableSystem().update(drawData);
-			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent.renderResource(), &mainWindow().camera(), mainWindow().uiMouseEv);
+			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.renderResource() : nullptr, &mainWindow().camera(), mainWindow().uiMouseEv);
 
 			rdUiCtx.onEndRender(&rdCtx);
 		}

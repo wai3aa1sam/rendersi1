@@ -24,7 +24,7 @@ Shader {
 }
 #endif
 
-//#include "built-in/shader/common/rdsCommon.hlsl"
+//#include "built-in/shader/rds_shader.hlsl"
 #include "rdsPbrCommon.hlsl"
 
 struct VertexIn
@@ -81,7 +81,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
     Surface surface;
     surface.posWS       = i.positionWS.xyz;
     surface.normal      = normalize(i.normal);
-    surface.color       = albedo;
+    surface.color.rgb   = albedo;
     surface.roughness   = roughness;
     surface.metallic    = metallic;
 

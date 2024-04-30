@@ -2,6 +2,10 @@
 #include "rdsCRenderableSystem.h"
 #include "rds_engine/ecs/component/rdsCRenderable.h"
 
+#include "rds_engine/rdsEngineContext.h"
+#include "rdsCLightSystem.h"
+
+
 #include "../rdsEntity.h"
 #include "../rdsScene.h"
 
@@ -29,13 +33,11 @@ CRenderableSystem::~CRenderableSystem()
 void 
 CRenderableSystem::create(EngineContext* egCtx)
 {
-	Base::create(&engineContext());
+	Base::create(egCtx);
 	_framedRdReq.resize(s_kFrameInFlightCount);
 
-	_objTransformBuf.resize(1);
-	_drawPramBuf.resize(1);
-	_objTransformBuf.setDebugName("objTransformBuf");
-	_drawPramBuf.setDebugName("drawPramBuf");
+	_objTransformBuf.setDebugName(	"rds_objTransforms");
+	_drawPramBuf.setDebugName(		"rds_drawPrams");
 }
 
 void 
@@ -68,6 +70,7 @@ CRenderableSystem::update(DrawData& drawData)
 		// for all materials and setParam
 		_objTransformBuf.uploadToGpu();
 	}
+
 	{
 		auto n = 1;
 		_drawPramBuf.resize(n);
@@ -75,11 +78,19 @@ CRenderableSystem::update(DrawData& drawData)
 		{
 			auto& drawParam = _drawPramBuf.at(i);
 			drawData.setupDrawParam(&drawParam);
+
+			// lights
+			{
+				RDS_CORE_ASSERT(n == 1, "only support 1 set lights, otherwise, there should be multi ParamBuffer<T>");
+				auto& sysLight = engineContext().lightSystem();
+				sysLight.update(drawData);
+			}
 		}
 
 		_drawPramBuf.uploadToGpu();
+		drawData.setupMaterial(drawData._mtlLine); // TODO: temporary
 	}
-	drawData.setupMaterial(drawData._mtlLine);
+
 
 	// record command
 	{
@@ -110,9 +121,8 @@ CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle,
 
 		rdReq.reset(rdCtx);
 		auto* clearValue = rdReq.clearFramebuffers();
-		clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
-		clearValue->setClearColor(Color4f{0.0f, 0.0f, 0.0f, 1.0f});
-		clearValue->setClearDepth(1.0f);
+		clearValue->setClearColor();
+		clearValue->setClearDepth();
 
 		if (mtlPresent)
 		{
@@ -131,6 +141,8 @@ CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh&
 	auto* rdCtx = rdGraph.renderContext();
 
 	auto texPresent		= drawData.oTexPresent;
+	if (!texPresent)
+		return;
 	//auto backBufferRt	= rdGraph.importTexture("back_buffer", rdCtx.backBuffer()); RDS_UNUSED(backBufferRt);
 
 	auto& finalComposePass = rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
@@ -177,10 +189,13 @@ void
 DrawData::setupMaterial(Material* oMtl)
 {
 	auto& mtl = oMtl;
-	auto& rdableSys = sceneView->renderableSystem();
+	auto& sysRdable = sceneView->renderableSystem();
+	auto& sysLight	= sysRdable.engineContext().lightSystem();
 
-	mtl->setParam("rds_objTransforms",		&rdableSys._objTransformBuf.gpuBuffer());
-	mtl->setParam("rds_drawParams",			&rdableSys._drawPramBuf.gpuBuffer());
+	mtl->setParam("rds_objTransforms",		&sysRdable._objTransformBuf.gpuBuffer());
+	mtl->setParam("rds_drawParams",			&sysRdable._drawPramBuf.gpuBuffer());
+	mtl->setParam("rds_lights",				&sysLight.lightParamBuf().gpuBuffer());
+	mtl->setParam("rds_nLights",			sysLight.lightCount());
 }
 
 const Tuple2f& DrawData::resolution() const { return camera->viewport().size; }

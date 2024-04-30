@@ -15,6 +15,7 @@ Shader {
 //		DepthTest	Always
 //		DepthWrite	false
 
+		DepthWrite	false		// pre_depth
 		Wireframe false
 
 		//BlendRGB 	Add One OneMinusSrcAlpha
@@ -32,7 +33,7 @@ Shader {
 }
 #endif
 
-#include "built-in/shader/common/rdsCommon.hlsl"
+#include "built-in/shader/rds_shader.hlsl"
 #include "test.hlsl" 
 
 struct VertexIn

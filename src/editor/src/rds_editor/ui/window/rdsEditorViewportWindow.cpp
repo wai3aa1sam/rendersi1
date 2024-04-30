@@ -20,7 +20,8 @@ EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, math
 	auto& uiDrawReq = *edtDrawReq;
 	auto wnd = window(edtDrawReq, label());
 
-	uiDrawReq.showImage(tex);
+	if (tex)
+		uiDrawReq.showImage(tex);
 
 	if (wnd.isFocused())
 	{

@@ -170,6 +170,55 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 			}
 		}
 	}
+
+	if (c->isLight)
+	{
+		auto&			comp	= *sCast<CLight*>(c);
+		const char*		label	= "Light";
+		auto			header	= edtDrawReq.makeCollapsingHeader(label);
+		auto			pushId	= edtDrawReq.makePushID(label);
+		
+		auto lightType = comp.lightType();
+		{
+			//auto* drawer = edtCtx.findPropertyDrawer(position);
+			edtDrawReq.showText(enumStr(lightType));
+		}
+
+		{
+			auto v = comp.color();
+			auto* drawer = edtCtx.findPropertyDrawer(v);
+			drawer->draw(propDrawReq, "Color", &v);
+			comp.setColor(v);
+		}
+
+		{
+			auto v = comp.intensity();
+			auto* drawer = edtCtx.findPropertyDrawer(v);
+			drawer->draw(propDrawReq, "Intensity", &v);
+			comp.setIntensity(v);
+		}
+
+		if (lightType != LightType::Directional)
+		{
+			float v = comp.range();
+			auto* drawer = edtCtx.findPropertyDrawer(v);
+			drawer->draw(propDrawReq, "Range", &v);
+			comp.setRange(v);
+		}
+
+		if (lightType == LightType::Spot)
+		{
+			float spotAngle			= math::degrees(comp.spotAngle());
+			float spotInnerAngle	= math::degrees(math::acos(comp.spotInnerCosAngle()));
+
+			auto* drawer = edtCtx.findPropertyDrawer(spotAngle);
+			drawer->draw(propDrawReq, "SpotAngle",		&spotAngle);
+			drawer->draw(propDrawReq, "SpotInnerAngle", &spotInnerAngle);
+
+			comp.setSpotAngle(math::radians(spotAngle));
+			comp.setSpotInnerCosAngle(math::cos(math::radians(spotInnerAngle)));
+		}
+	}
 }
 
 #endif
