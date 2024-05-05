@@ -38,7 +38,7 @@ CLightSystem::update(const DrawData& drawData)
 		{
 			auto& ent		= light->entity();
 			auto& transform = ent.transform(); RDS_UNUSED(transform);
-			updateLight(light, transform, matrixView, transform.isDirty());
+			updateLight(light, transform, matrixView, true/*transform.isDirty()*/);
 		}
 
 		lightParamBuf.uploadToGpu();
@@ -58,9 +58,10 @@ CLightSystem::updateLight(CLight* light, CTransform& transform, const Mat4f& vie
 		return isDirty;
 	}
 
-	auto matrixMv	= viewMatrix * transform.worldMatrix();
-	auto posVs		= matrixMv.mulPoint4x3(transform.localPosition());
-	auto dirVs		= matrixMv.mulVector(transform.localRotation().axis());
+	auto posVs		= viewMatrix.mulPoint4x3(transform.localPosition());
+	auto dirVs		= viewMatrix.mulVector(transform.forward()).normalize();
+
+	//posVs		= transform.localPosition();
 
 	light->setPositionVs( posVs);
 	light->setDirectionVs(dirVs);

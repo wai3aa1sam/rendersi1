@@ -9,7 +9,7 @@
 #include "built-in/shader/rds_shader.hlsl"
 #include "built-in/shader/geometry/rdsGeometry.hlsl"
 
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 32
 
 
 #endif

@@ -114,7 +114,7 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 							auto* value		= shaderRsc.findParam(e.name);
 							if (!value)
 								continue;
-							drawer->draw(propDrawReq, name.c_str(), value);
+							bool hasValueChanged = drawer->draw(propDrawReq, name.c_str(), value); RDS_UNUSED(hasValueChanged);
 						} break;
 						case SRC::Texture2D:
 						{
@@ -209,14 +209,14 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 		if (lightType == LightType::Spot)
 		{
 			float spotAngle			= math::degrees(comp.spotAngle());
-			float spotInnerAngle	= math::degrees(math::acos(comp.spotInnerCosAngle()));
+			float spotInnerAngle	= math::degrees(comp.spotInnerAngle());
 
 			auto* drawer = edtCtx.findPropertyDrawer(spotAngle);
 			drawer->draw(propDrawReq, "SpotAngle",		&spotAngle);
 			drawer->draw(propDrawReq, "SpotInnerAngle", &spotInnerAngle);
 
 			comp.setSpotAngle(math::radians(spotAngle));
-			comp.setSpotInnerCosAngle(math::cos(math::radians(spotInnerAngle)));
+			comp.setSpotInnerAngle(math::radians(spotInnerAngle));
 		}
 	}
 }

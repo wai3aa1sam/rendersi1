@@ -79,7 +79,7 @@ float Pbr_geometrySmith_ibl(float dotNV, float dotNL, float roughness)
 float3 Pbr_basic_lighting(Surface surface, float3 dirView, float3 posLight, float3 colorLight)
 {
     float3 posWs    = surface.posWS;
-    float3 normal   = surface.normal;
+    float3 normal   = surface.normalWs;
     float3 albedo   = surface.color.rgb;
 
     //float3 dirView  = normalize(posView - posWs);
@@ -122,8 +122,7 @@ float3 Pbr_basic_lighting(Surface surface, float3 dirView, float3 posLight, floa
 
 LightingResult Pbr_basic_lighting(Surface surface, float3 dirView, float3 L, float3 colorLight, float intensity)
 {
-    float3 posWs    = surface.posWS;
-    float3 normal   = surface.normal;
+    float3 normal   = surface.normalVs;
     float3 albedo   = surface.color.rgb;
 
     //float3 dirView  = normalize(posView - posWs);
@@ -143,7 +142,7 @@ LightingResult Pbr_basic_lighting(Surface surface, float3 dirView, float3 L, flo
     float   geo         = Pbr_geometrySmith(dotNV, dotNL, surface.roughness);
 
     float3  spec_numer  = normalDist * geo * fresnel;
-    float   spec_denom  = 4.0 * dotNV * dotNL + 0.0001;
+    float   spec_denom  = 4.0 * dotNV * dotNL + rds_epsilon;
     float3  specular    = spec_numer / spec_denom;
 
     float3 kSpecular = fresnel;
@@ -151,11 +150,11 @@ LightingResult Pbr_basic_lighting(Surface surface, float3 dirView, float3 L, flo
     kDiffuse        *= 1.0 - surface.metallic;  // metallic surface absorb all diffuse 
     
     float3  lambert = albedo / rds_pi;
-    float3  brdf    = kDiffuse * lambert + specular;
+    //float3  brdf    = kDiffuse * lambert + specular;
 
     //float   attenuation = Lighting_attenuation(posWs, posLight);
     float3  radiance    = colorLight * intensity;
-    float3  result      = brdf * radiance * dotNL;
+    //float3  result      = brdf * radiance * dotNL;
 
     float3 brdfDiffuse  = kDiffuse * lambert;
     float3 brdfSpecular = specular;
@@ -164,16 +163,20 @@ LightingResult Pbr_basic_lighting(Surface surface, float3 dirView, float3 L, flo
     o.diffuse.rgb   = brdfDiffuse  * radiance * dotNL;
     o.specular.rgb  = brdfSpecular * radiance * dotNL;
 
+    //o.diffuse.rgb   = float3(dotNL, dotNL, dotNL);
+
     return o;
 }
 
 float3 Pbr_indirectDiffuse_ibl(Surface surface, float3 dirView, float3 irradianceEnv, float ao)
 {
+    float3 normal    = surface.normalWs;
+
     float3 albedo    = surface.color.rgb;
     float3 baselRefl = float3(0.04, 0.04, 0.04); 
     baselRefl = lerp(baselRefl, albedo, surface.metallic);
 
-    float3 kS = Pbr_fresnelSchlick(max(dot(surface.normal, dirView), 0.0), baselRefl);
+    float3 kS = Pbr_fresnelSchlick(max(dot(normal, dirView), 0.0), baselRefl);
     float3 kD = 1.0 - kS;
     kD *= 1.0 - surface.metallic;	  
     float3 irradiance   = irradianceEnv;

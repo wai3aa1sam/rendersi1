@@ -36,6 +36,16 @@ struct PixelIn
 	float4 positionHcs  : SV_POSITION;
 };
 
+float linearizeDepth(float depth, DrawParam drawParam) 
+{
+	float near 	= drawParam.camera_near;
+	float far 	= drawParam.camera_far;
+
+    float z = depth * 2.0 - 1.0; // back to NDC 
+	return depth;
+    //return (2.0 * near * far) / (far + near - z * (far - near));	
+}
+
 PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
@@ -46,6 +56,8 @@ PixelIn vs_main(VertexIn input)
 float ps_main(PixelIn input) : SV_TARGET
 {
     //float4 color;
-    //color = float4(input.positionHcs.z, input.positionHcs.z, input.positionHcs.z, 1.0);
-    return input.positionHcs.z;
+    //color = float4(inputpositionHcs.z, inputpositionHcs.z, inputpositionHcs.z, 1.0);
+	//float depth = linearizeDepth(input.positionHcs.z, rds_DrawParam_get());
+	float depth = input.positionHcs.z;
+    return depth;
 }

@@ -86,20 +86,22 @@ float4 ps_main(PixelIn i) : SV_TARGET
 
     Surface surface;
     surface.posWS               = i.positionWS;
-    surface.normal              = normalize(i.normal);
+    surface.normalWs            = normalize(i.normal);
     surface.color.rgb           = color;
     surface.roughness           = roughness;
     surface.metallic            = metallic;
     surface.ambientOcclusion    = ao;
 
+    float3 normal = surface.normalWs;
+
     float3 posView = drawParam.camera_pos;
     float3 dirView = normalize(posView - surface.posWS);
-    float3 dirRefl = reflect(-dirView, surface.normal);
+    float3 dirRefl = reflect(-dirView, normal);
 
     o = Pbr_basic_lighting(surface, dirView, posLight, colorLight);
 
-    float  dotNV            = max(dot(surface.normal, dirView), 0.0);
-    float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(irradianceEnvMap, surface.normal).rgb;
+    float  dotNV            = max(dot(normal, dirView), 0.0);
+    float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(irradianceEnvMap, normal).rgb;
     float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(prefilteredEnvMap, dirRefl, surface.roughness * s_kMaxLod).rgb;
     float2 brdf             = RDS_TEXTURE_2D_SAMPLE(brdfLut, float2(dotNV, surface.roughness)).rg;
 

@@ -1160,6 +1160,8 @@ RenderContext_Vk::onRenderCommand_CopyTexture(RenderCommand_CopyTexture* cmd, vo
 	auto src = Vk_Texture::getVkImageHnd(cmd->src);
 	auto dst = Vk_Texture::getVkImageHnd(cmd->dst);
 
+	RDS_CORE_ASSERT(!Util::isDepthFormat(Util::toVkFormat(cmd->src->format())) && !Util::isDepthFormat(Util::toVkFormat(cmd->dst->format())), " use CopyDepthToTexture instead, btw not yet impl, since depth need vkCmdCopyImageToBuffer then vkCmdCopyBufferToImage");
+
 	copyRegion.extent = Util::toVkExtent3D(cmd->extent);
 
 	copyRegion.srcSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;

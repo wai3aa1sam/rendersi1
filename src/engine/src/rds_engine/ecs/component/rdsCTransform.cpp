@@ -41,6 +41,13 @@ CTransform::_computeLocalMatrix()
 	_matLocal = Mat4f::s_TRS(_localPosition, _localRotation, _localScale);
 }
 
+Vec3f CTransform::forward() const
+{
+	auto v = localRotation() * Vec3f::s_forward();
+	//RDS_CORE_ASSERT(math::equals(v.magnitude(), 1.0f), "forawrd is not normalized yet");
+	return v.normalize();
+}
+
 
 #endif
 

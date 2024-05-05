@@ -8,7 +8,7 @@ namespace rds
 {
 namespace shaderInterop
 {
-#include "../../../built-in/shader/common/geometry/rdsGeometryPrimitive.hlsl"
+#include "../../../built-in/shader/geometry/rdsGeometryPrimitive.hlsl"
 }
 }
 
@@ -21,18 +21,29 @@ namespace rds
 #endif // 0
 #if 1
 
+static constexpr int N = 100;
+static int arr[N];
+
 void 
 ForwardPlus::onCreate()
 {
 	Base::onCreate();
 
-	createMaterial(&_shaderForwardPlus, &_mtlForwardPlus, "asset/shader/demo/forward_plus/forward_plus.shader"
-					, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
-
 	createMaterial(&_shaderHelloTriangle, &_mtlHelloTriangle, "asset/shader/demo/hello_triangle/hello_triangle.shader"
 		, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
 
-	_fwpMakeFrustums = makeUPtr<ForwardPlus_MakeFrustums>();
+	createMaterial(&_shaderPostProcess, &_mtlPostProcess, "asset/shader/present.shader");
+
+	_rfpForwardPlus = makeUPtr<RfpForwardPlus>();
+
+	// just for test address sanitizers
+	#if 0
+	for (size_t i = 0; i < N; i++)
+	{
+		arr[i] = sCast<int>(i);
+}
+	arr[1000] = 0;
+	#endif // 0
 }
 
 void 
@@ -40,15 +51,13 @@ ForwardPlus::onCreateScene(Scene* oScene)
 {
 	Base::onCreateScene(oScene);
 
-	createDefaultScene(oScene, _mtlForwardPlus, meshAssets().suzanne, 25);
-
 	{
 		auto& scene = *oScene;
 		auto* ent = scene.addEntity("");
 
 		auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-		rdableMesh->material	= _fwpMakeFrustums->mtlFwpMakeFrustum;
-		//rdableMesh->meshAsset	= meshAsset;
+		rdableMesh->material	= _rfpForwardPlus->mtlFwdpMakeFrustum;
+		//rdableMesh->meshAsset	= meshAssets().fullScreenTriangle;
 
 		//auto* transform	= ent->getComponent<CTransform>();
 		//transform->setLocalPosition(startPos.x + step.x * c, 0.0f, startPos.y + step.y * r);
@@ -57,39 +66,14 @@ ForwardPlus::onCreateScene(Scene* oScene)
 		fmtTo(buf, "Debug Frustum-{}", sCast<u64>(ent->id()));
 		ent->setName(buf);
 	}
+
+	createDefaultScene(oScene, nullptr, meshAssets().plane, 1);
 }
 
 void 
 ForwardPlus::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
 	Base::onPrepareRender(oRdGraph, drawData);
-
-	#if 0
-	auto*	rdGraph		= oRdGraph;
-	auto*	rdCtx		= rdGraph->renderContext();
-	auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
-
-	RdgTextureHnd texCompute	= rdGraph->createTexture("forward_plus_texCompute-onPrepareRender"
-		,	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::UnorderedAccess	| TextureUsageFlags::ShaderResource});
-	#if 1
-	{
-		auto& pass = rdGraph->addPass("forward_plus", RdgPassTypeFlags::Compute);
-		pass.writeTexture(texCompute);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				auto mtl = _mtlForwardPlus;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
-
-				mtl->setParam("oImage", texCompute.renderResource());
-				rdReq.dispatch(RDS_SRCLOC, mtl, 0, screenSize.x / 8, screenSize.y / 8, 1);
-			}
-		);
-	}
-	#endif // 1
-
-	rdGraph->exportTexture(&_tex, texCompute, TextureUsageFlags::ShaderResource);
-	#endif // 0
 }
 
 void 
@@ -98,61 +82,69 @@ ForwardPlus::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 	Base::onExecuteRender(oRdGraph, drawData);
 
 	auto*	rdGraph		= oRdGraph;
-	auto*	rdCtx		= rdGraph->renderContext();
-	auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
+	auto	screenSize	= Vec2u::s_cast(Vec2f(drawData->resolution())).toTuple2();
 
 	//RdgBufferHnd bufFrustums = _fwpMakeFrustums->onExecuteRender(oRdGraph, drawData);
-
 	//Renderer::rdDev()->waitIdle();
 
-	RdgTextureHnd texColor		= rdGraph->createTexture("forward_plus_color",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget		| TextureUsageFlags::ShaderResource});
-	RdgTextureHnd texDepth		= rdGraph->createTexture("forward_plus_depth",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil		| TextureUsageFlags::ShaderResource});
-	RdgTextureHnd texCompute	= rdGraph->createTexture("forward_plus_texCompute",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::UnorderedAccess	| TextureUsageFlags::ShaderResource});
+#if 0
+	{
+		Mat4f viewMatrix = drawData->camera->viewMatrix();
+		{
+			Vec4f v = viewMatrix * Vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+			RDS_DUMP_VAR(v);
+			v = viewMatrix * Vec4f(3.0f, 1.0f, 0.0f, 1.0f);
+			RDS_DUMP_VAR(v);
+		}
+
+		{
+			Vec3f v = viewMatrix.mulPoint4x3(Vec3f(0.0f, 1.0f, 0.0f));
+			RDS_DUMP_VAR(v);
+			v = viewMatrix.mulPoint4x3(Vec3f(3.0f, 1.0f, 0.0f));
+			RDS_DUMP_VAR(v);
+		}
+	}
+#endif // 0
+
+	RdgTextureHnd rtColor		= rdGraph->createTexture("forward_plus_rtColor",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd dsBuf			= rdGraph->createTexture("forward_plus_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferSrc});
+	RdgTextureHnd texDepth		= rdGraph->createTexture("forward_plus_texDepth",	Texture2D_CreateDesc{ screenSize, ColorType::Rf,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource /*| TextureUsageFlags::TransferDst*/});
+
+	addPreDepthPass(rdGraph, drawData, &dsBuf, &texDepth, Color4f{1.0f, 0.0f, 0.0f, 1.0f});
+
+	auto		bufFwdpFrsutums		= _rfpForwardPlus->addMakeFrustumsPass(rdGraph, drawData);
+	auto		fwdpCullingResult	= _rfpForwardPlus->addLightCullingPass(rdGraph, drawData, bufFwdpFrsutums, texDepth);
+	RdgPass*	passFwdp			= fwdpCullingResult.lightCullingPass;
+	RdgPass*	passFwdpLighting	= _rfpForwardPlus->addLightingPass(rdGraph, drawData, rtColor, dsBuf, fwdpCullingResult, true, true);
+
+	// TODO: remove, just use it for transit then compute use, later add a flag in VkStageAccess to determine the stage
 	#if 1
 	{
-		auto& pass = rdGraph->addPass("forward_plus", RdgPassTypeFlags::Compute);
-		pass.writeTexture(texCompute);
+		auto& pass = rdGraph->addPass("TODO: remove, just use it for transit then compute use", RdgPassTypeFlags::Graphics /*| RdgPassTypeFlags::Transfer*/);
+		pass.readTexture(texDepth);
+		//pass.readTexture(dsBuf);
+		//pass.writeTexture(texDepth);
+		//pass.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				auto mtl = _mtlForwardPlus;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
-
-				mtl->setParam("oImage", texCompute.renderResource());
-				rdReq.dispatch(RDS_SRCLOC, mtl, 0, screenSize.x / 8, screenSize.y / 8, 1);
+				//rdReq.copyTexture(RDS_SRCLOC, texDepth.renderResource(), dsBuf.renderResource(), 0, 0, 0, 0);
 			}
 		);
+		if (passFwdp)
+			passFwdp->runAfter(&pass);
 	}
 	#endif // 1
 
-	#if 1
-	{
-		auto& passHelloTriangle = rdGraph->addPass("hello_triangle", RdgPassTypeFlags::Graphics);
-		passHelloTriangle.readTexture(texCompute);
-		passHelloTriangle.setRenderTarget(texColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		passHelloTriangle.setDepthStencil(texDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
-		passHelloTriangle.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				auto mtl = _mtlHelloTriangle;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+	//if (passFwdpLighting)
+	//	addSkyboxPass(rdGraph, drawData, skyboxDefault(), rtColor, dsBuf);
+	//addPostProcessPass(rdGraph, drawData, "debug_fwdp", rtColor,)
 
-				auto* clearValue = rdReq.clearFramebuffers();
-				clearValue->setClearColor();
-				clearValue->setClearDepth();
+	//_rfpForwardPlus->renderDebugMakeFrustums(rdGraph, drawData, rtColor);
+	if (passFwdpLighting)
+		addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);	
 
-				mtl->setParam("texture0", texCompute.renderResource());
-				//mtl->setParam("texture0", _tex);
-				drawData->sceneView->drawScene(rdReq, mtl, drawData);
-			}
-		);
-	}
-	#endif // 1
-
-	addSkyboxPass(rdGraph, drawData, skyboxDefault(), texColor, texDepth);
-	//_fwpMakeFrustums->renderDebugMakeFrustums(rdGraph, drawData, texColor);
-
-	drawData->oTexPresent = texColor;
+	drawData->oTexPresent = passFwdpLighting ? rtColor : RdgTextureHnd{};
 }
 
 void 
@@ -175,84 +167,108 @@ ForwardPlus::onUiKeyboardEvent(UiKeyboardEvent& ev)
 #endif
 
 #if 0
-#pragma mark --- rdsForwardPlus-Impl ---
+#pragma mark --- rdsRfpForwardPlus-Impl ---
 #endif // 0
 #if 1
 
-ForwardPlus_MakeFrustums::ForwardPlus_MakeFrustums()
+void 
+RfpForwardPlus::getMakeFrustumsThreadParamTo(Vec2u* oNThreads, Vec2u* oNThreadGrps, Vec2f resolution_, u32 blockSize)
+{
+	/*
+	*	1 block for 1 furstum == 1 thread for 1 frustum
+	*/
+
+	Vec2f nThreads_f	= resolution_ / sCast<float>(blockSize);
+	Vec2f nThreadGrps_f	= nThreads_f  / sCast<float>(blockSize);
+
+	*oNThreads		= Vec2u::s_cast(Vec2i{math::ceilToInt(nThreads_f.x),	math::ceilToInt(nThreads_f.y)});
+	*oNThreadGrps	= Vec2u::s_cast(Vec2i{math::ceilToInt(nThreadGrps_f.x),	math::ceilToInt(nThreadGrps_f.y)});
+}
+
+void 
+RfpForwardPlus::getLightCulllingThreadParamTo(Vec2u* oNThreads, Vec2u* oNThreadGrps, Vec2f resolution_, u32 blockSize)
+{
+	Vec2f nThreadGrps_f	= resolution_ / sCast<float>(blockSize);
+
+	*oNThreadGrps	= Vec2u::s_cast(Vec2i{math::ceilToInt(nThreadGrps_f.x),	math::ceilToInt(nThreadGrps_f.y)});
+	*oNThreads		= *oNThreadGrps * blockSize;
+}
+
+RfpForwardPlus::RfpForwardPlus()
 {
 	create();
 }
 
-ForwardPlus_MakeFrustums::~ForwardPlus_MakeFrustums()
+RfpForwardPlus::~RfpForwardPlus()
 {
 	destroy();
 }
 
 void 
-ForwardPlus_MakeFrustums::create()
+RfpForwardPlus::create()
 {
-	GraphicsDemo::createMaterial(&shaderFwpMakeFrustum, &mtlFwpMakeFrustum, "asset/shader/demo/forward_plus/forward_plus_makeFrustums.shader");
+	GraphicsDemo::createMaterial(&shaderFwdpMakeFrustum,	&mtlFwdpMakeFrustum,	"asset/shader/demo/forward_plus/forward_plus_makeFrustums.shader");
+	GraphicsDemo::createMaterial(&shaderFwdp,				&mtlFwdp,				"asset/shader/demo/forward_plus/forward_plus.shader");
+	GraphicsDemo::createMaterial(&shaderFwdpLighting,		&mtlFwdpLighting,		"asset/shader/demo/forward_plus/forward_plus_lighting.shader");
 }
 
 void 
-ForwardPlus_MakeFrustums::destroy()
+RfpForwardPlus::destroy()
 {
-	shaderFwpMakeFrustum.reset(	nullptr);
-	mtlFwpMakeFrustum.reset(	nullptr);
+	shaderFwdpMakeFrustum.reset(	nullptr);
+	mtlFwdpMakeFrustum.reset(	nullptr);
 }
 
+
 RdgBufferHnd 
-ForwardPlus_MakeFrustums::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
+RfpForwardPlus::addMakeFrustumsPass(RenderGraph* oRdGraph, DrawData* drawData)
 {
 	using Frustum			= shaderInterop::Frustum;
 	using DebugFrustumPts	= shaderInterop::DebugFrustrumPts;
 
 	RdgBufferHnd bufFrustums;
-	if (!(isInvalidate(drawData->resolution()) && drawData->drawParamIdx == 0))
+	if (!(isInvalidate(drawData->resolution()) && drawData->drawParamIdx == 0) && false)
 		return bufFrustums;
 
 	resolution = drawData->resolution();
 
 	auto* rdGraph		= oRdGraph;
-	Vec2f nThreads_f	= resolution / s_kTileCount;
-	Vec2f nThreadGrps_f	= nThreads_f / s_kTileCount;
 
-	Vec2u nThreads		= Vec2u::s_cast(Vec2i{math::ceilToInt(nThreads_f.x),	math::ceilToInt(nThreads_f.y)});
-	Vec2u nThreadGrps	= Vec2u::s_cast(Vec2i{math::ceilToInt(nThreadGrps_f.x),	math::ceilToInt(nThreadGrps_f.y)});
+	Vec2u nThreads, nThreadGrps;
+	getMakeFrustumsThreadParamTo(&nThreads, &nThreadGrps, resolution, s_kBlockSize);
 
 	auto n = nThreads.x * nThreads.y;
-	bufFrustums = rdGraph->createBuffer("forward_plus_buf_frustums"
-				, RenderGpuBuffer_CreateDesc{ sizeof(Frustum) * n, sizeof(Frustum), RenderGpuBufferTypeFlags::Compute});
+	bufFrustums = rdGraph->createBuffer("fwdp_buf_frustums"
+		, RenderGpuBuffer_CreateDesc{ sizeof(Frustum) * n, sizeof(Frustum), RenderGpuBufferTypeFlags::Compute});
 
-	RdgBufferHnd bufDebugFrustumsPts = rdGraph->createBuffer("forward_plus_buf_debugFrustumsPts"
-				, RenderGpuBuffer_CreateDesc{ sizeof(DebugFrustumPts) * n, sizeof(DebugFrustumPts), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex});
+	RdgBufferHnd bufDebugFrustumsPts = rdGraph->createBuffer("fwdp_buf_debugFrustumsPts"
+		, RenderGpuBuffer_CreateDesc{ sizeof(DebugFrustumPts) * n, sizeof(DebugFrustumPts), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex});
 
-	auto& passFwpMakeFrustums = rdGraph->addPass("forward_plus_make_frustums", RdgPassTypeFlags::Compute);
-	passFwpMakeFrustums.writeBuffer(bufFrustums);
-	passFwpMakeFrustums.writeBuffer(bufDebugFrustumsPts);
-	passFwpMakeFrustums.setExecuteFunc(
+	auto& passFwdpMakeFrustums = rdGraph->addPass("fwdp_make_frustums", RdgPassTypeFlags::Compute);
+	passFwdpMakeFrustums.writeBuffer(bufFrustums);
+	passFwdpMakeFrustums.writeBuffer(bufDebugFrustumsPts);
+	passFwdpMakeFrustums.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			auto mtl = mtlFwpMakeFrustum;
+			auto mtl = mtlFwdpMakeFrustum;
 			rdReq.reset(rdGraph->renderContext(), *drawData);
 
 			mtl->setParam("nThreads",			Vec3u{nThreads,		1});
 			mtl->setParam("nThreadGroups",		Vec3u{nThreadGrps,	1});
-			mtl->setParam("oFrustum",			bufFrustums.renderResource());
+			mtl->setParam("oFrustums",			bufFrustums.renderResource());
 			mtl->setParam("oDebugFrustumsPts",	bufDebugFrustumsPts.renderResource());
 			drawData->setupMaterial(mtl);
 			rdReq.dispatch(RDS_SRCLOC, mtl, 0, Vec3u{nThreadGrps, 1});
 		}
 	);
-	rdGraph->exportBuffer(&frustums,			bufFrustums,			RenderGpuBufferTypeFlags::Compute);
+	rdGraph->exportBuffer(&gpuFrustums,			bufFrustums,			RenderGpuBufferTypeFlags::Compute);
 	rdGraph->exportBuffer(&debugFrustumsPts,	bufDebugFrustumsPts,	RenderGpuBufferTypeFlags::Vertex);
 
 	{
 		auto& indices	= s_debugFrustumIndices;
 		auto idxCount	= arraySize(indices);
 
-		using IdxType = ForwardPlus_MakeFrustums::DebugIndexType;
+		using IdxType = RfpForwardPlus::DebugIndexType;
 		Vector<IdxType> indiceData;
 		indiceData.resize(idxCount * n);
 		for (u32 i = 0; i < n; i++)
@@ -278,10 +294,165 @@ ForwardPlus_MakeFrustums::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawD
 	return bufFrustums;
 }
 
-void 
-ForwardPlus_MakeFrustums::renderDebugMakeFrustums(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd texColor)
+RfpForwardPlus::LightCullingResult
+RfpForwardPlus::addLightCullingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgBufferHnd frustumsHnd, RdgTextureHnd texDepth)
 {
+	if (!frustumsHnd && !gpuFrustums)
+		return {};
+
+	auto* rdGraph		= oRdGraph;
+
+	Vec2u nThreads, nThreadGrps;
+	getLightCulllingThreadParamTo(&nThreads, &nThreadGrps, resolution, s_kBlockSize);
+
+	auto uintSize = RenderDataTypeUtil::getByteSize(RenderDataType::UInt32);
+	//auto n		= nThreads.x	* nThreads.y;
+	auto nGrps	= nThreadGrps.x * nThreadGrps.y;
+
+	RdgBufferHnd	opaque_lightIndexCounter		= rdGraph->createBuffer( "fwdp_opaque_lightIndexCounter",		RenderGpuBuffer_CreateDesc{ 1		* uintSize, uintSize, RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex});
+	RdgBufferHnd	opaque_lightIndexList			= rdGraph->createBuffer( "fwdp_opaque_lightIndexList",			RenderGpuBuffer_CreateDesc{ nGrps	* uintSize, uintSize, RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex});
+	RdgTextureHnd	opaque_lightGrid				= rdGraph->createTexture("fwdp_opaque_lightGrid",				Texture2D_CreateDesc{		nThreadGrps, ColorType::RGu, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::RenderTarget});
+
+	RdgBufferHnd	transparent_lightIndexCounter	= rdGraph->createBuffer( "fwdp_transparent_lightIndexCounter",	RenderGpuBuffer_CreateDesc{ 1		* uintSize, uintSize, RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex});
+	RdgBufferHnd	transparent_lightIndexList		= rdGraph->createBuffer( "fwdp_transparent_lightIndexList",		RenderGpuBuffer_CreateDesc{ nGrps	* uintSize, uintSize, RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex});
+	RdgTextureHnd	transparent_lightGrid			= rdGraph->createTexture("fwdp_transparent_lightGrid",			Texture2D_CreateDesc{		nThreadGrps, ColorType::RGu, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::RenderTarget});
+
 	#if 1
+	{
+		auto& pass = rdGraph->addPass("fwdp_set_default", RdgPassTypeFlags::Graphics);
+		pass.setRenderTarget(opaque_lightGrid,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setRenderTarget(transparent_lightGrid, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				auto mtl = mtlFwdp;
+				rdReq.reset(rdGraph->renderContext(), *drawData);
+
+				/*Vector<u8> data;
+				data.resize(opaque_lightIndexCounter.renderResource()->bufSize());
+				opaque_lightIndexCounter.renderResource()->uploadToGpu(data.byteSpan());
+				transparent_lightIndexCounter.renderResource()->uploadToGpu(data.byteSpan());
+
+				data.resize(opaque_lightIndexList.renderResource()->bufSize());
+				opaque_lightIndexList.renderResource()->uploadToGpu(data.byteSpan());
+				transparent_lightIndexList.renderResource()->uploadToGpu(data.byteSpan());*/
+
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor(Color4f{0.0f, 0.0f, 0.0f, 0.0f});
+			}
+		);
+	}
+	#endif // 0
+
+	RdgPass* lightCullingPass = nullptr;
+	{
+		auto& pass = rdGraph->addPass("fwdp_light_culling", RdgPassTypeFlags::Compute);
+		if (frustumsHnd)
+			pass.readBuffer(frustumsHnd);
+
+		pass.readTexture(texDepth/*, ShaderStageFlag::Pixel*/);
+		pass.writeBuffer(opaque_lightIndexCounter);
+		pass.writeBuffer(opaque_lightIndexList);
+		pass.writeTexture(opaque_lightGrid);
+		pass.writeBuffer(transparent_lightIndexCounter);
+		pass.writeBuffer(transparent_lightIndexList);
+		pass.writeTexture(transparent_lightGrid);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				auto mtl = mtlFwdp;
+				rdReq.reset(rdGraph->renderContext(), *drawData);
+
+				mtl->setParam("nThreads",			Vec3u{nThreads,		1});
+				mtl->setParam("nThreadGroups",		Vec3u{nThreadGrps,	1});
+
+				mtl->setParam("texDepth", texDepth.renderResource());
+				mtl->setParam("frustums", frustumsHnd ? frustumsHnd.renderResource() : gpuFrustums);
+
+				{
+					RDS_TODO("temporary solution for set data to 0");
+					Vector<u8, 64> data;
+					data.resize(opaque_lightIndexCounter.renderResource()->bufSize());
+					opaque_lightIndexCounter.renderResource()->uploadToGpu(data.byteSpan());
+					transparent_lightIndexCounter.renderResource()->uploadToGpu(data.byteSpan());
+
+					data.resize(opaque_lightIndexList.renderResource()->bufSize());
+					for (auto& e : data)
+					{
+						RDS_CORE_ASSERT(e == 0, "init failed");
+					}
+					opaque_lightIndexList.renderResource()->uploadToGpu(data.byteSpan());
+					transparent_lightIndexList.renderResource()->uploadToGpu(data.byteSpan());
+				}
+
+				mtl->setParam("opaque_lightIndexCounter",		opaque_lightIndexCounter.renderResource());
+				mtl->setParam("opaque_lightIndexList",			opaque_lightIndexList.renderResource());
+				mtl->setParam("opaque_lightGrid",				opaque_lightGrid.renderResource());
+
+				mtl->setParam("transparent_lightIndexCounter",	transparent_lightIndexCounter.renderResource());
+				mtl->setParam("transparent_lightIndexList",		transparent_lightIndexList.renderResource());
+				mtl->setParam("transparent_lightGrid",			transparent_lightGrid.renderResource());
+
+				drawData->setupMaterial(mtl);
+				rdReq.dispatch(RDS_SRCLOC, mtl, 0, Vec3u{nThreadGrps, 1});
+			}
+		);
+		lightCullingPass = &pass;
+	}
+	LightCullingResult ret;
+	ret.lightCullingPass			= lightCullingPass;
+	ret.opaque_lightIndexList		= opaque_lightIndexList;
+	ret.opaque_lightGrid			= opaque_lightGrid;
+	ret.transparent_lightIndexList	= transparent_lightIndexList;
+	ret.transparent_lightGrid		= transparent_lightGrid;
+
+	return ret;
+}
+
+RdgPass* 
+RfpForwardPlus::addLightingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, LightCullingResult& lightCulling, bool isOpaque, bool isClearColor)
+{
+	if (!lightCulling.lightCullingPass)
+		return nullptr;
+
+	auto*		rdGraph			= oRdGraph;
+	RdgPass*	lightingPass	= nullptr;
+	{
+		auto& pass = rdGraph->addPass("fwdp_lighting", RdgPassTypeFlags::Graphics);
+
+		RdgBufferHnd	lightIndexList	= lightCulling.lightIndexList(isOpaque);
+		RdgTextureHnd	lightGrid		= lightCulling.lightGrid(isOpaque);
+
+		pass.readBuffer(lightCulling.lightIndexList(isOpaque));
+		pass.readTexture(lightCulling.lightGrid(isOpaque));
+		pass.setRenderTarget(rtColor,	isClearColor ? RenderTargetLoadOp::Clear : RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+		pass.setDepthStencil(dsBuf,	RdgAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				auto mtl = mtlFwdpLighting;
+				rdReq.reset(rdGraph->renderContext(), *drawData);
+
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor();
+				//clearValue->setClearDepth();
+
+				mtl->setParam("lightIndexList",		lightIndexList.renderResource());
+				mtl->setParam("lightGrid",			lightGrid.renderResource());
+
+				drawData->setupMaterial(mtl);
+				drawData->sceneView->drawScene(rdReq, mtl, drawData);
+			}
+		);
+		lightingPass = &pass;
+	}
+	return lightingPass;
+}
+
+void 
+RfpForwardPlus::renderDebugMakeFrustums(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor)
+{
+#if 1
 	{
 		if (!debugFrustumsPts || !debugFrustumsIdxBuf)
 			return;
@@ -293,26 +464,22 @@ ForwardPlus_MakeFrustums::renderDebugMakeFrustums(RenderGraph* oRdGraph, DrawDat
 		auto*	rdCtx		= rdGraph->renderContext();
 		auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
 
-		Vec2f nThreads_f	= resolution / s_kTileCount;
-		Vec2f nThreadGrps_f	= nThreads_f / s_kTileCount;
-
-		Vec2u nThreads		= Vec2u::s_cast(Vec2i{math::ceilToInt(nThreads_f.x),	math::ceilToInt(nThreads_f.y)});
-		Vec2u nThreadGrps	= Vec2u::s_cast(Vec2i{math::ceilToInt(nThreadGrps_f.x),	math::ceilToInt(nThreadGrps_f.y)});
-
+		Vec2u nThreads, nThreadGrps;
+		getMakeFrustumsThreadParamTo(&nThreads, &nThreadGrps, resolution, s_kBlockSize);
 		auto n = nThreads.x * nThreads.y;
 
-		auto& pass = rdGraph->addPass("forward_plus_render_debug_frustums", RdgPassTypeFlags::Graphics);
-		pass.setRenderTarget(texColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+		auto& pass = rdGraph->addPass("fwdp_render_debug_frustums", RdgPassTypeFlags::Graphics);
+		pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
 		//pass.setDepthStencil(texDepth, RdgAccess::Write,	RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				auto mtl = mtlFwpMakeFrustum;
+				auto mtl = mtlFwdpMakeFrustum;
 				rdReq.reset(rdGraph->renderContext(), *drawData);
 
 				auto* drawCall = rdReq.addDrawCall();
 				drawCall->vertexLayout			= VertexT_Pos<Tuple4f>::vertexLayout();
-				drawCall->indexType				= RenderDataTypeUtil::get<ForwardPlus_MakeFrustums::DebugIndexType>();
+				drawCall->indexType				= RenderDataTypeUtil::get<RfpForwardPlus::DebugIndexType>();
 				drawCall->vertexCount			= ArraySize<decltype(DebugFrustumPts::pts)> * n;
 				drawCall->indexCount			= arraySize(s_debugFrustumIndices) * n;
 				drawCall->vertexBuffer			= debugFrustumsPts;
@@ -326,14 +493,14 @@ ForwardPlus_MakeFrustums::renderDebugMakeFrustums(RenderGraph* oRdGraph, DrawDat
 
 				drawData->setupMaterial(mtl);
 
-				RDS_CORE_ASSERT(drawCall->vertexCount <= NumLimit<ForwardPlus_MakeFrustums::DebugIndexType>::max(), "vertex count > index max count");
+				RDS_CORE_ASSERT(drawCall->vertexCount <= NumLimit<RfpForwardPlus::DebugIndexType>::max(), "vertex count > index max count");
 			}
 		);
 	}
 	#endif // 1
 }
 
-bool ForwardPlus_MakeFrustums::isInvalidate(const Vec2f& resoluton_) const { return !math::equals(resolution, resoluton_) && !math::equals0(resoluton_); }
+bool RfpForwardPlus::isInvalidate(const Vec2f& resoluton_) const { return !math::equals(resolution, resoluton_) && !math::equals0(resoluton_); }
 
 #endif
 

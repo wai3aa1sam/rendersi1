@@ -66,6 +66,10 @@ DemoEditorLayer::onCreate()
 	// prepare
 	#if 1
 	{
+		auto clientRect = mainWnd.clientRect();
+		rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
+		mainWnd.camera().setViewport(clientRect);
+
 		auto& rdGraph = renderableSystem().renderGraph();
 		rdGraph.create(mainWindow().title(), &rdCtx);
 		rdGraph.reset();
@@ -111,11 +115,13 @@ DemoEditorLayer::onUpdate()
 			OsUtil::sleep_ms(1);
 		}
 	}
+	//Renderer::rdDev()->waitIdle();
 	Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
 	#endif // 0
 
-	rdCtx.setFramebufferSize(mainWnd.clientRect().size);		// this will invalidate the swapchain
-	mainWnd.camera().setViewport(_edtViewportWnd.clientRect());
+	auto clientRect = mainWnd.clientRect();
+	rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
+	mainWnd.camera().setViewport(clientRect);
 
 	{
 		auto& rdGraph	= renderableSystem().renderGraph();
@@ -141,7 +147,7 @@ DemoEditorLayer::onUpdate()
 			// present
 			renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
 			renderableSystem().update(drawData);
-			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.renderResource() : nullptr, &mainWindow().camera(), mainWindow().uiMouseEv);
+			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.renderResource() : nullptr, drawData.camera, mainWindow().uiMouseEv);
 
 			rdUiCtx.onEndRender(&rdCtx);
 		}

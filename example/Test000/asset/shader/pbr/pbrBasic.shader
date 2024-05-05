@@ -80,10 +80,12 @@ float4 ps_main(PixelIn i) : SV_TARGET
 
     Surface surface;
     surface.posWS       = i.positionWS.xyz;
-    surface.normal      = normalize(i.normal);
+    surface.normalWs    = normalize(i.normal);
     surface.color.rgb   = albedo;
     surface.roughness   = roughness;
     surface.metallic    = metallic;
+
+    float3 normal = surface.normalWs;
 
     float3 posView = drawParam.camera_pos;
     float3 dirView  = normalize(posView - surface.posWS);
@@ -100,8 +102,8 @@ float4 ps_main(PixelIn i) : SV_TARGET
     float3 dirLight = normalize(posLight - i.positionWS);
     float3 dirHalf  = normalize(dirView  + dirLight);
 
-    float3 diffuse  = max(dot(i.normal, dirLight), 0.0) * colorLight;
-    float3 spec     = pow(max(dot(i.normal, dirHalf), 0.0), roughness) * colorSpec;
+    float3 diffuse  = max(dot(normal, dirLight), 0.0) * colorLight;
+    float3 spec     = pow(max(dot(normal, dirHalf), 0.0), roughness) * colorSpec;
     o = ambient + diffuse + spec;
     //o = spec;
     //o = float3(roughness);

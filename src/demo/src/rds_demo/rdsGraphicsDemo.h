@@ -43,12 +43,16 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 
 public:
-	RdgPass* addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCube* texSkybox, RdgTextureHnd texColor, RdgTextureHnd texDepth);
-	RdgPass* addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* oDsBuf, RdgTextureHnd* oTexDepthHnd);
+	RdgPass* addSkyboxPass(		RenderGraph* oRdGraph, DrawData* drawData, TextureCube* texSkybox, RdgTextureHnd texColor, RdgTextureHnd texDepth);
+	RdgPass* addPreDepthPass(	RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* oDsBuf, RdgTextureHnd* oTexDepthHnd, Color4f clearColor);
+	RdgPass* addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrView passName, RdgTextureHnd rtColor, RdgTextureHnd texColor, Material* material);
+	RdgPass* addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, Material* material);
 
 public:
 	DemoEditorApp& app();
 	EngineContext& engineContext();
+
+	Scene&		scene();
 
 	MeshAssets& meshAssets();
 
@@ -56,7 +60,9 @@ public:
 	TextureCube*	skyboxDefault();
 
 private:
-	DemoEditorLayer*	_demoLayer = nullptr;
+	DemoEditorLayer*	_demoLayer	= nullptr;
+	Scene*				_scene		= nullptr;
+
 	SPtr<Texture2D>		_texUvChecker;
 	SPtr<TextureCube>	_texDefaultSkybox;
 
@@ -66,6 +72,8 @@ private:
 	SPtr<Shader>	_shaderPreDepth;
 	SPtr<Material>	_mtlPreDepth;
 };
+
+inline Scene&		GraphicsDemo::scene()			{ return *_scene; }
 
 inline Texture2D*	GraphicsDemo::texUvChecker()	{ return _texUvChecker; }
 inline TextureCube* GraphicsDemo::skyboxDefault()	{ return _texDefaultSkybox; }
@@ -82,7 +90,11 @@ struct MeshAssets
 public:
 	SPtr<MeshAsset> box;
 	SPtr<MeshAsset> sphere;
-	SPtr<MeshAsset> suzanne;	
+	SPtr<MeshAsset> plane;
+	SPtr<MeshAsset> cone;
+	SPtr<MeshAsset> suzanne;
+
+	SPtr<MeshAsset> fullScreenTriangle;
 
 public:
 	MeshAssets();

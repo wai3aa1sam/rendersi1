@@ -26,7 +26,7 @@ public:
 	*/
 	void*			value		= nullptr;
 	const void*		resetValue	= nullptr;
-	TempString		label;
+	const char*		label;
 	/*
 		temporary
 	*/

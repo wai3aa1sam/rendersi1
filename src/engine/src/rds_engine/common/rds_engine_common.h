@@ -34,6 +34,8 @@ public:
 	static constexpr SizeType s_kInvalid = 0;
 
 public:
+	EntityId() = default;
+	EntityId(u32 id) : _id(id) {}
 	~EntityId()
 	{
 		_id = s_kInvalid;

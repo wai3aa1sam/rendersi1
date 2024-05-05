@@ -26,30 +26,30 @@ Shader {
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
+    float4 positionOs   : SV_POSITION;
     float2 uv           : TEXCOORD0;
 };
 
 struct PixelIn 
 {
-	float4 positionHCS  : SV_POSITION;
+	float4 positionHcs  : SV_POSITION;
     float2 uv           : TEXCOORD0;
 };
 
+RDS_TEXTURE_2D(texColor);
 
-RDS_TEXTURE_2D(texPresent);
-
-PixelIn vs_main(VertexIn i)
+PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
-    o.positionHCS = i.positionOS;
-    o.uv          = i.uv;
+    o.positionHcs = input.positionOs;
+    o.positionHcs = input.positionOs;
+    o.uv          = input.uv;
     
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float4 ps_main(PixelIn input) : SV_TARGET
 {
-	float4 o = RDS_TEXTURE_2D_SAMPLE(texPresent, i.uv);
+	float4 o = RDS_TEXTURE_2D_SAMPLE(texColor, input.uv);
     return o;
 }

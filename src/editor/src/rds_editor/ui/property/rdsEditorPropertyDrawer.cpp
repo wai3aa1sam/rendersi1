@@ -58,13 +58,13 @@ bool
  EditorPropertyDrawer_float::draw(DrawRequest* drawReq)
 {
 	auto&		uiDrawReq	= drawReq->editorUiDrawRequest();
-	const char* label		= drawReq->label.c_str();
+	const char* label		= drawReq->label;
 	auto&		value		= this->value(drawReq);
 
 	bool	hasValueChanged	= false;
 	//ValueT	resetValue		= this->resetValue(drawReq);
-
-	auto pushId = uiDrawReq.makePushID(&value);
+	
+	auto pushId = uiDrawReq.makePushID(label);
 
 	sameLineWithText(label);
 	hasValueChanged = uiDrawReq.dragFloat("", &value, 0.001f, 0.0f, 0.0f);
@@ -88,7 +88,7 @@ bool
  EditorPropertyDrawer_bool::draw(DrawRequest* drawReq)
 {
 	auto&		uiDrawReq	= drawReq->editorUiDrawRequest();
-	const char* label		= drawReq->label.c_str();
+	const char* label		= drawReq->label;
 	auto&		value		= this->value(drawReq);
 
 	bool	hasValueChanged	= false;
@@ -109,7 +109,7 @@ bool
  EditorPropertyDrawer_Vec2f::draw(DrawRequest* drawReq)
 {
 	auto&		uiDrawReq	= drawReq->editorUiDrawRequest();
-	const char* label		= drawReq->label.c_str();
+	const char* label		= drawReq->label;
 	auto&		value		= this->value(drawReq);
 
 	bool	hasValueChanged	= false;
@@ -127,7 +127,7 @@ bool
  EditorPropertyDrawer_Vec3f::draw(DrawRequest* drawReq)
 {
 	auto&		uiDrawReq	= drawReq->editorUiDrawRequest();
-	const char* label		= drawReq->label.c_str();
+	const char* label		= drawReq->label;
 	auto&		value		= this->value(drawReq);
 
 	bool	hasValueChanged	= false;
@@ -224,7 +224,7 @@ bool
 EditorPropertyDrawer_Vec4f::draw(DrawRequest* drawReq)
 {
 	auto&		uiDrawReq	= drawReq->editorUiDrawRequest();
-	const char* label		= drawReq->label.c_str();
+	const char* label		= drawReq->label;
 	auto&		value		= this->value(drawReq);
 
 	bool	hasValueChanged	= false;
@@ -242,7 +242,7 @@ bool
  EditorPropertyDrawer_Color4f::draw(DrawRequest* drawReq)
 {
 	auto&		uiDrawReq	= drawReq->editorUiDrawRequest();
-	const char* label		= drawReq->label.c_str();
+	const char* label		= drawReq->label;
 	auto&		value		= this->value(drawReq);
 
 	bool	hasValueChanged	= false;
@@ -261,7 +261,7 @@ bool
  EditorPropertyDrawer_Texture2D::draw(DrawRequest* drawReq)
 {
 	auto&		uiDrawReq	= drawReq->editorUiDrawRequest();
-	const char* label		= drawReq->label.c_str();
+	const char* label		= drawReq->label;
 	auto&		value		= this->value(drawReq);
 
 	bool	hasValueChanged	= false;

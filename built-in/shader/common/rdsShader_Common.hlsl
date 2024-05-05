@@ -142,7 +142,7 @@ references:
     #define RDS_RW_BUFFER_LOAD(TYPE, NAME)                      RDS_RW_BUFFER_LOAD_I(TYPE, NAME, 0)
     #define RDS_RW_BUFFER_STORE(TYPE, NAME, VALUE)              RDS_RW_BUFFER_STORE_I(TYPE, NAME, 0, VALUE)
 
-    #define RDS_RW_BUFFER_ATM_ADD_I(TYPE, NAME, IDX, VAL, OUT) RDS_RW_BUFFER_GET(NAME).InterlockedAdd(sizeof(TYPE) * (IDX), VAL, OUT)
+    #define RDS_RW_BUFFER_ATM_ADD_I(TYPE, NAME, IDX, VAL, ...) RDS_RW_BUFFER_GET(NAME).InterlockedAdd(sizeof(TYPE) * (IDX), VAL, __VA_ARGS__)
 
     /* 
     --- define Image
@@ -341,7 +341,7 @@ float4x4 inverse(float4x4 m)
 float4 SpaceTransform_clipToView(float4 clip, DrawParam drawParam)
 {
     float4 view = mul(drawParam.matrix_proj_inv, clip);
-    view = view / view.w;
+    view = view / (view.w + rds_epsilon);
     return view;
 }
 
@@ -356,6 +356,7 @@ float4 SpaceTransform_screenToView(float4 screen, DrawParam drawParam)
     float2 uv = screen.xy / drawParam.resolution;
 
     float4 clip = float4(float2(uv.x, 1.0 - uv.y) * 2.0 - 1.0, screen.z, screen.w);
+
     return SpaceTransform_clipToView(clip, drawParam);
 }
 

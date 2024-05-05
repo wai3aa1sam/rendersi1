@@ -15,15 +15,24 @@ bool Light_isEnabled(Light light)
 	return light.type != rds_LightType_None;
 }
 
+bool Light_isPointLight(Light light)
+{
+	return light.type == rds_LightType_Point;
+}
+
+bool Light_isSpotLight(Light light)
+{
+	return light.type == rds_LightType_Spot;
+}
+
+bool Light_isDirectionalLight(Light light)
+{
+	return light.type == rds_LightType_Directional;
+}
+
 float Light_getSpotCosAngle(Light light)
 {
 	return cos(light.param.x);
-}
-
-float Light_computeAttenuation(Light light, float distance)
-{
-	float lightRange = light.range;
-	return 1.0f - smoothstep(lightRange * 0.75, lightRange, distance);
 }
 
 Sphere Light_makeSphere(Light light)

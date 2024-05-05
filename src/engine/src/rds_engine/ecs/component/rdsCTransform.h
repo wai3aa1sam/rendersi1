@@ -45,6 +45,8 @@ public:
 	const Vec3f&	localScale()	const;
 	const Quat4f&	localRotation() const;
 
+	Vec3f forward() const;
+
 	bool			isDirty() const;
 
 protected:

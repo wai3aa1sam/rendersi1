@@ -40,7 +40,7 @@ public:
 	bool draw(DrawRequest* drawReq, StrView label, T* o)
 	{
 		drawReq->value		= o;
-		drawReq->label		= label;
+		drawReq->label		= label.data();
 		return draw(drawReq);
 	}
 

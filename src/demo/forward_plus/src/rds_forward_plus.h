@@ -6,7 +6,7 @@
 namespace rds
 {
 
-struct ForwardPlus_MakeFrustums;
+struct RfpForwardPlus;
 
 #if 0
 #pragma mark --- rdsForwardPlus-Decl ---
@@ -30,56 +30,88 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
 
 protected:
-	SPtr<Shader>	_shaderForwardPlus;
-	SPtr<Material>	_mtlForwardPlus;
-	SPtr<Texture2D>	_texUvChecker;
+	SPtr<Shader>			_shaderHelloTriangle;
+	SPtr<Material>			_mtlHelloTriangle;
 
-	SPtr<Shader>	_shaderHelloTriangle;
-	SPtr<Material>	_mtlHelloTriangle;
+	SPtr<Shader>			_shaderPostProcess;
+	SPtr<Material>			_mtlPostProcess;
 
-	SPtr<Texture2D> _tex;
-
-	UPtr<ForwardPlus_MakeFrustums> _fwpMakeFrustums;
-	
+	UPtr<RfpForwardPlus>	_rfpForwardPlus;
 };
 RDS_DEMO(ForwardPlus);
 #endif
 
 #if 0
-#pragma mark --- rdsForwardPlus-Decl ---
+#pragma mark --- rdsRfpForwardPlus-Decl ---
 #endif // 0
 #if 1
-struct ForwardPlus_MakeFrustums
+/*
+* view screen viewport as a grid, blocks in a grid, and each block has n tile
+*/
+struct RfpForwardPlus
 {
 public:
 	using DebugIndexType = u32;
 
 public:
-	static constexpr u32			s_kTileCount = 16;
+	static constexpr u32			s_kTileCount		= 32;
+	static constexpr u32			s_kBlockSize		= s_kTileCount;
+	static constexpr u32			s_kEstLightPerGrid	= 256;
+
 	static constexpr DebugIndexType s_debugFrustumIndices[] = {	0,1,
-																0,2,
-																3,1,
-																3,2,
+		0,2,
+		3,1,
+		3,2,
 	};
 
 public:
-	SPtr<Shader>			shaderFwpMakeFrustum;
-	SPtr<Material>			mtlFwpMakeFrustum;
+	struct LightCullingResult
+	{
+		RdgPass* lightCullingPass = nullptr;
+
+		RdgBufferHnd  opaque_lightIndexList;
+		RdgTextureHnd opaque_lightGrid;
+
+		RdgBufferHnd  transparent_lightIndexList;
+		RdgTextureHnd transparent_lightGrid;
+
+	public:
+		RdgBufferHnd	lightIndexList(	bool isOpaque) { return isOpaque ? opaque_lightIndexList	: transparent_lightIndexList; }
+		RdgTextureHnd	lightGrid(		bool isOpaque) { return isOpaque ? opaque_lightGrid			: transparent_lightGrid; }
+
+	};	
+
+public:
+	SPtr<Shader>			shaderFwdpMakeFrustum;
+	SPtr<Material>			mtlFwdpMakeFrustum;
 	Vec2f					resolution = Vec2f::s_zero();
-	SPtr<RenderGpuBuffer>	frustums;
+	SPtr<RenderGpuBuffer>	gpuFrustums;
 
 	SPtr<RenderGpuBuffer>	debugFrustumsPts;
 	SPtr<RenderGpuBuffer>	debugFrustumsIdxBuf;
 
+	SPtr<Shader>			shaderFwdp;
+	SPtr<Material>			mtlFwdp;
+
+	SPtr<Shader>			shaderFwdpLighting;
+	SPtr<Material>			mtlFwdpLighting;
+
 public:
-	ForwardPlus_MakeFrustums();
-	~ForwardPlus_MakeFrustums();
+	static void getMakeFrustumsThreadParamTo(Vec2u* oNThreads, Vec2u* oNThreadGrps, Vec2f resolution_, u32 tileCount);
+	static void getLightCulllingThreadParamTo(Vec2u* oNThreads, Vec2u* oNThreadGrps, Vec2f resolution_, u32 tileCount);
+
+public:
+	RfpForwardPlus();
+	~RfpForwardPlus();
 
 	void create();
 	void destroy();
 
-	RDS_NODISCARD RdgBufferHnd onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData);
-	void renderDebugMakeFrustums(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd texColor);
+	RDS_NODISCARD RdgBufferHnd			addMakeFrustumsPass(RenderGraph* oRdGraph, DrawData* drawData);
+	RDS_NODISCARD LightCullingResult	addLightCullingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgBufferHnd frustums, RdgTextureHnd texDepth);
+	RdgPass*							addLightingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd colorRt, RdgTextureHnd dsBuf, LightCullingResult& lightCulling, bool isOpaque, bool isClearColor);
+
+	void renderDebugMakeFrustums(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd colorRt);
 
 public:
 	bool isInvalidate(const Vec2f& resoluton_) const;

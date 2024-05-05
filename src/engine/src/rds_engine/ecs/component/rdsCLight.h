@@ -55,8 +55,8 @@ public:
 	void setRange(	  float v);
 	void setIntensity(float v);
 
-	void setSpotAngle(	   float v);
-	void setSpotInnerCosAngle(float v);
+	void setSpotAngle(	   float radian);
+	void setSpotInnerAngle(float radian);
 
 public:
 	LightType	lightType()		const;
@@ -65,7 +65,7 @@ public:
 	float		intensity()		const;
 
 	float		spotAngle()			const;
-	float		spotInnerCosAngle()	const;
+	float		spotInnerAngle()	const;
 
 	bool		isDirty() const;
 

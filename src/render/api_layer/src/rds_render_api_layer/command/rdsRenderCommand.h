@@ -34,9 +34,12 @@ using DrawingSettings = u64;
 	\
 	E(DrawRenderables,) \
 	\
+	E(Dispatch,) \
+	\
 	E(CopyTexture,) \
 	\
-	E(Dispatch,) \
+	E(ClearColorImage,) \
+	E(FillBuffer,) \
 	\
 	E(CopyBuffer,) \
 	E(_kCount,) \

@@ -411,6 +411,10 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 	vkPhyDevFeats = {};
 	vkPhyDevFeats.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	vkPhyDevFeats.pNext = &vkDescrIdxFeats;
+	/*vkPhyDevFeats.features.shaderUniformBufferArrayDynamicIndexing	= VK_TRUE;
+	vkPhyDevFeats.features.shaderSampledImageArrayDynamicIndexing	= VK_TRUE;
+	vkPhyDevFeats.features.shaderStorageBufferArrayDynamicIndexing	= VK_TRUE;
+	vkPhyDevFeats.features.shaderStorageImageArrayDynamicIndexing	= VK_TRUE;*/
 
 	vkGetPhysicalDeviceFeatures2(vkPhyDevHnd, &vkPhyDevFeats);
 	vkPhyDevFeats.pNext = &vkPhyDevVkFeats12;

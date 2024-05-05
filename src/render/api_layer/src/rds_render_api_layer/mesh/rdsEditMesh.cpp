@@ -60,9 +60,17 @@ EditMeshUtil::getFullScreenTriangle()
 		e.emplace_back(0.0f, 2.0f);
 	}
 
+	{
+		auto& e = editMesh.normal;
+		e.reserve(s_kVtxCount);
+		e.emplace_back(0.0f, 0.0f, 1.0f);
+		e.emplace_back(0.0f, 0.0f, 1.0f);
+		e.emplace_back(0.0f, 0.0f, 1.0f);
+	}
+
 	editMesh.indices = { 0, 1, 2 };
 
-	RDS_ASSERT(editMesh.getVertexLayout() == Vertex_PosUv<1>::vertexLayout(), "");
+	RDS_ASSERT(editMesh.getVertexLayout() == Vertex_PosUvNormal<1>::vertexLayout(), "");
 	return editMesh;
 }
 

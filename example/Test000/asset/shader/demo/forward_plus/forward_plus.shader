@@ -6,14 +6,12 @@ Shader {
 	
 	Pass {
 		
-		CsFunc		csMain
-		//VsFunc		makeGridFrustums_vsMain
-		//PsFunc		makeGridFrustums_psMain
+		CsFunc		cullLights
 	}
 
 	Permutation
 	{
-		//TILE_COUNT 	= { 16, 32, 64, 128, 256, }
+		//BLOCK_SIZE 	= { 16, 32, 64, 128, 256, }
 	}
 }
 #endif
@@ -23,8 +21,7 @@ Shader {
 	~ https://www.3dgep.com/forward-plus/#Forward
 */
 
-#include "built-in/shader/common/rdsCommon.hlsl"
-#include "built-in/shader/common/geometry/rdsGeometry.hlsl"
+#include "forward_plus_common.hlsl"
 
 struct ComputeIn 
 {
@@ -34,51 +31,195 @@ struct ComputeIn
     uint  groupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+#define LIGHT_LIST_LOCAL_SIZE 1024
+
+#if 0
+#pragma mark --- fwpd_cullLights_param ---
+#endif // 0
+#if 1
+
 uint3 nThreads;
 uint3 nThreadGroups;
 
-RDS_IMAGE_2D(float4, oImage);
-
-#define TILE_COUNT 16
-#define GRID_SIZE TILE_COUNT
+RDS_TEXTURE_2D(texDepth);
+RDS_BUFFER(Frustum, frustums);
 
 /*
-	eg. resolution = {1280, 720}
-	1 thread == 1 frustum
-	, 1 grid has 16 tiles, then 1280 / 16 = 80 frustum / grid
-	, 1 thread group = 16 grid, 80 / 16 = 5 thread group 
+	lightGrid : uint2{lightIdxOffset, lightCount}
 */
 
-[numThreads(8, 8, 1)]
-void csMain(ComputeIn i)
+RDS_RW_BUFFER(uint,  opaque_lightIndexCounter);		// size: 1
+RDS_RW_BUFFER(uint,  opaque_lightIndexList);
+RDS_IMAGE_2D( uint2, opaque_lightGrid);
+
+RDS_RW_BUFFER(uint,  transparent_lightIndexCounter);	// size: 1
+RDS_RW_BUFFER(uint,  transparent_lightIndexList);
+RDS_IMAGE_2D( uint2, transparent_lightGrid);
+
+//StructuredBuffer<uint> 	g_buffer[] 		: register(t0, space7);
+//RWStructuredBuffer<uint> g_rwbuffer[] 	: register(u0, space8);
+
+/* 
+	1 block for 1 thread group, 1 tile for 1 thread, 1 block has 1 frustum
+*/
+// no +-*/ operation is ok
+groupshared uint uMinDepth;
+groupshared uint uMaxDepth;
+
+groupshared Frustum groupFrustum;
+
+groupshared uint opaque_lightCount;
+groupshared uint opaque_lightIndexStartOffset;
+groupshared uint opaque_lightList[LIGHT_LIST_LOCAL_SIZE];
+
+groupshared uint transparent_lightCount;
+groupshared uint transparent_lightIndexStartOffset;
+groupshared uint transparent_lightList[LIGHT_LIST_LOCAL_SIZE];
+
+#endif
+
+void 
+opaque_appendLight(uint i)
 {
-	uint2 id = i.dispatchThreadId.xy;
-	uint factor = 15;
-	RDS_IMAGE_2D_GET(float4, oImage)[id.xy] = float4(id.x & id.y, (id.x & factor) / float(factor), (id.y & factor) / float(factor), 1.0);
+	uint idx;
+	InterlockedAdd(opaque_lightCount, 1, idx);
+	if (idx < LIGHT_LIST_LOCAL_SIZE)
+	{
+		opaque_lightList[idx] = i;
+	}
 }
 
-struct VertexIn
+void 
+transparent_appendLight(uint i)
 {
-    float4 positionOs   : SV_POSITION;
-};
-
-struct PixelIn 
-{
-	float4 positionHcs  : SV_POSITION;
-};
-
-PixelIn makeGridFrustums_vsMain(VertexIn i)
-{
-    PixelIn o;
-	//i.positionOs.z = debugFrustumZ;
-    //o.positionHcs = mul(RDS_MATRIX_PROJ, i.positionOs);
-    o.positionHcs = i.positionOs;
-
-    return o;
+	uint idx;
+	InterlockedAdd(transparent_lightCount, 1, idx);
+	if (idx < LIGHT_LIST_LOCAL_SIZE)
+	{
+		transparent_lightList[idx] = i;
+	}
 }
 
-float4 makeGridFrustums_psMain(PixelIn i) : SV_TARGET
+[numThreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
+void cullLights(ComputeIn input)
 {
-	float4 o = float4(1, 0, 0, 1);
-    return o;
+	int2  uv 	 = input.dispatchThreadId.xy;
+    float depth  = RDS_TEXTURE_2D_GET(texDepth).Load(int3(uv, 0)).r;
+	uint  uDepth = asuint(depth);
+	
+	bool isFirstThread = input.groupIndex == 0;
+	if (isFirstThread)
+	{
+		uMinDepth = UINT_MAX;
+		uMaxDepth = 0;
+		opaque_lightCount 		= 0;
+		transparent_lightCount 	= 0;
+		groupFrustum = RDS_BUFFER_LOAD_I(Frustum, frustums, input.groupId.x + (input.groupId.y * nThreadGroups.x));
+	}
+	// ensure all threads in group reach this point, also flush the groupshared to all groupThreads
+	GroupMemoryBarrierWithGroupSync();
+
+	// compare and store to variable 
+	InterlockedMin(uMinDepth, uDepth);
+    InterlockedMax(uMaxDepth, uDepth);
+    GroupMemoryBarrierWithGroupSync();
+
+	float minDepth = asfloat(uMinDepth);
+    float maxDepth = asfloat(uMaxDepth);
+
+	// view space
+	float minDepthVs = SpaceTransform_clipToView(float4(0.0, 0.0, minDepth, 1.0)).z;	// for opaque
+	float maxDepthVs = SpaceTransform_clipToView(float4(0.0, 0.0, maxDepth, 1.0)).z;
+	float nearClipVs = SpaceTransform_clipToView(float4(0.0, 0.0, 0.0, 	    1.0)).z;	// for transparent
+
+	Plane minPlane;
+	minPlane.normal 	= float3(0.0, 0.0, -1.0);
+	minPlane.distance 	= -minDepthVs;
+
+	const uint nLights = 2;
+	//lightCount = nLights;
+	Light lights[nLights];
+	lights[0].type	 	 = rds_LightType_Point;
+	lights[0].positionVs = mul(RDS_MATRIX_VIEW, float4(0.0f, 1.0f, 0.0f, 1.0f));
+	lights[0].directionVs= float4(0.0f, -0.698f, -0.7161, 0.0f);
+	lights[0].range		 = 4;
+	lights[0].intensity	 = 1;
+	lights[0].color		 = float4(1.0, 1.0, 1.0, 1.0);
+
+	lights[1].type	 	 = rds_LightType_Point;
+	lights[1].positionVs = mul(RDS_MATRIX_VIEW, float4(3.0f, 1.0f, 0.0f, 1.0f));
+	lights[1].directionVs= float4(0.0f, -0.698f, -0.7161, 0.0f);
+	lights[1].range		 = 4;
+	lights[1].intensity	 = 1;
+	lights[1].color		 = float4(1.0, 1.0, 1.0, 1.0);
+
+	uint stepLight = BLOCK_SIZE * BLOCK_SIZE;
+	// ensure the cull job is spread to all threads
+	for (uint i = input.groupIndex; i < rds_nLights; i += stepLight)
+	{
+		Light light 	= rds_Lights_get(i);
+		light 			= lights[i];
+
+		bool isEnabled 	= Light_isEnabled(light);
+		if (!isEnabled)
+			continue;
+
+		switch (light.type)
+		{
+			case rds_LightType_Point:
+			{
+				Sphere sphere = Light_makeSphere(light);
+				if (Geometry_isInside_sphereFrustum(sphere, groupFrustum, nearClipVs, maxDepthVs))
+				{
+					transparent_appendLight(i);
+					if (!Geometry_isInside_spherePlane(sphere, minPlane))
+					{
+						opaque_appendLight(i);
+					}
+				}
+			} break;
+			
+			case rds_LightType_Spot:
+			{
+				Cone cone = Light_makeCone(light);
+				if (Geometry_isInside_coneFrustum(cone, groupFrustum, nearClipVs, maxDepthVs))
+				{
+					transparent_appendLight(i);
+					if (!Geometry_isInside_conePlane(cone, minPlane))
+					{
+						opaque_appendLight(i);
+					}
+				}
+			} break;
+
+			case rds_LightType_Directional:
+			{
+				transparent_appendLight(i);
+				opaque_appendLight(i);
+			} break;
+		}
+	}
+    GroupMemoryBarrierWithGroupSync();
+
+	// update the global light grid
+	if (isFirstThread)
+	{
+		//InterlockedAdd(RDS_RW_BUFFER_LOAD_I(uint, opaque_lightIndexCounter, 0), opaque_lightCount, opaque_lightIndexStartOffset);
+		RDS_RW_BUFFER_ATM_ADD_I(uint, opaque_lightIndexCounter, 	 0, opaque_lightCount, opaque_lightIndexStartOffset);
+		RDS_IMAGE_2D_GET(uint2, opaque_lightGrid)[input.groupId.xy] 		= uint2(opaque_lightIndexStartOffset, opaque_lightCount);
+
+		RDS_RW_BUFFER_ATM_ADD_I(uint, transparent_lightIndexCounter, 0, transparent_lightCount, transparent_lightIndexStartOffset);
+		RDS_IMAGE_2D_GET(uint2, transparent_lightGrid)[input.groupId.xy] 	= uint2(transparent_lightIndexStartOffset, transparent_lightCount);
+	}
+	GroupMemoryBarrierWithGroupSync();
+
+	// update the global light index list
+	for (uint i = input.groupIndex; i < opaque_lightCount; i += stepLight)
+	{
+		RDS_RW_BUFFER_STORE_I(uint, opaque_lightIndexList, 		opaque_lightIndexStartOffset + i, 		opaque_lightList[i]);
+	}
+	for (uint i = input.groupIndex; i < transparent_lightCount; i += stepLight)
+	{
+		RDS_RW_BUFFER_STORE_I(uint, transparent_lightIndexList, transparent_lightIndexStartOffset + i, 	transparent_lightList[i]);
+	}
 }

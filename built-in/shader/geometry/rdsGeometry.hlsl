@@ -27,40 +27,41 @@ Geometry_makePlane(float3 pt0, float3 pt1, float3 pt2)
     return plane;
 }
 
+// check if sphere is fully behide a plane (forward is -z)
 bool 
-Geometry_isOverlapped_spherePlane(Sphere sphere, Plane plane)
+Geometry_isInside_spherePlane(Sphere sphere, Plane plane)
 {
-    return dot( plane.normal, sphere.center ) - plane.distance < -sphere.radius;
+    return dot(plane.normal, sphere.center) - plane.distance < -sphere.radius; 
 }
 
 bool 
-Geometry_isOverlapped_sphereFrustum(Sphere sphere, Frustum frustum, float zNear, float zFar)
+Geometry_isInside_sphereFrustum(Sphere sphere, Frustum frustum, float zNear, float zFar)
 {
-    bool isOverlapped = true;
+    bool isInside = true;
     if (sphere.center.z - sphere.radius > zNear || sphere.center.z + sphere.radius < zFar)
     {
-        isOverlapped = false;
+        isInside = false;
     }
 
-    for(uint i = 0; i < 4 && isOverlapped; ++i)
+    for(uint i = 0; i < 4 && isInside; ++i)
     {
-        if (Geometry_isOverlapped_spherePlane(sphere, frustum.planes[i]))
+        if (Geometry_isInside_spherePlane(sphere, frustum.planes[i]))
         {
-            isOverlapped = false;
+            isInside = false;
         }
     }
 
-    return isOverlapped;
+    return isInside;
 }
 
 bool 
-Geometry_isOverlapped_pointPlane(float3 pt, Plane plane)
+Geometry_isInside_pointPlane(float3 pt, Plane plane)
 {
     return dot(plane.normal, pt) - plane.distance < 0; 
 }
 
 bool 
-Geometry_isOverlapped_conePlane(Cone cone, Plane plane)
+Geometry_isInside_conePlane(Cone cone, Plane plane)
 {
     // Compute the farthest point on the end of the cone to the positive space of the plane.
     float3 m = cross(cross(plane.normal, cone.direction), cone.direction);
@@ -72,30 +73,30 @@ Geometry_isOverlapped_conePlane(Cone cone, Plane plane)
     // of the plane. 
     */
     
-    return Geometry_isOverlapped_pointPlane(cone.tip, plane) && Geometry_isOverlapped_pointPlane(q, plane);
+    return Geometry_isInside_pointPlane(cone.tip, plane) && Geometry_isInside_pointPlane(q, plane);
 }
 
 bool 
-Geometry_isOverlapped_coneFrustum(Cone cone, Frustum frustum, float zNear, float zFar)
+Geometry_isInside_coneFrustum(Cone cone, Frustum frustum, float zNear, float zFar)
 {
-    bool isOverlapped = true;
+    bool isInside = true;
     Plane planeNear = { float3(0, 0, -1.0), -zNear };
     Plane planeFar  = { float3(0, 0,  1.0), zFar };
 
-    if (Geometry_isOverlapped_conePlane(cone, planeNear) || Geometry_isOverlapped_conePlane(cone, planeFar))
+    if (Geometry_isInside_conePlane(cone, planeNear) || Geometry_isInside_conePlane(cone, planeFar))
     {
-        isOverlapped = false;
+        isInside = false;
     }
 
-    for(uint i = 0; i < 4 && isOverlapped; ++i)
+    for(uint i = 0; i < 4 && isInside; ++i)
     {
-        if (Geometry_isOverlapped_conePlane(cone, frustum.planes[i]))
+        if (Geometry_isInside_conePlane(cone, frustum.planes[i]))
         {
-            isOverlapped = false;
+            isInside = false;
         }
     }
 
-    return isOverlapped;
+    return isInside;
 }
 
 #endif

@@ -50,7 +50,7 @@ GraphicsDemo::onCreate()
 void 
 GraphicsDemo::onCreateScene(Scene* oScene)
 {
-	
+	_scene = oScene;
 }
 
 void 
@@ -62,7 +62,9 @@ GraphicsDemo::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
 void 
 GraphicsDemo::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
-	//auto& rdGraph = *oRdGraph;
+	auto& rdGraph	= oRdGraph;
+	auto* rdCtx		= rdGraph->renderContext();
+	RDS_CORE_ASSERT(math::equals(rdCtx->framebufferSize(), Vec2f{drawData->resolution()}), "RenderContext resoultion is different from DrawData resoultion");
 }
 
 void 
@@ -101,11 +103,14 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAs
 			auto* ent = scene.addEntity("");
 
 			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-			//rdableMesh->material = mtl;
+			rdableMesh->material = mtl;
 			rdableMesh->meshAsset = meshAsset;
 
 			auto* transform	= ent->getComponent<CTransform>();
 			transform->setLocalPosition(startPos.x + step.x * c, 0.0f, startPos.y + step.y * r);
+
+			float scaleFactor = 64.0f; RDS_UNUSED(scaleFactor);
+			transform->setLocalScale(Vec3f{ scaleFactor, 1.0, scaleFactor });
 
 			TempString buf;
 			fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
@@ -114,25 +119,41 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAs
 	}
 
 	#if 1
+	row = 1;
+	col = 2;
+
 	for (size_t r = 0; r < row; r++)
 	{
 		for (size_t c = 0; c < col; c++)
 		{
 			auto* ent = scene.addEntity("");
 
-			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-			//rdableMesh->material = mtl;
-			rdableMesh->meshAsset = meshAssets().box;
-
 			auto* transform	= ent->getComponent<CTransform>();
-			transform->setLocalPosition(startPos.x + step.x * c, 20.0f, startPos.y + step.y * r);
+			transform->setLocalPosition(startPos.x + step.x * c, 1.0f, startPos.y + step.y * r);
+			transform->setLocalRotation(Vec3f{math::radians(90.0f), 0.0f, 0.0f});
+
+			//auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+			//rdableMesh->material = mtl;
+			//rdableMesh->meshAsset = isDirectional ? meshAssets().box : isPoint ? meshAssets().sphere : meshAssets().cone;
+
+			bool isPoint		= r % 2 == 0;
+			bool isDirectional	= r == 0 && c == 0;
 
 			auto* light = ent->addComponent<CLight>();
-			light->setType(r % 2 == 0 ? LightType::Point : LightType::Spot);
-			if (r == 0 && c == 0)
+			light->setType(isPoint ? LightType::Point : LightType::Spot);
+			light->setType(LightType::Point);
+			if (isDirectional)
 			{
-				light->setType(LightType::Directional);
+				//light->setType(LightType::Directional);
 			}
+
+			if (light->lightType() == LightType::Spot)
+			{
+				light->setSpotAngle(math::radians(60.0f));
+				light->setSpotInnerAngle(math::radians(30.0f));
+			}
+
+			light->setRange(4);
 
 			TempString buf;
 			fmtTo(buf, "{}-{}", enumStr(light->lightType()), sCast<u64>(ent->id()));
@@ -183,7 +204,7 @@ GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCu
 }
 
 RdgPass* 
-GraphicsDemo::addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* oDsBufHnd, RdgTextureHnd* oTexDepthHnd)
+GraphicsDemo::addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* oDsBufHnd, RdgTextureHnd* oTexDepthHnd, Color4f clearColor)
 {
 	auto* rdGraph		= oRdGraph;
 	auto& dsBuf			= *oDsBufHnd;
@@ -202,7 +223,7 @@ GraphicsDemo::addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgText
 				auto mtl = _mtlPreDepth;
 
 				auto* clearValue = rdReq.clearFramebuffers();
-				clearValue->setClearColor();
+				clearValue->setClearColor(clearColor);
 				clearValue->setClearDepth();
 
 				drawData->setupMaterial(mtl);
@@ -222,6 +243,110 @@ GraphicsDemo::addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgText
 	}*/
 
 	return &passPreDepth;
+}
+
+RdgPass* 
+GraphicsDemo::addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrView passName, RdgTextureHnd rtColor, RdgTextureHnd texColor, Material* material)
+{
+	if (!texColor)
+		return nullptr;
+
+	auto*	rdGraph		= oRdGraph;
+
+	auto& skyboxPass = rdGraph->addPass(passName, RdgPassTypeFlags::Graphics);
+	skyboxPass.readTexture(texColor);
+	skyboxPass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+	skyboxPass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			rdReq.reset(rdGraph->renderContext(), *drawData);
+			auto mtl = material;
+
+			mtl->setParam("texColor", texColor.renderResource());
+			drawData->setupMaterial(mtl);
+			rdReq.drawMesh(RDS_SRCLOC, meshAssets().fullScreenTriangle->rdMesh, mtl);
+		});
+	return &skyboxPass;
+}
+
+
+RdgPass* 
+GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, Material* material)
+{
+	auto*	rdGraph		= oRdGraph;
+
+	RdgPass* passLightOutline = nullptr;
+
+	auto& pass = rdGraph->addPass("draw_lightOutline", RdgPassTypeFlags::Graphics);
+	passLightOutline = &pass;
+
+	pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			rdReq.reset(rdGraph->renderContext(), *drawData);
+			auto mtl = material ? material :drawData->mtlLine();	RDS_UNUSED(mtl);
+			mtl->setParam("rds_matrix_vp", drawData->camera->viewProjMatrix());
+
+			{
+				auto viewMatrix = drawData->camera->viewMatrix();
+				for (auto& light : engineContext().lightSystem().components())
+				{
+					auto ent = scene().findEntity(light->id());
+					auto& transform = ent->transform();
+
+					auto posWs		= transform.localPosition();
+					auto dirWs		= transform.forward().normalize();
+
+					RenderRequest::LineVtxType v0;
+					v0.position		= posWs;
+					v0.colors[0]	= Color4b{255, 0, 0, 255};
+
+					RenderRequest::LineVtxType v1;
+					v1.position		= posWs + dirWs * (light->lightType() == LightType::Directional ? 10 : light->range());
+					v1.colors[0]	= Color4b{0, 255, 0, 255};
+
+					rdReq.drawLine(v0, v1, mtl);
+				}
+			}
+
+			{
+				RenderRequest::LineVtxType v0;
+				v0.position		= Tuple3f{0.0, 0.0, 0.0};
+				v0.colors[0]	= Color4b{255, 0, 0, 255};
+
+				RenderRequest::LineVtxType v1;
+				v1.position		= Tuple3f{10.0, 0.0, 0.0};
+				v1.colors[0]	= Color4b{255, 0, 0, 255};
+
+				rdReq.drawLine(v0, v1, mtl);
+}
+
+			{
+				RenderRequest::LineVtxType v0;
+				v0.position		= Tuple3f{0.0, 0.0, 0.0};
+				v0.colors[0]	= Color4b{255, 0, 0, 255};
+
+				RenderRequest::LineVtxType v1;
+				v1.position		= Tuple3f{0.0, 10.0, 0.0};
+				v1.colors[0]	= Color4b{255, 0, 0, 255};
+
+				rdReq.drawLine(v0, v1, mtl);
+			}
+			{
+				RenderRequest::LineVtxType v0;
+				v0.position		= Tuple3f{0.0, 0.0, 0.0};
+				v0.colors[0]	= Color4b{255, 0, 0, 255};
+
+				RenderRequest::LineVtxType v1;
+				v1.position		= Tuple3f{0.0, 0.0, 10.0};
+				v1.colors[0]	= Color4b{255, 0, 0, 255};
+
+				rdReq.drawLine(v0, v1, mtl);
+			}
+		});
+
+	return passLightOutline;
 }
 
 void 
@@ -313,7 +438,13 @@ MeshAssets::create()
 
 	createMeshAsset(&box,		"asset/mesh/box.obj");
 	createMeshAsset(&sphere,	"asset/mesh/sphere.obj");
+	createMeshAsset(&plane,		"asset/mesh/plane.obj");
+	createMeshAsset(&cone,		"asset/mesh/cone.obj");
 	createMeshAsset(&suzanne,	"asset/mesh/suzanne.obj");
+
+	auto& meshAsset = fullScreenTriangle;
+	meshAsset = makeSPtr<MeshAsset>();
+	meshAsset->rdMesh.create(EditMeshUtil::getFullScreenTriangle());
 }
 
 void 
@@ -321,7 +452,10 @@ MeshAssets::destroy()
 {
 	box.reset(nullptr);
 	sphere.reset(nullptr);
+	plane.reset(nullptr);
+	cone.reset(nullptr);
 	suzanne.reset(nullptr);
+	fullScreenTriangle.reset(nullptr);
 }
 
 #endif // 1

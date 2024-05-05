@@ -52,7 +52,7 @@ CRenderableSystem::update(DrawData& drawData)
 {
 	// transform system update
 	{
-		_objTransformBuf.resize(renderables().size() + 1);
+		_objTransformBuf.resize(renderables().size() + 1);		// id start at 1, not using 2 table mapping currently
 
 		auto mat_vp = drawData.camera->viewProjMatrix();
 
@@ -78,6 +78,7 @@ CRenderableSystem::update(DrawData& drawData)
 		{
 			auto& drawParam = _drawPramBuf.at(i);
 			drawData.setupDrawParam(&drawParam);
+			_drawPramBuf.uploadToGpu();
 
 			// lights
 			{
@@ -87,7 +88,6 @@ CRenderableSystem::update(DrawData& drawData)
 			}
 		}
 
-		_drawPramBuf.uploadToGpu();
 		drawData.setupMaterial(drawData._mtlLine); // TODO: temporary
 	}
 
@@ -156,7 +156,7 @@ CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh&
 			clearValue->setClearColor();
 			clearValue->setClearDepth();
 
-			//mtlPresent->setParam("texPresent",			texPresent.texture2D());
+			//mtlPresent->setParam("texColor",			texPresent.texture2D());
 			//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, mtlPresent, Mat4f::s_identity());
 			//rdGraph->renderContext()->drawUI(rdReq);
 			//rdReq.swapBuffers();
@@ -175,12 +175,16 @@ void
 DrawData::setupDrawParam(DrawParam* oDrawParam)
 {
 	auto& drawParam = *oDrawParam;
+	drawParam.camera_pos		= camera->pos();
+	drawParam.camera_near		= camera->nearClip();
+	drawParam.camera_far		= camera->farClip();
+
 	drawParam.matrix_proj		= camera->projMatrix();
 	drawParam.matrix_view		= camera->viewMatrix();
 	drawParam.matrix_vp			= camera->viewProjMatrix();
 	drawParam.matrix_proj_inv	= drawParam.matrix_proj.inverse();
 	drawParam.matrix_view_inv	= drawParam.matrix_view.inverse();
-	drawParam.camera_pos		= camera->pos();
+
 	drawParam.resolution		= camera->viewport().size;
 	drawParam.delta_time		= Tuple2f(deltaTime, deltaTime);
 }
