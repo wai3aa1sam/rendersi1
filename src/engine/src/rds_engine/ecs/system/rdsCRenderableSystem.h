@@ -17,6 +17,9 @@ class	SceneView;
 class	CRenderable;
 struct	DrawParam;
 
+/*
+* TODO: should put on rds_render later, drawScene then need to be virtual
+*/
 struct DrawData
 {
 	u32 drawParamIdx = 0;
@@ -28,16 +31,19 @@ struct DrawData
 	RdgTextureHnd oTexPresent;
 
 public:
+	void drawScene(RenderRequest& rdReq, Material* mtl);
+	void drawScene(RenderRequest& rdReq);
+
+	void setupDrawParam(DrawParam*	oDrawParam);
+	void setupMaterial(	Material*	oMtl);
+
+public:
 	const Tuple2f& resolution() const;
 
 	Material* mtlLine();
 
 public:
 	SPtr<Material> _mtlLine;
-
-public:
-	void setupDrawParam(DrawParam*	oDrawParam);
-	void setupMaterial(	Material*	oMtl);
 };
 
 #if 0

@@ -30,8 +30,8 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
 
 protected:
-	SPtr<Shader>			_shaderHelloTriangle;
-	SPtr<Material>			_mtlHelloTriangle;
+	SPtr<Shader>			_shaderForwardPlus;
+	SPtr<Material>			_mtlForwardPlus;
 
 	SPtr<Shader>			_shaderPostProcess;
 	SPtr<Material>			_mtlPostProcess;

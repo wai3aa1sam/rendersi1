@@ -172,6 +172,18 @@ CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh&
 #if 1
 
 void 
+DrawData::drawScene(RenderRequest& rdReq, Material* mtl)
+{
+	sceneView->drawScene(rdReq, mtl, this);
+}
+
+void 
+DrawData::drawScene(RenderRequest& rdReq)
+{
+	sceneView->drawScene(rdReq, this);
+}
+
+void 
 DrawData::setupDrawParam(DrawParam* oDrawParam)
 {
 	auto& drawParam = *oDrawParam;

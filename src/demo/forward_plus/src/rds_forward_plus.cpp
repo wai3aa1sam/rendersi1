@@ -29,7 +29,7 @@ ForwardPlus::onCreate()
 {
 	Base::onCreate();
 
-	createMaterial(&_shaderHelloTriangle, &_mtlHelloTriangle, "asset/shader/demo/hello_triangle/hello_triangle.shader"
+	createMaterial(&_shaderForwardPlus, &_mtlForwardPlus, "asset/shader/demo/hello_triangle/hello_triangle.shader"
 		, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
 
 	createMaterial(&_shaderPostProcess, &_mtlPostProcess, "asset/shader/present.shader");
@@ -68,6 +68,27 @@ ForwardPlus::onCreateScene(Scene* oScene)
 	}
 
 	createDefaultScene(oScene, nullptr, meshAssets().plane, 1);
+
+	{
+		auto& camera = app().mainWindow().camera();
+		//camera.setPos(0, 10, 35);
+		camera.setPos(-0.423f, 4.870f, 4.728f);
+		//camera.setPos(-0.572f, 6.589f, 6.397f); // threshold to reproduce the bug
+
+		camera.setFov(45.0f);
+		camera.setAim(0, 0, 0);
+		camera.setNearClip(0.1f);
+		camera.setFarClip(1000.0f);
+
+		/*Vec3f scale;
+		Quat4f rotation;
+		Vec3f translation;
+		Vec3f skew;
+		Vec4f perspective;
+		glm::decompose(camera.viewMatrix(), scale, rotation, translation, skew, perspective);
+		RDS_DUMP_VAR(scale, rotation, translation, skew, perspective);
+		RDS_DUMP_VAR(scale, rotation, translation, skew, perspective);*/
+	}
 }
 
 void 
@@ -440,8 +461,7 @@ RfpForwardPlus::addLightingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTe
 				mtl->setParam("lightIndexList",		lightIndexList.renderResource());
 				mtl->setParam("lightGrid",			lightGrid.renderResource());
 
-				drawData->setupMaterial(mtl);
-				drawData->sceneView->drawScene(rdReq, mtl, drawData);
+				drawData->drawScene(rdReq, mtl);
 			}
 		);
 		lightingPass = &pass;

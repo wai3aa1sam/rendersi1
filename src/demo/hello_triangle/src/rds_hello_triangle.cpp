@@ -57,7 +57,7 @@ HelloTriangle::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 			clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
 			clearValue->setClearDepth(1.0f);
 
-			drawData->sceneView->drawScene(rdReq, mtl, drawData);
+			drawData->drawScene(rdReq, mtl);
 		}
 	);
 

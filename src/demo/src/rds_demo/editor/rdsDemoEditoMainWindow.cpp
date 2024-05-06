@@ -22,23 +22,12 @@ DemoEditorMainWindow::onCreate(const CreateDesc_Base& cDesc)
 	auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 	Base::onCreate(thisCDesc);
 
-	//_camera.setPos(0, 10, 35);
-	_camera.setPos(-0.423f, 4.870f, 4.728f);
-	//_camera.setPos(-0.572f, 6.589f, 6.397f); // threshold to reproduce the bug
+	_camera.setPos(0, 10, 35);
 
 	_camera.setFov(45.0f);
 	_camera.setAim(0, 0, 0);
 	_camera.setNearClip(0.1f);
 	_camera.setFarClip(1000.0f);
-
-	/*Vec3f scale;
-	Quat4f rotation;
-	Vec3f translation;
-	Vec3f skew;
-	Vec4f perspective;
-	glm::decompose(_camera.viewMatrix(), scale, rotation, translation, skew, perspective);
-	RDS_DUMP_VAR(scale, rotation, translation, skew, perspective);
-	RDS_DUMP_VAR(scale, rotation, translation, skew, perspective);*/
 }
 
 void 
