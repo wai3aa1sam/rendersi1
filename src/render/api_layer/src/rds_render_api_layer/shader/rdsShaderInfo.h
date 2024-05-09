@@ -490,6 +490,9 @@ public:
 	String queue;
 
 	String vsFunc;
+	String tescFunc;
+	String teseFunc;
+	String geomFunc;
 	String psFunc;
 	String csFunc;
 
@@ -505,6 +508,9 @@ public:
 		RDS_NAMED_FIXED_IO(se, name);
 		RDS_NAMED_FIXED_IO(se, queue);
 		RDS_NAMED_FIXED_IO(se, vsFunc);
+		RDS_NAMED_FIXED_IO(se, tescFunc);
+		RDS_NAMED_FIXED_IO(se, teseFunc);
+		RDS_NAMED_FIXED_IO(se, geomFunc);
 		RDS_NAMED_FIXED_IO(se, psFunc);
 		RDS_NAMED_FIXED_IO(se, csFunc);
 		RDS_NAMED_FIXED_IO(se, renderState);

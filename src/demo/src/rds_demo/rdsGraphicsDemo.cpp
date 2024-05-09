@@ -44,7 +44,8 @@ GraphicsDemo::onCreate()
 	createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/skybox.shader"
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 
-	createMaterial(&_shaderPreDepth, &_mtlPreDepth, "asset/shader/pre_depth.shader");
+	createMaterial(&_shaderPreDepth,		&_mtlPreDepth,			"asset/shader/pre_depth.shader");
+	createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/displayNormals.shader");
 }
 
 void 
@@ -108,9 +109,6 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAs
 
 			auto* transform	= ent->getComponent<CTransform>();
 			transform->setLocalPosition(startPos.x + step.x * c, 0.0f, startPos.y + step.y * r);
-
-			float scaleFactor = 64.0f; RDS_UNUSED(scaleFactor);
-			transform->setLocalScale(Vec3f{ scaleFactor, 1.0, scaleFactor });
 
 			TempString buf;
 			fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
@@ -227,7 +225,7 @@ GraphicsDemo::addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgText
 				clearValue->setClearDepth();
 
 				drawData->setupMaterial(mtl);
-				drawData->sceneView->drawScene(rdReq, mtl, drawData);
+				drawData->drawScene(rdReq, mtl);
 			});
 	}
 
@@ -253,10 +251,10 @@ GraphicsDemo::addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrV
 
 	auto*	rdGraph		= oRdGraph;
 
-	auto& skyboxPass = rdGraph->addPass(passName, RdgPassTypeFlags::Graphics);
-	skyboxPass.readTexture(texColor);
-	skyboxPass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
-	skyboxPass.setExecuteFunc(
+	auto& pass = rdGraph->addPass(passName, RdgPassTypeFlags::Graphics);
+	pass.readTexture(texColor);
+	pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
 			rdReq.reset(rdGraph->renderContext(), *drawData);
@@ -266,7 +264,7 @@ GraphicsDemo::addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrV
 			drawData->setupMaterial(mtl);
 			rdReq.drawMesh(RDS_SRCLOC, meshAssets().fullScreenTriangle->rdMesh, mtl);
 		});
-	return &skyboxPass;
+	return &pass;
 }
 
 
@@ -347,6 +345,25 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 		});
 
 	return passLightOutline;
+}
+
+RdgPass* 
+GraphicsDemo::addDisplayNormalPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor)
+{
+	auto*	rdGraph		= oRdGraph;
+
+	auto& pass = rdGraph->addPass("displayNormals", RdgPassTypeFlags::Graphics);
+	pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			rdReq.reset(rdGraph->renderContext(), *drawData);
+			auto mtl = _mtlDisplayNormals;
+
+			drawData->setupMaterial(mtl);
+			drawData->drawScene(rdReq, mtl);
+		});
+	return &pass;
 }
 
 void 

@@ -1,7 +1,8 @@
 #if 0
 Shader {
 	Properties {
-		Float debugFrustumZ = -0.2
+		Float minDepthBias
+		Float maxDepthBias
 	}
 	
 	Pass {
@@ -78,6 +79,9 @@ groupshared uint transparent_lightList[LIGHT_LIST_LOCAL_SIZE];
 
 #endif
 
+float minDepthBias;
+float maxDepthBias;
+
 void 
 opaque_appendLight(uint i)
 {
@@ -124,8 +128,8 @@ void cullLights(ComputeIn input)
     InterlockedMax(uMaxDepth, uDepth);
     GroupMemoryBarrierWithGroupSync();
 
-	float minDepth = asfloat(uMinDepth);
-    float maxDepth = asfloat(uMaxDepth);
+	float minDepth = asfloat(uMinDepth) - minDepthBias;
+    float maxDepth = asfloat(uMaxDepth) - maxDepthBias;
 
 	// view space
 	float minDepthVs = SpaceTransform_clipToView(float4(0.0, 0.0, minDepth, 1.0)).z;	// for opaque

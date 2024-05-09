@@ -39,11 +39,9 @@ public:
 		destroy();
 		_shaderStageCInfos.reserve(enumInt(ShaderStageFlag::_kCount));
 
-		const auto& info = shaderPass->info();
+		const auto& info = shaderPass->info(); RDS_UNUSED(info);
 
-		if (!info.vsFunc.is_empty()) { _shaderStageCInfos.emplace_back(VkPipelineShaderStageCreateInfo{shaderPass->vkVertexStage()->createVkStageInfo(info.vsFunc.c_str())}); }
-		if (!info.psFunc.is_empty()) { _shaderStageCInfos.emplace_back(VkPipelineShaderStageCreateInfo{shaderPass->vkPixelStage ()->createVkStageInfo(info.psFunc.c_str())}); }
-
+		shaderPass->createVkShaderStageCInfos(_shaderStageCInfos);
 		out.stageCount	= sCast<u32>(_shaderStageCInfos.size());
 		out.pStages		= _shaderStageCInfos.data();
 	}
@@ -55,7 +53,7 @@ public:
 		const auto& info = shaderPass->info();
 
 		throwIf(info.csFunc.is_empty(), "cs don't have an entry func");
-		if (!info.csFunc.is_empty()) { out.stage = VkPipelineShaderStageCreateInfo{shaderPass->vkComputeStage()->createVkStageInfo(info.csFunc.c_str())}; }
+		shaderPass->createComputeVkShaderStageCInfo(out.stage);
 	}
 
 protected:
@@ -420,34 +418,6 @@ protected:
 #endif // 0
 #if 1
 
-
-Vk_MaterialPass_VertexStage::Vk_MaterialPass_VertexStage()
-{
-
-}
-
-Vk_MaterialPass_VertexStage::~Vk_MaterialPass_VertexStage()
-{
-}
-
-void
-Vk_MaterialPass_VertexStage::create(MaterialPass_Vk* pass, ShaderStage* shaderStage)
-{
-	RDS_WARN_ONCE("move vk set to material pass, union reflection info");
-	Base::create(pass, shaderStage);
-}
-
-void
-Vk_MaterialPass_VertexStage::destroy(MaterialPass_Vk* pass)
-{
-}
-
-void 
-Vk_MaterialPass_PixelStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
-{
-	//Helper::bind(this, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, pass->vkPipelineLayout().hnd(), ctx, vkCmdBuf, vtxLayout, pass);
-}
-
 const Vk_MaterialPass_VertexStage::Vk_VertexInputAttrs& 
 Vk_MaterialPass_VertexStage::cacheVtxInputAttrCDesc(const VertexLayout* vtxLayout)
 {
@@ -485,42 +455,6 @@ Vk_MaterialPass_VertexStage::cacheVtxInputAttrCDesc(const VertexLayout* vtxLayou
 	return vtxInputIter->second;
 }
 
-void 
-Vk_MaterialPass_PixelStage::create(MaterialPass_Vk* pass, ShaderStage* shaderStage)
-{
-	Base::create(pass, shaderStage);
-}
-
-void 
-Vk_MaterialPass_PixelStage::destroy(MaterialPass_Vk* pass)
-{
-}
-
-void 
-Vk_MaterialPass_VertexStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
-{
-	//Helper::bind(this, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, pass->vkPipelineLayout().hnd(), ctx, vkCmdBuf, vtxLayout, pass);
-}
-
-void 
-Vk_MaterialPass_ComputeStage::create	(MaterialPass_Vk* pass, ShaderStage* shaderStage)
-{
-	Base::create(pass, shaderStage);
-	using Helper = MaterialStage_Helper;
-	//Helper::createVkDescriptorSet(this, pass->renderDeviceVk());
-}
-
-void 
-Vk_MaterialPass_ComputeStage::destroy(MaterialPass_Vk* pass)
-{
-}
-
-void 
-Vk_MaterialPass_ComputeStage::bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, MaterialPass_Vk* pass)
-{
-	//Helper::bind(this, VK_PIPELINE_BIND_POINT_COMPUTE, 0, pass->computeVkPipelineLayout().hnd(), ctx, vkCmdBuf, nullptr, pass);
-}
-
 #endif
 
 #if 0
@@ -543,21 +477,39 @@ MaterialPass_Vk::onCreate(Material* material, ShaderPass* shaderPass)
 {
 	Base::onCreate(material, shaderPass);
 	
-	if (shaderPass->vertexStage())
+	if (auto* stage = shaderPass->vertexStage())
 	{
-		_vkVertexStage.create(this, shaderPass->vertexStage());
+		_vkVertexStage.create(this, stage);
 		_vertexStage = &_vkVertexStage;
 	}
 
-	if (shaderPass->pixelStage())
+	if (auto* stage = shaderPass->tessellationControlStage())
 	{
-		_vkPixelStage.create(this, shaderPass->pixelStage());
+		_vkTescStage.create(this, stage);
+		_tescStage = &_vkTescStage;
+	}
+
+	if (auto* stage = shaderPass->tessellationEvaluationStage())
+	{
+		_vkTeseStage.create(this, stage);
+		_teseStage = &_vkTeseStage;
+	}
+
+	if (auto* stage = shaderPass->geometryStage())
+	{
+		_vkGeometryStage.create(this, stage);
+		_geometryStage = &_vkGeometryStage;
+	}
+
+	if (auto* stage = shaderPass->pixelStage())
+	{
+		_vkPixelStage.create(this, stage);
 		_pixelStage	= &_vkPixelStage;
 	}
 
-	if (shaderPass->computeStage())
+	if (auto* stage = shaderPass->computeStage())
 	{
-		_vkComputeStage.create(this, shaderPass->computeStage());
+		_vkComputeStage.create(this, stage);
 		_computeStage = &_vkComputeStage;
 		createComputeVkPipeline(_computeVkPipeline);
 	}
@@ -572,19 +524,37 @@ MaterialPass_Vk::onDestroy()
 
 	if (_vertexStage)
 	{
-		_vkVertexStage.destroy(this);
+		_vkVertexStage.destroy();
 		_vertexStage = nullptr;
+	}
+
+	if (_tescStage)
+	{
+		_vkTescStage.destroy();
+		_tescStage = nullptr;
+	}
+
+	if (_teseStage)
+	{
+		_vkTeseStage.destroy();
+		_teseStage = nullptr;
+	}
+
+	if (_geometryStage)
+	{
+		_vkGeometryStage.destroy();
+		_geometryStage = nullptr;
 	}
 
 	if (_pixelStage)
 	{
-		_vkPixelStage.destroy(this);
+		_vkPixelStage.destroy();
 		_pixelStage	= nullptr;
 	}
 
 	if (_computeStage)
 	{
-		_vkComputeStage.destroy(this);
+		_vkComputeStage.destroy();
 		_computeStage	= nullptr;
 
 		_computeVkPipeline.destroy(rdDevVk);

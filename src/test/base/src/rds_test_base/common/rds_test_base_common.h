@@ -65,7 +65,7 @@ public:
 			String file = app.getExecutableFilename();
 			String path = Path::dirname(file);
 
-			auto& proj = ProjectSetting_T {};
+			auto proj = ProjectSetting_T {};
 
 			path.append("/../../../../../..");
 			proj.setProjectRoot(path);

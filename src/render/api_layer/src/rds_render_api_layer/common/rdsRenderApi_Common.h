@@ -8,11 +8,14 @@ namespace rds
 
 #define ShaderStageFlag_ENUM_LIST(E) \
 	E(None, = 0) \
-	E(Vertex,	= BitUtil::bit(0)) \
-	E(Pixel,	= BitUtil::bit(1)) \
-	E(Compute,	= BitUtil::bit(2)) \
-	E(All,		= BitUtil::bit(3)) \
-	E(_kCount,	= 3) \
+	E(Vertex,					= BitUtil::bit(0)) \
+	E(TessellationControl,		= BitUtil::bit(1)) \
+	E(TessellationEvaluation,	= BitUtil::bit(2)) \
+	E(Geometry,					= BitUtil::bit(3)) \
+	E(Pixel,					= BitUtil::bit(4)) \
+	E(Compute,					= BitUtil::bit(5)) \
+	E(All,						= BitUtil::bit(6)) \
+	E(_kCount,					= 7) \
 //---
 RDS_ENUM_CLASS(ShaderStageFlag, u8);
 RDS_ENUM_ALL_OPERATOR(ShaderStageFlag);

@@ -297,7 +297,9 @@ RenderDevice_Vk::loadVkInstFn(Vk_ExtensionInfo& vkExtInfo)
 	VAR = vkExtInfo.getInstanceExtFunction<RDS_CONCAT(RDS_CONCAT(PFN_, VAR), EXT)>(RDS_CONCAT_TO_STR(VAR, EXT)); \
 	if (VAR == nullptr) \
 	{ \
-		RDS_CORE_LOG_WARN("cannot load" #VAR); \
+		VAR = FALLBACK_FN; \
+		RDS_CORE_LOG_ERROR("cannot load vk fn: {}", RDS_STRINGIFY(VAR)); \
+		/*throwIf(!VAR, "cannot load vk fn: {}", RDS_STRINGIFY(VAR)); */ \
 		VAR = FALLBACK_FN; \
 	} \
 	// ---

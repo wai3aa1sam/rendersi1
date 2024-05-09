@@ -46,9 +46,10 @@ int main(int argc, char* argv[])
 		"-cwd=../../../../../example/Test000",
 		//"-x=hlsl",
 		//"-file=asset/shader/demo/hello_triangle/hello_triangle.shader",
+		"-file=asset/shader/test/test_compute_bindless.shader",
+		//"-file=asset/shader/demo/forward_plus/forward_plus.shader",
 		//"-file=asset/shader/test/test_compute_bindless.shader",
-		"-file=asset/shader/demo/forward_plus/forward_plus.shader",
-		//"-file=asset/shader/test/test_compute_bindless.shader",
+		"-file=asset/shader/debug/displayNormals.shader",
 
 		//"-out=dx11/pass0/.bin",
 		//"-profile=vs_5_0",
@@ -70,8 +71,11 @@ int main(int argc, char* argv[])
 	MemoryContext::init();
 	{
 		rds::ShaderCompilerConsoleApp app;
+		#if 1
 		app.parseCmdLine(CmdLineArgsView{argc, argv});
-		//app.parseCmdLine(CmdLineArgsView{argvs});
+		#else
+		app.parseCmdLine(CmdLineArgsView{ argvs });
+		#endif // 0
 		app.run();
 	}
 	MemoryContext::terminate();

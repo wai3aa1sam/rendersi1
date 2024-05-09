@@ -47,6 +47,7 @@ public:
 	RdgPass* addPreDepthPass(	RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* oDsBuf, RdgTextureHnd* oTexDepthHnd, Color4f clearColor);
 	RdgPass* addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrView passName, RdgTextureHnd rtColor, RdgTextureHnd texColor, Material* material);
 	RdgPass* addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, Material* material);
+	RdgPass* addDisplayNormalPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor);
 
 public:
 	DemoEditorApp& app();
@@ -66,11 +67,15 @@ private:
 	SPtr<Texture2D>		_texUvChecker;
 	SPtr<TextureCube>	_texDefaultSkybox;
 
+protected:
 	SPtr<Shader>	_shaderSkybox;
 	SPtr<Material>	_mtlSkybox;
 
 	SPtr<Shader>	_shaderPreDepth;
 	SPtr<Material>	_mtlPreDepth;
+
+	SPtr<Shader>	_shaderDisplayNormals;
+	SPtr<Material>	_mtlDisplayNormals;
 };
 
 inline Scene&		GraphicsDemo::scene()			{ return *_scene; }

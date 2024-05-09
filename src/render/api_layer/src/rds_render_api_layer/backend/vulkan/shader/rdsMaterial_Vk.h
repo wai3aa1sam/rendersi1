@@ -32,12 +32,16 @@ struct MaterialStage_Helper;
 #endif // 0
 #if 1
 
-template<class VK_MATERIAL_PASS_STAGE>
-struct Vk_MaterialPassStage : public VK_MATERIAL_PASS_STAGE
+template<class MATERIAL_PASS_STAGE, class VK_SHADER_PASS_STAGE>
+struct Vk_MaterialPassStage : public MATERIAL_PASS_STAGE
 {
+	friend struct	Vk_PipelineLayoutCDesc;
+	friend struct	MaterialStage_Helper;
+	friend class	MaterialPass_Vk;
 public:
-	using Base = VK_MATERIAL_PASS_STAGE;
+	using Base = MATERIAL_PASS_STAGE;
 	using Util = Vk_RenderApiUtil;
+	using Vk_ShaderPassStage_T	 = VK_SHADER_PASS_STAGE;
 
 public:
 	Vk_MaterialPassStage()
@@ -47,127 +51,74 @@ public:
 
 	~Vk_MaterialPassStage()
 	{
-
+		destroy();
 	}
 
-	void create(ShaderPass_Vk* pass, StrView passPath)
+	void create(MaterialPass* pass, ShaderStage* shaderStage)
 	{
-		TempString binPath;
-		fmtTo(binPath, "{}/{}.bin", passPath, Util::toShaderStageProfile(stageFlag()));
-
-		auto* rdDevVk = pass->shader()->renderDeviceVk();
-		_vkModule.create(binPath, rdDevVk);
-
-		binPath += ".json";
-		//JsonUtil::readFile(binPath, _info);
-		_info.load(binPath);
-
-		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(_vkModule, rdDevVk, "{}-{}", pass->shader()->filename(), stageFlag());
+		Base::create(pass, shaderStage);
 	}
 
-	void destroy(ShaderPass_Vk* pass)
+	void destroy()
 	{
-		_vkModule.destroy(pass->shader()->renderDeviceVk());
+		Base::destroy();
 	}
 
-	VkPipelineShaderStageCreateInfo createVkStageInfo(const char* entry)
-	{
-		VkPipelineShaderStageCreateInfo	stageInfo = {};
-		stageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		stageInfo.stage					= Util::toVkShaderStageBit(stageFlag());
-		stageInfo.module				= _vkModule.hnd();
-		stageInfo.pName					= entry;
-		stageInfo.pSpecializationInfo	= nullptr;
-
-		return stageInfo;
-	}
-
-	//RenderDevice_Vk* renderDeviceVk() { return pass->shader()->renderDeviceVk(); }
+public:
+	RenderDevice_Vk*		renderDeviceVk()	{ return pass->shader()->renderDeviceVk(); }
+	Vk_ShaderPassStage_T*	vkShaderStage()		{ return sCast<Vk_ShaderPassStage_T*>(shaderStage()); }
 
 protected:
-	//ShaderPass_Vk*	_passVk = nullptr;
-	Vk_ShaderModule _vkModule;
 };
 
-struct Vk_MaterialPass_VertexStage : public MaterialPass_VertexStage
+struct Vk_MaterialPass_VertexStage : public Vk_MaterialPassStage<MaterialPass_VertexStage, Vk_VertexShaderStage>
 {
 	friend struct	Vk_PipelineLayoutCDesc;
 	friend struct	MaterialStage_Helper;
 	friend class	MaterialPass_Vk;
 public:
-	using Base		= MaterialPass_VertexStage;
-	using Util		= Vk_RenderApiUtil;
-	using Helper	= MaterialStage_Helper;
+	using Base		= Vk_MaterialPassStage<MaterialPass_VertexStage, Vk_VertexShaderStage>;
 
 public:
 	static constexpr SizeType s_kVtxInputAttrLocalSize = 32;
 	using Vk_VertexInputAttrs = Vector<VkVertexInputAttributeDescription, s_kVtxInputAttrLocalSize>;
 
 public:
-	Vk_MaterialPass_VertexStage();
-	~Vk_MaterialPass_VertexStage();
-
-	void create	(MaterialPass_Vk* pass, ShaderStage* shaderStage);
-	void destroy(MaterialPass_Vk* pass);
-
-	void bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass);
-
 	const Vk_VertexInputAttrs& cacheVtxInputAttrCDesc(const VertexLayout* vtxLayout);
-
-	Vk_VertexShaderStage*	vkShaderStage();
 
 protected:
 	VectorMap<const VertexLayout*, Vk_VertexInputAttrs>	_vtxInputAttrsMap;
 };
 
-inline Vk_VertexShaderStage* Vk_MaterialPass_VertexStage::vkShaderStage() { return sCast<Vk_VertexShaderStage*>(shaderStage()); }
-
-struct Vk_MaterialPass_PixelStage : public MaterialPass_PixelStage
+struct Vk_MaterialPass_TessellationControlStage : public Vk_MaterialPassStage<MaterialPass_TessellationControlStage, Vk_TessellationControlShaderStage>
 {
-	friend struct	Vk_PipelineLayoutCDesc;
-	friend struct	MaterialStage_Helper;
-	friend class	MaterialPass_Vk;
 public:
-	using Base		= MaterialPass_PixelStage;
-	using Util		= Vk_RenderApiUtil;
-	using Helper	= MaterialStage_Helper;
-
-public:
-	void create	(MaterialPass_Vk* pass, ShaderStage* shaderStage);
-	void destroy(MaterialPass_Vk* pass);
-
-	void bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass);
-
-	Vk_PixelShaderStage*	vkShaderStage();
-
-protected:
+	using Base = Vk_MaterialPassStage<MaterialPass_TessellationControlStage, Vk_TessellationControlShaderStage>;
 };
 
-inline Vk_PixelShaderStage* Vk_MaterialPass_PixelStage::vkShaderStage() { return sCast<Vk_PixelShaderStage*>(shaderStage()); }
+struct Vk_MaterialPass_TessellationEvaluationStage : public Vk_MaterialPassStage<MaterialPass_TessellationEvaluationStage, Vk_TessellationEvaluationShaderStage>
+{
+public:
+	using Base = Vk_MaterialPassStage<MaterialPass_TessellationEvaluationStage, Vk_TessellationEvaluationShaderStage>;
+};
+
+struct Vk_MaterialPass_GeometryStage : public Vk_MaterialPassStage<MaterialPass_GeometryStage, Vk_GeometryShaderStage>
+{
+public:
+	using Base = Vk_MaterialPassStage<MaterialPass_GeometryStage, Vk_GeometryShaderStage>;
+};
+
+struct Vk_MaterialPass_PixelStage : public Vk_MaterialPassStage<MaterialPass_PixelStage, Vk_PixelShaderStage>
+{
+public:
+	using Base = Vk_MaterialPassStage<MaterialPass_PixelStage, Vk_PixelShaderStage>;
+};
 
 struct Vk_MaterialPass_ComputeStage : public MaterialPass_ComputeStage
 {
-	friend struct	Vk_PipelineLayoutCDesc;
-	friend struct	MaterialStage_Helper;
-	friend class	MaterialPass_Vk;
 public:
-	using Base		= MaterialPass_ComputeStage;
-	using Util		= Vk_RenderApiUtil;
-	using Helper	= MaterialStage_Helper;
-
-public:
-	void create	(MaterialPass_Vk* pass, ShaderStage* shaderStage);
-	void destroy(MaterialPass_Vk* pass);
-
-	void bind(RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, MaterialPass_Vk* pass);
-
-	Vk_ComputeShaderStage*	vkShaderStage();
-
-protected:
+	using Base = Vk_MaterialPassStage<MaterialPass_PixelStage, Vk_PixelShaderStage>;
 };
-
-inline Vk_ComputeShaderStage* Vk_MaterialPass_ComputeStage::vkShaderStage() { return sCast<Vk_ComputeShaderStage*>(shaderStage()); }
-
 
 #endif
 
@@ -179,6 +130,9 @@ inline Vk_ComputeShaderStage* Vk_MaterialPass_ComputeStage::vkShaderStage() { re
 class MaterialPass_Vk : public MaterialPass
 {
 	friend struct Vk_MaterialPass_VertexStage;
+	friend struct Vk_MaterialPass_TessellationControlStage;
+	friend struct Vk_MaterialPass_TessellationEvaluationStage;
+	friend struct Vk_MaterialPass_GeometryStage;
 	friend struct Vk_MaterialPass_PixelStage;
 	friend struct Vk_MaterialPass_ComputeStage;
 	friend struct Vk_PipelineLayoutCDesc;
@@ -186,9 +140,12 @@ public:
 	using Base = MaterialPass;
 	using Util = Vk_RenderApiUtil;
 
-	using VertexStage	= Vk_MaterialPass_VertexStage;
-	using PixelStage	= Vk_MaterialPass_PixelStage;
-	using ComputeStage	= Vk_MaterialPass_ComputeStage;
+	using VertexStage					= Vk_MaterialPass_VertexStage;
+	using TessellationControlStage		= Vk_MaterialPass_TessellationControlStage;
+	using TessellationEvaluationStage	= Vk_MaterialPass_TessellationEvaluationStage;
+	using GeometryStage					= Vk_MaterialPass_GeometryStage;
+	using PixelStage					= Vk_MaterialPass_PixelStage;
+	using ComputeStage					= Vk_MaterialPass_ComputeStage;
 
 	using Vk_PipelineMap = VectorMap<Vk_RenderPass*, Vk_Pipeline>;
 
@@ -207,13 +164,19 @@ public:
 	Shader_Vk*		shader		();
 	ShaderPass_Vk*	shaderPass	();
 
-	VertexStage*	vkVertexStage();
-	PixelStage*		vkPixelStage();
-	ComputeStage*	vkComputeStage();
+	VertexStage*					vkVertexStage();
+	TessellationControlStage*		vkTessellationControlStage();
+	TessellationEvaluationStage*	vkTessellationEvaluationStage();
+	GeometryStage*					vkGeometryStage();
+	PixelStage*						vkPixelStage();
+	ComputeStage*					vkComputeStage();
 
-	VertexStage&	vkVertexStage_noCheck();
-	PixelStage&		vkPixelStage_noCheck();
-	ComputeStage&	vkComputeStage_noCheck();
+	VertexStage&					vkVertexStage_noCheck();
+	TessellationControlStage&		vkTessellationControlStage_noCheck();
+	TessellationEvaluationStage&	vkTessellationEvaluationStage_noCheck();
+	GeometryStage&					vkGeometryStage_noCheck();
+	PixelStage&						vkPixelStage_noCheck();
+	ComputeStage&					vkComputeStage_noCheck();
 
 	Vk_PipelineLayout& vkPipelineLayout();
 
@@ -233,9 +196,12 @@ protected:
 	void createComputeVkPipeline(Vk_Pipeline& out);
 
 protected:
-	VertexStage		_vkVertexStage;
-	PixelStage		_vkPixelStage;
-	ComputeStage	_vkComputeStage;
+	VertexStage						_vkVertexStage;
+	TessellationControlStage		_vkTescStage;
+	TessellationEvaluationStage		_vkTeseStage;
+	GeometryStage					_vkGeometryStage;
+	PixelStage						_vkPixelStage;
+	ComputeStage					_vkComputeStage;
 
 	Vk_PipelineLayout	_vkPipelineLayout;				// maybe should in shader, since it does not need to recreate if no push_constant
 	Vk_PipelineMap		_vkPipelineMap;
@@ -255,13 +221,19 @@ inline Material_Vk*						MaterialPass_Vk::material()				{ return sCast<Material_
 inline Shader_Vk*						MaterialPass_Vk::shader()				{ return reinCast<Shader_Vk*>(_material->shader()); }
 inline ShaderPass_Vk*					MaterialPass_Vk::shaderPass()			{ return reinCast<ShaderPass_Vk*>(_shaderPass); }
 
-inline MaterialPass_Vk::VertexStage*	MaterialPass_Vk::vkVertexStage()		{ return vertexStage()	? &_vkVertexStage	: nullptr; }
-inline MaterialPass_Vk::PixelStage*		MaterialPass_Vk::vkPixelStage()			{ return pixelStage()	? &_vkPixelStage	: nullptr; }
-inline MaterialPass_Vk::ComputeStage*	MaterialPass_Vk::vkComputeStage()		{ return computeStage()	? &_vkComputeStage	: nullptr; }
+inline MaterialPass_Vk::VertexStage*					MaterialPass_Vk::vkVertexStage()					{ return vertexStage()					? &_vkVertexStage	: nullptr; }
+inline MaterialPass_Vk::TessellationControlStage*		MaterialPass_Vk::vkTessellationControlStage()		{ return tessellationControlStage()		? &_vkTescStage		: nullptr; }
+inline MaterialPass_Vk::TessellationEvaluationStage*	MaterialPass_Vk::vkTessellationEvaluationStage()	{ return tessellationEvaluationStage()	? &_vkTeseStage		: nullptr; }
+inline MaterialPass_Vk::GeometryStage*					MaterialPass_Vk::vkGeometryStage()					{ return geometryStage()				? &_vkGeometryStage	: nullptr; }
+inline MaterialPass_Vk::PixelStage*						MaterialPass_Vk::vkPixelStage()						{ return pixelStage()					? &_vkPixelStage	: nullptr; }
+inline MaterialPass_Vk::ComputeStage*					MaterialPass_Vk::vkComputeStage()					{ return computeStage()					? &_vkComputeStage	: nullptr; }
 
-inline MaterialPass_Vk::VertexStage&	MaterialPass_Vk::vkVertexStage_noCheck()	{ return _vkVertexStage; }
-inline MaterialPass_Vk::PixelStage&		MaterialPass_Vk::vkPixelStage_noCheck()		{ return _vkPixelStage; }
-inline MaterialPass_Vk::ComputeStage&	MaterialPass_Vk::vkComputeStage_noCheck()	{ return _vkComputeStage; }
+inline MaterialPass_Vk::VertexStage&					MaterialPass_Vk::vkVertexStage_noCheck()					{ return _vkVertexStage; }
+inline MaterialPass_Vk::TessellationControlStage&		MaterialPass_Vk::vkTessellationControlStage_noCheck()		{ return _vkTescStage; }
+inline MaterialPass_Vk::TessellationEvaluationStage&	MaterialPass_Vk::vkTessellationEvaluationStage_noCheck()	{ return _vkTeseStage; }
+inline MaterialPass_Vk::GeometryStage&					MaterialPass_Vk::vkGeometryStage_noCheck()					{ return _vkGeometryStage; }
+inline MaterialPass_Vk::PixelStage&						MaterialPass_Vk::vkPixelStage_noCheck()						{ return _vkPixelStage; }
+inline MaterialPass_Vk::ComputeStage&					MaterialPass_Vk::vkComputeStage_noCheck()					{ return _vkComputeStage; }
 
 inline Vk_DescriptorSetLayout&			MaterialPass_Vk::vkDescriptorSetLayout()	{ return shaderPass()->vkDescriptorSetLayout(); }
 inline Vk_DescriptorSet&				MaterialPass_Vk::vkDescriptorSet()			{ return _vkFramedDescrSets[iFrame()]; }

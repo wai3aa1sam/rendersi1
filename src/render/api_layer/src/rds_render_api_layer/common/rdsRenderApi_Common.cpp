@@ -24,9 +24,12 @@ RenderApiUtil::toVkShaderStageProfile(ShaderStageFlag v)
 	using SRC = rds::ShaderStageFlag;
 	switch (v)
 	{
-		case SRC::Vertex:		{ return "vs_1_5"; } break;
-		case SRC::Pixel:		{ return "ps_1_5"; } break;
-		case SRC::Compute:		{ return "cs_1_5"; } break;
+		case SRC::Vertex:					{ return "vs_1_5"; }	break;
+		case SRC::TessellationControl:		{ return "tesc_1_5"; }	break;
+		case SRC::TessellationEvaluation:	{ return "tese_1_5"; }	break;
+		case SRC::Geometry:					{ return "geom_1_5"; }	break;
+		case SRC::Pixel:					{ return "ps_1_5"; }	break;
+		case SRC::Compute:					{ return "cs_1_5"; }	break;
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 }
@@ -37,13 +40,15 @@ RenderApiUtil::toDx12ShaderStageProfile(ShaderStageFlag v)
 	using SRC = ShaderStageFlag;
 	switch (v)
 	{
-		case SRC::Vertex:	{ return "vs_6_0"; } break;
-		case SRC::Pixel:	{ return "ps_6_0"; } break;
-		case SRC::Compute:	{ return "cs_6_0"; } break;
+		case SRC::Vertex:					{ return "vs_6_0"; } break;
+		case SRC::TessellationControl:		{ return "hs_6_0"; } break;
+		case SRC::TessellationEvaluation:	{ return "ds_6_0"; } break;
+		case SRC::Geometry:					{ return "gs_6_0"; } break;
+		case SRC::Pixel:					{ return "ps_6_0"; } break;
+		case SRC::Compute:					{ return "cs_6_0"; } break;
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 }
-
 
 const char* 
 RenderApiUtil::toShaderFormat(RenderApiType v)

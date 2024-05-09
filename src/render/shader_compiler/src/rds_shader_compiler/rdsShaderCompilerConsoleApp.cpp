@@ -180,17 +180,23 @@ ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcFi
 		ShaderCompileRequest::getBinPassDirTo(binPassDir, binDir, iPass);
 		Path::create(binPassDir);
 
-		compilerDx12.compile(ShaderStageFlag::Compute,	srcFileRoot, binPassDir, pass.csFunc, opt, cmpDesc);
-		compilerDx12.compile(ShaderStageFlag::Vertex,	srcFileRoot, binPassDir, pass.vsFunc, opt, cmpDesc);
-		compilerDx12.compile(ShaderStageFlag::Pixel,	srcFileRoot, binPassDir, pass.psFunc, opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::Compute,					srcFileRoot, binPassDir, pass.csFunc,	opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::Vertex,					srcFileRoot, binPassDir, pass.vsFunc,	opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::TessellationControl,		srcFileRoot, binPassDir, pass.tescFunc, opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::TessellationEvaluation,	srcFileRoot, binPassDir, pass.teseFunc, opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::Geometry,					srcFileRoot, binPassDir, pass.geomFunc, opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::Pixel,					srcFileRoot, binPassDir, pass.psFunc,	opt, cmpDesc);
 
 		auto opt2 = opt;
 		opt2.isCompileBinary	= false;
 		opt2.isReflect			= true;
 
-		compilerVk.compile(ShaderStageFlag::Compute,	srcFileRoot, binPassDir, pass.csFunc, opt2, cmpDesc);
-		compilerVk.compile(ShaderStageFlag::Vertex,		srcFileRoot, binPassDir, pass.vsFunc, opt2, cmpDesc);
-		compilerVk.compile(ShaderStageFlag::Pixel,		srcFileRoot, binPassDir, pass.psFunc, opt2, cmpDesc);
+		compilerVk.compile(ShaderStageFlag::Compute,					srcFileRoot, binPassDir, pass.csFunc,	opt2, cmpDesc);
+		compilerVk.compile(ShaderStageFlag::Vertex,						srcFileRoot, binPassDir, pass.vsFunc,	opt2, cmpDesc);
+		compilerVk.compile(ShaderStageFlag::TessellationControl,		srcFileRoot, binPassDir, pass.tescFunc, opt2, cmpDesc);
+		compilerVk.compile(ShaderStageFlag::TessellationEvaluation,		srcFileRoot, binPassDir, pass.teseFunc, opt2, cmpDesc);
+		compilerVk.compile(ShaderStageFlag::Geometry,					srcFileRoot, binPassDir, pass.geomFunc, opt2, cmpDesc);
+		compilerVk.compile(ShaderStageFlag::Pixel,						srcFileRoot, binPassDir, pass.psFunc,	opt2, cmpDesc);
 
 		TempString allStageUnionInfoFilepath;
 		ShaderCompileRequest::getAllStageUnionInfoFilepathTo(allStageUnionInfoFilepath, binPassDir, iPass);

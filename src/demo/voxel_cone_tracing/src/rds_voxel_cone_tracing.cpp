@@ -41,6 +41,8 @@ VoxelConeTracing::onCreateScene(Scene* oScene)
 
 		auto* rdableMesh = ent->addComponent<CRenderableMesh>();
 		rdableMesh->material	= _rpfVxgi->mtlVxgi;
+		rdableMesh->material	= _mtlDisplayNormals;
+
 		//rdableMesh->meshAsset	= meshAssets().fullScreenTriangle;
 
 		//auto* transform	= ent->getComponent<CTransform>();
@@ -51,7 +53,7 @@ VoxelConeTracing::onCreateScene(Scene* oScene)
 		ent->setName(buf);
 	}
 
-	createDefaultScene(oScene, nullptr, meshAssets().plane, 1);
+	createDefaultScene(oScene, nullptr, meshAssets().suzanne, 1);
 }
 
 void 
@@ -81,12 +83,15 @@ VoxelConeTracing::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 	RdgPass* passVxgiLighting = _rpfVxgi->addLightingPass(rdGraph, drawData, rtColor, dsBuf);
 
 	if (passVxgiLighting)
+	{
 		addSkyboxPass(rdGraph, drawData, skyboxDefault(), rtColor, dsBuf);
-	//addPostProcessPass(rdGraph, drawData, "debug_fwdp", rtColor,)
+		//addPostProcessPass(rdGraph, drawData, "debug_fwdp", rtColor,)
 
-	//_rfpVoxelConeTracing->renderDebugMakeFrustums(rdGraph, drawData, rtColor);
-	if (passVxgiLighting)
-		addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);	
+		//_rfpVoxelConeTracing->renderDebugMakeFrustums(rdGraph, drawData, rtColor);
+		addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);
+
+		addDisplayNormalPass(rdGraph, drawData, rtColor);
+	}
 
 	drawData->oTexPresent = passVxgiLighting ? rtColor : RdgTextureHnd{};
 }

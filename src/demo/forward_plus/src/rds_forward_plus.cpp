@@ -56,7 +56,7 @@ ForwardPlus::onCreateScene(Scene* oScene)
 		auto* ent = scene.addEntity("");
 
 		auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-		rdableMesh->material	= _rfpForwardPlus->mtlFwdpMakeFrustum;
+		rdableMesh->material	= _rfpForwardPlus->mtlFwdp;
 		//rdableMesh->meshAsset	= meshAssets().fullScreenTriangle;
 
 		//auto* transform	= ent->getComponent<CTransform>();
@@ -68,6 +68,12 @@ ForwardPlus::onCreateScene(Scene* oScene)
 	}
 
 	createDefaultScene(oScene, nullptr, meshAssets().plane, 1);
+	for (auto& e : scene().entities())
+	{
+		auto& transform = e->transform();
+		float scaleFactor = 64.0f; RDS_UNUSED(scaleFactor);
+		transform.setLocalScale(Vec3f{ scaleFactor, 1.0, scaleFactor });
+	}
 
 	{
 		auto& camera = app().mainWindow().camera();

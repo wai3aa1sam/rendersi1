@@ -162,9 +162,12 @@ void ShaderParser::_parsePass()
 		if (token.isOperator("}"))	{ nextToken(); break; }
 		if (token.isNewline())		{ nextToken(); continue; }
 
-		if (token.isIdentifier("VsFunc"))		{ nextToken(); readIdentifier(o.vsFunc); continue; }
-		if (token.isIdentifier("PsFunc"))		{ nextToken(); readIdentifier(o.psFunc); continue; }
-		if (token.isIdentifier("CsFunc"))		{ nextToken(); readIdentifier(o.csFunc); continue; }
+		if (token.isIdentifier("VsFunc"))		{ nextToken(); readIdentifier(o.vsFunc);	continue; }
+		if (token.isIdentifier("TescFunc"))		{ nextToken(); readIdentifier(o.tescFunc);	continue; }
+		if (token.isIdentifier("TeseFunc"))		{ nextToken(); readIdentifier(o.teseFunc);	continue; }
+		if (token.isIdentifier("GeomFunc"))		{ nextToken(); readIdentifier(o.geomFunc);	continue; }
+		if (token.isIdentifier("PsFunc"))		{ nextToken(); readIdentifier(o.psFunc);	continue; }
+		if (token.isIdentifier("CsFunc"))		{ nextToken(); readIdentifier(o.csFunc);	continue; }
 
 		if (token.isIdentifier("Cull"))			{ nextToken(); readEnum(o.renderState.cull); continue; }
 

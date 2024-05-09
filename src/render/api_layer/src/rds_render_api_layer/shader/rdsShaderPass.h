@@ -15,6 +15,7 @@ class Shader;
 
 // no virtual, virtual in upper layer (ShaderPass) as a whole
 // one virtual for all
+// TODO: add a template
 struct ShaderStage
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
@@ -37,6 +38,33 @@ struct VertexShaderStage : public ShaderStage
 {
 public:
 	static constexpr ShaderStageFlag stageFlag() { return ShaderStageFlag::Vertex; }
+
+protected:
+
+};
+
+struct TessellationControlShaderStage : public ShaderStage
+{
+public:
+	static constexpr ShaderStageFlag stageFlag() { return ShaderStageFlag::TessellationControl; }
+
+protected:
+
+};
+
+struct TessellationEvaluationShaderStage : public ShaderStage
+{
+public:
+	static constexpr ShaderStageFlag stageFlag() { return ShaderStageFlag::TessellationEvaluation; }
+
+protected:
+
+};
+
+struct GeometryShaderStage : public ShaderStage
+{
+public:
+	static constexpr ShaderStageFlag stageFlag() { return ShaderStageFlag::Geometry; }
 
 protected:
 
@@ -69,10 +97,13 @@ class ShaderPass : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	using Stage			= ShaderStage;
-	using VertexStage	= VertexShaderStage;
-	using PixelStage	= PixelShaderStage;
-	using ComputeStage	= ComputeShaderStage;
+	using Stage							= ShaderStage;
+	using VertexStage					= VertexShaderStage;
+	using TessellationControlStage		= TessellationControlShaderStage;
+	using TessellationEvaluationStage	= TessellationEvaluationShaderStage;
+	using GeometryStage					= GeometryShaderStage;
+	using PixelStage					= PixelShaderStage;
+	using ComputeStage					= ComputeShaderStage;
 
 	using Info = ShaderInfo::Pass;
 
@@ -83,9 +114,12 @@ public:
 	void create(Shader* shader, const Info* info, StrView passPath);
 	void destroy();
 
-	VertexStage*	vertexStage();
-	PixelStage*		pixelStage();
-	ComputeStage*	computeStage();
+	VertexStage*					vertexStage();
+	TessellationControlStage*		tessellationControlStage();
+	TessellationEvaluationStage*	tessellationEvaluationStage();
+	GeometryStage*					geometryStage();
+	PixelStage*						pixelStage();
+	ComputeStage*					computeStage();
 
 	const Info& info() const;
 
@@ -96,17 +130,22 @@ protected:
 	virtual void onDestroy();
 
 protected:
-	Shader*			_shader			= nullptr;
-	const Info*		_info			= nullptr;
-	VertexStage*	_vertexStage	= nullptr;
-	PixelStage*		_pixelStage		= nullptr;
-	ComputeStage*	_computeStage	= nullptr;
+	Shader*							_shader			= nullptr;
+	const Info*						_info			= nullptr;
+	VertexStage*					_vertexStage	= nullptr;
+	TessellationControlStage*		_tescStage		= nullptr;
+	TessellationEvaluationStage*	_teseStage		= nullptr;
+	GeometryStage*					_geometryStage	= nullptr;
+	PixelStage*						_pixelStage		= nullptr;
+	ComputeStage*					_computeStage	= nullptr;
 };
 
-
-inline ShaderPass::VertexStage*		ShaderPass::vertexStage()	{ return _vertexStage; }
-inline ShaderPass::PixelStage*		ShaderPass::pixelStage()	{ return _pixelStage; }
-inline ShaderPass::ComputeStage*	ShaderPass::computeStage()	{ return _computeStage; }
+inline ShaderPass::VertexStage*					ShaderPass::vertexStage()					{ return _vertexStage; }
+inline ShaderPass::TessellationControlStage*	ShaderPass::tessellationControlStage()		{ return _tescStage; }
+inline ShaderPass::TessellationEvaluationStage* ShaderPass::tessellationEvaluationStage()	{ return _teseStage; }
+inline ShaderPass::GeometryStage*				ShaderPass::geometryStage()					{ return _geometryStage; }
+inline ShaderPass::PixelStage*					ShaderPass::pixelStage()					{ return _pixelStage; }
+inline ShaderPass::ComputeStage*				ShaderPass::computeStage()					{ return _computeStage; }
 
 inline const	ShaderPass::Info&	ShaderPass::info() const	{ return *_info; }
 

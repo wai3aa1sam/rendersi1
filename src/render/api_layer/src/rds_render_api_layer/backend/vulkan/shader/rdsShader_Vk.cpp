@@ -175,6 +175,24 @@ ShaderPass_Vk::onCreate(Shader* shader_, const Info* info, StrView passPath)
 		_vkVertexStage.create(this, passPath);
 	}
 
+	if (!_info->tescFunc.is_empty())
+	{
+		_tescStage = &_vkTescStage;
+		_vkTescStage.create(this, passPath);
+	}
+
+	if (!_info->teseFunc.is_empty())
+	{
+		_teseStage = &_vkTeseStage;
+		_vkTeseStage.create(this, passPath);
+	}
+
+	if (!_info->geomFunc.is_empty())
+	{
+		_geometryStage = &_vkGeometryStage;
+		_vkGeometryStage.create(this, passPath);
+	}
+
 	if (!info->psFunc.is_empty())
 	{
 		_pixelStage		= &_vkPixelStage;
@@ -193,19 +211,37 @@ ShaderPass_Vk::onCreate(Shader* shader_, const Info* info, StrView passPath)
 void 
 ShaderPass_Vk::onDestroy()
 {
-	if (!_info->vsFunc.is_empty())
+	if (_vertexStage)
 	{
 		_vkVertexStage.destroy(this);
 		_vertexStage = nullptr;
 	}
 
-	if (!_info->psFunc.is_empty())
+	if (_tescStage)
+	{
+		_vkTescStage.destroy(this);
+		_tescStage = nullptr;
+	}
+
+	if (_teseStage)
+	{
+		_vkTeseStage.destroy(this);
+		_teseStage = nullptr;
+	}
+
+	if (_geometryStage)
+	{
+		_vkGeometryStage.destroy(this);
+		_geometryStage = nullptr;
+	}
+
+	if (_pixelStage)
 	{
 		_vkPixelStage.destroy(this);
 		_pixelStage = nullptr;
 	}
 
-	if (!_info->csFunc.is_empty())
+	if (_computeStage)
 	{
 		_vkComputeStage.destroy(this);
 		_computeStage = nullptr;

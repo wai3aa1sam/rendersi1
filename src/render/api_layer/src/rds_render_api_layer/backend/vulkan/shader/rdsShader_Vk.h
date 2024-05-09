@@ -18,11 +18,11 @@ class ShaderPass_Vk;
 #endif // 0
 #if 1
 
-template<class VK_SHADER_STAGE>
-struct Vk_ShaderStage : public VK_SHADER_STAGE
+template<class SHADER_STAGE>
+struct Vk_ShaderStage : public SHADER_STAGE
 {
 public:
-	using Base = VK_SHADER_STAGE;
+	using Base = SHADER_STAGE;
 	using Util = Vk_RenderApiUtil;
 
 public:
@@ -58,6 +58,8 @@ public:
 
 	VkPipelineShaderStageCreateInfo createVkStageInfo(const char* entry)
 	{
+		RDS_CORE_ASSERT(_vkModule, "invalid vkModule");
+
 		VkPipelineShaderStageCreateInfo	stageInfo = {};
 		stageInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		stageInfo.stage					= Util::toVkShaderStageBit(stageFlag());
@@ -84,6 +86,33 @@ public:
 	
 };
 
+struct Vk_TessellationControlShaderStage : public Vk_ShaderStage<TessellationControlShaderStage>
+{
+public:
+	using Base = Vk_ShaderStage<TessellationControlShaderStage>;
+
+public:
+
+};
+
+struct Vk_TessellationEvaluationShaderStage : public Vk_ShaderStage<TessellationEvaluationShaderStage>
+{
+public:
+	using Base = Vk_ShaderStage<TessellationEvaluationShaderStage>;
+
+public:
+
+};
+
+struct Vk_GeometryShaderStage : public Vk_ShaderStage<GeometryShaderStage>
+{
+public:
+	using Base = Vk_ShaderStage<GeometryShaderStage>;
+
+public:
+
+};
+
 struct Vk_PixelShaderStage : public Vk_ShaderStage<PixelShaderStage>
 {
 public:
@@ -108,21 +137,30 @@ public:
 	using Base = ShaderPass;
 	using Util = Vk_RenderApiUtil;
 
-	using VertexStage	= Vk_VertexShaderStage;
-	using PixelStage	= Vk_PixelShaderStage;
-	using ComputeStage	= Vk_ComputeShaderStage;
+	using VertexStage					= Vk_VertexShaderStage;
+	using TessellationControlStage		= Vk_TessellationControlShaderStage;
+	using TessellationEvaluationStage	= Vk_TessellationEvaluationShaderStage;
+	using GeometryStage					= Vk_GeometryShaderStage;
+	using PixelStage					= Vk_PixelShaderStage;
+	using ComputeStage					= Vk_ComputeShaderStage;
 
 public:
 	ShaderPass_Vk();
 	virtual ~ShaderPass_Vk();
+	
+	template<size_t N>	void createVkShaderStageCInfos			(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos);
+						void createComputeVkShaderStageCInfo	(VkPipelineShaderStageCreateInfo& out);
 
 public:
 	Shader_Vk*			shaderVk();
 	RenderDevice_Vk*	renderDeviceVk();
 
-	VertexStage*	vkVertexStage();
-	PixelStage*		vkPixelStage();
-	ComputeStage*	vkComputeStage();
+	VertexStage*					vkVertexStage();
+	TessellationControlStage*		vkTessellationControlStage();
+	TessellationEvaluationStage*	vkTessellationEvaluationStage();
+	GeometryStage*					vkGeometryStage();
+	PixelStage*						vkPixelStage();
+	ComputeStage*					vkComputeStage();
 
 	Vk_DescriptorSetLayout&	vkDescriptorSetLayout();
 
@@ -130,13 +168,14 @@ protected:
 	virtual void onCreate(Shader* shader, const Info* info, StrView passPath) override;
 	virtual void onDestroy() override;
 
-	template<size_t N>	void createVkShaderStageCInfos			(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos);
-						void createComputeVkShaderStageCInfo	(VkPipelineShaderStageCreateInfo& out);
 
 protected:
-	VertexStage		_vkVertexStage;
-	PixelStage		_vkPixelStage;
-	ComputeStage	_vkComputeStage;
+	VertexStage						_vkVertexStage;
+	TessellationControlStage		_vkTescStage;
+	TessellationEvaluationStage		_vkTeseStage;
+	GeometryStage					_vkGeometryStage;
+	PixelStage						_vkPixelStage;
+	ComputeStage					_vkComputeStage;
 
 	Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
 };
@@ -145,17 +184,24 @@ template<size_t N> inline
 void 
 ShaderPass_Vk::createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos)
 {
+	auto& passInfo = info();
 	outCInfos.clear();
 	outCInfos.reserve(enumInt(ShaderStageFlag::_kCount));
-	if (!info().vsFunc.is_empty()) { outCInfos.emplace_back(_vkVertexStage  .createVkStageInfo(info().vsFunc.c_str())); }
-	if (!info().psFunc.is_empty()) { outCInfos.emplace_back( _vkPixelStage  .createVkStageInfo(info().psFunc.c_str())); }
+	if (!passInfo.vsFunc.is_empty())	{ outCInfos.emplace_back(	_vkVertexStage.createVkStageInfo(passInfo.vsFunc.c_str())); }
+	if (!passInfo.tescFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTescStage.createVkStageInfo(passInfo.tescFunc.c_str())); }
+	if (!passInfo.teseFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTeseStage.createVkStageInfo(passInfo.teseFunc.c_str())); }
+	if (!passInfo.geomFunc.is_empty())	{ outCInfos.emplace_back( _vkGeometryStage.createVkStageInfo(passInfo.geomFunc.c_str())); }
+	if (!passInfo.psFunc.is_empty())	{ outCInfos.emplace_back(	 _vkPixelStage.createVkStageInfo(passInfo.psFunc.c_str())); }
 }
 
 inline Shader_Vk*		ShaderPass_Vk::shaderVk()		{ return sCast<Shader_Vk*>(_shader); }
 
-inline ShaderPass_Vk::VertexStage*	ShaderPass_Vk::vkVertexStage	()		{ return &_vkVertexStage; }
-inline ShaderPass_Vk::PixelStage*	ShaderPass_Vk::vkPixelStage		()		{ return &_vkPixelStage; }
-inline ShaderPass_Vk::ComputeStage*	ShaderPass_Vk::vkComputeStage	()		{ return &_vkComputeStage; }
+inline ShaderPass_Vk::VertexStage*					ShaderPass_Vk::vkVertexStage	()				{ return &_vkVertexStage; }
+inline ShaderPass_Vk::TessellationControlStage*		ShaderPass_Vk::vkTessellationControlStage()		{ return &_vkTescStage; }
+inline ShaderPass_Vk::TessellationEvaluationStage*	ShaderPass_Vk::vkTessellationEvaluationStage()	{ return &_vkTeseStage; }
+inline ShaderPass_Vk::GeometryStage*				ShaderPass_Vk::vkGeometryStage()				{ return &_vkGeometryStage; }
+inline ShaderPass_Vk::PixelStage*					ShaderPass_Vk::vkPixelStage		()				{ return &_vkPixelStage; }
+inline ShaderPass_Vk::ComputeStage*					ShaderPass_Vk::vkComputeStage	()				{ return &_vkComputeStage; }
 
 inline Vk_DescriptorSetLayout&		ShaderPass_Vk::vkDescriptorSetLayout()	{ return _vkDescriptorSetLayout; }
 
