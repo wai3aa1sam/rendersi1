@@ -3,10 +3,18 @@
 # https://github.com/SimpleTalkCpp/SimpleGameEngine
 # https://www.scivision.dev/cmake-git-submodule/
 
+include(ProcessorCount)
+
 # my_print_var(variable_name)
 function(my_print_var var)
   message("${var} = ${${var}}")
 endfunction()
+
+function(OsUtil_getThreadCountTo var)
+  ProcessorCount(var)
+endfunction()
+set(OsTraits_kThreadCount 0)
+ProcessorCount(OsTraits_kThreadCount)
 
 function(my_source_group src_path src_files)
   foreach(FILE ${src_files}) 
@@ -154,10 +162,26 @@ function(my_enable_sanitizer target_name)
   endif()
 endfunction()
 
+# this function only for 0 / 1 marco
 function(my_set_opt opt val)
   unset (${opt} CACHE)
   option(${opt} "" ${val}) # ${ARGV2}
+  # my_print_var(opt)
+  # my_print_var(val)
 endfunction()
+
+function(ProjectUtil_addMarco name value)
+  unset (${name} CACHE)
+  add_compile_definitions(${name}=${value})
+  # my_print_var(name)
+  # my_print_var(value)
+endfunction()
+# another approach to add marco
+# target_compile_definitions(${project_namespace}_job_system PUBLIC
+#                             ${project_namespace_marco}_JOB_SYSTEM_DEVELOPMENT=1
+#                             ${project_namespace_marco}_JOB_SYSTEM_MAX_FRAME_IN_FLIGHT_COUNT=4
+#                             ${project_namespace_marco}_JOB_SYSTEM_LOGICAL_THREAD_COUNT=${OsTraits_kThreadCount}
+#                             )
 
 function(my_only_one_opt_could_on_3 opt1 opt2 opt3)
   if( (${opt1} AND (${opt2} OR ${opt3}) )
