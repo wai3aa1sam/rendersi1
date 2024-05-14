@@ -42,7 +42,7 @@ RdgResource_TextureT*
 RdgResourcePool::createTexture	(Texture_CreateDesc&	cDesc, RenderDevice* rdDev)
 {
 	auto& tex = _texs.emplace_back();
-	tex = rdDev->createTexture2D(cDesc);
+	tex = rdDev->createTexture(cDesc);
 	return tex;
 }
 

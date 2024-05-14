@@ -40,7 +40,7 @@ public:
 	using PixelStage	= MaterialPass_PixelStage;
 
 public:
-	static constexpr SizeType s_kShaderStageCount	= enumInt(ShaderStageFlag::_kCount);
+	//static constexpr SizeType s_kShaderStageCount	= enumInt(ShaderStageFlag::_kCount);
 	static constexpr SizeType s_kLocalPassSize		= 2;
 
 public:

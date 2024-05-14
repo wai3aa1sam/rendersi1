@@ -42,6 +42,7 @@ class	Texture2D;
 class	TextureCube;
 struct	Texture_CreateDesc;
 struct	Texture2D_CreateDesc;
+struct	Texture3D_CreateDesc;
 struct	TextureCube_CreateDesc;
 
 class	Shader;
@@ -72,17 +73,19 @@ public:
 
 	virtual void waitIdle();
 
-	SPtr<RenderContext>			createContext				(const	RenderContext_CreateDesc&		cDesc);
-	SPtr<RenderGpuBuffer>		createRenderGpuBuffer		(		RenderGpuBuffer_CreateDesc&		cDesc);
-	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer	(		RenderGpuBuffer_CreateDesc&		cDesc);
-	SPtr<Texture2D>				createTexture2D				(		Texture2D_CreateDesc&			cDesc);
-	SPtr<TextureCube>			createTextureCube			(		TextureCube_CreateDesc&			cDesc);
-	SPtr<Shader>				createShader				(const	Shader_CreateDesc&				cDesc);
-	SPtr<Shader>				createShader				(		StrView							filename);
-	SPtr<Shader>				createShader				(		StrView							filename, const ShaderPermutations& permuts);
-	SPtr<Material>				createMaterial				(const	Material_CreateDesc&			cDesc);
-	SPtr<Material>				createMaterial				(		Shader*							shader);
-	SPtr<Material>				createMaterial				();
+	SPtr<RenderContext>			createContext(				const	RenderContext_CreateDesc&		cDesc);
+	SPtr<RenderGpuBuffer>		createRenderGpuBuffer(				RenderGpuBuffer_CreateDesc&		cDesc);
+	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer(			RenderGpuBuffer_CreateDesc&		cDesc);
+	SPtr<Texture>				createTexture(						Texture_CreateDesc&				cDesc);
+	SPtr<Texture2D>				createTexture2D(					Texture2D_CreateDesc&			cDesc);
+	SPtr<Texture3D>				createTexture3D(					Texture3D_CreateDesc& cDesc);
+	SPtr<TextureCube>			createTextureCube(					TextureCube_CreateDesc&			cDesc);
+	SPtr<Shader>				createShader(				const	Shader_CreateDesc&				cDesc);
+	SPtr<Shader>				createShader(						StrView							filename);
+	SPtr<Shader>				createShader(						StrView							filename, const ShaderPermutations& permuts);
+	SPtr<Material>				createMaterial(				const	Material_CreateDesc&			cDesc);
+	SPtr<Material>				createMaterial(						Shader*							shader);
+	SPtr<Material>				createMaterial();
 
 public:
 	SPtr<Texture2D>	createSolidColorTexture2D(const Color4b& color);
@@ -108,12 +111,13 @@ protected:
 	virtual void onNextFrame();
 
 protected:
-	virtual SPtr<RenderContext>			onCreateContext				(const	RenderContext_CreateDesc&	cDesc)	= 0;
-	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(		RenderGpuBuffer_CreateDesc&	cDesc)	= 0;
-	virtual SPtr<Texture2D>				onCreateTexture2D			(		Texture2D_CreateDesc&		cDesc)	= 0;
-	virtual SPtr<TextureCube>			onCreateTextureCube			(		TextureCube_CreateDesc&		cDesc)	= 0;
-	virtual SPtr<Shader>				onCreateShader				(const	Shader_CreateDesc&			cDesc)	= 0;
-	virtual SPtr<Material>				onCreateMaterial			(const	Material_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<RenderContext>			onCreateContext(			const	RenderContext_CreateDesc&	cDesc)	= 0;
+	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer(			RenderGpuBuffer_CreateDesc&	cDesc)	= 0;
+	virtual SPtr<Texture2D>				onCreateTexture2D(					Texture2D_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<Texture3D>				onCreateTexture3D(					Texture3D_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<TextureCube>			onCreateTextureCube(				TextureCube_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&			cDesc)	= 0;
+	virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&		cDesc)	= 0;
 
 protected:
 	RenderApiType		_apiType = RenderApiType::Vulkan;

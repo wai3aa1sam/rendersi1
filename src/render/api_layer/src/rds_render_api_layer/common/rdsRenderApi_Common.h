@@ -15,7 +15,7 @@ namespace rds
 	E(Pixel,					= BitUtil::bit(4)) \
 	E(Compute,					= BitUtil::bit(5)) \
 	E(All,						= BitUtil::bit(6)) \
-	E(_kCount,					= 7) \
+	E(_kMax,					= BitUtil::bit(7)) \
 //---
 RDS_ENUM_CLASS(ShaderStageFlag, u8);
 RDS_ENUM_ALL_OPERATOR(ShaderStageFlag);
@@ -59,7 +59,7 @@ template<class T> using FramedT = Vector<T, RenderApiLayerTraits::s_kFrameInFlig
 	E(Compute,	= BitUtil::bit(1)) \
 	E(Transfer,	= BitUtil::bit(2)) \
 	E(Present,	= BitUtil::bit(3)) \
-	E(_kCount,) \
+	E(_kMax,	= BitUtil::bit(4)) \
 //---
 RDS_ENUM_CLASS(QueueTypeFlags, u8);
 RDS_ENUM_ALL_OPERATOR(QueueTypeFlags);
@@ -87,7 +87,7 @@ RDS_ENUM_CLASS(RenderMemoryUsage, u8);
 	E(HostWrite,		= BitUtil::bit(0)) \
 	E(PersistentMapped,	= BitUtil::bit(1)) \
 	\
-	E(_kCount,) \
+	E(_kMax,			= BitUtil::bit(2)) \
 //---
 RDS_ENUM_CLASS(RenderAllocFlags, u8);
 RDS_ENUM_ALL_OPERATOR(RenderAllocFlags);

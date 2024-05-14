@@ -186,7 +186,7 @@ ShaderPass_Vk::createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo,
 {
 	auto& passInfo = info();
 	outCInfos.clear();
-	outCInfos.reserve(enumInt(ShaderStageFlag::_kCount));
+	outCInfos.reserve(Traits::s_kShaderStageCount);
 	if (!passInfo.vsFunc.is_empty())	{ outCInfos.emplace_back(	_vkVertexStage.createVkStageInfo(passInfo.vsFunc.c_str())); }
 	if (!passInfo.tescFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTescStage.createVkStageInfo(passInfo.tescFunc.c_str())); }
 	if (!passInfo.teseFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTeseStage.createVkStageInfo(passInfo.teseFunc.c_str())); }

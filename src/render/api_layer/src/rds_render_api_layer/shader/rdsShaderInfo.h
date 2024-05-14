@@ -527,7 +527,7 @@ public:
 	using Permut	= ShaderPermutationInfo;
 
 public:
-	static constexpr SizeType s_kShaderStageCount	= enumInt(ShaderStageFlag::_kCount);
+	//static constexpr SizeType s_kShaderStageCount	= enumInt(ShaderStageFlag::_kCount);
 	static constexpr SizeType s_kLocalPassSize		= 2;
 	static constexpr SizeType s_kLocalPropSize		= 12;
 	static constexpr SizeType s_kLocalPermutSize	= ShaderPermutations::s_kLocalPermutSize;

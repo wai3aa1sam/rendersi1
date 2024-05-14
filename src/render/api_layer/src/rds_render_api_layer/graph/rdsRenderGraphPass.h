@@ -22,13 +22,14 @@ class RdgDrawer;
 RDS_ENUM_CLASS(RdgPassTypeFlags, u8);
 RDS_ENUM_ALL_OPERATOR(RdgPassTypeFlags);
 
-#define RdgPassFlag_ENUM_LIST(E) \
+#define RdgPassFlags_ENUM_LIST(E) \
 	E(None, = 0) \
-	E(NeverCull,	= BitUtil::bit<EnumInt<RdgPassFlag> >(0)) \
-	E(_kMax,		= BitUtil::bit<EnumInt<RdgPassFlag> >(1)) \
+	E(NeverCull,		= BitUtil::bit<EnumInt<RdgPassFlags> >(0)) \
+	E(NoRenderTarget,	= BitUtil::bit<EnumInt<RdgPassFlags> >(1)) \
+	E(_kMax,			= BitUtil::bit<EnumInt<RdgPassFlags> >(2)) \
 //---
-RDS_ENUM_CLASS(RdgPassFlag, u8);
-RDS_ENUM_ALL_OPERATOR(RdgPassFlag);
+RDS_ENUM_CLASS(RdgPassFlags, u8);
+RDS_ENUM_ALL_OPERATOR(RdgPassFlags);
 
 struct RdgRenderTarget
 {
@@ -85,7 +86,7 @@ public:
 	using StateUtil = RenderResourceStateFlagsUtil;
 	using Pass		= RdgPass;
 	using TypeFlag	= RdgPassTypeFlags;
-	using PassFlag	= RdgPassFlag;
+	using PassFlag	= RdgPassFlags;
 
 	using Access	= RenderAccess;
 	using Usage		= RdgResourceUsage;
@@ -107,7 +108,7 @@ public:
 	using ResourceAccesses = Vector<RdgResourceAccess, s_kLocalSize>;
 
 public:
-	RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlag flag);
+	RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlags flags);
 	~RdgPass();
 
 	//void setExecuteFunc(ExecuteFunc&& func);
@@ -139,6 +140,7 @@ public:
 
 	void runAfter(RdgPass* pass);
 
+	RdgPassFlags		flags()				const;
 	RdgPassTypeFlags	typeFlags()			const;
 	RdgId				id()				const;
 	const String&		name()				const;
@@ -165,9 +167,9 @@ public:
 	SizeType dependencyCount() const;
 
 	bool hasRenderPass()				const;
-	bool isValid()	const;
+	bool isValid()						const;
 	bool isValidRenderTargetExtent()	const;
-	bool checkValid() const;
+	bool checkValid()					const;
 	bool hasRenderTargetOrDepth()		const;
 	bool hasDependency()				const;
 
@@ -212,7 +214,7 @@ protected:
 	bool _isCommitted	: 1;
 
 	RdgPassTypeFlags	_typeFlags;
-	RdgPassFlag			_flag;
+	RdgPassFlags		_flags;
 
 	//RenderCommandBuffer _cmdBuf;
 	RenderRequest	_rdReq;
@@ -227,6 +229,7 @@ RdgPass::toHndSpan(HND_SPAN hndTs)
 	return RdgResourceHndSpan{reinCast<ElementT*>(hndTs.data()), hndTs.size()};
 }
 
+inline RdgPassFlags		RdgPass::flags()			const	{ return _flags; }
 inline RdgPassTypeFlags	RdgPass::typeFlags()		const	{ return _typeFlags; }
 inline RdgId			RdgPass::id()				const	{ return _id; }
 inline const String&	RdgPass::name()				const	{ return _name; }
@@ -271,12 +274,19 @@ inline Span<RdgPass*>			RdgPass::runAfterThis() { return _runAfter; }
 //inline Span<RdgResourceAccess>	RdgPass::resourceAccesses()	{ return _rscAccesses.span(); }
 //inline RdgPass::ResourceAccesses&		RdgPass::resourceAccesses()			{ return _rscAccesses; }
 
-
 inline RdgPass::SizeType	RdgPass::dependencyCount()	const	{ return _runBefore.size(); }
 //inline bool					RdgPass::hasRenderPass()	const	{ return BitUtil::hasAny(typeFlags(), RdgPassTypeFlags::Graphics); }
-inline bool					RdgPass::hasRenderPass()	const	{ return !_rdTargets.is_empty() || _depthStencil; }
+inline bool					RdgPass::hasRenderPass()	const	{ return !_rdTargets.is_empty() || _depthStencil || BitUtil::hasAny(typeFlags(), RdgPassTypeFlags::Graphics); }
 
-inline bool RdgPass::isValid()	const { return !hasRenderPass() || (hasRenderPass() && hasRenderTargetOrDepth() && isValidRenderTargetExtent()); }
+inline 
+bool 
+RdgPass::isValid()	const 
+{ 
+	return !hasRenderPass() 
+		|| (hasRenderPass() && hasRenderTargetOrDepth() && isValidRenderTargetExtent()) 
+		|| (hasRenderPass() && BitUtil::hasAny(flags(), RdgPassFlags::NoRenderTarget)
+		); 
+}
 
 inline bool RdgPass::isValidRenderTargetExtent()	const { return renderTargetExtent() && !Vec2f{ renderTargetExtent().value().size }.equals0(); }
 

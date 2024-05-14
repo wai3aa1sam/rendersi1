@@ -10,13 +10,13 @@ namespace rds
 #endif // 0
 #if 1
 
-RdgPass::RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlag flag)
+RdgPass::RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlags flags)
 {
 	_rdGraph	= rdGraph;
 	_name		= name;
 	_id			= id;
 	_typeFlags	= typeFlag;
-	_flag		= _flag;
+	_flags		= flags;
 
 	_isCulled		= false;
 	_isExecuted		= false;

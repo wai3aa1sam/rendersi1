@@ -145,16 +145,16 @@ CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh&
 		return;
 	//auto backBufferRt	= rdGraph.importTexture("back_buffer", rdCtx.backBuffer()); RDS_UNUSED(backBufferRt);
 
-	auto& finalComposePass = rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
+	auto& finalComposePass = rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics, RdgPassFlags::NoRenderTarget);
 	finalComposePass.readTexture(texPresent);
 	//finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 	finalComposePass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
 			rdReq.reset(rdCtx);
-			auto* clearValue = rdReq.clearFramebuffers();
+			/*auto* clearValue = rdReq.clearFramebuffers();
 			clearValue->setClearColor();
-			clearValue->setClearDepth();
+			clearValue->setClearDepth();*/
 
 			//mtlPresent->setParam("texColor",			texPresent.texture2D());
 			//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, mtlPresent, Mat4f::s_identity());

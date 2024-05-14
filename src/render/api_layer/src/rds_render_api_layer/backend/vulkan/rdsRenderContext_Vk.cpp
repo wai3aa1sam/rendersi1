@@ -436,11 +436,11 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			bool	hasRenderPass	= pass->hasRenderPass();
 
 			Opt<Rect2f> rdTargetExtent = pass->renderTargetExtent();
-			if (!rdTargetExtent && hasRenderPass)
+			if (!pass->isValid())
 				return;
 
 			Vector<VkClearValue, 16> clearValues;
-			if (hasRenderPass)	// && pass->has clear operation
+			if (rdTargetExtent)	// && pass->has clear operation
 			{
 				auto* clearValue = pass->commandBuffer().getClearValue();
 				Util::getVkClearValuesTo(clearValues, clearValue, pass->renderTargets().size(), pass->depthStencil());
@@ -471,7 +471,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			RDS_TODO("Vk_RenderPassScope");
 			if (hasRenderPass)
 			{
-				const auto& framebufRect2f = rdTargetExtent.value();
+				const auto& framebufRect2f = rdTargetExtent ? rdTargetExtent.value() : Rect2f::s_zero();
 				vkCmdBuf->beginRenderPass(vkRdPass, vkFramebuf, framebufRect2f, clearValues, VK_SUBPASS_CONTENTS_INLINE);
 				//vkCmdBuf->setViewport(framebufRect2f);
 				//vkCmdBuf->setScissor (framebufRect2f);

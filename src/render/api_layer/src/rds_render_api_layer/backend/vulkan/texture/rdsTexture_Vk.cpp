@@ -2,6 +2,7 @@
 #include "rdsTexture_Vk.h"
 
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
+#include "rdsTexture3D_Vk.h"
 #include "rdsTextureCube_Vk.h"
 
 #include "../transfer/rdsTransferContext_Vk.h"

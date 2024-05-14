@@ -33,8 +33,9 @@ Vk_RenderPass::create(const VkRenderPassCreateInfo* pCreateInfo, RenderDevice_Vk
 void 
 Vk_RenderPass::create(Span<VkAttachmentDescription> vkAtchDescs, Span<VkAttachmentReference> vkAtchRefs, bool hasDepth, RenderDevice_Vk* rdDevVk)
 {
-	if (vkAtchDescs.is_empty() || vkAtchRefs.is_empty())
-		return;
+	/*if (vkAtchDescs.is_empty() || vkAtchRefs.is_empty())
+		return;*/
+	RDS_CORE_ASSERT(hasDepth && !vkAtchRefs.is_empty() || !hasDepth, "invalud vk attachment count");
 
 	VkSubpassDescription subpass = {};
 	subpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;

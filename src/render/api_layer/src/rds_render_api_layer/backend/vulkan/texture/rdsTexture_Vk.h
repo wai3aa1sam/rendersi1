@@ -96,6 +96,7 @@ struct Vk_Texture
 		switch (tex->type())
 		{
 			case RenderDataType::Texture2D:		{ return fn(sCast<Texture2D_Vk*>(tex)); }	break;
+			case RenderDataType::Texture3D:		{ return fn(sCast<Texture3D_Vk*>(tex)); }	break;
 			case RenderDataType::TextureCube:	{ return fn(sCast<TextureCube_Vk*>(tex)); } break;
 		}
 		throwIf(true, "");
@@ -106,6 +107,7 @@ struct Vk_Texture
 	switch (TEX->type()) \
 	{ \
 			case RenderDataType::Texture2D:		{ return sCast<Texture2D_Vk*>	(TEX)->FN; } break; \
+			case RenderDataType::Texture3D:		{ return sCast<Texture3D_Vk*>	(TEX)->FN; } break; \
 			case RenderDataType::TextureCube:	{ return sCast<TextureCube_Vk*>	(TEX)->FN; } break; \
 	} \
 	throwIf(true, ""); \

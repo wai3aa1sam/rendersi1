@@ -147,7 +147,7 @@ DemoEditorLayer::onUpdate()
 			// present
 			renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
 			renderableSystem().update(drawData);
-			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.renderResource() : nullptr, drawData.camera, mainWindow().uiMouseEv);
+			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, drawData.camera, mainWindow().uiMouseEv);
 
 			rdUiCtx.onEndRender(&rdCtx);
 		}

@@ -3,6 +3,8 @@
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
+#include "rds_render_api_layer/texture/rdsTexture3D.h"
+#include "rds_render_api_layer/texture/rdsTextureCube.h"
 
 namespace rds
 {
@@ -14,7 +16,7 @@ enum class RdgResourceType : u8;
 class RdgResource;
 template<class T> class RdgResourceT;
 
-using RdgResource_TextureT	= Texture2D;
+using RdgResource_TextureT	= Texture;
 using RdgResource_BufferT	= RenderGpuBuffer;
 
 class RdgBuffer;
@@ -103,7 +105,6 @@ public:
 	{
 		return srcUsage == dstUsage && srcAccess == dstAccess;
 	}
-
 };
 
 class RdgResourceStateTrack
@@ -188,7 +189,8 @@ protected:
 #endif // 0
 #if 1
 
-using RdgTexture_CreateDesc = RdgResource_TextureT::CreateDesc;
+//using RdgTexture_CreateDesc = RdgResource_TextureT::CreateDesc;
+using RdgTexture_CreateDesc =  Texture_CreateDesc;		// this support all texture type
 using RdgBuffer_CreateDesc	=  RdgResource_BufferT::CreateDesc;
 
 using RdgTexture_Desc	= RdgResource_TextureT::Desc;
@@ -512,6 +514,9 @@ public:
 	
 	Texture2D*		texture2D()				{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);	return sCast<Texture2D*>(resource()->renderResource()); }
 	Texture2D*		texture2D()		const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);	return sCast<Texture2D*>(resource()->renderResource()); }
+
+	Texture3D*		texture3D()				{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);	return sCast<Texture3D*>(resource()->renderResource()); }
+	Texture3D*		texture3D()		const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);	return sCast<Texture3D*>(resource()->renderResource()); }
 
 	TextureCube*	textureCube()			{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);	return sCast<TextureCube*>(resource()->renderResource()); }
 	TextureCube*	textureCube()	const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);	return sCast<TextureCube*>(resource()->renderResource()); }

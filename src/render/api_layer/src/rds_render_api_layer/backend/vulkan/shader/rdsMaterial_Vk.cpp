@@ -28,7 +28,7 @@ RenderDevice_Vk::onCreateMaterial(const	Material_CreateDesc& cDesc)
 
 struct Vk_ShaderStagesCDesc : public Vk_CDesc_Base
 {
-	using Vk_ShaderStageCInfos = Vector<VkPipelineShaderStageCreateInfo, enumInt(ShaderStageFlag::_kCount)>;
+	using Vk_ShaderStageCInfos = Vector<VkPipelineShaderStageCreateInfo, Traits::s_kShaderStageCount>;
 
 public:
 	static constexpr SizeType s_kLocalSize = 8;
@@ -37,7 +37,7 @@ public:
 	void createGraphics(VkGraphicsPipelineCreateInfo& out, ShaderPass_Vk* shaderPass)
 	{
 		destroy();
-		_shaderStageCInfos.reserve(enumInt(ShaderStageFlag::_kCount));
+		_shaderStageCInfos.reserve(Traits::s_kShaderStageCount);
 
 		const auto& info = shaderPass->info(); RDS_UNUSED(info);
 
@@ -600,25 +600,25 @@ void
 MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout)
 {
 	RDS_CORE_ASSERT(vkCmdBuf, "");
-	VkPipelineBindPoint vkBindPt	= VK_PIPELINE_BIND_POINT_GRAPHICS;
-	Vk_Pipeline*		vkPipeline	= nullptr;
+	VkPipelineBindPoint vkBindPt		= VK_PIPELINE_BIND_POINT_GRAPHICS;
+	Vk_Pipeline_T*		vkPipelineHnd	= nullptr;
 
 	{
 		auto it = _vkPipelineMap.find(vkRdPass);
 		if (it != _vkPipelineMap.end())
 		{
-			vkPipeline = &it->second;
+			vkPipelineHnd = it->second.hnd();
 		}
 		else
 		{
 			auto& outVkPipeline = _vkPipelineMap[vkRdPass];
 			createVkPipeline(outVkPipeline, vkRdPass, vtxLayout);
-			vkPipeline = &outVkPipeline;
-			RDS_VK_SET_DEBUG_NAME_FMT(*vkPipeline, "{}-{}", shader()->filename(), "vkPipeline");
+			vkPipelineHnd = outVkPipeline.hnd();
+			RDS_VK_SET_DEBUG_NAME_FMT(outVkPipeline, "{}-{}", shader()->filename(), "vkPipeline");
 		}
 	}
 
-	vkCmdBindPipeline(vkCmdBuf->hnd(), vkBindPt, vkPipeline->hnd());
+	vkCmdBindPipeline(vkCmdBuf->hnd(), vkBindPt, vkPipelineHnd);
 }
 
 void 
@@ -679,7 +679,7 @@ MaterialPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, con
 
 	pipelineCInfo.sType					= VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineCInfo.layout				= _vkPipelineLayout.hnd();
-	pipelineCInfo.renderPass			= vkRdPass->hnd();
+	pipelineCInfo.renderPass			= vkRdPass ? vkRdPass->hnd() : nullptr;
 	pipelineCInfo.subpass				= 0;
 	pipelineCInfo.basePipelineHandle	= VK_NULL_HANDLE;	// Optional for creating a new graphics pipeline by deriving from an existing pipeline with VK_PIPELINE_CREATE_DERIVATIVE_BIT
 	pipelineCInfo.basePipelineIndex		= -1;				// Optional

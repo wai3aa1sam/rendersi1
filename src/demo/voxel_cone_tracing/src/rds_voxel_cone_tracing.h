@@ -33,7 +33,7 @@ protected:
 	SPtr<Shader>			_shaderPostProcess;
 	SPtr<Material>			_mtlPostProcess;
 
-	UPtr<RpfVoxelConeTracing>	_rpfVxgi;
+	UPtr<RpfVoxelConeTracing>	_rpfVct;
 };
 RDS_DEMO(VoxelConeTracing);
 #endif
@@ -47,9 +47,14 @@ struct RpfVoxelConeTracing
 {
 public:
 	Vec2f					resolution = Vec2f::s_zero();
+	u32 clipmapSize = 256;
 
-	SPtr<Shader>			shaderVxgi;
-	SPtr<Material>			mtlVxgi;
+
+	SPtr<Shader>			shaderVct;
+	SPtr<Material>			mtlVct;
+
+	SPtr<Shader>			shaderVctVoxelization;
+	SPtr<Material>			mtlVctVoxelization;
 
 public:
 	//static void getMakeFrustumsThreadParamTo(Vec2u* oNThreads, Vec2u* oNThreadGrps, Vec2f resolution_, u32 tileCount);
@@ -62,6 +67,7 @@ public:
 	void create();
 	void destroy();
 
+	RdgPass* addVoxelizationPass(RenderGraph* oRdGraph, DrawData* drawData);
 	RdgPass* addLightingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, RdgTextureHnd dsBuf);
 
 	//RDS_NODISCARD RdgBufferHnd			addMakeFrustumsPass(RenderGraph* oRdGraph, DrawData* drawData);

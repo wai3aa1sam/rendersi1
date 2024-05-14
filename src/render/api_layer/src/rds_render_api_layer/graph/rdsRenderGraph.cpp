@@ -290,7 +290,7 @@ RenderGraph::dumpGraphviz(StrView filename)
 }
 
 RdgPass& 
-RenderGraph::addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlag flag)
+RenderGraph::addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
 {
 	Pass* pass = renderGraphFrame().addPass(name, typeFlag, flag);
 	return *pass;

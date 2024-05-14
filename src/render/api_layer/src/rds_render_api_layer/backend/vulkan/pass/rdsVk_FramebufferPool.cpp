@@ -30,8 +30,9 @@ Vk_Framebuffer::create(const VkFramebufferCreateInfo* pCreateInfo, RenderDevice_
 void 
 Vk_Framebuffer::create(Vk_RenderPass_T* vkRdPassHnd, Span<Vk_ImageView_T*> vkImageViewHnds, Vec3u size, RenderDevice_Vk* rdDevVk)
 {
-	if (vkImageViewHnds.is_empty())
-		return;
+	// support no render target
+	//if (vkImageViewHnds.is_empty())
+	//	return;
 
 	VkFramebufferCreateInfo framebufferInfo = {};
 	framebufferInfo.sType			= VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -46,16 +47,20 @@ Vk_Framebuffer::create(Vk_RenderPass_T* vkRdPassHnd, Span<Vk_ImageView_T*> vkIma
 }
 
 void 
-Vk_Framebuffer::create(Vk_RenderPass_T* vkRdPassHnd, Span<Vk_ImageView_T*> vkImageViewHnds, Vec2f  size, RenderDevice_Vk* rdDevVk)
+Vk_Framebuffer::create(Vk_RenderPass_T* vkRdPassHnd, Span<Vk_ImageView_T*> vkImageViewHnds, Vec2f size, RenderDevice_Vk* rdDevVk)
 {
-	RDS_CORE_ASSERT(!size.equals0(), "Vk_Frambuffer must not be size 0");
+	RDS_CORE_ASSERT(!size.equals0() || !vkImageViewHnds.is_empty(), "Vk_Frambuffer must not be size 0");
 	create(vkRdPassHnd, vkImageViewHnds, Vec3u{ Vec2u::s_cast(Vec2f{size}), 1 }, rdDevVk);
 }
 
 void 
 Vk_Framebuffer::destroy(RenderDevice_Vk* rdDevVk)
 {
-	RDS_CORE_ASSERT(hnd(), "");
+	//RDS_CORE_ASSERT(hnd(), "");
+	if (!hnd())
+	{
+		return;
+	}
 
 	auto* vkDev			= rdDevVk->vkDevice();
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
@@ -136,9 +141,11 @@ Vk_FramebufferPool::request(RdgPass* pass, Vk_RenderPass_T* vkRdPassHnd)
 		{
 			RDS_TODO("current impl for RenderPass Pool and FramebufferPool will always increase only");
 			//throwIf(true, "current impl for RenderPass Pool and FramebufferPool will always increase only");
-			auto& dst = _vkFramebufMap[hash];
+			auto&		dst			= _vkFramebufMap[hash];
+			const auto& rdTargetExt = pass->renderTargetExtent();
+
 			dst = makeUPtr<Vk_Framebuffer>();
-			dst->create(vkRdPassHnd, vkImageViewHnds.span(), pass->renderTargetExtent()->size, _rdDevVk);
+			dst->create(vkRdPassHnd, vkImageViewHnds.span(), rdTargetExt.has_value() ? rdTargetExt->size : Tuple2f::s_one(), _rdDevVk);
 			o = dst;
 		}
 		else

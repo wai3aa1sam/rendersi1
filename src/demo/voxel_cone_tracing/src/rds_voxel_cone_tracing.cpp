@@ -27,7 +27,7 @@ VoxelConeTracing::onCreate()
 
 	createMaterial(&_shaderPostProcess, &_mtlPostProcess, "asset/shader/present.shader");
 
-	_rpfVxgi = makeUPtr<RpfVoxelConeTracing>();
+	_rpfVct = makeUPtr<RpfVoxelConeTracing>();
 }
 
 void 
@@ -40,7 +40,7 @@ VoxelConeTracing::onCreateScene(Scene* oScene)
 		auto* ent = scene.addEntity("");
 
 		auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-		rdableMesh->material	= _rpfVxgi->mtlVxgi;
+		rdableMesh->material	= _rpfVct->mtlVct;
 		rdableMesh->material	= _mtlDisplayNormals;
 
 		//rdableMesh->meshAsset	= meshAssets().fullScreenTriangle;
@@ -73,16 +73,18 @@ VoxelConeTracing::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 	//RdgBufferHnd bufFrustums = _fwpMakeFrustums->onExecuteRender(oRdGraph, drawData);
 	//Renderer::rdDev()->waitIdle();
 
-	RdgTextureHnd rtColor		= rdGraph->createTexture("vxgi_rtColor",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
-	RdgTextureHnd dsBuf			= rdGraph->createTexture("vxgi_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferSrc});
-	RdgTextureHnd texDepth		= rdGraph->createTexture("vxgi_texDepth",	Texture2D_CreateDesc{ screenSize, ColorType::Rf,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource /*| TextureUsageFlags::TransferDst*/});
+	RdgTextureHnd rtColor		= rdGraph->createTexture("vct_rtColor",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd dsBuf			= rdGraph->createTexture("vct_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferSrc});
+	RdgTextureHnd texDepth		= rdGraph->createTexture("vct_texDepth",	Texture2D_CreateDesc{ screenSize, ColorType::Rf,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource /*| TextureUsageFlags::TransferDst*/});
 
 	addPreDepthPass(rdGraph, drawData, &dsBuf, &texDepth, Color4f{1.0f, 0.0f, 0.0f, 1.0f});
 
-	_rpfVxgi->mtlVxgi->setParam("texture0", texUvChecker());
-	RdgPass* passVxgiLighting = _rpfVxgi->addLightingPass(rdGraph, drawData, rtColor, dsBuf);
+	_rpfVct->mtlVct->setParam("texture0", texUvChecker());
+	RdgPass* passVctLighting = _rpfVct->addLightingPass(rdGraph, drawData, rtColor, dsBuf);
 
-	if (passVxgiLighting)
+	_rpfVct->addVoxelizationPass(rdGraph, drawData);
+
+	if (passVctLighting)
 	{
 		addSkyboxPass(rdGraph, drawData, skyboxDefault(), rtColor, dsBuf);
 		//addPostProcessPass(rdGraph, drawData, "debug_fwdp", rtColor,)
@@ -90,10 +92,10 @@ VoxelConeTracing::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 		//_rfpVoxelConeTracing->renderDebugMakeFrustums(rdGraph, drawData, rtColor);
 		addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);
 
-		addDisplayNormalPass(rdGraph, drawData, rtColor);
+		//addDisplayNormalPass(rdGraph, drawData, rtColor);
 	}
 
-	drawData->oTexPresent = passVxgiLighting ? rtColor : RdgTextureHnd{};
+	drawData->oTexPresent = passVctLighting ? rtColor : RdgTextureHnd{};
 }
 
 void 
@@ -133,14 +135,50 @@ RpfVoxelConeTracing::~RpfVoxelConeTracing()
 void 
 RpfVoxelConeTracing::create()
 {
-	GraphicsDemo::createMaterial(&shaderVxgi,	&mtlVxgi,	"asset/shader/demo/voxel_cone_tracing/voxel_cone_tracing.shader");
+	GraphicsDemo::createMaterial(&shaderVct,				&mtlVct,				"asset/shader/demo/voxel_cone_tracing/voxel_cone_tracing.shader");
+	GraphicsDemo::createMaterial(&shaderVctVoxelization,	&mtlVctVoxelization,	"asset/shader/demo/voxel_cone_tracing/vct_voxelization.shader");
 }
 
 void 
 RpfVoxelConeTracing::destroy()
 {
-	shaderVxgi.reset(	nullptr);
-	mtlVxgi.reset(		nullptr);
+	shaderVct.reset(	nullptr);
+	mtlVct.reset(		nullptr);
+}
+
+RdgPass* 
+RpfVoxelConeTracing::addVoxelizationPass(RenderGraph* oRdGraph, DrawData* drawData)
+{
+	auto*		rdGraph				= oRdGraph;
+	RdgPass*	voxelizationPass	= nullptr;
+	{
+
+		Tuple3u clipmapSizes;
+		clipmapSizes.setAll(clipmapSize);
+		// TODO: remove
+		RdgTextureHnd color3D = rdGraph->createTexture("vct_rtColor",		Texture3D_CreateDesc{ clipmapSizes, ColorType::RGBAh, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource});
+
+
+		auto& pass = rdGraph->addPass("vct_voxelization", RdgPassTypeFlags::Graphics, RdgPassFlags::NoRenderTarget);
+		pass.writeTexture(color3D);
+		//pass.setRenderTarget(rtColor, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		//pass.setDepthStencil(dsBuf,	RdgAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				auto mtl = mtlVctVoxelization;
+				rdReq.reset(rdGraph->renderContext(), *drawData);
+
+				//auto* clearValue = rdReq.clearFramebuffers();
+				//clearValue->setClearColor();
+				//clearValue->setClearDepth();
+
+				drawData->drawScene(rdReq, mtl);
+			}
+		);
+		voxelizationPass = &pass;
+	}
+	return voxelizationPass;
 }
 
 RdgPass* 
@@ -149,13 +187,13 @@ RpfVoxelConeTracing::addLightingPass(RenderGraph* oRdGraph, DrawData* drawData, 
 	auto*		rdGraph			= oRdGraph;
 	RdgPass*	lightingPass	= nullptr;
 	{
-		auto& pass = rdGraph->addPass("vxgi_lighting", RdgPassTypeFlags::Graphics);
+		auto& pass = rdGraph->addPass("vct_lighting", RdgPassTypeFlags::Graphics);
 		pass.setRenderTarget(rtColor, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		pass.setDepthStencil(dsBuf,	RdgAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				auto mtl = mtlVxgi;
+				auto mtl = mtlVct;
 				rdReq.reset(rdGraph->renderContext(), *drawData);
 
 				auto* clearValue = rdReq.clearFramebuffers();

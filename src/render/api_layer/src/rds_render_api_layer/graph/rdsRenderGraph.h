@@ -117,7 +117,7 @@ public:
 			_alloc.clear();
 		}
 
-		Pass* addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlag flag)
+		Pass* addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
 		{
 			auto id = sCast<RdgId>(passes.size());
 			//Pass*& pass = passes.emplace_back(RDS_NEW(RdgPass)(rdGraph, name, id, typeFlag, flag));
@@ -197,7 +197,7 @@ public:
 	void dumpGraphviz			(StrView filename = "debug/render_graph");				// visualization in https://dreampuf.github.io/GraphvizOnline/
 	void dumpResourceStateGraph	(StrView filename = "debug/render_graph_rsc_state");	// visualization in https://dreampuf.github.io/GraphvizOnline/
 
-	RdgPass& addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlag flag = RdgPassFlag::None);
+	RdgPass& addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag = RdgPassFlags::None);
 
 	RdgTextureHnd	createTexture	(StrView name, const TextureCreateDesc&	cDesc);
 	RdgBufferHnd	createBuffer	(StrView name, const BufferCreateDesc&	cDesc);

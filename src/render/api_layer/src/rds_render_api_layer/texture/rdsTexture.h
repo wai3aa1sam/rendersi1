@@ -360,7 +360,7 @@ public:
 	Texture2D();
 	virtual ~Texture2D();
 
-	void create		(CreateDesc& cDesc);
+	void create(	 CreateDesc& cDesc);
 	void uploadToGpu(CreateDesc& cDesc);
 
 	Size size() const;
@@ -382,11 +382,6 @@ protected:
 inline Texture2D::Size Texture2D::size() const { return Tuple2u{Base::size().x, Base::size().y}; }
 
 #endif
-
-class Texture3D : public Texture
-{
-
-};
 
 inline
 u32 
