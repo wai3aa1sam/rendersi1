@@ -60,7 +60,9 @@ public:
 
 	void setShader(Shader* shader);
 
+	void setParam(StrView name,			Texture*		v, const SamplerState& samplerState = {});
 	void setParam(StrView name,			Texture2D*		v, const SamplerState& samplerState = {});
+	void setParam(StrView name,			Texture3D*		v, const SamplerState& samplerState = {});
 	void setParam(StrView name,			TextureCube*	v, const SamplerState& samplerState = {});
 	void setParam(StrView name, const	SamplerState&	v);
 
@@ -124,6 +126,7 @@ protected:
 };
 
 inline void Material::setParam(StrView name,		Texture2D*		v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
+inline void Material::setParam(StrView name,		Texture3D*		v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
 inline void Material::setParam(StrView name,		TextureCube*	v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
 inline void Material::setParam(StrView name, const	SamplerState&	v)										{ return _setSamplerParam(name, v); }
 

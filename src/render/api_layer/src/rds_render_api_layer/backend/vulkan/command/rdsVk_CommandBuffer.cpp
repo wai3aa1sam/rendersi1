@@ -512,7 +512,7 @@ Vk_CommandBuffer::cmd_addMemoryBarrier(RenderResourceStateFlags srcState, Render
 void 
 Vk_CommandBuffer::cmd_addImageMemBarrier(const Vk_Cmd_AddImageMemBarrierDesc& desc)
 {
-	auto vkStageAcess = Util::toVkStageAccess(desc.srcLayout, desc.dstLayout);
+	auto vkStageAcess = Util::toVkStageAccess(desc.srcLayout, desc.dstLayout, desc.srcPipelineStage, desc.dstPipelineStage);
 
 	bool isTransferOwnership = desc.srcQueueFamilyIdx != VK_QUEUE_FAMILY_IGNORED || desc.dstQueueFamilyIdx != VK_QUEUE_FAMILY_IGNORED;
 	if (isTransferOwnership)
@@ -646,6 +646,7 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, V
 
 void 
 Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLayout, VkImageLayout dstLayout
+										, VkPipelineStageFlags srcPipelineStage, VkPipelineStageFlags dstPipelineStage
 										, const Texture_Desc& texDesc, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner)
 {
 	Vk_Cmd_AddImageMemBarrierDesc desc = {};
@@ -653,6 +654,8 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLay
 	desc.format				= Util::toVkFormat(texDesc.format);
 	desc.srcLayout			= srcLayout;
 	desc.dstLayout			= dstLayout;
+	desc.srcPipelineStage	= srcPipelineStage;
+	desc.dstPipelineStage	= dstPipelineStage;
 	desc.srcQueueFamilyIdx	= srcQueueFamilyIdx;
 	desc.dstQueueFamilyIdx	= dstQueueFamilyIdx;
 	desc.isSrcQueueOwner	= isSrcQueueOwner;
@@ -666,9 +669,19 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLay
 }
 
 void 
+Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLayout, VkImageLayout dstLayout, ShaderStageFlag srcShaderStage, ShaderStageFlag dstShaderStage, const Texture_Desc& texDesc)
+{
+	cmd_addImageMemBarrier(image, srcLayout, dstLayout
+							, Util::toVkPipelineStageFlag(srcShaderStage), Util::toVkPipelineStageFlag(dstShaderStage)
+							, texDesc, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, false);
+}
+
+void 
 Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLayout, VkImageLayout dstLayout, const Texture_Desc& texDesc)
 {
-	cmd_addImageMemBarrier(image, srcLayout, dstLayout, texDesc, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, false);
+	cmd_addImageMemBarrier(image, srcLayout, dstLayout
+							, VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM, VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM
+							, texDesc, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, false);
 }
 
 void 

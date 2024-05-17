@@ -178,6 +178,18 @@ Material::getParamId(StrView name) const
 }
 
 void 
+Material::setParam(StrView name, Texture* v, const SamplerState& samplerState)
+{
+	using SRC = RenderDataType;
+	switch (v->type())
+	{
+		case SRC::Texture2D: { setParam(name, sCast<Texture2D*>(v), samplerState); } break;
+		case SRC::Texture3D: { setParam(name, sCast<Texture3D*>(v), samplerState); } break;
+		default: { RDS_THROW("invalid texture type"); } break;
+	}
+}
+
+void 
 Material::_setSamplerParam(StrView name, const SamplerState& v)
 {
 	/*for (auto& pass : _passes)
@@ -473,7 +485,7 @@ Material::_internal_resetFrame()
 
 	for (auto& pass : _passes)
 	{
-		pass->_framedShaderRscs.uploadToGpu(&pass->shaderPass());		// this will reset dirty
+		//pass->_framedShaderRscs.uploadToGpu(&pass->shaderPass());		// this will reset dirty
 		pass->_framedShaderRscs._isRotated = false;
 	}
 }

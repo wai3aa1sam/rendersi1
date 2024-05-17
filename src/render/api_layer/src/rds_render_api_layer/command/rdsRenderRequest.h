@@ -90,9 +90,11 @@ public:
 
 	RDS_NODISCARD	RenderScissorRectScope	scissorRectScope();
 	RDS_INLINE		void					setScissorRect	(const Rect2f& rect);
+	RDS_INLINE		void					setScissorRect	(const Tuple2f& pos, const Tuple2f& size);
 
 	RDS_NODISCARD	RenderViewportScope		viewportScope		();
 	RDS_INLINE		void					setViewport			(const Rect2f& rect);
+	RDS_INLINE		void					setViewport			(const Tuple2f& pos, const Tuple2f& size);
 	RDS_INLINE		void					setViewportReverse	(const Rect2f& rect);
 
 	void copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, Tuple3u extent,		u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip);
@@ -197,12 +199,14 @@ inline RenderCommand_SwapBuffers*		RenderRequest::swapBuffers()							{ return c
 inline RenderCommand_DrawCall*			RenderRequest::addDrawCall()							{ return commandBuffer().addDrawCall(); }
 inline RenderCommand_DrawCall*			RenderRequest::addDrawCall(SizeType extraDataSize)		{ return commandBuffer().addDrawCall(extraDataSize); }
 
-inline RenderScissorRectScope		RenderRequest::scissorRectScope		()						{ return RenderScissorRectScope(&_rdCmdBuf); }
-inline void							RenderRequest::setScissorRect		(const Rect2f& rect)	{ _rdCmdBuf.setScissorRect(rect); }
+inline RenderScissorRectScope		RenderRequest::scissorRectScope		()											{ return RenderScissorRectScope(&_rdCmdBuf); }
+inline void							RenderRequest::setScissorRect		(const Rect2f& rect)						{ _rdCmdBuf.setScissorRect(rect); }
+inline void							RenderRequest::setScissorRect		(const Tuple2f& pos, const Tuple2f& size)	{  Rect2f o; o.set(pos, size); setScissorRect(o); }
 
-inline RenderViewportScope			RenderRequest::viewportScope		()						{ return RenderViewportScope(&_rdCmdBuf); }
-inline void							RenderRequest::setViewport			(const Rect2f& rect)	{ _rdCmdBuf.setViewport(rect); }	
-inline void							RenderRequest::setViewportReverse	(const Rect2f& rect)	{ _rdCmdBuf.setViewportReverse(rect); }			
+inline RenderViewportScope			RenderRequest::viewportScope		()											{ return RenderViewportScope(&_rdCmdBuf); }
+inline void							RenderRequest::setViewport			(const Rect2f& rect)						{ _rdCmdBuf.setViewport(rect); }	
+inline void							RenderRequest::setViewport			(const Tuple2f& pos, const Tuple2f& size)	{ Rect2f o; o.set(pos, size); setViewport(o); }
+inline void							RenderRequest::setViewportReverse	(const Rect2f& rect)						{ _rdCmdBuf.setViewportReverse(rect); }			
 
 inline Span<RenderCommand*>			RenderRequest::commands()									{ return _rdCmdBuf.commands(); }
 

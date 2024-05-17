@@ -12,9 +12,11 @@ namespace shaderInterop
 }
 }
 
-
 namespace rds
 {
+
+#define RDS_DEBUG_MATERIAL 0
+
 
 #if 0
 #pragma mark --- rdsForwardPlus-Impl ---
@@ -139,15 +141,16 @@ ForwardPlus::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 
 	addPreDepthPass(rdGraph, drawData, &dsBuf, &texDepth, Color4f{1.0f, 0.0f, 0.0f, 1.0f});
 
-	auto		bufFwdpFrsutums		= _rfpForwardPlus->addMakeFrustumsPass(rdGraph, drawData);
-	auto		fwdpCullingResult	= _rfpForwardPlus->addLightCullingPass(rdGraph, drawData, bufFwdpFrsutums, texDepth);
-	RdgPass*	passFwdp			= fwdpCullingResult.lightCullingPass;
-	RdgPass*	passFwdpLighting	= _rfpForwardPlus->addLightingPass(rdGraph, drawData, rtColor, dsBuf, fwdpCullingResult, true, true);
+	auto		bufFwdpFrsutums			= _rfpForwardPlus->addMakeFrustumsPass(rdGraph, drawData);
+	auto		fwdpCullingResult		= _rfpForwardPlus->addLightCullingPass(rdGraph, drawData, bufFwdpFrsutums, texDepth);
+	RdgPass*	passFwdpLighting		= _rfpForwardPlus->addLightingPass(rdGraph, drawData, rtColor, dsBuf, fwdpCullingResult, true, true);
 
 	// TODO: remove, just use it for transit then compute use, later add a flag in VkStageAccess to determine the stage
-	#if 1
+	#if 0
 	{
-		auto& pass = rdGraph->addPass("TODO: remove, just use it for transit then compute use", RdgPassTypeFlags::Graphics /*| RdgPassTypeFlags::Transfer*/);
+		RdgPass*	passFwdpLightCulling	= fwdpCullingResult.lightCullingPass;
+
+		auto& pass = rdGraph->addPass("TODO: remove, just use it for transit then compute use", RdgPassTypeFlags::Graphics /*| RdgPassTypeFlags::Transfer*/, RdgPassFlags::NoRenderTarget);
 		pass.readTexture(texDepth);
 		//pass.readTexture(dsBuf);
 		//pass.writeTexture(texDepth);
@@ -158,8 +161,8 @@ ForwardPlus::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 				//rdReq.copyTexture(RDS_SRCLOC, texDepth.renderResource(), dsBuf.renderResource(), 0, 0, 0, 0);
 			}
 		);
-		if (passFwdp)
-			passFwdp->runAfter(&pass);
+		if (passFwdpLightCulling)
+			passFwdpLightCulling->runAfter(&pass);
 	}
 	#endif // 1
 
@@ -377,7 +380,8 @@ RfpForwardPlus::addLightCullingPass(RenderGraph* oRdGraph, DrawData* drawData, R
 		if (frustumsHnd)
 			pass.readBuffer(frustumsHnd);
 
-		pass.readTexture(texDepth/*, ShaderStageFlag::Pixel*/);
+		//pass.readTexture(texDepth);
+		pass.readTexture(texDepth, TextureUsageFlags::ShaderResource, ShaderStageFlag::Compute);
 		pass.writeBuffer(opaque_lightIndexCounter);
 		pass.writeBuffer(opaque_lightIndexList);
 		pass.writeTexture(opaque_lightGrid);
@@ -393,7 +397,7 @@ RfpForwardPlus::addLightCullingPass(RenderGraph* oRdGraph, DrawData* drawData, R
 				mtl->setParam("nThreads",			Vec3u{nThreads,		1});
 				mtl->setParam("nThreadGroups",		Vec3u{nThreadGrps,	1});
 
-				mtl->setParam("texDepth", texDepth.renderResource());
+				mtl->setParam("texDepth", texDepth.texture2D());
 				mtl->setParam("frustums", frustumsHnd ? frustumsHnd.renderResource() : gpuFrustums);
 
 				{
@@ -450,6 +454,8 @@ RfpForwardPlus::addLightingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTe
 		RdgBufferHnd	lightIndexList	= lightCulling.lightIndexList(isOpaque);
 		RdgTextureHnd	lightGrid		= lightCulling.lightGrid(isOpaque);
 
+		//RDS_CORE_LOG_WARN("--- --- before RdGraph Execute frame: {}", rdGraph->iFrame());
+
 		pass.readBuffer(lightCulling.lightIndexList(isOpaque));
 		pass.readTexture(lightCulling.lightGrid(isOpaque));
 		pass.setRenderTarget(rtColor,	isClearColor ? RenderTargetLoadOp::Clear : RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
@@ -464,8 +470,40 @@ RfpForwardPlus::addLightingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTe
 				clearValue->setClearColor();
 				//clearValue->setClearDepth();
 
+				#if RDS_DEBUG_MATERIAL
+				RDS_CORE_LOG_WARN("--- --- after RdGraph Execute frame: {}", rdGraph->iFrame());
+
+				{
+					auto* mtlPass = mtl->passes()[0].ptr();
+					RDS_CORE_LOG_WARN("--- --- before mtlPass set, frame: {}", mtlPass->iFrame());
+
+					auto* lightIndexList_	= mtlPass->shaderResources().findParamT<u32>("lightIndexList");
+					auto* lightGrid_		= mtlPass->shaderResources().findParamT<u32>("lightGrid");
+
+					if (lightIndexList_ && lightGrid_)
+					{
+						RDS_DUMP_VAR(*lightIndexList_, *lightGrid_);
+					}
+				}
+				#endif // 0
+
 				mtl->setParam("lightIndexList",		lightIndexList.renderResource());
 				mtl->setParam("lightGrid",			lightGrid.renderResource());
+
+				#if RDS_DEBUG_MATERIAL
+				{
+					auto* mtlPass = mtl->passes()[0].ptr();
+					RDS_CORE_LOG_WARN("--- after mtlPass set, frame: {}", mtlPass->iFrame());
+
+					auto* lightIndexList_	= mtlPass->shaderResources().findParamT<u32>("lightIndexList");
+					auto* lightGrid_		= mtlPass->shaderResources().findParamT<u32>("lightGrid");
+
+					if (lightIndexList_ && lightGrid_)
+					{
+						RDS_DUMP_VAR(*lightIndexList_, *lightGrid_);
+					}
+			}
+				#endif // RDS_DEBUG_MATERIAL
 
 				drawData->drawScene(rdReq, mtl);
 			}

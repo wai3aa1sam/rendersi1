@@ -128,7 +128,9 @@ public:
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 baseLayer, u32 layerCount);
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
 	void cmd_addImageMemBarrier(Vk_Image_T*	image, VkImageLayout srcLayout, VkImageLayout dstLayout
+								, VkPipelineStageFlags srcPipelineStage, VkPipelineStageFlags dstPipelineStage
 								, const Texture_Desc& texDesc, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
+	void cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLayout, VkImageLayout dstLayout, ShaderStageFlag srcShaderStage, ShaderStageFlag dstShaderStage, const Texture_Desc& texDesc);
 	void cmd_addImageMemBarrier(Vk_Image_T* image, VkImageLayout srcLayout, VkImageLayout dstLayout, const Texture_Desc& texDesc);
 	void cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, VkImageLayout srcLayout, VkImageLayout dstLayout, u32 baseMip, u32 mipCount, u32 baseLayer, u32 layerCount, u32 srcQueueFamilyIdx, u32 dstQueueFamilyIdx, bool isSrcQueueOwner);
 
@@ -160,18 +162,20 @@ inline Vk_RenderPass* Vk_CommandBuffer::getVkRenderPass() { return _vkRdPass; }
 
 struct Vk_Cmd_AddImageMemBarrierDesc
 {
-	Vk_Image_T*		image		= nullptr;
-	VkFormat		format;
-	VkImageLayout	srcLayout; 
-	VkImageLayout	dstLayout;
-	u8				baseMip		= 0;
-	u8				mipCount	= 1;
-	u8				baseLayer	= 0;
-	u8				layerCount	= 1;
+	Vk_Image_T*					image		= nullptr;
+	VkFormat					format;
+	VkImageLayout				srcLayout; 
+	VkImageLayout				dstLayout;
+	VkPipelineStageFlags		srcPipelineStage	= VK_PIPELINE_STAGE_NONE; 
+	VkPipelineStageFlags		dstPipelineStage	= VK_PIPELINE_STAGE_NONE;
+	u8							baseMip				= 0;
+	u8							mipCount			= 1;
+	u8							baseLayer			= 0;
+	u8							layerCount			= 1;
 
-	u32				srcQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
-	u32				dstQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
-	bool			isSrcQueueOwner		= true;
+	u32					srcQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
+	u32					dstQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
+	bool				isSrcQueueOwner		= true;
 	//QueueTypeFlags	srcQueueType;
 	//QueueTypeFlags	dstQueueType;
 };

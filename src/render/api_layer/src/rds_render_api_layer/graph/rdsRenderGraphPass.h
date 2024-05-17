@@ -126,10 +126,10 @@ public:
 	//void setRenderTarget(RdgTextureHndSpan	hnds);
 	void setDepthStencil(RdgTextureHnd		hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp);
 
-	void readTexture	(RdgTextureHnd		hnd, TextureUsageFlags usage = TextureUsageFlags::ShaderResource);
+	void readTexture	(RdgTextureHnd		hnd, TextureUsageFlags usage = TextureUsageFlags::ShaderResource, ShaderStageFlag stage = ShaderStageFlag::Pixel);
 	void readTextures	(RdgTextureHndSpan	hnds);
 
-	void writeTexture	(RdgTextureHnd		hnd, TextureUsageFlags usage = TextureUsageFlags::UnorderedAccess);
+	void writeTexture	(RdgTextureHnd		hnd, TextureUsageFlags usage = TextureUsageFlags::UnorderedAccess, ShaderStageFlag stage = ShaderStageFlag::Compute);
 	void writeTextures	(RdgTextureHndSpan	hnds);
 
 	void readBuffer		(RdgBufferHnd		hnd,	ShaderStageFlag useStages = ShaderStageFlag::Compute);
@@ -276,7 +276,7 @@ inline Span<RdgPass*>			RdgPass::runAfterThis() { return _runAfter; }
 
 inline RdgPass::SizeType	RdgPass::dependencyCount()	const	{ return _runBefore.size(); }
 //inline bool					RdgPass::hasRenderPass()	const	{ return BitUtil::hasAny(typeFlags(), RdgPassTypeFlags::Graphics); }
-inline bool					RdgPass::hasRenderPass()	const	{ return !_rdTargets.is_empty() || _depthStencil || BitUtil::hasAny(typeFlags(), RdgPassTypeFlags::Graphics); }
+inline bool					RdgPass::hasRenderPass()	const	{ return !_rdTargets.is_empty() || _depthStencil || BitUtil::hasAny(flags(), RdgPassFlags::NoRenderTarget); }
 
 inline 
 bool 

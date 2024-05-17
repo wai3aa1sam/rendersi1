@@ -19,6 +19,9 @@
 #define RDS_TEST_MT_DRAW_CALLS 0
 #define RDS_TEST_DUMMY_FOR_NO_SWAP_BUF 1
 
+#define RDS_DEBUG_RENDER_GRAPH 0
+#define RDS_DEBUG_DRAW_CALL 0
+
 namespace rds
 {
 
@@ -464,14 +467,22 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				vkCmdBuf->insertDebugLabel(passName);
 			}
 
-			queueProfiler->beginProfile(vkCmdBuf->hnd(), pass->name().c_str());
+			queueProfiler->beginProfile(vkCmdBuf->hnd(), passName);
+
+			#if RDS_DEBUG_RENDER_GRAPH
+			RDS_CORE_LOG("before pass:[{}] record barrier", passName);
+			#endif // RDS_DEBUG_RENDER_GRAPH
 
 			_recordBarriers(pass, vkCmdBuf);
+
+			#if RDS_DEBUG_RENDER_GRAPH
+			RDS_CORE_LOG("after pass:[{}] record barrier", passName);
+			#endif // RDS_DEBUG_RENDER_GRAPH
 
 			RDS_TODO("Vk_RenderPassScope");
 			if (hasRenderPass)
 			{
-				const auto& framebufRect2f = rdTargetExtent ? rdTargetExtent.value() : Rect2f::s_zero();
+				const auto& framebufRect2f = rdTargetExtent ? rdTargetExtent.value() : Rect2f::s_posZero_sizeOne();
 				vkCmdBuf->beginRenderPass(vkRdPass, vkFramebuf, framebufRect2f, clearValues, VK_SUBPASS_CONTENTS_INLINE);
 				//vkCmdBuf->setViewport(framebufRect2f);
 				//vkCmdBuf->setScissor (framebufRect2f);
@@ -496,7 +507,6 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				//}
 			}
 
-
 			queueProfiler->endProfile(vkCmdBuf->hnd());
 
 			if (!isMainVkCmdBuf)
@@ -518,31 +528,36 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				auto	type	= rsc->type();
 				StrView name	= rsc->name(); RDS_UNUSED(name);
 
-				if (!RenderResourceState::isTransitionNeeded(rscAccess.srcState, rscAccess.dstState))
+				auto srcState = rscAccess.srcState;
+				auto dstState = rscAccess.dstState;
+
+				if (!RenderResourceState::isTransitionNeeded(srcState, dstState))
 					continue;
 
 				switch (type)
 				{
 					case SRC::Buffer:	
-					{
+				{
 						//auto* rdgBuf	= sCast<RdgTexture*>(rsc);
 						//auto* bufVk		= sCast<RenderGpuBuffer_Vk*>(RdgResourceAccessor::access(rdgBuf));
-						auto srcUsage = RenderResourceStateFlagsUtil::getBufferUsageFlags(rscAccess.srcState);
+						auto srcUsage = RenderResourceStateFlagsUtil::getBufferUsageFlags(srcState);
 						if (srcUsage != RenderGpuBufferTypeFlags::None)
 						{
-							vkCmdBuf->cmd_addMemoryBarrier(rscAccess.srcState, rscAccess.dstState);
+							vkCmdBuf->cmd_addMemoryBarrier(srcState, dstState);
 						}
 					} break;
 
 					case SRC::Texture:	
-					{
+				{
 						auto* rdgTex	= sCast<RdgTexture*>(rsc);
 						auto* vkImgHnd	= Vk_Texture::getVkImageHnd(RdgResourceAccessor::access(rdgTex));
 
-						VkImageLayout	srcLayout	= Util::toVkImageLayout(rscAccess.srcState);
-						VkImageLayout	dstLayout	= Util::toVkImageLayout(rscAccess.dstState);
+						VkImageLayout	srcLayout	= Util::toVkImageLayout(srcState);
+						VkImageLayout	dstLayout	= Util::toVkImageLayout(dstState);
 
-						vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout, rdgTex->desc());
+						vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout
+												, RenderResourceStateFlagsUtil::getShaderStageFlag(srcState), RenderResourceStateFlagsUtil::getShaderStageFlag(dstState)
+												, rdgTex->desc());
 					} break;
 
 					default: { RDS_THROW("invalid RenderGraphResource type: {}", type); } break;
@@ -600,7 +615,9 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				VkImageLayout	srcLayout	= Util::toVkImageLayout(srcState);
 				VkImageLayout	dstLayout	= Util::toVkImageLayout(expTex.pendingState);
 
-				vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout, rdgTex->desc());
+				vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout
+										, RenderResourceStateFlagsUtil::getShaderStageFlag(srcState), RenderResourceStateFlagsUtil::getShaderStageFlag(expTex.pendingState)
+										, rdgTex->desc());
 			}
 
 			vkCmdBuf->endRecord();
@@ -890,6 +907,21 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 	//if (vtxCount > 0 && !vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf while vtxCount > 0"); return; }
 	if (!vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf"); return; }
 
+	#if RDS_DEBUG_DRAW_CALL
+	{
+		auto* mtlPass = cmd->getMaterialPass();
+
+		auto* lightIndexList_	= mtlPass->shaderResources().findParamT<u32>("lightIndexList");
+		auto* lightGrid_		= mtlPass->shaderResources().findParamT<u32>("lightGrid");
+
+		if (lightIndexList_ && lightGrid_)
+		{
+			RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk before mtlPass bind, frame: {}", mtlPass->iFrame());
+			RDS_DUMP_VAR(*lightIndexList_, *lightGrid_);
+		}
+	}
+	#endif
+
 	if (auto* pass = cmd->getMaterialPass())
 	{
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
@@ -918,6 +950,21 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 	vkCmdBindVertexBuffers(vkCmdBufHnd, 0, 1, vertexBuffers, offsets);
 
 	RDS_VK_INSERT_DEBUG_LABEL(cmdBuf, cmd);
+
+	#if RDS_DEBUG_DRAW_CALL
+	{
+		auto* mtlPass = cmd->getMaterialPass();
+
+		auto* lightIndexList_	= mtlPass->shaderResources().findParamT<u32>("lightIndexList");
+		auto* lightGrid_		= mtlPass->shaderResources().findParamT<u32>("lightGrid");
+
+		if (lightIndexList_ && lightGrid_)
+		{
+			RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk after mtlPass bind, frame: {}", mtlPass->iFrame());
+			RDS_DUMP_VAR(*lightIndexList_, *lightGrid_);
+		}
+	}
+	#endif // RDS_DEBUG_DRAW_CALL
 
 	if (idxCount > 0)
 	{

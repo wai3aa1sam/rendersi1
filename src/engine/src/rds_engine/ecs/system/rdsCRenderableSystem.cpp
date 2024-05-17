@@ -145,7 +145,7 @@ CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh&
 		return;
 	//auto backBufferRt	= rdGraph.importTexture("back_buffer", rdCtx.backBuffer()); RDS_UNUSED(backBufferRt);
 
-	auto& finalComposePass = rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics, RdgPassFlags::NoRenderTarget);
+	auto& finalComposePass = rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
 	finalComposePass.readTexture(texPresent);
 	//finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 	finalComposePass.setExecuteFunc(

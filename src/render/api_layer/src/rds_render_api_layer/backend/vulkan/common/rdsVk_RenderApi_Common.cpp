@@ -85,7 +85,19 @@ Vk_RenderApiUtil::debugCallback(
 	if (pCallbackData->messageIdNumber == 0x822806fa) { RDS_WARN_ONCE("bypassed vulkan error: UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging"); return VK_FALSE; }
 	if (pCallbackData->messageIdNumber == 0xfc68be96) { RDS_WARN_ONCE("bypassed vulkan error: SPIR-V Extension SPV_GOOGLE_hlsl_functionality1 was declared, but one of the following requirements is required (VK_GOOGLE_hlsl_functionality1)"); return VK_FALSE; } 
 
-	RDS_CORE_LOG_ERROR("Vulkan validation layer: {}\n", pCallbackData->pMessage);
+	switch (messageSeverity)
+	{
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:			{ RDS_CORE_LOG(			"Vulkan validation layer: {}\n", pCallbackData->pMessage); } break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:				{ RDS_CORE_LOG(			"Vulkan validation layer: {}\n", pCallbackData->pMessage); } break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:			{ RDS_CORE_LOG_WARN(	"Vulkan validation layer: {}\n", pCallbackData->pMessage); } break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:				{ RDS_CORE_LOG_ERROR(	"Vulkan validation layer: {}\n", pCallbackData->pMessage); } break;
+		default: { RDS_THROW("invalid vk messageSeverity"); } break;
+	}
+
+	if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+	{
+		return VK_FALSE;		// for break point only
+	}
 	return VK_FALSE;
 }
 
@@ -481,6 +493,7 @@ Vk_RenderApiUtil::toVkShaderStageBit(ShaderStageFlag v)
 
 	switch (v)
 	{
+		case SRC::None:						{ return VkShaderStageFlagBits::VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM; }			break;
 		case SRC::Vertex:					{ return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT; }					break;
 		case SRC::TessellationControl:		{ return VkShaderStageFlagBits::VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT; }		break;
 		case SRC::TessellationEvaluation:	{ return VkShaderStageFlagBits::VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT; }	break;
@@ -657,7 +670,7 @@ Vk_RenderApiUtil::toVkSampleCountFlagBits(u8 v)
 }
 
 Vk_StageAccess
-Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout)
+Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout, VkPipelineStageFlags srcPipelineStage, VkPipelineStageFlags dstPipelineStage)
 {
 	Vk_StageAccess out;
 	auto& srcStage	= out.srcStage;
@@ -817,6 +830,12 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		throwError("");
 	}
 
+	if (srcPipelineStage != VK_PIPELINE_STAGE_NONE)
+		srcStage	= srcPipelineStage;
+
+	if (dstPipelineStage != VK_PIPELINE_STAGE_NONE)
+		dstStage	= dstPipelineStage;
+
 	return out;
 }
 
@@ -847,10 +866,10 @@ Vk_RenderApiUtil::toVkAccessFlag(RenderAccess v)
 }
 
 VkPipelineStageFlags 
-Vk_RenderApiUtil::toVkPipelineStageFlag(RenderGpuBufferTypeFlags usage)
+Vk_RenderApiUtil::toVkPipelineStageFlag(RenderGpuBufferTypeFlags v)
 {
 	using SRC = RenderGpuBufferTypeFlags;
-	switch (usage)
+	switch (v)
 	{
 		case SRC::Compute:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT; }	break;
 		case SRC::Vertex:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_VERTEX_INPUT_BIT; }		break;
@@ -858,7 +877,25 @@ Vk_RenderApiUtil::toVkPipelineStageFlag(RenderGpuBufferTypeFlags usage)
 		case SRC::Const:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; }	break;
 		case SRC::TransferSrc:	{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT; }			break;
 		case SRC::TransferDst:	{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT; }			break;
-		default: { RDS_THROW("unsupport type {}", usage); }	break;
+		default: { RDS_THROW("unsupport type {}", v); }	break;
+	}
+}
+
+VkPipelineStageFlags 
+Vk_RenderApiUtil::toVkPipelineStageFlag(ShaderStageFlag v)
+{
+	using SRC = ShaderStageFlag;
+	switch (v)
+	{
+		case SRC::None:						{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_NONE; }									break;
+		case SRC::Vertex:					{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_VERTEX_INPUT_BIT; }						break;
+		case SRC::TessellationControl:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT; }		break;
+		case SRC::TessellationEvaluation:	{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT; }	break;
+		case SRC::Geometry:					{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT; }					break;
+		case SRC::Pixel:					{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; }					break;
+		case SRC::Compute:					{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT; }					break;
+		case SRC::All:						{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; }						break;
+		default: { RDS_THROW("unsupport type {}", v); }	break;
 	}
 }
 

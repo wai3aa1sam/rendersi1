@@ -82,15 +82,16 @@ RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp de
 }
 
 void 
-RdgPass::readTexture(RdgTextureHnd	hnd, TextureUsageFlags usage)
+RdgPass::readTexture(RdgTextureHnd	hnd, TextureUsageFlags usage, ShaderStageFlag stage)
 {
+	RDS_TODO("add validation for stage");
 	RDS_CORE_ASSERT(BitUtil::has(typeFlags(), RdgPassTypeFlags::Transfer) || BitUtil::has(hnd.usageFlags(), TextureUsageFlags::ShaderResource), "must have ShaderResource flag");
 	if (BitUtil::has(typeFlags(), RdgPassTypeFlags::Transfer))
 	{
 		RDS_CORE_ASSERT(BitUtil::has(hnd.desc().usageFlags, TextureUsageFlags::TransferSrc));
 		usage = TextureUsageFlags::TransferSrc;
 	}
-	auto state = StateUtil::make(usage, Access::Read);
+	auto state = StateUtil::make(usage, Access::Read, stage);
 	accessResource(hnd, state);
 }
 void 
@@ -103,14 +104,15 @@ RdgPass::readTextures(RdgTextureHndSpan hnds)
 }
 
 void
-RdgPass::writeTexture(RdgTextureHnd hnd, TextureUsageFlags usage)
+RdgPass::writeTexture(RdgTextureHnd hnd, TextureUsageFlags usage, ShaderStageFlag stage)
 {
+	RDS_TODO("add validation for stage");
 	if (BitUtil::has(typeFlags(), RdgPassTypeFlags::Transfer))
 	{
 		RDS_CORE_ASSERT(BitUtil::has(hnd.desc().usageFlags, TextureUsageFlags::TransferDst));
 		usage = TextureUsageFlags::TransferDst;
 	}
-	auto state = StateUtil::make(usage, Access::Write);
+	auto state = StateUtil::make(usage, Access::Write, stage);
 	accessResource(hnd, state);
 }
 

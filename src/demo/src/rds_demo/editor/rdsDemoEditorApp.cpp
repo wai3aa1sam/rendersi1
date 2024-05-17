@@ -50,7 +50,8 @@ DemoEditorApp::onCreate(const CreateDesc_Base& cDesc)
 
 		auto& mainWnd = *_mainWnd;
 		auto windowCDesc = mainWnd.makeCDesc();
-		windowCDesc.isMainWindow = true;
+		windowCDesc.isMainWindow		= true;
+		windowCDesc.isCenterToScreen	= true;
 		mainWnd.create(windowCDesc);
 		mainWnd.setWindowTitle(cDesc.title);
 	}

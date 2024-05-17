@@ -231,10 +231,11 @@ public:
 
 	static Vk_AccessFlags toVkAccessFlag(RenderAccess v);
 
-	static Vk_StageAccess toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout);
+	static Vk_StageAccess toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayout, VkPipelineStageFlags srcPipelineStage, VkPipelineStageFlags dstPipelineStage);
 	static Vk_StageAccess toVkStageAccess(RenderGpuBufferTypeFlags srcUsage, RenderGpuBufferTypeFlags dstUsage, RenderAccess srcAccess, RenderAccess dstAccess);
 
-	static VkPipelineStageFlags toVkPipelineStageFlag(RenderGpuBufferTypeFlags usage);
+	static VkPipelineStageFlags toVkPipelineStageFlag(RenderGpuBufferTypeFlags v);
+	static VkPipelineStageFlags toVkPipelineStageFlag(ShaderStageFlag v);
 	static VkAccessFlags		toVkAccessFlag(RenderGpuBufferTypeFlags usage, RenderAccess access);
 
 

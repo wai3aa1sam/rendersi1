@@ -93,13 +93,26 @@ struct TypeBitMixture_Impl<RenderResourceStateFlags>
     using SizeType	= RenderApiLayerTraits::SizeType;
 
     // Types<0> - reserved
-    using Types								= Tuple<u8, RenderResourceType,     RenderAccess,   RenderGpuBufferTypeFlags,                       TextureUsageFlags                       >; 
-    static constexpr size_t s_kBitCounts[]	= {     1,  8,                      3,              BitUtil::bitSize<RenderGpuBufferTypeFlags>(),   BitUtil::bitSize<TextureUsageFlags>(),  };
+    using Types								= Tuple<u8
+                                                    , RenderResourceType
+                                                    , RenderAccess
+                                                    , RenderGpuBufferTypeFlags
+                                                    , TextureUsageFlags
+                                                    , ShaderStageFlag
+                                                    >; 
+    static constexpr size_t s_kBitCounts[]	= {     1
+                                                    , 8
+                                                    , 3
+                                                    , BitUtil::bitSize<RenderGpuBufferTypeFlags>()
+                                                    , BitUtil::bitSize<TextureUsageFlags>()
+                                                    , BitUtil::bitSize<ShaderStageFlag>()
+                                                    };
     
     static constexpr SizeType s_kSlotIdxResourceType	= 1;
     static constexpr SizeType s_kSlotIdxRenderAccess	= 2;
     static constexpr SizeType s_kSlotIdxBufferUsage		= 3;
     static constexpr SizeType s_kSlotIdxTextureUsage	= 4;
+    static constexpr SizeType s_kSlotIdxShaderStage	    = 5;
 };
 
 struct RenderResourceStateFlagsUtil
@@ -115,25 +128,40 @@ public:
     RenderResourceStateFlagsUtil() = delete;
 
 public:
-    static constexpr ValueType make(RenderGpuBufferTypeFlags        flags, RenderAccess access) { return sCast<ValueType>(makeInt(flags, access)); }
-    static constexpr ValueType make(TextureUsageFlags               flags, RenderAccess access) { return sCast<ValueType>(makeInt(flags, access)); }
+    static constexpr ValueType make(RenderGpuBufferTypeFlags        flags, RenderAccess access, ShaderStageFlag shaderStage = ShaderStageFlag::None) { return sCast<ValueType>(makeInt(flags, access, shaderStage)); }
+    static constexpr ValueType make(TextureUsageFlags               flags, RenderAccess access, ShaderStageFlag shaderStage = ShaderStageFlag::None) { return sCast<ValueType>(makeInt(flags, access, shaderStage)); }
 
-    static constexpr IntType makeInt(RenderGpuBufferTypeFlags       flags, RenderAccess access) { return (sCast<IntType>(RenderResourceType::RenderGpuBuffer)   << TBM_T::offsets(TBM_T::s_kSlotIdxResourceType))  |(sCast<IntType>(flags) << TBM_T::offsets(TBM_T::s_kSlotIdxBufferUsage))  | (sCast<IntType>(access) << TBM_T::offsets(TBM_T::s_kSlotIdxRenderAccess)); }
-    static constexpr IntType makeInt(TextureUsageFlags              flags, RenderAccess access) { return (sCast<IntType>(RenderResourceType::Texture)           << TBM_T::offsets(TBM_T::s_kSlotIdxResourceType)) |(sCast<IntType>(flags) << TBM_T::offsets(TBM_T::s_kSlotIdxTextureUsage)) | (sCast<IntType>(access) << TBM_T::offsets(TBM_T::s_kSlotIdxRenderAccess)); }
+    static constexpr IntType makeInt(RenderGpuBufferTypeFlags       flags, RenderAccess access, ShaderStageFlag shaderStage = ShaderStageFlag::None) 
+    { 
+        return (sCast<IntType>(RenderResourceType::RenderGpuBuffer) << TBM_T::offsets(TBM_T::s_kSlotIdxResourceType)) 
+             | (sCast<IntType>(flags)                               << TBM_T::offsets(TBM_T::s_kSlotIdxBufferUsage))  
+             | (sCast<IntType>(access)                              << TBM_T::offsets(TBM_T::s_kSlotIdxRenderAccess))
+             | (sCast<IntType>(shaderStage)                         << TBM_T::offsets(TBM_T::s_kSlotIdxShaderStage));
+    }
+
+    static constexpr IntType makeInt(TextureUsageFlags              flags, RenderAccess access, ShaderStageFlag shaderStage = ShaderStageFlag::None) 
+    { 
+        return (sCast<IntType>(RenderResourceType::Texture) << TBM_T::offsets(TBM_T::s_kSlotIdxResourceType)) 
+             | (sCast<IntType>(flags)                       << TBM_T::offsets(TBM_T::s_kSlotIdxTextureUsage)) 
+             | (sCast<IntType>(access)                      << TBM_T::offsets(TBM_T::s_kSlotIdxRenderAccess))
+             | (sCast<IntType>(shaderStage)                 << TBM_T::offsets(TBM_T::s_kSlotIdxShaderStage));
+    }
 
     static constexpr bool	                    isBuffer		        (RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxResourceType>(x) == RenderResourceType::RenderGpuBuffer; }
     static constexpr bool	                    isTexture		        (RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxResourceType>(x) == RenderResourceType::Texture; }
 
     static constexpr RenderAccess	            getRenderAccess		    (RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxRenderAccess>(x); }
-    static constexpr RenderGpuBufferTypeFlags	getBufferUsageFlags		(RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxBufferUsage> (x); }
+    static constexpr RenderGpuBufferTypeFlags	getBufferUsageFlags		(RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxBufferUsage>( x); }
     static constexpr TextureUsageFlags		    getTextureUsageFlags    (RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxTextureUsage>(x); }
+    static constexpr ShaderStageFlag		    getShaderStageFlag      (RenderResourceStateFlags x) { return TBM_T::getElementValue<TBM_T::s_kSlotIdxShaderStage>( x); }
 
     static void debugWatcher(RenderResourceStateFlags v)
     {
         #if RDS_DEVELOPMENT
-        auto access     = getRenderAccess(v);       RDS_UNUSED(access);
-        auto bufUsage   = getBufferUsageFlags(v);   RDS_UNUSED(bufUsage);
-        auto texUsage   = getTextureUsageFlags(v);  RDS_UNUSED(texUsage);
+        auto access         = getRenderAccess(v);       RDS_UNUSED(access);
+        auto bufUsage       = getBufferUsageFlags(v);   RDS_UNUSED(bufUsage);
+        auto texUsage       = getTextureUsageFlags(v);  RDS_UNUSED(texUsage);
+        auto shaderStage    = getShaderStageFlag(v);    RDS_UNUSED(shaderStage);
         v = v;
         #endif // RDS_DEVELOPMENT
     }
