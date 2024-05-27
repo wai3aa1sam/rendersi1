@@ -19,7 +19,7 @@ void
 GraphicsDemo::onCreate()
 {
 	{
-		auto texCDesc = Texture2D::makeCDesc();
+		auto texCDesc = Texture2D::makeCDesc(RDS_SRCLOC);
 
 		texCDesc.create("asset/texture/uvChecker.png");
 		_texUvChecker = Renderer::rdDev()->createTexture2D(texCDesc);
@@ -27,7 +27,7 @@ GraphicsDemo::onCreate()
 	}
 
 	{
-		auto texCDesc = TextureCube::makeCDesc();
+		auto texCDesc = TextureCube::makeCDesc(RDS_SRCLOC);
 		Vector<StrView, TextureCube::s_kFaceCount> filenames;
 		filenames.emplace_back("asset/texture/skybox/default/right.png");
 		filenames.emplace_back("asset/texture/skybox/default/left.png");
@@ -45,7 +45,8 @@ GraphicsDemo::onCreate()
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 
 	createMaterial(&_shaderPreDepth,		&_mtlPreDepth,			"asset/shader/pre_depth.shader");
-	createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/displayNormals.shader");
+	createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/rdsDisplayNormals.shader");
+	createMaterial(&_shaderScreenQuad,		&_mtlScreenQuad,		"asset/shader/util/rdsScreenQuad.shader");
 }
 
 void 
@@ -108,7 +109,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAs
 			rdableMesh->meshAsset = meshAsset;
 
 			auto* transform	= ent->getComponent<CTransform>();
-			transform->setLocalPosition(startPos.x + step.x * c, 0.0f, startPos.y + step.y * r);
+			transform->setLocalPosition(startPos.x + step.x * c, startPos.y, step.y * r);
 
 			TempString buf;
 			fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));

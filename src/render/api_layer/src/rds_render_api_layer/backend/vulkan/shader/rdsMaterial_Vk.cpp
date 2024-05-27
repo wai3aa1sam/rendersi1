@@ -388,7 +388,7 @@ public:
 		u32 bindingPt = 0;
 
 		binding.binding		= bindingPt;
-		binding.stride		= sCast<u32>(vtxLayout->stride());
+		binding.stride		= sCast<u32>(vtxLayout ? vtxLayout->stride() : 0);
 		binding.inputRate	= VK_VERTEX_INPUT_RATE_VERTEX;
 
 		cInfo.sType								= VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -446,7 +446,7 @@ Vk_MaterialPass_VertexStage::cacheVtxInputAttrCDesc(const VertexLayout* vtxLayou
 
 		VkVertexInputBindingDescription bindingDesc = {};
 		bindingDesc.binding		= bindingPt;
-		bindingDesc.stride		= sCast<u32>(vtxLayout->stride());
+		bindingDesc.stride		= sCast<u32>(vtxLayout ? vtxLayout->stride() : 0);
 		bindingDesc.inputRate	= VK_VERTEX_INPUT_RATE_VERTEX;
 
 		return attrs;
@@ -637,6 +637,7 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 		*/
 		RDS_TODO("shaderRsc.uploadToGpu() should in Update loop");
 		shaderRsc.uploadToGpu(shaderPass());
+		material()->_internal_resetFrame();
 
 		auto& vkDescrSet = vkDescriptorSet();
 		if (!vkDescrSet)

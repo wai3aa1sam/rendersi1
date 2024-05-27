@@ -111,6 +111,7 @@ RdgPass::writeTexture(RdgTextureHnd hnd, TextureUsageFlags usage, ShaderStageFla
 	{
 		RDS_CORE_ASSERT(BitUtil::has(hnd.desc().usageFlags, TextureUsageFlags::TransferDst));
 		usage = TextureUsageFlags::TransferDst;
+		stage = ShaderStageFlag::None;
 	}
 	auto state = StateUtil::make(usage, Access::Write, stage);
 	accessResource(hnd, state);

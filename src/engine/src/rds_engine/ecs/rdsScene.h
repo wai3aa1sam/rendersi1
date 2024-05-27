@@ -61,16 +61,19 @@ inline Span<const	Entity*> Scene::entities() const	{ return spanConstCast<const 
 class SceneView
 {
 public:
-	void create(CRenderableSystem* sys);
+	void create(Scene* scene, CRenderableSystem* sys);
 
 	void drawScene(RenderRequest& rdReq, Material* mtl, DrawData* drawData);
 	void drawScene(RenderRequest& rdReq, DrawData* drawData);
+
+	Entity* findEntity(EntityId id);
 
 public:
 	CRenderableSystem& renderableSystem();
 
 private:
-	CRenderableSystem* _rdableSys = nullptr;
+	Scene*				_scene		= nullptr;
+	CRenderableSystem*	_rdableSys	= nullptr;
 };
 
 inline CRenderableSystem& SceneView::renderableSystem() { return *_rdableSys; }

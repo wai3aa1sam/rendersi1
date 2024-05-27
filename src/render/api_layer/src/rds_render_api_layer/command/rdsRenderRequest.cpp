@@ -133,8 +133,11 @@ RenderRequest::clearFramebuffers(const Color4f& color, float depth, u32 stencil)
 void 
 RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl)
 {
-	if (!rdSubMesh.vertexBuffer() || !rdSubMesh.indexBuffer())
-		return;
+	/*
+	* support no vtx / idx buffer draw
+	*/
+	//if (!rdSubMesh.vertexBuffer() || !rdSubMesh.indexBuffer())
+	//	return;
 
 	auto& e = rdSubMesh;
 	
@@ -143,16 +146,21 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, co
 	p->indexType			= e.indexType();
 	p->renderPrimitiveType	= e.renderPrimitiveType();
 	p->vertexLayout			= e.vertexLayout();
-
-	p->vertexBuffer = e.vertexBuffer();
-	p->vertexCount  = e.vertexCount();
-	p->vertexOffset = 0;
-
-	p->indexBuffer	= e.indexBuffer();
-	p->indexCount	= e.indexCount();
-	p->indexOffset	= 0;
-
 	p->setMaterial(mtl);
+
+	if (rdSubMesh.vertexBuffer())
+	{
+		p->vertexBuffer = e.vertexBuffer();
+		p->vertexCount  = e.vertexCount();
+		p->vertexOffset = 0;
+	}
+	
+	if (rdSubMesh.indexBuffer())
+	{
+		p->indexBuffer	= e.indexBuffer();
+		p->indexCount	= e.indexCount();
+		p->indexOffset	= 0;
+	}
 }
 
 void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, Tuple3u extent,		u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)

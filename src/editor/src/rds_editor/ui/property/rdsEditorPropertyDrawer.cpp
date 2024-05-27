@@ -248,11 +248,11 @@ bool
 	bool	hasValueChanged	= false;
 	ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(&value);
+	auto pushId = uiDrawReq.makePushID(label);
 
 	//uiDrawReq.showText(label);
 	sameLineWithText(label);
-	hasValueChanged = ImGui::ColorEdit4(label, value.data, ImGuiColorEditFlags_NoLabel);
+	hasValueChanged = ImGui::ColorEdit4("", value.data, ImGuiColorEditFlags_NoLabel);
 
 	return hasValueChanged;
 }

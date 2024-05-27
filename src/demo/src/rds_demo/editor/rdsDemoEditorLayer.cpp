@@ -38,7 +38,7 @@ DemoEditorLayer::onCreate()
 
 	_egCtx.create();
 	_scene.create(_egCtx);
-	_sceneView.create(&renderableSystem());
+	_sceneView.create(&_scene, &renderableSystem());
 
 	_edtCtx.create();
 
@@ -79,6 +79,9 @@ DemoEditorLayer::onCreate()
 		DrawData drawData;
 		drawData.sceneView	= &_sceneView;
 		drawData.camera		= &mainWnd.camera();
+		drawData.meshAssets = _meshAssets.ptr();
+		drawData._mtlLine   = _mtlLine;		// TODO: temporary
+
 		_gfxDemo->onPrepareRender(&rdGraph, &drawData);
 
 		rdGraph.compile();
@@ -115,7 +118,7 @@ DemoEditorLayer::onUpdate()
 			OsUtil::sleep_ms(1);
 		}
 	}
-	//Renderer::rdDev()->waitIdle();
+	Renderer::rdDev()->waitIdle();
 	Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
 	#endif // 0
 
@@ -130,6 +133,7 @@ DemoEditorLayer::onUpdate()
 		DrawData drawData;
 		drawData.sceneView	= &_sceneView;
 		drawData.camera		= &mainWnd.camera();
+		drawData.meshAssets = _meshAssets.ptr();
 		drawData._mtlLine   = _mtlLine;		// TODO: temporary
 
 		_gfxDemo->onExecuteRender(&rdGraph, &drawData);

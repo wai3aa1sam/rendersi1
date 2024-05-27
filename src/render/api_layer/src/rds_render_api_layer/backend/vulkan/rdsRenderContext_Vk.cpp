@@ -530,7 +530,13 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 				auto srcState = rscAccess.srcState;
 				auto dstState = rscAccess.dstState;
-
+				
+				//bool isSameLastPassAccess = false;
+				RDS_TODO("same state but in different pass also need barrier (esp. write -> write)"
+					", memory barrier is needed(no need to transit), need to revise later"
+					"but read -> read no need to add"
+					"****************same layout only need memory barrier"
+				);
 				if (!RenderResourceState::isTransitionNeeded(srcState, dstState))
 					continue;
 
@@ -889,7 +895,7 @@ void
 RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd)
 {
 	auto* vtxLayout = cmd->vertexLayout;
-	if (!vtxLayout) { RDS_CORE_ASSERT(false, "drawcall no vertexLayout"); return; }
+	//if (!vtxLayout) { RDS_CORE_ASSERT(false, "drawcall no vertexLayout"); return; }
 
 	auto* vkCmdBufHnd = cmdBuf->hnd();
 
@@ -905,7 +911,7 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 
 	auto* vtxBufHndVk = cmd->vertexBuffer ? sCast<RenderGpuBuffer_Vk*>(cmd->vertexBuffer.ptr())->vkBuf()->hnd() : nullptr;
 	//if (vtxCount > 0 && !vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf while vtxCount > 0"); return; }
-	if (!vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf"); return; }
+	//if (!vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf"); return; }
 
 	#if RDS_DEBUG_DRAW_CALL
 	{
@@ -913,11 +919,16 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 
 		auto* lightIndexList_	= mtlPass->shaderResources().findParamT<u32>("lightIndexList");
 		auto* lightGrid_		= mtlPass->shaderResources().findParamT<u32>("lightGrid");
-
 		if (lightIndexList_ && lightGrid_)
 		{
 			RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk before mtlPass bind, frame: {}", mtlPass->iFrame());
 			RDS_DUMP_VAR(*lightIndexList_, *lightGrid_);
+		}
+
+		auto* voxel_tex_albedo = mtlPass->shaderResources().findParamT<u32>("voxel_tex_albedo");
+		if (voxel_tex_albedo)
+		{
+			RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk before mtlPass bind, voxel_tex_albedo: {}, frame: {}", *voxel_tex_albedo, mtlPass->iFrame());
 		}
 	}
 	#endif
@@ -947,7 +958,10 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 
 	Vk_Buffer_T* vertexBuffers[]	= { vtxBufHndVk };
 	VkDeviceSize offsets[]			= { Util::toVkDeviceSize(cmd->vertexOffset) };
-	vkCmdBindVertexBuffers(vkCmdBufHnd, 0, 1, vertexBuffers, offsets);
+	if (vtxBufHndVk)
+	{
+		vkCmdBindVertexBuffers(vkCmdBufHnd, 0, 1, vertexBuffers, offsets);
+	}
 
 	RDS_VK_INSERT_DEBUG_LABEL(cmdBuf, cmd);
 
@@ -957,11 +971,16 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 
 		auto* lightIndexList_	= mtlPass->shaderResources().findParamT<u32>("lightIndexList");
 		auto* lightGrid_		= mtlPass->shaderResources().findParamT<u32>("lightGrid");
-
 		if (lightIndexList_ && lightGrid_)
 		{
 			RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk after mtlPass bind, frame: {}", mtlPass->iFrame());
 			RDS_DUMP_VAR(*lightIndexList_, *lightGrid_);
+		}
+
+		auto* voxel_tex_albedo = mtlPass->shaderResources().findParamT<u32>("voxel_tex_albedo");
+		if (voxel_tex_albedo)
+		{
+			RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk after mtlPass bind, voxel_tex_albedo: {}, frame: {}", *voxel_tex_albedo, mtlPass->iFrame());
 		}
 	}
 	#endif // RDS_DEBUG_DRAW_CALL

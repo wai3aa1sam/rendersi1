@@ -153,8 +153,10 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 		{
 			//compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
 			compileArgs.emplace_back(L"-spirv");
-			if (stage == ShaderStageFlag::Vertex 
-				|| stage == ShaderStageFlag::TessellationControl || stage == ShaderStageFlag::TessellationEvaluation || stage == ShaderStageFlag::Geometry)
+			if (opt.isInvertY &&
+				(stage == ShaderStageFlag::Vertex 
+				|| stage == ShaderStageFlag::TessellationControl || stage == ShaderStageFlag::TessellationEvaluation || stage == ShaderStageFlag::Geometry)	// add this will double reverse
+				)
 			{
 				compileArgs.emplace_back(L"-fvk-invert-y");
 			}

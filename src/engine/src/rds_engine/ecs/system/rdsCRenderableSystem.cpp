@@ -52,12 +52,15 @@ CRenderableSystem::update(DrawData& drawData)
 {
 	// transform system update
 	{
-		_objTransformBuf.resize(renderables().size() + 1);		// id start at 1, not using 2 table mapping currently
+		auto& renderables_ = renderables();
+
+		// should resize as scene ent size, * 10 is a temp dirty fix
+		_objTransformBuf.resize(renderables_.size() * 10 + 1);		// id start at 1, not using 2 table mapping currently
 
 		auto mat_vp = drawData.camera->viewProjMatrix();
 
 		// or loop dirty transform only
-		for (auto* rdable : renderables())
+		for (auto* rdable : renderables_)
 		{
 			auto& ent		= rdable->entity();
 			auto& transform = ent.transform();

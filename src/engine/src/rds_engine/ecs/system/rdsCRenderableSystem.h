@@ -15,6 +15,7 @@ namespace rds
 class	Scene;
 class	SceneView;
 class	CRenderable;
+struct  MeshAssets;
 struct	DrawParam;
 
 /*
@@ -27,6 +28,8 @@ struct DrawData
 	float			deltaTime   = 0.0f;
 	SceneView*		sceneView	= nullptr;
 	math::Camera3f*	camera		= nullptr;
+
+	MeshAssets*		meshAssets	= nullptr;
 
 	RdgTextureHnd oTexPresent;
 

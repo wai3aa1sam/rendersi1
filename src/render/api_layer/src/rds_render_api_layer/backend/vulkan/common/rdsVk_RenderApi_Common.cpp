@@ -595,7 +595,7 @@ Vk_RenderApiUtil::toVkFilter(SamplerFilter v)
 		case SRC::Nearest:		{ return VkFilter::VK_FILTER_NEAREST; }		break;
 		case SRC::Linear:		{ return VkFilter::VK_FILTER_LINEAR; }		break;
 		case SRC::Bilinear:		{ return VkFilter::VK_FILTER_LINEAR; }		break;
-		case SRC::Trilinear:	{ return VkFilter::VK_FILTER_CUBIC_IMG; }	break;
+		case SRC::Trilinear:	{ return VkFilter::VK_FILTER_LINEAR; }		break;
 		default: { RDS_THROW("unsupport type {}", v); } break;
 	}
 	//return VkFilter::VK_FILTER_MAX_ENUM;
@@ -685,6 +685,20 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
 		dstAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
 	}
+	//else if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)	// load undefine
+	//{
+	//	srcStage	= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;		// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	//	dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	//	srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
+	//	dstAccess	= VK_ACCESS_SHADER_READ_BIT;
+	//}
+	else if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)	// load undefine
+	{
+		srcStage	= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
+		dstAccess	= VK_PIPELINE_STAGE_NONE_KHR;
+	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) // read depthStencil in shader
 	{
 		srcStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
@@ -713,6 +727,13 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
 		dstAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
 	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_GENERAL) 
+	{
+		srcStage	= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage	= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		srcAccess	= VK_ACCESS_TRANSFER_WRITE_BIT;
+		dstAccess	= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)						// write renderTarget
 	{
 		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -729,10 +750,10 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) // write depthStencil
 	{
-		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-		dstAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
+		dstAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) // read depthStencil in shader
 	{
@@ -740,6 +761,13 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;		// pass a texture usage here could help
 		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
+	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) // depth -> depth
+	{
+		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) // read depthStencil in shader
 	{
@@ -769,6 +797,13 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
 	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) // rdTraget -> rdTraget
+	{
+		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		}
 	else if (srcLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ) // shader rsc -> rt
 	{
 		srcStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
@@ -802,8 +837,8 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		dstStage	= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		dstAccess	= VK_ACCESS_SHADER_WRITE_BIT;
-		}
+		dstAccess	= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_GENERAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) // present
 	{
 		srcStage	= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
@@ -835,6 +870,9 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 
 	if (dstPipelineStage != VK_PIPELINE_STAGE_NONE)
 		dstStage	= dstPipelineStage;
+
+	//srcStage	= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	//dstStage	= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
 	return out;
 }
@@ -1091,7 +1129,7 @@ Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v, RenderAccess access, Rend
 	using SRC = TextureUsageFlags;
 	RDS_CORE_ASSERT(op != RenderTargetLoadOp::None, "op != RenderTargetLoadOp::None");
 
-	if (op == RenderTargetLoadOp::DontCare || op == RenderTargetLoadOp::Clear)
+	if (op == RenderTargetLoadOp::DontCare /*|| op == RenderTargetLoadOp::Clear*/)
 	{
 		return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
 	}
@@ -1115,10 +1153,10 @@ Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v, RenderAccess access, Rend
 	using SRC = TextureUsageFlags;
 	RDS_CORE_ASSERT(op != RenderTargetStoreOp::None, "op != RenderTargetStoreOp::None");
 
-	if (op == RenderTargetStoreOp::DontCare)
+	/*if (op == RenderTargetStoreOp::DontCare)
 	{
 		return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
-	}
+	}*/
 
 	switch (v)
 	{

@@ -164,6 +164,7 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 		RDS_CORE_ASSERT(e->type() == TransferCommandType::UploadBuffer, "");
 		auto* cmd = sCast<TransferCommand_UploadBuffer*>(e);
 		cmd->dst;
+		RDS_TODO("onTransferCommand_UploadBuffer() and here need to add barrier, but validation layer ignore it? (although the buffer is created with VK_SHARING_MODE_EXCLUSIVE)");
 	}
 
 	for (auto& e : texCmds.commands())
@@ -183,9 +184,11 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 
 	if (!isWaitImmediate)
 	{
-		vkCmdBuf->submit(&dstInFlighVkFnc, 
-			&srcCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
-			&dstCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+		// ("this submit call could put on the last submit queue? but the last submit queue may record many stuffs, submit here maybe faster");
+		vkCmdBuf->submit(&dstInFlighVkFnc
+			, &srcCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT
+			, &dstCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT
+		);
 	}
 	else
 	{

@@ -180,11 +180,15 @@ ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcFi
 		ShaderCompileRequest::getBinPassDirTo(binPassDir, binDir, iPass);
 		Path::create(binPassDir);
 
+		bool hasGeometryShader = !pass.geomFunc.is_empty();
+		auto opt_invret_y = opt;
+		opt_invret_y.isInvertY = true;
+
 		compilerDx12.compile(ShaderStageFlag::Compute,					srcFileRoot, binPassDir, pass.csFunc,	opt, cmpDesc);
-		compilerDx12.compile(ShaderStageFlag::Vertex,					srcFileRoot, binPassDir, pass.vsFunc,	opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::Vertex,					srcFileRoot, binPassDir, pass.vsFunc,	hasGeometryShader ? opt : opt_invret_y, cmpDesc);
 		compilerDx12.compile(ShaderStageFlag::TessellationControl,		srcFileRoot, binPassDir, pass.tescFunc, opt, cmpDesc);
 		compilerDx12.compile(ShaderStageFlag::TessellationEvaluation,	srcFileRoot, binPassDir, pass.teseFunc, opt, cmpDesc);
-		compilerDx12.compile(ShaderStageFlag::Geometry,					srcFileRoot, binPassDir, pass.geomFunc, opt, cmpDesc);
+		compilerDx12.compile(ShaderStageFlag::Geometry,					srcFileRoot, binPassDir, pass.geomFunc, hasGeometryShader ? opt_invret_y : opt, cmpDesc);
 		compilerDx12.compile(ShaderStageFlag::Pixel,					srcFileRoot, binPassDir, pass.psFunc,	opt, cmpDesc);
 
 		auto opt2 = opt;

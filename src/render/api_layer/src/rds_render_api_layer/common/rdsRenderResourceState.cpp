@@ -12,7 +12,10 @@ namespace rds
 bool 
 RenderResourceState::isTransitionNeeded(RenderResourceStateFlags src, RenderResourceStateFlags dst)
 {
-	if (src == dst) return false;
+	bool srcIsWrite = RenderResourceStateFlagsUtil::getRenderAccess(src) == RenderAccess::Write;
+	bool dstIsWrite = RenderResourceStateFlagsUtil::getRenderAccess(dst) == RenderAccess::Write;
+
+	if (src == dst && (!srcIsWrite && !dstIsWrite)) return false;
 	return true;
 }
 

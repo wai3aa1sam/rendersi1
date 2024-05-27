@@ -366,7 +366,7 @@ RenderUiContext::_createFontTexture()
 	using Color = ColorRGBAb;
 	#endif // 0
 
-	Texture2D_CreateDesc cDesc;
+	auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
 	cDesc.create(pixels, width, height, Color::s_kColorType);
 
 	auto* rdDev = renderDevice();

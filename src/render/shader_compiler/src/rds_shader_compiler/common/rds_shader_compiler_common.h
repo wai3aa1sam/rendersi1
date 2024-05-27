@@ -25,7 +25,7 @@ struct ShaderCompileOption
 {
 public:
 	ShaderCompileOption()
-		: isDebug(false), isToSpirv(true), enableLog(false), isNoOffset(true), isCompileBinary(true), isReflect(true)
+		: isDebug(false), isToSpirv(true), enableLog(false), isNoOffset(true), isCompileBinary(true), isReflect(true), isInvertY(false)
 	{
 
 	}
@@ -38,6 +38,8 @@ public:
 
 	bool isCompileBinary	: 1;
 	bool isReflect			: 1;
+
+	bool isInvertY			: 1;
 
 	RenderApiType apiType = RenderApiType::Vulkan;
 };

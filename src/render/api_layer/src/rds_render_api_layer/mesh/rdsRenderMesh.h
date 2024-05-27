@@ -25,11 +25,11 @@ public:
 public:
 	void create(const EditMesh& editMesh);
 
-	SPtr<RenderGpuBuffer>& vertexBuffer();
-	SPtr<RenderGpuBuffer>& vertexBuffer() const;
+	RenderGpuBuffer* vertexBuffer();
+	RenderGpuBuffer* vertexBuffer() const;
 
-	SPtr<RenderGpuBuffer>& indexBuffer();
-	SPtr<RenderGpuBuffer>& indexBuffer() const;
+	RenderGpuBuffer* indexBuffer();
+	RenderGpuBuffer* indexBuffer() const;
 
 	SizeType vertexCount()	const;
 	SizeType indexCount()	const;
@@ -46,14 +46,14 @@ protected:
 	RenderDataType				_idxType = RenderDataType::UInt16;
 };
 
-inline SPtr<RenderGpuBuffer>& RenderSubMesh::vertexBuffer()			{ return _vtxBuf->renderGpuBuffer(); }
-inline SPtr<RenderGpuBuffer>& RenderSubMesh::vertexBuffer() const	{ return constCast(_vtxBuf->renderGpuBuffer()); }
+inline RenderGpuBuffer* RenderSubMesh::vertexBuffer()				{ return _vtxBuf ? _vtxBuf->renderGpuBuffer()				: nullptr; }
+inline RenderGpuBuffer* RenderSubMesh::vertexBuffer() const			{ return _vtxBuf ? constCast(_vtxBuf->renderGpuBuffer())	: nullptr; }
 
-inline SPtr<RenderGpuBuffer>& RenderSubMesh::indexBuffer()			{ return _idxBuf->renderGpuBuffer(); }
-inline SPtr<RenderGpuBuffer>& RenderSubMesh::indexBuffer() const	{ return constCast(_idxBuf->renderGpuBuffer()); }
+inline RenderGpuBuffer* RenderSubMesh::indexBuffer()				{ return _idxBuf ? _idxBuf->renderGpuBuffer()				: nullptr; }
+inline RenderGpuBuffer* RenderSubMesh::indexBuffer() const			{ return _idxBuf ? constCast(_idxBuf->renderGpuBuffer())	: nullptr; }
 
-inline RenderSubMesh::SizeType RenderSubMesh::vertexCount()	const { return vertexBuffer()->elementCount(); }
-inline RenderSubMesh::SizeType RenderSubMesh::indexCount()	const { return indexBuffer()->elementCount(); }
+inline RenderSubMesh::SizeType RenderSubMesh::vertexCount()	const	{ return vertexBuffer()->elementCount(); }
+inline RenderSubMesh::SizeType RenderSubMesh::indexCount()	const	{ return indexBuffer()->elementCount(); }
 
 inline RenderDataType RenderSubMesh::indexType() const { return _idxType; }
 

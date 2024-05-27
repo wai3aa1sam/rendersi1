@@ -87,9 +87,10 @@ Scene::findEntity(EntityId id) const
 #if 1
 
 void 
-SceneView::SceneView::create(CRenderableSystem* sys) 
-{ 
-	_rdableSys = sys; 
+SceneView::SceneView::create(Scene* scene, CRenderableSystem* sys) 
+{
+	_scene		= scene;
+	_rdableSys	= sys; 
 }
 
 void 
@@ -117,6 +118,13 @@ SceneView::drawScene(RenderRequest& rdReq, DrawData* drawData)
 		e->render(rdReq, drawData);
 	}
 }
+
+Entity* 
+SceneView::findEntity(EntityId id)
+{
+	return _scene->findEntity(id);
+}
+
 
 #endif
 

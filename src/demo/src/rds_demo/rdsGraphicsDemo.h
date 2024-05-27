@@ -27,6 +27,10 @@ public:
 	static void createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam = {});
 
 public:
+	SPtr<Shader>	_shaderScreenQuad;
+	SPtr<Material>	_mtlScreenQuad;
+
+public:
 	virtual ~GraphicsDemo();
 
 	void createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAsset, int n, Tuple2f startPos = Tuple2f{0.0f, 0.0f}, Tuple2f step = Tuple2f{3.0f, 3.0f});
@@ -76,6 +80,7 @@ protected:
 
 	SPtr<Shader>	_shaderDisplayNormals;
 	SPtr<Material>	_mtlDisplayNormals;
+
 };
 
 inline Scene&		GraphicsDemo::scene()			{ return *_scene; }
