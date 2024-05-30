@@ -34,16 +34,19 @@ Scene::destroy()
 }
 
 Entity*
-Scene::addEntity()
+Scene::addEntity(bool hasDefaultName)
 {
 	auto& id = ++_nextEntId;
 	auto* ent = _entVecTable.newElement<Entity>(id);
 	ent->create(*this, id);
 
-	#if 0
-	TempString buf;
-	fmtTo(buf, "Entity-{}", sCast<u64>(id));
-	ent->setName(buf);
+	#if 1
+	if (hasDefaultName)
+	{
+		TempString buf;
+		fmtTo(buf, "Entity-{}", sCast<u64>(id));
+		ent->setName(buf);
+	}
 	#endif // 0
 
 	return ent;
@@ -52,7 +55,7 @@ Scene::addEntity()
 Entity*
 Scene::addEntity(StrView name)
 {
-	auto* ent = addEntity();
+	auto* ent = addEntity(false);
 	ent->setName(name);
 	return ent;
 }

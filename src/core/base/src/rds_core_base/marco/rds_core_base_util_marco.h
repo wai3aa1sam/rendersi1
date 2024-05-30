@@ -13,7 +13,8 @@
 #define RDS_COMMA ,
 #define RDS_EMPTY
 #define RDS_ARGS(...) __VA_ARGS__
-#define RDS_STRINGIFY(...)	#__VA_ARGS__
+#define RDS_STRINGIFY_IMPL(...)	#__VA_ARGS__
+#define RDS_STRINGIFY(...)		RDS_STRINGIFY_IMPL(__VA_ARGS__)
 
 #define RDS_IDENTITY(X) X
 #define RDS_CALL(M, ARGS) RDS_IDENTITY( M(ARGS) )

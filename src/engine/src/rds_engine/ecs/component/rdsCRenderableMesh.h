@@ -2,20 +2,11 @@
 
 #include "rds_engine/common/rds_engine_common.h"
 #include "rdsCRenderable.h"
+#include "rds_engine/asset/mesh/rdsMeshAsset.h"
 
 namespace rds
 {
 
-class Asset : public Object
-{
-
-};
-
-class MeshAsset : public Asset
-{
-public:
-	RenderMesh rdMesh;
-};
 
 #if 0
 #pragma mark --- rdsCRenderableMesh-Decl ---
@@ -25,8 +16,12 @@ public:
 class CRenderableMesh : public CRenderable
 {
 public:
+	static constexpr u32 s_kInvalidSubMeshIndex = NumLimit<u32>::max();
+
+public:
 	SPtr<MeshAsset> meshAsset;
 	SPtr<Material>	material;
+	u32				subMeshIndex = s_kInvalidSubMeshIndex;
 
 public:
 	CRenderableMesh();

@@ -39,7 +39,14 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawDat
 	perObjParam.id				= sCast<u32>(id);
 	//perObjParam.drawParamIdx	= drawData ? sCast<u32>(drawData->drawParamIdx) : 0;
 
-	rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, meshAsset->rdMesh, mtl, perObjParam);
+	if (subMeshIndex == s_kInvalidSubMeshIndex)
+	{
+		rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, meshAsset->renderMesh, mtl, perObjParam);
+	}
+	else
+	{
+		rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, meshAsset->renderMesh.subMeshes()[subMeshIndex], mtl, perObjParam);
+	}
 }
 
 

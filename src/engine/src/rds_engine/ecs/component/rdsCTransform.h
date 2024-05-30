@@ -62,8 +62,8 @@ protected:
 	Vec3f	_localScale			= Vec3f {1, 1, 1};
 	Quat4f	_localRotation		= Quat4f{0, 0, 0, 1};
 
-	Mat4f	_matLocal = Mat4f::s_identity();
-	Mat4f	_matWorld = Mat4f::s_identity();
+	Mat4f	_matrixLocal = Mat4f::s_identity();
+	Mat4f	_matrixWorld = Mat4f::s_identity();
 
 	bool _isDirty = false;
 };
@@ -88,7 +88,7 @@ inline
 const Mat4f& 
 CTransform::localMatrix()
 {
-	return _matLocal;
+	return _matrixLocal;
 }
 
 inline

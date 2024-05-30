@@ -1,7 +1,7 @@
 #ifndef __rdsConstant_Common_HLSL__
 #define __rdsConstant_Common_HLSL__
 
-#include "built-in/shader/rdsShaderInterop.hlsl"
+#include "built-in/shader/interop/rdsShaderInterop.hlsl"
 
 static const int rds_LightType_None         = RDS_LIGHT_TYPE_NONE;
 static const int rds_LightType_Point        = RDS_LIGHT_TYPE_POINT;

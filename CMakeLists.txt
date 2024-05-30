@@ -15,12 +15,13 @@ set(project_root ${CMAKE_CURRENT_SOURCE_DIR})
 set(project_namespace_marco RDS)
 
 project(${project_name})
-my_set_opt(${project_namespace_marco}_ENABLE_PROFILER           0)
+my_set_opt(${project_namespace_marco}_ENABLE_PROFILER           1)
 my_set_opt(${project_namespace_marco}_ENABLE_SANITIZER          0)
 
 find_package(fmt                    CONFIG REQUIRED)
 find_package(benchmark              CONFIG REQUIRED)
 find_package(imgui                  CONFIG REQUIRED)
+find_package(assimp                 CONFIG REQUIRED)
 
 # --- vulkan
 find_package(Vulkan)

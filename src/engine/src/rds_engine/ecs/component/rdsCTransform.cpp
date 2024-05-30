@@ -38,7 +38,7 @@ CTransform::onCreate(Entity* entity)
 void 
 CTransform::_computeLocalMatrix()
 {
-	_matLocal = Mat4f::s_TRS(_localPosition, _localRotation, _localScale);
+	_matrixLocal = Mat4f::s_TRS(_localPosition, _localRotation, _localScale);
 }
 
 Vec3f CTransform::forward() const

@@ -24,7 +24,7 @@ public:
 	void create(EngineContext& egCtx);
 	void destroy();
 
-	Entity* addEntity();
+	Entity* addEntity(bool hasDefaultName);
 	Entity* addEntity(StrView name);
 
 	void removeEntity(Entity* entity);

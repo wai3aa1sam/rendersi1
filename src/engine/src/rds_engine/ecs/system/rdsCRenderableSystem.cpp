@@ -213,7 +213,11 @@ DrawData::setupMaterial(Material* oMtl)
 
 	mtl->setParam("rds_objTransforms",		&sysRdable._objTransformBuf.gpuBuffer());
 	mtl->setParam("rds_drawParams",			&sysRdable._drawPramBuf.gpuBuffer());
-	mtl->setParam("rds_lights",				&sysLight.lightParamBuf().gpuBuffer());
+
+	if (!sysLight.lightParamBuf().is_empty())
+	{
+		mtl->setParam("rds_lights",			&sysLight.lightParamBuf().gpuBuffer());
+	}
 	mtl->setParam("rds_nLights",			sysLight.lightCount());
 }
 

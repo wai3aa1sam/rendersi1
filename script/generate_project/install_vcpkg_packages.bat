@@ -34,6 +34,7 @@ vcpkg install shaderc:x64-windows 	                	--recurse
 vcpkg install directx-dxc:x64-windows 	            	--recurse
 vcpkg install directx-headers:x64-windows 	        	--recurse
 vcpkg install imgui[docking-experimental]:x64-windows 	--recurse
+vcpkg install assimp:x64-windows 						--recurse
 
 POPD
 

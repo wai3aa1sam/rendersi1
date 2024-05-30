@@ -1,5 +1,5 @@
-#ifndef __rdsShaderInterop_HLSL__
-#define __rdsShaderInterop_HLSL__
+#ifndef __rdsShaderInterop_Common_HLSL__
+#define __rdsShaderInterop_Common_HLSL__
 
 #if RDS_LANG_CPP
     #define RDS_OUT(T) T&
@@ -7,9 +7,9 @@
     #define RDS_OUT(T) T
 #endif
 
-#define RDS_PADDING     float  RDS_CONCAT(__padding, __COUNTER__)
-#define RDS_PADDING_4_2 float2 RDS_CONCAT(__padding, __COUNTER__)
-#define RDS_PADDING_4_3 float3 RDS_CONCAT(__padding, __COUNTER__)
+#define RDS_PADDING      float  RDS_CONCAT(__padding, __COUNTER__)
+#define RDS_PADDING_32x2 float2 RDS_CONCAT(__padding, __COUNTER__)
+#define RDS_PADDING_32x3 float3 RDS_CONCAT(__padding, __COUNTER__)
 
 #define RDS_LIGHT_TYPE_NONE          0
 #define RDS_LIGHT_TYPE_POINT         1
