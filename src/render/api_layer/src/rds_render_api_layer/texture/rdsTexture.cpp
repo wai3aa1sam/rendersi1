@@ -77,7 +77,9 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 
 	if (BitUtil::hasAny(desc().usageFlags, TextureUsageFlags::ShaderResource | TextureUsageFlags::UnorderedAccess))
 	{
-		_bindlessHnd = renderDevice()->bindlessResource().allocTexture(this);
+		auto* rdDev			= renderDevice();
+		auto& bindlessRsc	= rdDev->bindlessResource();
+		_bindlessHnd = bindlessRsc.allocTexture(this);
 		renderDevice()->textureStock().textures.add(this);
 	}
 }

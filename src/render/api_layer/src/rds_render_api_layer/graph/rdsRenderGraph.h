@@ -66,64 +66,30 @@ public:
 public:
 	struct RenderGraphFrame : public NonCopyable
 	{
-		RenderGraphFrame()
-		{
+	public:
+		RenderGraph*	rdGraph = nullptr;
 
-		}
+		Passes			resultPasses;
+		PassDepths		resultPassDepths;
 
-		~RenderGraphFrame()
-		{
-			destroy();
-		}
+		Passes			passes;
+		Resources		resources;
+		RdgResourcePool rscPool;
 
-		RenderGraphFrame(RenderGraphFrame&&)	{ throwIf(true, ""); };
-		void operator=(RenderGraphFrame&&)		{ throwIf(true, ""); };
+	public:
+		RenderGraphFrame();
+		~RenderGraphFrame();
 
-		void create(RenderGraph* rdGraph_)
-		{
-			destroy();
-			rdGraph = rdGraph_;
-		}
+		RenderGraphFrame(	RenderGraphFrame&&)	{ throwIf(true, ""); };
+		void operator=(		RenderGraphFrame&&)	{ throwIf(true, ""); };
 
-		void destroy()
-		{
-			reset();
-			rdGraph = nullptr;
-		}
+	public:
+		void create(RenderGraph* rdGraph_);
+		void destroy();
 
-		void reset()
-		{
-			resultPasses.clear();
-			resultPassDepths.clear();
+		void reset();
 
-			for (RdgPass* pass : passes)
-			{
-				deleteT(pass);
-			}
-			for (RdgResource* rsc : resources)
-			{
-				switch (rsc->type())
-				{
-					case RdgResourceType::Buffer:	{ deleteT(sCast<RdgBuffer*>(rsc)); }	break;
-					case RdgResourceType::Texture:	{ deleteT(sCast<RdgTexture*>(rsc)); }	break;
-					default: { RDS_THROW("invalid RdgResourceType"); } break;
-				}
-			}
-
-			passes.clear();
-			resources.clear();
-
-			rscPool.reset();
-			_alloc.clear();
-		}
-
-		Pass* addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
-		{
-			auto id = sCast<RdgId>(passes.size());
-			//Pass*& pass = passes.emplace_back(RDS_NEW(RdgPass)(rdGraph, name, id, typeFlag, flag));
-			Pass*& pass = passes.emplace_back(newT<RdgPass>(rdGraph, name, id, typeFlag, flag));
-			return pass;
-		}
+		Pass* addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag);
 
 		template<class T>
 		RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc, const RenderGraph& rdGraph)
@@ -137,15 +103,6 @@ public:
 			rdgRsc->create(rdGraph, cDesc, name, id, false, false);
 			return rdgRsc;
 		}
-
-		RenderGraph*	rdGraph = nullptr;
-
-		Passes			resultPasses;
-		PassDepths		resultPassDepths;
-
-		Passes			passes;
-		Resources		resources;
-		RdgResourcePool rscPool;
 
 	private:
 		template<class T, class... ARGS>

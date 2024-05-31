@@ -177,6 +177,8 @@ public:
 	void _internal_commit();
 
 protected:
+	void destroy();
+
 	void execute();
 
 	void accessResources(RdgResourceHndSpan hnds,	RenderResourceStateFlags state,		bool isRenderTarget = false);

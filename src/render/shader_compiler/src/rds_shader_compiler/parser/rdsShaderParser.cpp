@@ -3,6 +3,14 @@
 
 namespace rds
 {
+namespace shaderInterop
+{
+#include "../../../built-in/shader/interop/rdsShaderInterop_Material.hlsl"
+}
+}
+
+namespace rds
+{
 
 #if 0
 #pragma mark --- rdsShaderParser-Impl ---
@@ -120,6 +128,14 @@ void ShaderParser::_parseProperty()
 
 		// prop name
 		readIdentifier(prop.name);
+
+		/*
+		* RDS_TODO("temporary solution for these marco");
+		*/
+		if		(StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_TEXTURE_Albedo"))				{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Albedo); }
+		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_TEXTURE_Normal"))				{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Normal); }
+		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_TEXTURE_RoughnessMetalness"))	{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_RoughnessMetalness); }
+		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_TEXTURE_Emissive"))			{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Emissive); }
 	}
 
 	// optional defaultValue

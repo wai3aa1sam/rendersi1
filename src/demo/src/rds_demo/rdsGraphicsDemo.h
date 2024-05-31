@@ -104,6 +104,8 @@ public:
 	SPtr<MeshAsset> cone;
 	SPtr<MeshAsset> suzanne;
 
+	SPtr<MeshAsset> sponza;
+
 	SPtr<MeshAsset> fullScreenTriangle;
 
 public:
@@ -112,6 +114,8 @@ public:
 
 	void create();
 	void destroy();
+
+	void loadSponza();
 };
 
 #endif // 1

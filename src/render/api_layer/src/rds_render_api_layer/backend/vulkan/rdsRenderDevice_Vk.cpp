@@ -35,7 +35,7 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 	
 	loadVkInstFn(_vkExtInfo);
 	loadVkDevFn(_vkExtInfo);
-
+	
 	_vkMemoryContext.create(vkDevice(), vkPhysicalDevice(), vkInstance());
 
 	{

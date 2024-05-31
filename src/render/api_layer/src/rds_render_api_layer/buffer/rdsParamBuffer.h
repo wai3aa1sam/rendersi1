@@ -24,7 +24,9 @@ public:
 	void setDebugName(StrView name);
 
 public:
-	SizeType size() const;
+	SizeType	size()		const;
+	bool		is_empty()	const;
+
 
 	/*
 	* do not store the ptr, store the index instead, since it will rotate and the cpuBuffer will resize, all ptr will be invalid
@@ -130,7 +132,8 @@ ParamBuffer<T>::uploadToGpu()
 	memory_copy(cpuBuffer().data(), prevCpuBuffer().data(), prevSize);
 }
 
-template<class T> inline typename ParamBuffer<T>::SizeType ParamBuffer<T>::size() const { return cpuBuffer().size() / sizeof(T); }
+template<class T> inline typename ParamBuffer<T>::SizeType	ParamBuffer<T>::size()		const { return cpuBuffer().size() / sizeof(T); }
+template<class T> inline bool								ParamBuffer<T>::is_empty()	const { return size() == 0; }
 
 
 }

@@ -36,7 +36,6 @@ void RenderFrame::create()
 		_renderCommandPools[i].emplace_back(makeUPtr<RenderCommandBuffer>());
 	}*/
 	_renderCommandPool.emplace_back(makeUPtr<RenderCommandBuffer>());
-
 }
 
 void RenderFrame::destroy()

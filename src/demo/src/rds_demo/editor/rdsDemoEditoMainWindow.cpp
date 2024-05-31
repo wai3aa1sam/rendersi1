@@ -26,8 +26,8 @@ DemoEditorMainWindow::onCreate(const CreateDesc_Base& cDesc)
 
 	_camera.setFov(45.0f);
 	_camera.setAim(0, 0, 0);
-	_camera.setNearClip(0.1f);
-	_camera.setFarClip(1000.0f);
+	_camera.setNearClip(0.1f	* 10.0f);
+	_camera.setFarClip(1000.0f	* 10.0f);
 }
 
 void 

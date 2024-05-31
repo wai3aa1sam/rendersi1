@@ -39,7 +39,9 @@ RenderSubMesh::create(const EditMesh& editMesh)
 
 	if (idxCount > 0)
 	{
-		ByteSpan idxDataSpan;
+		ByteSpan			idxDataSpan;
+		Vector<u16, 1024>	index16Data;
+
 		//Vector<u8, 1024> idxData;
 
 		if (vtxCount > NumLimit<u16>::max())
@@ -50,19 +52,19 @@ RenderSubMesh::create(const EditMesh& editMesh)
 		else
 		{
 			_idxType = RenderDataType::UInt16;
-			buf.resize(idxCount * sizeof(u16));
-			auto* p = reinCast<u16*>(buf.data());
+			index16Data.resize(idxCount * sizeof(u16));
+			auto* p = reinCast<u16*>(index16Data.data());
 
 			for (size_t i = 0; i < idxCount; i++)
 			{
 				*p = sCast<u16>(indices[i]);
 				++p;
 			}
-			idxDataSpan = buf.byteSpan();
+			idxDataSpan = index16Data.byteSpan();
 		}
 
 		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
-		cDesc.bufSize	= buf.size();
+		cDesc.bufSize	= idxDataSpan.size();
 		cDesc.stride	= RenderDataTypeUtil::getByteSize(_idxType);
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Index;
 		if (!_idxBuf)
@@ -72,8 +74,25 @@ RenderSubMesh::create(const EditMesh& editMesh)
 		}
 		_idxBuf->uploadToGpu(idxDataSpan);
 	}
+
+	/*
+	* should be set when load
+	*/
+	if (!_renderMesh->isSameBuffer())
+	{
+		_vtxCount = sCast<u32>(vtxCount);
+		_idxCount = sCast<u32>(idxCount);
+	}
 }
 
+void 
+RenderSubMesh::create(u32 vtxOffset, u32 vtxCount, u32 idxOffset, u32 idxCount)
+{
+	_vtxOffset	= vtxOffset;
+	_vtxCount	= vtxCount;
+	_idxOffset	= idxOffset;
+	_idxCount	= idxCount;
+}
 
 #endif
 
@@ -87,16 +106,28 @@ void
 RenderMesh::create(const EditMesh& editMesh)
 {
 	clear();
+	setSubMeshCount(1);
 	upload(editMesh);
 }
 
-void RenderMesh::upload(const EditMesh& editMesh)
+void 
+RenderMesh::create(const EditMesh& editMesh, u32 subMeshCount)
+{
+	_isSameBuffer = true;
+	upload(editMesh);
+	setSubMeshCount(subMeshCount);
+}
+
+void 
+RenderMesh::upload(const EditMesh& editMesh)
 {
 	auto newVtxLayout = editMesh.getVertexLayout();
 	throwIf(_vertexLayout && _vertexLayout != newVtxLayout, "");
 	_vertexLayout = newVtxLayout;
-	setSubMeshCount(1);
 	_subMeshes[0].create(editMesh);
+
+	_vtxCount = sCast<u32>(editMesh.pos.size());
+	_idxCount = sCast<u32>(editMesh.indices.size());
 }
 
 void 
@@ -109,11 +140,12 @@ RenderMesh::clear()
 void 
 RenderMesh::setSubMeshCount(SizeType n)
 {
-	//_subMeshes.clear();
 	_subMeshes.resize(n);
+
 	for (auto& e : _subMeshes)
 	{
-		e._renderMesh = this;
+		e._renderMesh	= this;
+		e._idxType		= _subMeshes[0].indexType();
 	}
 }
 
@@ -122,6 +154,13 @@ RenderMesh::setRenderPrimitiveType(RenderPrimitiveType v)
 {
 	_renderPrimitveType = v;
 }
+
+//void 
+//RenderMesh::setIndexType(RenderDataType	v)
+//{
+//	_idxType = v;
+//}
+
 
 
 #endif

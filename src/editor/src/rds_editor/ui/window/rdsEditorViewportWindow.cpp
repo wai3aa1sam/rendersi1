@@ -25,6 +25,7 @@ EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, math
 
 	if (wnd.isFocused())
 	{
+		RDS_TODO("CameraController");
 		auto& cam	= *camera;
 		if (ev.isDragging()) 
 		{

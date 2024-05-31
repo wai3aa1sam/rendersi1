@@ -25,6 +25,34 @@ RdgPass::RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags ty
 
 RdgPass::~RdgPass()
 {
+	destroy();
+}
+
+void 
+RdgPass::destroy()
+{
+	_rdGraph	= nullptr;
+	
+	_id			= 0;
+	_typeFlags	= {};
+	_flags		= {};
+
+	_isCulled		= false;
+	_isExecuted		= false;
+	_isCommitted	= false;
+
+	_reads.clear();
+	_writes.clear();
+	_runBefore.clear();
+	_runAfter.clear();
+	_rscAccesses.clear();
+	_rdTargets.clear();
+	_depthStencil = {};
+
+	_rdReq.reset(nullptr);
+	_executeFunc = {};
+
+	_name.clear();
 }
 
 void 

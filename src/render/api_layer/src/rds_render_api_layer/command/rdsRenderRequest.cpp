@@ -36,7 +36,7 @@ RenderRequest::reset(RenderContext* rdCtx)
 {
 	_rdCmdBuf.reset();
 	_rdCtx = rdCtx;
-	if (_rdCtx->isValidFramebufferSize())
+	if (_rdCtx && _rdCtx->isValidFramebufferSize())
 	{
 		_rdCmdBuf.setViewport	(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
 		_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()}); 
@@ -148,19 +148,16 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, co
 	p->vertexLayout			= e.vertexLayout();
 	p->setMaterial(mtl);
 
-	if (rdSubMesh.vertexBuffer())
-	{
-		p->vertexBuffer = e.vertexBuffer();
-		p->vertexCount  = e.vertexCount();
-		p->vertexOffset = 0;
-	}
+	RDS_TODO("revise");
+	auto& parent = rdSubMesh.renderMesh();
+
+	p->vertexBuffer = parent.vertexBuffer();
+	p->vertexCount  = e.vertexCount();
+	p->vertexOffset = e.vertexOffsetInByte();
 	
-	if (rdSubMesh.indexBuffer())
-	{
-		p->indexBuffer	= e.indexBuffer();
-		p->indexCount	= e.indexCount();
-		p->indexOffset	= 0;
-	}
+	p->indexBuffer	= parent.indexBuffer();
+	p->indexCount	= e.indexCount();
+	p->indexOffset	= e.indexOffsetInByte();
 }
 
 void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, Tuple3u extent,		u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
@@ -338,6 +335,9 @@ void RenderRequest::InlineDraw::reset(RenderContext* rdCtx)
 		desc.stride		= sizeof(LineIdxType);
 		indexBuffer = rdDev->createRenderGpuBuffer(desc);
 	}*/
+
+	vertexData.clear();
+	indexData.clear();
 }
 
 void 

@@ -50,9 +50,9 @@ public:
 	Filter	minFliter = Filter::Linear;
 	Filter	magFliter = Filter::Linear;
 
-	Wrap	wrapU = Wrap::ClampToEdge;
-	Wrap	wrapV = Wrap::ClampToEdge;
-	Wrap	wrapS = Wrap::ClampToEdge;
+	Wrap	wrapU = Wrap::Repeat;
+	Wrap	wrapV = Wrap::Repeat;
+	Wrap	wrapS = Wrap::Repeat;
 
 	// TODO: Border Color
 

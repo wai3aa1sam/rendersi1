@@ -15,7 +15,7 @@ using float4    = Tuple4f;
 //using float3x3  = Mat3f;
 using float4x4  = Mat4f;
 
-#include "../../../built-in/shader/rdsShaderInterop.hlsl"
+#include "../../../built-in/shader/interop/rdsShaderInterop.hlsl"
 
 }
 

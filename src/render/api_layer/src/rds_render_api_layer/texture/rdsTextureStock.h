@@ -5,6 +5,7 @@
 namespace rds
 {
 
+class RenderDevice;
 class Texture;
 class Texture2D;
 
@@ -23,6 +24,15 @@ public:
 	SPtr<Texture2D>	blue;
 	SPtr<Texture2D>	magenta;
 	SPtr<Texture2D>	error;
+
+public:
+	~TextureStock();
+
+	void create(RenderDevice* rdDev);
+	void destroy();
+
+	SPtr<Texture2D>	createSolidColorTexture2D(  const Color4b& color);
+	SPtr<Texture2D>	createCheckerboardTexture2D(const Color4b& color);
 
 public:
 	struct Textures
@@ -46,6 +56,9 @@ public:
 
 public:
 	Textures textures;
+
+private:
+	RenderDevice* _rdDev = nullptr;
 };
 
 #endif

@@ -6,6 +6,81 @@
 namespace rds
 {
 
+
+#if 0
+#pragma mark --- rdsRenderGraph::RenderGraphFrame-Impl ---
+#endif // 0
+#if 1
+
+RenderGraph::RenderGraphFrame::RenderGraphFrame()
+{
+
+}
+
+RenderGraph::RenderGraphFrame::~RenderGraphFrame()
+{
+	destroy();
+}
+
+
+void 
+RenderGraph::RenderGraphFrame::create(RenderGraph* rdGraph_)
+{
+	destroy();
+	rdGraph = rdGraph_;
+}
+
+void 
+RenderGraph::RenderGraphFrame::destroy()
+{
+	/*for (RdgPass* pass : passes)
+	{
+		deleteT(pass);
+	}*/
+
+	reset();
+	rdGraph = nullptr;
+}
+
+void 
+RenderGraph::RenderGraphFrame::reset()
+{
+	resultPasses.clear();
+	resultPassDepths.clear();
+
+	for (RdgPass* pass : passes)
+	{
+		//pass->destroy();
+		deleteT(pass);
+	}
+	for (RdgResource* rsc : resources)
+	{
+		switch (rsc->type())
+		{
+			case RdgResourceType::Buffer:	{ deleteT(sCast<RdgBuffer*>(rsc)); }	break;
+			case RdgResourceType::Texture:	{ deleteT(sCast<RdgTexture*>(rsc)); }	break;
+			default: { RDS_THROW("invalid RdgResourceType"); } break;
+		}
+	}
+
+	passes.clear();
+	resources.clear();
+
+	rscPool.reset();
+	_alloc.clear();
+}
+
+RenderGraph::Pass* 
+RenderGraph::RenderGraphFrame::addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
+{
+	auto id = sCast<RdgId>(passes.size());
+	//Pass*& pass = passes.emplace_back(RDS_NEW(RdgPass)(rdGraph, name, id, typeFlag, flag));
+	Pass*& pass = passes.emplace_back(newT<RdgPass>(rdGraph, name, id, typeFlag, flag));
+	return pass;
+}
+
+#endif
+
 #if 0
 #pragma mark --- rdsRenderGraph-Impl ---
 #endif // 0

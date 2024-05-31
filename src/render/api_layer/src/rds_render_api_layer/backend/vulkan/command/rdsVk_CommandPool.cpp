@@ -47,6 +47,10 @@ Vk_CommandPool::destroy(RenderDevice_Vk* rdDevVk)
 	auto* vkDev			= rdDevVk->vkDevice();
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
 
+	_primaryVkCmdBufs.clear();
+	_secondaryVkCmdBufs.clear();
+	_alloc.destructAndClear<Vk_CommandBuffer>(Traits::s_kDefaultAlign);
+
 	vkDestroyCommandPool(vkDev, hnd(), vkAllocCbs);
 	Base::destroy();
 }

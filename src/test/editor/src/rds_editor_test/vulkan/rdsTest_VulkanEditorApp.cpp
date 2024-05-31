@@ -288,7 +288,7 @@ public:
 
 				auto* rdableMesh	= ent->addComponent<CRenderableMesh>();
 				rdableMesh->material;
-				rdableMesh->meshAsset->rdMesh;
+				rdableMesh->meshAsset->renderMesh;
 
 				auto* transform		= ent->getComponent<CTransform>();
 				transform->setLocalPosition(1, 1, 1);
@@ -485,8 +485,8 @@ public:
 			_testMultiBuffer->uploadToGpu(data.byteSpan());
 			_testMultiBuffer2->uploadToGpu(data2.byteSpan());
 
-			_rdMesh1.upload(makeRndColorTriangleMesh(0.0f, false));
-			_rdMesh2.upload(makeRndColorTriangleMesh(0.5));
+			//_rdMesh1.upload(makeRndColorTriangleMesh(0.0f, false));
+			//_rdMesh2.upload(makeRndColorTriangleMesh(0.5));
 		}
 		#endif // 0
 

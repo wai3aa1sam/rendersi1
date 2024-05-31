@@ -167,6 +167,7 @@ Vk_Surface::create(NativeUIWindow* wnd, Vk_Instance_T* instance, const VkWin32Su
 	destroy(wnd, rdDevVk);
 
 	_wnd = wnd;
+
 	auto ret = vkCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, hndForInit());
 	Util::throwIfError(ret);
 }

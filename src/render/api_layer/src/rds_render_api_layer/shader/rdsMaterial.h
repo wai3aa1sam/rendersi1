@@ -71,6 +71,7 @@ public:
 	void setParam(StrView name, const u32&		v);
 	void setParam(StrView name, const f32&		v);
 	void setParam(StrView name, const Color4b&	v);
+	void setParam(StrView name, const Color4f&	v);
 	void setParam(StrView name, const Tuple2u&	v);
 	void setParam(StrView name, const Tuple3u&	v);
 	void setParam(StrView name, const Tuple4u&	v);
@@ -135,6 +136,7 @@ inline void Material::setParam(StrView name, const i32&		v)		{ return _setParam(
 inline void Material::setParam(StrView name, const u32&		v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const f32&		v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const Color4b&	v)		{ return _setParam(name, v); }
+inline void Material::setParam(StrView name, const Color4f&	v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const Tuple2u&	v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const Tuple3u&	v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const Tuple4u&	v)		{ return _setParam(name, v); }

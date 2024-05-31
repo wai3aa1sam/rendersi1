@@ -197,7 +197,7 @@ GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCu
 
 			mtl->setParam("skybox", texSkybox);
 			drawData->setupMaterial(mtl);
-			rdReq.drawMesh(RDS_SRCLOC, meshAssets().box->rdMesh, mtl);
+			rdReq.drawMesh(RDS_SRCLOC, meshAssets().box->renderMesh, mtl);
 		});
 	return &skyboxPass;
 }
@@ -263,11 +263,10 @@ GraphicsDemo::addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrV
 
 			mtl->setParam("texColor", texColor.renderResource());
 			drawData->setupMaterial(mtl);
-			rdReq.drawMesh(RDS_SRCLOC, meshAssets().fullScreenTriangle->rdMesh, mtl);
+			rdReq.drawMesh(RDS_SRCLOC, meshAssets().fullScreenTriangle->renderMesh, mtl);
 		});
 	return &pass;
 }
-
 
 RdgPass* 
 GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, Material* material)
@@ -367,6 +366,7 @@ GraphicsDemo::addDisplayNormalPass(RenderGraph* oRdGraph, DrawData* drawData, Rd
 	return &pass;
 }
 
+#if 0
 void 
 addDrawLineTest()
 {
@@ -418,6 +418,8 @@ addDrawLineTest()
 	}
 	#endif // 0
 }
+#endif // 0
+
 
 DemoEditorApp&	GraphicsDemo::app()				{ return _demoLayer->app(); }
 EngineContext&	GraphicsDemo::engineContext()	{ return _demoLayer->engineContext(); }
@@ -443,15 +445,17 @@ MeshAssets::~MeshAssets()
 void 
 MeshAssets::create()
 {
+	#if 1
 	auto createMeshAsset = [&](SPtr<MeshAsset>* oMeshAsset, StrView filename)
 		{
 			auto& meshAsset = *oMeshAsset;
 
-			EditMesh mesh;
-			WavefrontObjLoader::loadFile(mesh, filename);
+			/*EditMesh mesh;
+			WavefrontObjLoader::loadFile(mesh, filename);*/
 
 			meshAsset = makeSPtr<MeshAsset>();
-			meshAsset->rdMesh.create(mesh);
+			//meshAsset->rdMesh.create(mesh);
+			meshAsset->load(filename);
 		};
 
 	createMeshAsset(&box,		"asset/mesh/box.obj");
@@ -460,9 +464,11 @@ MeshAssets::create()
 	createMeshAsset(&cone,		"asset/mesh/cone.obj");
 	createMeshAsset(&suzanne,	"asset/mesh/suzanne.obj");
 
+	#endif // 0
+
 	auto& meshAsset = fullScreenTriangle;
 	meshAsset = makeSPtr<MeshAsset>();
-	meshAsset->rdMesh.create(EditMeshUtil::getFullScreenTriangle());
+	meshAsset->renderMesh.create(EditMeshUtil::getFullScreenTriangle());
 }
 
 void 
@@ -473,8 +479,19 @@ MeshAssets::destroy()
 	plane.reset(nullptr);
 	cone.reset(nullptr);
 	suzanne.reset(nullptr);
+	sponza.reset(nullptr);
 	fullScreenTriangle.reset(nullptr);
 }
+
+void 
+MeshAssets::loadSponza()
+{
+	auto defaultShader = Renderer::rdDev()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
+
+	sponza = makeSPtr<MeshAsset>();
+	sponza->load("asset/mesh/scene/sponza/sponza.obj", defaultShader);
+}
+
 
 #endif // 1
 

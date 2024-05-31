@@ -88,7 +88,8 @@ public:
 	SPtr<Material>				createMaterial();
 
 public:
-	SPtr<Texture2D>	createSolidColorTexture2D(const Color4b& color);
+	SPtr<Texture2D>	createSolidColorTexture2D(  const Color4b& color);
+	SPtr<Texture2D>	createCheckerboardTexture2D(const Color4b& color);
 
 public:
 	const	RenderAdapterInfo&	adapterInfo() const;
@@ -132,9 +133,10 @@ protected:
 	TransferContext* _tsfCtx = nullptr;
 	TransferRequest	 _tsfReq;
 
+	BindlessResources*	_bindlessRscs = nullptr;
+
 	ShaderStock			_shaderStock;
 	TextureStock		_textureStock;
-	BindlessResources*	_bindlessRscs = nullptr;
 };
 
 inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const	{ return _adapterInfo; }

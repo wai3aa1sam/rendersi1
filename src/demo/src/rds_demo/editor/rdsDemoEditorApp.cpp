@@ -15,7 +15,7 @@ namespace rds
 
 DemoEditorApp::DemoEditorApp()
 {
-
+	
 }
 
 DemoEditorApp::~DemoEditorApp()

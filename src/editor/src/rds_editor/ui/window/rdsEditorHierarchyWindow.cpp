@@ -39,6 +39,7 @@ EditorHierarchyWindow::drawEntity(EditorUiDrawRequest* edtDrawReq, Entity* ent)
 		flags |= ImGuiTreeNodeFlags_Selected;
 	}
 
+	auto pushId = edtDrawReq->makePushID(ent->name().c_str());
 	auto node = edtDrawReq->makeTreeNode(ent->name().c_str(), flags);
 	
 	if (node.isItemClicked())

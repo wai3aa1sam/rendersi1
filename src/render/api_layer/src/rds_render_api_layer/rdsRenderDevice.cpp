@@ -45,20 +45,11 @@ RenderDevice::create(const CreateDesc& cDesc)
 
 	_tsfCtx->transferRequest().reset(_tsfCtx);
 
-	{
-		// wait for UploadContext, since currently use RenderContext to upload
-		_textureStock.white		= createSolidColorTexture2D(Color4b(255, 255, 255, 255));
-		_textureStock.black		= createSolidColorTexture2D(Color4b(0,   0,   0,   255));
-		_textureStock.red		= createSolidColorTexture2D(Color4b(255, 0,   0,   255));
-		_textureStock.green		= createSolidColorTexture2D(Color4b(0,   255, 0,   255));
-		_textureStock.blue		= createSolidColorTexture2D(Color4b(0,   0,   255, 255));
-		_textureStock.magenta	= createSolidColorTexture2D(Color4b(255, 0,   255, 255));
-		_textureStock.error		= createSolidColorTexture2D(Color4b(255, 0,   255, 255));
-	}
+	_shaderStock.create(this);
+	_textureStock.create(this);
 
 	RDS_CORE_ASSERT(_bindlessRscs, "");
 }
-
 
 void 
 RenderDevice::destroy()
@@ -66,6 +57,7 @@ RenderDevice::destroy()
 	waitIdle();
 
 	_shaderStock.destroy();
+	_textureStock.destroy();
 
 	onDestroy();
 
@@ -90,8 +82,6 @@ RenderDevice::onCreate(const CreateDesc& cDesc)
 	{
 		e.create();
 	}
-
-	_shaderStock.create(this);
 }
 
 void 
@@ -127,30 +117,16 @@ RenderDevice::waitIdle()
 SPtr<Texture2D>	
 RenderDevice::createSolidColorTexture2D(const Color4b& color)
 {
-	#if 0
-	int w = 4;
-	int h = 4;
-	Texture2D_CreateDesc texDesc;
-	texDesc.format		= ColorType::RGBAb;
-	texDesc.mipCount	= 1;
-	//texDesc._size.set(w, h);
-
-	auto& image = texDesc._uploadImage;
-	image.create(Color4b::s_kColorType, w, h);
-
-	for (int y = 0; y < h; y++) 
-	{
-		auto span = image.row<Color4b>(y);
-		for (int x = 0; x < w; x++) 
-		{
-			span[x] = color;
-		}
-	}
-	return createTexture2D(texDesc);
-	#else
-	return nullptr;
-	#endif // 0
+	return _textureStock.createSolidColorTexture2D(color);
 }
+
+SPtr<Texture2D>	
+RenderDevice::createCheckerboardTexture2D(const Color4b& color)
+{
+	return _textureStock.createCheckerboardTexture2D(color);
+
+}
+
 
 #endif
 

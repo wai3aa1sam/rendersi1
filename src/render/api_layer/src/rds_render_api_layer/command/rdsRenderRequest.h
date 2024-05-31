@@ -176,7 +176,7 @@ template<class T> inline
 void 
 RenderRequest::drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData)
 {
-	RDS_CORE_ASSERT(rdSubMesh.vertexBuffer() || rdSubMesh.indexBuffer(), "");
+	//RDS_CORE_ASSERT(rdSubMesh.vertexBuffer() || rdSubMesh.indexBuffer(), "");
 
 	auto* p = addDrawCall(sizeof(T));
 	drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl, extraData);

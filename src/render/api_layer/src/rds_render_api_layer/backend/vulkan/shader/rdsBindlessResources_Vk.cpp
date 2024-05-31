@@ -103,7 +103,6 @@ BindlessResources_Vk::onCommit()
 			for (auto& rsc : rscs)
 			{
 				{
-
 					RDS_CORE_ASSERT(Vk_Texture::getVkImageViewHnd(rsc), "_vkImageView == nullptr");
 					bool isTexture	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil);
 					bool isImage	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::UnorderedAccess);
