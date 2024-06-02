@@ -133,7 +133,7 @@ RenderDevice_Vk* Vk_TransferFrame::renderDeviceVk() { return _tsfCtxVk->renderDe
 
 Vk_LinearStagingBuffer::Chunks::Chunks()
 {
-	_chunkSize	= sCast<u32>(64 * 5) * 1024 * 1024;
+	_chunkSize	= sCast<u32>(64 * 2) * 1024 * 1024;
 }
 
 Vk_LinearStagingBuffer::Chunks::~Chunks()

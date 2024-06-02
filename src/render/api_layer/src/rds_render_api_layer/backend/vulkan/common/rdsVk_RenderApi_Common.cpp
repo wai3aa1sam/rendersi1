@@ -858,8 +858,15 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcStage	= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		dstStage	= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		srcAccess	= VK_PIPELINE_STAGE_NONE_KHR;
-		dstAccess	= VK_ACCESS_SHADER_WRITE_BIT;
+		dstAccess	= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_GENERAL && dstLayout == VK_IMAGE_LAYOUT_GENERAL) // compute write -> compute write
+	{
+		srcStage	= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		dstStage	= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		srcAccess	= VK_ACCESS_SHADER_WRITE_BIT;
+		dstAccess	= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+		}
 	else 
 	{
 		throwError("");

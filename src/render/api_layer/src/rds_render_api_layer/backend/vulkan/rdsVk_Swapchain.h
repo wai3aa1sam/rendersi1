@@ -186,8 +186,12 @@ Vk_Swapchain::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, Backbu
 	out.resize(vkImages.size());
 	for (size_t i = 0; i < vkImages.size(); ++i)
 	{
+		auto* texVk = sCast<Texture2D_Vk*>(outBackbuffers.backbuffer(i));
+		//texVk->_vkImageViews.resize(1);
+
 		out[i].create(vkImages[i].hnd(), format, aspectFlags, mipLevels, rdDevVk);
-		*sCast<Texture2D_Vk*>(outBackbuffers.backbuffer(i))->_vkImageView.hndForInit() = out[i].hnd();
+		// Vk_Texture::getVkImageView(outBackbuffers.backbuffer(i), 0)->hndForInit() = out[i].hnd();
+		*texVk->_srvVkImageView.hndForInit() = out[i].hnd();
 	}
 }
 

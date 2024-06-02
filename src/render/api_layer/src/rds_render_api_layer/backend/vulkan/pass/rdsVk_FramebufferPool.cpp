@@ -123,13 +123,13 @@ Vk_FramebufferPool::request(RdgPass* pass, Vk_RenderPass_T* vkRdPassHnd)
 	for (auto& rdTarget : pass->renderTargets())
 	{
 		auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdTarget.targetHnd));
-		vkImageViewHnds.emplace_back(texVk->vkImageViewHnd());
+		vkImageViewHnds.emplace_back(texVk->srvVkImageViewHnd());
 	}
 
 	if (auto depthStencil = pass->depthStencil())
 	{
 		auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(depthStencil->targetHnd));
-		vkImageViewHnds.emplace_back(texVk->vkImageViewHnd());
+		vkImageViewHnds.emplace_back(texVk->srvVkImageViewHnd());
 	}
 
 	Vk_Framebuffer* o = nullptr;

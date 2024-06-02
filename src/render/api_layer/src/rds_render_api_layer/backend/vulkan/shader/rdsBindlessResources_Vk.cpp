@@ -94,67 +94,6 @@ BindlessResources_Vk::onCommit()
 		auto* rdDevVk = renderDeviceVk();
 
 		{
-			auto data = _texAlloc.scopedULock();
-			auto& rscs = data->rscs;
-
-			writeDescs.reserve	(writeDescs.size()	+ rscs.size());
-			imgInfos.reserve	(imgInfos.size()	+ rscs.size());
-
-			for (auto& rsc : rscs)
-			{
-				{
-					RDS_CORE_ASSERT(Vk_Texture::getVkImageViewHnd(rsc), "_vkImageView == nullptr");
-					bool isTexture	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil);
-					bool isImage	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::UnorderedAccess);
-					RDS_CORE_ASSERT(isImage || isTexture, "invalid Texture usage");
-
-					VkDescriptorImageInfo& info	= imgInfos.emplace_back();
-					info = {};
-					info.imageView		= Vk_Texture::getVkImageViewHnd(rsc);
-					info.sampler		=  nullptr;
-					//info.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
-
-					VkWriteDescriptorSet out;
-					out = {};
-					out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					//out.dstBinding			= isImage ? 0 : sCast<u32>(_vkSamplers.size());
-					out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
-					//out.descriptorType		= isImage ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-					out.descriptorCount		= 1;
-					out.pBufferInfo			= nullptr;
-					out.pImageInfo			= &info;
-					out.pTexelBufferView	= nullptr;
-
-					if (isTexture)
-					{
-						info.imageLayout = BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-						auto& dstSet = descrSetTex();
-						out.dstBinding		= sCast<u32>(_vkSamplers.size());
-						out.descriptorType	= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-						out.dstSet			= dstSet.hnd();
-
-						auto& dst = writeDescs.emplace_back();
-						dst = out;
-					}
-
-					if (isImage)
-					{
-						info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-						auto& dstSet = descrSetImg();
-						out.dstBinding		= 0;
-						out.descriptorType	= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-						out.dstSet			= dstSet.hnd();
-
-						auto& dst = writeDescs.emplace_back();
-						dst = out;
-					}
-				}
-			}
-		}
-
-		{
 			auto data = _bufAlloc.scopedULock();
 			auto& rscs = data->rscs;
 
@@ -189,10 +128,101 @@ BindlessResources_Vk::onCommit()
 			}
 		}
 
+		{
+			auto data = _texAlloc.scopedULock();
+			auto& rscs = data->rscs;
+
+			writeDescs.reserve	(writeDescs.size()	+ rscs.size());
+			imgInfos.reserve	(imgInfos.size()	+ rscs.size());
+
+			auto& dstSet = descrSetTex();
+			for (auto& rsc : rscs)
+			{
+				{
+					RDS_CORE_ASSERT(Vk_Texture::getSrvVkImageViewHnd(rsc), "getSrvVkImageViewHnd == nullptr");
+					bool isTexture	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil);
+					RDS_CORE_ASSERT(isTexture, "invalid Texture usage, usage has no TextureUsageFlags::ShaderResource or TextureUsageFlags::DepthStencil");
+
+					VkDescriptorImageInfo& info	= imgInfos.emplace_back();
+					info = {};
+					info.imageLayout = BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					info.imageView		= Vk_Texture::getSrvVkImageViewHnd(rsc);
+					info.sampler		=  nullptr;
+					//info.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
+
+					VkWriteDescriptorSet out;
+					out = {};
+					out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+					out.dstSet				= dstSet.hnd();
+					out.dstBinding			= sCast<u32>(_vkSamplers.size());
+					out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
+					out.descriptorCount		= 1;
+					out.pBufferInfo			= nullptr;
+					out.pImageInfo			= &info;
+					out.pTexelBufferView	= nullptr;
+
+					auto& dst = writeDescs.emplace_back();
+					dst = out;
+				}
+			}
+		}
+
+		{
+			auto data = _imgAlloc.scopedULock();
+			auto& rscs = data->rscs;
+
+			writeDescs.reserve(	writeDescs.size()	+ rscs.size());
+			imgInfos.reserve(	imgInfos.size()		+ rscs.size());
+
+			auto& dstSet = descrSetImg();
+			for (auto& rsc : rscs)
+			{
+				{
+					//bool isTexture	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil);
+					bool isImage	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::UnorderedAccess);
+					RDS_CORE_ASSERT(isImage, "invalid Texture usage, usage has no TextureUsageFlags::UnorderedAccess");
+
+					for (u32 i = 0; i < rsc->mipmapViewCount(); i++)
+					{
+						RDS_CORE_ASSERT(Vk_Texture::getUavVkImageViewHnd(rsc, i), "getUavVkImageViewHnd[{}] == nullptr", i);
+
+						VkDescriptorImageInfo& info	= imgInfos.emplace_back();
+						info = {};
+						info.imageLayout	= VK_IMAGE_LAYOUT_GENERAL;
+						info.imageView		= Vk_Texture::getUavVkImageViewHnd(rsc, i);
+						info.sampler		=  nullptr;
+						//info.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
+
+						VkWriteDescriptorSet out;
+						out = {};
+						out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+						out.descriptorType		= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+						out.dstBinding			= 0;
+						out.dstSet				= dstSet.hnd();
+						out.dstArrayElement		= sCast<u32>(rsc->uavBindlessHandle().getResourceIndex(i));
+						out.descriptorCount		= 1;
+						out.pBufferInfo			= nullptr;
+						out.pImageInfo			= &info;
+						out.pTexelBufferView	= nullptr;
+
+						auto& dst = writeDescs.emplace_back();
+						dst = out;
+					}
+				}
+			}
+		}
+
 		vkUpdateDescriptorSets(rdDevVk->vkDevice(), sCast<u32>(writeDescs.size()), writeDescs.data(), 0, nullptr);
 	}
 
 	// clean up
+	{
+		auto data = _bufAlloc.scopedULock();
+		auto& rscs = data->rscs;
+		rscs.clear();
+	}
+
 	{
 		auto data = _texAlloc.scopedULock();
 		auto& rscs = data->rscs;
@@ -200,7 +230,7 @@ BindlessResources_Vk::onCommit()
 	}
 
 	{
-		auto data = _bufAlloc.scopedULock();
+		auto data = _imgAlloc.scopedULock();
 		auto& rscs = data->rscs;
 		rscs.clear();
 	}

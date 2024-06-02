@@ -68,29 +68,43 @@ void
 Texture::onCreate(TextureCreateDesc& cDesc)
 {
 	_desc = cDesc;
-	
 	_internal_setSubResourceCount(desc().mipCount);
-	if (BitUtil::has(desc().usageFlags, TextureUsageFlags::TransferDst))
+
+	auto*	rdDev		= renderDevice();
+	auto&	bindlessRsc	= rdDev->bindlessResource();
+	auto	usageFlags	= desc().usageFlags;
+	if (BitUtil::has(usageFlags, TextureUsageFlags::TransferDst))
 	{
 		_internal_setRenderResourceState(RenderResourceStateFlags::Transfer_Dst);
 	}
 
-	if (BitUtil::hasAny(desc().usageFlags, TextureUsageFlags::ShaderResource | TextureUsageFlags::UnorderedAccess))
+	if (BitUtil::hasAny(usageFlags, TextureUsageFlags::ShaderResource))
 	{
-		auto* rdDev			= renderDevice();
-		auto& bindlessRsc	= rdDev->bindlessResource();
-		_bindlessHnd = bindlessRsc.allocTexture(this);
-		renderDevice()->textureStock().textures.add(this);
+		_bindlessHnd	= bindlessRsc.allocTexture(this);
+
+		renderDevice()->textureStock().textures.add(this);		// TextureStock only store ShaderResource
+	}
+
+	if (BitUtil::hasAny(usageFlags, TextureUsageFlags::UnorderedAccess))
+	{
+		_uavBindlessHnd	= bindlessRsc.allocImage(this);
 	}
 }
 
 void 
 Texture::onDestroy()
 {
-	if (/*!isNull() || */bindlessHandle().isValid())
+	auto* rdDev = renderDevice();
+
+	if (bindlessHandle().isValid())
 	{
-		renderDevice()->textureStock().textures.remove(this);		// must before remove bindless
-		renderDevice()->bindlessResource().freeTexture(this);
+		rdDev->textureStock().textures.remove(this);		// TextureStock only store ShaderResource, must before remove bindless
+		rdDev->bindlessResource().freeTexture(this);
+	}
+
+	if (uavBindlessHandle().isValid())
+	{
+		rdDev->bindlessResource().freeImage(this);
 	}
 }
 
@@ -106,6 +120,9 @@ Texture::checkValid(TextureCreateDesc& cDesc)
 {
 	RDS_CORE_ASSERT(isValid(cDesc), "invalid cDesc");
 }
+
+bool	Texture::hasMipmapView()	const { return BitUtil::has(usageFlags(), TextureUsageFlags::UnorderedAccess); }
+u32		Texture::mipmapViewCount()	const { return hasMipmapView() ? mipCount() : 1; }
 
 #endif
 

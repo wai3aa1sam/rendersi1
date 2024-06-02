@@ -457,9 +457,9 @@ public:
 	void operator=(Vk_ImageView&&)	{ throwIf(true, ""); }
 
 	void create(VkImageViewCreateInfo* viewInfo, RenderDevice_Vk* rdDevVk);
-	void create(Vk_Image*	vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount, RenderDevice_Vk* rdDevVk);
-	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount, RenderDevice_Vk* rdDevVk);
-	void create(Vk_Image_T*	vkImageHnd, const Texture_Desc&	desc,	RenderDevice_Vk* rdDevVk);
+	void create(Vk_Image*	vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount,	RenderDevice_Vk* rdDevVk);
+	void create(Vk_Image_T* vkImage, VkFormat vkFormat, VkImageAspectFlags aspectFlags, u32 mipCount,	RenderDevice_Vk* rdDevVk);
+	void create(Vk_Image_T*	vkImageHnd, const Texture_Desc&	desc, u32 baseMipLevel, u32 mipCount,		RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 
 };

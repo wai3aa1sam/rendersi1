@@ -201,6 +201,26 @@ Material::_setSamplerParam(StrView name, const SamplerState& v)
 }
 
 void 
+Material::setImage(StrView name, Texture*	 v, u32 mipLevel)
+{
+	using SRC = RenderDataType;
+	switch (v->type())
+	{
+		case SRC::Texture2D: { setImage(name, sCast<Texture2D*>(v), mipLevel); } break;
+		case SRC::Texture3D: { setImage(name, sCast<Texture3D*>(v), mipLevel); } break;
+		default: { RDS_THROW("invalid texture type"); } break;
+	}
+}
+
+void Material::setImage(StrView name, Texture2D* v, u32 mipLevel)	{ return _setImageParam(name, v, mipLevel); }
+
+void Material::setImage(StrView name, Texture3D* v, u32 mipLevel)	
+{ 
+	//RDS_LOG("{}: {}", name, v->uavBindlessHandle().getResourceIndex(mipLevel)); 
+	return _setImageParam(name, v, mipLevel); 
+}
+
+void 
 Material::setPermutation(StrView name, StrView value)						
 {
 	checkMainThreadExclusive(RDS_SRCLOC);

@@ -12,6 +12,9 @@ class Backbuffers;
 
 class TransferCommand_UploadTexture;
 
+u32 Texture_mipCount(u32 width_, u32 height_);
+u32 Texture_mipCount(u32 size);
+
 #if 0
 #pragma mark --- rdsSamplerState-Decl ---
 #endif // 0
@@ -99,9 +102,6 @@ public:
 };
 
 #endif // 1
-
-u32 Texture_mipCount(u32 width_, u32 height_);
-u32 Texture_mipCount(u32 size);
 
 #if 0
 #pragma mark --- rdsTexture_CreateDesc-Impl ---
@@ -219,7 +219,12 @@ public:
 		Base::create(RenderDataType::Texture2D, size_.x, size_.y, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
 	}
 
-	Texture2D_CreateDesc(Tuple2u size_, ColorType format_, bool isUseMip, TextureUsageFlags usageFlags_, u32 sampleCount_ = 1)
+	Texture2D_CreateDesc(Tuple2u size_, ColorType format_, u32 mipCount_, TextureUsageFlags usageFlags_, u32 sampleCount_)
+	{
+		Base::create(RenderDataType::Texture2D, size_.x, size_.y, 1, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
+	}
+
+	Texture2D_CreateDesc(Tuple2u size_, bool isUseMip, ColorType format_, TextureUsageFlags usageFlags_, u32 sampleCount_ = 1)
 	{
 		Base::create(RenderDataType::Texture2D, size_.x, size_.y, 1, format_, isUseMip, usageFlags_, 1, sampleCount_, {});
 	}
@@ -293,40 +298,46 @@ public:
 
 	SizeType				totalByteSize()		const;
 
-	BindlessResourceHandle	bindlessHandle()	const;;
+	BindlessResourceHandle	bindlessHandle()	const;
+	BindlessResourceHandle	uavBindlessHandle()	const;
+
+	bool					hasMipmapView()		const;
+	u32						mipmapViewCount()	const;
 
 protected:
 	Texture(RenderDataType type);
 
 	virtual void setNull() = 0;	// only use  for swapchain
 
-	bool isValid	(TextureCreateDesc& cDesc);
-	void checkValid	(TextureCreateDesc& cDesc);
+	bool isValid(	TextureCreateDesc& cDesc);
+	void checkValid(TextureCreateDesc& cDesc);
 
 protected:
-	void onCreate		(TextureCreateDesc& cDesc);
-	virtual void onDestroy		();
+	void onCreate(TextureCreateDesc& cDesc);
+	virtual void onDestroy();
 
 protected:
 	Desc					_desc;
 	BindlessResourceHandle	_bindlessHnd;
+	BindlessResourceHandle	_uavBindlessHnd;
 };
 
-inline RenderDataType				Texture::type()				const { return _desc.type; }
-inline const Texture::Desc&			Texture::desc()				const { return _desc; }
+inline RenderDataType				Texture::type()					const { return _desc.type; }
+inline const Texture::Desc&			Texture::desc()					const { return _desc; }
 
-inline TextureUsageFlags			Texture::usageFlags()		const { return desc().usageFlags; }
-inline ColorType					Texture::format()			const { return desc().format; }
-inline const SamplerState&			Texture::samplerState()		const { return desc().samplerState; }
-inline u8							Texture::mipCount()			const { return desc().mipCount; }
-inline u8							Texture::layerCount()		const { return desc().layerCount; }
-inline u8							Texture::sampleCount()		const { return desc().sampleCount; }
+inline TextureUsageFlags			Texture::usageFlags()			const { return desc().usageFlags; }
+inline ColorType					Texture::format()				const { return desc().format; }
+inline const SamplerState&			Texture::samplerState()			const { return desc().samplerState; }
+inline u8							Texture::mipCount()				const { return desc().mipCount; }
+inline u8							Texture::layerCount()			const { return desc().layerCount; }
+inline u8							Texture::sampleCount()			const { return desc().sampleCount; }
 
-inline Vec3u						Texture::size()				const { return desc().size; }
+inline Vec3u						Texture::size()					const { return desc().size; }
 
-inline Texture::SizeType			Texture::totalByteSize()	const { return desc().totalByteSize(); }
+inline Texture::SizeType			Texture::totalByteSize()		const { return desc().totalByteSize(); }
 
-inline BindlessResourceHandle		Texture::bindlessHandle()	const { return _bindlessHnd; }
+inline BindlessResourceHandle		Texture::bindlessHandle()		const { return _bindlessHnd; }
+inline BindlessResourceHandle		Texture::uavBindlessHandle()	const { return _uavBindlessHnd; }
 
 #endif
 
@@ -366,11 +377,11 @@ public:
 	Size size() const;
 
 protected:
-	virtual void onCreate		(CreateDesc& cDesc);
-	virtual void onPostCreate	(CreateDesc& cDesc);
-	virtual void onDestroy		();
+	virtual void onCreate(		CreateDesc& cDesc);
+	virtual void onPostCreate(	CreateDesc& cDesc);
+	virtual void onDestroy();
 
-	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
+	virtual void onUploadToGpu(	CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
 
 private:
 	void _create(CreateDesc& cDesc);

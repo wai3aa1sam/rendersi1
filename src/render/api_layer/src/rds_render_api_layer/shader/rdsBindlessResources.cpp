@@ -39,50 +39,39 @@ BindlessResources::destroy()
 }
 
 BindlessResourceHandle
-BindlessResources::allocTexture(Texture*            rsc)
+BindlessResources::allocBuffer(RenderGpuBuffer* rsc)
 {
-	auto oHnd = BindlessResourceHandle{};
-	{
-		auto data = _texAlloc.scopedULock();
-		oHnd = data->alloc(rsc, this);
-	}
-	return oHnd;
+	return alloc(rsc, _bufAlloc, 1, BindlessResourceType::Buffer);
 }
 
 BindlessResourceHandle
-BindlessResources::allocBuffer(RenderGpuBuffer*    rsc)
+BindlessResources::allocTexture(Texture* rsc)
 {
-	auto oHnd = BindlessResourceHandle{};
-	{
-		auto data = _bufAlloc.scopedULock();
-		oHnd = data->alloc(rsc, this);
-	}
-	return oHnd;
+	return alloc(rsc, _texAlloc, 1, BindlessResourceType::Texture);
+}
+
+BindlessResourceHandle 
+BindlessResources::allocImage(Texture* rsc)
+{
+	return alloc(rsc, _imgAlloc, rsc->mipCount(), BindlessResourceType::Image);
+}
+
+void
+BindlessResources::freeBuffer (RenderGpuBuffer* rsc)
+{
+	free(rsc->bindlessHandle(), _bufAlloc, 1, BindlessResourceType::Buffer);
+}
+
+void
+BindlessResources::freeTexture(Texture* rsc)
+{
+	free(rsc->bindlessHandle(), _texAlloc, 1, BindlessResourceType::Texture);
 }
 
 void 
-BindlessResources::free(BindlessResourceHandle hnd, RenderResourceType type)
+BindlessResources::freeImage(Texture* rsc)
 {
-	using SRC = RenderResourceType;
-
-	if (!hnd.isValid())
-		return;
-
-	switch (type)
-	{
-		case SRC::RenderGpuBuffer:	{ auto data = _bufAlloc.scopedULock(); data->free(hnd); } break;
-		case SRC::Texture:			{ auto data = _texAlloc.scopedULock(); data->free(hnd); } break;
-	}
-}
-
-void BindlessResources::freeBuffer (RenderGpuBuffer*   rsc)
-{
-	free(rsc->bindlessHandle(), RenderResourceType::RenderGpuBuffer);
-}
-
-void BindlessResources::freeTexture(Texture* rsc)
-{
-	free(rsc->bindlessHandle(), RenderResourceType::Texture);
+	free(rsc->uavBindlessHandle(), _imgAlloc, rsc->mipCount(), BindlessResourceType::Image);
 }
 
 void 

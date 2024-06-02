@@ -215,6 +215,7 @@ public:
 	template<class T>	void setParam		(StrView name, const T& v);
 						void setSamplerParam(StrView name, const SamplerState& v);
 						void setBufferParam	(StrView name, RenderGpuBuffer* v);
+	template<class TEX> void setImageParam	(StrView name, TEX* v, u32 mipLevel);
 
 public:
 	const Info& info() const;

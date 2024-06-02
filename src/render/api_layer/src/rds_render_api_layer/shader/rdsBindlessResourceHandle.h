@@ -25,11 +25,21 @@ public:
 public:
 
 public:
-    IndexT  getResourceIndex() const;
+    IndexT  getResourceIndex()              const;
+    IndexT  getResourceIndex(u32 mipLevel)  const;
     bool    isValid         () const;
 
+    u32     subResouceCount () const;
+
 protected:
-    u32 _hnd = s_kInvalid;
+    void setValue(u32 v);
+    void setSubResourceCount(u32 v);
+
+    u32 getValue() const;
+
+protected:
+    u32 _value          = s_kInvalid;
+    u8  _subRscCount    = sCast<u8>(1);
 };
 
 

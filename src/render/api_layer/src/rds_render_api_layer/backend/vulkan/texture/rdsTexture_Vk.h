@@ -31,10 +31,12 @@ public:
 	virtual bool isNull() const;
 
 	Vk_Image*		vkImage();
-	Vk_ImageView*	vkImageView();
+	Vk_ImageView*	srvVkImageView();
+	Vk_ImageView*	uavVkImageView(u32 mipLevel);
 
 	Vk_Image_T*		vkImageHnd();
-	Vk_ImageView_T* vkImageViewHnd();
+	Vk_ImageView_T* srvVkImageViewHnd();
+	Vk_ImageView_T* uavVkImageViewHnd(u32 mipLevel);
 
 protected:
 	virtual void onCreate		(CreateDesc& cDesc) override;
@@ -47,8 +49,10 @@ protected:
 	virtual void setNull() override;
 
 protected:
-	Vk_Image		_vkImage;
-	Vk_ImageView	_vkImageView;	// TODO: if only stencil, then must have a separate view
+	Vk_Image				_vkImage;
+	Vk_ImageView			_srvVkImageView;		// for shader resource
+	Vector<Vk_ImageView>	_uavVkImageViews;		// [0] is original imageView, [1] -> [n - 1] is for mipmap view
+	// TODO: if only stencil, then must have a separate view
 };
 
 #if 0
@@ -113,22 +117,34 @@ struct Vk_Texture
 	throwIf(true, ""); \
 	// ---
 
-	static Vk_Image*		getVkImage		(Texture* tex);
-	static Vk_ImageView*	getVkImageView	(Texture* tex);
-	static Vk_Sampler*		getVkSampler	(Texture* tex);
+	static Vk_Image*		getVkImage(				Texture* tex);
+	static Vk_ImageView*	getSrvVkImageView(		Texture* tex);
+	static Vk_ImageView*	getUavVkImageView(		Texture* tex, u32 mipLevel);
+	static Vk_Sampler*		getVkSampler(			Texture* tex);
 
-	static Vk_Image_T*		getVkImageHnd		(Texture* tex);
-	static Vk_ImageView_T*	getVkImageViewHnd	(Texture* tex);
-	static Vk_Sampler_T*	getVkSamplerHnd		(Texture* tex);
+	static Vk_Image_T*		getVkImageHnd(			Texture* tex);
+	static Vk_ImageView_T*	getSrvVkImageViewHnd(	Texture* tex);
+	static Vk_ImageView_T*	getUavVkImageViewHnd(	Texture* tex, u32 mipLevel);
+	static Vk_Sampler_T*	getVkSamplerHnd(		Texture* tex);
 
 	template<class TEX_VK>
-	static void createVkResource	(TEX_VK* tex)
+	static void createVkResource(TEX_VK* tex)
 	{ 
 		auto* rdDevVk = tex->renderDeviceVk();
-		createVkImage		(getVkImage		(tex), tex, rdDevVk);
-		createVkImageView	(getVkImageView	(tex), tex, rdDevVk);
-		//createVkSampler		(getVkSampler	(tex), tex, rdDevVk);
+		createVkImage(		getVkImage(tex), tex, rdDevVk);
+		createVkImageView(	getSrvVkImageView(tex), tex, 0, tex->mipCount(), rdDevVk);
 
+		if (tex->hasMipmapView())
+		{
+			auto nMipmapView = tex->mipmapViewCount();
+			tex->_uavVkImageViews.resize(nMipmapView);
+			for (u32 i = 0; i < nMipmapView; i++)
+			{
+				createVkImageView(getUavVkImageView(tex, i), tex, i, 1, rdDevVk);
+			}
+		}
+
+		//createVkSampler		(getVkSampler	(tex), tex, rdDevVk);
 		//tex->_vkImgViewShaderRsc.create(getVkImage(tex)->hnd(), tex->desc(), TextureUsageFlags::ShaderResource, rdDevVk);
 
 		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
@@ -136,8 +152,8 @@ struct Vk_Texture
 		#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 	}
 
-	static void createVkImage		(Vk_Image*		o, Texture* tex, RenderDevice_Vk* rdDevVk);
-	static void createVkImageView	(Vk_ImageView*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
+	static void createVkImage		(Vk_Image*		o, Texture* tex,RenderDevice_Vk* rdDevVk);
+	static void createVkImageView	(Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount,	RenderDevice_Vk* rdDevVk);
 	//static void createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
 };
 
@@ -148,7 +164,7 @@ struct Vk_Texture
 template<class TEX_BASE> inline
 Texture_Vk<TEX_BASE>::Texture_Vk()
 {
-
+	//_vkImageViews.resize(1);
 }
 
 template<class TEX_BASE> inline
@@ -180,7 +196,11 @@ Texture_Vk<TEX_BASE>::onDestroy()
 
 	auto* rdDevVk = renderDeviceVk();
 
-	_vkImageView.destroy(rdDevVk);
+	_srvVkImageView.destroy(rdDevVk);
+	for (auto& e : _uavVkImageViews)
+	{
+		e.destroy(rdDevVk);
+	}
 	_vkImage.destroy();
 
 	Base::onDestroy();
@@ -201,11 +221,21 @@ Texture_Vk<TEX_BASE>::setDebugName(StrView name)
 
 	if (_vkImage.hnd())
 	{
-		RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,		"{}-{}-[{}:{}]", name, "_vkImage",		RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+		RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,				"{}-{}-[{}:{}]",		name, "_vkImage",				RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 	}
-	if (_vkImageView.hnd())
+
+	if (_srvVkImageView.hnd())
 	{
-		RDS_VK_SET_DEBUG_NAME_FMT(_vkImageView, "{}-{}-[{}:{}]", name, "_vkImageView",	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+		RDS_VK_SET_DEBUG_NAME_FMT(_srvVkImageView,		"{}-{}-[{}:{}]",		name, "_srvVkImageView",		RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+	}
+
+	u32 i = 0;
+	for (auto& e : _uavVkImageViews)
+	{
+		if (!e.hnd())
+			continue;
+		RDS_VK_SET_DEBUG_NAME_FMT(_uavVkImageViews[i],	"{}-{}-mip{}-[{}:{}]",	name, "_uavVkImageViews", i,	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+		++i;
 	}
 }
 
@@ -214,16 +244,22 @@ void
 Texture_Vk<TEX_BASE>::setNull()
 {
 	_vkImage.destroy();
-	_vkImageView.destroy(nullptr);
+	_srvVkImageView.destroy(nullptr);
+	for (auto& e : _uavVkImageViews)
+	{
+		e.destroy(nullptr);
+	}
 }
 
-template<class TEX_BASE> inline bool			Texture_Vk<TEX_BASE>::isNull()	const	{ return !_vkImage; }
+template<class TEX_BASE> inline bool			Texture_Vk<TEX_BASE>::isNull()	const					{ return !_vkImage; }
 
-template<class TEX_BASE> inline Vk_Image*		Texture_Vk<TEX_BASE>::vkImage()			{ return &_vkImage; }
-template<class TEX_BASE> inline Vk_ImageView*	Texture_Vk<TEX_BASE>::vkImageView()		{ return &_vkImageView; }
+template<class TEX_BASE> inline Vk_Image*		Texture_Vk<TEX_BASE>::vkImage()							{ return &_vkImage; }
+template<class TEX_BASE> inline Vk_ImageView*	Texture_Vk<TEX_BASE>::srvVkImageView()					{ return &_srvVkImageView; }
+template<class TEX_BASE> inline Vk_ImageView*	Texture_Vk<TEX_BASE>::uavVkImageView(u32 mipLevel)		{ return &_uavVkImageViews[mipLevel]; }
 
-template<class TEX_BASE> inline Vk_Image_T*		Texture_Vk<TEX_BASE>::vkImageHnd()		{ return _vkImage.hnd(); }
-template<class TEX_BASE> inline Vk_ImageView_T* Texture_Vk<TEX_BASE>::vkImageViewHnd()	{ return _vkImageView.hnd(); }
+template<class TEX_BASE> inline Vk_Image_T*		Texture_Vk<TEX_BASE>::vkImageHnd()						{ return _vkImage.hnd(); }
+template<class TEX_BASE> inline Vk_ImageView_T*	Texture_Vk<TEX_BASE>::srvVkImageViewHnd()				{ return _srvVkImageView.hnd(); }
+template<class TEX_BASE> inline Vk_ImageView_T* Texture_Vk<TEX_BASE>::uavVkImageViewHnd(u32 mipLevel)	{ return _uavVkImageViews[mipLevel].hnd(); }
 
 #endif
 

@@ -47,7 +47,12 @@ public:
 		Base::create(RenderDataType::Texture3D, size_.x, size_.y, size_.z, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
 	}
 
-	Texture3D_CreateDesc(Tuple3u size_, ColorType format_, bool isUseMip, TextureUsageFlags usageFlags_, u32 sampleCount_ = 1)
+	Texture3D_CreateDesc(Tuple3u size_, ColorType format_, u32 mipCount_, TextureUsageFlags usageFlags_, u32 sampleCount_ = 1)
+	{
+		Base::create(RenderDataType::Texture3D, size_.x, size_.y, size_.z, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
+	}
+	
+	Texture3D_CreateDesc(Tuple3u size_, bool isUseMip, ColorType format_, TextureUsageFlags usageFlags_, u32 sampleCount_ = 1)
 	{
 		Base::create(RenderDataType::Texture3D, size_.x, size_.y, size_.z, format_, isUseMip, usageFlags_, 1, sampleCount_, {});
 	}

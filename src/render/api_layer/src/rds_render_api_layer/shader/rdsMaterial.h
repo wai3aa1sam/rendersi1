@@ -79,8 +79,11 @@ public:
 	void setParam(StrView name, const Tuple3f&	v);
 	void setParam(StrView name, const Tuple4f&	v);
 	void setParam(StrView name, const Mat4f&	v);
-
 	void setParam(StrView name, RenderGpuBuffer* v);
+
+	void setImage(StrView name, Texture*	 v, u32 mipLevel);
+	void setImage(StrView name, Texture2D* v, u32 mipLevel);
+	void setImage(StrView name, Texture3D* v, u32 mipLevel);
 
 	void setParamsToDefault();
 
@@ -114,6 +117,7 @@ protected:
 	template<class TEX> void _setTexParam		(StrView name,			TEX*				v, const SamplerState& samplerState);
 						void _setSamplerParam	(StrView name, const	SamplerState&		v);
 						void _setBufferParam	(StrView name,			RenderGpuBuffer*	v);
+	template<class TEX> void _setImageParam		(StrView name,			TEX*				v, u32 mipLevel);
 
 						void _setPermutation(StrView name, StrView value);
 
@@ -201,6 +205,25 @@ Material::_setBufferParam(StrView name, RenderGpuBuffer* v)
 	}
 
 	auto bindlessIdx = v->bindlessHandle().getResourceIndex();
+	setParam(name, bindlessIdx);
+}
+
+template<class TEX> inline 
+void 
+Material::_setImageParam(StrView name, TEX* v, u32 mipLevel)
+{
+	RDS_CORE_ASSERT(v->hasMipmapView(),					"{} cannot use as image, no TextureUsageFlags::UnorderedAccess usageFlags", v->debugName());
+	RDS_CORE_ASSERT(mipLevel < v->mipmapViewCount(),	"mipLevel out of boundary");
+
+	// TODO: support non bindless 
+	#if 0
+	for (auto& pass : _passes)
+	{
+		pass->setImageParam(name, v);
+	}
+	#endif // 0
+
+	auto bindlessIdx = v->uavBindlessHandle().getResourceIndex(mipLevel);
 	setParam(name, bindlessIdx);
 }
 

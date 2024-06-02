@@ -211,7 +211,7 @@ Vk_Sampler::create(const SamplerState& samplerState, RenderDevice_Vk* rdDevVk)
 #if 1
 
 void 
-Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, RenderDevice_Vk* rdDevVk)
+Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, u32 baseMipLevel, u32 mipCount, RenderDevice_Vk* rdDevVk)
 {
 	throwIf(!vkImageHnd, "no VkImage while creating image view");
 	VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -233,9 +233,9 @@ Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, RenderDev
 	cInfo.components.a						= VK_COMPONENT_SWIZZLE_IDENTITY;
 
 	cInfo.subresourceRange.aspectMask		= aspectFlags;
-	cInfo.subresourceRange.baseMipLevel		= 0;
+	cInfo.subresourceRange.baseMipLevel		= baseMipLevel;
 	cInfo.subresourceRange.baseArrayLayer	= 0;
-	cInfo.subresourceRange.levelCount		= desc.mipCount;
+	cInfo.subresourceRange.levelCount		= mipCount;
 	cInfo.subresourceRange.layerCount		= desc.layerCount;
 
 	auto* vkDev			= rdDevVk->vkDevice();
@@ -265,9 +265,9 @@ Vk_Texture::createVkImage		(Vk_Image*		o, Texture* tex, RenderDevice_Vk* rdDevVk
 }
 
 void 
-Vk_Texture::createVkImageView	(Vk_ImageView*	o, Texture* tex, RenderDevice_Vk* rdDevVk)
+Vk_Texture::createVkImageView	(Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, RenderDevice_Vk* rdDevVk)
 {
-	o->create(getVkImageHnd(tex), tex->desc(), rdDevVk);
+	o->create(getVkImageHnd(tex), tex->desc(), baseMipLevel, mipCount, rdDevVk);
 }
 
 //void 
@@ -276,12 +276,14 @@ Vk_Texture::createVkImageView	(Vk_ImageView*	o, Texture* tex, RenderDevice_Vk* r
 //	o->create(tex->samplerState(), rdDevVk);
 //}
 
-Vk_Image*		Vk_Texture::getVkImage			(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkImage());		return nullptr; }
-Vk_ImageView*	Vk_Texture::getVkImageView		(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkImageView());	return nullptr; }
-//Vk_Sampler*		Vk_Texture::getVkSampler		(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkSampler());		return nullptr; }
+Vk_Image*		Vk_Texture::getVkImage			(Texture* tex)					{ RDS_VK_TEXTURE_EXECUTE(tex, vkImage());					return nullptr; }
+Vk_ImageView*	Vk_Texture::getSrvVkImageView	(Texture* tex)					{ RDS_VK_TEXTURE_EXECUTE(tex, srvVkImageView());			return nullptr; }
+Vk_ImageView*	Vk_Texture::getUavVkImageView	(Texture* tex, u32 mipLevel)	{ RDS_VK_TEXTURE_EXECUTE(tex, uavVkImageView(mipLevel));	return nullptr; }
+//Vk_Sampler*		Vk_Texture::getVkSampler	(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkSampler());		return nullptr; }
 
-Vk_Image_T*		Vk_Texture::getVkImageHnd		(Texture* tex) { return getVkImage		(tex)->hnd(); }
-Vk_ImageView_T*	Vk_Texture::getVkImageViewHnd	(Texture* tex) { return getVkImageView	(tex)->hnd(); }
+Vk_Image_T*		Vk_Texture::getVkImageHnd		(Texture* tex)					{ return getVkImage(		tex)->hnd(); }
+Vk_ImageView_T*	Vk_Texture::getSrvVkImageViewHnd(Texture* tex)					{ return getSrvVkImageView(	tex)->hnd(); }
+Vk_ImageView_T*	Vk_Texture::getUavVkImageViewHnd(Texture* tex, u32 mipLevel)	{ return getUavVkImageView(	tex, mipLevel)->hnd(); }
 //Vk_Sampler_T*	Vk_Texture::getVkSamplerHnd		(Texture* tex) { return getVkSampler	(tex)->hnd(); }
 
 #endif // 1
