@@ -43,17 +43,17 @@ struct VertexIn
 
 struct PixelIn 
 {
-	float4 positionHCS  : SV_POSITION;
+	float4 positionHcs  : SV_POSITION;
     float2 uv           : TEXCOORD0;
 };
 
 
-RDS_TEXTURE_2D(texture0);
+RDS_TEXTURE_2D(tex2D);
 
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
-	o.positionHCS = mul(RDS_MATRIX_MVP, i.positionOS);
+	o.positionHcs = SpaceTransform_objectToClip(i.positionOS);
     o.uv          = i.uv;
     
     return o;
@@ -61,8 +61,8 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-	//float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv) * color;
-	float4 o = RDS_TEXTURE_2D_SAMPLE(texture0, i.uv);
+	//float4 o = RDS_TEXTURE_2D_SAMPLE(tex2D, i.uv) * color;
+	float4 o = RDS_TEXTURE_2D_SAMPLE(tex2D, i.uv);
 
 	float4 white = {1.0, 1.0, 1.0, 1.0};
     return o;

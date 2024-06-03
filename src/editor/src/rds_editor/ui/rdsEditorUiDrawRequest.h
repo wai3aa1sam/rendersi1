@@ -27,6 +27,7 @@ public:
 public:
 	static constexpr const char*	mixedValueFormat	= "--";
 	static constexpr const char*	floatFormat			= "%0.3f";
+	static constexpr const char*	intFormat			= "%d";
 	static constexpr bool			showMixedValue		= false;
 
 public:

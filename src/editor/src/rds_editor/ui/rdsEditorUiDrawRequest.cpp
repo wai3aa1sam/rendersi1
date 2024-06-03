@@ -38,7 +38,7 @@ EditorUiDrawRequest::dragInt(const	char*				label,
 									ImGuiSliderFlags	flags)
 {
 	return ImGui::DragInt(	label, v, v_speed, v_min, v_max, 
-							showMixedValue ? mixedValueFormat : floatFormat, 
+							showMixedValue ? mixedValueFormat : intFormat, 
 							flags);
 }
 

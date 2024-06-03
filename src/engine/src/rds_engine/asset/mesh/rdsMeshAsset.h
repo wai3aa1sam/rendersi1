@@ -136,7 +136,7 @@ public:
 	~MeshAsset();
 
 	bool load(StrView filename, Shader* shader = nullptr);
-	Entity* addToScene(Scene* scene);
+	Entity* addToScene(Scene* scene, const Mat4f& matrix = Mat4f::s_identity());
 
 protected:
 	Entity* _addToScene(Scene* scene, MeshAssetNode* node, const Mat4f& matrix);

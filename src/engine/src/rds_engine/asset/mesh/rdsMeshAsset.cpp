@@ -646,7 +646,7 @@ MeshAsset::load(StrView filename_, Shader* shader)
 }
 
 Entity*
-MeshAsset::addToScene(Scene* scene)
+MeshAsset::addToScene(Scene* scene, const Mat4f& matrix)
 {
 	auto* rootNode = nodeList.rootNode;
 	if (!rootNode)
@@ -655,7 +655,7 @@ MeshAsset::addToScene(Scene* scene)
 	}
 
 	auto* node		= rootNode;
-	auto* rootEnt	= _addToScene(scene, node, Mat4f::s_identity());
+	auto* rootEnt	= _addToScene(scene, node, matrix);
 	return rootEnt;
 }
 
