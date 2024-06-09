@@ -12,10 +12,22 @@ namespace rds
 bool 
 RenderResourceState::isTransitionNeeded(RenderResourceStateFlags src, RenderResourceStateFlags dst)
 {
-	bool srcIsWrite = RenderResourceStateFlagsUtil::getRenderAccess(src) == RenderAccess::Write;
-	bool dstIsWrite = RenderResourceStateFlagsUtil::getRenderAccess(dst) == RenderAccess::Write;
+	bool srcIsRead = RenderResourceStateFlagsUtil::getRenderAccess(src) == RenderAccess::Read;
+	bool dstIsRead = RenderResourceStateFlagsUtil::getRenderAccess(dst) == RenderAccess::Read;
 
-	if (src == dst && (!srcIsWrite && !dstIsWrite)) return false;
+	auto srcTexUsage = RenderResourceStateFlagsUtil::getTextureUsageFlags(src);
+	auto dstTexUsage = RenderResourceStateFlagsUtil::getTextureUsageFlags(dst);
+
+	auto srcBufUsage = RenderResourceStateFlagsUtil::getBufferUsageFlags(src);
+	auto dstBufUsage = RenderResourceStateFlagsUtil::getBufferUsageFlags(dst);
+
+	bool isBothRead		= (srcIsRead && dstIsRead);
+	bool isSameTexUsage = (srcTexUsage == dstTexUsage);
+	bool isSameBufUsage	= (srcBufUsage == dstBufUsage);
+
+	if (src == dst && isBothRead)						return false;
+	if (isBothRead && isSameTexUsage && isSameBufUsage)	return false;
+
 	return true;
 }
 

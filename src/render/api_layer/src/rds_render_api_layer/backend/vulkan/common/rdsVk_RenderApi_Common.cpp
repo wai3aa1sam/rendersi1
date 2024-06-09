@@ -758,7 +758,7 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) // read depthStencil in shader
 	{
 		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;		// pass a texture usage here could help
+		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
 	}
@@ -771,9 +771,9 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) // read depthStencil in shader
 	{
-		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;		// pass a texture usage here could help
-		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;			// adding VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT resolve the validation error 
+		dstStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;		// adding write bit resolve the validation error 
 		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) // read depthStencil in attachment
@@ -802,20 +802,13 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		}
 	else if (srcLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ) // shader rsc -> rt
 	{
 		srcStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		srcAccess	= VK_ACCESS_NONE;
-		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	}
-	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ) // shader rsc -> rt
-	{
-		srcStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		srcAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) // to transfer src
@@ -851,7 +844,7 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcStage	= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		dstStage	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		srcAccess	= VK_ACCESS_SHADER_WRITE_BIT;
-		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dstAccess	= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_UNDEFINED && dstLayout == VK_IMAGE_LAYOUT_GENERAL) // compute
 	{
@@ -1755,9 +1748,9 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 		}
 		else
 		{
-			if (isLogResult)
+			if (true)
 			{
-				RDS_CORE_LOG("{} do not support vulkan extension: {}", adapterInfo.adapterName, ext);
+				RDS_CORE_LOG_WARN("{} do not support vulkan extension: {}", adapterInfo.adapterName, ext);
 			}
 		}
 	};
@@ -1769,7 +1762,8 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	emplaceIfExist(o, VK_GOOGLE_USER_TYPE_EXTENSION_NAME,				availablePhyDeviceExts());
 	//emplaceIfExist(o, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,		availablePhyDeviceExts());
 	emplaceIfExist(o, VK_KHR_MAINTENANCE1_EXTENSION_NAME,				availablePhyDeviceExts());
-	
+	//emplaceIfExist(o, VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME,	availablePhyDeviceExts());
+
 	if (adapterInfo.isDebug)
 	{
 		emplaceIfExist(o, VK_EXT_DEBUG_MARKER_EXTENSION_NAME,			availablePhyDeviceExts());
