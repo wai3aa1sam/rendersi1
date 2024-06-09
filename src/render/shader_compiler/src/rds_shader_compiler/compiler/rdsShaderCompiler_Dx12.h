@@ -70,10 +70,10 @@ public:
 
 protected:
 	/* .hlsl -> .spv */ 
-	virtual void onCompile(const CompileDescView& descView);
+	virtual bool onCompile(const CompileDescView& descView);
 
 private:
-	void _compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpReq, const CompileDescView& descView, bool isStripLastByte);
+	bool _compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpReq, const CompileDescView& descView, bool isStripLastByte);
 
 protected:
 	// reflect .spv by spirv_cross

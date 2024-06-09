@@ -368,6 +368,14 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 
 	// vulkan core feature base on its version, otherwise it is a extension
 
+	#if 0
+	static VkPhysicalDeviceComputeShaderDerivativesFeaturesNV csDerivativesFeatNv = {};
+	csDerivativesFeatNv.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV;
+	csDerivativesFeatNv.computeDerivativeGroupQuads		= VK_TRUE;
+	csDerivativesFeatNv.computeDerivativeGroupLinear	= VK_TRUE;
+	csDerivativesFeatNv.pNext = nullptr;
+	#endif // 0
+
 	#if RDS_VK_VER_1_3
 
 	VkPhysicalDeviceVulkan13Features& vkPhyDevVkFeats13 = _vkPhyDevVkFeats13;

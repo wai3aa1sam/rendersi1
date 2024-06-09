@@ -105,6 +105,7 @@ public:
 	RenderApiType	apiType()	const;
 	u32				iFrame()	const;
 
+	bool			isCompilerShader	= false;
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);

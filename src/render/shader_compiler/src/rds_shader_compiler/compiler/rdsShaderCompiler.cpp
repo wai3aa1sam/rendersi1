@@ -9,23 +9,22 @@ namespace rds
 #endif // 0
 #if 1
 
-void 
+bool 
 ShaderCompiler::compile(ShaderStageFlag stage, StrView srcFilepath, StrView dstDir, StrView entry, const Option& opt, const ShaderCompileDesc& compileDesc)
 {
 	if (entry.is_empty())
-	{
-		return;
-	}
+		return true;
+
 	auto descView = CompileDescView{stage, srcFilepath, dstDir, entry, opt, compileDesc};
-	compile(descView);
+	return compile(descView);
 }
 
-void 
+bool 
 ShaderCompiler::compile(const CompileDescView& descView)
 {
 	_compileDescView = &descView;
 	_allStageUnionInfo.stageFlag = ShaderStageFlag::All;
-	onCompile(descView);
+	return onCompile(descView);
 }
 
 void 

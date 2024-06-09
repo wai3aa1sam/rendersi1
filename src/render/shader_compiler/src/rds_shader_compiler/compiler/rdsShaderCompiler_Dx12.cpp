@@ -82,7 +82,7 @@ struct Dx12Util
 #endif // 0
 #if 1
 
-void 
+bool 
 ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 {
 	auto			srcFilepath	= descView.srcFilepath;
@@ -98,6 +98,8 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 	ComPtr<Dxc_Compiler>		compiler;
 	ComPtr<IDxcUtils>			utils;
 	ComPtr<IDxcIncludeHandler>	includeHandler;
+
+	bool isCompileSuccess = false;
 
 	HRESULT ret = 0;
 	ret = ::DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&utils));
@@ -208,7 +210,9 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 		}
 
 		ComPtr<IDxcResult> compiledShaderBuffer;
-		_compile(compiledShaderBuffer, dxcCmpDesc, descView, false);
+		isCompileSuccess = _compile(compiledShaderBuffer, dxcCmpDesc, descView, false);
+		if (!isCompileSuccess)
+			return false;
 
 		if (opt.isReflect)
 		{
@@ -237,11 +241,13 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 		compileArgs.appendIncludes(includes);
 
 		ComPtr<IDxcResult> compiledShaderBuffer;
-		_compile(compiledShaderBuffer, dxcCmpDesc, descView, true);
+		isCompileSuccess = _compile(compiledShaderBuffer, dxcCmpDesc, descView, true);
 	}
+
+	return isCompileSuccess;
 }
 
-void 
+bool 
 ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDesc, const CompileDescView& descView, bool isStripLastByte)
 {
 	auto srcFilepath	= descView.srcFilepath;
@@ -276,8 +282,9 @@ ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDe
 	bool isFailed = dxcError && dxcError->GetStringLength() > 0;
 	if (isFailed)
 	{
+		//RDS_CORE_LOG_ERROR("Dxc Compile shader failed \n path: \t{} \n msg: \t{}", srcFilepath, (const char*)dxcError->GetBufferPointer());
 		throwIf(isFailed, "Dxc Compile shader failed \n path: \t{} \n msg: \t{}", srcFilepath, (const char*)dxcError->GetBufferPointer());
-		return;
+		return false;
 	}
 
 	ComPtr<IDxcBlob> pResult;
@@ -291,6 +298,8 @@ ShaderCompiler_Dx12::_compile(ComPtr<IDxcResult>& oRes, DxcCompileDesc& dxcCmpDe
 	memory_copy(bin.data(), sCast<u8*>(pResult->GetBufferPointer()), bin.size());
 	
 	File::writeFile(dxcCmpDesc.outputFilePath, bin.byteSpan(), false);
+
+	return true;
 }
 
 void 

@@ -70,6 +70,12 @@ RdgPass::execute()
 }
 
 void 
+RdgPass::setExecuteFunc(ExecuteFunc&& func)
+{
+	_executeFunc = rds::move(func);
+}
+
+void 
 RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp)
 {
 	RDS_CORE_ASSERT(hnd, "invalid RenderTarget hnd");

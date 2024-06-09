@@ -49,6 +49,7 @@ ShaderCompilerConsoleApp::create()
 		#if RDS_USE_RENDERER
 		{
 			auto cDesc = Renderer::makeCDesc();
+			cDesc.isCompilerShader = true;
 			Renderer::instance()->create(cDesc);
 		}
 		#endif
@@ -96,11 +97,19 @@ ShaderCompilerConsoleApp::destroy()
 	ProjectSetting::terminate();
 }
 
-void 
+int
 ShaderCompilerConsoleApp::onRun()
 {
 	create();
-	compile(_compileDesc);
+	try
+	{
+		compile(_compileDesc);
+		return 0;
+	}
+	catch (const std::exception&)
+	{
+		return -1;
+	}
 }
 
 void 

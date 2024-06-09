@@ -51,13 +51,13 @@ private:
 #endif // 0
 #if 1
 
-void 
+bool 
 ShaderCompileRequest::hotReload(Renderer* renderer, JobSystem* jobSystem, const ProjectSetting* projectSetting)
 {
 	const auto& ps = *projectSetting;
 
 	if (!Path::isFile(ps.shaderRecompileListPath()))
-		return;
+		return false;
 
 	auto* rdDev = renderer->rdDev();
 	rdDev->waitIdle();
@@ -95,6 +95,9 @@ ShaderCompileRequest::hotReload(Renderer* renderer, JobSystem* jobSystem, const 
 	reloadPermutation(rdDev, ps);
 
 	//throwIf(true, "");
+
+	bool hasCompileShaders = textData.size() > 0;
+	return hasCompileShaders;
 }
 
 void 

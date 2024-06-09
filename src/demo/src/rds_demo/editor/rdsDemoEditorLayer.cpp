@@ -241,6 +241,13 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	}
 	#endif // 0
 
+	{
+		RDS_TODO("remove, temporary solution, all of the console related code must be reworked");
+		auto& consoleBuf = app().mainWindow().consoleBuf;
+		_edtConsoleWnd.addLog(consoleBuf);
+		consoleBuf.clear();
+	}
+
 	_edtInspectorWnd.draw(&uiDrawReq, scene());
 	_edtProjectWnd.draw(&uiDrawReq);
 	_edtConsoleWnd.draw(&uiDrawReq);

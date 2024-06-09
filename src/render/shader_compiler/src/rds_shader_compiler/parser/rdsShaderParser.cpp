@@ -136,6 +136,10 @@ void ShaderParser::_parseProperty()
 		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_TEXTURE_Normal"))				{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Normal); }
 		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_TEXTURE_RoughnessMetalness"))	{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_RoughnessMetalness); }
 		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_TEXTURE_Emissive"))			{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Emissive); }
+		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_PROPERTY_albedo"))			{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_albedo); }
+		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_PROPERTY_emission"))			{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_emission); }
+		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_PROPERTY_metalness"))			{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_metalness); }
+		else if (StrUtil::isSame(prop.name.c_str(), "RDS_MATERIAL_PROPERTY_roughness"))			{ prop.name = RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_roughness); }
 	}
 
 	// optional defaultValue

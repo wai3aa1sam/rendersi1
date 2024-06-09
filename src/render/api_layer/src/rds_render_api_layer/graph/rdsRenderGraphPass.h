@@ -91,7 +91,7 @@ public:
 	using Access	= RenderAccess;
 	using Usage		= RdgResourceUsage;
 
-	using ExecuteFunc		= Function<void(RenderRequest& rdReq), s_kFuncLocalSize>;
+	using ExecuteFunc		= Function<void(RenderRequest& rdReq), s_kFuncLocalSize, Traits::s_kDefaultAlign, NoFallbackAllocator_Policy>;
 	//using ExecuteFunc		= std::function<void(RenderRequest& rdReq)>;
 
 	// const for std::initlist
@@ -111,16 +111,16 @@ public:
 	RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlags flags);
 	~RdgPass();
 
-	//void setExecuteFunc(ExecuteFunc&& func);
+	void setExecuteFunc(ExecuteFunc&& func);
 
-	template<class FUNC>
+	/*template<class FUNC>
 	void setExecuteFunc(FUNC&& func)
 	{
 		RDS_TODO("void setExecuteFunc(ExecuteFunc&& func); nmsp::Function_T has bug, wont use this version btw (will copy twice), but the problem still need to solve");
 		RDS_TODO("crash in [void nmsp::Function_T::_move(Function_T&& rhs)], when [pfunc		= rhs._ftr->clone(buf);], the placement new will crash due to access error 0xFFFF");
 		RDS_TODO("but the buf is not 0xFFFF");
 		_executeFunc = rds::move(func);
-	}
+	}*/
 
 	void setRenderTarget(RdgTextureHnd		hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp);
 	//void setRenderTarget(RdgTextureHndSpan	hnds);

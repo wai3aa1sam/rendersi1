@@ -33,7 +33,7 @@ struct SpirvUtil
 #endif // 0
 #if 1
 
-void 
+bool 
 ShaderCompiler_Vk::onCompile(const CompileDescView& descView)
 {
 	auto			srcFilepath	= descView.srcFilepath;
@@ -82,6 +82,9 @@ ShaderCompiler_Vk::onCompile(const CompileDescView& descView)
 		}
 	}
 
+	if (!Path::isExist(binFilepath))
+		return false;
+
 	if (opt.isReflect)
 	{
 		Vector<u8> spvBin;
@@ -91,6 +94,8 @@ ShaderCompiler_Vk::onCompile(const CompileDescView& descView)
 	}
 
 	log("outputed to {}", binFilepath);
+
+	return true;
 }
 
 void 

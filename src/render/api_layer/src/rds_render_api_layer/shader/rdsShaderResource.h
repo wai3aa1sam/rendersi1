@@ -712,17 +712,17 @@ ShaderResources::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v)
 	auto end = varInfo.offset + sizeof(v);
 	throwIf(end > _cpuBuf.size() || !data(), "material set param failed, cpuBuffer overflow");
 
-	auto* dst = _getValue(varInfo);
+	auto* dst = sCast<T*>(_getValue(varInfo));
 	
-	passTest(_cpuBuf, varInfo, _info, &v);
-	RDS_CALL_ONCE(RDS_DUMP_VAR(varInfo.offset, _cpuBuf.size(), end, sizeof(v), sCast<void*>(data()), sCast<void*>(dst)));
+	//passTest(_cpuBuf, varInfo, _info, &v);
+	//RDS_CALL_ONCE(RDS_DUMP_VAR(varInfo.offset, _cpuBuf.size(), end, sizeof(v), sCast<void*>(data()), sCast<void*>(dst)));
 
-	//*dst = v;
+	*dst = v;
 	//memory_copy(dst, &v, 1);
-	auto sizeofT = sizeof(T); RDS_UNUSED(sizeofT);
-	::memcpy(dst, &v, sizeof(T));
+	//auto sizeofT = sizeof(T); RDS_UNUSED(sizeofT);
+	//::memcpy(dst, &v, sizeof(T));
 
-	RDS_WARN_ONCE("*dst = v success");
+	//RDS_WARN_ONCE("*dst = v success");
 
 	_isDirty = true;
 	return _isDirty;

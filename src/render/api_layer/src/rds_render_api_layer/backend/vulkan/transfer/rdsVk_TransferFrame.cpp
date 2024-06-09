@@ -2,6 +2,8 @@
 #include "rdsVk_TransferFrame.h"
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
+#include "rds_render_api_layer/rdsRenderer.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -133,7 +135,10 @@ RenderDevice_Vk* Vk_TransferFrame::renderDeviceVk() { return _tsfCtxVk->renderDe
 
 Vk_LinearStagingBuffer::Chunks::Chunks()
 {
-	_chunkSize	= sCast<u32>(64 * 6) * 1024 * 1024;
+	if (!Renderer::rdDev()->isCompilerShader)
+	{
+		_chunkSize	= sCast<u32>(64 * 6) * 1024 * 1024;
+	}
 }
 
 Vk_LinearStagingBuffer::Chunks::~Chunks()

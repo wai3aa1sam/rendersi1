@@ -20,7 +20,7 @@ public:
 	using Permutations = ShaderPermutations;
 
 public:
-	static void hotReload(Renderer* renderer, JobSystem* jobSystem, const ProjectSetting* projectSetting);
+	static bool hotReload(Renderer* renderer, JobSystem* jobSystem, const ProjectSetting* projectSetting);
 
 public:
 	template<class STR> static void getImportedShaderDirTo(			STR& o, StrView filename,		const ProjectSetting& ps);

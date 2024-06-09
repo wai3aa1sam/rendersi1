@@ -62,8 +62,8 @@ public:
 public:
 	virtual ~ShaderCompiler() = default;
 
-	void compile(const CompileDescView& descView);
-	void compile(ShaderStageFlag stage, StrView srcFilepath, StrView dstDir, StrView entry, const Option& opt, const ShaderCompileDesc& compileDesc);
+	bool compile(const CompileDescView& descView);
+	bool compile(ShaderStageFlag stage, StrView srcFilepath, StrView dstDir, StrView entry, const Option& opt, const ShaderCompileDesc& compileDesc);
 	
 	void writeAllStageUnionInfo(StrView filename);
 	void writeStageInfo(		StrView filename, ShaderStageInfo& stageInfo);
@@ -81,7 +81,7 @@ protected:
 
 
 protected:
-	virtual void onCompile(const CompileDescView& descView) = 0;
+	virtual bool onCompile(const CompileDescView& descView) = 0;
 
 protected:
 	template<class... ARGS> void log(const char* fmt, ARGS&&... args);

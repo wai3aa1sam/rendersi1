@@ -38,12 +38,11 @@ protected:
 	void destroy();
 
 protected:
-	virtual void onRun();
+	virtual int onRun();
 	
 	void compile(StrView filename, const ShaderCompileOption& opt);
 	void compile(const ShaderCompileDesc& cmpDesc);
 	void compileForVulkan(const ShaderInfo& info, StrView srcFileRoot, StrView dstDirRoot, const ShaderCompileOption& opt);
-
 
 	void createShaderInfo(ShaderCompileDesc* oCmpDesc, ShaderInfo* outInfo, StrView filename, StrView outDir);
 

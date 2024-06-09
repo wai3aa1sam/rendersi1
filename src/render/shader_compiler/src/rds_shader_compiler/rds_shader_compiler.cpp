@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 		#else
 		app.parseCmdLine(CmdLineArgsView{ argvs });
 		#endif // 0
-		app.run();
+		exitCode = app.run();
 	}
 	MemoryContext::terminate();
 

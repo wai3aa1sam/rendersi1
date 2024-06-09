@@ -149,13 +149,35 @@ class CmdLineArg(Enum):
     Program = 0
     Project_root = 1
 
+
+class BColors:
+    Header      = '\033[95m'
+    OkBlue      = '\033[94m'
+    OkCyan      = '\033[96m'
+    OkGreen     = '\033[92m'
+    Warning     = '\033[93m'
+    Fail        = '\033[91m'
+    EndC        = '\033[0m'
+    Bold        = '\033[1m'
+    Underline   = '\033[4m'
+
+    Red         = '\033[31m'
+
+def printRedText(str):
+    print("{}{}{}".format(BColors.Red, str, BColors.EndC))
+
 class CompileShaders:
     
     @staticmethod
-    def printProcOutput(proc, timeoutSec):
+    def printProcOutput(errorList, proc, shaderPath, timeoutSec):
         stdout, stderr = proc.communicate(timeout = timeoutSec)
-        print(stdout.decode())
-        #print(stderr.decode())
+        rtCode = proc.returncode
+        hasError = rtCode != 0
+        if (hasError):
+            errorList.append(shaderPath)
+            printRedText("\n\n\n***************** error: {}".format(shaderPath))
+            print(stdout.decode())
+            printRedText("--- error end --- {} --- --- ---".format(shaderPath))
 
     def main(args):
         cur_dir = os.getcwd()
@@ -187,11 +209,12 @@ class CompileShaders:
         # ===
 
         procs           = []
-        timeoutSec      = 10 # sec
+        timeoutSec      = 4 # sec
+        errorList       = []
 
         #shader_paths    = ["asset/shader/demo/hello_triangle/hello_triangle.shader"]
 
-        print("=== Compile Shaders Begin ===")
+        #print("=== Compile Shaders Begin ===")
         #bin_path_base = project_root + "/" + imported_path + "/"
         for i, path in enumerate(shader_paths):
 
@@ -215,18 +238,25 @@ class CompileShaders:
             #proc.wait()
 
         for i, proc in enumerate(procs):
-            print("\t === Begin Wait {} ===".format(shader_paths[i]))
+            shaderPath = shader_paths[i]
+            #print("\t === Begin Wait {} ===".format(shaderPath))
+            stdout = {}
             try:
                 # proc.wait(timeout = timeoutSec) # this will deadlock when using subprocess.PIPE ...., see doc.......
-                CompileShaders.printProcOutput(proc, timeoutSec)
+                CompileShaders.printProcOutput(errorList, proc, shaderPath, timeoutSec)
                 pass
             except:
                 proc.kill()
-                CompileShaders.printProcOutput(proc, timeoutSec)
-            print("\t === End ===")
+                errorList.append(shaderPath)
+                #CompileShaders.printProcOutput(errorList, proc, shaderPath, timeoutSec)
+            #print("\t === End ===")
+        #print("=== Compile Shaders End ===")
 
-        print("=== Compile Shaders End ===")
-            
+        if (len(errorList)):
+            printRedText("\n***\n total {} shaders has error".format(len(errorList)))
+            for i, err in enumerate(errorList):
+                print(" - {}".format(errorList[i]))
+
         return
     
         
