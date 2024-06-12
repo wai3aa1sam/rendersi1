@@ -100,6 +100,7 @@ class	TextureCube_Vk;
 struct	Texture_Desc;
 
 class	Vk_Buffer;
+class	Vk_Fence;
 
 #if 0
 #pragma mark --- rdsVk_RenderApiPrimitive-Decl ---
@@ -388,13 +389,22 @@ public:
 	Vk_Queue() = default;
 	~Vk_Queue() { destroy(); }
 
-	Vk_Queue(Vk_Queue&&)		{ throwIf(true, ""); }
-	void operator=(Vk_Queue&&)	{ throwIf(true, ""); }
+	Vk_Queue(		Vk_Queue&&)	{ throwIf(true, ""); }
+	void operator=(	Vk_Queue&&)	{ throwIf(true, ""); }
 
+public:
 	void create(QueueTypeFlags type, RenderDevice_Vk* rdDevVk);
 	void create(u32 familyIdx, Vk_Device_T* vkDevice);
 	void destroy();
 
+	void submit(const VkSubmitInfo2& submitInfo, Vk_Fence_T* signalFenceHnd, const RenderDebugLabel& debugLabel);
+
+public:
+	void insertDebugLabel(	const char* name, const Color4f& color = Color4f{ 0.7f, 0.8f, 0.9f, 1.0f });
+	void beginDebugLabel(	const char* name, const Color4f& color = Color4f{ 0.6f, 0.7f, 0.8f, 1.0f });
+	void endDebugLabel();
+
+public:
 	u32 familyIdx() const;
 	u32 queueIdx()	const;
 

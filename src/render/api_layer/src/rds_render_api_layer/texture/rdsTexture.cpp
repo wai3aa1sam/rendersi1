@@ -73,10 +73,10 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 	auto*	rdDev		= renderDevice();
 	auto&	bindlessRsc	= rdDev->bindlessResource();
 	auto	usageFlags	= desc().usageFlags;
-	if (BitUtil::has(usageFlags, TextureUsageFlags::TransferDst))
+	/*if (BitUtil::has(usageFlags, TextureUsageFlags::TransferDst))
 	{
 		_internal_setRenderResourceState(RenderResourceStateFlags::Transfer_Dst);
-	}
+	}*/
 
 	if (BitUtil::hasAny(usageFlags, TextureUsageFlags::ShaderResource))
 	{

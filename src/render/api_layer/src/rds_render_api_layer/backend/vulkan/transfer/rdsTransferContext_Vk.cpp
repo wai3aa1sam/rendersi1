@@ -124,25 +124,28 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq, bool isWaitImmediate)
 	inFlighVkFence.wait(rdDevVk);
 	inFlighVkFence.reset(rdDevVk);
 
+	RenderDebugLabel debugLabel;
+	debugLabel.name = "TransferContext_Vk::onCommit()";
 	if (!isWaitImmediate)
 	{
-		vkCmdBuf->submit(&inFlighVkFence, 
+		vkCmdBuf->submit(debugLabel, &inFlighVkFence, 
 			//&frame._completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
 			&completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
 	}
 	else
 	{
-		vkCmdBuf->submit(&inFlighVkFence);
+		vkCmdBuf->submit(debugLabel, &inFlighVkFence);
 		inFlighVkFence.wait(rdDevVk);
 		//inFlighVkFence.reset(rdDevVk);
 	}
 
 	//frame._inFlightVkFence.wait(device());
-	_commitUploadCmdsToDstQueue(tsfReq.uploadBufCmds(), tsfReq.uploadTexCmds(), QueueTypeFlags::Graphics, isWaitImmediate);
+	debugLabel.name = "TransferContext_Vk::_commitUploadCmdsToDstQueue()";
+	_commitUploadCmdsToDstQueue(debugLabel, tsfReq.uploadBufCmds(), tsfReq.uploadTexCmds(), QueueTypeFlags::Graphics, isWaitImmediate);
 }
 
 void 
-TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType, bool isWaitImmediate)
+TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLabel, TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType, bool isWaitImmediate)
 {
 	if (queueType == QueueTypeFlags::Graphics	&& !vkTransferFrame().hasTransferedGraphicsResoures())	{ return; }
 	if (queueType == QueueTypeFlags::Compute	&& !vkTransferFrame().hasTransferedComputeResoures())	{ return; }
@@ -185,14 +188,14 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, 
 	if (!isWaitImmediate)
 	{
 		// ("this submit call could put on the last submit queue? but the last submit queue may record many stuffs, submit here maybe faster");
-		vkCmdBuf->submit(&dstInFlighVkFnc
+		vkCmdBuf->submit(debugLabel, &dstInFlighVkFnc
 			, &srcCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT
 			, &dstCompletedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT
 		);
 	}
 	else
 	{
-		vkCmdBuf->submit(&dstInFlighVkFnc);
+		vkCmdBuf->submit(debugLabel, &dstInFlighVkFnc);
 		dstInFlighVkFnc.wait(rdDevVk);
 	}
 }
@@ -221,7 +224,7 @@ void
 TransferContext_Vk::transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags srcQueueType)
 {
 	auto& vkTsfFrame	= vkTransferFrame();
-	auto* hndVkCmd		= vkTsfFrame.requestCommandBuffer(srcQueueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "transit");
+	auto* hndVkCmd		= vkTsfFrame.requestCommandBuffer(srcQueueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "TransferContext_Vk::transitImageLayout");
 	auto* srcQueue		= requestVkQueue(srcQueueType);
 
 	Util::transitionImageLayout(hnd, desc, Util::toVkFormat(desc.format), dstLayout, srcLayout, nullptr, srcQueue, hndVkCmd);

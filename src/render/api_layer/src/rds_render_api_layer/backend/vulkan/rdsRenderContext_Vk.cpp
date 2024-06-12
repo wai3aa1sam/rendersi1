@@ -224,7 +224,9 @@ RenderContext_Vk::onEndRender()
 
 			signalSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame().renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
 			
-			Vk_CommandBuffer::submit(vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame().inFlightFence(), waitSmps, signalSmps);
+			RenderDebugLabel debugLabel;
+			debugLabel.name = "RenderContext_Vk::onEndRender()";
+			Vk_CommandBuffer::submit(debugLabel, vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame().inFlightFence(), waitSmps, signalSmps);
 		}
 
 		#if RDS_TEST_DUMMY_FOR_NO_SWAP_BUF && 0
@@ -464,7 +466,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			}
 			else
 			{
-				vkCmdBuf->insertDebugLabel(passName);
+				vkCmdBuf->beginDebugLabel(passName);
 			}
 
 			queueProfiler->beginProfile(vkCmdBuf->hnd(), passName);
@@ -510,7 +512,13 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			queueProfiler->endProfile(vkCmdBuf->hnd());
 
 			if (!isMainVkCmdBuf)
+			{
 				vkCmdBuf->endRecord();
+			}
+			else
+			{
+				vkCmdBuf->endDebugLabel();
+			}
 
 			/*
 			maybe use sync pt level as each prim buffer, then submit between sync pt

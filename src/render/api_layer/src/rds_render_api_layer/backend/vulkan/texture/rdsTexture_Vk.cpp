@@ -139,7 +139,7 @@ Vk_Image::create(RenderDevice_Vk* rdDevVk, const Texture_Desc& texDesc, QueueTyp
 	imageInfo.arrayLayers	= texDesc.layerCount;
 	imageInfo.format		= vkFormat;
 	imageInfo.tiling		= VK_IMAGE_TILING_OPTIMAL;
-	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;		// must be VK_IMAGE_LAYOUT_UNDEFINED or VK_IMAGE_LAYOUT_PREINITIALIZED 
 	imageInfo.usage			= usageFlags;
 	imageInfo.sharingMode	= VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.samples		= Util::toVkSampleCountFlagBits(texDesc.sampleCount);
@@ -159,11 +159,14 @@ Vk_Image::create(RenderDevice_Vk* rdDevVk, const Texture_Desc& texDesc, QueueTyp
 
 	create(vkAlloc, &imageInfo, allocInfo, vkMemPropFlags);
 
+	#if 0
 	// this wait immediately
-	auto& tsfCtxVk = rdDevVk->transferContextVk();
+	//RDS_TODO("put to transferContext to process instead of wait immediately, also the whole upload texture flow should be revise");
+	//auto& tsfCtxVk = rdDevVk->transferContextVk(); RDS_UNUSED(tsfCtxVk);
 	//if		(BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferSrc)) { tsfCtxVk.transitImageLayout(hnd(), vkFormat, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, queueTypeFlags); }
-	if		(BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferDst))		{ tsfCtxVk.transitImageLayout(hnd(), texDesc, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, queueTypeFlags); }
+	//if		(BitUtil::has(texDesc.usageFlags, TextureUsageFlags::TransferDst))		{ tsfCtxVk.transitImageLayout(hnd(), texDesc, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, queueTypeFlags); }
 	//else if (BitUtil::has(texDesc.usageFlags, TextureUsageFlags::UnorderedAccess))	{ tsfCtxVk.transitImageLayout(hnd(), texDesc, VK_IMAGE_LAYOUT_GENERAL,				queueTypeFlags); }
+	#endif // 0
 }
 
 #endif

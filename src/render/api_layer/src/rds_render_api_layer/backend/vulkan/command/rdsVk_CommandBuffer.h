@@ -56,9 +56,9 @@ class Vk_CommandBuffer : public Vk_RenderApiPrimitive<Vk_CommandBuffer_T, VK_OBJ
 	using Base = Vk_RenderApiPrimitive<Vk_CommandBuffer_T, VK_OBJECT_TYPE_COMMAND_BUFFER>;
 public:
 
-	static void submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_SmpSubmitInfo waitSmp, Span<Vk_SmpSubmitInfo> signalSmps);
-	static void submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
-	static void submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
+	static void submit(const RenderDebugLabel& debugLabel, Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_SmpSubmitInfo waitSmp, Span<Vk_SmpSubmitInfo> signalSmps);
+	static void submit(const RenderDebugLabel& debugLabel, Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
+	static void submit(const RenderDebugLabel& debugLabel, Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
 
 public:
 	Vk_CommandBuffer();
@@ -76,11 +76,11 @@ public:
 							, u32 subpassIdx = 0, VkCommandBufferUsageFlags usageFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT);
 	void endRecord();
 
-	void submit(Vk_Fence* signalFence, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
-	void submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
-	void submit(Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
-	void submit(Vk_Fence* signalFence);
-	void submit();
+	void submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFence, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
+	void submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage);
+	void submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps);
+	void submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFence);
+	void submit(const RenderDebugLabel& debugLabel);
 
 	void executeSecondaryCmdBufs(Span<Vk_CommandBuffer*> cmdBufs);
 	void waitIdle();
@@ -137,11 +137,11 @@ public:
 	void cmd_addBufferMemoryBarrier(); // use for queue family tansfer
 
 public:
-	void insertDebugLabel(const char* name, const Color4f& color = Color4f{ 0.4f, 0.5f, 0.6f, 1.0f });
+	void insertDebugLabel(	const char* name, const Color4f& color = Color4f{0.824f, 0.949f, 0.945f, 1.0f});
+	void beginDebugLabel(	const char* name, const Color4f& color = Color4f{0.831f, 0.949f, 0.824f, 1.0f});
+	void endDebugLabel();
 
 protected:
-	void beginDebugLabel(const char* name, const Color4f& color = Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
-	void endDebugLabel	();
 
 protected:
 	Vk_CommandPool*			_vkCommandPool	= nullptr;

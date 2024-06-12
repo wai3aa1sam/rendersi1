@@ -19,13 +19,13 @@ namespace rds
 #if 1
 
 void 
-Vk_CommandBuffer::submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps)
+Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps)
 {
 	_notYetSupported(RDS_SRCLOC);
 }
 
 void 
-Vk_CommandBuffer::submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps)
+Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHnds, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps)
 {
 	auto n = sCast<VkDeviceSize>(vkCmdBudHnds.size());
 	if (n == 0)
@@ -52,8 +52,7 @@ Vk_CommandBuffer::submit(Vk_Queue* vkQueue, Span<Vk_CommandBuffer_T*> vkCmdBudHn
 	submitInfo.pCommandBufferInfos		= cmdBufSubmitInfos.data();
 	
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-	auto ret = vkQueueSubmit2(vkQueue->hnd(), 1, &submitInfo, signalFence->hnd());
-	Util::throwIfError(ret);
+	vkQueue->submit(submitInfo, signalFence->hnd(), debugLabel);
 }
 
 #endif
@@ -163,13 +162,13 @@ Vk_CommandBuffer::endRecord()
 }
 
 void 
-Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage)
+Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFence, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage)
 {
-	return submit(signalFence, nullptr, VK_PIPELINE_STAGE_2_NONE, signalVkSmp, signalStage);
+	return submit(debugLabel, signalFence, nullptr, VK_PIPELINE_STAGE_2_NONE, signalVkSmp, signalStage);
 }
 
 void 
-Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage)
+Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_PipelineStageFlags waitStage, Vk_Semaphore* signalVkSmp, Vk_PipelineStageFlags signalStage)
 {
 	VkSubmitInfo2KHR submitInfo = {};
 
@@ -207,7 +206,7 @@ Vk_CommandBuffer::submit(Vk_Fence* signalFence, Vk_Semaphore* waitVkSmp, Vk_Pipe
 }
 
 void 
-Vk_CommandBuffer::submit(Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps)
+Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps, Span<Vk_SmpSubmitInfo> signalSmps)
 {
 	VkSubmitInfo2KHR submitInfo = {};
 
@@ -224,18 +223,17 @@ Vk_CommandBuffer::submit(Vk_Fence* signalFence, Span<Vk_SmpSubmitInfo> waitSmps,
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-	auto ret = vkQueueSubmit2(_vkQueue->hnd(), 1, &submitInfo, signalFence->hnd());
-	Util::throwIfError(ret);
+	_vkQueue->submit(submitInfo, signalFence->hnd(), debugLabel);
 }
 
 void 
-Vk_CommandBuffer::submit(Vk_Fence* signalFence)
+Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFence)
 {
-	return submit(signalFence, nullptr, VK_PIPELINE_STAGE_2_NONE, nullptr, VK_PIPELINE_STAGE_2_NONE);
+	return submit(debugLabel, signalFence, nullptr, VK_PIPELINE_STAGE_2_NONE, nullptr, VK_PIPELINE_STAGE_2_NONE);
 }
 
 void 
-Vk_CommandBuffer::submit()
+Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel)
 {
 	VkSubmitInfo2KHR submitInfo = {};
 
@@ -247,10 +245,7 @@ Vk_CommandBuffer::submit()
 	submitInfo.commandBufferInfoCount	= 1;
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
-	auto ret = vkQueueSubmit2(_vkQueue->hnd(), 1, &submitInfo, VK_NULL_HANDLE);
-	Util::throwIfError(ret);
-
-	//Renderer_Vk::instance()->extInfo().getDeviceExtFunction<PFN_vkQueueSubmit2KHR>("vkQueueSubmit2KHR");
+	_vkQueue->submit(submitInfo, VK_NULL_HANDLE, debugLabel);
 }
 
 void 
@@ -711,14 +706,8 @@ void
 Vk_CommandBuffer::beginDebugLabel(const char* name, const Color4f& color)
 {
 	#if RDS_DEVELOPMENT
-
-	VkDebugUtilsLabelEXT debugLabel = {};
-	debugLabel.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-	memory_copy(debugLabel.color, color.data, color.s_kElementCount);	RDS_CORE_ASSERT(arraySize(debugLabel.color) == color.s_kElementCount, "arraySize(debugLabel.color) == color.s_kElementCount");
-	debugLabel.pLabelName = name;
-
+	VkDebugUtilsLabelEXT debugLabel = Util::toVkDebugUtilsLabel(name, color);
 	vkCmdBeginDebugUtilsLabel(hnd(), &debugLabel);
-
 	#endif // RDS_DEVELOP
 }
 
@@ -734,12 +723,7 @@ void
 Vk_CommandBuffer::insertDebugLabel(const char* name, const Color4f& color)
 {
 	#if RDS_DEVELOPMENT
-
-	VkDebugUtilsLabelEXT debugLabel = {};
-	debugLabel.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-	memory_copy(debugLabel.color, color.data, color.s_kElementCount);	RDS_CORE_ASSERT(arraySize(debugLabel.color) == color.s_kElementCount, "arraySize(debugLabel.color) == color.s_kElementCount");
-	debugLabel.pLabelName = name;
-
+	VkDebugUtilsLabelEXT debugLabel = Util::toVkDebugUtilsLabel(name, color);
 	vkCmdInsertDebugUtilsLabel(hnd(), &debugLabel);
 	#endif
 }

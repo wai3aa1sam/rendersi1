@@ -36,6 +36,12 @@ RDS_ENUM_CLASS(RenderApiType, u8);
 #endif // 0
 #if 1
 
+struct RenderDebugLabel
+{
+	const char* name	= "";
+	Color4f		color	= {0.831f, 0.949f, 0.824f, 1.0f};
+};
+
 struct RenderApiUtil
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();

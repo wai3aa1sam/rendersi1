@@ -266,7 +266,10 @@ public:
 	
 public:
 	static u32	getMemoryTypeIdx(u32 memoryTypeBitsRequirement, VkMemoryPropertyFlags requiredProperties, RenderDevice_Vk* rdDevVk);
-	static void setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const char* name, const void* vkHnd);
+	static void setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, const char*	name,										const void* vkHnd);
+	static void setDebugUtilObjectTag( Vk_Device_T* vkDevHnd, VkObjectType vkObjT, u64			tagName, SizeType tagSize, void* tagData,	const void* vkHnd);
+
+	static VkDebugUtilsLabelEXT toVkDebugUtilsLabel(const char* name, const Color4f& color);
 
 public:
 	static Vk_Buffer*	toVkBuf		(		RenderGpuBuffer* rdGpuBuf);

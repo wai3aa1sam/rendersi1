@@ -215,6 +215,41 @@ Vk_Queue::destroy()
 	Base::destroy();
 }
 
+void 
+Vk_Queue::submit(const VkSubmitInfo2& submitInfo, Vk_Fence_T* signalFenceHnd, const RenderDebugLabel& debugLabel)
+{
+	beginDebugLabel(debugLabel.name, debugLabel.color);
+	auto ret = vkQueueSubmit2(hnd(), 1, &submitInfo, signalFenceHnd);
+	Util::throwIfError(ret);
+	endDebugLabel();
+}
+
+void 
+Vk_Queue::insertDebugLabel(const char* name, const Color4f& color)
+{
+	#if RDS_DEVELOPMENT
+	VkDebugUtilsLabelEXT debugLabel = Util::toVkDebugUtilsLabel(name, color);
+	vkQueueInsertDebugUtilsLabel(hnd(), &debugLabel);
+	#endif
+}
+
+void 
+Vk_Queue::beginDebugLabel(const char* name, const Color4f& color)
+{
+	#if RDS_DEVELOPMENT
+	VkDebugUtilsLabelEXT debugLabel = Util::toVkDebugUtilsLabel(name, color);
+	vkQueueBeginDebugUtilsLabel(hnd(), &debugLabel);
+	#endif
+}
+
+void 
+Vk_Queue::endDebugLabel()
+{
+	#if RDS_DEVELOPMENT
+	vkQueueEndDebugUtilsLabel(hnd());
+	#endif
+}
+
 #endif
 
 #if 0

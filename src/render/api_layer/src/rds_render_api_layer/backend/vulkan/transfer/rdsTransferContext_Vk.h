@@ -48,7 +48,7 @@ protected:
 	Vk_Queue* requestVkQueue(QueueTypeFlags type);
 
 protected:
-	void _commitUploadCmdsToDstQueue(TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType, bool isWaitImmediate);
+	void _commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLabel, TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType, bool isWaitImmediate);
 
 	void _setDebugName();
 

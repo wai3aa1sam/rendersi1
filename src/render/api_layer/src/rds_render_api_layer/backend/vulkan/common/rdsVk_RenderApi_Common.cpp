@@ -1214,15 +1214,49 @@ Vk_RenderApiUtil::setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkO
 {
 	RDS_CORE_ASSERT(vkHnd, "");
 
-	VkDebugUtilsObjectNameInfoEXT nameInfo = {};
-	nameInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-	nameInfo.objectType		= vkObjT;
-	nameInfo.pObjectName	= name;
-	nameInfo.objectHandle	= reinCast<u64>(vkHnd);
-	nameInfo.pNext			= VK_NULL_HANDLE;
+	VkDebugUtilsObjectNameInfoEXT info = {};
+	info.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+	info.objectType		= vkObjT;
+	info.objectHandle	= reinCast<u64>(vkHnd);
+	info.pObjectName	= name;
+	info.pNext			= VK_NULL_HANDLE;
 
-	auto ret = vkSetDebugUtilsObjectName(vkDevHnd, &nameInfo);
+	auto ret = vkSetDebugUtilsObjectName(vkDevHnd, &info);
 	throwIfError(ret);
+}
+
+void 
+Vk_RenderApiUtil::setDebugUtilObjectTag(Vk_Device_T* vkDevHnd, VkObjectType vkObjT, u64 tagName, SizeType tagSize, void* tagData, const void* vkHnd)
+{
+	_notYetSupported(RDS_SRCLOC);		// renderdoc do not support
+	RDS_CORE_ASSERT(vkHnd, "");
+
+	VkDebugUtilsObjectTagInfoEXT info = {};
+	info.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT;
+	info.objectType		= vkObjT;
+	info.objectHandle	= reinCast<u64>(vkHnd);
+	info.tagName		= tagName;
+	info.tagSize		= tagSize;
+	info.pTag			= tagData;
+	info.pNext			= VK_NULL_HANDLE;
+
+	auto ret = vkSetDebugUtilsObjectTag(vkDevHnd, &info);
+	throwIfError(ret);
+}
+
+VkDebugUtilsLabelEXT 
+Vk_RenderApiUtil::toVkDebugUtilsLabel(const char* name, const Color4f& color)
+{
+	VkDebugUtilsLabelEXT o = {};
+	o.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	o.pLabelName	= name;
+	o.color[0]		= color.r;
+	o.color[1]		= color.g;
+	o.color[2]		= color.b;
+	o.color[3]		= color.a;
+	o.pNext			= VK_NULL_HANDLE;
+	//memory_copy(o.color, color.data, color.s_kElementCount); RDS_CORE_ASSERT(arraySize(o.color) == color.s_kElementCount, "arraySize(debugLabel.color) == color.s_kElementCount");
+	return o;
 }
 
 Vk_Buffer*		Vk_RenderApiUtil::toVkBuf		(		RenderGpuBuffer* rdGpuBuf) { return sCast<RenderGpuBuffer_Vk*>(rdGpuBuf)->vkBuf(); }
@@ -1508,7 +1542,7 @@ Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, const Texture_Desc& des
 	#endif // 0
 
 	vkCmdBuf->endRecord();
-	vkCmdBuf->submit();
+	vkCmdBuf->submit(RenderDebugLabel{});
 	vkCmdBuf->waitIdle();
 }
 
@@ -1540,7 +1574,7 @@ Vk_RenderApiUtil::copyBufferToImage(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 w
 	);
 
 	vkCmdBuf->endRecord();
-	vkCmdBuf->submit();
+	vkCmdBuf->submit(RenderDebugLabel{});
 	vkCmdBuf->waitIdle();
 }
 
@@ -1766,7 +1800,9 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 
 	if (adapterInfo.isDebug)
 	{
-		emplaceIfExist(o, VK_EXT_DEBUG_MARKER_EXTENSION_NAME,			availablePhyDeviceExts());
+		emplaceIfExist(o, VK_EXT_DEBUG_MARKER_EXTENSION_NAME,			availablePhyDeviceExts());		// deprecated
+		emplaceIfExist(o, VK_EXT_DEBUG_UTILS_EXTENSION_NAME,			availablePhyDeviceExts());
+		
 	}
 	if (rdDevCDesc.isPresent)
 	{
