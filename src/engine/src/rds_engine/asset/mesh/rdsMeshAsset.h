@@ -34,10 +34,10 @@ public:
 
 	//Vector<Texture2D*, s_kTextureTypeCount> textures;
 
-	Color4f albedo;
-	Color4f emission;
-	float	metalness;
-	float	roughness;
+	Color4f albedo			= Color4f{1.0f, 1.0f, 1.0f, 1.0f};
+	Color4f emission		= Color4f{1.0f, 1.0f, 1.0f, 1.0f};
+	float	metalness		= 0.0f;
+	float	roughness		= 0.6f;
 
 	#if 1
 	/*Texture2D* texAlbedo				= nullptr;
@@ -68,6 +68,9 @@ public:
 	static constexpr SizeType s_kLocalSize = 2;
 
 public:
+	void setupMaterial(Material* mtl, SizeType mtlIdx);
+
+public:
 	Vector<MeshAssetMaterialData,	s_kLocalSize> materialData;
 	Vector<SPtr<Texture2D>,			s_kLocalSize> textures;
 	Vector<SPtr<Material>,			s_kLocalSize> materials;
@@ -94,11 +97,14 @@ struct MeshAssetNodeList
 	using Traits = EngineTraits;
 public:
 	using Node	= MeshAssetNode;
-	using Nodes = Vector<Node, 2>;
+	using Nodes = Vector<Node*, 2>;
+
+	using SizeType = Traits::SizeType;
 
 public:
-	Node*	rootNode		= nullptr;
-	u32		totalNodeCount	= 0;
+	Node*	rootNode = nullptr;
+	Nodes	nodes;
+	//u32	totalNodeCount	= 0;
 
 public:
 	MeshAssetNodeList()
@@ -112,7 +118,18 @@ public:
 	}
 
 public:
-	Node* _makeNode() { totalNodeCount++; return sCast<Node*>(_alloc.alloc(sizeof(Node))); }
+	Node* _makeNode() 
+	{
+		auto* buf	= _alloc.alloc(sizeof(Node));
+		auto* node	= new(buf) Node();
+		nodes.emplace_back(node);
+		return node; 
+	}
+
+	SizeType nodeCount() const { return nodes.size(); }
+
+public:
+
 
 public:
 	LinearAllocator _alloc;
@@ -139,7 +156,7 @@ public:
 	Entity* addToScene(Scene* scene, const Mat4f& matrix = Mat4f::s_identity());
 
 protected:
-	Entity* _addToScene(Scene* scene, MeshAssetNode* node, const Mat4f& matrix);
+	Entity* _addToScene(Scene* scene, Entity* parent, MeshAssetNode* node, const Mat4f& matrix);
 	void _setupEntity(Entity* dst, MeshAssetNode* node, const Mat4f& localMatrix);
 
 };

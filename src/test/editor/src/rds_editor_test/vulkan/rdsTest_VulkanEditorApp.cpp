@@ -79,9 +79,10 @@ void testEditMesh()
 
 Vector<u8, 1024>	makeRndColorTriangleData(float z = 0.0f)
 {
+	AABBox3f aabbox;
 	auto mesh = makeRndColorTriangleMesh(z);
 	Vector<u8, 1024> o;
-	mesh.createPackedVtxData(o);
+	mesh.createPackedVtxData(o, aabbox);
 	return o;
 }
 

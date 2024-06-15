@@ -13,3 +13,7 @@
 
 #include "rds_engine/ecs/system/rdsCTransformSystem.h"
 #include "rds_engine/ecs/system/rdsCRenderableSystem.h"
+
+#include "rds_engine/draw/rdsDrawData.h"
+#include "rds_engine/draw/rdsDrawSettings.h"
+#include "rds_engine/draw/rdsSceneView.h"

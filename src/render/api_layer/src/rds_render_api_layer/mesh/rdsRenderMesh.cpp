@@ -18,7 +18,7 @@ RenderSubMesh::create(const EditMesh& editMesh)
 	const auto* vtxLayout	= _renderMesh->vertexLayout();
 	
 	Vector<u8, 1024> buf;
-	editMesh.createPackedVtxData(buf, _renderMesh->vertexLayout());
+	editMesh.createPackedVtxData(buf, _aabbox, _renderMesh->vertexLayout());
 
 	{
 		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
@@ -94,6 +94,19 @@ RenderSubMesh::create(u32 vtxOffset, u32 vtxCount, u32 idxOffset, u32 idxCount)
 	_idxCount	= idxCount;
 }
 
+void 
+RenderSubMesh::setAABBox(const AABBox3& aabbox)
+{
+	_aabbox = aabbox;
+}
+
+void 
+RenderSubMesh::setName(StrView name)
+{
+	_name = name;
+}
+
+
 #endif
 
 
@@ -116,6 +129,20 @@ RenderMesh::create(const EditMesh& editMesh, u32 subMeshCount)
 	_isSameBuffer = true;
 	upload(editMesh);
 	setSubMeshCount(subMeshCount);
+}
+
+void 
+RenderMesh::create(const EditMesh& editMesh, u32 subMeshCount, Span<AABBox3> aabboxs)
+{
+	RDS_CORE_ASSERT(subMeshCount == aabboxs.size(), "invalid aabbox count");
+
+	create(editMesh, subMeshCount);
+	for (size_t i = 0; i < _subMeshes.size(); i++)
+	{
+		auto&		e		= _subMeshes[i];
+		const auto& aabbox	= aabboxs[i];
+		e.setAABBox(aabbox);
+	}
 }
 
 void 

@@ -36,10 +36,28 @@ CTransform::onCreate(Entity* entity)
 //}
 
 void 
+CTransform::setLocalTRS(const Vec3f& t, const Quat4f& r, const Vec3f& s)
+{
+	_localPosition	= t;
+	_localRotation	= r;
+	_localScale		= s;
+	_setDirty();
+}
+
+void 
+CTransform::setLocalTRS(const Vec3f& t, const Vec3f& r, const Vec3f& s)
+{
+	Quat4f quat;
+	quat.setEuler(r);
+	setLocalTRS(t, quat, s);
+}
+
+void 
 CTransform::_computeLocalMatrix()
 {
 	_matrixLocal = Mat4f::s_TRS(_localPosition, _localRotation, _localScale);
 }
+
 
 Vec3f CTransform::forward() const
 {

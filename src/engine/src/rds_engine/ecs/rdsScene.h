@@ -24,8 +24,9 @@ public:
 	void create(EngineContext& egCtx);
 	void destroy();
 
-	Entity* addEntity(bool hasDefaultName);
+	Entity* addEntity();
 	Entity* addEntity(StrView name);
+	Entity* addEntityWithDefaultName();
 
 	void removeEntity(Entity* entity);
 
@@ -48,35 +49,6 @@ inline EngineContext& Scene::engineContext() { return *_egCtx; }
 
 inline Span<		Entity*> Scene::entities()			{ return _entVecTable.elements(); }
 inline Span<const	Entity*> Scene::entities() const	{ return spanConstCast<const Entity*>(_entVecTable.elements()); }
-
-
-#endif
-
-
-#if 0
-#pragma mark --- rdsSceneView-Impl ---
-#endif // 0
-#if 1
-
-class SceneView
-{
-public:
-	void create(Scene* scene, CRenderableSystem* sys);
-
-	void drawScene(RenderRequest& rdReq, Material* mtl, DrawData* drawData);
-	void drawScene(RenderRequest& rdReq, DrawData* drawData);
-
-	Entity* findEntity(EntityId id);
-
-public:
-	CRenderableSystem& renderableSystem();
-
-private:
-	Scene*				_scene		= nullptr;
-	CRenderableSystem*	_rdableSys	= nullptr;
-};
-
-inline CRenderableSystem& SceneView::renderableSystem() { return *_rdableSys; }
 
 
 #endif

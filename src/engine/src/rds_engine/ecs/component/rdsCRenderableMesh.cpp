@@ -2,6 +2,9 @@
 #include "rdsCRenderableMesh.h"
 #include "rds_engine/ecs/rdsEntity.h"
 
+#include "rds_engine/draw/rdsDrawData.h"
+#include "rds_engine/draw/rdsDrawSettings.h"
+
 namespace rds
 {
 
@@ -20,8 +23,23 @@ CRenderableMesh::~CRenderableMesh()
 	
 }
 
+template<class T>
+bool isOverlapped(const T& a, const T& b)
+{
+	return a.isOverlapped(b);
+}
+
+template<class T, class FUNC>
+void executeWhenOverlapped(FUNC&& fn, const T& a, const T& b)
+{
+	if (isOverlapped(a, b))
+	{
+		fn();
+	}
+}
+
 void 
-CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawData)
+CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawData, const DrawSettings& drawSettings)
 {
 	if (!meshAsset) return;
 	if (!mtl)
@@ -39,13 +57,86 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawDat
 	perObjParam.id				= sCast<u32>(id);
 	//perObjParam.drawParamIdx	= drawData ? sCast<u32>(drawData->drawParamIdx) : 0;
 
-	if (subMeshIndex == s_kInvalidSubMeshIndex)
+	if (auto& fn = drawSettings.setMaterialFn)
 	{
-		rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, meshAsset->renderMesh, mtl, perObjParam);
+		fn(mtl);
 	}
-	else
+
+	auto&		transform	= entity().transform();
+	const auto& matrix		= transform.worldMatrix();
+	auto&		rdMesh		= meshAsset->renderMesh;
+
+	auto& cullingSetting = drawSettings.cullingSetting;
+	switch (cullingSetting.mode)
 	{
-		rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, meshAsset->renderMesh.subMeshes()[subMeshIndex], mtl, perObjParam);
+		case CullingMode::None:
+		{
+			if (subMeshIndex == s_kInvalidSubMeshIndex)
+			{
+				rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, rdMesh, mtl, perObjParam);
+			}
+			else
+			{
+				auto& subMesh = rdMesh.subMeshes()[subMeshIndex];
+				rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+			}
+		} break;
+
+		case CullingMode::CameraFustrum:
+		{
+			const auto& cullingFrustum = cullingSetting.cameraFustrum;
+			if (subMeshIndex == s_kInvalidSubMeshIndex)
+			{
+				for (auto& subMesh : rdMesh.subMeshes())
+				{
+					bool isOverlapped = cullingFrustum.isOverlapped(subMesh.aabbox(), matrix);
+					if (isOverlapped)
+					{
+						rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+					}
+				}
+			}
+			else
+			{
+				auto& subMesh = rdMesh.subMeshes()[subMeshIndex];
+				bool isOverlapped = cullingFrustum.isOverlapped(subMesh.aabbox(), matrix);
+				if (isOverlapped)
+				{
+					rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+				}
+				else
+				{
+					//RDS_LOG("culled: {}", entity().name());
+				}
+			}
+		} break;
+		case CullingMode::AABBox:
+		{
+			const auto& aabbox = cullingSetting.aabbox;
+			if (subMeshIndex == s_kInvalidSubMeshIndex)
+			{
+				for (auto& subMesh : rdMesh.subMeshes())
+				{
+					bool isOverlapped = aabbox.isOverlapped(subMesh.aabbox().makeExpanded(matrix));
+					if (isOverlapped)
+					{
+						rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+					}
+				}
+			}
+			else
+			{
+				auto& subMesh = rdMesh.subMeshes()[subMeshIndex];
+				bool isOverlapped = aabbox.isOverlapped(subMesh.aabbox().makeExpanded(matrix));
+				if (isOverlapped)
+				{
+					rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+					//RDS_LOG("isOverlapped: {}", entity().name());
+				}
+			}
+		} break;
+
+		default: { RDS_THROW("invalid CullingMode"); } break;
 	}
 }
 

@@ -115,8 +115,7 @@ bool
 	bool	hasValueChanged	= false;
 	ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(&value);
-
+	auto pushId = uiDrawReq.makePushID(label);
 	sameLineWithText(label);
 	hasValueChanged = ImGui::DragFloat2("", &value.x, 0.01f, 0.0f, 0.0f);
 
@@ -267,7 +266,7 @@ bool
 	bool	hasValueChanged	= false;
 	//ValueT	resetValue		= this->resetValue(drawReq);
 
-	auto pushId = uiDrawReq.makePushID(&value);
+	auto pushId = uiDrawReq.makePushID(label);
 	sameLineWithText(label);
 	uiDrawReq.showImage(&value, Tuple2f{75, 75});
 

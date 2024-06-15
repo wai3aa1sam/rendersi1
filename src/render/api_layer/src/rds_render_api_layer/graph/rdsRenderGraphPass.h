@@ -80,7 +80,7 @@ class RdgPass : public NonCopyable
 	friend class RdgDrawer;
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	static constexpr SizeType s_kFuncLocalSize = 64 * 4;
+	static constexpr SizeType s_kFuncLocalSize = 128 * 4;
 
 public:
 	using StateUtil = RenderResourceStateFlagsUtil;

@@ -5,7 +5,7 @@
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
 
-#include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
+#include "rds_core.h"
 
 namespace rds
 {
@@ -23,6 +23,13 @@ RenderRequest::RenderRequest()
 RenderRequest::~RenderRequest()
 {
 
+}
+
+void 
+RenderRequest::reset(RenderContext* rdCtx, DrawData& drawData, Material* lineMaterial_)
+{
+	reset(rdCtx);
+	lineMaterial = lineMaterial_;
 }
 
 void 
@@ -103,6 +110,32 @@ void
 RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const PerObjectParam& perObjectParam)
 {
 	drawMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, rdMesh, mtl, perObjectParam);
+}
+
+
+void 
+RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl
+						, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix)
+{
+	for (auto& e : rdMesh.subMeshes())
+	{
+		bool isOverlapped = cullingFrustum.isOverlapped(e.aabbox().makeExpanded(matrix), matrix);
+		if (isOverlapped)
+		{
+			drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, e, mtl, perObjectParam);
+		}
+	}
+}
+
+void 
+RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl
+							, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix)
+{
+	bool isOverlapped = cullingFrustum.isOverlapped(rdSubMesh.aabbox().makeExpanded(matrix), matrix);
+	if (isOverlapped)
+	{
+		drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, rdSubMesh, mtl, perObjectParam);
+	}
 }
 
 void 
@@ -202,7 +235,7 @@ RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTrian
 }
 
 void 
-RenderRequest::drawLine(LineVtxType pt0, LineVtxType pt1, Material* mtlLine)
+RenderRequest::drawLine(LineVtxType pt0, LineVtxType pt1)
 {
 	Vector<LineVtxType, 2> pts;
 	pts.emplace_back(pt0);
@@ -212,12 +245,14 @@ RenderRequest::drawLine(LineVtxType pt0, LineVtxType pt1, Material* mtlLine)
 	indices.emplace_back(0);
 	indices.emplace_back(1);
 
-	drawLines(pts, indices, mtlLine);
+	drawLines(pts, indices);
 }
 
 void 
-RenderRequest::drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices, Material* mtlLine)
+RenderRequest::drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices)
 {
+	RDS_CORE_ASSERT(lineMaterial, "lineMaterial is nullptr");
+
 	if (indices.size() <= 0) 
 		return;
 
@@ -232,7 +267,7 @@ RenderRequest::drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices, Mater
 	_inlineDraw.vertexData.appendRange(spanCast<const u8>(pts));
 	_inlineDraw.indexData.appendRange( spanCast<const u8>(indices));
 
-	cmd->setMaterial(mtlLine);
+	cmd->setMaterial(lineMaterial);
 	cmd->renderPrimitiveType	= RenderPrimitiveType::Line;
 	cmd->vertexLayout			= LineVtxType::vertexLayout();
 	cmd->indexType				= RenderDataTypeUtil::get<LineIdxType>();
@@ -242,6 +277,95 @@ RenderRequest::drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices, Mater
 	cmd->indexCount				= indices.size();
 
 	_inlineDraw._drawCalls.emplace_back(cmd);
+}
+
+void 
+RenderRequest::drawFrustum(const Frustum3f& frustum, const Color4b& color)
+{
+	drawBox(frustum.points, color);
+}
+
+void 
+RenderRequest::drawFrustum(const Frustum3f& frustum, const Color4f& color)
+{
+	drawFrustum(frustum, color.toColorRGBAb());
+}
+
+void 
+RenderRequest::drawAABBox(const AABBox3f& aabbox, const Color4b& color, const Mat4f& mat)
+{
+	if (!aabbox.isValid()) return;
+
+	Vec3f pts[AABBox3f::s_kVertexCount];
+	aabbox.makeExpanded(pts, mat);
+	drawBox(pts, color);
+}
+
+void 
+RenderRequest::drawAABBox(const RenderMesh&    mesh, const Color4b& color, const Mat4f& mat)
+{
+	for (auto& sm : mesh.subMeshes()) 
+	{
+		drawAABBox(sm, color, mat);
+	}
+}
+
+void 
+RenderRequest::drawAABBox(const RenderMesh&    mesh, const Color4f& color, const Mat4f& mat)
+{
+	drawAABBox(mesh, color.toColorRGBAb(), mat);
+}
+
+void 
+RenderRequest::drawAABBox(const RenderSubMesh& mesh, const Color4b& color, const Mat4f& mat)
+{
+	drawAABBox(mesh.aabbox(), color, mat);
+}
+
+void 
+RenderRequest::drawAABBox(const RenderSubMesh& mesh, const Color4f& color, const Mat4f& mat)
+{
+	drawAABBox(mesh.aabbox(), color.toColorRGBAb(), mat);
+}
+
+void 
+RenderRequest::drawAABBox(const Vec3f& pos, const Vec3f& size, const Color4b& color)
+{
+	AABBox3f aabbox;
+	aabbox.min = Vec3f{ -1.0, -1.0, -1.0 };
+	aabbox.max = Vec3f{  1.0,  1.0,  1.0 };
+	drawAABBox(aabbox, color, Mat4f::s_TS(pos, size));
+}
+
+void 
+RenderRequest::drawBox(const Vec3f pts[AABBox3f::s_kVertexCount], const Color4b& color)
+{
+	Vertex_PosColor<1> vertices[8];
+	for (size_t i = 0; i < 8; i++) 
+	{
+		auto& v = vertices[i];
+		v.position	= pts[i];
+		v.colors[0] = color;
+	}
+
+	u16 indices[] = 
+	{	0,1,
+		1,2,
+		2,3,
+		3,0,
+
+		4,5,
+		5,6,
+		6,7,
+		7,4,
+
+		0,4,
+		1,5,
+		2,6,
+		3,7
+	};
+
+	drawLines(vertices, indices);
 }
 
 #if 0

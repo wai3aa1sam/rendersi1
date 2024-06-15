@@ -2,6 +2,8 @@
 
 #include "rds_core_base/common/rds_core_base_common.h"
 
+#include <nmsp_math/geometry/nmspMathGeometry.h>
+
 #if 0
 #pragma mark --- rds_math-Impl ---
 #endif // 0
@@ -99,6 +101,23 @@ using Rect2u = Rect2<u32>;
 template<class T> using Ray3 = ::nmsp::math::Ray3_T<T>;
 using Ray3f = Ray3<f32>;
 using Ray3d = Ray3<f64>;
+
+template<class T> using Triangle3 = ::nmsp::math::Triangle3_T<T>;
+using Triangle3f = Triangle3<f32>;
+using Triangle3d = Triangle3<f64>;
+
+template<class T> using Plane3 = ::nmsp::math::Plane3_T<T>;
+using Plane3f = Plane3<f32>;
+using Plane3d = Plane3<f64>;
+
+template<class T> using AABBox3 = ::nmsp::math::AABBox3_T<T>;
+using AABBox3f = AABBox3<f32>;
+using AABBox3d = AABBox3<f64>;
+
+using Frustum3_Side = ::nmsp::math::Frustum3_Side;
+template<class T> using Frustum3 = ::nmsp::math::Frustum3_T<T>;
+using Frustum3f = Frustum3<f32>;
+using Frustum3d = Frustum3<f64>;
 
 #endif
 

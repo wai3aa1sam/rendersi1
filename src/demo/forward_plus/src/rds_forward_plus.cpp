@@ -418,11 +418,11 @@ RfpForwardPlus::addLightCullingPass(RenderGraph* oRdGraph, DrawData* drawData, R
 
 				mtl->setParam("opaque_lightIndexCounter",		opaque_lightIndexCounter.renderResource());
 				mtl->setParam("opaque_lightIndexList",			opaque_lightIndexList.renderResource());
-				mtl->setParam("opaque_lightGrid",				opaque_lightGrid.renderResource());
+				mtl->setImage("opaque_lightGrid",				opaque_lightGrid.renderResource(), 0);
 
 				mtl->setParam("transparent_lightIndexCounter",	transparent_lightIndexCounter.renderResource());
 				mtl->setParam("transparent_lightIndexList",		transparent_lightIndexList.renderResource());
-				mtl->setParam("transparent_lightGrid",			transparent_lightGrid.renderResource());
+				mtl->setImage("transparent_lightGrid",			transparent_lightGrid.renderResource(), 0);
 
 				drawData->setupMaterial(mtl);
 				rdReq.dispatch(RDS_SRCLOC, mtl, 0, Vec3u{nThreadGrps, 1});

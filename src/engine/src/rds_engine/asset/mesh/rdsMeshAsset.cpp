@@ -34,8 +34,14 @@ template<class T> Mat4<T>		toMat4(		const aiMatrix4x4t<T>&	v);
 template<class T> ColorRGBA<T>	toColor4(	const aiColor4t<T>&		v);
 template<class T> Color4b		toColor4b(	const aiColor4t<T>&		v);
 
+template<class T> AABBox3<T>	toAABBox3(	const aiAABB&			v);
+
+
 struct AssimpMeshLoader
 {
+public:
+	using AABBox3 = EditMesh::AABBox3;
+
 public:
 	static constexpr u32 s_kInvalidId = MeshAsset::s_kInvalidId;
 
@@ -46,7 +52,7 @@ public:
 	bool load(MeshAsset* oMeshAsset, StrView filename, Shader* shader);
 
 private:
-	bool loadVertices(	EditMesh* oEdMesh, const aiMesh& aiMesh);
+	bool loadVertices(	EditMesh* oEdMesh, AABBox3* oAabbox, const aiMesh& aiMesh);
 	bool loadIndices(	EditMesh* oEdMesh, const aiMesh& aiMesh);
 	bool loadBones(		EditMesh* oEdMesh, const aiMesh& aiMesh);
 
@@ -90,13 +96,16 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	TempString buf;
 	buf = filename;
 
-	u32				loadFileFlags	 = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_OptimizeMeshes;
+	u32				loadFileFlags	 = aiProcess_Triangulate	| aiProcess_SortByPType 
+									 | aiProcess_GenUVCoords	| aiProcess_GenNormals 
+									 | aiProcess_OptimizeMeshes	| aiProcess_ValidateDataStructure;
+
 	if (false)		loadFileFlags	|= aiProcess_CalcTangentSpace;
 	if (false)		loadFileFlags	|= aiProcess_GlobalScale;			// convert cm to m
 
 	if (true)		loadFileFlags	|= aiProcess_FlipUVs;
 	if (true)		loadFileFlags	|= aiProcess_SortByPType;			// split by primitive type
-	if (true)		loadFileFlags	|= aiProcess_ValidateDataStructure;
+	//if (true)		loadFileFlags	|= aiProcess_GenBoundingBoxes;
 
 	const aiScene* srcScene = importer.ReadFile(buf.c_str(), loadFileFlags);
 	bool isLoadFailed = !srcScene || srcScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !srcScene->mRootNode;
@@ -134,17 +143,29 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 		}
 	}
 
+	Vector<AABBox3, 8> aabboxs;
+	aabboxs.resize(nMeshes);
+
 	EditMesh edMesh;
 	edMesh.pos.reserve(totalVertices);
 	edMesh.indices.reserve(totalIndices);
 	for (u32 i = 0; i < nMeshes; i++)
 	{
+		auto& aabbox = aabboxs[i];
 		const aiMesh* pAiMesh = srcScene->mMeshes[i]; 
-		if (!loadVertices(	&edMesh, *pAiMesh)) return false;
-		if (!loadIndices(	&edMesh, *pAiMesh)) return false;
-		if (!loadBones(		&edMesh, *pAiMesh)) return false;
+		if (!loadVertices(	&edMesh, &aabbox,	*pAiMesh)) return false;
+		if (!loadIndices(	&edMesh,			*pAiMesh)) return false;
+		if (!loadBones(		&edMesh,			*pAiMesh)) return false;
+		//aabbox = toAABBox3<f32>(pAiMesh->mAABB);
 	}
-	rdMesh.create(edMesh, nMeshes);
+
+	rdMesh.create(edMesh, nMeshes, aabboxs);
+	for (u32 i = 0; i < nMeshes; i++)
+	{
+		auto&			e		= rdMesh.subMeshes()[i];
+		const aiMesh*	srcMesh = srcScene->mMeshes[i]; 
+		e.setName(srcMesh->mName.C_Str());
+	}
 
 	bool isSuccess = false;
 	isSuccess = loadHeirarchyData(&oMeshAsset->nodeList, srcScene->mRootNode, srcScene);
@@ -164,20 +185,24 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 
 inline
 bool 
-AssimpMeshLoader::loadVertices(EditMesh* oEdMesh, const aiMesh& aiMesh)
+AssimpMeshLoader::loadVertices(EditMesh* oEdMesh, AABBox3* oAabbox, const aiMesh& aiMesh)
 {
 	auto&	edMesh		= *oEdMesh;
+	auto&	aabbox		= *oAabbox;
 	u32		nVertices	= aiMesh.mNumVertices;
 
 	//auto& mesh = subMeshes[iMeshes];
-	bool hasTangents	= aiMesh.mTangents	!= nullptr && aiMesh.mNumVertices > 0;
+	bool hasTangents	= aiMesh.mTangents		!= nullptr && aiMesh.mNumVertices > 0;
 	bool hasBitangents	= aiMesh.mBitangents	!= nullptr && aiMesh.mNumVertices > 0;
 
 	if (aiMesh.HasPositions())
 	{
+		//aabbox.reset(toVec3(aiMesh.mVertices[0]), toVec3(aiMesh.mVertices[0]));
 		for (u32 iVertex = 0; iVertex < nVertices; iVertex++)
 		{
-			edMesh.pos.emplace_back(toVec3(aiMesh.mVertices[iVertex]));
+			auto pos = toVec3(aiMesh.mVertices[iVertex]);
+			edMesh.pos.emplace_back(pos);
+			aabbox.encapsulate(pos);
 		}
 	}
 
@@ -201,7 +226,7 @@ AssimpMeshLoader::loadVertices(EditMesh* oEdMesh, const aiMesh& aiMesh)
 	{
 		for (u32 iVertex = 0; iVertex < nVertices; iVertex++)
 		{
-			edMesh.binormal.emplace_back(	toVec3(aiMesh.mBitangents[iVertex]));
+			edMesh.binormal.emplace_back(toVec3(aiMesh.mBitangents[iVertex]));
 		}
 	}
 
@@ -340,13 +365,15 @@ AssimpMeshLoader::_loadHeirarchyData(int level, MeshAssetNode* dst, MeshAssetNod
 	auto nChildren	= srcNode->mNumChildren;
 	//nodes->reserve(nodes->size() + nChildren + extraMeshCount);
 	RDS_TODO("_loadHeirarchyData, fmtTo(node.name, , srcNode->mName.C_Str()); failed, node.name == 0, but the length is not 0");
+
+	//RDS_LOG("loaded {}", srcNode->mName.C_Str());
 	{
 		auto& node = *dst;
 		//fmtTo(node.name,		"{}", srcNode->mName.C_Str());
 		node.name			= srcNode->mName.C_Str();
 		node.parent			= parent;
 		node.localTransform = toMat4(srcNode->mTransformation);
-		node.worldTransform = worldTransform * dst->localTransform;
+		node.worldTransform = worldTransform * node.localTransform;
 		if (nMeshes > 0)
 		{
 			node.meshIdx		= srcNode->mMeshes[0];
@@ -508,7 +535,7 @@ AssimpMeshLoader::loadMaterials(Shader* shader, const aiScene* srcScene)
 					materialDatum.roughness = bufFloat;
 				}
 
-				if (isSuccess(srcMaterial.Get(AI_MATKEY_REFLECTIVITY, bufFloat)))
+				if (isSuccess(srcMaterial.Get(AI_MATKEY_METALLIC_FACTOR, bufFloat)))
 				{
 					materialDatum.metalness = bufFloat;
 				}
@@ -551,25 +578,19 @@ AssimpMeshLoader::loadMaterials(Shader* shader, const aiScene* srcScene)
 		auto& materials		= materialList.materials;
 		auto& materialData	= materialList.materialData;
 
+		TempString buf;
+
 		auto nMaterial = materialData.size();
 		materials.reserve(nMaterial);
 		for (u32 i = 0; i < nMaterial; i++)
 		{
 			const auto& mtlDatum = materialData[i];
+			fmtToNew(buf, "{}[{}]", mtlDatum.name, i);
 
 			auto& mtl = materials.emplace_back();
 			mtl = Renderer::rdDev()->createMaterial(shader);
-			mtl->setDebugName(mtlDatum.name);
-
-			if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Albedo))				mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Albedo),				tex);
-			if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Normal))				mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Normal),				tex);
-			if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::RoughnessMetalness))	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_RoughnessMetalness),	tex);
-			if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Emissive))			mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Emissive),				tex);
-
-			mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_albedo),				mtlDatum.albedo);
-			mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_emission),			mtlDatum.emission);
-			mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_metalness),			mtlDatum.metalness);
-			mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_roughness),			mtlDatum.roughness);
+			mtl->setDebugName(buf);
+			meshAsset.materialList.setupMaterial(mtl, i);
 		}
 	}
 
@@ -620,7 +641,46 @@ toColor4b(const aiColor4t<T>& v)
 	return Color4b{ sCast<U>(o.r), sCast<U>(o.g), sCast<U>(o.b), sCast<U>(o.a)};
 }
 
+template<class T> inline
+AABBox3<T>	
+toAABBox3(const aiAABB& v)
+{
+	AABBox3<T> o;
+	o.min = toVec3(v.mMin);
+	o.max = toVec3(v.mMax);
+	return o;
+}
+
 #endif
+
+#if 0
+#pragma mark --- rdsMeshAssetMaterialList-Impl ---
+#endif // 0
+#if 1
+
+void 
+MeshAssetMaterialList::setupMaterial(Material* mtl, SizeType mtlIdx)
+{
+	auto* shader = mtl->shader();
+	if (!shader)
+		return;
+
+	const auto& mtlDatum = materialData[mtlIdx];
+
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Albedo))				mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Albedo),				tex);
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Normal))				mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Normal),				tex);
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::RoughnessMetalness))	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_RoughnessMetalness),	tex);
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Emissive))			mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Emissive),				tex);
+
+	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_albedo),				mtlDatum.albedo);
+	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_emission),			mtlDatum.emission);
+	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_metalness),			mtlDatum.metalness);
+	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_roughness),			mtlDatum.roughness);
+}
+
+
+#endif // 1
+
 
 #if 0
 #pragma mark --- rdsMeshAsset-Impl ---
@@ -655,23 +715,25 @@ MeshAsset::addToScene(Scene* scene, const Mat4f& matrix)
 	}
 
 	auto* node		= rootNode;
-	auto* rootEnt	= _addToScene(scene, node, matrix);
+	auto* rootEnt	= scene->addEntity(node->name);
+	_addToScene(scene, rootEnt, node, matrix);
 	return rootEnt;
 }
 
 Entity*
-MeshAsset::_addToScene(Scene* scene, MeshAssetNode* node, const Mat4f& matrix)
+MeshAsset::_addToScene(Scene* scene, Entity* parent, MeshAssetNode* node, const Mat4f& matrix)
 {
-	//RDS_LOG("{}", node->name);
-
-	auto* ent	= scene->addEntity(node->name);
-	_setupEntity(ent, node, matrix);
-
+	Entity* ent = nullptr;
+	if (node->meshIdx != Asset::s_kInvalidId/* && StrUtil::ignoreCaseCompare(node->name, "sponza_117_sponza_117_floor") == 0*/)
+	{
+		ent	= scene->addEntity(node->name);
+		_setupEntity(ent, node, matrix);
+	}
+	
 	for (auto& e : node->children)
 	{
 		// set parent in this line
-
-		_addToScene(scene, e, node->localTransform);
+		_addToScene(scene, ent ? ent : parent, e, matrix);
 	}
 	return ent;
 }
@@ -682,9 +744,17 @@ MeshAsset::_setupEntity(Entity* dst, MeshAssetNode* node, const Mat4f& localMatr
 	auto* ent = dst;
 
 	RDS_TODO("decompose TRS then set to entity transform");
-	//Mat4f dstLocalMatrix = localMatrix * node->localTransform;
-	//auto* transform = ent->getComponent<CTransform>();
-	//transform->setLocalMatrix(worldMatrix);
+	Mat4f dstLocalMatrix = localMatrix * node->localTransform;
+	
+	Vec3f scale;
+	Quat4f rotation;
+	Vec3f translation;
+	Vec3f skew;
+	Vec4f perspective;
+	glm::decompose(dstLocalMatrix, scale, rotation, translation, skew, perspective);
+
+	auto* transform = ent->getComponent<CTransform>();
+	transform->setLocalTRS(translation, rotation, scale);
 
 	auto* rdableMesh = ent->addComponent<CRenderableMesh>();
 	rdableMesh->meshAsset		= this;

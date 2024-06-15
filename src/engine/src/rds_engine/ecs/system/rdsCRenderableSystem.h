@@ -6,6 +6,7 @@
 
 #include "rdsCSystem.h"
 #include "rds_engine/ecs/component/rdsCRenderable.h"
+#include "rds_engine/draw/rdsDrawData.h"
 
 #include <rds_render_api_layer/buffer/rdsParamBuffer.h>
 
@@ -15,39 +16,9 @@ namespace rds
 class	Scene;
 class	SceneView;
 class	CRenderable;
-struct  MeshAssets;
+
+struct	MeshAssets;
 struct	DrawParam;
-
-/*
-* TODO: should put on rds_render later, drawScene then need to be virtual
-*/
-struct DrawData
-{
-	u32 drawParamIdx = 0;
-
-	float			deltaTime   = 0.0f;
-	SceneView*		sceneView	= nullptr;
-	math::Camera3f*	camera		= nullptr;
-
-	MeshAssets*		meshAssets	= nullptr;
-
-	RdgTextureHnd oTexPresent;
-
-public:
-	void drawScene(RenderRequest& rdReq, Material* mtl);
-	void drawScene(RenderRequest& rdReq);
-
-	void setupDrawParam(DrawParam*	oDrawParam);
-	void setupMaterial(	Material*	oMtl);
-
-public:
-	const Tuple2f& resolution() const;
-
-	Material* mtlLine();
-
-public:
-	SPtr<Material> _mtlLine;
-};
 
 #if 0
 #pragma mark --- rdsCRenderableSystem-Decl ---
@@ -58,6 +29,7 @@ class CRenderableSystem : public CSystemT<CRenderable> // Singleton<CRenderableS
 {
 	friend class	CRenderable;
 	friend struct	DrawData;		// temporary
+	friend class	SceneView;
 	RDS_ENGINE_COMMON_BODY();
 public:
 	using RenderableTable		= VectorMap<EntityId, SPtr<CRenderable> >;

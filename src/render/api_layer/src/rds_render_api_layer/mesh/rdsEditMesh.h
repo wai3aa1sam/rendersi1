@@ -22,6 +22,7 @@ public:
 	using NormalType	= Tuple3f;
 	using TangentType	= Tuple3f;
 	using BinormalType	= Tuple3f;
+	using AABBox3		= AABBox3<PosType::ElementType>;
 
 	using SizeType = RenderApiLayerTraits::SizeType;
 
@@ -46,8 +47,8 @@ public:
 	Vector<u32> indices;
 
 public:
-	template<size_t N>	const VertexLayout*	createPackedVtxData(Vector<u8, N>& out) const;
-	template<size_t N>	void				createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout) const;
+	template<size_t N>	const VertexLayout*	createPackedVtxData(Vector<u8, N>& out, AABBox3& oAabbox) const;
+	template<size_t N>	void				createPackedVtxData(Vector<u8, N>& out, AABBox3& oAabbox, const VertexLayout* vertexLayout) const;
 						Vector<u8>			makePackedVtxData() const;
 
 	const VertexLayout* getVertexLayout() const;
@@ -59,9 +60,9 @@ public:
 
 template<size_t N> inline
 const VertexLayout*
-EditMesh::createPackedVtxData(Vector<u8, N>& out) const
+EditMesh::createPackedVtxData(Vector<u8, N>& out, AABBox3& oAabbox) const
 {
-	return PackedVtxDataHelper::createPackedVtxData(out
+	return PackedVtxDataHelper::createPackedVtxData(out, oAabbox
 		, &pos,			s_kPosCount
 		, &color,		s_kColorCount
 		, uvs,			s_kUvCount
@@ -73,9 +74,10 @@ EditMesh::createPackedVtxData(Vector<u8, N>& out) const
 
 template<size_t N> inline 
 void
-EditMesh::createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout) const
+EditMesh::createPackedVtxData(Vector<u8, N>& out, AABBox3& oAabbox, const VertexLayout* vertexLayout) const
 {
-	return PackedVtxDataHelper::createPackedVtxData(out, vertexLayout
+	return PackedVtxDataHelper::createPackedVtxData(out, oAabbox
+		, vertexLayout
 		, &pos,			s_kPosCount
 		, &color,		s_kColorCount
 		, uvs,			s_kUvCount
@@ -85,7 +87,13 @@ EditMesh::createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayo
 	);
 }
 
-inline Vector<u8> EditMesh::makePackedVtxData() const { Vector<u8> o; createPackedVtxData(o); return o; }
+inline Vector<u8> EditMesh::makePackedVtxData() const 
+{
+	Vector<u8> o; 
+	AABBox3 oAabbox3; 
+	createPackedVtxData(o, oAabbox3); 
+	return o; 
+}
 
 #endif
 
@@ -122,8 +130,10 @@ public:
 	using NormalType	= NORMAL_TYPE;
 	using TangentType	= TANGNET_TYPE;
 	using BinormalType	= BINORMAL_TYPE;
+	using AABBox3		= AABBox3<typename PosType::ElementType>;
 
 	using SizeType = RenderApiLayerTraits::SizeType;
+
 
 public:
 	static constexpr u8 s_kPosCount			= POS_COUNT;
@@ -134,16 +144,16 @@ public:
 	static constexpr u8 s_kBinormalCount	= BINORMAL_COUNT;
 
 public:
-	template<size_t N>	void		createPackedVtxData(Vector<u8, N>& out);
+	template<size_t N>	void		createPackedVtxData(Vector<u8, N>& out, AABBox3& oAabbox);
 						Vector<u8>	makePackedVtxData();
 
 public:
-	Vector<PosType>			positions	[s_kPosCount];
-	Vector<ColorType>		colors		[s_kColorCount];
-	Vector<UvType>			uvs			[s_kUvCount];
-	Vector<NormalType>		normals		[s_kNormalCount];
-	Vector<TangentType>		tangents	[s_kTangentCount];
-	Vector<BinormalType>	binormals	[s_kBinormalCount];
+	Vector<PosType>			positions[	s_kPosCount];
+	Vector<ColorType>		colors[		s_kColorCount];
+	Vector<UvType>			uvs[		s_kUvCount];
+	Vector<NormalType>		normals[	s_kNormalCount];
+	Vector<TangentType>		tangents[	s_kTangentCount];
+	Vector<BinormalType>	binormals[	s_kBinormalCount];
 
 };
 
@@ -164,9 +174,9 @@ template< class PT,	u8 PC
 		, class BT,	u8 BC>
 template<size_t N> inline
 void
-EditMeshTC<PT, PC, CT, CC, UT, UC, NT, NC, TT, TC, BT, BC>::createPackedVtxData(Vector<u8, N>& out)
+EditMeshTC<PT, PC, CT, CC, UT, UC, NT, NC, TT, TC, BT, BC>::createPackedVtxData(Vector<u8, N>& out, AABBox3& oAabbox)
 {
-	PackedVtxDataHelper::createPackedVtxData(out
+	PackedVtxDataHelper::createPackedVtxData(out, oAabbox
 												, positions,	s_kPosCount
 												, colors,		s_kColorCount
 												, uvs,			s_kUvCount
@@ -185,7 +195,10 @@ template< class PT,	u8 PC
 Vector<u8> 
 EditMeshTC<PT, PC, CT, CC, UT, UC, NT, NC, TT, TC, BT, BC>::makePackedVtxData()
 {
-	Vector<u8> o; createPackedVtxData(o); return o;
+	Vector<u8>	o;
+	AABBox3		oAabbox;
+	createPackedVtxData(o, oAabbox); 
+	return o;
 }
 
 #endif
@@ -208,7 +221,7 @@ struct PackedVtxDataHelper
 		, class TANGNET_TYPE
 		, class BINORMAL_TYPE
 	>
-	static const VertexLayout* createPackedVtxData(Vector<u8, N>& out
+	static const VertexLayout* createPackedVtxData(Vector<u8, N>& out, AABBox3<typename POS_TYPE::ElementType>& oAabbox
 									, const Vector<POS_TYPE>*		positions,		u8 posCount
 									, const Vector<COLOR_TYPE>*		colors,			u8 colorCount
 									, const Vector<UV_TYPE>*		uvs,			u8 uvCount
@@ -225,7 +238,8 @@ struct PackedVtxDataHelper
 		, class TANGNET_TYPE
 		, class BINORMAL_TYPE
 	>
-	static void createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout
+	static void createPackedVtxData(Vector<u8, N>& out, AABBox3<typename POS_TYPE::ElementType>& oAabbox
+									, const VertexLayout* vertexLayout
 									, const Vector<POS_TYPE>*		positions,		u8 posCount
 									, const Vector<COLOR_TYPE>*		colors,			u8 colorCount
 									, const Vector<UV_TYPE>*		uvs,			u8 uvCount
@@ -333,7 +347,7 @@ template<size_t N
 		, class BINORMAL_TYPE
 		> inline
 const VertexLayout* 
-PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out
+PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out, AABBox3<typename POS_TYPE::ElementType>& oAabbox
 							, const Vector<POS_TYPE>*		positions,		u8 posCount
 							, const Vector<COLOR_TYPE>*		colors,			u8 colorCount
 							, const Vector<UV_TYPE>*		uvs,			u8 uvCount
@@ -361,7 +375,8 @@ PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out
 												, normals,		normalCount
 												, tangents,		tangentCount
 												, binormals,	binormalCount);
-	createPackedVtxData(out, vtxLayout
+	createPackedVtxData(out, oAabbox
+		, vtxLayout
 		, positions,	posCount
 		, colors,		colorCount
 		, uvs,			uvCount
@@ -382,7 +397,8 @@ template<size_t N
 >
 inline
 void
-PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out, const VertexLayout* vertexLayout
+PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out, AABBox3<typename POS_TYPE::ElementType>& oAabbox
+										, const VertexLayout* vertexLayout
 										, const Vector<POS_TYPE>*		positions,		u8 posCount
 										, const Vector<COLOR_TYPE>*		colors,			u8 colorCount
 										, const Vector<UV_TYPE>*		uvs,			u8 uvCount
@@ -400,6 +416,8 @@ PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out, const VertexLayout*
 
 	using Helper	= PackedVtxDataHelper;
 	using SizeType	= Helper::SizeType;
+	using Tuple3	= Tuple3<typename PosType::ElementType>;
+
 
 	RDS_CORE_ASSERT(posCount == 1, "only 1 pos count supported");
 	static_assert(IsSame<NormalType, TangentType> && IsSame<NormalType, BinormalType>, "");
@@ -434,11 +452,25 @@ PackedVtxDataHelper::createPackedVtxData(Vector<u8, N>& out, const VertexLayout*
 		switch (semanticType)
 		{
 			case SemanticT::SV_Position:
-			case SemanticT::POSITION:	{ auto& src = positions[semanticIdx];	Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
-			case SemanticT::COLOR:		{ auto& src = colors[semanticIdx];		Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
-			case SemanticT::TEXCOORD:	{ auto& src = uvs[semanticIdx];			Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
-			case SemanticT::NORMAL:		{ auto& src = normals[semanticIdx];		Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
-			case SemanticT::TANGENT:	{ auto& src = tangents[semanticIdx];	Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
+			case SemanticT::POSITION:	
+			{ 
+				auto& src = positions[semanticIdx];	
+				//Helper::copyVertexData(o, src.data(), src.size(), stride, offset); 
+				auto*	srcData = src.data();
+				u8*		dstData = o + offset;
+				for (size_t i = 0; i < vtxCount; i++) 
+				{
+					*reinCast<Tuple3*>(dstData) = *srcData;
+					oAabbox.encapsulate(*srcData);
+
+					srcData++;
+					dstData += stride;
+				}
+			} break;
+			case SemanticT::COLOR:		{ auto& src = colors[	semanticIdx];	Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
+			case SemanticT::TEXCOORD:	{ auto& src = uvs[		semanticIdx];	Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
+			case SemanticT::NORMAL:		{ auto& src = normals[	semanticIdx];	Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
+			case SemanticT::TANGENT:	{ auto& src = tangents[	semanticIdx];	Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
 			case SemanticT::BINORMAL:	{ auto& src = binormals[semanticIdx];	Helper::copyVertexData(o, src.data(), src.size(), stride, offset); } break;
 		}
 	}

@@ -10,10 +10,9 @@ class	DemoEditorApp;
 class	DemoEditorLayer;
 class	GraphicsDemo;
 
-struct	MeshAssets;
+struct 	MeshAssets;
 
 extern UPtr<GraphicsDemo> makeDemo();
-
 
 #if 0
 #pragma mark --- rdsGraphicsDemo-Decl ---
@@ -52,6 +51,7 @@ public:
 	RdgPass* addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrView passName, RdgTextureHnd rtColor, RdgTextureHnd texColor, Material* material);
 	RdgPass* addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, Material* material);
 	RdgPass* addDisplayNormalPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor);
+	RdgPass* addDisplayAABBoxPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, const DrawSettings& drawSettings);
 
 public:
 	DemoEditorApp& app();
@@ -115,7 +115,7 @@ public:
 	void create();
 	void destroy();
 
-	void loadSponza();
+	void loadSponza(Shader* shader);
 };
 
 #endif // 1

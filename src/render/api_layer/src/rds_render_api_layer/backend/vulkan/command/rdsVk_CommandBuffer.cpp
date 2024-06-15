@@ -201,8 +201,7 @@ Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFen
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-	auto ret = vkQueueSubmit2(_vkQueue->hnd(), 1, &submitInfo, signalFence->hnd());
-	Util::throwIfError(ret);
+	_vkQueue->submit(submitInfo, signalFence->hnd(), debugLabel);
 }
 
 void 

@@ -8,7 +8,9 @@ namespace rds
 
 class CRenderableSystem;
 class SceneView;
+
 struct DrawData;
+struct DrawSettings;
 
 #if 0
 #pragma mark --- rdsCRenderable-Decl ---
@@ -34,9 +36,9 @@ protected:
 	void onCreate(Entity* entity)	override;
 	//void onDestroy()				override;
 
-	void			render	(RenderRequest& rdReq, DrawData* drawData);
-	void			render	(RenderRequest& rdReq, Material* mtl, DrawData* drawData);
-	virtual void	onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawData) = 0;
+	void			render	(RenderRequest& rdReq, DrawData* drawData, const DrawSettings& drawSettings);
+	void			render	(RenderRequest& rdReq, Material* mtl, DrawData* drawData, const DrawSettings& drawSettings);
+	virtual void	onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawData, const DrawSettings& drawSettings) = 0;
 
 	void setMaterialCommonParam(Material* mtl, DrawData& drawData);
 

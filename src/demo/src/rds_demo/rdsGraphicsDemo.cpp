@@ -143,7 +143,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAs
 			light->setType(LightType::Point);
 			if (isDirectional)
 			{
-				//light->setType(LightType::Directional);
+				light->setType(LightType::Directional);
 			}
 
 			if (light->lightType() == LightType::Spot)
@@ -282,7 +282,7 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), *drawData);
+			rdReq.reset(rdGraph->renderContext(), *drawData, drawData->mtlLine());
 			auto mtl = material ? material :drawData->mtlLine();	RDS_UNUSED(mtl);
 			mtl->setParam("rds_matrix_vp", drawData->camera->viewProjMatrix());
 
@@ -304,7 +304,7 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 					v1.position		= posWs + dirWs * (light->lightType() == LightType::Directional ? 10 : light->range());
 					v1.colors[0]	= Color4b{0, 255, 0, 255};
 
-					rdReq.drawLine(v0, v1, mtl);
+					rdReq.drawLine(v0, v1);
 				}
 			}
 
@@ -317,7 +317,7 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 				v1.position		= Tuple3f{10.0, 0.0, 0.0};
 				v1.colors[0]	= Color4b{255, 0, 0, 255};
 
-				rdReq.drawLine(v0, v1, mtl);
+				rdReq.drawLine(v0, v1);
 }
 
 			{
@@ -329,7 +329,7 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 				v1.position		= Tuple3f{0.0, 10.0, 0.0};
 				v1.colors[0]	= Color4b{255, 0, 0, 255};
 
-				rdReq.drawLine(v0, v1, mtl);
+				rdReq.drawLine(v0, v1);
 			}
 			{
 				RenderRequest::LineVtxType v0;
@@ -340,7 +340,7 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 				v1.position		= Tuple3f{0.0, 0.0, 10.0};
 				v1.colors[0]	= Color4b{255, 0, 0, 255};
 
-				rdReq.drawLine(v0, v1, mtl);
+				rdReq.drawLine(v0, v1);
 			}
 		});
 
@@ -364,6 +364,53 @@ GraphicsDemo::addDisplayNormalPass(RenderGraph* oRdGraph, DrawData* drawData, Rd
 			drawData->drawScene(rdReq, mtl);
 		});
 	return &pass;
+}
+
+RdgPass* 
+GraphicsDemo::addDisplayAABBoxPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, const DrawSettings& drawSettings)
+{
+	auto*	rdGraph		= oRdGraph;
+
+	RdgPass* passDisplayAABBox = nullptr;
+	{
+		auto& pass = rdGraph->addPass("displayAABBox", RdgPassTypeFlags::Graphics);
+		pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), *drawData, drawData->mtlLine());
+
+				#if 0
+				if (drawSettings.cullingSetting.mode == CullingMode::CameraFustrum)
+				{
+					const auto& camera = *drawData->camera;
+
+					//auto fov = drawData->camera->fov();
+					//auto camera = *drawData->camera;
+					//camera.setFov(fov / 2.0f);
+					//rdReq.drawFrustum(camera.frustum(), Color4f{1.0f, 0.5f, 0.0f, 1.0f});
+					//rdReq.drawFrustum(drawSettings.cullingSetting.cameraFustrum, Color4f{1.0f, 0.0f, 1.0f, 1.0f});
+				}
+				#endif // 0
+
+				bool isDrawStaticDebugCamera = false;
+				if (isDrawStaticDebugCamera)
+				{
+					static math::Camera3f camera;
+					static bool isSet = false;
+					if (!isSet)
+					{
+						camera = *drawData->camera;
+						isSet = true;
+					}
+					rdReq.drawFrustum(camera.frustum(), Color4f{1.0f, 0.0f, 1.0f, 1.0f});
+				}
+
+				drawData->drawSceneAABBox(rdReq, drawSettings);
+			});
+		passDisplayAABBox = &pass;
+	}
+	return passDisplayAABBox;
 }
 
 #if 0
@@ -484,12 +531,15 @@ MeshAssets::destroy()
 }
 
 void 
-MeshAssets::loadSponza()
+MeshAssets::loadSponza(Shader* shader)
 {
-	auto defaultShader = Renderer::rdDev()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
+	if (!shader)
+	{
+		shader = Renderer::rdDev()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
+	}
 
 	sponza = makeSPtr<MeshAsset>();
-	sponza->load("asset/mesh/scene/sponza/sponza.obj", defaultShader);
+	sponza->load("asset/mesh/scene/sponza/sponza.obj", shader);
 }
 
 

@@ -89,6 +89,7 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq, bool isWaitImmediate)
 	for (auto* cmd : uploadBufCmds)
 	{
 		onTransferCommand_UploadBuffer(sCast<TransferCommand_UploadBuffer*>(cmd));
+		//RDS_LOG("onTransferCommand_UploadBuffer: {}", sCast<TransferCommand_UploadBuffer*>(cmd)->dst->debugName());
 	}
 
 	for (auto* cmd : uploadTexCmds)

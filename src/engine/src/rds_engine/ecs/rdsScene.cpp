@@ -2,6 +2,10 @@
 #include "rdsScene.h"
 #include "rds_engine/rdsEngineContext.h"
 
+#include "component/rdsCRenderableMesh.h"
+#include "system/rdsCRenderableSystem.h"
+
+
 namespace rds
 {
 
@@ -33,21 +37,12 @@ Scene::destroy()
 	_entVecTable.destroy();
 }
 
-Entity*
-Scene::addEntity(bool hasDefaultName)
+Entity* 
+Scene::addEntity()
 {
 	auto& id = ++_nextEntId;
 	auto* ent = _entVecTable.newElement<Entity>(id);
 	ent->create(*this, id);
-
-	#if 1
-	if (hasDefaultName)
-	{
-		TempString buf;
-		fmtTo(buf, "Entity-{}", sCast<u64>(id));
-		ent->setName(buf);
-	}
-	#endif // 0
 
 	return ent;
 }
@@ -55,8 +50,20 @@ Scene::addEntity(bool hasDefaultName)
 Entity*
 Scene::addEntity(StrView name)
 {
-	auto* ent = addEntity(false);
+	auto* ent = addEntity();
 	ent->setName(name);
+	return ent;
+}
+
+Entity*
+Scene::addEntityWithDefaultName()
+{
+	auto* ent = addEntity();
+
+	TempString buf;
+	fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
+	ent->setName(buf);
+
 	return ent;
 }
 
@@ -80,54 +87,6 @@ Scene::findEntity(EntityId id) const
 {
 	return constCast(_entVecTable).findElement(id);
 }
-
-#endif
-
-
-#if 0
-#pragma mark --- rdsSceneView-Impl ---
-#endif // 0
-#if 1
-
-void 
-SceneView::SceneView::create(Scene* scene, CRenderableSystem* sys) 
-{
-	_scene		= scene;
-	_rdableSys	= sys; 
-}
-
-void 
-SceneView::drawScene(RenderRequest& rdReq, Material* mtl, DrawData* drawData)
-{
-	RDS_CORE_ASSERT(mtl && drawData, "draw scene fail");
-	auto& rdableSys = renderableSystem();
-
-	drawData->setupMaterial(mtl);
-	for (auto* e : rdableSys.renderables())
-	{
-		e->render(rdReq, mtl, nullptr);
-	}
-}
-
-void 
-SceneView::drawScene(RenderRequest& rdReq, DrawData* drawData)
-{
-	RDS_CORE_ASSERT(drawData, "draw scene fail");
-
-	auto& rdableSys = renderableSystem();
-
-	for (auto* e : rdableSys.renderables())
-	{
-		e->render(rdReq, drawData);
-	}
-}
-
-Entity* 
-SceneView::findEntity(EntityId id)
-{
-	return _scene->findEntity(id);
-}
-
 
 #endif
 

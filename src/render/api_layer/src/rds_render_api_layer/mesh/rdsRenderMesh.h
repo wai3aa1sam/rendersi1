@@ -18,13 +18,17 @@ class RenderSubMesh
 {
 	friend class RenderMesh;
 public:
-	using Traits = RenderApiLayerTraits;
-
-	using SizeType = Traits::SizeType;
+	using Traits	= RenderApiLayerTraits;
+	using AABBox3	= AABBox3f;
+	using SizeType	= Traits::SizeType;
 
 public:
 	void create(const EditMesh& editMesh);
 	void create(u32 vtxOffset, u32 vtxCount, u32 idxOffset, u32 idxCount);
+
+	void setAABBox(const AABBox3& aabbox);
+
+	void setName(StrView name);
 
 public:
 	RenderMesh&		 renderMesh();
@@ -50,6 +54,9 @@ public:
 	const VertexLayout* vertexLayout() const;
 	RenderPrimitiveType renderPrimitiveType() const;
 
+	const AABBox3& aabbox() const;
+	const String&  name() const;
+
 protected:
 	RenderMesh*					_renderMesh = nullptr;
 	SPtr<RenderGpuMultiBuffer>	_vtxBuf;
@@ -60,6 +67,10 @@ protected:
 	u32 _vtxCount	= 0;
 	u32 _idxOffset	= 0;
 	u32 _idxCount	= 0;
+
+	AABBox3 _aabbox;
+
+	String _name;
 };
 
 inline RenderMesh&			RenderSubMesh::renderMesh()					{ return *_renderMesh; }
@@ -80,6 +91,9 @@ inline RenderSubMesh::SizeType RenderSubMesh::indexOffset()		const	{ return _idx
 inline RenderSubMesh::SizeType RenderSubMesh::vertexOffsetInByte()	const { return vertexLayout()->stride()						* vertexOffset(); }
 inline RenderSubMesh::SizeType RenderSubMesh::indexOffsetInByte()	const { return RenderDataTypeUtil::getByteSize(indexType()) * indexOffset(); }
 
+inline 	const RenderSubMesh::AABBox3&	RenderSubMesh::aabbox() const		{ return _aabbox; }
+inline 	const String&					RenderSubMesh::name()	const		{ return _name; }
+
 #endif
 
 #if 0
@@ -89,13 +103,14 @@ inline RenderSubMesh::SizeType RenderSubMesh::indexOffsetInByte()	const { return
 
 class RenderMesh
 {
-	using Traits = RenderApiLayerTraits;
-
-	using SizeType = Traits::SizeType;
+	using Traits	= RenderApiLayerTraits;
+	using AABBox3	= RenderSubMesh::AABBox3;
+	using SizeType	= Traits::SizeType;
 
 public:
 	void create(const EditMesh& editMesh);
 	void create(const EditMesh& editMesh, u32 subMeshCount);
+	void create(const EditMesh& editMesh, u32 subMeshCount, Span<AABBox3> aabboxs);
 
 	void clear();
 

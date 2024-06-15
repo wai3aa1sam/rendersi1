@@ -31,11 +31,13 @@ public:
 	CTransform();
 	virtual ~CTransform();
 
-	void setLocalPosition	(float x, float y, float z);
-	void setLocalPosition	(const Vec3f&  v);
-	void setLocalRotation	(const Quat4f& v);
-	void setLocalRotation	(const Vec3f&  v);
-	void setLocalScale		(const Vec3f&  v);
+	void setLocalPosition(float x, float y, float z);
+	void setLocalPosition(const Vec3f&  v);
+	void setLocalRotation(const Quat4f& v);
+	void setLocalRotation(const Vec3f&  v);
+	void setLocalScale(	  const Vec3f&  v);
+	void setLocalTRS(	  const Vec3f&  t, const Quat4f& r, const Vec3f&  s);
+	void setLocalTRS(	  const Vec3f&  t, const Vec3f&  r, const Vec3f&  s);
 
 public:
 	const Mat4f& localMatrix();
@@ -68,11 +70,11 @@ protected:
 	bool _isDirty = false;
 };
 
-inline void CTransform::setLocalPosition	(float x, float y, float z) { setLocalPosition(Vec3f(x,y,z)); }
-inline void CTransform::setLocalPosition	(const Vec3f&  v)			{ _localPosition = v;			_setDirty(); }
-inline void CTransform::setLocalRotation	(const Quat4f& v)			{ _localRotation = v;			_setDirty(); }
-inline void CTransform::setLocalRotation	(const Vec3f&  v)			{ _localRotation.setEuler(v);	_setDirty(); }
-inline void CTransform::setLocalScale		(const Vec3f&  v)			{ _localScale = v;				_setDirty(); }
+inline void CTransform::setLocalPosition(float x, float y, float z)		{ setLocalPosition(Vec3f(x,y,z)); }
+inline void CTransform::setLocalPosition(const Vec3f&  v)				{ _localPosition = v;			_setDirty(); }
+inline void CTransform::setLocalRotation(const Quat4f& v)				{ _localRotation = v;			_setDirty(); }
+inline void CTransform::setLocalRotation(const Vec3f&  v)				{ _localRotation.setEuler(v);	_setDirty(); }
+inline void CTransform::setLocalScale(	 const Vec3f&  v)				{ _localScale = v;				_setDirty(); }
 
 inline void CTransform::_setDirty() 
 { 

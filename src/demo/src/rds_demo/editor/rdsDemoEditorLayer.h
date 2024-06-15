@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_demo/common/rds_demo_common.h"
-
+#include "rds_engine/draw/rdsSceneView.h"
 
 namespace rds
 {
@@ -10,7 +10,10 @@ class GraphicsDemo;
 class DemoEditorApp;
 class DemoEditorMainWindow;
 
+class SceneView;
+
 struct MeshAssets;
+
 
 #if 0
 #pragma mark --- rdsDemoEditorLayer-Decl ---

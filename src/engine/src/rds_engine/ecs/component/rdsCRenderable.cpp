@@ -38,15 +38,15 @@ CRenderable::onCreate(Entity* entity)
 //}
 
 void 
-CRenderable::render(RenderRequest& rdReq, Material* mtl, DrawData* drawData)
+CRenderable::render(RenderRequest& rdReq, Material* mtl, DrawData* drawData, const DrawSettings& drawSettings)
 {
-	onRender(rdReq, mtl, drawData);
+	onRender(rdReq, mtl, drawData, drawSettings);
 }
 
 void			
-CRenderable::render(RenderRequest& rdReq, DrawData* drawData)
+CRenderable::render(RenderRequest& rdReq, DrawData* drawData, const DrawSettings& drawSettings)
 {
-	onRender(rdReq, nullptr, drawData);
+	onRender(rdReq, nullptr, drawData, drawSettings);
 }
 
 void 

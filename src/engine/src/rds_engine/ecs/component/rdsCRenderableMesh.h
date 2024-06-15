@@ -28,7 +28,7 @@ public:
 	virtual ~CRenderableMesh();
 
 protected:
-	virtual void onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawData) override;
+	virtual void onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawData, const DrawSettings& drawSettings) override;
 };
 
 

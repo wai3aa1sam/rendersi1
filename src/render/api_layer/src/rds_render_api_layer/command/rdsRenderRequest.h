@@ -49,14 +49,8 @@ public:
 	template<class T>	static void drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData);
 						static void drawSubMesh (RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl);
 
-	
 public:
-	#if 0
-	Mat4f matrix_view = Mat4f::s_identity();
-	Mat4f matrix_proj = Mat4f::s_identity();
-
-	Vec3f cameraPos;
-	#endif // 0
+	SPtr<Material> lineMaterial;
 
 public:
 	RenderRequest();
@@ -65,6 +59,7 @@ public:
 	RenderRequest	(const RenderRequest& rhs) { throwIf(true, ""); }
 	void operator=	(const RenderRequest& rhs) { throwIf(true, ""); }
 
+	void reset(RenderContext* rdCtx, DrawData& drawData, Material* lineMaterial_);
 	void reset(RenderContext* rdCtx, DrawData& drawData);
 	void reset(RenderContext* rdCtx);
 
@@ -80,10 +75,13 @@ public:
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color, float depth, u32 stencil = 0);
 
 
-	template<class T>	void drawSubMeshT	(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,	Material* mtl, const T& extraData);
-	template<class T>	void drawMeshT		(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const T& extraData);
-						void drawMesh		(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl);
-						void drawMesh		(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh,			Material* mtl, const PerObjectParam& perObjectParam);
+	template<class T>	void drawSubMeshT(	RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,		Material* mtl, const T& extraData);
+	template<class T>	void drawMeshT(		RDS_RD_CMD_DEBUG_PARAM, const RenderMesh&    rdMesh,		Material* mtl, const T& extraData);
+						void drawMesh(		RDS_RD_CMD_DEBUG_PARAM, const RenderMesh&    rdMesh,		Material* mtl);
+						void drawMesh(		RDS_RD_CMD_DEBUG_PARAM, const RenderMesh&    rdMesh,		Material* mtl, const PerObjectParam& perObjectParam);
+						
+						void drawMesh(		RDS_RD_CMD_DEBUG_PARAM, const RenderMesh&    rdMesh,		Material* mtl, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix);
+						void drawSubMesh(	RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,		Material* mtl, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix);
 
 	RenderCmdIter<RenderCommand_DrawCall> addDrawCalls(SizeType n);
 	void drawRenderables(const DrawingSettings& settings);
@@ -105,8 +103,20 @@ public:
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY);
 	
 public:
-	void drawLine(LineVtxType pt0, LineVtxType pt1, Material* mtlLine);
-	void drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices, Material* mtlLine);
+	void drawLine(LineVtxType pt0, LineVtxType pt1);
+	void drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices);
+
+	void drawFrustum(const Frustum3f& frustum, const Color4b& color);
+	void drawFrustum(const Frustum3f& frustum, const Color4f& color);
+
+	void drawAABBox(const AABBox3f&    aabbox, const Color4b& color = Color4b(0,	 255,   0,    255),  const Mat4f& mat = Mat4f::s_identity());
+	void drawAABBox(const RenderMesh&    mesh, const Color4b& color = Color4b(0,	 255,   0,    255),  const Mat4f& mat = Mat4f::s_identity());
+	void drawAABBox(const RenderMesh&    mesh, const Color4f& color = Color4f(0.0f,  1.0f,  0.0f, 1.0f), const Mat4f& mat = Mat4f::s_identity());
+	void drawAABBox(const RenderSubMesh& mesh, const Color4b& color = Color4b(0,	 255,	0,    255),	 const Mat4f& mat = Mat4f::s_identity());
+	void drawAABBox(const RenderSubMesh& mesh, const Color4f& color = Color4f(0.0f,  0.0f,	1.0f, 1.0f), const Mat4f& mat = Mat4f::s_identity());
+	void drawAABBox(const Vec3f& pos, const Vec3f& size, const Color4b& color = Color4b(255, 0, 255, 255));
+
+	void drawBox(const Vec3f pts[AABBox3f::s_kVertexCount], const Color4b& color = Color4b(0,  255,    0,  255));
 
 public:
 	Span<RenderCommand*>			commands();
