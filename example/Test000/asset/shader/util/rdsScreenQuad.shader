@@ -47,9 +47,9 @@ PixelIn vs_main(VertexIn input)
 	PixelIn o = (PixelIn)0;
 
 	uint 	vertexId 	= input.vertexId;
-	float2 	uv 			= float2(uint2(vertexId, vertexId << 1) & 2);
+	float2 	uv 			= ScreenQuad_makeUv(vertexId);
 
-    o.positionHcs = float4(lerp(float2(-1.0, 1.0), float2(1, -1), uv), 0.0, 1.0);
+    o.positionHcs = ScreenQuad_makePositionHcs(uv);
     o.uv          = uv;
     
     return o;

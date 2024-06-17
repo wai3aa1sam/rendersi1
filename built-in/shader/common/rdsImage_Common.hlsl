@@ -26,11 +26,12 @@ uint makeRBGA8ByFloat4(float4 v)
 /*
 reference:
 ~ OpenGL Insights Chapter 22 "Octree-Based Sparse Voxelization Using the GPU Hardware Rasterizer" [Cyril Crassin, Simon Green]
+
+a is used to store the total access count
 */
-void AtomicOp_avgRGBA8(RWTexture3D<uint> dst, uint3 coords, float4 value)
+void AtomicOp_avgRGBA8(RWTexture3D<uint> dst, uint3 coords, float3 v)
 {
-    value.rgb *= 255.0;
-    value.w   += rds_epsilon;
+    float4 value = float4(v * 255.0, 1.0);
     uint newVal         = makeRBGA8ByFloat4(value);
     uint prevStoredVal  = 0;
     uint curStoredVal   = 0;
@@ -49,6 +50,7 @@ void AtomicOp_avgRGBA8(RWTexture3D<uint> dst, uint3 coords, float4 value)
             break;
 
         prevStoredVal   = curStoredVal;
+        
         float4 rval     = makeFloat4ByRBGA8(curStoredVal);
 
         // denormalize
@@ -56,19 +58,31 @@ void AtomicOp_avgRGBA8(RWTexture3D<uint> dst, uint3 coords, float4 value)
 
         // add new value
         float4 curValF = rval + value;
-
+        
         // renormalize
         curValF.xyz /= (curValF.w);
-
+        
         newVal = makeRBGA8ByFloat4(curValF);
+        
         ++i;
     } while (true && i < maxIterations);
 }
+
 
 #if 0
 #pragma mark --- Image-Impl ---
 #endif
 #if 1
+
+bool Image_isInBoundary(uint3 dispatchThreadId, uint2 imageExtent)
+{
+	return all(dispatchThreadId.xy < imageExtent);
+}
+
+bool Image_isInBoundary(uint3 dispatchThreadId, uint2 imageExtent, uint2 imageExtentOffset)
+{
+	return all(imageExtentOffset + dispatchThreadId.xy < imageExtent);
+}
 
 bool Image_isInBoundary(uint3 dispatchThreadId, uint3 imageExtent)
 {
@@ -83,6 +97,7 @@ bool Image_isInBoundary(uint3 dispatchThreadId, uint3 imageExtent, uint3 imageEx
     //     				&& imageExtentOffset.z 	+ dispatchThreadId.z < imageExtent.z;
 	// return isInBoundary;
 }
+
 
 #endif
 

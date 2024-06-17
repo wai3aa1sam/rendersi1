@@ -8,7 +8,7 @@ Shader {
 		// Queue	"Transparent"
 		//Cull		None
 
-		DepthTest	Less
+//		DepthTest	Less
 
 //		DepthTest	Always
 //		DepthWrite	false
@@ -28,7 +28,7 @@ Shader {
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
+    float4 positionOs   : SV_POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal       : NORMAL0;
 
@@ -37,31 +37,31 @@ struct VertexIn
 
 struct PixelIn 
 {
-	float4 positionHCS  : SV_POSITION;
+	float4 positionHcs  : SV_POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal       : NORMAL0;
 };
 
-PixelIn vs_main(VertexIn i)
+PixelIn vs_main(VertexIn input)
 {
-    PixelIn o;
+    PixelIn o = (PixelIn)0;
     
-    //o.positionOS    = positions[i.vertexId];
-    //o.color         = colors[i.vertexId];
-    o.positionHCS = mul(RDS_MATRIX_MVP, i.positionOS);
-    o.normal      = i.normal;
-    o.uv          = i.uv;
+    //o.positionOs    = positions[input.vertexId];
+    //o.color         = colors[input.vertexId];
+    o.positionHcs = mul(RDS_MATRIX_MVP, input.positionOs);
+    o.normal      = input.normal;
+    o.uv          = input.uv;
     
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float4 ps_main(PixelIn input) : SV_TARGET
 {
-    //float2 pos2f = i.positionOS;
+    //float2 pos2f = input.positionOs;
 
     float4 color;
     color = float4(1.0, 1.0, 1.0, 1.0);
-	//color.r = i.positionHCS.z;
-    //color.a = 1.0;
+	//color.r = input.positionHcs.z;
+    //color.a = input.0;
     return color;
 }

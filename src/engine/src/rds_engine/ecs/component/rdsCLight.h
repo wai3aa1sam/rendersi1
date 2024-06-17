@@ -70,16 +70,22 @@ public:
 	bool		isDirty() const;
 
 protected:
-	void setPositionVs	(const Vec4f&  v);
-	void setPositionVs	(const Vec3f&  v);
-	void setPositionVs	(float x, float y, float z, float w = 1.0f);
+	void setPositionVs( const Vec4f&  v);
+	void setPositionVs( const Vec3f&  v);
+	void setPositionVs( float x, float y, float z, float w = 1.0f);
 
-	void setDirectionVs	(const Vec4f&  v);
-	void setDirectionVs	(const Vec3f&  v);
-	void setDirectionVs	(float x, float y, float z, float w = 1.0f);
+	void setDirectionVs(const Vec4f&  v);
+	void setDirectionVs(const Vec3f&  v);
+	void setDirectionVs(float x, float y, float z, float w = 1.0f);
+
+	void setPositionWs( const Vec3f&  v);
+	void setDirectionWs(const Vec3f&  v);
 
 	Vec3f positionVs()	const;
 	Vec3f directionVs()	const;
+
+	Vec3f positionWs()	const;
+	Vec3f directionWs()	const;
 
 	void resetDirty();
 
@@ -108,17 +114,6 @@ inline float		CLight::range()			const		{ return lightData().range; }
 inline float		CLight::intensity()		const		{ return lightData().intensity; }
 
 inline bool			CLight::isDirty()		const		{ return _isDirty; }
-
-inline 
-void 
-CLight::_setDirty() 
-{ 
-	_isDirty = true;
-	if (_isDirty)
-	{
-		_isDirty	= false;
-	}
-}
 
 
 #endif

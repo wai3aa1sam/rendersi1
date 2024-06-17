@@ -126,7 +126,7 @@ references:
     #define RDS_TEXTURE_CUBE_SAMPLE_LOD(TEX, UV, LOD)       RDS_TEXTURE_CUBE_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
     #define RDS_TEXTURE_CUBE_GET_DIMENSIONS(TEX, OUT_WH)    RDS_TEXTURE_CUBE_GET(TEX).GetDimensions(OUT_WH.x,   OUT_WH.y)
 
-    #define RDS_TEXTURE_T_NAME(T, NAME) NAME
+    #define RDS_TEXTURE_T_NAME(T, NAME) (NAME)
     #define RDS_TEXTURE_1D_T(  T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
     #define RDS_TEXTURE_2D_T(  T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); float4 RDS_TEXTURE_ST(NAME)
     #define RDS_TEXTURE_3D_T(  T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
@@ -232,6 +232,11 @@ DrawParam rds_DrawParam_get(uint idx = 0)
 Light rds_Lights_get(uint idx)
 {
     return RDS_BUFFER_LOAD_I(Light, rds_lights, idx);
+}
+
+uint rds_Lights_getLightCount()
+{
+    return rds_nLights;
 }
 
 #endif
@@ -372,11 +377,24 @@ float4x4 inverse(float4x4 m)
 #endif
 #if 1
 
+float4 SpaceTransform_clipToWorld(float4 clip, DrawParam drawParam)
+{
+    float4 o = mul(drawParam.matrix_vp_inv, clip);
+    o = o / (o.w + rds_epsilon);
+    return o;
+}
+
+float4 SpaceTransform_clipToWorld(float4 clip)
+{
+    DrawParam drawParam = rds_DrawParam_get();
+    return SpaceTransform_clipToWorld(clip, drawParam);
+}
+
 float4 SpaceTransform_clipToView(float4 clip, DrawParam drawParam)
 {
-    float4 view = mul(drawParam.matrix_proj_inv, clip);
-    view = view / (view.w + rds_epsilon);
-    return view;
+    float4 o = mul(drawParam.matrix_proj_inv, clip);
+    o = o / (o.w + rds_epsilon);
+    return o;
 }
 
 float4 SpaceTransform_clipToView(float4 clip)
@@ -385,12 +403,23 @@ float4 SpaceTransform_clipToView(float4 clip)
     return SpaceTransform_clipToView(clip, drawParam);
 }
 
+float4 SpaceTransform_screenUvToClip(float2 screenUv, float depth, float w)
+{
+	float2 uv = screenUv;
+    float4 clip = float4(float2(uv.x, 1.0 - uv.y) * 2.0 - 1.0, depth, w);
+	return clip;
+}
+
+float4 SpaceTransform_screenToClip(float4 screen, DrawParam drawParam)
+{
+	float2 uv = screen.xy / drawParam.resolution;
+    float4 clip = SpaceTransform_screenUvToClip(uv, screen.z, screen.w);
+	return clip;
+}
+
 float4 SpaceTransform_screenToView(float4 screen, DrawParam drawParam)
 {
-    float2 uv = screen.xy / drawParam.resolution;
-
-    float4 clip = float4(float2(uv.x, 1.0 - uv.y) * 2.0 - 1.0, screen.z, screen.w);
-
+    float4 clip = SpaceTransform_screenToClip(screen, drawParam);
     return SpaceTransform_clipToView(clip, drawParam);
 }
 
@@ -400,9 +429,24 @@ float4 SpaceTransform_screenToView(float4 screen)
     return SpaceTransform_screenToView(screen, drawParam);
 }
 
+float4 SpaceTransform_computePositionWs(float2 screenUv, float z, DrawParam drawParam)
+{
+	float4 clip = SpaceTransform_screenUvToClip(screenUv, z, 1.0);
+	float4 o = SpaceTransform_clipToWorld(clip, drawParam);
+	return o;
+}
+
+float3 SpaceTransform_computeNormal(float2 normalXy)
+{
+	float3 o = float3(normalXy.xy, 0.0);
+	o.z = sqrt(1.0 - (o.x * o.x + o.y * o.y));
+	return o;
+}
+
 float3 SpaceTransform_toWorldNormal(float3 normal, ObjectTransform objectTransform)
 {
-	return normalize(mul((float3x3)transpose(inverse(objectTransform.matrix_model)), normal));
+    float3 o = (mul((float3x3)transpose(inverse(objectTransform.matrix_model)), normal));
+	return o;
 }
 
 float3 SpaceTransform_toWorldNormal(float3 normal)
@@ -412,9 +456,9 @@ float3 SpaceTransform_toWorldNormal(float3 normal)
 
 float3 SpaceTransform_toViewNormal(float3 normal, ObjectTransform objectTransform, DrawParam drawParam)
 {
-    float3 o = mul((float3x3)transpose(inverse(objectTransform.matrix_model)), normal);
-    o = mul((float3x3)drawParam.matrix_view, normal);
-	return normalize(normal);
+    float3 o = SpaceTransform_toWorldNormal(normal, objectTransform);
+    o = mul((float3x3)drawParam.matrix_view, o);
+	return (o);
 }
 
 float3 SpaceTransform_toViewNormal(float3 normal)
@@ -495,8 +539,32 @@ float4 SpaceTransform_viewToClip(float4 v)
 #endif
 
 
+#if 0
+#pragma mark --- ScreenQuad-Impl ---
+#endif
+#if 1
+
+float2 ScreenQuad_makeUv(uint vertexId)
+{
+	float2 o = float2(uint2(vertexId, vertexId << 1) & 2);
+	return o;
+}
+
+float4 ScreenQuad_makePositionHcs(float2 uv)
+{
+	float4 o = float4(lerp(float2(-1.0, 1.0), float2(1.0, -1.0), uv), 0.0, 1.0);
+	return o;
+}
+
+float4 ScreenQuad_makePositionHcs(uint vertexId)
+{
+	float2 uv = ScreenQuad_makeUv(vertexId);
+	float4 o = ScreenQuad_makePositionHcs(uv);
+	return o;
+}
 
 
+#endif
 
 
 

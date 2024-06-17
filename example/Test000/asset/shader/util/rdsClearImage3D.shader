@@ -34,9 +34,7 @@ RDS_IMAGE_3D(float4, image);
 [numThreads(8, 8, 8)]
 void cs_main(ComputeIn input)
 {
-	bool isInBoundary = image_extent_offset.x 	 + input.dispatchThreadId.x < image_extent.x
-        				&& image_extent_offset.y + input.dispatchThreadId.y < image_extent.y
-        				&& image_extent_offset.z + input.dispatchThreadId.z < image_extent.z;
+	bool isInBoundary = Image_isInBoundary(input.dispatchThreadId, image_extent, image_extent_offset);
 	if (!isInBoundary)
 		 return;
 	

@@ -29,7 +29,7 @@ Shader {
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
+    float4 positionOs   : SV_POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal       : NORMAL0;
 
@@ -39,7 +39,7 @@ struct VertexIn
 struct PixelIn 
 {
 	float4 positionHCS  : SV_POSITION;
-	float4 positionWS   : POSITION;
+	float4 positionWs   : POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal       : NORMAL0;
 };
@@ -62,8 +62,8 @@ RDS_TEXTURE_2D(texture1);
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
-    o.positionHCS = mul(RDS_MATRIX_MVP,     i.positionOS);
-    o.positionWS  = mul(RDS_MATRIX_MODEL,   i.positionOS);
+    o.positionHCS = mul(RDS_MATRIX_MVP,     i.positionOs);
+    o.positionWs  = mul(RDS_MATRIX_MODEL,   i.positionOs);
     o.normal      = normalize(mul((float3x3)RDS_MATRIX_MODEL, i.normal));
     o.uv          = i.uv;
     
@@ -79,18 +79,18 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	DrawParam drawParam = rds_DrawParam_get();
 
     Surface surface;
-    surface.posWS       = i.positionWS.xyz;
-    surface.normalWs    = normalize(i.normal);
+    surface.pos         = i.positionWs.xyz;
+    surface.normal      = normalize(i.normal);
     surface.color.rgb   = albedo;
     surface.roughness   = roughness;
     surface.metallic    = metallic;
 
-    float3 normal = surface.normalWs;
+    float3 normal = surface.normal;
 
     float3 posView = drawParam.camera_pos;
-    float3 dirView  = normalize(posView - surface.posWS);
+    float3 viewDir  = normalize(posView - surface.pos);
 
-    o = Pbr_basic_lighting(surface, dirView, posLight, colorLight);
+    o = Pbr_computeDirectLighting(surface, viewDir, posLight, colorLight);
 
     float3 kAmbient = float3(0.03, 0.03, 0.03);
     float3 ambient  = kAmbient * albedo * ao;
@@ -98,9 +98,9 @@ float4 ps_main(PixelIn i) : SV_TARGET
     o = ambient + o;
 
     #if 0
-    float3 dirView  = normalize(posView  - i.positionWS);
-    float3 dirLight = normalize(posLight - i.positionWS);
-    float3 dirHalf  = normalize(dirView  + dirLight);
+    float3 viewDir  = normalize(posView  - i.positionWs);
+    float3 dirLight = normalize(posLight - i.positionWs);
+    float3 dirHalf  = normalize(viewDir  + dirLight);
 
     float3 diffuse  = max(dot(normal, dirLight), 0.0) * colorLight;
     float3 spec     = pow(max(dot(normal, dirHalf), 0.0), roughness) * colorSpec;

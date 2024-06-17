@@ -32,6 +32,7 @@ struct DrawParam
     float4x4 matrix_vp;
     float4x4 matrix_view_inv;
     float4x4 matrix_proj_inv;
+    float4x4 matrix_vp_inv;
 
     float2 resolution;
     float2 delta_time;
@@ -51,10 +52,9 @@ struct ObjectTransform
 
 struct Surface 
 {
-	float3 posWS;
-	float3 normalWs;
-	float3 posVs;
-	float3 normalVs;
+    float3 pos;
+	float3 normal;
+
 	float4 color;
 	float3 ambient;
 	float3 diffuse;
@@ -69,8 +69,12 @@ struct Surface
 
 struct Light
 {
+    float4  positionWs;
+    float4  directionWs;
+    
 	float4	positionVs;
 	float4	directionVs;
+    
     float4  color;
 
 	uint 	type;

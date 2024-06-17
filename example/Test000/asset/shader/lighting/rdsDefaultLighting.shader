@@ -1,6 +1,11 @@
 #if 0
 Shader {
 	Properties {
+		Color4f  	RDS_MATERIAL_PROPERTY_albedo	= {1.0, 1.0, 1.0, 1.0}
+		Color4f  	RDS_MATERIAL_PROPERTY_emission	= {1.0, 1.0, 1.0, 1.0}
+		Float   	RDS_MATERIAL_PROPERTY_metalness	= 0.0
+		Float   	RDS_MATERIAL_PROPERTY_roughness	= 0.5
+
 		Texture2D 	RDS_MATERIAL_TEXTURE_Albedo
 		Texture2D 	RDS_MATERIAL_TEXTURE_Normal
 		Texture2D 	RDS_MATERIAL_TEXTURE_RoughnessMetalness
@@ -12,7 +17,7 @@ Shader {
 		//Cull		Front
 
 		//DepthTest	LessEqual
-		DepthWrite	false
+		//DepthWrite	false
 
 		//Wireframe false
 
@@ -45,9 +50,10 @@ struct PixelIn
 {
 	float4 positionHcs  : SV_POSITION;
     float2 uv           : TEXCOORD0;
-	float3 normalVs   	: NORMAL;
-	float3 positionWs   : TEXCOORD1;
-	float3 positionVs   : TEXCOORD2;
+	float3 normal   	: NORMAL;
+	float3 normalVs   	: TEXCOORD1;
+	float3 positionWs   : TEXCOORD2;
+	float3 positionVs   : TEXCOORD3;
 };
 
 #if 0
@@ -65,11 +71,11 @@ PixelIn vs_main(VertexIn input)
     ObjectTransform objTransf = rds_ObjectTransform_get();
     DrawParam       drawParam = rds_DrawParam_get();
 
-	o.positionHcs 	= SpaceTransform_objectToClip(	input.positionOs, 				drawParam);
-    o.positionWs  	= SpaceTransform_objectToWorld( input.positionOs, 	            objTransf).xyz;
-    o.positionVs  	= SpaceTransform_worldToView(   float4(o.positionWs, 1.0),  	drawParam).xyz;
-    //o.normal 	  	= SpaceTransform_toWorldNormal( input.normal, 		            objTransf);
-    o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		            objTransf, drawParam);
+	o.positionHcs 	= SpaceTransform_objectToClip(	input.positionOs, 	drawParam);
+    o.positionWs  	= SpaceTransform_objectToWorld( input.positionOs, 	objTransf).xyz;
+    o.positionVs  	= SpaceTransform_objectToView(  input.positionOs,   drawParam).xyz;
+    o.normal 	  	= SpaceTransform_toWorldNormal( input.normal, 		objTransf);
+    o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		objTransf, drawParam);
 
     o.uv          	= input.uv;
     
@@ -81,40 +87,37 @@ PixelIn vs_main(VertexIn input)
 //[earlydepthstencil]
 float4 ps_main(PixelIn input) : SV_TARGET
 {
-	float2 uv = input.uv;
 	float4 o = float4(0.0, 0.0, 0.0, 1.0);
 
-    Surface surface;
-    surface.posVs               = input.positionVs;
-    surface.normalVs            = normalize(input.normalVs);
-    surface.color               = float4(1.0, 1.0, 1.0, 1.0);
-    surface.roughness           = 0.2/*roughness*/;
-    surface.metallic            = 0.0/*metallic*/;
-    surface.ambientOcclusion    = 0.2/*ao*/;
+    DrawParam       drawParam = rds_DrawParam_get();
 
-	DrawParam drawParam = rds_DrawParam_get();
-	float3 posView = drawParam.camera_pos;
-	float3 dirView = normalize(posView - input.positionVs);
+	float2 uv = input.uv;
+	float3 pos;
+	float3 normal;
 
-	LightingResult oLightingResult = (LightingResult)0;
+	pos 	= input.positionVs;
+	normal 	= normalize(input.normalVs);
+	
+	//pos 	= input.positionWs;
+	//normal 	= normalize(input.normal);
 
-	uint lightCount = rds_nLights;
-	for (uint i = 0; i < lightCount; ++i)
 	{
-		uint  iLight 	= i;
-		Light light 	= rds_Lights_get(iLight);
+		Surface surface;
+		surface = Material_makeSurface(uv, pos, normal);
 
-		LightingResult result = Lighting_computeLighting(light, surface, dirView);
-		oLightingResult.diffuse 	+= result.diffuse;
-		oLightingResult.specular 	+= result.specular;
+		LightingResult oLightingResult = (LightingResult)0;
+		oLightingResult = Lighting_computeForwardLighting_Vs(surface, drawParam.camera_pos);
+
+		o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
+		//o.rgb = oLightingResult.specular.rgb;
+
+		//o.rgb = rds_Lights_get(0).directionVs.rgb;
+		//o.rgb = remapNeg11To01(surface.normalVs.rgb);
+		//o.rgb = remapNeg11To01(normal);
+		//o.rgb = oLightingResult.diffuse.rgb;
+		//o.rgb = surface.color.rgb;
 	}
-	o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
-
-	float4 albedo = Material_sampleTexture_Albedo(uv);
-    o.rgb =  lerp(Material_getProperty_Albedo().rgb, albedo.rgb, albedo.a);
-
-	//o.rgb = albedo.rgb;
-	//o.rgb = Material_getProperty_Albedo().rgb;
 	
     return o;
 }
+

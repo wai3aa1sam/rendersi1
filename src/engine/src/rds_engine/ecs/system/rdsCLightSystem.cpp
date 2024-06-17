@@ -58,14 +58,14 @@ CLightSystem::updateLight(CLight* light, CTransform& transform, const Mat4f& vie
 		return isDirty;
 	}
 
-	auto posVs		= viewMatrix.mulPoint4x3(transform.localPosition());
-	auto dirVs		= viewMatrix.mulVector(transform.forward()).normalize();
+	auto posWs		= transform.localPosition();
+	auto dirWs		= transform.forward().normalize();
 
-	// to world space
-	posVs = transform.localPosition();
-	dirVs = transform.forward().normalize();
+	auto posVs		= viewMatrix.mulPoint4x3(posWs);
+	auto dirVs		= viewMatrix.mulVector(dirWs).normalize();
 
-	//posVs		= transform.localPosition();
+	light->setPositionWs( posWs);
+	light->setDirectionWs(dirWs);
 
 	light->setPositionVs( posVs);
 	light->setDirectionVs(dirVs);

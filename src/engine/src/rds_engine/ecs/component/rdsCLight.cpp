@@ -156,6 +156,20 @@ CLight::setDirectionVs(float x, float y, float z, float w)
 }
 
 void 
+CLight::setPositionWs(const Vec3f&  v)
+{
+	lightData().positionWs = Vec4f{v, 1.0};
+	_setDirty(); 
+}
+
+void 
+CLight::setDirectionWs(const Vec3f&  v)
+{
+	lightData().directionWs = Vec4f{v, 1.0};
+	_setDirty(); 
+}
+
+void 
 CLight::resetDirty()
 {
 	_isDirty = false;
@@ -175,14 +189,14 @@ CLight::lightData() const
 	return constCast(*this).lightData();
 }
 
-Vec3f CLight::positionVs()	const { const auto& posVs = lightData().positionVs;		return Vec3f{ posVs.x, posVs.y, posVs.z }; }
-Vec3f CLight::directionVs()	const { const auto& dirVs = lightData().directionVs;	return Vec3f{ dirVs.x, dirVs.y, dirVs.z }; }
+Vec3f CLight::positionVs()	const { const auto& pos = lightData().positionVs;	return Vec3f{ pos.x, pos.y, pos.z }; }
+Vec3f CLight::directionVs()	const { const auto& dir = lightData().directionVs;	return Vec3f{ dir.x, dir.y, dir.z }; }
 
+Vec3f CLight::positionWs()	const { const auto& pos = lightData().positionWs;	return Vec3f{ pos.x, pos.y, pos.z }; }
+Vec3f CLight::directionWs()	const { const auto& dir = lightData().directionWs;	return Vec3f{ dir.x, dir.y, dir.z }; }
 
 float CLight::spotAngle()			const	{ RDS_CORE_ASSERT(lightType() == LightType::Spot, ""); return shaderInterop::Light_getSpotAngle(constCast(lightData())); }
 float CLight::spotInnerAngle()		const	{ RDS_CORE_ASSERT(lightType() == LightType::Spot, ""); return acos(shaderInterop::Light_getSpotInnerCosAngle(constCast(lightData()))); }
-
-
 
 //void 
 //CLight::onDestroy()
@@ -190,6 +204,11 @@ float CLight::spotInnerAngle()		const	{ RDS_CORE_ASSERT(lightType() == LightType
 //	
 //}
 
+void 
+CLight::_setDirty() 
+{ 
+	_isDirty = true;
+}
 
 #endif
 

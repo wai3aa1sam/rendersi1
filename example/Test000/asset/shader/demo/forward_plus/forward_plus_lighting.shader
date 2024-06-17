@@ -1,11 +1,15 @@
 #if 0
 Shader {
 	Properties {
-		[DisplayName="Color Test"]
-		Color4f	color = {1,1,1,1}
-		
-		Texture2D 	texture0
-		Bool		test_bool = true
+		Color4f  	RDS_MATERIAL_PROPERTY_albedo	= {1.0, 1.0, 1.0, 1.0}
+		Color4f  	RDS_MATERIAL_PROPERTY_emission	= {1.0, 1.0, 1.0, 1.0}
+		Float   	RDS_MATERIAL_PROPERTY_metalness	= 0.0
+		Float   	RDS_MATERIAL_PROPERTY_roughness	= 0.5
+
+		Texture2D 	RDS_MATERIAL_TEXTURE_Albedo
+		Texture2D 	RDS_MATERIAL_TEXTURE_Normal
+		Texture2D 	RDS_MATERIAL_TEXTURE_RoughnessMetalness
+		Texture2D 	RDS_MATERIAL_TEXTURE_Emissive
 	}
 	
 	Pass {
@@ -38,6 +42,7 @@ Shader {
 */
 
 #include "forward_plus_common.hlsl"
+#include "built-in/shader/lighting/rdsDefaultLighting.hlsl"
 
 struct VertexIn
 {
@@ -50,9 +55,10 @@ struct PixelIn
 {
 	float4 positionHcs  : SV_POSITION;
     float2 uv           : TEXCOORD0;
-	float3 normalVs   	: NORMAL;
-	float3 positionWs   : TEXCOORD1;
-	float3 positionVs   : TEXCOORD2;
+	float3 normal   	: NORMAL;
+	float3 normalVs   	: TEXCOORD1;
+	float3 positionWs   : TEXCOORD2;
+	float3 positionVs   : TEXCOORD3;
 };
 
 #if 0
@@ -68,43 +74,39 @@ RDS_TEXTURE_2D_T(uint2, lightGrid);
 PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
-	o.positionHcs 	= mul(RDS_MATRIX_MVP, 	input.positionOs);
-	//o.positionHcs 	= input.positionOs;
+	
+    ObjectTransform objTransf = rds_ObjectTransform_get();
+    DrawParam       drawParam = rds_DrawParam_get();
 
-	o.positionWs 	= mul(RDS_MATRIX_MODEL, input.positionOs).xyz;
-	o.positionVs 	= mul(RDS_MATRIX_VIEW, 	float4(o.positionWs, 1.0)).xyz;
-    o.normalVs      = mul(RDS_MATRIX_VIEW,  float4(input.normal, 0.0)).xyz;
-    o.uv          	= input.uv;
-    
+	o.positionHcs 	= SpaceTransform_objectToClip(	input.positionOs, 	drawParam);
+	o.uv 			= input.uv;
+    o.positionWs  	= SpaceTransform_objectToWorld( input.positionOs, 	objTransf).xyz;
+    o.positionVs  	= SpaceTransform_objectToView(  input.positionOs,   drawParam).xyz;
+    o.normal 	  	= SpaceTransform_toWorldNormal( input.normal, 		objTransf);
+    o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		objTransf, drawParam);
+
+
     return o;
 }
 
 //[earlydepthstencil]
 float4 ps_main(PixelIn input) : SV_TARGET
 {
-	float2 uv = input.uv;
 	float4 o = float4(0.0, 0.0, 0.0, 1.0);
+
+	DrawParam drawParam = rds_DrawParam_get();
+
+	float2 uv = input.uv;
 
     uint2 blockIndex 			= uint2(floor(input.positionHcs.xy / BLOCK_SIZE));
 	uint2 lightBlock 			= RDS_TEXTURE_2D_T_GET(uint2, lightGrid)[blockIndex];
  	uint lightIdxStartOffset 	= lightBlock.x;
     uint lightCount 			= lightBlock.y;
-	//lightCount = rds_nLights;
 
-    Surface surface;
-    surface.posVs               = input.positionVs;
-    surface.normalVs            = normalize(input.normalVs);
-    surface.color               = float4(1.0, 1.0, 1.0, 1.0);
-    surface.roughness           = 0.2/*roughness*/;
-    surface.metallic            = 0.0/*metallic*/;
-    surface.ambientOcclusion    = 0.2/*ao*/;
-
-	DrawParam drawParam = rds_DrawParam_get();
-	float3 posView = drawParam.camera_pos;
-	float3 dirView = normalize(posView - input.positionVs);
+	Surface surface;
+	surface = Material_makeSurface(uv, input.positionVs, normalize(input.normalVs));
 
 	const uint nLights = 2;
-	//lightCount = nLights;
 	Light lights[nLights];
 	lights[0].type	 	 = rds_LightType_Point;
 	lights[0].positionVs = mul(RDS_MATRIX_VIEW, float4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -120,15 +122,19 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	lights[1].intensity	 = 1;
 	lights[1].color		 = float4(1.0, 1.0, 1.0, 1.0);
 
+	lightCount = nLights;
+	//lightCount = rds_Lights_getLightCount();
+	lightCount = nLights;
 	LightingResult oLightingResult = (LightingResult)0;
 	for (uint i = 0; i < lightCount; ++i)
 	{
 		uint  iLight 	= RDS_BUFFER_LOAD_I(uint, lightIndexList, lightIdxStartOffset + i);
-		//iLight = i;
 		Light light 	= rds_Lights_get(iLight);
-		light = lights[iLight];
 
-		LightingResult result = Lighting_computeLighting(light, surface, dirView);
+		// iLight = i;
+		// light = lights[iLight];
+
+		LightingResult result = Lighting_computeLighting_Vs(light, surface, drawParam.camera_pos);
 		oLightingResult.diffuse 	+= result.diffuse;
 		oLightingResult.specular 	+= result.specular;
 
@@ -147,9 +153,11 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		}
 		//oLightingResult.diffuse.xyz 	+= float3(0.1, 0.1, 0.1).xyz;
 
-		//oLightingResult.diffuse 	+= light.positionVs;
+		oLightingResult.diffuse 	+= light.positionVs;
 	}
 	o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
+
+
 	//o.rgb = surface.color.rgb;
 
 	//uint  iLight 	= 0;
@@ -158,7 +166,8 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	//o.rgb = float3(heatMapColor, heatMapColor, heatMapColor);
 	//o.rgb = float3(lightCount, lightCount, lightCount);
 
-	//o.rgb = light.color.rgb;
+	//o.rgb = lights[0].positionVs.rgb;
+	//o.rgb = input.positionVs;
 	
     return o;
 }

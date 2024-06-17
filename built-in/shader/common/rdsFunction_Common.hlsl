@@ -31,6 +31,13 @@ float3 remap01ToNeg11(float3 v)
     return 2.0 * v - 1.0;
 }
 
+float3 remap01ToNeg11_Inv_Y(float3 v)
+{
+    float3 o = remap01ToNeg11(v);
+	o.y = -o.y;
+    return o;
+}
+
 bool isInBoundary01(float a)  { return a == saturate(a); }
 bool isInBoundary01(float2 a) { return all(a == saturate(a)); }
 bool isInBoundary01(float3 a) { return all(a == saturate(a)); }

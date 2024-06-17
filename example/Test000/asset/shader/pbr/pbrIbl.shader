@@ -29,7 +29,7 @@ Shader {
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
+    float4 positionOs   : SV_POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal       : NORMAL0;
 
@@ -38,8 +38,8 @@ struct VertexIn
 
 struct PixelIn 
 {
-	float4 positionHCS  : SV_POSITION;
-	float3 positionWS   : POSITION;
+	float4 positionHcs  : SV_POSITION;
+	float3 positionWs   : POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal       : NORMAL0;
 };
@@ -62,8 +62,8 @@ float3  colorSpec;
 PixelIn vs_main(VertexIn i)
 {
     PixelIn o;
-    o.positionHCS = mul(RDS_MATRIX_MVP,     i.positionOS);
-    o.positionWS  = mul(RDS_MATRIX_MODEL,   i.positionOS).xyz;
+    o.positionHcs = mul(RDS_MATRIX_MVP,     i.positionOs);
+    o.positionWs  = mul(RDS_MATRIX_MODEL,   i.positionOs).xyz;
     o.normal      = mul((float3x3)RDS_MATRIX_MODEL, i.normal);
     //o.normal      = mul((float3x3)transpose(inverse(rds_matrix_model)), i.normal);
 
@@ -85,22 +85,22 @@ float4 ps_main(PixelIn i) : SV_TARGET
     float2 uv = i.uv;
 
     Surface surface;
-    surface.posWS               = i.positionWS;
-    surface.normalWs            = normalize(i.normal);
+    surface.pos                 = i.positionWs;
+    surface.normal              = normalize(i.normal);
     surface.color.rgb           = color;
     surface.roughness           = roughness;
     surface.metallic            = metallic;
     surface.ambientOcclusion    = ao;
 
-    float3 normal = surface.normalWs;
+    float3 normal = surface.normal;
 
     float3 posView = drawParam.camera_pos;
-    float3 dirView = normalize(posView - surface.posWS);
-    float3 dirRefl = reflect(-dirView, normal);
+    float3 viewDir = normalize(posView - surface.pos);
+    float3 dirRefl = reflect(-viewDir, normal);
 
-    o = Pbr_basic_lighting(surface, dirView, posLight, colorLight);
+    o = Pbr_computeDirectLighting(surface, viewDir, posLight, colorLight);
 
-    float  dotNV            = max(dot(normal, dirView), 0.0);
+    float  dotNV            = max(dot(normal, viewDir), 0.0);
     float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(irradianceEnvMap, normal).rgb;
     float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(prefilteredEnvMap, dirRefl, surface.roughness * s_kMaxLod).rgb;
     float2 brdf             = RDS_TEXTURE_2D_SAMPLE(brdfLut, float2(dotNV, surface.roughness)).rg;

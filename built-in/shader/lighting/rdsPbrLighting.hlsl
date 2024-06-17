@@ -76,62 +76,18 @@ float Pbr_geometrySmith_ibl(float dotNV, float dotNL, float roughness)
     return ggx1 * ggx2;
 }
 
-float3 Pbr_basic_lighting(Surface surface, float3 dirView, float3 posLight, float3 colorLight)
+LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3 L, float3 colorLight, float intensity)
 {
-    float3 posWs    = surface.posWS;
-    float3 normal   = surface.normalWs;
+    float3 normal   = surface.normal;
     float3 albedo   = surface.color.rgb;
 
-    //float3 dirView  = normalize(posView - posWs);
-    float3 dirLight = normalize(posLight - posWs);
-    float3 dirHalf  = normalize(dirView + dirLight);
-
-    float dotHV = max(dot(dirHalf,  dirView),  0.0);
-    float dotNH = max(dot(normal,   dirHalf),  0.0);
-    float dotNV = max(dot(normal,   dirView),  0.0);
-    float dotNL = max(dot(normal,   dirLight), 0.0);
-
-    float3 baseRefl = float3(0.04, 0.04, 0.04);   // non-metallic surfaces
-    baseRefl        = lerp(baseRefl, albedo, surface.metallic);
-
-    float3  fresnel     = Pbr_fresnelSchlick(dotHV, baseRefl);                  // dotNV or dotHV
-    float   normalDist  = Pbr_distributionGGX(dotNH, surface.roughness);        // speculat highlight, distriGGX give us % of mircofacet align H 
-    float   geo         = Pbr_geometrySmith(dotNV, dotNL, surface.roughness);
-
-    float3  spec_numer  = normalDist * geo * fresnel;
-    float   spec_denom  = 4.0 * dotNV * dotNL + 0.0001;
-    float3  specular    = spec_numer / spec_denom;
-
-    float3 kSpecular = fresnel;
-    float3 kDiffuse  = float3(1.0, 1.0, 1.0) - kSpecular;
-    kDiffuse        *= 1.0 - surface.metallic;  // metallic surface absorb all diffuse 
-    
-    float3  lambert = albedo / rds_pi;
-    float3  brdf    = kDiffuse * lambert + specular;
-
-    //float   attenuation = Light_computeAttenuation(posWs, posLight);
-    float   attenuation = 1.0;
-    
-    float3  radiance    = colorLight * attenuation;
-    float3  o           = brdf * radiance * dotNL;
-
-    //o = fresnel;
-
-    return o;
-}
-
-LightingResult Pbr_basic_lighting(Surface surface, float3 dirView, float3 L, float3 colorLight, float intensity)
-{
-    float3 normal   = surface.normalVs;
-    float3 albedo   = surface.color.rgb;
-
-    //float3 dirView  = normalize(posView - posWs);
+    //float3 viewDir  = normalize(posView - posWs);
     //float3 dirLight = normalize(posLight - posWs);
-    float3 dirHalf  = normalize(dirView + L);
+    float3 dirHalf  = normalize(viewDir + L);
 
-    float dotHV = max(dot(dirHalf,  dirView),  0.0);
+    float dotHV = max(dot(dirHalf,  viewDir),  0.0);
     float dotNH = max(dot(normal,   dirHalf),  0.0);
-    float dotNV = max(dot(normal,   dirView),  0.0);
+    float dotNV = max(dot(normal,   viewDir),  0.0);
     float dotNL = max(dot(normal,   L),        0.0);
 
     float3 baseRefl = float3(0.04, 0.04, 0.04);   // non-metallic surfaces
@@ -168,15 +124,29 @@ LightingResult Pbr_basic_lighting(Surface surface, float3 dirView, float3 L, flo
     return o;
 }
 
-float3 Pbr_indirectDiffuse_ibl(Surface surface, float3 dirView, float3 irradianceEnv, float ao)
+float3 Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3 lightPos, float3 colorLight)
 {
-    float3 normal    = surface.normalWs;
+    float3 pos      = surface.pos;
+    float3 normal   = surface.normal;
+    float3 albedo   = surface.color.rgb;
+
+    float3 lightPosDir 	= lightPos - pos;
+
+    LightingResult o = (LightingResult)0;
+    o = Pbr_computeDirectLighting(surface, viewDir, lightPosDir, colorLight, 1.0);
+
+    return o.diffuse.rgb;
+}
+
+float3 Pbr_indirectDiffuse_ibl(Surface surface, float3 viewDir, float3 irradianceEnv, float ao)
+{
+    float3 normal    = surface.normal;
 
     float3 albedo    = surface.color.rgb;
     float3 baselRefl = float3(0.04, 0.04, 0.04); 
     baselRefl = lerp(baselRefl, albedo, surface.metallic);
 
-    float3 kS = Pbr_fresnelSchlick(max(dot(normal, dirView), 0.0), baselRefl);
+    float3 kS = Pbr_fresnelSchlick(max(dot(normal, viewDir), 0.0), baselRefl);
     float3 kD = 1.0 - kS;
     kD *= 1.0 - surface.metallic;	  
     float3 irradiance   = irradianceEnv;
