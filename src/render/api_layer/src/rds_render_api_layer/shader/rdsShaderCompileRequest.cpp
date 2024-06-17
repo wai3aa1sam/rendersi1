@@ -92,7 +92,7 @@ ShaderCompileRequest::hotReload(Renderer* renderer, JobSystem* jobSystem, const 
 		pair = StrUtil::splitByChar(pair.second, "\n");
 	}
 
-	reloadPermutation(rdDev, ps);
+	processPermutationRequests(rdDev, ps);
 
 	//throwIf(true, "");
 
@@ -101,7 +101,7 @@ ShaderCompileRequest::hotReload(Renderer* renderer, JobSystem* jobSystem, const 
 }
 
 void 
-ShaderCompileRequest::reloadPermutation(RenderDevice* renderDevice, const ProjectSetting& projectSetting)
+ShaderCompileRequest::processPermutationRequests(RenderDevice* renderDevice, const ProjectSetting& projectSetting)
 {
 	const auto& ps			= projectSetting;
 	auto&		rdDev		= *renderDevice;
@@ -154,7 +154,10 @@ ShaderCompileRequest::_hotReloadShader(StrView filename, RenderDevice* renderDev
 
 	auto& info = shader->info();
 
-	for (auto& mtl : *mtlTable)
+	RDS_TODO("TODO: Material::setShader() will remove itself from mtlTable, however we are using it to looping");
+	RDS_TODO(", so it has to copy here, rewrite another function for hotReload to solve this problem (probably pass a isHotReloading bool to it, or a delete request????)");
+	ShaderStock::Materials mtls = *mtlTable;
+	for (auto& mtl : mtls)
 	{
 		// if pervious has permutation, compare its value to new shader info, if no change
 		if (info.permuts.is_empty())

@@ -37,7 +37,7 @@ public:
 
 private:
 	static void			_hotReloadShader(StrView filename, RenderDevice* renderDevice, const ProjectSetting& projectSetting);
-	static void			reloadPermutation(RenderDevice* renderDevice, const ProjectSetting& projectSetting);
+	static void			processPermutationRequests(RenderDevice* renderDevice, const ProjectSetting& projectSetting);
 	static SPtr<Shader> compilePermutationShader(StrView filename, StrView impShaderDir, const Permutations& permuts, RenderDevice& renderDevice, const ProjectSetting& projectSetting);
 };
 

@@ -104,6 +104,7 @@ Material::setShader(Shader* shader)
 		* materialPasses maybe reference to a destroyed shader, so need to get the non permutated shader
 		* copy for restore the previous value
 		*/
+		RDS_TODO("ShaderResources::create() will create gpu buffer, but we only need the cpu buffer, pass a bool to it?");
 		Shader* nonPermutatedShader = renderDevice()->shaderStock().findShader(filename());
 		if (nonPermutatedShader)
 		{

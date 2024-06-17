@@ -82,7 +82,7 @@ RenderCommand_DrawCall::setMaterial(Material* mtl, SizeType mtlPassIdx)
 	_mtlRscFrameIdx = getMaterialPass()->iFrame();
 
 	RDS_TODO("shaderRsc.uploadToGpu() should in Update loop, now in Material_Vk (Render Loop)");
-	_mtl->_internal_resetFrame();
+	//_mtl->_internal_resetFrame();
 }
 
 void 

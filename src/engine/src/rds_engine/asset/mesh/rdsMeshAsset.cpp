@@ -97,7 +97,7 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	buf = filename;
 
 	u32				loadFileFlags	 = aiProcess_Triangulate	| aiProcess_SortByPType 
-									 | aiProcess_GenUVCoords	| aiProcess_GenNormals 
+									 | aiProcess_GenUVCoords	| aiProcess_GenSmoothNormals 
 									 | aiProcess_OptimizeMeshes	| aiProcess_ValidateDataStructure;
 
 	if (false)		loadFileFlags	|= aiProcess_CalcTangentSpace;

@@ -938,6 +938,12 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 		{
 			RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk before mtlPass bind, voxel_tex_albedo: {}, frame: {}", *voxel_tex_albedo, mtlPass->iFrame());
 		}
+		
+		auto* frameIndex = mtlPass->shaderResources().findParamT<u32>("frameIndex");
+		if (frameIndex)
+		{
+			//RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk before mtlPass bind, frameIndex: {}, frame: {}", *frameIndex, mtlPass->iFrame());
+		}
 	}
 	#endif
 
@@ -989,6 +995,12 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 		if (voxel_tex_albedo)
 		{
 			RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk after mtlPass bind, voxel_tex_albedo: {}, frame: {}", *voxel_tex_albedo, mtlPass->iFrame());
+		}
+
+		auto* frameIndex = mtlPass->shaderResources().findParamT<u32>("frameIndex");
+		if (frameIndex)
+		{
+			//RDS_CORE_LOG_WARN("--- --- onDrawCall_Vk after mtlPass bind, frameIndex: {}, frame: {}", *frameIndex, mtlPass->iFrame());
 		}
 	}
 	#endif // RDS_DEBUG_DRAW_CALL

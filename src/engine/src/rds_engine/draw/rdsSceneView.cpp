@@ -28,10 +28,11 @@ SceneView::SceneView::create(Scene* scene, CRenderableSystem* sys)
 void 
 SceneView::drawScene(RenderRequest& rdReq, Material* mtl, DrawData* drawData)
 {
-	RDS_CORE_ASSERT(mtl && drawData, "draw scene fail");
+	RDS_CORE_ASSERT(drawData, "draw scene fail");
 	auto& rdableSys = renderableSystem();
 
-	drawData->setupMaterial(mtl);
+	if (mtl)
+		drawData->setupMaterial(mtl);
 	for (auto* e : rdableSys.renderables())
 	{
 		e->render(rdReq, mtl, drawData, DrawSettings{});
