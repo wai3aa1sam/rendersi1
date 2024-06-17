@@ -13,12 +13,135 @@ namespace rds
 
 class RenderGpuBuffer;
 class Texture;
-
+class SamplerStateListTable;
 
 struct BindlessResources_CreateDesc : public RenderResource_CreateDesc
 {
     u32             size    = 512 * 10;
 };
+
+// VectorTable
+#if 0
+#pragma mark --- rdsSamplerStateListTable-Decl ---
+#endif // 0
+#if 1
+
+#if 1
+
+// this could keep the index same
+// template<class T, class VALUE, size_t LOCAL_SIZE = 0, class PRED = Less<typename rds::Hash<T>::Value>, class ALLOC = DefaultAllocator>
+class SamplerStateListTable
+{
+public:
+    using SizeType = RenderApiLayerTraits::SizeType;
+
+public:
+    static constexpr SizeType s_kLocalSize = 64;
+
+public:
+    //struct 
+    //using T = SamplerState;
+
+    using T = SamplerState;
+
+
+    using Key      = T::HashValue;      // rds::Hash<T>::Value
+    //using Value    = T*;
+    using Value    = SizeType;
+
+    using List  = Vector<T*, s_kLocalSize>;
+    using Table = VectorMap<Key, Value>;
+    using Alloc = LinearAllocator;		// VectorSet<T> and store its ptr will fucked up, since resize will re-alloc
+
+    using Iter = List::Iter;
+
+public:
+    static constexpr Value s_kInvalid = ~Value(0);
+    //static constexpr Value s_kInvalid = nullptr;
+
+public:
+    void add(const T& s)
+    {
+        RDS_CORE_ASSERT(!find(s), "already exist");
+        auto* buf = _alloc.alloc(sizeof(T));
+        auto* p = new(buf) T(s);
+        _list.emplace_back(p);
+        //_table.emplace(p->hash(), Value(p));
+        _table.emplace(p->hash(), size() - 1);
+    }
+
+    SamplerState* find(const T& s) const
+    {
+        auto it = _table.find(s.hash());
+        return it != _table.end() ? _list[it->second] : nullptr;
+    }
+
+    SizeType findIndex(const T& s) const
+    {
+        auto it = _table.find(s.hash());
+        return it != _table.end() ? it->second : s_kInvalid;
+    }
+
+    void clear()
+    {
+        _list.clear();
+        _table.clear();
+        _alloc.clear();
+    }
+
+    SizeType size() const { return _list.size(); }
+
+    Iter begin()  { return _list.begin(); }
+    Iter end()    { return _list.end(); }
+
+protected:
+    List    _list;
+    Table   _table;
+    Alloc	_alloc;
+};
+
+#else
+
+class SamplerStateTable : protected VectorMap<SamplerState, u32>
+{
+public:
+    using HandleType = u32;
+
+    using Base = VectorMap<SamplerState, HandleType>;
+
+    using T = SamplerState;
+
+    using Iter = Base::iterator;
+
+public:
+    void emplace(const T& s)
+    {
+        //auto& table = *this;
+        Base::emplace(s, sCast<HandleType>(size()));
+    }
+
+    HandleType findIndex(const T& s)
+    {
+        auto& table = *this;
+        auto it = table.find(s);
+        RDS_CORE_ASSERT(it != table.end(), "not found");
+        return it != table.end() ? it->second : ~HandleType(0);
+    }
+
+    void clear()
+    {
+        Base::clear();
+    }
+
+    SizeType size() const { return Base::size(); }
+
+    Iter begin()  { return Base::begin(); }
+    Iter end()    { return Base::end(); }
+};
+
+#endif // 0
+
+#endif // 1
 
 #if 0
 #pragma mark --- rdsBindlessResources-Decl ---
@@ -42,9 +165,14 @@ public:
 
 public:
     static constexpr SizeType s_kTypeCount = enumInt(BindlessResourceType::_kCount);
-   
+
 public:
-    static CreateDesc makeCDesc();
+    static CreateDesc   makeCDesc();
+    static SizeType     supportSamplerCount();
+    static SizeType     createSamplerListTable(SamplerStateListTable& o);
+    static SizeType     bindlessTypeCount();
+    static bool         isSupportAccelerationStruct();
+
 
 public:
     BindlessResources();
@@ -67,7 +195,6 @@ public:
 
 public:
     SizeType samplerCount()         const;
-    SizeType bindlessTypeCount()    const;
     SizeType size()                 const;
 
 
@@ -76,7 +203,6 @@ protected:
     virtual void onDestroy();
 
     virtual void onCommit();
-
 
 public:
     template<class RSC>
@@ -163,131 +289,13 @@ protected:
     MutexProtected<ResourceAlloc<Texture> >             _imgAlloc;
     MutexProtected<ResourceAlloc<RenderGpuBuffer> >     _bufAlloc;
 
-    // VectorTable
-    #if 1
-
-    // this could keep the index same
-    // template<class T, class VALUE, size_t LOCAL_SIZE = 0, class PRED = Less<typename rds::Hash<T>::Value>, class ALLOC = DefaultAllocator>
-    class SamplerStateListTable
-    {
-    public:
-        static constexpr size_t s_kLocalSize = 64;
-
-    public:
-        //struct 
-        //using T = SamplerState;
-
-        using T = SamplerState;
-
-
-        using Key      = T::HashValue;      // rds::Hash<T>::Value
-        //using Value    = T*;
-        using Value    = SizeType;
-
-        using List  = Vector<T*, s_kLocalSize>;
-        using Table = VectorMap<Key, Value>;
-        using Alloc = LinearAllocator;		// VectorSet<T> and store its ptr will fucked up, since resize will re-alloc
-
-        using Iter = List::Iter;
-
-    public:
-        static constexpr Value s_kInvalid = ~Value(0);
-        //static constexpr Value s_kInvalid = nullptr;
-
-    public:
-        void add(const T& s)
-        {
-            RDS_CORE_ASSERT(!find(s), "already exist");
-            auto* buf = _alloc.alloc(sizeof(T));
-            auto* p = new(buf) T(s);
-            _list.emplace_back(p);
-            //_table.emplace(p->hash(), Value(p));
-            _table.emplace(p->hash(), size() - 1);
-        }
-
-        SamplerState* find(const T& s) const
-        {
-            auto it = _table.find(s.hash());
-            return it != _table.end() ? _list[it->second] : nullptr;
-        }
-
-        SizeType findIndex(const T& s) const
-        {
-        auto it = _table.find(s.hash());
-        return it != _table.end() ? it->second : s_kInvalid;
-        }
-
-        void clear()
-        {
-            _list.clear();
-            _table.clear();
-            _alloc.clear();
-        }
-
-        SizeType size() const { return _list.size(); }
-
-        Iter begin()  { return _list.begin(); }
-        Iter end()    { return _list.end(); }
-
-    protected:
-        List    _list;
-        Table   _table;
-        Alloc	_alloc;
-    };
-
-    #else
-
-    class SamplerStateTable : protected VectorMap<SamplerState, u32>
-    {
-    public:
-        using HandleType = u32;
-
-        using Base = VectorMap<SamplerState, HandleType>;
-
-        using T = SamplerState;
-
-        using Iter = Base::iterator;
-
-    public:
-        void emplace(const T& s)
-        {
-            //auto& table = *this;
-            Base::emplace(s, sCast<HandleType>(size()));
-        }
-
-        HandleType findIndex(const T& s)
-        {
-            auto& table = *this;
-            auto it = table.find(s);
-            RDS_CORE_ASSERT(it != table.end(), "not found");
-            return it != table.end() ? it->second : ~HandleType(0);
-        }
-
-        void clear()
-        {
-            Base::clear();
-        }
-
-        SizeType size() const { return Base::size(); }
-
-        Iter begin()  { return Base::begin(); }
-        Iter end()    { return Base::end(); }
-    };
-
-    #endif // 0
-
     SamplerStateListTable _samplerStateListTable;
 
     SizeType _size = 0;
 };
 
 inline BindlessResources::SizeType BindlessResources::samplerCount()        const { return _samplerStateListTable.size(); }
-inline BindlessResources::SizeType BindlessResources::bindlessTypeCount()   const 
-{ 
-    bool isSupportAcceralteStruct = false; 
-    auto typeCount = enumInt(BindlessResourceType::_kCount); 
-    return isSupportAcceralteStruct ? typeCount : typeCount - 1; 
-}
+
 
 inline BindlessResources::SizeType BindlessResources::size() const { return _size; }
 

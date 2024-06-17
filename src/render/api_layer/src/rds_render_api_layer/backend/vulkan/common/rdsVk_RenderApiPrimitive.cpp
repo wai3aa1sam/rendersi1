@@ -208,7 +208,8 @@ Vk_Queue::create(u32 familyIdx, Vk_Device_T* vkDevice)
 void 
 Vk_Queue::destroy()
 {
-	RDS_CORE_ASSERT(hnd(), "");
+	if (!hnd())
+		return;
 
 	_familyIdx	= ~u32(0);
 	_queueIdx	= 0;

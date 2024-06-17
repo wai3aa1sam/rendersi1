@@ -44,9 +44,13 @@ BindlessResources_Vk::onCreate(const CreateDesc& cDesc)
 	_descrSets.resize(bindlessTypeCount());
 	_descrSetLayouts.resize(bindlessTypeCount());
 
-	_createDescritporSet(descrSetBuf(),		descrSetLayoutBuf(),		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,	descriptorCount());	descrSetBuf().setDebugName("bindless_buffer",	rdDevVk);
-	_createDescritporSet(descrSetTex(),		descrSetLayoutTex(),		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,	descriptorCount()); descrSetTex().setDebugName("bindless_texture",	rdDevVk);
-	_createDescritporSet(descrSetImg(),		descrSetLayoutImg(),		VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,	descriptorCount());	descrSetImg().setDebugName("bindless_image",	rdDevVk);
+	_createDescritporSet(descrSetBuf(),		descrSetLayoutBuf(),		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,				descriptorCount());	descrSetBuf().setDebugName("bindless_buffer",		rdDevVk);
+	_createDescritporSet(descrSetTex(),		descrSetLayoutTex(),		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,				descriptorCount()); descrSetTex().setDebugName("bindless_texture",		rdDevVk);
+	_createDescritporSet(descrSetImg(),		descrSetLayoutImg(),		VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,				descriptorCount());	descrSetImg().setDebugName("bindless_image",		rdDevVk);
+	if (isSupportAccelerationStruct())
+	{
+		//_createDescritporSet(descrSetAccStruct(),		descrSetLayoutAccStruct(),		VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,	descriptorCount());	descrSetAccStruct().setDebugName("bindless_accStruct",	rdDevVk);
+	}
 
 	{
 		Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc = {};

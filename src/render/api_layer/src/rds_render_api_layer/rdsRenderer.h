@@ -13,8 +13,8 @@ namespace rds
 
 struct Renderer_CreateDesc : public RenderDevice_CreateDesc
 {
-	SizeType		gpuCount			= 1;
-	bool			isCompilerShader	= false;		// TODO: remove
+	SizeType		gpuCount				= 1;
+	bool			isUsingForCompileShader	= false;
 };
 
 class Renderer : public Singleton<Renderer>

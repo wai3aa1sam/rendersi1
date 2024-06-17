@@ -17,7 +17,7 @@ namespace rds
 #endif // 0
 #if 1
 
-struct RenderDevice_CreateDesc : public RenderResource
+struct RenderDevice_CreateDesc
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
@@ -26,8 +26,11 @@ public:
 public:
 	RenderApiType apiType;
 
-	bool isDebug	: 1;
-	bool isPresent	: 1;
+	bool isDebug			: 1;
+	bool isPresent			: 1;
+
+public:
+	bool isShaderCompileMode() const;
 };
 
 class	RenderContext;
@@ -104,8 +107,6 @@ public:
 
 	RenderApiType	apiType()	const;
 	u32				iFrame()	const;
-
-	bool			isCompilerShader	= false;
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);

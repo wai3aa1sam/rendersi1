@@ -26,16 +26,21 @@ RenderDevice_Vk::~RenderDevice_Vk()
 void
 RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 {
-	Base::onCreate(cDesc);
 	createVkInstance();
 
 	Vk_PhysicalDeviceFeatures phyDevFeats;
 	createVkPhyDevice(&phyDevFeats, cDesc);
 	createVkDevice(phyDevFeats);
+
+	if (cDesc.isShaderCompileMode())
+		return;
+
+	Base::onCreate(cDesc);
 	
+
 	loadVkInstFn(_vkExtInfo);
 	loadVkDevFn(_vkExtInfo);
-	
+
 	_vkMemoryContext.create(vkDevice(), vkPhysicalDevice(), vkInstance());
 
 	{
@@ -62,7 +67,8 @@ RenderDevice_Vk::onDestroy()
 
 	_bindlessRscsVk.destroy();
 
-	_tsfCtx->destroy();
+	if (_tsfCtx)
+		_tsfCtx->destroy();
 
 	_rdFrames.clear();
 	_tsfFrames.clear();
@@ -448,7 +454,7 @@ Vk_PhysicalDeviceFeatures::_getRenderApaterFeaturesTo(RenderAdapterInfo* outInfo
 {
 	const auto& devFeats = this->_vkPhyDevFeats2.features;
 
-	RenderAdapterInfo::Feature temp;
+	RenderAdapterInfo::Feature temp = outInfo->feature;
 	temp.shaderHasFloat64		= devFeats.shaderFloat64;
 	temp.hasGeometryShader		= devFeats.geometryShader;
 	temp.hasSamplerAnisotropy	= devFeats.samplerAnisotropy;

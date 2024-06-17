@@ -1775,15 +1775,16 @@ Vk_ExtensionInfo::createValidationLayers(const RenderAdapterInfo& adapterInfo)
 }
 
 void
-Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice, bool isLogResult)
+Vk_ExtensionInfo::createPhyDeviceExtensions(RenderAdapterInfo& outAdapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice, bool isLogResult)
 {
 	getAvailablePhyDeviceExtensionsTo(_availablePhyDeviceExts, phyDevice, false);
 	auto& o = _phyDeviceExts;
 	o.clear();
 
-	auto emplaceIfExist = [adapterInfo, isLogResult](auto& dst, const char* ext, const auto& availPhyDevExts)
+	auto emplaceIfExist = [outAdapterInfo, isLogResult](auto& dst, const char* ext, const auto& availPhyDevExts)
 	{
-		if (availPhyDevExts.findIf([ext](const auto& v) { return StrUtil::isSame(v.extensionName, ext); }) != availPhyDevExts.end())
+		bool isFound = availPhyDevExts.findIf([ext](const auto& v) { return StrUtil::isSame(v.extensionName, ext); }) != availPhyDevExts.end();
+		if (isFound)
 		{
 			dst.emplace_back(ext);
 		}
@@ -1791,9 +1792,10 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 		{
 			if (true)
 			{
-				RDS_CORE_LOG_WARN("{} do not support vulkan extension: {}", adapterInfo.adapterName, ext);
+				RDS_CORE_LOG_WARN("{} do not support vulkan extension: {}", outAdapterInfo.adapterName, ext);
 			}
 		}
+		return isFound;
 	};
 
 	// TODO: check extension exist
@@ -1804,8 +1806,9 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(const RenderAdapterInfo& adapterInfo
 	//emplaceIfExist(o, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,		availablePhyDeviceExts());
 	emplaceIfExist(o, VK_KHR_MAINTENANCE1_EXTENSION_NAME,				availablePhyDeviceExts());
 	//emplaceIfExist(o, VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME,	availablePhyDeviceExts());
+	outAdapterInfo.feature.hasAccelerationStruct = emplaceIfExist(o, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,		availablePhyDeviceExts());	
 
-	if (adapterInfo.isDebug)
+	if (outAdapterInfo.isDebug)
 	{
 		emplaceIfExist(o, VK_EXT_DEBUG_MARKER_EXTENSION_NAME,			availablePhyDeviceExts());		// deprecated
 		emplaceIfExist(o, VK_EXT_DEBUG_UTILS_EXTENSION_NAME,			availablePhyDeviceExts());

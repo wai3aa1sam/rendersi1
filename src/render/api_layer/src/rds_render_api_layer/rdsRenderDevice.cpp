@@ -8,6 +8,8 @@
 #include "rds_render_api_layer/texture/rdsTexture.h"
 #include "rds_render_api_layer/shader/rdsShader.h"
 
+#include "rdsRenderer.h"
+
 
 namespace rds
 {
@@ -18,11 +20,18 @@ namespace rds
 
 RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 {
-	apiType		= RenderApiType::Vulkan;
-	isPresent	= true;
-
+	apiType			= RenderApiType::Vulkan;
+	isPresent		= true;
+	
 	isDebug = RDS_DEBUG;
 }
+
+bool 
+RenderDevice_CreateDesc::isShaderCompileMode() const
+{
+	return sCast<const Renderer_CreateDesc&>(*this).isUsingForCompileShader;
+}
+
 
 RenderDevice::CreateDesc RenderDevice::makeCDesc() { return CreateDesc{}; }
 
@@ -42,6 +51,9 @@ RenderDevice::create(const CreateDesc& cDesc)
 	_apiType = cDesc.apiType;
 
 	onCreate(cDesc);
+
+	if (cDesc.isShaderCompileMode())
+		return;
 
 	_tsfCtx->transferRequest().reset(_tsfCtx);
 

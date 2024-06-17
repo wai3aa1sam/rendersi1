@@ -38,6 +38,7 @@ struct RenderAdapterInfo
 		bool	isDiscreteGPU			: 1;
 		bool	hasGeometryShader		: 1;
 		bool	hasWireframe			: 1;
+		bool	hasAccelerationStruct	: 1;
 		bool	bindless				: 1;
 
 		bool	multithread				: 1;

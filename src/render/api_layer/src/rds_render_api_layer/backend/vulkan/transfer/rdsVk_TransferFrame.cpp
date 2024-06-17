@@ -128,26 +128,6 @@ RenderDevice_Vk* Vk_TransferFrame::renderDeviceVk() { return _tsfCtxVk->renderDe
 
 #endif
 
-#if 0
-#pragma mark --- rdsVk_LinearStagingBuffer-Impl ---
-#endif // 0
-#if 1
-
-Vk_LinearStagingBuffer::Chunks::Chunks()
-{
-	if (!Renderer::rdDev()->isCompilerShader)
-	{
-		_chunkSize	= sCast<u32>(64 * 6) * 1024 * 1024;
-	}
-}
-
-Vk_LinearStagingBuffer::Chunks::~Chunks()
-{
-
-}
-
-
-#endif
 
 }
 

@@ -348,7 +348,7 @@ public:
 
 	void createInstanceExtensions	(const RenderAdapterInfo& adapterInfo, bool logAvaliableExtension = false);
 	void createValidationLayers		(const RenderAdapterInfo& adapterInfo);
-	void createPhyDeviceExtensions	(const RenderAdapterInfo& adapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice, bool isLogResult = false);
+	void createPhyDeviceExtensions	(RenderAdapterInfo& outAdapterInfo, const RenderDevice_CreateDesc& rdDevCDesc, Vk_PhysicalDevice_T* phyDevice, bool isLogResult = false);
 
 	template<class T> T getInstanceExtFunction(const char* funcName) const;
 	template<class T> T getDeviceExtFunction(const char* funcName) const;

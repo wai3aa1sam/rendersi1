@@ -61,8 +61,11 @@ struct StagingHandle
 public:
 	static constexpr SizeType s_kInvalid = NumLimit<u32>::max();
 
-	bool isValid()		const { return chunkId != s_kInvalid && offset != s_kInvalid; }
-	void checkValid()	const { RDS_CORE_ASSERT(isValid(), "Invalid StagingHandle"); }
+	bool isValid()			const { return chunkId != s_kInvalid && offset != s_kInvalid; }
+	void checkValid()		const { RDS_CORE_ASSERT(isValid(), "Invalid StagingHandle"); }
+
+	bool isOffsetValid()	const { return offset != s_kInvalid; }
+	void checkOffsetValid()	const { RDS_CORE_ASSERT(isOffsetValid(), "Invalid StagingHandle"); }
 
 public:
 	u32 chunkId = s_kInvalid;

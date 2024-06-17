@@ -49,7 +49,7 @@ ShaderCompilerConsoleApp::create()
 		#if RDS_USE_RENDERER
 		{
 			auto cDesc = Renderer::makeCDesc();
-			cDesc.isCompilerShader = true;
+			cDesc.isUsingForCompileShader = true;
 			Renderer::instance()->create(cDesc);
 		}
 		#endif
@@ -72,8 +72,8 @@ ShaderCompilerConsoleApp::create()
 
 		_isPermutationCompile = !marcos.is_empty();
 
-		marcos.emplace_back("RDS_K_SAMPLER_COUNT",			StrUtil::toTempStr(bindlessRsc.samplerCount()));
-		marcos.emplace_back("RDS_CONSTANT_BUFFER_SPACE",	fmtAs_T<TempString>("space{}",	bindlessRsc.bindlessTypeCount()));
+		marcos.emplace_back("RDS_K_SAMPLER_COUNT",			StrUtil::toTempStr(BindlessResources::supportSamplerCount()));
+		marcos.emplace_back("RDS_CONSTANT_BUFFER_SPACE",	fmtAs_T<TempString>("space{}",	BindlessResources::bindlessTypeCount()));
 
 		auto minBinding_vkSpec = 16;
 		cmpDesc.globalBinding	= minBinding_vkSpec - 2;

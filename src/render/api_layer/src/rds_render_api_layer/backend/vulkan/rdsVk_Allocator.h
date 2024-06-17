@@ -7,6 +7,8 @@
 namespace rds
 {
 
+class RenderDevice_Vk;
+
 #if 0
 #pragma mark --- rdsVk_Allocator-Decl ---
 #endif // 0
@@ -52,7 +54,7 @@ private:
 	VmaAllocationCreateFlags	toAllocFlags(RenderAllocFlags v);
 
 private:
-	VmaAllocator _allocator;
+	VmaAllocator _allocator = nullptr;
 };
 
 #endif
