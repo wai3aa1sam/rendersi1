@@ -10,6 +10,21 @@
 #endif
 #if 1
 
+float3 Lighting_computeViewDir_Ws(float3 pos, float3 cameraPos)
+{
+	float3 viewPos;
+	viewPos = cameraPos;
+	float3 viewDir = normalize(viewPos - pos);
+	return viewDir;
+}
+
+float3 Lighting_computeViewDir_Vs(float3 pos, float3 cameraPos)
+{
+	float3 viewPos;
+	viewPos = float3(0.0, 0.0, 0.0);
+	float3 viewDir = normalize(viewPos - pos);
+	return viewDir;
+}
 
 float Lighting_computeSpotIntensity(Light light, float3 L)
 {
@@ -75,31 +90,26 @@ LightingResult Lighting_computeLighting_Impl(Light light, float3 lightPos, float
 	return o;
 }
 
-LightingResult Lighting_computeLighting_Ws(Light light, Surface surface, float3 cameraPos)
+
+LightingResult Lighting_computeLighting_Ws(Light light, Surface surface, float3 cameraPos, out float3 viewDir)
 {
 	LightingResult o = (LightingResult)0;
 	
-	float3 viewPos;
-	viewPos = cameraPos;
-	float3 viewDir = normalize(viewPos - surface.pos);
-
+	viewDir = Lighting_computeViewDir_Ws(surface.pos, cameraPos);
 	o = Lighting_computeLighting_Impl(light, light.positionWs.xyz, light.directionWs.xyz, surface, viewDir);
 	return o;
 }
 
-LightingResult Lighting_computeLighting_Vs(Light light, Surface surface, float3 cameraPos)
+LightingResult Lighting_computeLighting_Vs(Light light, Surface surface, float3 cameraPos, out float3 viewDir)
 {
 	LightingResult o = (LightingResult)0;
 
-	float3 viewPos;
-	viewPos = float3(0.0, 0.0, 0.0);
-	float3 viewDir = normalize(viewPos - surface.pos);
-
+	viewDir = Lighting_computeViewDir_Vs(surface.pos,cameraPos);
 	o = Lighting_computeLighting_Impl(light, light.positionVs.xyz, light.directionVs.xyz, surface, viewDir);
 	return o;
 }
 
-LightingResult Lighting_computeForwardLighting_Ws(Surface surface, float3 cameraPos)
+LightingResult Lighting_computeForwardLighting_Ws(Surface surface, float3 cameraPos, out float3 viewDir)
 {
 	LightingResult 	o = (LightingResult)0;
 
@@ -108,7 +118,7 @@ LightingResult Lighting_computeForwardLighting_Ws(Surface surface, float3 camera
 	{
 		Light light = rds_Lights_get(iLight);
 
-		LightingResult result = Lighting_computeLighting_Ws(light, surface, cameraPos);
+		LightingResult result = Lighting_computeLighting_Ws(light, surface, cameraPos, viewDir);
 		o.diffuse 	+= result.diffuse;
 		o.specular 	+= result.specular;
 	}
@@ -116,7 +126,7 @@ LightingResult Lighting_computeForwardLighting_Ws(Surface surface, float3 camera
 	return o;
 }
 
-LightingResult Lighting_computeForwardLighting_Vs(Surface surface, float3 cameraPos)
+LightingResult Lighting_computeForwardLighting_Vs(Surface surface, float3 cameraPos, out float3 viewDir)
 {
 	LightingResult 	o = (LightingResult)0;
 
@@ -125,13 +135,15 @@ LightingResult Lighting_computeForwardLighting_Vs(Surface surface, float3 camera
 	{
 		Light light = rds_Lights_get(iLight);
 
-		LightingResult result = Lighting_computeLighting_Vs(light, surface, cameraPos);
+		LightingResult result = Lighting_computeLighting_Vs(light, surface, cameraPos, viewDir);
 		o.diffuse 	+= result.diffuse;
 		o.specular 	+= result.specular;
 	}
 
 	return o;
 }
+
+
 #endif
 
 

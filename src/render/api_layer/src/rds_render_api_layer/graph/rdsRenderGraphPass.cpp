@@ -124,6 +124,7 @@ RdgPass::readTexture(RdgTextureHnd	hnd, TextureUsageFlags usage, ShaderStageFlag
 	{
 		RDS_CORE_ASSERT(BitUtil::has(hnd.desc().usageFlags, TextureUsageFlags::TransferSrc));
 		usage = TextureUsageFlags::TransferSrc;
+		stage = ShaderStageFlag::None;
 	}
 	auto state = StateUtil::make(usage, Access::Read, stage);
 	accessResource(hnd, state);

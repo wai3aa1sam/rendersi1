@@ -9,8 +9,8 @@ namespace rds
 class CRenderableSystem;
 class SceneView;
 
-struct DrawData;
-struct DrawSettings;
+class	DrawData;
+struct	DrawSettings;
 
 #if 0
 #pragma mark --- rdsCRenderable-Decl ---

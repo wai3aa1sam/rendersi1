@@ -1,7 +1,8 @@
 #if 0
 Shader {
 	Properties {
-		
+		Float delta_phi     = 0.025
+		Float delta_theta   = 0.025
 	}
 	
 	Pass {
@@ -31,41 +32,37 @@ reference:
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
+    float4 positionOs   : SV_POSITION;
 };
 
 struct PixelIn 
 {
 	float4 positionHCS  : SV_POSITION;
-	float3 positionOS	: POSITION;
+	float3 positionOs	: POSITION;
 };
 
-RDS_TEXTURE_CUBE(envCubeMap);
-float deltaPhi;
-float deltaTheta;
+RDS_TEXTURE_CUBE(cube_env);
 
-PixelIn vs_main(VertexIn i)
+float       delta_phi;
+float       delta_theta;
+float4x4    matrix_vp;
+
+PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
 
-    o.positionHCS   = mul(RDS_MATRIX_MVP, i.positionOS);
-    o.positionOS 	= i.positionOS.xyz;
-
-    o.positionOS.x = deltaPhi + i.positionOS.x;
-    o.positionOS.x -= deltaPhi;
+    o.positionHCS   = mul(matrix_vp, input.positionOs);
+    o.positionOs 	= input.positionOs.xyz;
 
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float4 ps_main(PixelIn input) : SV_TARGET
 {
     float3 o = float3(0.0, 0.0, 0.0);
-    o.r = RDS_MATRIX_MVP[0][0];
-    o.r += deltaPhi; 
-    o.r -= RDS_MATRIX_MVP[0][0]; 
 
     // tangent space
-    float3 normal   = normalize(i.positionOS);
+    float3 normal   = normalize(input.positionOs);
 	float3 up       = float3(0.0, 1.0, 0.0);
 	float3 right    = normalize(cross(up, normal));
 	up = cross(normal, right);
@@ -75,9 +72,9 @@ float4 ps_main(PixelIn i) : SV_TARGET
 
 	float3  irradiance   = float3(0.0, 0.0, 0.0);
 	uint    sampleCount  = 0u;
-	for (float phi = 0.0; phi < pi_two; phi += deltaPhi) 
+	for (float phi = 0.0; phi < pi_two; phi += delta_phi) 
     {
-		for (float theta = 0.0; theta < pi_half; theta += deltaTheta) 
+		for (float theta = 0.0; theta < pi_half; theta += delta_theta) 
         {
             float cosTheta = cos(theta);
             float sinTheta = sin(theta);
@@ -87,7 +84,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
             // tangent space to world
             float3 sampleDir    = cartesianCoord.x * right + cartesianCoord.y * up + cartesianCoord.z * normal; 
 
-            irradiance += RDS_TEXTURE_CUBE_SAMPLE(envCubeMap, sampleDir).rgb * cosTheta * sinTheta;
+            irradiance += RDS_TEXTURE_CUBE_SAMPLE(cube_env, sampleDir).rgb * cosTheta * sinTheta;
 			sampleCount++;
 		}
 	}

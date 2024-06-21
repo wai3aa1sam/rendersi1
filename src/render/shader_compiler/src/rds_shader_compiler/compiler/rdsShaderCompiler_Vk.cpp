@@ -420,19 +420,11 @@ ShaderCompiler_Vk::_reflect_threadGroups(ShaderStageInfo& outInfo, SpirvCompiler
 	if (!BitUtil::has(outInfo.stageFlag, ShaderStageFlag::Compute))
 		return;
 
-	auto ex = compiler.get_execution_model();
-	ex = ex;
+	u32 x = compiler.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 0);
+	u32 y = compiler.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 1);
+	u32 z = compiler.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 2);
 
-	//compiler();
-
-	auto constants = compiler.get_specialization_constants();
-	for (auto& e : constants)
-	{
-		e.constant_id;
-	}
-	SpecializationConstant a[3];
-	compiler.get_work_group_size_specialization_constants(a[0], a[1], a[2]);		// ??????????????
-	a[0];
+	outInfo._specialConstant = Vec4i{Vec3i::s_cast(Vec3u{ x, y, z }), 0};
 }
 
 void 

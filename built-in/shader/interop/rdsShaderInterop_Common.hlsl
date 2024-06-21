@@ -56,14 +56,13 @@ struct Surface
 	float3 normal;
 
 	float4 color;
-	float3 ambient;
-	float3 diffuse;
-	float3 specular;
-	float  shininess;
+	float4 ambient;
+	float4 diffuse;
+	float4 specular;
 
+	float  shininess;
     float  roughness;
     float  metallic;
-
     float  ambientOcclusion;
 };
 

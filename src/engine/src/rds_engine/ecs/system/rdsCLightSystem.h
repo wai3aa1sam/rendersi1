@@ -14,6 +14,7 @@ class Scene;
 //class CLight;
 class CTransform;
 class CLight;
+class DrawData;
 
 #if 0
 #pragma mark --- rdsCLightSystem-Decl ---

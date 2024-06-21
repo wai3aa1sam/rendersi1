@@ -97,6 +97,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	DrawParam drawParam = rds_DrawParam_get();
 
 	float2 uv = input.uv;
+	float3 viewDir;
 
     uint2 blockIndex 			= uint2(floor(input.positionHcs.xy / BLOCK_SIZE));
 	uint2 lightBlock 			= RDS_TEXTURE_2D_T_GET(uint2, lightGrid)[blockIndex];
@@ -134,7 +135,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		// iLight = i;
 		// light = lights[iLight];
 
-		LightingResult result = Lighting_computeLighting_Vs(light, surface, drawParam.camera_pos);
+		LightingResult result = Lighting_computeLighting_Vs(light, surface, drawParam.camera_pos, viewDir);
 		oLightingResult.diffuse 	+= result.diffuse;
 		oLightingResult.specular 	+= result.specular;
 

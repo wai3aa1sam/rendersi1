@@ -31,35 +31,34 @@ reference:
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
-    float2 uv           : TEXCOORD0;
+    uint vertexId       : SV_VertexID;
 };
 
 struct PixelIn 
 {
-	float4 positionHCS  : SV_POSITION;
-	float3 positionOS	: POSITION;
+	float4 positionHcs  : SV_POSITION;
     float2 uv           : TEXCOORD0;
 };
 
 static const uint s_kSampleCount = 1024u;
 
-PixelIn vs_main(VertexIn i)
+PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
 
-    o.positionHCS   = mul(RDS_MATRIX_MVP, i.positionOS);
-    o.positionOS 	= i.positionOS.xyz;
-    o.uv            = i.uv;
+    uint 	vertexId 	= input.vertexId;
+    float2 	uv 			= ScreenQuad_makeUv(vertexId);
 
+    o.positionHcs = ScreenQuad_makePositionHcs(uv);
+    o.uv          = uv;
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float4 ps_main(PixelIn input) : SV_TARGET
 {
     float3 o = float3(0.0, 0.0, 0.0);
 
-    float2 uv = i.uv;
+    float2 uv = input.uv;
     o.xy = Pbr_integrateBrdf(uv.x, uv.y, s_kSampleCount);
     
     return float4(o, 1.0);

@@ -16,6 +16,30 @@ GraphicsDemo::~GraphicsDemo()
 }
 
 void 
+GraphicsDemo::prepareRender(RenderGraph* oRdGraph, DrawData* drawData)
+{
+	auto& rdGraph	= oRdGraph;
+	auto* rdCtx		= rdGraph->renderContext();
+	RDS_CORE_ASSERT(math::equals(rdCtx->framebufferSize(), Vec2f{drawData->resolution()}), "RenderContext resoultion is different from DrawData resoultion");
+
+	auto& rdPassPipeline = *_rdPassPipelines[drawData->drawParamIdx];
+	rdPassPipeline.reset(oRdGraph, drawData);
+	onPrepareRender(&rdPassPipeline);
+}
+
+void 
+GraphicsDemo::executeRender(RenderGraph* oRdGraph, DrawData* drawData)
+{
+	auto& rdGraph	= oRdGraph;
+	auto* rdCtx		= rdGraph->renderContext();
+	RDS_CORE_ASSERT(math::equals(rdCtx->framebufferSize(), Vec2f{drawData->resolution()}), "RenderContext resoultion is different from DrawData resoultion");
+
+	auto& rdPassPipeline = *_rdPassPipelines[drawData->drawParamIdx];
+	rdPassPipeline.reset(oRdGraph, drawData);
+	onExecuteRender(&rdPassPipeline);
+}
+
+void 
 GraphicsDemo::onCreate()
 {
 	{
@@ -41,12 +65,19 @@ GraphicsDemo::onCreate()
 		_texDefaultSkybox->setDebugName("skybox_default");
 	}
 
+	{
+		auto texCDesc = Texture2D::makeCDesc();
+		texCDesc.create("asset/texture/hdr/newport_loft.hdr");
+		_texDefaultHdrEnv = Renderer::rdDev()->createTexture2D(texCDesc);
+		_texDefaultHdrEnv->setDebugName("texHdrEnvMap");
+	}
+
 	createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/skybox.shader"
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 
-	createMaterial(&_shaderPreDepth,		&_mtlPreDepth,			"asset/shader/pre_depth.shader");
-	createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/rdsDisplayNormals.shader");
 	createMaterial(&_shaderScreenQuad,		&_mtlScreenQuad,		"asset/shader/util/rdsScreenQuad.shader");
+
+	_rdPassPipelines.emplace_back(makeUPtr<RenderPassPipeline>());
 }
 
 void 
@@ -56,17 +87,15 @@ GraphicsDemo::onCreateScene(Scene* oScene)
 }
 
 void 
-GraphicsDemo::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
+GraphicsDemo::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 {
 
 }
 
 void 
-GraphicsDemo::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
+GraphicsDemo::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
-	auto& rdGraph	= oRdGraph;
-	auto* rdCtx		= rdGraph->renderContext();
-	RDS_CORE_ASSERT(math::equals(rdCtx->framebufferSize(), Vec2f{drawData->resolution()}), "RenderContext resoultion is different from DrawData resoultion");
+	
 }
 
 void 
@@ -192,7 +221,7 @@ GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCu
 	skyboxPass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), *drawData);
+			rdReq.reset(rdGraph->renderContext(), drawData);
 			auto mtl = _mtlSkybox;
 
 			mtl->setParam("skybox", texSkybox);
@@ -218,7 +247,7 @@ GraphicsDemo::addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgText
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 				auto mtl = _mtlPreDepth;
 
 				auto* clearValue = rdReq.clearFramebuffers();
@@ -258,7 +287,7 @@ GraphicsDemo::addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrV
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), *drawData);
+			rdReq.reset(rdGraph->renderContext(), drawData);
 			auto mtl = material;
 
 			mtl->setParam("texColor", texColor.renderResource());
@@ -282,7 +311,7 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), *drawData, drawData->mtlLine());
+			rdReq.reset(rdGraph->renderContext(), drawData, drawData->mtlLine());
 			auto mtl = material ? material :drawData->mtlLine();	RDS_UNUSED(mtl);
 			mtl->setParam("rds_matrix_vp", drawData->camera->viewProjMatrix());
 
@@ -357,7 +386,7 @@ GraphicsDemo::addDisplayNormalPass(RenderGraph* oRdGraph, DrawData* drawData, Rd
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), *drawData);
+			rdReq.reset(rdGraph->renderContext(), drawData);
 			auto mtl = _mtlDisplayNormals;
 
 			drawData->setupMaterial(mtl);
@@ -378,15 +407,15 @@ GraphicsDemo::addDisplayAABBoxPass(RenderGraph* oRdGraph, DrawData* drawData, Rd
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				rdReq.reset(rdGraph->renderContext(), *drawData, drawData->mtlLine());
+				rdReq.reset(rdGraph->renderContext(), drawData, drawData->mtlLine());
 
 				#if 0
 				if (drawSettings.cullingSetting.mode == CullingMode::CameraFustrum)
 				{
-					const auto& camera = *drawData->camera;
+					const auto& camera = drawData->camera;
 
 					//auto fov = drawData->camera->fov();
-					//auto camera = *drawData->camera;
+					//auto camera = drawData->camera;
 					//camera.setFov(fov / 2.0f);
 					//rdReq.drawFrustum(camera.frustum(), Color4f{1.0f, 0.5f, 0.0f, 1.0f});
 					//rdReq.drawFrustum(drawSettings.cullingSetting.cameraFustrum, Color4f{1.0f, 0.0f, 1.0f, 1.0f});
@@ -424,7 +453,7 @@ addDrawLineTest()
 		passDrawLine.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 				auto mtl = drawData->mtlLine();	RDS_UNUSED(mtl);
 				mtl->setParam("rds_matrix_vp", drawData->camera->viewProjMatrix());
 				{

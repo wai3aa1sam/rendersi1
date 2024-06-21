@@ -506,8 +506,8 @@ public:
 public:
 	RdgTextureHnd() = default;
 
-	Size				size()				const	{ return resource()->access()->size(); }
-	ColorType			format()			const	{ return resource()->desc().format; }
+	Size				size()				const	{ return desc().size; }
+	ColorType			format()			const	{ return desc().format; }
 	TextureUsageFlags	usageFlags()		const	{ return desc().usageFlags; }
 
 	Texture*		texture()				{ return sCast<Texture*>(resource()->renderResource()); }

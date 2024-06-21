@@ -21,8 +21,8 @@ public:
 public:
 	virtual void onCreate()								override;
 	virtual void onCreateScene(Scene* oScene)			override;
-	virtual void onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData) override;
-	virtual void onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData) override;
+	virtual void onPrepareRender(RenderPassPipeline* renderPassPipeline) override;
+	virtual void onExecuteRender(RenderPassPipeline* renderPassPipeline) override;
 
 	virtual void onDrawGui(EditorUiDrawRequest& uiDrawReq) override;
 

@@ -463,6 +463,7 @@ public:
 	Vector<StorageBuffer,	s_kStorageBufLocalSize>		storageBufs;
 	Vector<StorageImage,	s_kStorageImageLocalSize>	storageImages;
 
+
 public:
 	template<class JSON_SE>
 	void onJsonIo(JSON_SE& se)
@@ -477,7 +478,14 @@ public:
 		RDS_NAMED_FIXED_IO(se, samplers);
 		RDS_NAMED_FIXED_IO(se, storageBufs);
 		RDS_NAMED_FIXED_IO(se, storageImages);
+		RDS_NAMED_FIXED_IO(se, _specialConstant);
 	}
+
+public:
+	Tuple3u numthreads() const { RDS_CORE_ASSERT(stageFlag == ShaderStageFlag::Compute, "compute stage only"); return Vec3u::s_cast(Vec3i{ _specialConstant.x, _specialConstant.y, _specialConstant.z }); }
+
+public:
+	Tuple4i _specialConstant;
 };
 
 struct ShaderPassInfo

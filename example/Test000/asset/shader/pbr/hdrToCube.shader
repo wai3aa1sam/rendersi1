@@ -31,16 +31,18 @@ reference:
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
+    float4 positionOs   : SV_POSITION;
 };
 
 struct PixelIn 
 {
-	float4 positionHCS  : SV_POSITION;
-	float3 positionOS	: POSITION;
+	float4 positionHcs  : SV_POSITION;
+	float3 positionOs	: POSITION;
 };
 
-RDS_TEXTURE_2D(equirectangularMap);
+RDS_TEXTURE_2D(tex_equirectangular);
+
+float4x4 matrix_vp;
 
 float2 sampleSphericalMap(float3 v)
 {
@@ -52,22 +54,22 @@ float2 sampleSphericalMap(float3 v)
     return uv;
 }
 
-PixelIn vs_main(VertexIn i)
+PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
 
-    o.positionHCS   = mul(RDS_MATRIX_MVP, i.positionOS);
-    o.positionOS 	= i.positionOS.xyz;
+    o.positionHcs   = mul(matrix_vp, input.positionOs);
+    o.positionOs 	= input.positionOs.xyz;
 
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float4 ps_main(PixelIn input) : SV_TARGET
 {
     float3 o;
 	
-	float2 uv = sampleSphericalMap(normalize(i.positionOS));
-    o = RDS_TEXTURE_2D_SAMPLE(equirectangularMap, uv).rgb;
+	float2 uv = sampleSphericalMap(normalize(input.positionOs));
+    o = RDS_TEXTURE_2D_SAMPLE(tex_equirectangular, uv).rgb;
 
     return float4(o, 1.0);
 }

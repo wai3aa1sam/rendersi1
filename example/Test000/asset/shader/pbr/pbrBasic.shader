@@ -59,28 +59,28 @@ cbuffer PbrParam
 RDS_TEXTURE_2D(texture0);
 RDS_TEXTURE_2D(texture1);
 
-PixelIn vs_main(VertexIn i)
+PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
-    o.positionHCS = mul(RDS_MATRIX_MVP,     i.positionOs);
-    o.positionWs  = mul(RDS_MATRIX_MODEL,   i.positionOs);
-    o.normal      = normalize(mul((float3x3)RDS_MATRIX_MODEL, i.normal));
-    o.uv          = i.uv;
+    o.positionHCS = mul(RDS_MATRIX_MVP,     input.positionOs);
+    o.positionWs  = mul(RDS_MATRIX_MODEL,   input.positionOs);
+    o.normal      = normalize(mul((float3x3)RDS_MATRIX_MODEL, input.normal));
+    o.uv          = input.uv;
     
     o.uv.x = roughness;     // temp solution for match same descriptor set layout
-    o.uv.x = i.uv.x;
+    o.uv.x = input.uv.x;
 
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float4 ps_main(PixelIn input) : SV_TARGET
 {
     float3 o = float3(1.0, 1.0, 1.0);
 	DrawParam drawParam = rds_DrawParam_get();
 
     Surface surface;
-    surface.pos         = i.positionWs.xyz;
-    surface.normal      = normalize(i.normal);
+    surface.pos         = input.positionWs.xyz;
+    surface.normal      = normalize(input.normal);
     surface.color.rgb   = albedo;
     surface.roughness   = roughness;
     surface.metallic    = metallic;
@@ -98,8 +98,8 @@ float4 ps_main(PixelIn i) : SV_TARGET
     o = ambient + o;
 
     #if 0
-    float3 viewDir  = normalize(posView  - i.positionWs);
-    float3 dirLight = normalize(posLight - i.positionWs);
+    float3 viewDir  = normalize(posView  - input.positionWs);
+    float3 dirLight = normalize(posLight - input.positionWs);
     float3 dirHalf  = normalize(viewDir  + dirLight);
 
     float3 diffuse  = max(dot(normal, dirLight), 0.0) * colorLight;

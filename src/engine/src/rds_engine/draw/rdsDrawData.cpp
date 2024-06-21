@@ -83,8 +83,6 @@ DrawData::setupMaterial(Material* oMtl)
 	mtl->setParam("rds_nLights",			sysLight.lightCount());
 }
 
-const Tuple2f& DrawData::resolution() const { return camera->viewport().size; }
-
 Material* 
 DrawData::mtlLine()
 {

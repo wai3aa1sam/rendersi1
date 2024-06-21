@@ -1,3 +1,4 @@
+import math
 import os, sys, pathlib
 import subprocess
 from enum import Enum
@@ -166,6 +167,12 @@ class BColors:
 def printRedText(str):
     print("{}{}{}".format(BColors.Red, str, BColors.EndC))
 
+class ShaderCompileDesc:
+    rds_make            = ''
+    mk_rds_root         = ''
+    mk_project_root     = ''
+    mk_shader_file_path = ''
+
 class CompileShaders:
     
     @staticmethod
@@ -178,6 +185,52 @@ class CompileShaders:
             printRedText("\n\n\n***************** error: {}".format(shaderPath))
             print(stdout.decode())
             printRedText("--- error end --- {} --- --- ---".format(shaderPath))
+
+    @staticmethod
+    def compileShaderBatch(errorList, shaderCompileDesc, shader_paths, offset, batch, timeoutSec):
+        procs = []
+        for i in range(batch):
+            iShaderPath = offset + i
+            if iShaderPath >= len(shader_paths):
+                break
+            
+            path = shader_paths[offset + i]
+            #print("compiling {}".format(path))
+
+            # if (i > 1):
+            #     break
+            
+            shader_file_path = shaderCompileDesc.mk_shader_file_path + path
+            
+            # print("mk_rds_root:         {}".format(mk_rds_root))
+            # print("mk_project_root:     {}".format(mk_project_root))
+            # print("shader_file_path:    {}".format(shader_file_path))
+            # print("shader path:         {}".format(path))
+            
+            proc = subprocess.Popen(
+                args = [shaderCompileDesc.rds_make, shaderCompileDesc.mk_rds_root, shaderCompileDesc.mk_project_root, shader_file_path, ]
+                #, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE
+                , stdout = subprocess.PIPE, stderr = subprocess.STDOUT
+            )
+
+            procs.append(proc)
+            #proc.wait()
+
+        for i, proc in enumerate(procs):
+            iShaderPath = offset + i
+            shaderPath = shader_paths[iShaderPath]
+            #print("\t === Begin Wait {} ===".format(shaderPath))
+            stdout = {}
+            try:
+                # proc.wait(timeout = timeoutSec) # this will deadlock when using subprocess.PIPE ...., see doc.......
+                CompileShaders.printProcOutput(errorList, proc, shaderPath, timeoutSec)
+                pass
+            except:
+                proc.kill()
+                errorList.append(shaderPath)
+                #CompileShaders.printProcOutput(errorList, proc, shaderPath, timeoutSec)
+            #print("\t === End ===")
+        #print("=== Compile Shaders End ===")
 
     def main(args):
         cur_dir = os.getcwd()
@@ -201,14 +254,14 @@ class CompileShaders:
         #print(shaders_path)
 
         # === TODO: no hardcode, load variable name
-        rds_make            = "make"
         imported_path       = "local_temp/imported"
-        mk_rds_root         = "RDS_ROOT"            + "=" + rds_root
-        mk_project_root     = "PROJECT_ROOT"        + "=" + project_root
-        mk_shader_file_path = "SHADER_FILE_PATH"    + "=" + ""
+        cmpDesc = ShaderCompileDesc
+        cmpDesc.rds_make            = "make"
+        cmpDesc.mk_rds_root         = "RDS_ROOT"            + "=" + rds_root
+        cmpDesc.mk_project_root     = "PROJECT_ROOT"        + "=" + project_root
+        cmpDesc.mk_shader_file_path = "SHADER_FILE_PATH"    + "=" + ""
         # ===
 
-        procs           = []
         timeoutSec      = 4 # sec
         errorList       = []
 
@@ -216,41 +269,10 @@ class CompileShaders:
 
         #print("=== Compile Shaders Begin ===")
         #bin_path_base = project_root + "/" + imported_path + "/"
-        for i, path in enumerate(shader_paths):
-
-            # if (i > 1):
-            #     break
-            
-            shader_file_path = mk_shader_file_path + path
-            
-            # print("mk_rds_root:         {}".format(mk_rds_root))
-            # print("mk_project_root:     {}".format(mk_project_root))
-            # print("shader_file_path:    {}".format(shader_file_path))
-            # print("shader path:         {}".format(path))
-            
-            proc = subprocess.Popen(
-                args = [rds_make, mk_rds_root, mk_project_root, shader_file_path, ]
-                #, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE
-                , stdout = subprocess.PIPE, stderr = subprocess.STDOUT
-            )
-
-            procs.append(proc)
-            #proc.wait()
-
-        for i, proc in enumerate(procs):
-            shaderPath = shader_paths[i]
-            #print("\t === Begin Wait {} ===".format(shaderPath))
-            stdout = {}
-            try:
-                # proc.wait(timeout = timeoutSec) # this will deadlock when using subprocess.PIPE ...., see doc.......
-                CompileShaders.printProcOutput(errorList, proc, shaderPath, timeoutSec)
-                pass
-            except:
-                proc.kill()
-                errorList.append(shaderPath)
-                #CompileShaders.printProcOutput(errorList, proc, shaderPath, timeoutSec)
-            #print("\t === End ===")
-        #print("=== Compile Shaders End ===")
+        batchSize = 8
+        batchCount = math.ceil(len(shader_paths) / batchSize)
+        for i in range(batchCount):
+            CompileShaders.compileShaderBatch(errorList, cmpDesc, shader_paths, i * batchSize, batchSize, timeoutSec)
 
         if (len(errorList)):
             printRedText("\n***\n total {} shaders has error".format(len(errorList)))
@@ -259,6 +281,4 @@ class CompileShaders:
 
         return
     
-        
-
 CompileShaders.main(sys.argv)

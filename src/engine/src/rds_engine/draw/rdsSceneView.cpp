@@ -8,8 +8,6 @@
 #include "../ecs/component/rdsCRenderableMesh.h"
 #include "../ecs/system/rdsCRenderableSystem.h"
 
-#include "rdsDrawSettings.h"
-
 namespace rds
 {
 

@@ -44,9 +44,9 @@ struct PixelIn
     float3 normal       : NORMAL0;
 };
 
-RDS_TEXTURE_2D(brdfLut);
-RDS_TEXTURE_CUBE(irradianceEnvMap);
-RDS_TEXTURE_CUBE(prefilteredEnvMap);
+RDS_TEXTURE_2D(tex_brdfLut);
+RDS_TEXTURE_CUBE(cube_irradianceEnv);
+RDS_TEXTURE_CUBE(cube_prefilteredEnv);
 
 static const float s_kMaxLod = 9.0;
 
@@ -59,34 +59,34 @@ float   albedo;
 float   metallic;
 float3  colorSpec;
 
-PixelIn vs_main(VertexIn i)
+PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
-    o.positionHcs = mul(RDS_MATRIX_MVP,     i.positionOs);
-    o.positionWs  = mul(RDS_MATRIX_MODEL,   i.positionOs).xyz;
-    o.normal      = mul((float3x3)RDS_MATRIX_MODEL, i.normal);
-    //o.normal      = mul((float3x3)transpose(inverse(rds_matrix_model)), i.normal);
+    o.positionHcs = mul(RDS_MATRIX_MVP,     input.positionOs);
+    o.positionWs  = mul(RDS_MATRIX_MODEL,   input.positionOs).xyz;
+    o.normal      = mul((float3x3)RDS_MATRIX_MODEL, input.normal);
+    //o.normal      = mul((float3x3)transpose(inverse(rds_matrix_model)), input.normal);
 
-    o.uv          = i.uv;
-    o.uv.y        = 1 - i.uv.y;
+    o.uv          = input.uv;
+    o.uv.y        = 1 - input.uv.y;
     
     o.uv.x = roughness;     // temp solution for match same descriptor set layout
-    o.uv.x += i.uv.x;
+    o.uv.x += input.uv.x;
     o.uv.x -= roughness;
 
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float4 ps_main(PixelIn input) : SV_TARGET
 {
     DrawParam drawParam = rds_DrawParam_get();
 
     float3 o = float3(0.0, 0.0, 0.0);
-    float2 uv = i.uv;
+    float2 uv = input.uv;
 
     Surface surface;
-    surface.pos                 = i.positionWs;
-    surface.normal              = normalize(i.normal);
+    surface.pos                 = input.positionWs;
+    surface.normal              = normalize(input.normal);
     surface.color.rgb           = color;
     surface.roughness           = roughness;
     surface.metallic            = metallic;
@@ -101,13 +101,13 @@ float4 ps_main(PixelIn i) : SV_TARGET
     o = Pbr_computeDirectLighting(surface, viewDir, posLight, colorLight);
 
     float  dotNV            = max(dot(normal, viewDir), 0.0);
-    float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(irradianceEnvMap, normal).rgb;
-    float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(prefilteredEnvMap, dirRefl, surface.roughness * s_kMaxLod).rgb;
-    float2 brdf             = RDS_TEXTURE_2D_SAMPLE(brdfLut, float2(dotNV, surface.roughness)).rg;
+    float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(cube_irradianceEnv, normal).rgb;
+    float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(cube_prefilteredEnv, dirRefl, surface.roughness * s_kMaxLod).rgb;
+    float2 brdf             = RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, float2(dotNV, surface.roughness)).rg;
 
-    float3 ambient = Pbr_indirectLighting(surface, irradiance, prefilteredRefl, brdf, dotNV);
+    LightingResult indirect = Pbr_computeIndirectLighting(surface, irradiance, prefilteredRefl, brdf, dotNV);
     //ambient = float3(0.0);
-    o = ambient + o;
+    o = indirect.diffuse.rgb + indirect.specular.rgb + o;
     //o = ambient;
 
     o = ToneMapping_reinhard(o);

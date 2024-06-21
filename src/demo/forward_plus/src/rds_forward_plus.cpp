@@ -100,18 +100,19 @@ ForwardPlus::onCreateScene(Scene* oScene)
 }
 
 void 
-ForwardPlus::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
+ForwardPlus::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 {
-	Base::onPrepareRender(oRdGraph, drawData);
+	Base::onPrepareRender(renderPassPipeline);
 }
 
 void 
-ForwardPlus::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
+ForwardPlus::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
-	Base::onExecuteRender(oRdGraph, drawData);
+	Base::onExecuteRender(renderPassPipeline);
 
-	auto*	rdGraph		= oRdGraph;
-	auto	screenSize	= Vec2u::s_cast(Vec2f(drawData->resolution())).toTuple2();
+	auto*	rdGraph		= renderPassPipeline->renderGraph();
+	auto*	drawData	= renderPassPipeline->drawDataT<DrawData*>();
+	auto	screenSize	= drawData->resolution2u();
 
 	//RdgBufferHnd bufFrustums = _fwpMakeFrustums->onExecuteRender(oRdGraph, drawData);
 	//Renderer::rdDev()->waitIdle();
@@ -281,7 +282,7 @@ RfpForwardPlus::addMakeFrustumsPass(RenderGraph* oRdGraph, DrawData* drawData)
 		[=](RenderRequest& rdReq)
 		{
 			auto mtl = mtlFwdpMakeFrustum;
-			rdReq.reset(rdGraph->renderContext(), *drawData);
+			rdReq.reset(rdGraph->renderContext(), drawData);
 
 			mtl->setParam("nThreads",			Vec3u{nThreads,		1});
 			mtl->setParam("nThreadGroups",		Vec3u{nThreadGrps,	1});
@@ -356,7 +357,7 @@ RfpForwardPlus::addLightCullingPass(RenderGraph* oRdGraph, DrawData* drawData, R
 			[=](RenderRequest& rdReq)
 			{
 				auto mtl = mtlFwdp;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				/*Vector<u8> data;
 				data.resize(opaque_lightIndexCounter.renderResource()->bufSize());
@@ -392,7 +393,7 @@ RfpForwardPlus::addLightCullingPass(RenderGraph* oRdGraph, DrawData* drawData, R
 			[=](RenderRequest& rdReq)
 			{
 				auto mtl = mtlFwdp;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				mtl->setParam("nThreads",			Vec3u{nThreads,		1});
 				mtl->setParam("nThreadGroups",		Vec3u{nThreadGrps,	1});
@@ -464,7 +465,7 @@ RfpForwardPlus::addLightingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTe
 			[=](RenderRequest& rdReq)
 			{
 				auto mtl = mtlFwdpLighting;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor();
@@ -539,7 +540,7 @@ RfpForwardPlus::renderDebugMakeFrustums(RenderGraph* oRdGraph, DrawData* drawDat
 			[=](RenderRequest& rdReq)
 			{
 				auto mtl = mtlFwdpMakeFrustum;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				auto* drawCall = rdReq.addDrawCall();
 				drawCall->vertexLayout			= VertexT_Pos<Tuple4f>::vertexLayout();

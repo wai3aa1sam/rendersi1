@@ -1,6 +1,7 @@
 #pragma once
 
-#include "rds_engine/common/rds_engine_common.h"
+//#include "rds_engine/common/rds_engine_common.h"
+#include "rds_render/common/rds_render_common.h"
 
 namespace rds
 {
@@ -15,6 +16,11 @@ namespace rds
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(CullingMode, u8);
+
+#if 0
+#pragma mark --- rdsCullingSettings-Decl ---
+#endif // 0
+#if 1
 
 struct CullingSettings
 {
@@ -31,22 +37,6 @@ public:
 
 	void setCameraFrustum(	const Frustum3f& v);
 	void setAABBox(			const AABBox3f& v);
-};
-
-#if 0
-#pragma mark --- rdsDrawSettings-Decl ---
-#endif // 0
-#if 1
-
-struct DrawSettings
-{
-public:
-	CullingSettings				cullingSetting;
-	Function<void(Material*)>	setMaterialFn;
-
-public:
-	DrawSettings();
-
 };
 
 #endif

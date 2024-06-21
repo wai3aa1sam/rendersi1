@@ -1,8 +1,13 @@
-#include "rds_engine-pch.h"
-#include "rdsDrawSettings.h"
+#include "rds_render-pch.h"
+#include "rdsCullingSettings.h"
 
 namespace rds
 {
+
+#if 0
+#pragma mark --- rdsCullingSettings-Impl ---
+#endif // 0
+#if 1
 
 void 
 CullingSettings::setCameraFrustum(const Frustum3f& v)
@@ -22,17 +27,6 @@ CullingSettings::CullingSettings()
 {
 
 }
-
-#if 0
-#pragma mark --- rdsDrawSettings-Impl ---
-#endif // 0
-#if 1
-
-DrawSettings::DrawSettings()
-{
-
-}
-
 
 #endif
 

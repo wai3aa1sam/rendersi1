@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_demo/common/rds_demo_common.h"
-
+#include "rds_render/pass/rdsRenderPassFeature.h"
 
 namespace rds
 {
@@ -34,11 +34,14 @@ public:
 
 	void createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAsset, int n, Tuple2f startPos = Tuple2f{0.0f, 0.0f}, Tuple2f step = Tuple2f{3.0f, 3.0f});
 
+	void prepareRender(RenderGraph* oRdGraph, DrawData* drawData);
+	void executeRender(RenderGraph* oRdGraph, DrawData* drawData);
+
 public:
 	virtual void onCreate();
 	virtual void onCreateScene(Scene* oScene);
-	virtual void onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData);
-	virtual void onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData);
+	virtual void onPrepareRender(RenderPassPipeline* renderPassPipeline);
+	virtual void onExecuteRender(RenderPassPipeline* renderPassPipeline);
 
 	virtual void onDrawGui(EditorUiDrawRequest& uiDrawReq);
 
@@ -62,6 +65,7 @@ public:
 	MeshAssets& meshAssets();
 
 	Texture2D*		texUvChecker();
+	Texture2D*		defaultHdrEnv();
 	TextureCube*	skyboxDefault();
 
 private:
@@ -69,7 +73,9 @@ private:
 	Scene*				_scene		= nullptr;
 
 	SPtr<Texture2D>		_texUvChecker;
+	SPtr<Texture2D>		_texDefaultHdrEnv;
 	SPtr<TextureCube>	_texDefaultSkybox;
+
 
 protected:
 	SPtr<Shader>	_shaderSkybox;
@@ -81,11 +87,13 @@ protected:
 	SPtr<Shader>	_shaderDisplayNormals;
 	SPtr<Material>	_mtlDisplayNormals;
 
+	Vector<UPtr<RenderPassPipeline>, 2>	_rdPassPipelines;
 };
 
 inline Scene&		GraphicsDemo::scene()			{ return *_scene; }
 
 inline Texture2D*	GraphicsDemo::texUvChecker()	{ return _texUvChecker; }
+inline Texture2D*	GraphicsDemo::defaultHdrEnv()	{ return _texDefaultHdrEnv; }
 inline TextureCube* GraphicsDemo::skyboxDefault()	{ return _texDefaultSkybox; }
 
 #endif

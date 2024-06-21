@@ -6,6 +6,11 @@ Shader {
 		Float   	RDS_MATERIAL_PROPERTY_metalness	= 0.0
 		Float   	RDS_MATERIAL_PROPERTY_roughness	= 0.5
 
+		Color4f 	ambient				= {1.0, 1.0, 1.0, 1.0}
+		Color4f 	diffuse				= {1.0, 1.0, 1.0, 1.0}
+		Color4f 	specular			= {1.0, 1.0, 1.0, 1.0}
+		Float		ambientOcclusion	= 0.2
+
 		Texture2D 	RDS_MATERIAL_TEXTURE_Albedo
 		Texture2D 	RDS_MATERIAL_TEXTURE_Normal
 		Texture2D 	RDS_MATERIAL_TEXTURE_RoughnessMetalness
@@ -61,6 +66,16 @@ struct PixelIn
 #endif // 0
 #if 1
 
+static const float s_kMaxLod = 9.0;
+
+RDS_TEXTURE_2D(tex_brdfLut);
+RDS_TEXTURE_CUBE(cube_irradianceEnv);
+RDS_TEXTURE_CUBE(cube_prefilteredEnv);
+
+float4  ambient;
+float4  diffuse;
+float4  specular;
+float   ambientOcclusion;
 
 #endif
 
@@ -94,19 +109,28 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	float2 uv = input.uv;
 	float3 pos;
 	float3 normal;
+	float3 viewDir;
+
 
 	pos 	= input.positionVs;
 	normal 	= normalize(input.normalVs);
 	
-	//pos 	= input.positionWs;
-	//normal 	= normalize(input.normal);
+	pos 	= input.positionWs;
+	normal 	= normalize(input.normal);
+
+	Surface surface;
+	surface.ambient				= ambient;
+	surface.diffuse				= diffuse;
+	surface.specular			= specular;
+	surface.ambientOcclusion    = ambientOcclusion;
+	surface = Material_makeSurface(uv, pos, normal);
+	
+	surface.metallic = 1.0;
+	surface.roughness = 0.0;
 
 	{
-		Surface surface;
-		surface = Material_makeSurface(uv, pos, normal);
-
 		LightingResult oLightingResult = (LightingResult)0;
-		oLightingResult = Lighting_computeForwardLighting_Vs(surface, drawParam.camera_pos);
+		oLightingResult = Lighting_computeForwardLighting_Ws(surface, drawParam.camera_pos, viewDir);
 
 		o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 		//o.rgb = oLightingResult.specular.rgb;
@@ -117,7 +141,21 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		//o.rgb = oLightingResult.diffuse.rgb;
 		//o.rgb = surface.color.rgb;
 	}
-	
+
+    {
+		float3 dirRefl 			= reflect(viewDir, normal);
+		float  dotNV            = max(dot(surface.normal, viewDir), 0.0);
+		float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(cube_irradianceEnv, surface.normal).rgb;
+		float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(cube_prefilteredEnv, dirRefl, surface.roughness * s_kMaxLod).rgb;
+		float2 brdf             = RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, float2(dotNV, surface.roughness)).rg;
+
+		LightingResult indirectLight = Pbr_computeIndirectLighting(surface, irradiance, prefilteredRefl, brdf, dotNV);
+		o.rgb += indirectLight.diffuse.rgb + indirectLight.specular.rgb;
+
+		o.rgb = ToneMapping_reinhard(o.rgb);
+		o.rgb = PostProc_gammaEncoding(o.rgb);
+	}
+
     return o;
 }
 

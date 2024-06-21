@@ -27,19 +27,19 @@ HelloTriangle::onCreateScene(Scene* oScene)
 }
 
 void 
-HelloTriangle::onPrepareRender(RenderGraph* oRdGraph, DrawData* drawData)
+HelloTriangle::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 {
-	Base::onPrepareRender(oRdGraph, drawData);
+	Base::onPrepareRender(renderPassPipeline);
 }
 
 void 
-HelloTriangle::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
+HelloTriangle::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
-	Base::onExecuteRender(oRdGraph, drawData);
+	Base::onExecuteRender(renderPassPipeline);
 
-	auto*	rdGraph		= oRdGraph;
-	auto*	rdCtx		= rdGraph->renderContext();
-	auto	screenSize	= Vec2u::s_cast(rdCtx->framebufferSize()).toTuple2();
+	auto*	rdGraph		= renderPassPipeline->renderGraph();
+	auto*	drawData	= renderPassPipeline->drawDataT<DrawData*>();
+	auto	screenSize	= drawData->resolution2u();
 
 	RdgTextureHnd texColor	= rdGraph->createTexture("hello_triangle_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 	RdgTextureHnd texDepth	= rdGraph->createTexture("hello_triangle_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
@@ -51,7 +51,7 @@ HelloTriangle::onExecuteRender(RenderGraph* oRdGraph, DrawData* drawData)
 		[=](RenderRequest& rdReq)
 		{
 			auto mtl = _mtlHelloTriangle;
-			rdReq.reset(rdGraph->renderContext(), *drawData);
+			rdReq.reset(rdGraph->renderContext(), drawData);
 
 			auto* clearValue = rdReq.clearFramebuffers();
 			clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });

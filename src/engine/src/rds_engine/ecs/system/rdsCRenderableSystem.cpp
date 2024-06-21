@@ -109,7 +109,7 @@ CRenderableSystem::update(DrawData& drawData)
 }
 
 void
-CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent)
+CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent, bool isDrawUi)
 {
 	auto& rdGraph = renderGraph();
 	
@@ -132,7 +132,8 @@ CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle,
 			rdReq.drawMesh(RDS_SRCLOC, fullScreenTriangle, mtlPresent);
 			rdReq.swapBuffers();
 		}
-		rdCtx->drawUI(rdReq);		
+		if (isDrawUi)
+			rdCtx->drawUI(rdReq);		
 		rdCtx->commit(rdReq);
 	}
 }

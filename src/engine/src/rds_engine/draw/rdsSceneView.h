@@ -8,7 +8,9 @@ namespace rds
 class Scene;
 class CRenderableSystem;
 
-struct DrawSettings;
+class	DrawData;
+struct	DrawSettings;
+
 
 #if 0
 #pragma mark --- rdsSceneView-Decl ---

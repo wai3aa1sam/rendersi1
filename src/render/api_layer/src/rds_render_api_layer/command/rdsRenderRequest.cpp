@@ -10,6 +10,8 @@
 namespace rds
 {
 
+Tuple3u RenderRequest::computeExactThreadGroups(Tuple3u v, Tuple3u nThreads) { return Tuple3u{math::ceilingDvision(v.x, nThreads.x), math::ceilingDvision(v.y, nThreads.y), math::ceilingDvision(v.z, nThreads.z)}; }
+
 #if 0
 #pragma mark --- rdsRenderRequest-Impl ---
 #endif // 0
@@ -26,14 +28,14 @@ RenderRequest::~RenderRequest()
 }
 
 void 
-RenderRequest::reset(RenderContext* rdCtx, DrawData& drawData, Material* lineMaterial_)
+RenderRequest::reset(RenderContext* rdCtx, DrawData_Base* drawData, Material* lineMaterial_)
 {
 	reset(rdCtx);
 	lineMaterial = lineMaterial_;
 }
 
 void 
-RenderRequest::reset(RenderContext* rdCtx, DrawData& drawData)
+RenderRequest::reset(RenderContext* rdCtx, DrawData_Base* drawData)
 {
 	reset(rdCtx);
 }
@@ -97,6 +99,26 @@ RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u	threadGrp
 }
 
 void 
+RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total, Tuple3u nThreads)
+{
+	auto nThreadGrps = computeExactThreadGroups(total, nThreads);
+	dispatch(RDS_RD_CMD_DEBUG_ARG, mtl, materialPassIdx, nThreadGrps);
+}
+
+void 
+RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total)
+{
+	Tuple3u nThreads = mtl->getPass(materialPassIdx)->computeStage()->info().numthreads();
+	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, 0, total, nThreads);
+}
+
+void 
+RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u total)
+{
+	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, 0, total);
+}
+
+void 
 RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl)
 {
 	for (auto& e : rdMesh.subMeshes())
@@ -111,7 +133,6 @@ RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Materi
 {
 	drawMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, rdMesh, mtl, perObjectParam);
 }
-
 
 void 
 RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl

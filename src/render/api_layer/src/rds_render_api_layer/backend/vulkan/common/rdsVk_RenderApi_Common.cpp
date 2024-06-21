@@ -1144,6 +1144,7 @@ Vk_RenderApiUtil::toVkImageLayout(TextureUsageFlags v, RenderAccess access, Rend
 	switch (v)
 	{
 		case SRC::None:				{ return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED; }						break;
+		case SRC::TransferSrc:		{ return VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED; }						break;
 		case SRC::ShaderResource:	{ return VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; }			break;
 		case SRC::UnorderedAccess:	{ return VkImageLayout::VK_IMAGE_LAYOUT_GENERAL; }							break;
 		case SRC::RenderTarget:		{ return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;}			break;

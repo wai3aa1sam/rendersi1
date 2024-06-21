@@ -37,6 +37,9 @@ public:
 	Vector<Image, s_kFaceCount> uploadImages;
 
 public:
+	TextureCube_CreateDesc(u32 size_, ColorType format_, bool isUseMip, TextureUsageFlags usageFlags_, const SamplerState& samplerState_) { create(size_, format_, isUseMip, usageFlags_, samplerState_); }
+
+public:
 	void create(Span<StrView> filenames, TextureUsageFlags usageFlags_ = TextureUsageFlags::ShaderResource)
 	{
 		for (auto& e : filenames)

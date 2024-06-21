@@ -15,7 +15,7 @@ namespace rds
 class	RenderMesh;
 class	RenderSubMesh;
 class	RenderContext;
-struct	DrawData;
+class	DrawData_Base;
 
 #if 0
 #pragma mark --- rdsRenderCommand-Impl ---
@@ -48,6 +48,9 @@ public:
 	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
 	template<class T>	static void drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData);
 						static void drawSubMesh (RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl);
+	
+	static Tuple3u computeExactThreadGroups(Tuple3u v, Tuple3u nThreads);
+	template<class T> static T ceilingDvision(T x, T n) { return (x + n - 1) / n; }
 
 public:
 	SPtr<Material> lineMaterial;
@@ -59,8 +62,8 @@ public:
 	RenderRequest	(const RenderRequest& rhs) { throwIf(true, ""); }
 	void operator=	(const RenderRequest& rhs) { throwIf(true, ""); }
 
-	void reset(RenderContext* rdCtx, DrawData& drawData, Material* lineMaterial_);
-	void reset(RenderContext* rdCtx, DrawData& drawData);
+	void reset(RenderContext* rdCtx, DrawData_Base* drawData, Material* lineMaterial_);
+	void reset(RenderContext* rdCtx, DrawData_Base* drawData);
 	void reset(RenderContext* rdCtx);
 
 	void uploadToGpu();
@@ -69,6 +72,10 @@ public:
 	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32		materialPassIdx,	Tuple3u	threadGrps);
 	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32		threadGrpsX,		u32		threadGrpsY, u32 threadGrpsZ);
 	void dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u	threadGrps);
+
+	void dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total, Tuple3u nThreads);
+	void dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total);
+	void dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u total);
 
 	RenderCommand_ClearFramebuffers* clearFramebuffers();
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color);

@@ -215,9 +215,9 @@ float2 Pbr_integrateBrdf(float dotNV, float roughness, uint sampleCount)
     return o;
 }
 
-float3 Pbr_indirectLighting(Surface surface, float3 irradianceEnv, float3 prefilteredRefl, float2 brdf, float dotNV)
+LightingResult Pbr_computeIndirectLighting(Surface surface, float3 irradianceEnv, float3 prefilteredRefl, float2 brdf, float dotNV)
 {
-    float3 o = float3(0.0, 0.0, 0.0);
+    LightingResult o = (LightingResult)0;
 
     float3 albedo   = surface.color.rgb;
     float3 baseRefl = float3(0.04, 0.04, 0.04); 
@@ -231,9 +231,10 @@ float3 Pbr_indirectLighting(Surface surface, float3 irradianceEnv, float3 prefil
     kD             *= 1.0 - surface.metallic;
 
     float3 specular = prefilteredRefl * (fresnel * brdf.x + brdf.y);
-    float3 ambient  = (kD * diffuse + specular) * surface.ambientOcclusion;
+    float3 ambient  = (kD * diffuse)    * surface.ambientOcclusion;
 
-    o = ambient;
+    o.diffuse.rgb   = ambient;
+    o.specular.rgb  = (specular)        * surface.ambientOcclusion;
     //o = fresnel * brdf.x + brdf.y;
 
     return o; 

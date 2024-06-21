@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 		"-file=asset/shader/test/test_compute_bindless.shader",
 		//"-file=asset/shader/demo/forward_plus/forward_plus.shader",
 		//"-file=asset/shader/test/test_compute_bindless.shader",
-		"-file=asset/shader/debug/displayNormals.shader",
+		//"-file=asset/shader/debug/displayNormals.shader",
 
 		//"-out=dx11/pass0/.bin",
 		//"-profile=vs_5_0",

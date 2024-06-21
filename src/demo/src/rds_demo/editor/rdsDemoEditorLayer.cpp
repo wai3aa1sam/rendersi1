@@ -61,11 +61,11 @@ DemoEditorLayer::onCreate()
 
 	RDS_CORE_ASSERT(_gfxDemo, "");
 	_gfxDemo->onCreate();
-	_gfxDemo->onCreateScene(&_scene);
 
 	// prepare
 	#if 1
 	{
+
 		auto clientRect = mainWnd.clientRect();
 		rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
 		mainWnd.camera().setViewport(clientRect);
@@ -82,17 +82,11 @@ DemoEditorLayer::onCreate()
 		drawData.meshAssets = _meshAssets.ptr();
 		drawData._mtlLine   = _mtlLine;		// TODO: temporary
 
-		_gfxDemo->onPrepareRender(&rdGraph, &drawData);
+		_gfxDemo->prepareRender(&rdGraph, &drawData);
 
-		rdGraph.compile();
-		rdGraph.execute();
-		rdGraph.commit();
+		renderableSystem().update(drawData);
+		renderableSystem().render(&rdCtx, _fullScreenTriangle, nullptr, false);
 
-		RenderRequest rdReq;
-		rdReq.reset(&rdCtx);
-		//rdCtx.drawUI(rdReq);
-		rdCtx.commit(rdReq);
-		
 		rdCtx.transferRequest().commit();
 
 		rdCtx.endRender();
@@ -100,6 +94,8 @@ DemoEditorLayer::onCreate()
 		Renderer::rdDev()->waitIdle();
 	}
 	#endif // 0
+
+	_gfxDemo->onCreateScene(&_scene);
 }
 
 void 
@@ -118,7 +114,7 @@ DemoEditorLayer::onUpdate()
 			OsUtil::sleep_ms(1);
 		}
 	}
-	Renderer::rdDev()->waitIdle();
+	//Renderer::rdDev()->waitIdle();
 	Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
 	#endif // 0
 
@@ -136,7 +132,7 @@ DemoEditorLayer::onUpdate()
 		drawData.meshAssets = _meshAssets.ptr();
 		drawData._mtlLine   = _mtlLine;		// TODO: temporary
 
-		_gfxDemo->onExecuteRender(&rdGraph, &drawData);
+		_gfxDemo->executeRender(&rdGraph, &drawData);
 		//RDS_CORE_ASSERT(drawData.oTexPresent, "invalid present tex");
 		_texHndPresent = drawData.oTexPresent;
 

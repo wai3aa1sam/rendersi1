@@ -28,8 +28,8 @@ struct	DrawParam;
 class CRenderableSystem : public CSystemT<CRenderable> // Singleton<CRenderableSystem, CSystem>
 {
 	friend class	CRenderable;
-	friend struct	DrawData;		// temporary
 	friend class	SceneView;
+	friend class	DrawData;		// temporary
 	RDS_ENGINE_COMMON_BODY();
 public:
 	using RenderableTable		= VectorMap<EntityId, SPtr<CRenderable> >;
@@ -43,7 +43,7 @@ public:
 	void destroy();
 
 	void update(DrawData& drawData);
-	void render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent);
+	void render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent, bool isDrawUi = true);
 	void present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh& fullScreenTriangle, Material* mtlPresent);
 
 public:

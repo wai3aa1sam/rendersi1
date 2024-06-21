@@ -31,44 +31,46 @@ reference:
 
 struct VertexIn
 {
-    float4 positionOS   : SV_POSITION;
+    float4 positionOs   : SV_POSITION;
 };
 
 struct PixelIn 
 {
-	float4 positionHCS  : SV_POSITION;
-	float3 positionOS	: POSITION;
+	float4 positionHcs  : SV_POSITION;
+	float3 positionOs	: POSITION;
 };
 
-RDS_TEXTURE_CUBE(envCubeMap);
+RDS_TEXTURE_CUBE(cube_env);
 float roughness;
+
+float4x4 matrix_vp;
 
 static const uint s_kSampleCount = 1024u;
 
-PixelIn vs_main(VertexIn i)
+PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
 
-    o.positionHCS   = mul(RDS_MATRIX_MVP, i.positionOS);
-    o.positionOS 	= i.positionOS.xyz;
+    o.positionHcs   = mul(matrix_vp, input.positionOs);
+    o.positionOs 	= input.positionOs.xyz;
 
-    o.positionOS.x = roughness + i.positionOS.x;
-    o.positionOS.x -= roughness;
-
+    o.positionOs.x 	= -o.positionOs.x;
+    o.positionOs.z 	= -o.positionOs.z;
+    
     return o;
 }
 
-float4 ps_main(PixelIn i) : SV_TARGET
+float4 ps_main(PixelIn input) : SV_TARGET
 {
     float3 o = float3(0.0, 0.0, 0.0);
 
     // tangent space
-    float3 normal   = normalize(i.positionOS);
+    float3 normal   = normalize(input.positionOs);
 	float3 R        = normal;
 	float3 viewDir  = R;
 
     int2 envCubeMapDims;
-    RDS_TEXTURE_CUBE_GET_DIMENSIONS(envCubeMap, envCubeMapDims);
+    RDS_TEXTURE_CUBE_GET_DIMENSIONS(cube_env, envCubeMapDims);
 	float envMapDim = float(envCubeMapDims.x);
 
     float   totalWeight         = 0.0;   
@@ -92,7 +94,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 
             float mipLevel      = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel); 
 
-            prefilteredColor += RDS_TEXTURE_CUBE_SAMPLE_LOD(envCubeMap, L, mipLevel).rgb * dotNL;
+            prefilteredColor += RDS_TEXTURE_CUBE_SAMPLE_LOD(cube_env, L, mipLevel).rgb * dotNL;
             totalWeight      += dotNL;
         }
     }

@@ -18,31 +18,26 @@ struct	DrawSettings;
 /*
 * TODO: should put on rds_render later, drawScene then need to be virtual
 */
-struct DrawData
+class DrawData : public DrawData_Base
 {
-	u32 drawParamIdx = 0;
-
-	float			deltaTime   = 0.0f;
+public:
 	SceneView*		sceneView	= nullptr;
-	math::Camera3f*	camera		= nullptr;
-
 	MeshAssets*		meshAssets	= nullptr;
-
-	RdgTextureHnd oTexPresent;
+	RdgTextureHnd	oTexPresent;
 
 public:
-	void drawScene(			RenderRequest& rdReq, Material* mtl);
-	void drawScene(			RenderRequest& rdReq);
-	void drawScene(			RenderRequest& rdReq, Material* mtl, const DrawSettings& drawSettings);
-	void drawScene(			RenderRequest& rdReq, const DrawSettings& drawSettings);
-	void drawSceneAABBox(	RenderRequest& rdReq, const DrawSettings& drawSettings);
+	virtual void drawScene(			RenderRequest& rdReq, Material* mtl) override;
+	virtual void drawScene(			RenderRequest& rdReq, Material* mtl, const DrawSettings& drawSettings) override;
+
+			void drawScene(			RenderRequest& rdReq);
+			void drawScene(			RenderRequest& rdReq, const DrawSettings& drawSettings);
+			void drawSceneAABBox(	RenderRequest& rdReq, const DrawSettings& drawSettings);
+
+	virtual void setupMaterial(	Material*	oMtl) override;
 
 	void setupDrawParam(DrawParam*	oDrawParam);
-	void setupMaterial(	Material*	oMtl);
 
 public:
-	const Tuple2f& resolution() const;
-
 	Material* mtlLine();
 
 public:

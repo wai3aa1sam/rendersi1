@@ -3,7 +3,6 @@
 #include "rds_engine/ecs/rdsEntity.h"
 
 #include "rds_engine/draw/rdsDrawData.h"
-#include "rds_engine/draw/rdsDrawSettings.h"
 
 namespace rds
 {
