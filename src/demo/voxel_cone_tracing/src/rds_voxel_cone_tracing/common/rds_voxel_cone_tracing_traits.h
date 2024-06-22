@@ -6,7 +6,7 @@
 namespace rds {
 
 #if 0
-#pragma mark --- rdsEditorAppTraits-Impl ---
+#pragma mark --- rdsVoxelConeTracingTraits-Impl ---
 #endif // 0
 #if 1
 struct VoxelConeTracingDefaultTraits_T : public DemoTraits

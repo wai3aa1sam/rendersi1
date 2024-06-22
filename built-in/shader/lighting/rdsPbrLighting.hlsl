@@ -90,8 +90,8 @@ LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3
     float dotNV = max(dot(normal,   viewDir),  0.0);
     float dotNL = max(dot(normal,   L),        0.0);
 
-    float3 baseRefl = float3(0.04, 0.04, 0.04);   // non-metallic surfaces
-    baseRefl        = lerp(baseRefl, albedo, surface.metallic);
+    float3 baseRefl = float3(0.04, 0.04, 0.04);   // non-metalness surfaces
+    baseRefl        = lerp(baseRefl, albedo, surface.metalness);
 
     float3  fresnel     = Pbr_fresnelSchlick(dotHV, baseRefl);                  // dotNV or dotHV
     float   normalDist  = Pbr_distributionGGX(dotNH, surface.roughness);        // speculat highlight, distriGGX give us % of mircofacet align H 
@@ -103,7 +103,7 @@ LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3
 
     float3 kSpecular = fresnel;
     float3 kDiffuse  = float3(1.0, 1.0, 1.0) - kSpecular;
-    kDiffuse        *= 1.0 - surface.metallic;  // metallic surface absorb all diffuse 
+    kDiffuse        *= 1.0 - surface.metalness;  // metalness surface absorb all diffuse 
     
     float3  lambert = albedo / rds_pi;
     //float3  brdf    = kDiffuse * lambert + specular;
@@ -144,11 +144,11 @@ float3 Pbr_indirectDiffuse_ibl(Surface surface, float3 viewDir, float3 irradianc
 
     float3 albedo    = surface.color.rgb;
     float3 baselRefl = float3(0.04, 0.04, 0.04); 
-    baselRefl = lerp(baselRefl, albedo, surface.metallic);
+    baselRefl = lerp(baselRefl, albedo, surface.metalness);
 
     float3 kS = Pbr_fresnelSchlick(max(dot(normal, viewDir), 0.0), baselRefl);
     float3 kD = 1.0 - kS;
-    kD *= 1.0 - surface.metallic;	  
+    kD *= 1.0 - surface.metalness;	  
     float3 irradiance   = irradianceEnv;
     float3 diffuse      = irradiance * albedo;
     float3 ambient      = (kD * diffuse) * ao;
@@ -221,14 +221,14 @@ LightingResult Pbr_computeIndirectLighting(Surface surface, float3 irradianceEnv
 
     float3 albedo   = surface.color.rgb;
     float3 baseRefl = float3(0.04, 0.04, 0.04); 
-    baseRefl        = lerp(baseRefl, albedo, surface.metallic);
+    baseRefl        = lerp(baseRefl, albedo, surface.metalness);
 
     float3 diffuse = irradianceEnv * albedo;
 
     float3 fresnel  = Pbr_fresnelSchlick(dotNV, baseRefl, surface.roughness);
     float3 kS       = fresnel;
     float3 kD       = 1.0 - kS;
-    kD             *= 1.0 - surface.metallic;
+    kD             *= 1.0 - surface.metalness;
 
     float3 specular = prefilteredRefl * (fresnel * brdf.x + brdf.y);
     float3 ambient  = (kD * diffuse)    * surface.ambientOcclusion;

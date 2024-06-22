@@ -60,9 +60,8 @@ struct Surface
 	float4 diffuse;
 	float4 specular;
 
-	float  shininess;
     float  roughness;
-    float  metallic;
+    float  metalness;
     float  ambientOcclusion;
 };
 

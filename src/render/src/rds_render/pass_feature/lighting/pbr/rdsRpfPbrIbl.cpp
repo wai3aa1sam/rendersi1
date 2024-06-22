@@ -22,13 +22,11 @@ RpfPbrIbl::~RpfPbrIbl()
 void 
 RpfPbrIbl::create()
 {
-	//createMaterial(&_shaderPbrIbl, &_mtlPbrIbl, "asset/shader/demo/geometry_buffer/rdsPbrIbl.shader");
+	createShader(&_shaderHdrToCube,				"asset/shader/pass_feature/lighting/pbr/rdsPbr_HdrToCube.shader");
+	createShader(&_shaderIrradianceEnvCube,		"asset/shader/pass_feature/lighting/pbr/rdsPbr_IrradianceEnvCube.shader");
+	createShader(&_shaderPrefilteredEnvCube,	"asset/shader/pass_feature/lighting/pbr/rdsPbr_PrefilteredEnvCube.shader");
 
-	createShader(&_shaderHdrToCube,				"asset/shader/pbr/hdrToCube.shader");
-	createShader(&_shaderIrradianceEnvCube,		"asset/shader/pbr/irradianceEnvCube.shader");
-	createShader(&_shaderPrefilteredEnvCube,	"asset/shader/pbr/PrefilteredEnvCube.shader");
-
-	createMaterial(&_shaderBrdfLut, &_mtlBrdfLut, "asset/shader/pbr/brdfLut.shader");
+	createMaterial(&_shaderBrdfLut, &_mtlBrdfLut, "asset/shader/pass_feature/lighting/pbr/rdsPbr_BrdfLut.shader");
 }
 
 void 

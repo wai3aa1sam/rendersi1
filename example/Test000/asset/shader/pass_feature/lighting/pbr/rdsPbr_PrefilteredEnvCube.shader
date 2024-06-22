@@ -27,7 +27,7 @@ reference:
 ~ https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 */
 
-#include "rdsPbrCommon.hlsl"
+#include "rdsPbr_Common.hlsl"
 
 struct VertexIn
 {

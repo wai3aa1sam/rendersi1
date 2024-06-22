@@ -63,6 +63,7 @@ add_subdirectory(src/demo)
 add_subdirectory(src/demo/hello_triangle)
 add_subdirectory(src/demo/forward_plus)
 add_subdirectory(src/demo/voxel_cone_tracing)
+add_subdirectory(src/demo/pbr_ibl)
 
 message("--- rendersi1_test ---")
 #test

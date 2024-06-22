@@ -900,7 +900,7 @@ public:
 				static float   roughness	= 0.0f;
 				static float   ao			= 0.2f;
 				static float   albedo		= 0.2f;
-				static float   metallic		= 1.0f;
+				static float   metalness		= 1.0f;
 
 				Function<void(Material*, int i)> fn  
 
@@ -938,7 +938,7 @@ public:
 								dragFloat	(mtl, "roughness",	&roughness);
 								dragFloat	(mtl, "ao",			&ao);
 								dragFloat	(mtl, "albedo",		&albedo);
-								dragFloat	(mtl, "metallic",	&metallic);
+								dragFloat	(mtl, "metalness",	&metalness);
 
 								//ImGui::End();
 							}

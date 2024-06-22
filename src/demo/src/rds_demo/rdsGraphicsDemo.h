@@ -32,7 +32,7 @@ public:
 public:
 	virtual ~GraphicsDemo();
 
-	void createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAsset, int n, Tuple2f startPos = Tuple2f{0.0f, 0.0f}, Tuple2f step = Tuple2f{3.0f, 3.0f});
+	void createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u size, Vec3f startPos = Vec3f::s_zero(), Vec3f step = Vec3f::s_one() * 3.0f);
 
 	void prepareRender(RenderGraph* oRdGraph, DrawData* drawData);
 	void executeRender(RenderGraph* oRdGraph, DrawData* drawData);

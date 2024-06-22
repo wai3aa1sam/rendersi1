@@ -28,7 +28,7 @@ reference:
 ~ https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 */
 
-#include "built-in/shader/rds_shader.hlsl"
+#include "rdsPbr_Common.hlsl"
 
 struct VertexIn
 {

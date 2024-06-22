@@ -64,13 +64,12 @@ Surface Material_makeSurface(float2 uv, float3 pos, float3 normal)
     o.normal              = float3(sampleNormal.xyz);
     o.color               = float4(sampleAlbedo.rgb, 1.0);
     o.roughness           = roughness;
-    o.metallic            = metalness;
-    o.ambientOcclusion    = 0.2;
+    o.metalness           = metalness;
     
-    o.shininess     = 1.0;
-	o.ambient       = float4(1.0, 1.0, 1.0, 1.0);
-	o.diffuse       = float4(1.0, 1.0, 1.0, 1.0);
-	o.specular      = float4(1.0, 1.0, 1.0, 1.0);
+    //o.ambientOcclusion    = 0.2;
+	o.ambient             = float4(1.0, 1.0, 1.0, 1.0);
+	o.diffuse             = float4(1.0, 1.0, 1.0, 1.0);
+	o.specular            = float4(1.0, 1.0, 1.0, 1.0);
 
     return o;
 }

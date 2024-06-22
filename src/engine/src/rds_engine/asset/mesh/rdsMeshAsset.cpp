@@ -364,13 +364,11 @@ AssimpMeshLoader::_loadHeirarchyData(int level, MeshAssetNode* dst, MeshAssetNod
 
 	auto nChildren	= srcNode->mNumChildren;
 	//nodes->reserve(nodes->size() + nChildren + extraMeshCount);
-	RDS_TODO("_loadHeirarchyData, fmtTo(node.name, , srcNode->mName.C_Str()); failed, node.name == 0, but the length is not 0");
 
 	//RDS_LOG("loaded {}", srcNode->mName.C_Str());
 	{
 		auto& node = *dst;
-		//fmtTo(node.name,		"{}", srcNode->mName.C_Str());
-		node.name			= srcNode->mName.C_Str();
+		fmtTo(node.name,		"{}", srcNode->mName.C_Str());
 		node.parent			= parent;
 		node.localTransform = toMat4(srcNode->mTransformation);
 		node.worldTransform = worldTransform * node.localTransform;
@@ -391,10 +389,7 @@ AssimpMeshLoader::_loadHeirarchyData(int level, MeshAssetNode* dst, MeshAssetNod
 		{
 			auto& node = *nodeList->_makeNode();
 
-			TempString buf;
-			fmtTo(buf,		"{}-({})", srcNode->mName.C_Str(), i);
-			//fmtTo(node.name,	"{}-({})", srcNode->mName.C_Str(), i);
-			node.name			= buf;
+			fmtTo(node.name,	"{}-({})", srcNode->mName.C_Str(), i);
 			node.parent			= parent;
 			node.localTransform = dst->localTransform;
 			node.worldTransform = dst->worldTransform;

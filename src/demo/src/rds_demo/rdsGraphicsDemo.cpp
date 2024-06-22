@@ -117,32 +117,34 @@ GraphicsDemo::onUiKeyboardEvent(UiKeyboardEvent& ev)
 }
 
 void 
-GraphicsDemo::createDefaultScene(Scene* oScene, Material* mtl, MeshAsset* meshAsset, int n, Tuple2f startPos, Tuple2f step)
+GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u size, Vec3f startPos, Vec3f step)
 {
 	auto& scene = *oScene;
 
 	//auto n = 25;
-	auto row = math::sqrt(sCast<int>(n));
-	auto col = row;
-	//auto step		= Tuple2f{ 3.0f, 3.0f};
-	//auto startPos	= Tuple2f{-0.0f, 0.0f};
+	auto row	= size.x;
+	auto col	= size.y;
+	auto depth	= size.z;
 
-	for (size_t r = 0; r < row; r++)
+	for (u32 d = 0; d < depth; d++)
 	{
-		for (size_t c = 0; c < col; c++)
+		for (u32 c = 0; c < col; c++)
 		{
-			auto* ent = scene.addEntity("");
+			for (u32 r = 0; r < row; r++)
+			{
+				auto* ent = scene.addEntity("");
 
-			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-			rdableMesh->material = mtl;
-			rdableMesh->meshAsset = meshAsset;
+				auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+				rdableMesh->material = Renderer::rdDev()->createMaterial(shader);
+				rdableMesh->meshAsset = meshAsset;
 
-			auto* transform	= ent->getComponent<CTransform>();
-			transform->setLocalPosition(startPos.x + step.x * c, startPos.y, step.y * r);
+				auto* transform	= ent->getComponent<CTransform>();
+				transform->setLocalPosition(startPos + step * Vec3f::s_cast(Vec3u{r, c, d}));
 
-			TempString buf;
-			fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
-			ent->setName(buf);
+				TempString buf;
+				fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
+				ent->setName(buf);
+			}
 		}
 	}
 

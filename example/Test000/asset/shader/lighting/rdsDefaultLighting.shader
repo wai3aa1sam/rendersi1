@@ -9,7 +9,7 @@ Shader {
 		Color4f 	ambient				= {1.0, 1.0, 1.0, 1.0}
 		Color4f 	diffuse				= {1.0, 1.0, 1.0, 1.0}
 		Color4f 	specular			= {1.0, 1.0, 1.0, 1.0}
-		Float		ambientOcclusion	= 0.2
+		Float		ambientOcclusion	= 0.0
 
 		Texture2D 	RDS_MATERIAL_TEXTURE_Albedo
 		Texture2D 	RDS_MATERIAL_TEXTURE_Normal
@@ -118,15 +118,13 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	pos 	= input.positionWs;
 	normal 	= normalize(input.normal);
 
-	Surface surface;
+	Surface surface = Material_makeSurface(uv, pos, normal);
 	surface.ambient				= ambient;
 	surface.diffuse				= diffuse;
 	surface.specular			= specular;
 	surface.ambientOcclusion    = ambientOcclusion;
-	surface = Material_makeSurface(uv, pos, normal);
-	
-	surface.metallic = 1.0;
-	surface.roughness = 0.0;
+	//surface.metalness = 1.0;
+	//surface.roughness = 0.0;
 
 	{
 		LightingResult oLightingResult = (LightingResult)0;
@@ -142,6 +140,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		//o.rgb = surface.color.rgb;
 	}
 
+	//if (RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, uv).a != 0.0)
     {
 		float3 dirRefl 			= reflect(viewDir, normal);
 		float  dotNV            = max(dot(surface.normal, viewDir), 0.0);
@@ -151,10 +150,10 @@ float4 ps_main(PixelIn input) : SV_TARGET
 
 		LightingResult indirectLight = Pbr_computeIndirectLighting(surface, irradiance, prefilteredRefl, brdf, dotNV);
 		o.rgb += indirectLight.diffuse.rgb + indirectLight.specular.rgb;
-
-		o.rgb = ToneMapping_reinhard(o.rgb);
-		o.rgb = PostProc_gammaEncoding(o.rgb);
 	}
+
+	o.rgb = ToneMapping_reinhard(o.rgb);
+	o.rgb = PostProc_gammaEncoding(o.rgb);
 
     return o;
 }

@@ -24,8 +24,8 @@ Shader {
 }
 #endif
 
-//#include "built-in/shader/rds_shader.hlsl"
-#include "rdsPbrCommon.hlsl"
+#include "built-in/shader/rds_shader.hlsl"
+#include "built-in/shader/lighting/rdsPbrLighting.hlsl"
 
 struct VertexIn
 {
@@ -56,7 +56,7 @@ float3  colorLight;
 float3  color;
 float   ao;
 float   albedo;
-float   metallic;
+float   metalness;
 float3  colorSpec;
 
 PixelIn vs_main(VertexIn input)
@@ -89,7 +89,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
     surface.normal              = normalize(input.normal);
     surface.color.rgb           = color;
     surface.roughness           = roughness;
-    surface.metallic            = metallic;
+    surface.metalness            = metalness;
     surface.ambientOcclusion    = ao;
 
     float3 normal = surface.normal;
