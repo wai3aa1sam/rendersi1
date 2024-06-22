@@ -85,15 +85,68 @@ BindlessResources_Vk::onDestroy()
 	Base::onDestroy();
 }
 
+template<class T>
+class PersistentVector //: public Vector<>
+{
+public:
+	using SizeType	= size_t;
+
+public:
+
+	~PersistentVector()
+	{
+		if constexpr (!IsTrivial<T>)
+		{
+			clear(); 
+		}
+	}
+
+	void clear()
+	{
+		_alloc.destructAndClear<T>(_alloc.s_kDefaultAlign);
+		_size = 0;
+	}
+
+	void reserve(SizeType n)
+	{
+		_alloc.setChunkSize(computeObjectsSize(n));
+	}
+
+	template<class... ARGS>
+	T& emplace_back(ARGS&&... args)
+	{
+		auto* buf = _alloc.alloc(computeObjectsSize(1));
+		auto* obj = new (buf) T(rds::forward<ARGS>(args)...);
+		_size++;
+		return *obj;
+	}
+
+public:
+	SizeType size() const { return _size; }
+
+	SizeType computeObjectsSize(SizeType n) const { return sizeof(T) * n; }
+
+private:
+	LinearAllocator _alloc;
+	SizeType		_size = 0;
+};
+
 void 
 BindlessResources_Vk::onCommit()
 {
 	RDS_TODO("currently texture and image is using same Alloc, should be separate, then the bindless handle need to modify too, keep simple first");
 	// update descriptor set
 	{
-		Vector<VkWriteDescriptorSet,	64>	writeDescs;
-		Vector<VkDescriptorImageInfo,	64>	imgInfos;
-		Vector<VkDescriptorBufferInfo,	64>	bufInfos;
+		/*
+		* *** VkDescriptorImageInfo / VkDescriptorBufferInfo must need a non resize linear array!!!
+		* PersistentVector is a joke, it will not be linear too when there are other chunks
+		* TODO: better handle for this case is to update multiple times, set a maximum
+		*/
+		static constexpr SizeType s_kLocalSize = 128;
+		Vector<VkWriteDescriptorSet,	s_kLocalSize * 3>	writeDescs;
+		Vector<VkDescriptorBufferInfo,	s_kLocalSize>		bufInfos;
+		Vector<VkDescriptorImageInfo,	s_kLocalSize>		texInfos;
+		Vector<VkDescriptorImageInfo,	s_kLocalSize>		imgInfos;
 
 		auto* rdDevVk = renderDeviceVk();
 
@@ -101,8 +154,8 @@ BindlessResources_Vk::onCommit()
 			auto data = _bufAlloc.scopedULock();
 			auto& rscs = data->rscs;
 
-			bufInfos.reserve(bufInfos.size()		+ rscs.size());
-			writeDescs.reserve(writeDescs.size()	+ rscs.size());
+			writeDescs.reserve(	writeDescs.size()	+ rscs.size());
+			bufInfos.reserve(	bufInfos.size()		+ data->totalResourceCount());
 
 			for (auto& rsc : rscs)
 			{
@@ -136,8 +189,8 @@ BindlessResources_Vk::onCommit()
 			auto data = _texAlloc.scopedULock();
 			auto& rscs = data->rscs;
 
-			writeDescs.reserve	(writeDescs.size()	+ rscs.size());
-			imgInfos.reserve	(imgInfos.size()	+ rscs.size());
+			writeDescs.reserve(writeDescs.size()	+ rscs.size());
+			texInfos.reserve(	texInfos.size()		+ data->totalResourceCount());
 
 			auto& dstSet = descrSetTex();
 			for (auto& rsc : rscs)
@@ -147,7 +200,7 @@ BindlessResources_Vk::onCommit()
 					bool isTexture	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil);
 					RDS_CORE_ASSERT(isTexture, "invalid Texture usage, usage has no TextureUsageFlags::ShaderResource or TextureUsageFlags::DepthStencil");
 
-					VkDescriptorImageInfo& info	= imgInfos.emplace_back();
+					VkDescriptorImageInfo& info	= texInfos.emplace_back();
 					info = {};
 					info.imageLayout = BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 					info.imageView		= Vk_Texture::getSrvVkImageViewHnd(rsc);
@@ -177,7 +230,7 @@ BindlessResources_Vk::onCommit()
 			auto& rscs = data->rscs;
 
 			writeDescs.reserve(	writeDescs.size()	+ rscs.size());
-			imgInfos.reserve(	imgInfos.size()		+ rscs.size());
+			imgInfos.reserve(	imgInfos.size()		+ data->totalResourceCount());
 
 			auto& dstSet = descrSetImg();
 			for (auto& rsc : rscs)

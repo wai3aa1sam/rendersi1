@@ -140,7 +140,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		//o.rgb = surface.color.rgb;
 	}
 
-	//if (RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, uv).a != 0.0)
+	if (RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, uv).a != 0.0)
     {
 		float3 dirRefl 			= reflect(viewDir, normal);
 		float  dotNV            = max(dot(surface.normal, viewDir), 0.0);
@@ -153,7 +153,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	}
 
 	o.rgb = ToneMapping_reinhard(o.rgb);
-	o.rgb = PostProc_gammaEncoding(o.rgb);
+	//o.rgb = PostProc_gammaEncoding(o.rgb);
 
     return o;
 }

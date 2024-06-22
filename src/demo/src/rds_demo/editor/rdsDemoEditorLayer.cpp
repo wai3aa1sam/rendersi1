@@ -95,7 +95,11 @@ DemoEditorLayer::onCreate()
 	}
 	#endif // 0
 
-	_gfxDemo->onCreateScene(&_scene);
+	// next frame will clear those upload cmds
+	{
+		_gfxDemo->onCreateScene(&_scene);
+		rdCtx.transferRequest().commit(true);		
+	}
 }
 
 void 
@@ -148,6 +152,7 @@ DemoEditorLayer::onUpdate()
 			renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
 			renderableSystem().update(drawData);
 			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, drawData.camera, mainWindow().uiMouseEv);
+
 
 			rdUiCtx.onEndRender(&rdCtx);
 		}
