@@ -61,8 +61,9 @@ EditorApp::onDestroy()
 	Renderer::rdDev()->waitIdle();
 }
 
+
 void 
-EditorApp::onRun		()
+EditorApp::onRun()
 {
 	RDS_PROFILE_SCOPED();
 
@@ -71,9 +72,7 @@ EditorApp::onRun		()
 
 	while (!_shouldQuit)
 	{
-		//HiResTimer timer;
 		onExecuteRun();
-		//RDS_DUMP_VAR("fps: {}", 1.0 / (timer.get()));
 	}
 
 	willQuit();
@@ -82,12 +81,15 @@ EditorApp::onRun		()
 void 
 EditorApp::onExecuteRun()
 {
-	pollMsg();
+	_frameControl.beginFrame();
 
+	pollMsg();
+	
 	for (auto& layer : _appLayerStack)
 	{
 		layer->update();
 	}
+
 
 	for (auto& layer : _appLayerStack)
 	{
@@ -96,17 +98,21 @@ EditorApp::onExecuteRun()
 
 	JobSystem::instance()->_internal_nextFrame();
 	RDS_PROFILE_FRAME();
+
+	_frameControl.endFrame(true);
 }
 
 void 
-EditorApp::onQuit		()
+EditorApp::onQuit()
 {
 	Base::onQuit();
 }
 
 void 
-EditorApp::willQuit	()
+EditorApp::willQuit()
 {
+	pollMsg();
+
 	if (Renderer::rdDev())
 		Renderer::rdDev()->waitIdle();
 

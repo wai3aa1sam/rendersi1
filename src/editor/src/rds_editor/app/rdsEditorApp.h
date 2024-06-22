@@ -6,8 +6,11 @@
 
 #include <rds_core_base/job_system/rds_job_system.h>
 
+#include <rds_engine/time/rdsFrameControl.h>
+
 namespace rds
 {
+
 #if 0
 #pragma mark --- rdsEditorApp-Decl ---
 #endif // 0
@@ -28,8 +31,10 @@ public:
 
 public:
 	static EditorApp* instance();
-
 	static CreateDesc makeCDesc();
+
+public:
+	FrameControl _frameControl;
 
 public:
 	EditorApp();

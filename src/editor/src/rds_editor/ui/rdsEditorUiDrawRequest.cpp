@@ -135,14 +135,6 @@ EditorUiDrawRequest::showImage(Texture* tex)
 	showImage(tex, makeVec2f(availSize));
 }
 
-void 
-EditorUiDrawRequest::showText(StrView text)
-{
-	TempString buf;
-	buf = text;
-	ImGui::Text(buf.c_str());
-}
-
 
 #endif
 

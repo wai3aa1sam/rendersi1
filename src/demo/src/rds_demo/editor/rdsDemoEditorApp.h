@@ -38,6 +38,7 @@ public:
 protected:
 	virtual void onCreate(const CreateDesc_Base& cDesc) override;
 	virtual void onDestroy()							override;
+	//virtual void onRun()								override;
 	virtual void onExecuteRun()							override;
 
 protected:

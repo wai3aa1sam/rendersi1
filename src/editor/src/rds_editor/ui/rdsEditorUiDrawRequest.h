@@ -67,7 +67,8 @@ public:
 	void showImage(Texture* tex, Tuple2f size);
 	void showImage(Texture* tex);
 
-	void showText(StrView text);
+	template<class... ARGS> void showText(const char* fmt, ARGS&&... args);
+
 	
 public:
 	/*
@@ -85,6 +86,15 @@ private:
 	EditorContext*	_edtCtx = nullptr;
 	RenderRequest*	_rdReq	= nullptr;
 };
+
+template<class... ARGS> inline 
+void 
+EditorUiDrawRequest::showText(const char* fmt, ARGS&&... args)
+{
+	TempString buf;
+	fmtTo(buf, fmt, rds::forward<ARGS>(args)...);
+	ImGui::Text(buf.c_str());
+}
 
 inline EditorContext& EditorUiDrawRequest::editorContext() { return *_edtCtx; }
 inline RenderRequest& EditorUiDrawRequest::renderRequest() { return *_rdReq; }

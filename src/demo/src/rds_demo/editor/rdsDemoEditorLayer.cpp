@@ -259,6 +259,19 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	}
 
 	{
+		auto& frameControl = app()._frameControl;
+
+		auto wnd = uiDrawReq.makeWindow("Application");
+
+		uiDrawReq.showText("elapsed time: {}",	frameControl.elapsedTime());
+		uiDrawReq.showText("fps: {}",			frameControl.fps());
+
+		int targetFrameRate = sCast<int>(frameControl.targetFrameRate());
+		uiDrawReq.dragInt("target fps", &targetFrameRate, 0.1f, 10);
+		frameControl.setTargetFrameRate(targetFrameRate);
+	}
+
+	{
 		auto& camera = app().mainWindow().camera();
 		auto pos		= camera.pos();
 		auto aim		= camera.aim();
