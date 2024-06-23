@@ -151,6 +151,8 @@ using UiMouseEventType      = ::nmsp::UiMouseEventType;
 using UiMouseEventButton    = ::nmsp::UiMouseEventButton;
 using UiMouseEvent          = ::nmsp::UiMouseEvent;
 
+using UiInput				= ::nmsp::UiInput;
+
 #endif
 
 #if 0

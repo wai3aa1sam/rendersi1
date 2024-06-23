@@ -15,7 +15,7 @@ namespace rds
 #if 1
 
 void 
-EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, math::Camera3f* camera, UiMouseEvent& ev)
+EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, math::Camera3f* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput)
 {
 	auto& uiDrawReq = *edtDrawReq;
 	auto wnd = window(edtDrawReq, label());
@@ -25,32 +25,7 @@ EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, math
 
 	if (wnd.isFocused())
 	{
-		RDS_TODO("CameraController");
-		auto& cam	= *camera;
-		if (ev.isDragging()) 
-		{
-			using Button = UiMouseEventButton;
-			switch (ev.pressedButtons) 
-			{
-				case Button::Left: 
-				{
-					auto d = ev.deltaPos * 0.01f;
-					cam.orbit(d.x, d.y);
-				} break;
-
-				case Button::Middle: 
-				{
-					auto d = ev.deltaPos * 0.1f;
-					cam.move(d.x, d.y, 0);
-				} break;
-
-				case Button::Right: 
-				{
-					auto d = ev.deltaPos * -0.1f;
-					cam.dolly(d.x + d.y);
-				} break;
-			}
-		}
+		_camCtrl.update(camera, dt, mouseEv, uiInput);
 	}
 }
 
