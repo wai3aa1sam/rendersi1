@@ -122,6 +122,9 @@ public:
 
 	private:
 		LinearAllocator _alloc;
+
+		Passes			_freePasses;
+		LinearAllocator _passAlloc;
 	};
 	using RenderGraphFrames = Vector<RenderGraphFrame, s_kFrameInFlightCount>;
 

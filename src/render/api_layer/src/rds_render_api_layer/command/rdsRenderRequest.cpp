@@ -483,6 +483,7 @@ void RenderRequest::InlineDraw::reset(RenderContext* rdCtx)
 
 	vertexData.clear();
 	indexData.clear();
+	_drawCalls.clear();
 }
 
 void 

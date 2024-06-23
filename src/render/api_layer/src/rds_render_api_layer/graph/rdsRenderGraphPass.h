@@ -108,7 +108,8 @@ public:
 	using ResourceAccesses = Vector<RdgResourceAccess, s_kLocalSize>;
 
 public:
-	RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlags flags);
+	RdgPass();
+	//RdgPass(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlags flags);
 	~RdgPass();
 
 	void setExecuteFunc(ExecuteFunc&& func);
@@ -177,6 +178,7 @@ public:
 	void _internal_commit();
 
 protected:
+	void create(RenderGraph* rdGraph, StrView name, int id, RdgPassTypeFlags typeFlag, RdgPassFlags flags);
 	void destroy();
 
 	void execute();

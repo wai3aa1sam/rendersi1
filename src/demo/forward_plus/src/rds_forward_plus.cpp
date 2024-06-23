@@ -69,7 +69,7 @@ ForwardPlus::onCreateScene(Scene* oScene)
 		ent->setName(buf);
 	}
 
-	createDefaultScene(oScene, nullptr, meshAssets().plane, 1);
+	createDefaultScene(oScene, nullptr, meshAssets().plane, Vec3u::s_one());
 	for (auto& e : scene().entities())
 	{
 		auto& transform = e->transform();

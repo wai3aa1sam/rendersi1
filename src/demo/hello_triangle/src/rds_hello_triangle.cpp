@@ -23,7 +23,7 @@ void
 HelloTriangle::onCreateScene(Scene* oScene)			
 {
 	Base::onCreateScene(oScene);
-	createDefaultScene(oScene, _mtlHelloTriangle, meshAssets().suzanne, Vec3u{5, 5, 1});
+	createDefaultScene(oScene, _shaderHelloTriangle, meshAssets().suzanne, Vec3u{5, 5, 1});
 }
 
 void 
@@ -41,12 +41,12 @@ HelloTriangle::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	auto*	drawData	= renderPassPipeline->drawDataT<DrawData*>();
 	auto	screenSize	= drawData->resolution2u();
 
-	RdgTextureHnd texColor	= rdGraph->createTexture("hello_triangle_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
-	RdgTextureHnd texDepth	= rdGraph->createTexture("hello_triangle_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd rtColor	= rdGraph->createTexture("hello_triangle_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd dsBuf		= rdGraph->createTexture("hello_triangle_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
 	auto& passHelloTriangle = rdGraph->addPass("hello_triangle", RdgPassTypeFlags::Graphics);
-	passHelloTriangle.setRenderTarget(texColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-	passHelloTriangle.setDepthStencil(texDepth,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
+	passHelloTriangle.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+	passHelloTriangle.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
 	passHelloTriangle.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
@@ -61,7 +61,9 @@ HelloTriangle::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 		}
 	);
 
-	drawData->oTexPresent = texColor;
+	addDisplayAABBoxPass(rdGraph, drawData, rtColor, {});
+
+	drawData->oTexPresent = rtColor;
 }
 
 void 

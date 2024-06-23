@@ -173,6 +173,9 @@ private:
 		void _uploadToGpu(SPtr<RenderGpuBuffer>& buf, const Vector<u8>& data, RenderGpuBufferTypeFlags type, RenderContext* rdCtx);
 
 	public:
+		/*
+		* TODO: draw lines can batch drawCall
+		*/
 		Vector<RenderCommand_DrawCall*, 64> _drawCalls;
 	};
 

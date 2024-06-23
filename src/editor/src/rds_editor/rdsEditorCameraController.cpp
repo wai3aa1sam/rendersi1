@@ -9,6 +9,16 @@ namespace rds
 #endif // 0
 #if 1
 
+EditorCameraController::EditorCameraController()
+{
+
+}
+
+EditorCameraController::~EditorCameraController()
+{
+
+}
+
 void 
 EditorCameraController::update(Camera* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput)
 {

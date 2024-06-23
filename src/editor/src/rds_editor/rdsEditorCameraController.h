@@ -16,6 +16,9 @@ public:
 	using Camera = math::Camera3f;
 
 public:
+	EditorCameraController();
+	~EditorCameraController();
+
 	void update(Camera* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput);
 
 	void setSpeed(float speed);
@@ -24,7 +27,7 @@ public:
 	float speed() const;
 
 private:
-	float _speed = 5.0f;
+	float _speed = 2.5f;
 };
 
 inline float EditorCameraController::speed() const { return _speed; }

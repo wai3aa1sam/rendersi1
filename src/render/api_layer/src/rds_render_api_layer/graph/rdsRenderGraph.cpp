@@ -33,12 +33,8 @@ RenderGraph::RenderGraphFrame::create(RenderGraph* rdGraph_)
 void 
 RenderGraph::RenderGraphFrame::destroy()
 {
-	/*for (RdgPass* pass : passes)
-	{
-		deleteT(pass);
-	}*/
-
 	reset();
+	_passAlloc.destructAndClear<RdgPass>(_passAlloc.s_kDefaultAlign);
 	rdGraph = nullptr;
 }
 
@@ -48,11 +44,11 @@ RenderGraph::RenderGraphFrame::reset()
 	resultPasses.clear();
 	resultPassDepths.clear();
 
-	for (RdgPass* pass : passes)
-	{
-		//pass->destroy();
-		deleteT(pass);
-	}
+	//for (RdgPass* pass : passes)
+	//{
+	//	pass->destroy();
+	//	//deleteT(pass);
+	//}
 	for (RdgResource* rsc : resources)
 	{
 		switch (rsc->type())
@@ -63,6 +59,7 @@ RenderGraph::RenderGraphFrame::reset()
 		}
 	}
 
+	_freePasses = passes;
 	passes.clear();
 	resources.clear();
 
@@ -74,8 +71,17 @@ RenderGraph::Pass*
 RenderGraph::RenderGraphFrame::addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
 {
 	auto id = sCast<RdgId>(passes.size());
-	//Pass*& pass = passes.emplace_back(RDS_NEW(RdgPass)(rdGraph, name, id, typeFlag, flag));
-	Pass*& pass = passes.emplace_back(newT<RdgPass>(rdGraph, name, id, typeFlag, flag));
+	Pass* pass = nullptr;
+	if (!_freePasses.is_empty())
+	{
+		pass = _freePasses.moveBack();
+	}
+	else
+	{
+		pass = _passAlloc.newT<RdgPass>();
+	}
+	pass->create(rdGraph, name, id, typeFlag, flag);
+	passes.emplace_back(pass);
 	return pass;
 }
 

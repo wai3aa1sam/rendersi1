@@ -49,9 +49,9 @@ protected:
 	virtual void setNull() override;
 
 protected:
-	Vk_Image				_vkImage;
-	Vk_ImageView			_srvVkImageView;		// for shader resource
-	Vector<Vk_ImageView>	_uavVkImageViews;		// [0] is original imageView, [1] -> [n - 1] is for mipmap view
+	Vk_Image					_vkImage;
+	Vk_ImageView				_srvVkImageView;		// for shader resource
+	Vector<Vk_ImageView, 10>	_uavVkImageViews;
 	// TODO: if only stencil, then must have a separate view
 };
 

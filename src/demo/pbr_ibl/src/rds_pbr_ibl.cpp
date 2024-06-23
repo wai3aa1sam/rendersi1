@@ -125,7 +125,6 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	addSkyboxPass(rdGraph, drawData, rpfPbrIbl->result.cubeEnvMap, rtColor, dsBuf);
 
-
 	drawData->oTexPresent = rtColor;
 }
 
