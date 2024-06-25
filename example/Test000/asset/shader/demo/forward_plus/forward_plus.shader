@@ -1,8 +1,8 @@
 #if 0
 Shader {
 	Properties {
-		Float minDepthBias
-		Float maxDepthBias
+		Float minDepthBias = 0.0
+		Float maxDepthBias = 0.0
 	}
 	
 	Pass {
@@ -32,7 +32,6 @@ struct ComputeIn
     uint  groupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-#define LIGHT_LIST_LOCAL_SIZE 1024
 
 #if 0
 #pragma mark --- fwpd_cullLights_param ---
@@ -140,33 +139,16 @@ void cullLights(ComputeIn input)
 	minPlane.normal 	= float3(0.0, 0.0, -1.0);
 	minPlane.distance 	= -minDepthVs;
 
-	const uint nLights = 2;
-	//lightCount = nLights;
-	Light lights[nLights];
-	lights[0].type	 	 = rds_LightType_Point;
-	lights[0].positionVs = mul(RDS_MATRIX_VIEW, float4(0.0f, 1.0f, 0.0f, 1.0f));
-	lights[0].directionVs= float4(0.0f, -0.698f, -0.7161, 0.0f);
-	lights[0].range		 = 4;
-	lights[0].intensity	 = 1;
-	lights[0].color		 = float4(1.0, 1.0, 1.0, 1.0);
-
-	lights[1].type	 	 = rds_LightType_Point;
-	lights[1].positionVs = mul(RDS_MATRIX_VIEW, float4(3.0f, 1.0f, 0.0f, 1.0f));
-	lights[1].directionVs= float4(0.0f, -0.698f, -0.7161, 0.0f);
-	lights[1].range		 = 4;
-	lights[1].intensity	 = 1;
-	lights[1].color		 = float4(1.0, 1.0, 1.0, 1.0);
-
 	uint stepLight = BLOCK_SIZE * BLOCK_SIZE;
 	// ensure the cull job is spread to all threads
 	for (uint i = input.groupIndex; i < rds_nLights; i += stepLight)
 	{
 		Light light 	= rds_Lights_get(i);
-		light 			= lights[i];
-
+		
 		bool isEnabled 	= Light_isEnabled(light);
 		if (!isEnabled)
 			continue;
+
 
 		switch (light.type)
 		{
@@ -208,7 +190,6 @@ void cullLights(ComputeIn input)
 	// update the global light grid
 	if (isFirstThread)
 	{
-		//InterlockedAdd(RDS_RW_BUFFER_LOAD_I(uint, opaque_lightIndexCounter, 0), opaque_lightCount, opaque_lightIndexStartOffset);
 		RDS_RW_BUFFER_ATM_ADD_I(uint, opaque_lightIndexCounter, 	 0, opaque_lightCount, opaque_lightIndexStartOffset);
 		RDS_IMAGE_2D_GET(uint2, opaque_lightGrid)[input.groupId.xy] 		= uint2(opaque_lightIndexStartOffset, opaque_lightCount);
 

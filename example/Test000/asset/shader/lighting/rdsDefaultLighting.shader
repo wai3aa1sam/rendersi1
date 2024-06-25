@@ -153,7 +153,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	}
 
 	o.rgb = ToneMapping_reinhard(o.rgb);
-	//o.rgb = PostProc_gammaEncoding(o.rgb);
+	o.rgb = PostProc_gammaEncoding(o.rgb);
 
     return o;
 }

@@ -85,7 +85,6 @@ PixelIn vs_main(VertexIn input)
     o.normal 	  	= SpaceTransform_toWorldNormal( input.normal, 		objTransf);
     o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		objTransf, drawParam);
 
-
     return o;
 }
 
@@ -101,65 +100,22 @@ float4 ps_main(PixelIn input) : SV_TARGET
 
     uint2 blockIndex 			= uint2(floor(input.positionHcs.xy / BLOCK_SIZE));
 	uint2 lightBlock 			= RDS_TEXTURE_2D_T_GET(uint2, lightGrid)[blockIndex];
- 	uint lightIdxStartOffset 	= lightBlock.x;
-    uint lightCount 			= lightBlock.y;
+ 	uint  lightIdxStartOffset 	= lightBlock.x;
+    uint  lightCount 			= lightBlock.y;
 
-	Surface surface;
-	surface = Material_makeSurface(uv, input.positionVs, normalize(input.normalVs));
+	Surface surface = Material_makeSurface(uv, input.positionVs, normalize(input.normalVs));
 
-	const uint nLights = 2;
-	Light lights[nLights];
-	lights[0].type	 	 = rds_LightType_Point;
-	lights[0].positionVs = mul(RDS_MATRIX_VIEW, float4(0.0f, 1.0f, 0.0f, 1.0f));
-	lights[0].directionVs= float4(0.0f, -0.698f, -0.7161, 0.0f);
-	lights[0].range		 = 4;
-	lights[0].intensity	 = 1;
-	lights[0].color		 = float4(1.0, 1.0, 1.0, 1.0);
-
-	lights[1].type	 	 = rds_LightType_Point;
-	lights[1].positionVs = mul(RDS_MATRIX_VIEW, float4(3.0f, 1.0f, 0.0f, 1.0f));
-	lights[1].directionVs= float4(0.0f, -0.698f, -0.7161, 0.0f);
-	lights[1].range		 = 4;
-	lights[1].intensity	 = 1;
-	lights[1].color		 = float4(1.0, 1.0, 1.0, 1.0);
-
-	lightCount = nLights;
-	//lightCount = rds_Lights_getLightCount();
-	lightCount = nLights;
 	LightingResult oLightingResult = (LightingResult)0;
 	for (uint i = 0; i < lightCount; ++i)
 	{
 		uint  iLight 	= RDS_BUFFER_LOAD_I(uint, lightIndexList, lightIdxStartOffset + i);
 		Light light 	= rds_Lights_get(iLight);
-
-		// iLight = i;
-		// light = lights[iLight];
-
+		
 		LightingResult result = Lighting_computeLighting_Vs(light, surface, drawParam.camera_pos, viewDir);
 		oLightingResult.diffuse 	+= result.diffuse;
 		oLightingResult.specular 	+= result.specular;
-
-		if (iLight < 0 || iLight > 3)
-		{
-			//oLightingResult.diffuse 	+= float4(1.0, 0.0, 0.0, 0.0);
-		}
-
-		if (iLight == 0)
-		{
-			//oLightingResult.diffuse 	+= result.diffuse;
-			//oLightingResult.diffuse.xyz 	+= light.color.xyz;
-			//oLightingResult.diffuse.xyz 	+= light.positionVs.xyz;
-
-			//oLightingResult.diffuse 	+= float4(0.0, 1.0, 0.0, 0.0);
-		}
-		//oLightingResult.diffuse.xyz 	+= float3(0.1, 0.1, 0.1).xyz;
-
-		oLightingResult.diffuse 	+= light.positionVs;
 	}
 	o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
-
-
-	//o.rgb = surface.color.rgb;
 
 	//uint  iLight 	= 0;
 	//Light light 	= rds_Lights_get(iLight);
