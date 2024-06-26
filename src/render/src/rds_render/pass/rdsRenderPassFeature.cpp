@@ -2,6 +2,9 @@
 #include "rdsRenderPassFeature.h"
 #include "rdsRenderPassPipeline.h"
 
+#include "rds_render/pass_feature/utility/image/rdsRpfClearImage2D.h"
+#include "rds_render/pass_feature/utility/image/rdsRpfClearImage3D.h"
+
 namespace rds
 {
 
@@ -10,8 +13,38 @@ namespace rds
 #endif // 0
 #if 1
 
+RenderPassFeature::RenderPassFeature()
+{
+
+}
+
+RenderPassFeature::~RenderPassFeature()
+{
+
+}
+
+RdgPass* RenderPassFeature::addClearImage2DPass(SPtr<Material>& material, RdgTextureHnd image) { return _rdPassPipeline->_rpfClearImage2D->addClearImage2DPass(material, image); }
+RdgPass* RenderPassFeature::addClearImage3DPass(SPtr<Material>& material, RdgTextureHnd image) { return _rdPassPipeline->_rpfClearImage3D->addClearImage3DPass(material, image); }
+
 void 
-RenderPassFeature::createShader(SPtr<Shader>* oShader, StrView filename)
+RenderPassFeature::setRenderPassPipeline(RenderPassPipeline* v)
+{
+	_rdPassPipeline = v;
+}
+
+RenderGraph*	RenderPassFeature::renderGraph()	{ return _rdPassPipeline->renderGraph(); }
+DrawData_Base*	RenderPassFeature::drawDataBase()	{ return _rdPassPipeline->drawDataBase(); }
+RenderDevice*	RenderPassFeature::renderDevice()	{ return renderGraph()->renderContext()->renderDevice(); }
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderUtil-Impl ---
+#endif // 0
+#if 1
+
+void 
+RenderUtil::createShader(SPtr<Shader>* oShader, StrView filename)
 {
 	auto& shader	= *oShader;
 	if (shader)
@@ -21,7 +54,7 @@ RenderPassFeature::createShader(SPtr<Shader>* oShader, StrView filename)
 }
 
 void 
-RenderPassFeature::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam)
+RenderUtil::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam)
 {
 	auto& shader	= *oShader;
 	auto& mtl		= *oMtl;
@@ -38,7 +71,7 @@ RenderPassFeature::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, S
 }
 
 void 
-RenderPassFeature::createMaterial(Shader* shader, SPtr<Material>* oMtl)
+RenderUtil::createMaterial(Shader* shader, SPtr<Material>* oMtl)
 {
 	//auto& shader	= *oShader;
 	auto& mtl		= *oMtl;
@@ -50,27 +83,37 @@ RenderPassFeature::createMaterial(Shader* shader, SPtr<Material>* oMtl)
 	mtl->setShader(shader);
 }
 
-
-RenderPassFeature::RenderPassFeature()
+void
+RenderUtil::destroyShader(SPtr<Shader>& shader)
 {
-
+	shader.reset(nullptr);
 }
 
-RenderPassFeature::~RenderPassFeature()
+void
+RenderUtil::destroyShaderMaterial(SPtr<Shader>& shader, SPtr<Material>& material)
 {
-
+	destroyMaterial(material);
+	destroyShader(shader);
 }
 
-void 
-RenderPassFeature::setRenderPassPipeline(RenderPassPipeline* v)
+void
+RenderUtil::destroyMaterial(SPtr<Material>& material)
 {
-	_rdPassPipeline = v;
+	material.reset(nullptr);
 }
 
-RenderGraph*	RenderPassFeature::renderGraph()	{ return _rdPassPipeline->renderGraph(); }
-DrawData_Base*	RenderPassFeature::drawDataBase()	{ return _rdPassPipeline->drawDataBase(); }
-RenderDevice*	RenderPassFeature::renderDevice()	{ return renderGraph()->renderContext()->renderDevice(); }
+void
+RenderUtil::destroyMaterials(Span<SPtr<Material>> materials)
+{
+	for (auto& e : materials)
+	{
+		destroyMaterial(e);
+	}
+}
+
+
 
 #endif
+
 
 }

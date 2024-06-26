@@ -22,42 +22,40 @@ RpfPbrIbl::~RpfPbrIbl()
 void 
 RpfPbrIbl::create()
 {
-	createShader(&_shaderHdrToCube,				"asset/shader/pass_feature/lighting/pbr/rdsPbr_HdrToCube.shader");
-	createShader(&_shaderIrradianceEnvCube,		"asset/shader/pass_feature/lighting/pbr/rdsPbr_IrradianceEnvCube.shader");
-	createShader(&_shaderPrefilteredEnvCube,	"asset/shader/pass_feature/lighting/pbr/rdsPbr_PrefilteredEnvCube.shader");
+	RenderUtil::createShader(&_shaderHdrToCube,				"asset/shader/pass_feature/lighting/pbr/rdsPbr_HdrToCube.shader");
+	RenderUtil::createShader(&_shaderIrradianceEnvCube,		"asset/shader/pass_feature/lighting/pbr/rdsPbr_IrradianceEnvCube.shader");
+	RenderUtil::createShader(&_shaderPrefilteredEnvCube,	"asset/shader/pass_feature/lighting/pbr/rdsPbr_PrefilteredEnvCube.shader");
 
-	createMaterial(&_shaderBrdfLut, &_mtlBrdfLut, "asset/shader/pass_feature/lighting/pbr/rdsPbr_BrdfLut.shader");
+	RenderUtil::createMaterial(&_shaderBrdfLut, &_mtlBrdfLut, "asset/shader/pass_feature/lighting/pbr/rdsPbr_BrdfLut.shader");
 }
 
 void 
 RpfPbrIbl::destroy()
 {
-	for (auto& e : _mtlsHdrToCube)			e.reset(nullptr);
-	for (auto& e : _mtlsIrradianceEnvCube)	e.reset(nullptr);
-	for (auto& e : _mtlsPrefilteredEnvCube) e.reset(nullptr);
+	RenderUtil::destroyMaterials(_mtlsHdrToCube);
+	RenderUtil::destroyMaterials(_mtlsIrradianceEnvCube);
+	RenderUtil::destroyMaterials(_mtlsPrefilteredEnvCube);
 
-	_shaderHdrToCube.reset(			nullptr);
-	_shaderIrradianceEnvCube.reset(	nullptr);
-	_shaderPrefilteredEnvCube.reset(nullptr);
-	_shaderBrdfLut.reset(			nullptr);
 
-	result.brdfLut.reset(			nullptr);
-	result.cubeEnvMap.reset(		nullptr);
-	result.cubeIrradinceMap.reset(	nullptr);
-	result.cubePrefilteredMap.reset(nullptr);
+	RenderUtil::destroyShader(_shaderHdrToCube);
+	RenderUtil::destroyShader(_shaderIrradianceEnvCube);
+	RenderUtil::destroyShader(_shaderPrefilteredEnvCube);
+	RenderUtil::destroyShader(_shaderBrdfLut);
 }
 
 RdgPass* 
-RpfPbrIbl::addPreparePass(Texture2D* texHdrEnvMap, const RenderMesh& box, u32 cubeSize, u32 irradianceCubeSize)
+RpfPbrIbl::addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const RenderMesh& box, u32 cubeSize, u32 irradianceCubeSize)
 {
 	//auto*		rdGraph		= renderGraph();
 	//auto*		drawData	= drawDataBase();
 	RdgPass*	pass		= nullptr;
 
-	bool isFirst = createTexture(result, texHdrEnvMap->debugName(), cubeSize, irradianceCubeSize);
+	auto* result = oResult;
+
+	bool isFirst = createTexture(*result, texHdrEnvMap->debugName(), cubeSize, irradianceCubeSize);
 
 	#if 1
-	RdgPass* passHdrToCube			= addRenderToCubePass("hdrToCube",				result.cubeEnvMap, _shaderHdrToCube, box, nullptr
+	RdgPass* passHdrToCube			= addRenderToCubePass("hdrToCube",				result->cubeEnvMap, _shaderHdrToCube, box, nullptr
 		, _mtlsHdrToCube
 		, [=](Material* mtl, u32 mip, u32 face)
 		{
@@ -68,33 +66,33 @@ RpfPbrIbl::addPreparePass(Texture2D* texHdrEnvMap, const RenderMesh& box, u32 cu
 	/*
 	* this pass will trigger crash
 	*/
-	RdgPass* passIrradianceEnvCube = addRenderToCubePass("irradianceEnvCube",		result.cubeIrradinceMap, _shaderIrradianceEnvCube, box, passHdrToCube
+	RdgPass* passIrradianceEnvCube = addRenderToCubePass("irradianceEnvCube",		result->cubeIrradinceMap, _shaderIrradianceEnvCube, box, passHdrToCube
 		, _mtlsIrradianceEnvCube
 		, [=](Material* mtl, u32 mip, u32 face)
 		{
 			mtl->setParam("delta_phi",		0.025f);
 			mtl->setParam("delta_theta",	0.025f);
-			mtl->setParam("cube_env",		result.cubeEnvMap);
+			mtl->setParam("cube_env",		result->cubeEnvMap);
 		}
 	); RDS_UNUSED(passIrradianceEnvCube);
 	#endif // 0
 	#if 1
-	RdgPass* passPrefilteredEnvCube = addRenderToCubePass("PrefilteredEnvCube",		result.cubePrefilteredMap, _shaderPrefilteredEnvCube, box, passIrradianceEnvCube
+	RdgPass* passPrefilteredEnvCube = addRenderToCubePass("PrefilteredEnvCube",		result->cubePrefilteredMap, _shaderPrefilteredEnvCube, box, passIrradianceEnvCube
 		, _mtlsPrefilteredEnvCube
 		, [=](Material* mtl, u32 mip, u32 face)
 		{
-			mtl->setParam("roughness",	sCast<float>(mip) / result.cubePrefilteredMap->mipCount());
-			mtl->setParam("cube_env", result.cubeEnvMap);
+			mtl->setParam("roughness",	sCast<float>(mip) / result->cubePrefilteredMap->mipCount());
+			mtl->setParam("cube_env", result->cubeEnvMap);
 		}
 	); RDS_UNUSED(passPrefilteredEnvCube);
 	pass = passPrefilteredEnvCube;
 	#endif // 0
-	
+
 	#endif // 0
 
 	if (isFirst)
 	{
-		pass = addBrdfLutPass(result.brdfLut, passPrefilteredEnvCube);
+		pass = addBrdfLutPass(result->brdfLut, passPrefilteredEnvCube);
 	}
 
 	return pass;
@@ -197,7 +195,7 @@ RpfPbrIbl::addRenderToCubePass(StrView name, TextureCube* outCube, Shader* shade
 		for (size_t i = prevSize; i < TextureCube::s_kFaceCount * mipCount; i++)
 		{
 			auto& mtl = mtls[i];
-			createMaterial(shader,	&mtl);
+			RenderUtil::createMaterial(shader,	&mtl);
 		}
 	}
 
@@ -326,7 +324,7 @@ RpfPbrIbl::createTexture(Result& result_, StrView name, u32 cubeSize, u32 irradi
 	cubePrefilteredMap = renderDevice()->createTextureCube(texCubeCDesc);
 	cubePrefilteredMap->setDebugName(cubeName);
 
-	bool isFirst = !result.brdfLut;
+	bool isFirst = !result_.brdfLut;
 	if (isFirst)
 	{
 		auto texCDesc = Texture2D::makeCDesc(RDS_SRCLOC);

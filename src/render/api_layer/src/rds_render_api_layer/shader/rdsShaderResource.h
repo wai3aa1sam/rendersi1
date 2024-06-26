@@ -692,7 +692,7 @@ template<class T> inline
 bool 
 ShaderResources::ConstBuffer::_setParamCheckType(const VarInfo& varInfo, const T& v)
 {
-	throwIf(!_checkType<T>(varInfo), "material set param failed, in valid type {}", RenderDataTypeUtil::get<T>());
+	throwIf(!_checkType<T>(varInfo), "material set param [{} {}] failed, set wrong type as {}", varInfo.dataType, varInfo.name, RenderDataTypeUtil::get<T>());
 	return _setValue(varInfo, v);
 }
 

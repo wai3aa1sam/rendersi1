@@ -2,6 +2,7 @@
 
 #include "rds_pbr_ibl/common/rds_pbr_ibl_common.h"
 
+#include "rds_render/pass_feature/lighting/pbr/rdsRpfPbrIbl.h"
 
 namespace rds
 {
@@ -29,7 +30,8 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
 
 protected:
-	RpfPbrIbl* _rpfPbrIbl = nullptr;
+	RpfPbrIbl*			_rpfPbrIbl = nullptr;
+	RpfPbrIbl_Result	_rpfPbrIblResult;
 };
 RDS_DEMO(PbrIbl);
 #endif

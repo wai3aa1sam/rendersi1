@@ -22,14 +22,13 @@ RpfSkybox::~RpfSkybox()
 void 
 RpfSkybox::create()
 {
-	createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/demo/geometry_buffer/rdsSkybox.shader");
+	RenderUtil::createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/demo/geometry_buffer/rdsSkybox.shader");
 }
 
 void 
 RpfSkybox::destroy()
 {
-	_mtlSkybox.reset(nullptr);
-	_shaderSkybox.reset(nullptr);
+	RenderUtil::destroyShaderMaterial(_shaderSkybox, _mtlSkybox);
 }
 
 RdgPass* 

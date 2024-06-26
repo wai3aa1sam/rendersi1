@@ -2,6 +2,9 @@
 #include "rdsRenderPassPipeline.h"
 #include "rdsRenderPassFeature.h"
 
+#include "rds_render/pass_feature/utility/image/rdsRpfClearImage2D.h"
+#include "rds_render/pass_feature/utility/image/rdsRpfClearImage3D.h"
+
 namespace rds
 {
 
@@ -12,7 +15,8 @@ namespace rds
 
 RenderPassPipeline::RenderPassPipeline()
 {
-
+	_rpfClearImage2D = addRenderPassFeature<RpfClearImage2D>();
+	_rpfClearImage3D = addRenderPassFeature<RpfClearImage3D>();
 }
 
 RenderPassPipeline::~RenderPassPipeline()

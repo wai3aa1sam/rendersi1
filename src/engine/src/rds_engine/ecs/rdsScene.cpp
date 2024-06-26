@@ -50,8 +50,17 @@ Scene::addEntity()
 Entity*
 Scene::addEntity(StrView name)
 {
-	auto* ent = addEntity();
-	ent->setName(name);
+	Entity* ent = nullptr;
+	if (name.is_empty())
+	{
+		ent = addEntityWithDefaultName();
+	}
+	else
+	{
+		ent = addEntity();
+		ent->setName(name);
+	}
+	
 	return ent;
 }
 

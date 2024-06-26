@@ -22,14 +22,13 @@ RpfPreDepth::~RpfPreDepth()
 void 
 RpfPreDepth::create()
 {
-	createMaterial(&_shaderPreDepth, &_mtlPreDepth, "asset/shader/pass_feature/geometry/rdsPreDepth.shader");
+	RenderUtil::createMaterial(&_shaderPreDepth, &_mtlPreDepth, "asset/shader/pass_feature/geometry/rdsPreDepth.shader");
 }
 
 void 
 RpfPreDepth::destroy()
 {
-	_mtlPreDepth.reset(nullptr);
-	_shaderPreDepth.reset(nullptr);
+	RenderUtil::destroyShaderMaterial(_shaderPreDepth, _mtlPreDepth);
 }
 
 RdgPass* 

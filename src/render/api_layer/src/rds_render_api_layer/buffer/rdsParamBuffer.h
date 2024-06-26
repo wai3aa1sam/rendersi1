@@ -51,7 +51,7 @@ public:
 protected:
 	bool checkIsInBoundary(SizeType i) const { bool isInBoundary = i < cpuBuffer().size() / sizeof(T); RDS_CORE_ASSERT(isInBoundary, "out of boundary"); return isInBoundary;  }
 
-private:
+public:
 	SPtr<RenderGpuMultiBuffer>					_gpuBufs;
 	Vector<Vector<u8>, s_kFrameInFlightCount>	_cpuBufs;
 };
@@ -76,7 +76,10 @@ void
 ParamBuffer<T>::popBack()
 {
 	auto size = this->size();
-	resize(size - 1);
+	if (size)
+	{
+		resize(size - 1);
+	}
 }
 
 template<class T> inline

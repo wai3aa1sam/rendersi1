@@ -92,7 +92,7 @@ public:
 	SizeType					offset = 0;
 	QueueTypeFlags				queueTypeflags = QueueTypeFlags::Graphics | QueueTypeFlags::Compute;
 	
-	SPtr<RenderGpuMultiBuffer>	parent;
+	//SPtr<RenderGpuMultiBuffer>	parent;
 
 	//Vector<u8>					data;
 

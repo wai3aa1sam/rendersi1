@@ -4,7 +4,6 @@
 
 #include "rds_editor/ui/property/rdsEditorPropertyDrawer.h"
 
-#include "rds_render/pass_feature/lighting/pbr/rdsRpfPbrIbl.h"
 
 namespace rds
 {
@@ -80,7 +79,7 @@ PbrIbl::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 	auto	screenSize	= drawData->resolution2u();
 
 	auto* rpfPbrIbl	= _rpfPbrIbl;
-	rpfPbrIbl->addPreparePass(defaultHdrEnv(), meshAssets().box->renderMesh);
+	rpfPbrIbl->addPreparePass(&_rpfPbrIblResult, defaultHdrEnv(), meshAssets().box->renderMesh);
 }
 
 void 
@@ -92,7 +91,7 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	auto*	drawData	= renderPassPipeline->drawDataT<DrawData*>();
 	auto	screenSize	= drawData->resolution2u();
 
-	auto* rpfPbrIbl	= _rpfPbrIbl;
+	//auto* rpfPbrIbl	= _rpfPbrIbl;
 
 	RdgTextureHnd rtColor	= rdGraph->createTexture("pbr_ibl_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 	RdgTextureHnd dsBuf		= rdGraph->createTexture("pbr_ibl_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
@@ -114,16 +113,16 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 			drawSettings.setMaterialFn = 
 				[=](Material* mtl_)
 				{
-					mtl_->setParam("tex_brdfLut",			_rpfPbrIbl->result.brdfLut);
-					mtl_->setParam("cube_irradianceEnv",	_rpfPbrIbl->result.cubeIrradinceMap);
-					mtl_->setParam("cube_prefilteredEnv",	_rpfPbrIbl->result.cubePrefilteredMap);
+					mtl_->setParam("tex_brdfLut",			_rpfPbrIblResult.brdfLut);
+					mtl_->setParam("cube_irradianceEnv",	_rpfPbrIblResult.cubeIrradinceMap);
+					mtl_->setParam("cube_prefilteredEnv",	_rpfPbrIblResult.cubePrefilteredMap);
 				};
 
 			drawData->drawScene(rdReq, drawSettings);
 		}
 	);
 
-	addSkyboxPass(rdGraph, drawData, rpfPbrIbl->result.cubeEnvMap, rtColor, dsBuf);
+	addSkyboxPass(rdGraph, drawData, _rpfPbrIblResult.cubeEnvMap, rtColor, dsBuf);
 
 	drawData->oTexPresent = rtColor;
 }

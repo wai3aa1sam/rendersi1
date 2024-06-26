@@ -3,6 +3,9 @@
 #include "rds_render/common/rds_render_common.h"
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
 
+#include "rds_render/pass_feature/utility/image/rdsRpfClearImage2D.h"
+#include "rds_render/pass_feature/utility/image/rdsRpfClearImage3D.h"
+
 namespace rds
 {
 
@@ -44,6 +47,13 @@ protected:
 
 	LinearAllocator					_alloc;
 	Vector<RenderPassFeature*, 4>	_rpfs;
+
+	/*
+	* TODO: temporary, later have a hash to get the rpf instead of caching
+	*/
+	friend class RenderPassFeature;
+	RpfClearImage2D* _rpfClearImage2D = nullptr;
+	RpfClearImage3D* _rpfClearImage3D = nullptr;
 };
 
 template<class T, class... ARGS> inline

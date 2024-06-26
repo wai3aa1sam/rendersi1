@@ -109,6 +109,7 @@ RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 	{
 		_renderGpuBuffers[idx] = _makeNewBuffer(bufSize);
 		_renderGpuBuffers[idx]->setDebugName(fmtAs_T<TempString>("{}-{}", debugName(), idx));
+		//RDS_LOG_ERROR("created: {}-{}", debugName(), idx);
 	}
 	return _renderGpuBuffers[idx];
 }

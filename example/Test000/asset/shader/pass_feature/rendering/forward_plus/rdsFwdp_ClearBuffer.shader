@@ -15,7 +15,7 @@ Shader {
 }
 #endif
 
-#include "built-in/shader/rds_shader.hlsl"
+#include "rdsFwdp_Common.hlsl"
 
 struct ComputeIn 
 {

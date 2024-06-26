@@ -149,7 +149,7 @@ TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType of
 	cmd->dst	= rdBuf;
 	cmd->data	= data;
 	cmd->offset = offset;
-	cmd->parent = rdMultiBuf;
+	//cmd->parent = rdMultiBuf;
 
 	rdBuf->onUploadToGpu(cmd);
 }

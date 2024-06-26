@@ -17,7 +17,6 @@ namespace rds
 CLightSystem::CLightSystem()
 {
 	_lightParamBuf.setDebugName("rds_lights");
-
 }
 
 CLightSystem::~CLightSystem()
@@ -33,7 +32,6 @@ CLightSystem::update(const DrawData& drawData)
 		Mat4f matrixView = drawData.camera->viewMatrix();
 
 		auto& sysLight		= *this;
-		auto& lightParamBuf = sysLight.lightParamBuf();
 		for (auto* light : sysLight.components())
 		{
 			auto& ent		= light->entity();
@@ -41,7 +39,10 @@ CLightSystem::update(const DrawData& drawData)
 			updateLight(light, transform, matrixView, true/*transform.isDirty()*/);
 		}
 
+		#if 1
+		auto& lightParamBuf = sysLight.lightParamBuf();
 		lightParamBuf.uploadToGpu();
+		#endif // 0
 	}
 }
 

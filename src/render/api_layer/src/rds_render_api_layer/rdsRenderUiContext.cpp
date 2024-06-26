@@ -83,6 +83,8 @@ RenderUiContext::destroy()
 	_material.reset(nullptr);
 	_shader.reset(nullptr);
 
+	_fontTex.reset(nullptr);
+
 	_rdCtx = nullptr;
 }
 

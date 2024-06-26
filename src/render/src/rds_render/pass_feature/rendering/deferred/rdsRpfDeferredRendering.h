@@ -6,21 +6,21 @@
 namespace rds
 {
 
-struct RpfDeferred_Result
+struct RpfDeferredRendering_Result
 {
 	
 };
 
 #if 0
-#pragma mark --- rdsRpfDeferred-Decl ---
+#pragma mark --- rdsRpfDeferredRendering-Decl ---
 #endif // 0
 #if 1
 
-class RpfDeferred : public RenderPassFeature
+class RpfDeferredRendering : public RenderPassFeature
 {
 public:
 	using Base		= RenderPassFeature;
-	using Result	= RpfDeferred_Result;
+	using Result	= RpfDeferredRendering_Result;
 
 public:
 	Result result;
@@ -29,15 +29,15 @@ public:
 	RdgPass* addGeometryPass(const DrawSettings& drawSettings, RdgTextureHnd dsBuf);
 
 protected:
-	RpfDeferred();
-	virtual ~RpfDeferred();
+	RpfDeferredRendering();
+	virtual ~RpfDeferredRendering();
 
 	void create();
 	void destroy();
 
 private:
-	SPtr<Shader>	_shaderDeferred;
-	SPtr<Material>	_mtlDeferred;
+	SPtr<Shader>	_shaderDeferredRendering;
+	SPtr<Material>	_mtlDeferredRendering;
 };
 
 #endif

@@ -127,17 +127,17 @@ public:
 	//void setRenderTarget(RdgTextureHndSpan	hnds);
 	void setDepthStencil(RdgTextureHnd		hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp);
 
-	void readTexture	(RdgTextureHnd		hnd, TextureUsageFlags usage = TextureUsageFlags::ShaderResource, ShaderStageFlag stage = ShaderStageFlag::Pixel);
+	void readTexture	(RdgTextureHnd		hnd,	TextureUsageFlags		 usage = TextureUsageFlags::ShaderResource,		ShaderStageFlag useStage = ShaderStageFlag::Pixel);
 	void readTextures	(RdgTextureHndSpan	hnds);
 
-	void writeTexture	(RdgTextureHnd		hnd, TextureUsageFlags usage = TextureUsageFlags::UnorderedAccess, ShaderStageFlag stage = ShaderStageFlag::Compute);
+	void writeTexture	(RdgTextureHnd		hnd,	TextureUsageFlags		 usage = TextureUsageFlags::UnorderedAccess,	ShaderStageFlag useStage = ShaderStageFlag::Compute);
 	void writeTextures	(RdgTextureHndSpan	hnds);
 
-	void readBuffer		(RdgBufferHnd		hnd,	ShaderStageFlag useStages = ShaderStageFlag::Compute);
-	void readBuffers	(RdgBufferHndSpan	hnds,	ShaderStageFlag useStages = ShaderStageFlag::Compute);
+	void readBuffer		(RdgBufferHnd		hnd,	RenderGpuBufferTypeFlags usage = RenderGpuBufferTypeFlags::Compute,		ShaderStageFlag useStage = ShaderStageFlag::Compute);
+	void readBuffers	(RdgBufferHndSpan	hnds,	RenderGpuBufferTypeFlags usage = RenderGpuBufferTypeFlags::Compute,		ShaderStageFlag useStage = ShaderStageFlag::Compute);
 
-	void writeBuffer	(RdgBufferHnd		hnd);
-	void writeBuffers	(RdgBufferHndSpan	hnds);
+	void writeBuffer	(RdgBufferHnd		hnd,	RenderGpuBufferTypeFlags usage = RenderGpuBufferTypeFlags::Compute,		ShaderStageFlag useStage = ShaderStageFlag::Compute);
+	void writeBuffers	(RdgBufferHndSpan	hnds,	RenderGpuBufferTypeFlags usage = RenderGpuBufferTypeFlags::Compute,		ShaderStageFlag useStage = ShaderStageFlag::Compute);
 
 	void runAfter(RdgPass* pass);
 

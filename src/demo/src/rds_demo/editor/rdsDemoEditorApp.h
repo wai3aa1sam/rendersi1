@@ -40,6 +40,7 @@ protected:
 	virtual void onDestroy()							override;
 	//virtual void onRun()								override;
 	virtual void onExecuteRun()							override;
+	virtual void willQuit	() override;
 
 protected:
 	UPtr<DemoEditorMainWindow> _mainWnd;

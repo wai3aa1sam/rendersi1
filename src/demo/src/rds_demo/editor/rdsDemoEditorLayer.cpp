@@ -26,7 +26,12 @@ DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 
 DemoEditorLayer::~DemoEditorLayer()
 {
+	#if 1
 	//Renderer::rdDev()->waitIdle();
+	_gfxDemo.reset(nullptr);
+	_scene.destroy();
+	_egCtx.destroy();
+	#endif // 1
 }
 
 void 

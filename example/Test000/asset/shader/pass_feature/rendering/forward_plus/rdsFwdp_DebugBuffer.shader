@@ -7,7 +7,7 @@ Shader {
 	
 	Pass {
 		
-		CsFunc		cullLights
+		CsFunc		Cs_main
 	}
 
 	Permutation
@@ -22,7 +22,7 @@ Shader {
 	~ https://www.3dgep.com/forward-plus/#Forward
 */
 
-#include "forward_plus_common.hlsl"
+#include "rdsFwdp_Common.hlsl"
 
 struct ComputeIn 
 {
@@ -54,7 +54,7 @@ groupshared uint opaque_lightIndexStartOffset;
 
 
 [numThreads(1024, 1, 1)]
-void cullLights(ComputeIn input)
+void Cs_main(ComputeIn input)
 {
 	uint count 	= 1;
 	uint offset = 0;

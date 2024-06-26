@@ -207,7 +207,7 @@ EcsVectorTable<T, VALUE>::removeElement(const Key& key)
 	_indexTable[lastKey] = removeIdx;
 
 	// erase unsort, if the remove is not last, otherwise has bug
-	if (removeIdx != lastIdx)
+	if (removeIdx != lastIdx && _elements.size() > 1)
 	{
 		rds::swap(_elements[removeIdx], _elements[lastIdx]);
 	}

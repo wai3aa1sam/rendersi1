@@ -20,9 +20,6 @@ class RpfSkybox : public RenderPassFeature
 {
 	RDS_RPF_COMMON_BODY(RpfSkybox);
 public:
-	Result result;
-
-public:
 	RdgPass* addSkybox(RdgTextureHnd rtColor);
 
 protected:

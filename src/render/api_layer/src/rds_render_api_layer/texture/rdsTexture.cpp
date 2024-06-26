@@ -47,7 +47,7 @@ Texture::Texture(RenderDataType type)
 
 Texture::~Texture()
 {
-	
+	//RDS_LOG_ERROR("~Texture() {}", debugName());
 }
 
 //void 

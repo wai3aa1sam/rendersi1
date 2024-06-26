@@ -38,8 +38,10 @@ CLight::~CLight()
 	// swap last to current index
 	auto  lastIdx		= sys.components().size() - 1;
 	auto& lightParamBuf = sys._lightParamBuf;
-	if (_lightIdx < lightParamBuf.size())
+	if (_lightIdx < lightParamBuf.size() && lightParamBuf.size() > 1)
+	{
 		lightParamBuf.at(_lightIdx) = lightParamBuf.at(lastIdx);
+	}
 	lightParamBuf.popBack();
 	
 	sys.deleteComponent(id());

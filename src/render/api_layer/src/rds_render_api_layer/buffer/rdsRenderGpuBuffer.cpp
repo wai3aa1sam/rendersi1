@@ -35,6 +35,7 @@ RenderGpuBuffer::RenderGpuBuffer()
 
 RenderGpuBuffer::~RenderGpuBuffer()
 {
+	//RDS_LOG_ERROR("~RenderGpuBuffer() {}", debugName());
 }
 
 void RenderGpuBuffer::create(CreateDesc& cDesc)

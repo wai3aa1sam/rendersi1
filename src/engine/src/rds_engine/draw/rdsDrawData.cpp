@@ -71,16 +71,22 @@ DrawData::setupMaterial(Material* oMtl)
 {
 	auto& mtl = oMtl;
 	auto& sysRdable = sceneView->renderableSystem();
-	auto& sysLight	= sysRdable.engineContext().lightSystem();
+	auto& sysLight	= sysRdable.engineContext().lightSystem(); RDS_UNUSED(sysLight);
 
 	mtl->setParam("rds_objTransforms",		&sysRdable._objTransformBuf.gpuBuffer());
 	mtl->setParam("rds_drawParams",			&sysRdable._drawPramBuf.gpuBuffer());
 
+	#if 1
 	if (!sysLight.lightParamBuf().is_empty())
 	{
 		mtl->setParam("rds_lights",			&sysLight.lightParamBuf().gpuBuffer());
+		mtl->setParam("rds_nLights",		sysLight.lightCount());
 	}
-	mtl->setParam("rds_nLights",			sysLight.lightCount());
+	else
+	{
+		mtl->setParam("rds_nLights",		u32(0));
+	}
+	#endif // 0
 }
 
 Material* 

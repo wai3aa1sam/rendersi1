@@ -22,7 +22,7 @@ Shader {
 	~ https://www.3dgep.com/forward-plus/#Forward
 */
 
-#include "forward_plus_common.hlsl"
+#include "rdsFwdp_Common.hlsl"
 
 struct ComputeIn 
 {

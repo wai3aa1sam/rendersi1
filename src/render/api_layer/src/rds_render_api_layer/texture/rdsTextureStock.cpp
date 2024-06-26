@@ -22,6 +22,7 @@ void
 TextureStock::create(RenderDevice* rdDev)
 {
 	_rdDev = rdDev;
+	//if (false)
 	{
 		error		= createCheckerboardTexture2D(	Color4b(255, 0,   220, 0));
 		white		= createSolidColorTexture2D(	Color4b(255, 255, 255, 255));

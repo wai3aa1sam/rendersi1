@@ -22,14 +22,13 @@ RpfDisplayNormal::~RpfDisplayNormal()
 void 
 RpfDisplayNormal::create()
 {
-	createMaterial(&_shaderDisplayNormal, &_mtlDisplayNormal, "asset/shader/util/rdsDisplayNormals.shader");
+	RenderUtil::createMaterial(&_shaderDisplayNormal, &_mtlDisplayNormal, "asset/shader/util/rdsDisplayNormals.shader");
 }
 
 void 
 RpfDisplayNormal::destroy()
 {
-	_mtlDisplayNormal.reset(nullptr);
-	_shaderDisplayNormal.reset(nullptr);
+	RenderUtil::destroyShaderMaterial(_shaderDisplayNormal, _mtlDisplayNormal);
 }
 
 RdgPass* 

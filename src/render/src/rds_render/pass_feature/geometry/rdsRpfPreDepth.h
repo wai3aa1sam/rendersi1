@@ -23,7 +23,7 @@ public:
 	//Result result;
 
 public:
-	RdgPass* addPreDepthPass(const DrawSettings& drawSettings, RdgTextureHnd dsBuf, RdgTextureHnd* oTexDepth, Color4f clearColor);
+	RdgPass* addPreDepthPass(const DrawSettings& drawSettings, RdgTextureHnd dsBuf, RdgTextureHnd* oTexDepth, Color4f clearColor = Color4f{0.0f, 0.0f, 0.0f, 0.0f});
 
 protected:
 	RpfPreDepth();

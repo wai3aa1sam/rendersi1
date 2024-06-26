@@ -23,12 +23,8 @@ class RpfPbrIbl : public RenderPassFeature
 {
 	RDS_RPF_COMMON_BODY(RpfPbrIbl);
 	using CubeMaterial = Vector<SPtr<Material>, TextureCube::s_kFaceCount >;
-
 public:
-	Result result;
-
-public:
-	RdgPass* addPreparePass(Texture2D* texHdrEnvMap, const RenderMesh& box, u32 cubeSize = 512, u32 irradianceCubeSize = 32);
+	RdgPass* addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const RenderMesh& box, u32 cubeSize = 512, u32 irradianceCubeSize = 32);
 	RdgPass* addLightingPass(const DrawSettings& drawSettings, RdgTextureHnd rtColor, RdgTextureHnd dsBuf);
 
 protected:

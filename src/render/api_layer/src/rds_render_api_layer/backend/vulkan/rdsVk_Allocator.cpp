@@ -58,6 +58,7 @@ Vk_Allocator::destroy()
 {
 	if (!_allocator)
 		return;
+
 	vmaDestroyAllocator(_allocator);
 	_allocator = nullptr;
 }
@@ -71,7 +72,7 @@ Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBuff
 	vmaAllocCInfo.usage			= toMemoryUsage(allocInfo->usage);
 	vmaAllocCInfo.flags			= toAllocFlags(allocInfo->flags);
 	vmaAllocCInfo.requiredFlags = vkMemPropFlags;
-
+	
 	//vmaAllocCInfo.pUserData = nullptr;
 	/*
 	VkBuffer buffer;

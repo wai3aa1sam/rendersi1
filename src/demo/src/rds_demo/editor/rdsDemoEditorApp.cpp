@@ -74,6 +74,11 @@ DemoEditorApp::onExecuteRun()
 	mainWindow().uiKeyboardEv	= {};
 }
 
+void 
+DemoEditorApp::willQuit()
+{
+	Base::willQuit();
+}
 
 #endif
 

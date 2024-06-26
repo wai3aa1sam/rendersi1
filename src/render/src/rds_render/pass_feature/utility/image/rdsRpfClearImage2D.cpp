@@ -23,20 +23,19 @@ RpfClearImage2D::~RpfClearImage2D()
 void 
 RpfClearImage2D::create()
 {
-	createShader(&_shaderClearImage2D, "asset/shader/pass_feature/utility/image/rdsClearImage2D.shader");
+	RenderUtil::createShader(&_shaderClearImage2D, "asset/shader/pass_feature/utility/image/rdsClearImage2D.shader");
 }
 
 void 
 RpfClearImage2D::destroy()
 {
-	//_mtlClearImage2D.reset(nullptr);
-	_shaderClearImage2D.reset(nullptr);
+	RenderUtil::destroyShader(_shaderClearImage2D);
 }
 
 RdgPass* 
 RpfClearImage2D::addClearImage2DPass(SPtr<Material>& mtl_, RdgTextureHnd image, const Tuple2u& image_extent, const Tuple2u& image_offset, const Tuple4f& clear_value)
 {
-	createMaterial(_shaderClearImage2D, &mtl_);
+	RenderUtil::createMaterial(_shaderClearImage2D, &mtl_);
 
 	auto*		rdGraph				= renderGraph();
 	auto*		drawData			= drawDataBase();

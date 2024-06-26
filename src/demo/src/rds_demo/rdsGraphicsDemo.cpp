@@ -12,7 +12,6 @@ namespace rds
 
 GraphicsDemo::~GraphicsDemo()
 {
-
 }
 
 void 
@@ -42,6 +41,7 @@ GraphicsDemo::executeRender(RenderGraph* oRdGraph, DrawData* drawData)
 void 
 GraphicsDemo::onCreate()
 {
+	_rdPassPipelines.emplace_back(makeUPtr<RenderPassPipeline>());
 	{
 		auto texCDesc = Texture2D::makeCDesc(RDS_SRCLOC);
 
@@ -76,8 +76,6 @@ GraphicsDemo::onCreate()
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 
 	createMaterial(&_shaderScreenQuad,		&_mtlScreenQuad,		"asset/shader/util/rdsScreenQuad.shader");
-
-	_rdPassPipelines.emplace_back(makeUPtr<RenderPassPipeline>());
 }
 
 void 
@@ -132,7 +130,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 		{
 			for (u32 r = 0; r < row; r++)
 			{
-				auto* ent = scene.addEntity("");
+				auto* ent = scene.addEntityWithDefaultName();
 
 				auto* rdableMesh = ent->addComponent<CRenderableMesh>();
 				rdableMesh->material = Renderer::rdDev()->createMaterial(shader);
@@ -140,23 +138,19 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 
 				auto* transform	= ent->getComponent<CTransform>();
 				transform->setLocalPosition(startPos + step * Vec3f::s_cast(Vec3u{r, c, d}));
-
-				TempString buf;
-				fmtTo(buf, "Entity-{}", sCast<u64>(ent->id()));
-				ent->setName(buf);
 			}
 		}
 	}
 
 	#if 1
-	row = 1;
-	col = 2;
+	row = 5;
+	col = 5;
 
 	for (size_t r = 0; r < row; r++)
 	{
 		for (size_t c = 0; c < col; c++)
 		{
-			auto* ent = scene.addEntity("");
+			auto* ent = scene.addEntity();
 
 			auto* transform	= ent->getComponent<CTransform>();
 			transform->setLocalPosition(startPos.x + step.x * c, 1.0f, startPos.y + step.y * r);
@@ -166,6 +160,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 			//rdableMesh->material = mtl;
 			//rdableMesh->meshAsset = isDirectional ? meshAssets().box : isPoint ? meshAssets().sphere : meshAssets().cone;
 
+			#if 1
 			bool isPoint		= r % 2 == 0;
 			bool isDirectional	= r == 0 && c == 0;
 
@@ -188,6 +183,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 			TempString buf;
 			fmtTo(buf, "{}-{}", enumStr(light->lightType()), sCast<u64>(ent->id()));
 			ent->setName(buf);
+			#endif // 0
 		}
 	}
 	#endif // 1
@@ -523,6 +519,13 @@ MeshAssets::~MeshAssets()
 void 
 MeshAssets::create()
 {
+	#if 0
+	if (true)
+	{
+		return;
+	}
+	#endif // 0
+
 	#if 1
 	auto createMeshAsset = [&](SPtr<MeshAsset>* oMeshAsset, StrView filename)
 		{

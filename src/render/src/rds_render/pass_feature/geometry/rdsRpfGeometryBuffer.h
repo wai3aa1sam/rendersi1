@@ -23,10 +23,7 @@ class RpfGeometryBuffer : public RenderPassFeature
 {
 	RDS_RPF_COMMON_BODY(RpfGeometryBuffer);
 public:
-	Result result;
-
-public:
-	RdgPass* addGeometryPass(const DrawSettings& drawSettings, RdgTextureHnd dsBuf);
+	RdgPass* addGeometryPass(Result& oResult, const DrawSettings& drawSettings, RdgTextureHnd dsBuf);
 
 protected:
 	RpfGeometryBuffer();

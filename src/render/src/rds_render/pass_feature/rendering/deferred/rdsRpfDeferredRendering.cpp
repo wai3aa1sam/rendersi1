@@ -1,39 +1,39 @@
 #include "rds_render-pch.h"
-#include "rdsRpfForwardPlus.h"
+#include "rdsRpfDeferredRendering.h"
 
 namespace rds
 {
 
 #if 0
-#pragma mark --- rdsRpfForwardPlus-Impl ---
+#pragma mark --- rdsRpfDeferredRendering-Impl ---
 #endif // 0
 #if 1
 
-RpfForwardPlus::RpfForwardPlus()
+RpfDeferredRendering::RpfDeferredRendering()
 {
 
 }
 
-RpfForwardPlus::~RpfForwardPlus()
+RpfDeferredRendering::~RpfDeferredRendering()
 {
 	destroy();
 }
 
 void 
-RpfForwardPlus::create()
+RpfDeferredRendering::create()
 {
-	//createMaterial(&_shaderFwdp, &_mtlFwdp, "asset/shader/demo/geometry_buffer/rdsForwardPlus.shader");
+	//createMaterial(&_shaderDeferredRendering, &_mtlDeferredRendering, "asset/shader/demo/geometry_buffer/rdsDeferredRendering.shader");
 }
 
 void 
-RpfForwardPlus::destroy()
+RpfDeferredRendering::destroy()
 {
-	_mtlFwdp.reset(nullptr);
-	_shaderFwdp.reset(nullptr);
+	_mtlDeferredRendering.reset(nullptr);
+	_shaderDeferredRendering.reset(nullptr);
 }
 
 RdgPass* 
-RpfForwardPlus::addGeometryPass(const DrawSettings& drawSettings, RdgTextureHnd dsBuf)
+RpfDeferredRendering::addGeometryPass(const DrawSettings& drawSettings, RdgTextureHnd dsBuf)
 {
 	auto*	rdGraph		= renderGraph();
 	auto*	drawData	= drawDataBase();
@@ -52,7 +52,7 @@ RpfForwardPlus::addGeometryPass(const DrawSettings& drawSettings, RdgTextureHnd 
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				auto mtl = _mtlFwdp;
+				auto mtl = _mtlDeferredRendering;
 				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				auto* clearValue = rdReq.clearFramebuffers();

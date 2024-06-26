@@ -62,7 +62,7 @@ Material::Material()
 
 Material::~Material()
 {
-	RDS_PROFILE_SCOPED();
+	Base::destroy();
 }
 
 void 
