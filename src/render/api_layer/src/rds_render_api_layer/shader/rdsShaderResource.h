@@ -255,11 +255,12 @@ public:
 	static void getTextureStNameTo(TempString& out, StrView name);
 
 public:
-	template<class T>	bool setParam		(StrView name, const T& v);
-	template<class TEX>	bool setTexParam	(StrView name, TEX* v);
-						bool setSamplerParam(StrView name, const SamplerState&	v);
-						bool setBufferParam	(StrView name, RenderGpuBuffer*		v);
-						bool setImageParam	(StrView name, Texture*				v);
+	template<class T>	bool setParam(			StrView name, const T&				v);
+	template<class T>	bool setArray(			StrView name, const Span<T>&		v);
+	template<class TEX>	bool setTexParam(		StrView name, TEX*					v);
+						bool setSamplerParam(	StrView name, const SamplerState&	v);
+						bool setBufferParam(	StrView name, RenderGpuBuffer*		v);
+						bool setImageParam(		StrView name, Texture*				v);
 
 	void create	(const ShaderStageInfo& info_, ShaderPass* pass, u32 frameIdx);
 	void destroy();
@@ -274,15 +275,15 @@ public:
 	template<class T>	T*		findParamT(StrView name);
 	template<class T>	T*		findParamT(StrView name) const;
 
-	TexParamT*				findTexParam	(StrView name);
+	TexParamT*				findTexParam(	 StrView name);
 	SamplerParamT*			findSamplerParam(StrView name);
-	BufferParamT*			findBufferParam	(StrView name);
-	ImageParamT*			findImageParam	(StrView name);
+	BufferParamT*			findBufferParam( StrView name);
+	ImageParamT*			findImageParam(	 StrView name);
 
-	const TexParamT*		findTexParam	(StrView name) const;
+	const TexParamT*		findTexParam(	 StrView name) const;
 	const SamplerParamT*	findSamplerParam(StrView name) const;
-	const BufferParamT*		findBufferParam	(StrView name) const;
-	const ImageParamT*		findImageParam	(StrView name) const;
+	const BufferParamT*		findBufferParam( StrView name) const;
+	const ImageParamT*		findImageParam(	 StrView name) const;
 
 public:
 	const ShaderStageInfo&	info()		const;
@@ -340,6 +341,15 @@ public:
 			return _setParam(*var, v);
 		}
 
+		template<class T> 
+		bool setArray(StrView name, const Span<T>& v)
+		{
+			const ShaderVariableInfo* var = info().findVariable(name);
+			if (!var)
+				return false;
+			return _setArray(*var, v);
+		}
+
 		template<class T>	T*		findParamT(StrView name);
 							void*	findParam( StrView name);
 
@@ -363,25 +373,32 @@ public:
 		//}
 
 	protected:
-		bool _setParam(const VarInfo& varInfo, const bool&		v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const i32&		v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const u32&		v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const f32&		v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Color4b&	v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Color4f&	v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Tuple2u&	v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Tuple3u&	v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Tuple4u&	v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Tuple2f&	v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Tuple3f&	v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Tuple4f&	v)	{ return _setParamCheckType(varInfo, v); }
-		bool _setParam(const VarInfo& varInfo, const Mat4f&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const bool&			v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const i32&			v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const u32&			v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const f32&			v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Color4b&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Color4f&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple2u&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple3u&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple4u&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple2f&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple3f&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Tuple4f&		v)	{ return _setParamCheckType(varInfo, v); }
+		bool _setParam(const VarInfo& varInfo, const Mat4f&			v)	{ return _setParamCheckType(varInfo, v); }
+
+		bool _setArray(const VarInfo& varInfo, const Span<float>&	v)	{ return _setArrayCheckType(varInfo, v); }
+		bool _setArray(const VarInfo& varInfo, const Span<Vec4f>&	v)	{ return _setArrayCheckType(varInfo, v); }
+		bool _setArray(const VarInfo& varInfo, const Span<Mat4f>&	v)	{ return _setArrayCheckType(varInfo, v); }
 
 		template<class T> bool _setParamCheckType(	const VarInfo& varInfo, const T& v);
 		template<class T> bool _checkType(			const VarInfo& varInfo);
 		template<class T> bool _setValue(			const VarInfo& varInfo, const T& v);
 		template<class T> T*   _getValueT(			const VarInfo& varInfo);
 
+		template<class T> bool _setArrayCheckType(	const VarInfo& varInfo, const Span<T>& v);
+		template<class T> bool _setArrayValue(		const VarInfo& varInfo, const Span<T>& v);
+		
 		void* _getValue(const VarInfo& varInfo);
 
 	protected:
@@ -588,6 +605,18 @@ ShaderResources::setParam(StrView name, const T& v)
 	return isDirty;
 }
 
+template<class T> bool 
+ShaderResources::setArray(StrView name, const Span<T>& v)
+{
+	bool isDirty = false;
+	for (auto& e : constBufs())
+	{
+		auto& rsc = e/*.shaderResource()*/;
+		isDirty |= rsc.setArray(name, v);
+	}
+	return isDirty;
+}
+
 template<class TEX> inline
 bool 
 ShaderResources::setTexParam(StrView name, TEX* v)
@@ -698,6 +727,14 @@ ShaderResources::ConstBuffer::_setParamCheckType(const VarInfo& varInfo, const T
 
 template<class T> inline
 bool 
+ShaderResources::ConstBuffer::_setArrayCheckType(const VarInfo& varInfo, const Span<T>& v)
+{
+	throwIf(!_checkType<T>(varInfo), "material set param [{} {}] failed, set wrong type as {}", varInfo.dataType, varInfo.name, RenderDataTypeUtil::get<T>());
+	return _setArrayValue(varInfo, v);
+}
+
+template<class T> inline
+bool 
 ShaderResources::ConstBuffer::_checkType(const VarInfo& varInfo)
 {
 	return varInfo.dataType == RenderDataTypeUtil::get<T>();
@@ -709,20 +746,26 @@ template<class T> inline
 bool 
 ShaderResources::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v)
 {
-	auto end = varInfo.offset + sizeof(v);
+	auto end = varInfo.offset + sizeof(T);
 	throwIf(end > _cpuBuf.size() || !data(), "material set param failed, cpuBuffer overflow");
 
 	auto* dst = sCast<T*>(_getValue(varInfo));
-	
-	//passTest(_cpuBuf, varInfo, _info, &v);
-	//RDS_CALL_ONCE(RDS_DUMP_VAR(varInfo.offset, _cpuBuf.size(), end, sizeof(v), sCast<void*>(data()), sCast<void*>(dst)));
-
 	*dst = v;
-	//memory_copy(dst, &v, 1);
-	//auto sizeofT = sizeof(T); RDS_UNUSED(sizeofT);
-	//::memcpy(dst, &v, sizeof(T));
 
-	//RDS_WARN_ONCE("*dst = v success");
+	_isDirty = true;
+	return _isDirty;
+}
+
+template<class T> inline
+bool 
+ShaderResources::ConstBuffer::_setArrayValue(const VarInfo& varInfo, const Span<T>& v)
+{
+	auto commitSize = sCast<u32>(sizeof(T) * v.size());
+	auto end		= varInfo.offset + commitSize;
+	throwIf(end > _cpuBuf.size() || !data() || commitSize > varInfo.size, "material set param failed, cpuBuffer overflow");
+
+	auto* dst = sCast<T*>(_getValue(varInfo));
+	memory_copy(dst, v.data(), v.size());
 
 	_isDirty = true;
 	return _isDirty;
@@ -834,11 +877,12 @@ public:
 	void create(const ShaderStageInfo& info_, ShaderPass* pass);
 	void destroy();
 
-	template<class T>	bool setParam		(StrView name, const T& v);
-	template<class TEX>	bool setTexParam	(StrView name, TEX* v);
-						bool setSamplerParam(StrView name, const SamplerState&	v);
-						bool setBufferParam	(StrView name, RenderGpuBuffer*		v);
-						bool setImageParam	(StrView name, Texture*				v);
+	template<class T>	bool setParam(			StrView name, const T&				v);
+	template<class T>	bool setArray(			StrView name, const Span<T>&		v);
+	template<class TEX>	bool setTexParam(		StrView name, TEX*					v);
+						bool setSamplerParam(	StrView name, const SamplerState&	v);
+						bool setBufferParam(	StrView name, RenderGpuBuffer*		v);
+						bool setImageParam(		StrView name, Texture*				v);
 	
 	void uploadToGpu(ShaderPass* pass);
 
@@ -864,6 +908,13 @@ FramedShaderResources::setParam(StrView name, const T& v)
 {
 	rotate();
 	return shaderResource().setParam(name, v);
+}
+
+template<class T> bool 
+FramedShaderResources::setArray(StrView name, const Span<T>& v)
+{
+	rotate();
+	return shaderResource().setArray(name, v);
 }
 
 template<class TEX>	inline

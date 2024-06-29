@@ -452,7 +452,8 @@ ShaderCompiler_Vk::_reflect_struct(ShaderStageInfo& outInfo, ShaderStageInfo::Va
 			bool hasPaddingWarning = memberSize % arrayStride != 0;
 			if (hasPaddingWarning)
 			{
-				_log("array padding warning: variable: {}, dataType : {}, array stride: {}", memberName, SpirvUtil::toStr(memberType.basetype), arrayStride);
+				RDS_CORE_LOG_WARN("array padding warning: variable: {}, dataType : {}, array stride: {}", memberName, SpirvUtil::toStr(memberType.basetype), arrayStride);
+				RDS_THROW("");
 			}
 		}
 

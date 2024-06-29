@@ -266,6 +266,17 @@ Material::_setPermutation(StrView name, StrView value)
 	_permuts.set(name, value);
 }
 
+void 
+Material::setArray(StrView name, Span<const float>	v)		
+{ 
+	Vector<Vec4f, 128> temp; 
+	temp.resize(v.size()); 
+	for (size_t i = 0; i < v.size(); ++i)
+	{
+		temp[i].x = v[i];
+	}
+	return _setArray(name, v); 
+}
 
 /*
 * temporary

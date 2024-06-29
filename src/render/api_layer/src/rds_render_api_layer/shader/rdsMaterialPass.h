@@ -48,10 +48,11 @@ public:
 	void create(MaterialPass* pass, ShaderStage* shaderStage);
 	void destroy();
 
-	template<class TEX> void setTexParam	(Material* mtl, StrView name, TEX* v);
-	template<class T>	void setParam		(Material* mtl, StrView name, const T& v);
-						void setSamplerParam(Material* mtl, StrView name, const SamplerState&	v);
-						void setBufferParam	(Material* mtl, StrView name, RenderGpuBuffer*		v);
+	template<class T>	void setParam(			Material* mtl, StrView name, const T&				v);
+	template<class T>	void setArray(			Material* mtl, StrView name, const Span<T>&			v);
+	template<class TEX> void setTexParam(		Material* mtl, StrView name, TEX*					v);
+						void setSamplerParam(	Material* mtl, StrView name, const SamplerState&	v);
+						void setBufferParam(	Material* mtl, StrView name, RenderGpuBuffer*		v);
 
 	const ShaderStageInfo&	info() const;
 	//ShaderResources&		shaderResources(Material* mtl);
@@ -74,6 +75,13 @@ MaterialPass_Stage::setParam(Material* mtl, StrView name, const T& v)
 	/*if (!_shaderStage)
 	return;*/
 	shaderResources(mtl).setParam(name, v);
+}
+
+template<class T> inline
+void 
+MaterialPass_Stage::setArray(Material* mtl, StrView name, const Span<T>& v)
+{
+	shaderResources(mtl).setArray(name, v);
 }
 
 template<class TEX> inline
@@ -211,11 +219,12 @@ public:
 
 	//void bind(RenderContext* ctx, const VertexLayout* vtxLayout);
 
-	template<class TEX> void setTexParam	(StrView name, TEX* v);
-	template<class T>	void setParam		(StrView name, const T& v);
-						void setSamplerParam(StrView name, const SamplerState& v);
-						void setBufferParam	(StrView name, RenderGpuBuffer* v);
-	template<class TEX> void setImageParam	(StrView name, TEX* v, u32 mipLevel);
+	template<class TEX> void setTexParam	(	StrView name, TEX*					v);
+	template<class T>	void setArray(			StrView name, const Span<T>&		v);
+	template<class T>	void setParam(			StrView name, const T&				v);
+						void setSamplerParam(	StrView name, const SamplerState&	v);
+						void setBufferParam(	StrView name, RenderGpuBuffer*		v);
+	template<class TEX> void setImageParam(		StrView name, TEX*					v, u32 mipLevel);
 
 public:
 	const Info& info() const;
@@ -252,21 +261,6 @@ protected:
 	FramedShaderResources _framedShaderRscs;
 };
 
-template<class TEX> inline 
-void 
-MaterialPass::setTexParam(StrView name, TEX* v)
-{
-	auto* mtl = _material; RDS_UNUSED(mtl);
-
-	#if RDS_NO_BINDLESS
-	if (_vertexStage)	_vertexStage ->setTexParam(mtl, name, v);
-	if (_pixelStage)	_pixelStage  ->setTexParam(mtl, name, v);
-	if (_computeStage)	_computeStage->setTexParam(mtl, name, v);
-	#endif // RDS_NO_BINDLESS
-	
-	_framedShaderRscs.setTexParam(name, v);
-}
-
 template<class T> inline 
 void 
 MaterialPass::setParam(StrView name, const T& v)
@@ -280,6 +274,29 @@ MaterialPass::setParam(StrView name, const T& v)
 	#endif
 
 	_framedShaderRscs.setParam(name, v);
+}
+
+template<class T> inline
+void 
+MaterialPass::setArray(StrView name, const Span<T>& v)
+{
+	auto* mtl = _material; RDS_UNUSED(mtl);
+	_framedShaderRscs.setArray(name, v);
+}
+
+template<class TEX> inline 
+void 
+MaterialPass::setTexParam(StrView name, TEX* v)
+{
+	auto* mtl = _material; RDS_UNUSED(mtl);
+
+	#if RDS_NO_BINDLESS
+	if (_vertexStage)	_vertexStage ->setTexParam(mtl, name, v);
+	if (_pixelStage)	_pixelStage  ->setTexParam(mtl, name, v);
+	if (_computeStage)	_computeStage->setTexParam(mtl, name, v);
+	#endif // RDS_NO_BINDLESS
+	
+	_framedShaderRscs.setTexParam(name, v);
 }
 
 inline

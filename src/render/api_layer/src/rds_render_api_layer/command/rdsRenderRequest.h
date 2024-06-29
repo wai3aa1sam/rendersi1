@@ -117,6 +117,7 @@ public:
 	void drawFrustum(const Frustum3f& frustum, const Color4f& color);
 
 	void drawAABBox(const AABBox3f&    aabbox, const Color4b& color = Color4b(0,	 255,   0,    255),  const Mat4f& mat = Mat4f::s_identity());
+	void drawAABBox(const AABBox3f&    aabbox, const Color4f& color = Color4f(0,	 1.0f,  0,    1.0f));
 	void drawAABBox(const RenderMesh&    mesh, const Color4b& color = Color4b(0,	 255,   0,    255),  const Mat4f& mat = Mat4f::s_identity());
 	void drawAABBox(const RenderMesh&    mesh, const Color4f& color = Color4f(0.0f,  1.0f,  0.0f, 1.0f), const Mat4f& mat = Mat4f::s_identity());
 	void drawAABBox(const RenderSubMesh& mesh, const Color4b& color = Color4b(0,	 255,	0,    255),	 const Mat4f& mat = Mat4f::s_identity());

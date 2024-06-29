@@ -34,11 +34,11 @@ public:
 			T& at(SizeType i)						{ checkIsInBoundary(i); return reinCast<			T&>(cpuBuffer()[i * sizeof(T)]); }
 	const	T& at(SizeType i) const					{ checkIsInBoundary(i); return reinCast<const		T&>(cpuBuffer()[i * sizeof(T)]); }
 
-			RenderGpuBuffer& gpuBuffer()			{ return *_gpuBufs->renderGpuBuffer(); }
-	const	RenderGpuBuffer& gpuBuffer() const		{ return *_gpuBufs->renderGpuBuffer(); }
+			RenderGpuBuffer* gpuBuffer()			{ return _gpuBufs->renderGpuBuffer(); }
+	const	RenderGpuBuffer* gpuBuffer() const		{ return _gpuBufs->renderGpuBuffer(); }
 	
-			RenderGpuBuffer& prevGpuBuffer()		{ return *_gpuBufs->previousBuffer(); }
-	const	RenderGpuBuffer& prevGpuBuffer() const	{ return *_gpuBufs->previousBuffer(); }
+			RenderGpuBuffer* prevGpuBuffer()		{ return _gpuBufs->previousBuffer(); }
+	const	RenderGpuBuffer* prevGpuBuffer() const	{ return _gpuBufs->previousBuffer(); }
 
 			Vector<u8>& cpuBuffer()					{ return _cpuBufs[_gpuBufs->iFrame()]; }
 	const	Vector<u8>& cpuBuffer() const			{ return _cpuBufs[_gpuBufs->iFrame()]; }

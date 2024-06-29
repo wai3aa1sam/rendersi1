@@ -143,6 +143,7 @@ public:
 	{
 		RDS_NAMED_FIXED_IO(se, dataType);
 		RDS_NAMED_FIXED_IO(se, offset);
+		RDS_NAMED_FIXED_IO(se, size);
 		RDS_NAMED_FIXED_IO(se, name);
 		RDS_NAMED_FIXED_IO(se, isRowMajor);
 	}

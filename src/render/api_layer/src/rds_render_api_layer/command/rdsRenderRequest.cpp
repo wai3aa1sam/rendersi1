@@ -109,7 +109,7 @@ void
 RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total)
 {
 	Tuple3u nThreads = mtl->getPass(materialPassIdx)->computeStage()->info().numthreads();
-	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, 0, total, nThreads);
+	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, materialPassIdx, total, nThreads);
 }
 
 void 
@@ -320,6 +320,12 @@ RenderRequest::drawAABBox(const AABBox3f& aabbox, const Color4b& color, const Ma
 	Vec3f pts[AABBox3f::s_kVertexCount];
 	aabbox.makeExpanded(pts, mat);
 	drawBox(pts, color);
+}
+
+void 
+RenderRequest::drawAABBox(const AABBox3f& aabbox, const Color4f& color)
+{
+	drawAABBox(aabbox, color.toColorRGBAb(), Mat4f::s_identity());
 }
 
 void 
