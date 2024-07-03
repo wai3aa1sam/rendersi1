@@ -67,9 +67,9 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 0.000000
 illum 2
-map_Kd texture/spnza_bricks_a_diff.png
-map_Kn texture/spnza_bricks_a_ddn.png
-map_Ka texture/spnza_bricks_a_diff.png
+map_Kd texture/sponza_bricks_a_diff.png
+map_Kn texture/sponza_bricks_a_ddn.png
+map_Ka texture/sponza_bricks_a_diff.png
 
 newmtl ceiling
 Ns 7.843137
