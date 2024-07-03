@@ -190,6 +190,14 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 
 	_nativeUIWindow = cDesc.window;
 	_backbuffers.create(this, s_kFrameInFlightCount);
+
+	{
+		auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+		bufCDesc.bufSize	= 16;
+		bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
+		_dummyVtxBuf = renderDevice()->createRenderGpuBuffer(bufCDesc);
+		_dummyVtxBuf->setDebugName("dummyVtxBuf");
+	}
 }
 
 void

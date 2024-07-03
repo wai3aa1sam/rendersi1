@@ -68,7 +68,6 @@ public:
 	{
 		Base::create(RenderDataType::TextureCube, size_, size_, 1, format_, isUseMip, usageFlags_, s_kFaceCount, 1, samplerState_);
 	}
-	
 };
 
 

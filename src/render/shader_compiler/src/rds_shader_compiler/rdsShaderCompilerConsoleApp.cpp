@@ -191,7 +191,7 @@ ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcFi
 
 		bool hasGeometryShader = !pass.geomFunc.is_empty();
 		auto opt_invret_y = opt;
-		opt_invret_y.isInvertY = true;
+		//opt_invret_y.isInvertY = true;
 
 		compilerDx12.compile(ShaderStageFlag::Compute,					srcFileRoot, binPassDir, pass.csFunc,	opt, cmpDesc);
 		compilerDx12.compile(ShaderStageFlag::Vertex,					srcFileRoot, binPassDir, pass.vsFunc,	hasGeometryShader ? opt : opt_invret_y, cmpDesc);

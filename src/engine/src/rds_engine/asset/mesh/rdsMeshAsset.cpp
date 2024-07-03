@@ -106,6 +106,9 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	if (true)		loadFileFlags	|= aiProcess_FlipUVs;
 	if (true)		loadFileFlags	|= aiProcess_SortByPType;			// split by primitive type
 	//if (true)		loadFileFlags	|= aiProcess_GenBoundingBoxes;
+	if (true)		loadFileFlags	|= aiProcess_MakeLeftHanded;
+	//if (true)		loadFileFlags	|= aiProcess_ConvertToLeftHanded;
+	
 
 	const aiScene* srcScene = importer.ReadFile(buf.c_str(), loadFileFlags);
 	bool isLoadFailed = !srcScene || srcScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !srcScene->mRootNode;

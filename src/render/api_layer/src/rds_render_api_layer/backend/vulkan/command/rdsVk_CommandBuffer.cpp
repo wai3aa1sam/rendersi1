@@ -617,8 +617,8 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, V
 
 	desc.baseMip	= sCast<u8>(baseMip);
 	desc.mipCount	= sCast<u8>(mipCount);
-	desc.baseLayer	= sCast<u8>(baseLayer);
-	desc.layerCount	= sCast<u8>(layerCount);
+	desc.baseLayer	= sCast<u16>(baseLayer);
+	desc.layerCount	= sCast<u16>(layerCount);
 
 	cmd_addImageMemBarrier(desc);
 }
@@ -692,8 +692,8 @@ Vk_CommandBuffer::cmd_addImageMemBarrier(Vk_Image_T* image, VkFormat vkFormat, V
 
 	desc.baseMip			= sCast<u8>(baseMip);
 	desc.mipCount			= sCast<u8>(mipCount);
-	desc.baseLayer			= sCast<u8>(baseLayer);
-	desc.layerCount			= sCast<u8>(layerCount);
+	desc.baseLayer			= sCast<u16>(baseLayer);
+	desc.layerCount			= sCast<u16>(layerCount);
 
 	cmd_addImageMemBarrier(desc);
 }

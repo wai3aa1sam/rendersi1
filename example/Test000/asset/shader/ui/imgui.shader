@@ -42,7 +42,9 @@ PixelIn vs_main(VertexIn i)
 	o.pos = mul(rds_matrix_proj, float4(i.pos.xy, 0.f, 1.f));
 	o.col = i.col;
 	o.uv  = i.uv;
-	//o.uv.y = -o.uv.y;		// flip viewport in application side
+	#if RDS_SHADER_VULKAN
+	o.pos.y = -o.pos.y;
+	#endif
 
 	return o;
 }

@@ -99,9 +99,10 @@ struct Vk_Texture
 
 		switch (tex->type())
 		{
-			case RenderDataType::Texture2D:		{ return fn(sCast<Texture2D_Vk*>(tex)); }	break;
-			case RenderDataType::Texture3D:		{ return fn(sCast<Texture3D_Vk*>(tex)); }	break;
-			case RenderDataType::TextureCube:	{ return fn(sCast<TextureCube_Vk*>(tex)); } break;
+			case RenderDataType::Texture2D:			{ return fn(sCast<Texture2D_Vk*>(tex)); }		break;
+			case RenderDataType::Texture3D:			{ return fn(sCast<Texture3D_Vk*>(tex)); }		break;
+			case RenderDataType::TextureCube:		{ return fn(sCast<TextureCube_Vk*>(tex)); }		break;
+			case RenderDataType::Texture2DArray:	{ return fn(sCast<Texture2DArray_Vk*>(tex)); }	break;
 		}
 		throwIf(true, "");
 		return fn(tex);
@@ -110,9 +111,10 @@ struct Vk_Texture
 	#define RDS_VK_TEXTURE_EXECUTE(TEX, FN) \
 	switch (TEX->type()) \
 	{ \
-			case RenderDataType::Texture2D:		{ return sCast<Texture2D_Vk*>	(TEX)->FN; } break; \
-			case RenderDataType::Texture3D:		{ return sCast<Texture3D_Vk*>	(TEX)->FN; } break; \
-			case RenderDataType::TextureCube:	{ return sCast<TextureCube_Vk*>	(TEX)->FN; } break; \
+			case RenderDataType::Texture2D:			{ return sCast<Texture2D_Vk*>(			TEX)->FN; } break; \
+			case RenderDataType::Texture3D:			{ return sCast<Texture3D_Vk*>(			TEX)->FN; } break; \
+			case RenderDataType::TextureCube:		{ return sCast<TextureCube_Vk*>(		TEX)->FN; } break; \
+			case RenderDataType::Texture2DArray:	{ return sCast<Texture2DArray_Vk*>(		TEX)->FN; } break; \
 	} \
 	throwIf(true, ""); \
 	// ---
@@ -152,8 +154,9 @@ struct Vk_Texture
 		#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 	}
 
-	static void createVkImage		(Vk_Image*		o, Texture* tex,RenderDevice_Vk* rdDevVk);
-	static void createVkImageView	(Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount,	RenderDevice_Vk* rdDevVk);
+	static void createVkImage(		Vk_Image*		o, Texture* tex,RenderDevice_Vk* rdDevVk);
+	static void createVkImageView(	Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, u32 baseLayerLevel, u32 layerCount,	RenderDevice_Vk* rdDevVk);
+	static void createVkImageView(	Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, RenderDevice_Vk* rdDevVk);
 	//static void createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
 };
 

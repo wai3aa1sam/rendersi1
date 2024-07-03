@@ -32,7 +32,7 @@ public:
 public:
 	virtual ~GraphicsDemo();
 
-	void createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u size, Vec3f startPos = Vec3f::s_zero(), Vec3f step = Vec3f::s_one() * 3.0f);
+	void createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u size, Vec3f startPos = Vec3f::s_zero(), Vec3f step = Vec3f::s_one() * 3.0f, bool isCreateLights = true);
 
 	void prepareRender(RenderGraph* oRdGraph, DrawData* drawData);
 	void executeRender(RenderGraph* oRdGraph, DrawData* drawData);

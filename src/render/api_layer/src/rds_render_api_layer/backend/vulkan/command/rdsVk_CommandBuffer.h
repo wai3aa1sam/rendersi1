@@ -170,8 +170,8 @@ struct Vk_Cmd_AddImageMemBarrierDesc
 	VkPipelineStageFlags		dstPipelineStage	= VK_PIPELINE_STAGE_NONE;
 	u8							baseMip				= 0;
 	u8							mipCount			= 1;
-	u8							baseLayer			= 0;
-	u8							layerCount			= 1;
+	u16							baseLayer			= 0;
+	u16							layerCount			= 1;
 
 	u32					srcQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;
 	u32					dstQueueFamilyIdx	= VK_QUEUE_FAMILY_IGNORED;

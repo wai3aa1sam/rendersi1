@@ -42,7 +42,7 @@ RenderDevice::RenderDevice()
 
 RenderDevice::~RenderDevice()
 {
-	RDS_LOG_DEBUG("~RenderDevice()");
+	//RDS_LOG_DEBUG("~RenderDevice()");
 }
 
 void 
@@ -72,8 +72,6 @@ RenderDevice::destroy()
 	_textureStock.destroy();
 
 	onDestroy();
-
-	RDS_LOG_DEBUG("{}", RDS_SRCLOC);
 
 	RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
 	RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");

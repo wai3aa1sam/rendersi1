@@ -2,6 +2,7 @@
 #include "rdsTexture.h"
 #include "rdsTexture3D.h"
 #include "rdsTextureCube.h"
+#include "rdsTexture2DArray.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
@@ -19,9 +20,10 @@ RenderDevice::createTexture(Texture_CreateDesc& cDesc)
 	SPtr<Texture> o;
 	switch (cDesc.type)
 	{
-		case RenderDataType::Texture2D:		{ auto p = createTexture2D(		sCast<Texture2D_CreateDesc&>(	cDesc)); o.reset(p.ptr()); } break;
-		case RenderDataType::Texture3D:		{ auto p = createTexture3D(		sCast<Texture3D_CreateDesc&>(	cDesc)); o.reset(p.ptr()); } break;
-		case RenderDataType::TextureCube:	{ auto p = createTextureCube(	sCast<TextureCube_CreateDesc&>(	cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::Texture2D:			{ auto p = createTexture2D(			sCast<Texture2D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::Texture3D:			{ auto p = createTexture3D(			sCast<Texture3D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::TextureCube:		{ auto p = createTextureCube(		sCast<TextureCube_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::Texture2DArray:	{ auto p = createTexture2DArray(	sCast<Texture2DArray_CreateDesc&>(	cDesc)); o.reset(p.ptr()); } break;
 		default: { RDS_THROW("invalid texture type"); } break;
 	}
 	return o;
@@ -123,6 +125,8 @@ Texture::checkValid(TextureCreateDesc& cDesc)
 
 bool	Texture::hasMipmapView()	const { return BitUtil::has(usageFlags(), TextureUsageFlags::UnorderedAccess); }
 u32		Texture::mipmapViewCount()	const { return hasMipmapView() ? mipCount() : 1; }
+
+bool	Texture::isArray()			const { return type() == RenderDataType::Texture1DArray || type() == RenderDataType::Texture2DArray || type() == RenderDataType::Texture3DArray || type() == RenderDataType::TextureCubeArray; }
 
 #endif
 

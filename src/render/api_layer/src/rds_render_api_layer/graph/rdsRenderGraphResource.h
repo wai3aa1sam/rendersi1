@@ -5,6 +5,7 @@
 #include "rds_render_api_layer/texture/rdsTexture.h"
 #include "rds_render_api_layer/texture/rdsTexture3D.h"
 #include "rds_render_api_layer/texture/rdsTextureCube.h"
+#include "rds_render_api_layer/texture/rdsTexture2DArray.h"
 
 namespace rds
 {
@@ -417,6 +418,7 @@ class RdgResourceHndT : public RdgResourceHnd
 	friend class	RenderGraph;
 	friend class	RdgPass;
 	friend class	RdgResourceAccessor;
+	friend struct	RdgTarget;
 	friend struct	RdgRenderTarget;
 	friend struct	RdgDepthStencil;
 	RDS_RENDER_API_LAYER_COMMON_BODY();
@@ -510,17 +512,19 @@ public:
 	ColorType			format()			const	{ return desc().format; }
 	TextureUsageFlags	usageFlags()		const	{ return desc().usageFlags; }
 
-	Texture*		texture()				{ return sCast<Texture*>(resource()->renderResource()); }
+	Texture*			texture()					{ return sCast<Texture*>(resource()->renderResource()); }
 	
-	Texture2D*		texture2D()				{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);	return sCast<Texture2D*>(resource()->renderResource()); }
-	Texture2D*		texture2D()		const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);	return sCast<Texture2D*>(resource()->renderResource()); }
+	Texture2D*			texture2D()					{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);		return sCast<Texture2D*>(resource()->renderResource()); }
+	Texture2D*			texture2D()			const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);		return sCast<Texture2D*>(resource()->renderResource()); }
 
-	Texture3D*		texture3D()				{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);	return sCast<Texture3D*>(resource()->renderResource()); }
-	Texture3D*		texture3D()		const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);	return sCast<Texture3D*>(resource()->renderResource()); }
+	Texture3D*			texture3D()					{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);		return sCast<Texture3D*>(resource()->renderResource()); }
+	Texture3D*			texture3D()			const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);		return sCast<Texture3D*>(resource()->renderResource()); }
 
-	TextureCube*	textureCube()			{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);	return sCast<TextureCube*>(resource()->renderResource()); }
-	TextureCube*	textureCube()	const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);	return sCast<TextureCube*>(resource()->renderResource()); }
+	TextureCube*		textureCube()				{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);		return sCast<TextureCube*>(resource()->renderResource()); }
+	TextureCube*		textureCube()		const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);		return sCast<TextureCube*>(resource()->renderResource()); }
 
+	Texture2DArray*		texture2DArray()			{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2DArray);	return sCast<Texture2DArray*>(resource()->renderResource()); }
+	Texture2DArray*		texture2DArray()	const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2DArray);	return sCast<Texture2DArray*>(resource()->renderResource()); }
 };
 
 class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>

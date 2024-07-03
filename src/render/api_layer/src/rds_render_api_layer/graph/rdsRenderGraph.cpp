@@ -398,6 +398,10 @@ RenderGraph::importTexture(StrView name, TextureT* tex)
 	auto	hnd		= createTexture(name, cDesc);
 	auto*	rdgTex	= sCast<RdgTexture*>(hnd._rdgRsc);
 
+	// setName here will have sync problem btw
+	// TODO: framed _debugName
+	//tex->setDebugName(hnd.name());
+
 	rdgTex->_desc = tex->desc();
 	rdgTex->setImport(true);
 	rdgTex->commitRenderResouce(tex);

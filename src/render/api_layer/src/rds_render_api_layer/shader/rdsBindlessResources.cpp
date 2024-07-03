@@ -35,7 +35,7 @@ BindlessResources::createSamplerListTable(SamplerStateListTable& o)
 
 		s = {};
 		s.minFliter = SamplerFilter::Nearest;
-		s.magFliter = SamplerFilter::Nearest;
+		s.magFliter = SamplerFilter::Linear;
 		table.add(s);
 
 		s = {};

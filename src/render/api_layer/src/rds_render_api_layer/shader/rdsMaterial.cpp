@@ -184,8 +184,9 @@ Material::setParam(StrView name, Texture* v, const SamplerState& samplerState)
 	using SRC = RenderDataType;
 	switch (v->type())
 	{
-		case SRC::Texture2D: { setParam(name, sCast<Texture2D*>(v), samplerState); } break;
-		case SRC::Texture3D: { setParam(name, sCast<Texture3D*>(v), samplerState); } break;
+		case SRC::Texture2D:		{ setParam(name, sCast<Texture2D*>(		v), samplerState); } break;
+		case SRC::Texture3D:		{ setParam(name, sCast<Texture3D*>(		v), samplerState); } break;
+		case SRC::Texture2DArray:	{ setParam(name, sCast<Texture2DArray*>(v), samplerState); } break;
 		default: { RDS_THROW("invalid texture type"); } break;
 	}
 }
@@ -267,15 +268,16 @@ Material::_setPermutation(StrView name, StrView value)
 }
 
 void 
-Material::setArray(StrView name, Span<const float>	v)		
-{ 
-	Vector<Vec4f, 128> temp; 
-	temp.resize(v.size()); 
+Material::setArray(StrView name, Span<const float> v)		
+{
+	constexpr size_t paddingCount = sizeof(Vec4f) / sizeof(float);
+	Vector<float, 128> temp; 
+	temp.resize(v.size() * paddingCount); 
 	for (size_t i = 0; i < v.size(); ++i)
 	{
-		temp[i].x = v[i];
+		temp[i * paddingCount] = v[i];
 	}
-	return _setArray(name, v); 
+	return _setArray(name, spanConstCast<const float>(temp.span())); 
 }
 
 /*

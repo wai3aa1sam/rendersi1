@@ -67,13 +67,14 @@ public:
 public:
 
 protected:
-	virtual SPtr<RenderContext>			onCreateContext				(const	RenderContext_CreateDesc&	cDesc)	override;
-	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(		RenderGpuBuffer_CreateDesc&	cDesc)	override;
-	virtual SPtr<Texture2D>				onCreateTexture2D			(		Texture2D_CreateDesc&		cDesc)	override;
-	virtual SPtr<Texture3D>				onCreateTexture3D(					Texture3D_CreateDesc&		cDesc)	override;
-	virtual SPtr<TextureCube>			onCreateTextureCube			(		TextureCube_CreateDesc&		cDesc)	override;
-	virtual SPtr<Shader>				onCreateShader				(const	Shader_CreateDesc&			cDesc)	override;
-	virtual SPtr<Material>				onCreateMaterial			(const	Material_CreateDesc&		cDesc)	override;
+	virtual SPtr<RenderContext>			onCreateContext				(const	RenderContext_CreateDesc&		cDesc)	override;
+	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(		RenderGpuBuffer_CreateDesc&		cDesc)	override;
+	virtual SPtr<Texture2D>				onCreateTexture2D			(		Texture2D_CreateDesc&			cDesc)	override;
+	virtual SPtr<Texture3D>				onCreateTexture3D(					Texture3D_CreateDesc&			cDesc)	override;
+	virtual SPtr<TextureCube>			onCreateTextureCube			(		TextureCube_CreateDesc&			cDesc)	override;
+	virtual SPtr<Texture2DArray>		onCreateTexture2DArray(				Texture2DArray_CreateDesc&		cDesc)	override;
+	virtual SPtr<Shader>				onCreateShader				(const	Shader_CreateDesc&				cDesc)	override;
+	virtual SPtr<Material>				onCreateMaterial			(const	Material_CreateDesc&			cDesc)	override;
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc) override;

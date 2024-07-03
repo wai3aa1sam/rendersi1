@@ -114,7 +114,7 @@ RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTar
 }
 
 void 
-RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp)
+RdgPass::setDepthStencil(RdgTextureHnd hnd, u32 layerIndex, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp)
 {
 	RDS_CORE_ASSERT(hnd, "invalid DepthStencil hnd");
 	RDS_CORE_ASSERT(!_depthStencil, "depthStencil already set");
@@ -125,11 +125,18 @@ RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp de
 	_depthStencil.stencilLoadOp = stencilLoadOp;
 	_depthStencil.targetHnd		= hnd;
 	_depthStencil.access		= access;
+	_depthStencil.layerIndex	= layerIndex;
 	_depthStencil._localId		= sCast<int>(_rscAccesses.size());
 
 	auto usage = TextureUsageFlags::DepthStencil;
 	auto state = StateUtil::make(usage, access);
 	accessResource(hnd, state, true);
+}
+
+void 
+RdgPass::setDepthStencil(RdgTextureHnd hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp)
+{
+	setDepthStencil(hnd, 0, access, depthLoadOp, stencilLoadOp);
 }
 
 void 

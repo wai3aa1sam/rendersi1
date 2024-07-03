@@ -23,7 +23,8 @@ public:
 	using Base::create;
 
 public:
-	Image uploadImage;
+	Image	uploadImage;
+	//bool	hasLayerView = false;
 
 public:
 	RDS_RenderResource_CreateDesc_COMMON_BODY(Texture3D_CreateDesc);
@@ -46,6 +47,12 @@ public:
 	{
 		Base::create(RenderDataType::Texture3D, size_.x, size_.y, size_.z, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
 	}
+
+	/*Texture3D_CreateDesc(Tuple3u size_, bool hasLayerView_, ColorType format_, TextureUsageFlags usageFlags_, u32 mipCount_ = 1, u32 sampleCount_ = 1)
+	{
+		Base::create(RenderDataType::Texture3D, size_.x, size_.y, size_.z, format_, usageFlags_, mipCount_, 1, sampleCount_, {});
+		hasLayerView = hasLayerView_;
+	}*/
 
 	Texture3D_CreateDesc(Tuple3u size_, ColorType format_, u32 mipCount_, TextureUsageFlags usageFlags_, u32 sampleCount_ = 1)
 	{

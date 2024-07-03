@@ -45,29 +45,32 @@ references:
     SamplerState rds_sampler : register(s13, RDS_CONSTANT_BUFFER_SPACE);   // immutable sampler behave differently, so use this temp solution
 
     // ByteAddressBuffer
-    ByteAddressBuffer 	    rds_bufferTable		    [] 						: register(t0, RDS_BUFFER_SPACE);
-    RWByteAddressBuffer 	rds_rwBufferTable	    [] 						: register(u0, RDS_BUFFER_SPACE);
+    ByteAddressBuffer 	    rds_bufferTable[] 						    : register(t0, RDS_BUFFER_SPACE);
+    RWByteAddressBuffer 	rds_rwBufferTable[] 						: register(u0, RDS_BUFFER_SPACE);
 
-    SamplerState    	    rds_samplerTable	    [RDS_K_SAMPLER_COUNT] 	: register(s0, 					RDS_SAMPLER_SPACE);
-    Texture1D 			    rds_texture1DTable	    []  					: register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
-    Texture2D 			    rds_texture2DTable	    []  					: register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
-    Texture3D 			    rds_texture3DTable	    []  					: register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
-    TextureCube 		    rds_textureCubeTable    []  					: register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
+    SamplerState    	    rds_samplerTable[RDS_K_SAMPLER_COUNT] 	    : register(s0, 					RDS_SAMPLER_SPACE);
+    Texture1D 			    rds_texture1DTable[]  					    : register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
+    Texture2D 			    rds_texture2DTable[]  					    : register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
+    Texture3D 			    rds_texture3DTable[]  					    : register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
+    TextureCube 		    rds_textureCubeTable[]  					: register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
+    Texture2DArray 		    rds_texture2DArrayTable[]  					: register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE);
     
     // Texture<T>
     #define RDS_TEXTURE_TABLE_T_NAME(ND, T) RDS_CONCAT(RDS_CONCAT(RDS_CONCAT(rds_texture, ND), Table), RDS_CONCAT(_, T))
     #define RDS_TEXTURE_TABLE_T_DECL(ND, T) RDS_CONCAT(Texture, ND)<T> RDS_TEXTURE_TABLE_T_NAME(ND, T)[] : register(RDS_TEXTURE_BINDING, RDS_TEXURE_SPACE)
     
-    #define RDS_TEXTURE_TABLE_1D_T_DECL(T, ...)    RDS_TEXTURE_TABLE_T_DECL(1D,     T);
-    #define RDS_TEXTURE_TABLE_2D_T_DECL(T, ...)    RDS_TEXTURE_TABLE_T_DECL(2D,     T);
-    #define RDS_TEXTURE_TABLE_3D_T_DECL(T, ...)    RDS_TEXTURE_TABLE_T_DECL(3D,     T);
-    #define RDS_TEXTURE_TABLE_CUBE_T_DECL(T, ...)  RDS_TEXTURE_TABLE_T_DECL(Cube,   T);
+    #define RDS_TEXTURE_TABLE_1D_T_DECL(            T, ...)     RDS_TEXTURE_TABLE_T_DECL(1D,            T);
+    #define RDS_TEXTURE_TABLE_2D_T_DECL(            T, ...)     RDS_TEXTURE_TABLE_T_DECL(2D,            T);
+    #define RDS_TEXTURE_TABLE_3D_T_DECL(            T, ...)     RDS_TEXTURE_TABLE_T_DECL(3D,            T);
+    #define RDS_TEXTURE_TABLE_CUBE_T_DECL(          T, ...)     RDS_TEXTURE_TABLE_T_DECL(Cube,          T);
+    #define RDS_TEXTURE_TABLE_2D_ARRAY_T_DECL(      T, ...)     RDS_TEXTURE_TABLE_T_DECL(2DArray,       T);
 
     #define RDS_TEXTURE_DECL() \
         RDS_TYPE_ITER_LIST(RDS_TEXTURE_TABLE_1D_T_DECL) \
         RDS_TYPE_ITER_LIST(RDS_TEXTURE_TABLE_2D_T_DECL) \
         RDS_TYPE_ITER_LIST(RDS_TEXTURE_TABLE_3D_T_DECL) \
         RDS_TYPE_ITER_LIST(RDS_TEXTURE_TABLE_CUBE_T_DECL) \
+        RDS_TYPE_ITER_LIST(RDS_TEXTURE_TABLE_2D_ARRAY_T_DECL) \
     // ---
     RDS_TEXTURE_DECL();
 
@@ -75,14 +78,16 @@ references:
     #define RDS_IMAGE_TABLE_T_NAME(ND, T)          RDS_CONCAT(RDS_CONCAT(RDS_CONCAT(rds_image, ND), Table), RDS_CONCAT(_, T))
     #define RDS_IMAGE_TABLE_T_DECL(ND, T)          RDS_CONCAT(RWTexture, ND)<T> RDS_IMAGE_TABLE_T_NAME(ND, T)[] : register(u0, RDS_IMAGE_SPACE)
     
-    #define RDS_IMAGE_TABLE_1D_T_DECL(T, ...)      RDS_IMAGE_TABLE_T_DECL(1D, T);
-    #define RDS_IMAGE_TABLE_2D_T_DECL(T, ...)      RDS_IMAGE_TABLE_T_DECL(2D, T);
-    #define RDS_IMAGE_TABLE_3D_T_DECL(T, ...)      RDS_IMAGE_TABLE_T_DECL(3D, T);
+    #define RDS_IMAGE_TABLE_1D_T_DECL(          T, ...)      RDS_IMAGE_TABLE_T_DECL(1D, T);
+    #define RDS_IMAGE_TABLE_2D_T_DECL(          T, ...)      RDS_IMAGE_TABLE_T_DECL(2D, T);
+    #define RDS_IMAGE_TABLE_3D_T_DECL(          T, ...)      RDS_IMAGE_TABLE_T_DECL(3D, T);
+    #define RDS_IMAGE_TABLE_2D_ARRAY_T_DECL(    T, ...)      RDS_IMAGE_TABLE_T_DECL(2DArray, T);
 
     #define RDS_IMAGE_DECL() \
         RDS_TYPE_ITER_LIST(RDS_IMAGE_TABLE_1D_T_DECL) \
         RDS_TYPE_ITER_LIST(RDS_IMAGE_TABLE_2D_T_DECL) \
         RDS_TYPE_ITER_LIST(RDS_IMAGE_TABLE_3D_T_DECL) \
+        RDS_TYPE_ITER_LIST(RDS_IMAGE_TABLE_2D_ARRAY_T_DECL) \
     // ---
     RDS_IMAGE_DECL();
     
@@ -92,60 +97,73 @@ references:
 
     #define RDS_TEXTURE_ST_SUFFIX _ST_
 
-    #define RDS_TEXTURE_NAME(NAME)  NAME
-    #define RDS_TEXTURE_ST(NAME)    RDS_CONCAT(NAME, RDS_TEXTURE_ST_SUFFIX)
-    #define RDS_SAMPLER_NAME(NAME)  RDS_CONCAT(RDS_CONCAT(_rds_, NAME), _sampler)
-    #define RDS_TEXTURE_1D(NAME)    uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
-    #define RDS_TEXTURE_2D(NAME)    uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME); float4 RDS_TEXTURE_ST(NAME)
-    #define RDS_TEXTURE_3D(NAME)    uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
-    #define RDS_TEXTURE_CUBE(NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_NAME(           NAME)  NAME
+    #define RDS_TEXTURE_ST(             NAME)  RDS_CONCAT(NAME, RDS_TEXTURE_ST_SUFFIX)
+    #define RDS_SAMPLER_NAME(           NAME)  RDS_CONCAT(RDS_CONCAT(_rds_, NAME), _sampler)
+    #define RDS_TEXTURE_1D(             NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_2D(             NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME); float4 RDS_TEXTURE_ST(NAME)
+    #define RDS_TEXTURE_3D(             NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_CUBE(           NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_2D_ARRAY(       NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
 
     #define RDS_SAMPLER_GET(NAME)       rds_sampler
 
     #define RDS_TEXTURE_UV2(NAME, UV) float2(UV.xy * RDS_TEXTURE_ST(NAME).xy + RDS_TEXTURE_ST(NAME).zw)
 
     //#define RDS_SAMPLER_GET(NAME)       rds_samplerTable[NonUniformResourceIndex(RDS_SAMPLER_NAME(NAME))]
-    #define RDS_TEXTURE_1D_GET(NAME)    rds_texture1DTable[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
-    #define RDS_TEXTURE_2D_GET(NAME)    rds_texture2DTable[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
-    #define RDS_TEXTURE_3D_GET(NAME)    rds_texture3DTable[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
-    #define RDS_TEXTURE_CUBE_GET(NAME)  rds_textureCubeTable[NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_1D_GET(             NAME) rds_texture1DTable[           NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_2D_GET(             NAME) rds_texture2DTable[           NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_3D_GET(             NAME) rds_texture3DTable[           NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_CUBE_GET(           NAME) rds_textureCubeTable[         NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
+    #define RDS_TEXTURE_2D_ARRAY_GET(       NAME) rds_texture2DArrayTable[      NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
 
-    #define RDS_TEXTURE_1D_SAMPLE(TEX, UV)                  RDS_TEXTURE_1D_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), (UV))
-    #define RDS_TEXTURE_1D_SAMPLE_LOD(TEX, UV, LOD)         RDS_TEXTURE_1D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
-    #define RDS_TEXTURE_1D_GET_DIMENSIONS(TEX, OUT_WH)      RDS_TEXTURE_1D_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+    #define RDS_TEXTURE_1D_SAMPLE(                      TEX, UV)        RDS_TEXTURE_1D_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), (UV))
+    #define RDS_TEXTURE_1D_SAMPLE_LOD(                  TEX, UV, LOD)   RDS_TEXTURE_1D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
+    #define RDS_TEXTURE_1D_GET_DIMENSIONS(              TEX, OUT_WH)    RDS_TEXTURE_1D_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
 
-    #define RDS_TEXTURE_2D_SAMPLE(TEX, UV)                  RDS_TEXTURE_2D_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, (UV)))
-    #define RDS_TEXTURE_2D_SAMPLE_LOD(TEX, UV, LOD)         RDS_TEXTURE_2D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, (UV)), (LOD))
-    #define RDS_TEXTURE_2D_GET_DIMENSIONS(TEX, OUT_WH)      RDS_TEXTURE_2D_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+    #define RDS_TEXTURE_2D_SAMPLE(                      TEX, UV)        RDS_TEXTURE_2D_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, (UV)))
+    #define RDS_TEXTURE_2D_SAMPLE_LOD(                  TEX, UV, LOD)   RDS_TEXTURE_2D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, (UV)), (LOD))
+    #define RDS_TEXTURE_2D_GET_DIMENSIONS(              TEX, OUT_WH)    RDS_TEXTURE_2D_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
 
-    #define RDS_TEXTURE_3D_SAMPLE(TEX, UV)                  RDS_TEXTURE_3D_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), (UV))
-    #define RDS_TEXTURE_3D_SAMPLE_LOD(TEX, UV, LOD)         RDS_TEXTURE_3D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
-    #define RDS_TEXTURE_3D_GET_DIMENSIONS(TEX, OUT_WHD)      RDS_TEXTURE_3D_GET(TEX).GetDimensions(OUT_WHD.x, OUT_WHD.y, OUT_WHD.z)
+    #define RDS_TEXTURE_3D_SAMPLE(                      TEX, UV)        RDS_TEXTURE_3D_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), (UV))
+    #define RDS_TEXTURE_3D_SAMPLE_LOD(                  TEX, UV, LOD)   RDS_TEXTURE_3D_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
+    #define RDS_TEXTURE_3D_GET_DIMENSIONS(              TEX, OUT_WHD)   RDS_TEXTURE_3D_GET(TEX).GetDimensions(OUT_WHD.x, OUT_WHD.y, OUT_WHD.z)
 
-    #define RDS_TEXTURE_CUBE_SAMPLE(TEX, UV)                RDS_TEXTURE_CUBE_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), (UV))
-    #define RDS_TEXTURE_CUBE_SAMPLE_LOD(TEX, UV, LOD)       RDS_TEXTURE_CUBE_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
-    #define RDS_TEXTURE_CUBE_GET_DIMENSIONS(TEX, OUT_WH)    RDS_TEXTURE_CUBE_GET(TEX).GetDimensions(OUT_WH.x,   OUT_WH.y)
+    #define RDS_TEXTURE_CUBE_SAMPLE(                    TEX, UV)        RDS_TEXTURE_CUBE_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), (UV))
+    #define RDS_TEXTURE_CUBE_SAMPLE_LOD(                TEX, UV, LOD)   RDS_TEXTURE_CUBE_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
+    #define RDS_TEXTURE_CUBE_GET_DIMENSIONS(            TEX, OUT_WH)    RDS_TEXTURE_CUBE_GET(TEX).GetDimensions(OUT_WH.x,   OUT_WH.y)
 
-    #define RDS_TEXTURE_T_NAME(T, NAME) (NAME)
-    #define RDS_TEXTURE_1D_T(  T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
-    #define RDS_TEXTURE_2D_T(  T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); float4 RDS_TEXTURE_ST(NAME)
-    #define RDS_TEXTURE_3D_T(  T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
-    #define RDS_TEXTURE_CUBE_T(T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
+    #define RDS_TEXTURE_2D_ARRAY_SAMPLE(                TEX, UV)        RDS_TEXTURE_2D_ARRAY_GET(TEX).Sample(     RDS_SAMPLER_GET(TEX), (UV))
+    #define RDS_TEXTURE_2D_ARRAY_SAMPLE_LOD(            TEX, UV, LOD)   RDS_TEXTURE_2D_ARRAY_GET(TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
+    #define RDS_TEXTURE_2D_ARRAY_GET_DIMENSIONS(        TEX, OUT_WH)    RDS_TEXTURE_2D_ARRAY_GET(TEX).GetDimensions(OUT_WH.x,   OUT_WH.y)
 
-    #define RDS_TEXTURE_1D_T_GET(  T, NAME) RDS_TEXTURE_TABLE_T_NAME(1D,    T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
-    #define RDS_TEXTURE_2D_T_GET(  T, NAME) RDS_TEXTURE_TABLE_T_NAME(2D,    T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
-    #define RDS_TEXTURE_3D_T_GET(  T, NAME) RDS_TEXTURE_TABLE_T_NAME(3D,    T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
-    #define RDS_TEXTURE_CUBE_T_GET(T, NAME) RDS_TEXTURE_TABLE_T_NAME(Cube,  T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
+    #define RDS_TEXTURE_T_NAME(         T, NAME) (NAME)
+    #define RDS_TEXTURE_1D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
+    #define RDS_TEXTURE_2D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); float4 RDS_TEXTURE_ST(NAME)
+    #define RDS_TEXTURE_3D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
+    #define RDS_TEXTURE_CUBE_T(         T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
+    #define RDS_TEXTURE_2D_ARRAY_T(     T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
 
-    #define RDS_TEXTURE_2D_T_LOAD(      T, TEX, UV, LOD)        RDS_TEXTURE_2D_T_GET(T, TEX).Load(  uint3((UV).xy, (LOD)))
-    #define RDS_TEXTURE_2D_T_SAMPLE(T, TEX, UV)                 RDS_TEXTURE_2D_T_GET(T, TEX).Sample(RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, (UV)))
-    #define RDS_TEXTURE_2D_T_SAMPLE_LOD(T, TEX, UV, LOD)        RDS_TEXTURE_2D_T_GET(T, TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
-    #define RDS_TEXTURE_2D_T_GET_DIMENSIONS(TEX, OUT_WH)        RDS_TEXTURE_2D_T_GET(TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+    #define RDS_TEXTURE_1D_T_GET(           T, NAME) RDS_TEXTURE_TABLE_T_NAME(1D,           T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
+    #define RDS_TEXTURE_2D_T_GET(           T, NAME) RDS_TEXTURE_TABLE_T_NAME(2D,           T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
+    #define RDS_TEXTURE_3D_T_GET(           T, NAME) RDS_TEXTURE_TABLE_T_NAME(3D,           T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
+    #define RDS_TEXTURE_CUBE_T_GET(         T, NAME) RDS_TEXTURE_TABLE_T_NAME(Cube,         T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
+    #define RDS_TEXTURE_2D_ARRAY_T_GET(     T, NAME) RDS_TEXTURE_TABLE_T_NAME(2DArray,      T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
 
-    #define RDS_TEXTURE_3D_T_LOAD(      T, TEX, UV, LOD)        RDS_TEXTURE_3D_T_GET(T, TEX).Load(       uint4((UV).xyz, (LOD)))
-    #define RDS_TEXTURE_3D_T_SAMPLE(    T, TEX, UV)             RDS_TEXTURE_3D_T_GET(T, TEX).Sample(     RDS_SAMPLER_GET(TEX), (UV))
-    #define RDS_TEXTURE_3D_T_SAMPLE_LOD(T, TEX, UV, LOD)        RDS_TEXTURE_3D_T_GET(T, TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
-    #define RDS_TEXTURE_3D_T_GET_DIMENSIONS(T, TEX, OUT_WHD)    RDS_TEXTURE_3D_T_GET(T, TEX).GetDimensions(OUT_WHD.x, OUT_WHD.y, OUT_WHD.z)
+    #define RDS_TEXTURE_2D_T_LOAD(                  T, TEX, UV, LOD)    RDS_TEXTURE_2D_T_GET(T, TEX).Load(uint3((UV).xy, (LOD)))
+    #define RDS_TEXTURE_2D_T_SAMPLE(                T, TEX, UV)         RDS_TEXTURE_2D_T_GET(T, TEX).Sample(RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, (UV)))
+    #define RDS_TEXTURE_2D_T_SAMPLE_LOD(            T, TEX, UV, LOD)    RDS_TEXTURE_2D_T_GET(T, TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
+    #define RDS_TEXTURE_2D_T_GET_DIMENSIONS(        T, TEX, OUT_WH)     RDS_TEXTURE_2D_T_GET(T, TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
+
+    #define RDS_TEXTURE_3D_T_LOAD(                  T, TEX, UV, LOD)    RDS_TEXTURE_3D_T_GET(T, TEX).Load(uint4((UV).xyz, (LOD)))
+    #define RDS_TEXTURE_3D_T_SAMPLE(                T, TEX, UV)         RDS_TEXTURE_3D_T_GET(T, TEX).Sample(RDS_SAMPLER_GET(TEX), (UV))
+    #define RDS_TEXTURE_3D_T_SAMPLE_LOD(            T, TEX, UV, LOD)    RDS_TEXTURE_3D_T_GET(T, TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
+    #define RDS_TEXTURE_3D_T_GET_DIMENSIONS(        T, TEX, OUT_WHD)    RDS_TEXTURE_3D_T_GET(T, TEX).GetDimensions(OUT_WHD.x, OUT_WHD.y, OUT_WHD.z)
+
+    #define RDS_TEXTURE_2D_ARRAY_T_LOAD(            T, TEX, UV, LOD)    RDS_TEXTURE_2D_ARRAY_T_GET(T, TEX).Load(uint3((UV).xy, (LOD)))
+    #define RDS_TEXTURE_2D_ARRAY_T_SAMPLE(          T, TEX, UV)         RDS_TEXTURE_2D_ARRAY_T_GET(T, TEX).Sample(RDS_SAMPLER_GET(TEX), RDS_TEXTURE_UV2(TEX, (UV)))
+    #define RDS_TEXTURE_2D_ARRAY_T_SAMPLE_LOD(      T, TEX, UV, LOD)    RDS_TEXTURE_2D_ARRAY_T_GET(T, TEX).SampleLevel(RDS_SAMPLER_GET(TEX), (UV), (LOD))
+    #define RDS_TEXTURE_2D_ARRAY_T_GET_DIMENSIONS(  T, TEX, OUT_WH)     RDS_TEXTURE_2D_ARRAY_T_GET(T, TEX).GetDimensions(OUT_WH.x, OUT_WH.y)
 
     /* 
     --- define ConstantBuffer Util
@@ -188,6 +206,10 @@ references:
     #define RDS_IMAGE_3D_GET(    TYPE, NAME)                    RDS_IMAGE_TABLE_T_NAME(3D, TYPE)[NonUniformResourceIndex(RDS_IMAGE_T_NAME(TYPE, NAME))]
     #define RDS_IMAGE_3D_LOAD(   TYPE, NAME, UV)                RDS_IMAGE_3D_GET(TYPE, NAME).Load((UV).xyz)
 
+    #define RDS_IMAGE_2D_ARRAY(        TYPE, NAME)              uint RDS_IMAGE_T_NAME(TYPE, NAME)
+    #define RDS_IMAGE_2D_ARRAY_GET(    TYPE, NAME)              RDS_IMAGE_TABLE_T_NAME(2DArray, TYPE)[NonUniformResourceIndex(RDS_IMAGE_T_NAME(TYPE, NAME))]
+    #define RDS_IMAGE_2D_ARRAY_LOAD(   TYPE, NAME, UV)          RDS_IMAGE_2D_ARRAY_GET(TYPE, NAME).Load((UV).xyz)
+
 #else
     #error "only support for bindless"
 #endif
@@ -203,6 +225,8 @@ references:
 [[vk::push_constant]] ConstantBuffer<PerObjectParam> rds_perObjectParam;
 
 RDS_BUFFER(DrawParam,           rds_drawParams);
+RDS_BUFFER(DrawParam,           rds_lastFrame_drawParams);
+
 RDS_BUFFER(ObjectTransform,     rds_objTransforms);
 RDS_BUFFER(Light,               rds_lights);
 uint                            rds_nLights;
@@ -227,6 +251,11 @@ ObjectTransform rds_ObjectTransform_get()
 DrawParam rds_DrawParam_get(uint idx = 0)
 {
     return RDS_DRAW_PARAM_GET(idx);
+}
+
+DrawParam rds_DrawParam_getLastFrame(uint idx = 0)
+{
+    return RDS_BUFFER_LOAD_I(DrawParam, rds_lastFrame_drawParams, idx);
 }
 
 Light rds_Lights_get(uint idx)
@@ -506,12 +535,12 @@ float4 SpaceTransform_objectToClip(float4 v, DrawParam drawParam)
 	return SpaceTransform_objectToClip(v, drawParam, rds_ObjectTransform_get());
 }
 
-float4 SpaceTransform_worldToView(float4 v, DrawParam drawParam)
+float4 SpaceTransform_worldToView(float3 v, DrawParam drawParam)
 {
-	return mul(drawParam.matrix_view, v);
+	return mul(drawParam.matrix_view, float4(v, 1.0));
 }
 
-float4 SpaceTransform_worldToView(float4 v)
+float4 SpaceTransform_worldToView(float3 v)
 {
 	return SpaceTransform_worldToView(v, rds_DrawParam_get());
 }

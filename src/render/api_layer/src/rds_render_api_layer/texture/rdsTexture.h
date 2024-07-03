@@ -50,12 +50,12 @@ public:
 	using HashValue	= SizeType;
 
 public:
-	Filter	minFliter = Filter::Linear;
-	Filter	magFliter = Filter::Linear;
+	Filter	minFliter = Filter::Nearest;
+	Filter	magFliter = Filter::Nearest;
 
-	Wrap	wrapU = Wrap::Repeat;
-	Wrap	wrapV = Wrap::Repeat;
-	Wrap	wrapS = Wrap::Repeat;
+	Wrap	wrapU = Wrap::ClampToBorder;
+	Wrap	wrapV = Wrap::ClampToBorder;
+	Wrap	wrapS = Wrap::ClampToBorder;
 
 	// TODO: Border Color
 
@@ -119,7 +119,7 @@ public:
 	SamplerState		samplerState;
 	u8					mipCount		= 1;
 	u8					sampleCount		= 1;
-	u8					layerCount		= 1;
+	u16					layerCount		= 1;
 	bool				isSrgb			= false;
 
 public:
@@ -165,9 +165,9 @@ public:
 		usageFlags		= usageFlags_;
 		samplerState	= samplerState_;
 		size			= Tuple3u{width_, height_, depth_};
-		mipCount		= sCast<u8>(mipCount_);
-		layerCount		= sCast<u8>(layerCount_);
-		sampleCount		= sCast<u8>(sampleCount_);
+		mipCount		= sCast<u8>( mipCount_);
+		layerCount		= sCast<u16>(layerCount_);
+		sampleCount		= sCast<u8>( sampleCount_);
 
 		samplerState.maxLod = sampleCount;
 	}
@@ -292,7 +292,7 @@ public:
 	ColorType				format()			const;
 	const SamplerState&		samplerState()		const;
 	u8						mipCount()			const;
-	u8						layerCount()		const;
+	u16						layerCount()		const;
 	u8						sampleCount()		const;
 	Vec3u					size()				const;
 
@@ -303,6 +303,8 @@ public:
 
 	bool					hasMipmapView()		const;
 	u32						mipmapViewCount()	const;
+
+	bool					isArray()			const;
 
 protected:
 	Texture(RenderDataType type);
@@ -329,7 +331,7 @@ inline TextureUsageFlags			Texture::usageFlags()			const { return desc().usageFl
 inline ColorType					Texture::format()				const { return desc().format; }
 inline const SamplerState&			Texture::samplerState()			const { return desc().samplerState; }
 inline u8							Texture::mipCount()				const { return desc().mipCount; }
-inline u8							Texture::layerCount()			const { return desc().layerCount; }
+inline u16							Texture::layerCount()			const { return desc().layerCount; }
 inline u8							Texture::sampleCount()			const { return desc().sampleCount; }
 
 inline Vec3u						Texture::size()					const { return desc().size; }

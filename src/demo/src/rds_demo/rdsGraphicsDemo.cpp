@@ -115,7 +115,7 @@ GraphicsDemo::onUiKeyboardEvent(UiKeyboardEvent& ev)
 }
 
 void 
-GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u size, Vec3f startPos, Vec3f step)
+GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u size, Vec3f startPos, Vec3f step, bool isCreateLights)
 {
 	auto& scene = *oScene;
 
@@ -143,47 +143,50 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 	}
 
 	#if 1
-	row = 5;
-	col = 5;
-
-	for (size_t r = 0; r < row; r++)
+	if (isCreateLights)
 	{
-		for (size_t c = 0; c < col; c++)
+		row = 5;
+		col = 5;
+
+		for (size_t r = 0; r < row; r++)
 		{
-			auto* ent = scene.addEntity();
-
-			auto* transform	= ent->getComponent<CTransform>();
-			transform->setLocalPosition(startPos.x + step.x * c, 1.0f, startPos.y + step.y * r);
-			transform->setLocalRotation(Vec3f{math::radians(90.0f), 0.0f, 0.0f});
-
-			//auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-			//rdableMesh->material = mtl;
-			//rdableMesh->meshAsset = isDirectional ? meshAssets().box : isPoint ? meshAssets().sphere : meshAssets().cone;
-
-			#if 1
-			bool isPoint		= r % 2 == 0;
-			bool isDirectional	= r == 0 && c == 0;
-
-			auto* light = ent->addComponent<CLight>();
-			light->setType(isPoint ? LightType::Point : LightType::Spot);
-			light->setType(LightType::Point);
-			if (isDirectional)
+			for (size_t c = 0; c < col; c++)
 			{
-				light->setType(LightType::Directional);
+				auto* ent = scene.addEntity();
+
+				auto* transform	= ent->getComponent<CTransform>();
+				transform->setLocalPosition(startPos.x + step.x * c, 1.0f, startPos.y + step.y * r);
+				transform->setLocalRotation(Vec3f{math::radians(90.0f), 0.0f, 0.0f});
+
+				//auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+				//rdableMesh->material = mtl;
+				//rdableMesh->meshAsset = isDirectional ? meshAssets().box : isPoint ? meshAssets().sphere : meshAssets().cone;
+
+				#if 1
+				bool isPoint		= r % 2 == 0;
+				bool isDirectional	= r == 0 && c == 0;
+
+				auto* light = ent->addComponent<CLight>();
+				light->setType(isPoint ? LightType::Point : LightType::Spot);
+				light->setType(LightType::Point);
+				if (isDirectional)
+				{
+					light->setType(LightType::Directional);
+				}
+
+				if (light->lightType() == LightType::Spot)
+				{
+					light->setSpotAngle(math::radians(60.0f));
+					light->setSpotInnerAngle(math::radians(30.0f));
+				}
+
+				light->setRange(4);
+
+				TempString buf;
+				fmtTo(buf, "{}-{}", enumStr(light->lightType()), sCast<u64>(ent->id()));
+				ent->setName(buf);
+				#endif // 0
 			}
-
-			if (light->lightType() == LightType::Spot)
-			{
-				light->setSpotAngle(math::radians(60.0f));
-				light->setSpotInnerAngle(math::radians(30.0f));
-			}
-
-			light->setRange(4);
-
-			TempString buf;
-			fmtTo(buf, "{}-{}", enumStr(light->lightType()), sCast<u64>(ent->id()));
-			ent->setName(buf);
-			#endif // 0
 		}
 	}
 	#endif // 1

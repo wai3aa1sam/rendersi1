@@ -150,14 +150,13 @@ DemoEditorLayer::onUpdate()
 			rdUiCtx.onBeginRender(&rdCtx);
 			auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
 
-			drawEditorUi(uiDrawReq, _texHndPresent);
-			_gfxDemo->onDrawGui(uiDrawReq);
-
 			// present
 			renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
 			renderableSystem().update(drawData);
 
+			drawEditorUi(uiDrawReq, _texHndPresent);
 			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, drawData.camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());
+			_gfxDemo->onDrawGui(uiDrawReq);
 
 			rdUiCtx.onEndRender(&rdCtx);
 		}

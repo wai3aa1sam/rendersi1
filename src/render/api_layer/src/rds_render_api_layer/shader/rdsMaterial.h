@@ -60,30 +60,31 @@ public:
 
 	void setShader(Shader* shader);
 
-	void setParam(StrView name,			Texture*		v, const SamplerState& samplerState = {});
-	void setParam(StrView name,			Texture2D*		v, const SamplerState& samplerState = {});
-	void setParam(StrView name,			Texture3D*		v, const SamplerState& samplerState = {});
-	void setParam(StrView name,			TextureCube*	v, const SamplerState& samplerState = {});
-	void setParam(StrView name, const	SamplerState&	v);
+	void setParam(StrView name,			Texture*			v, const SamplerState& samplerState = {});
+	void setParam(StrView name,			Texture2D*			v, const SamplerState& samplerState = {});
+	void setParam(StrView name,			Texture3D*			v, const SamplerState& samplerState = {});
+	void setParam(StrView name,			TextureCube*		v, const SamplerState& samplerState = {});
+	void setParam(StrView name,			Texture2DArray*		v, const SamplerState& samplerState = {});
+	void setParam(StrView name, const	SamplerState&		v);
 
-	void setParam(StrView name, const bool&				v);
-	void setParam(StrView name, const i32&				v);
-	void setParam(StrView name, const u32&				v);
-	void setParam(StrView name, const f32&				v);
-	void setParam(StrView name, const Color4b&			v);
-	void setParam(StrView name, const Color4f&			v);
-	void setParam(StrView name, const Tuple2u&			v);
-	void setParam(StrView name, const Tuple3u&			v);
-	void setParam(StrView name, const Tuple4u&			v);
-	void setParam(StrView name, const Tuple2f&			v);
-	void setParam(StrView name, const Tuple3f&			v);
-	void setParam(StrView name, const Tuple4f&			v);
-	void setParam(StrView name, const Mat4f&			v);
-	void setParam(StrView name, RenderGpuBuffer*		v);
+	void setParam(StrView name, const bool&					v);
+	void setParam(StrView name, const i32&					v);
+	void setParam(StrView name, const u32&					v);
+	void setParam(StrView name, const f32&					v);
+	void setParam(StrView name, const Color4b&				v);
+	void setParam(StrView name, const Color4f&				v);
+	void setParam(StrView name, const Tuple2u&				v);
+	void setParam(StrView name, const Tuple3u&				v);
+	void setParam(StrView name, const Tuple4u&				v);
+	void setParam(StrView name, const Tuple2f&				v);
+	void setParam(StrView name, const Tuple3f&				v);
+	void setParam(StrView name, const Tuple4f&				v);
+	void setParam(StrView name, const Mat4f&				v);
+	void setParam(StrView name, RenderGpuBuffer*			v);
 
-	void setArray(StrView name, Span<const float>		v);		// hlsl will still pack it as float x[4] == total size is 16 * 4, minimum is 16 bytes
-	void setArray(StrView name, Span<const Vec4f>		v);
-	void setArray(StrView name, Span<const Mat4f>		v);
+	void setArray(StrView name, Span<const float>			v);		// hlsl will still pack it as float x[4] == total size is 16 * 4, minimum is 16 bytes
+	void setArray(StrView name, Span<const Vec4f>			v);
+	void setArray(StrView name, Span<const Mat4f>			v);
 
 	void setImage(StrView name, Texture*		v, u32 mipLevel);
 	void setImage(StrView name, Texture2D*		v, u32 mipLevel);
@@ -136,10 +137,11 @@ protected:
 	ShaderPermutations	_permuts;
 };
 
-inline void Material::setParam(StrView name,		Texture2D*		v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
-inline void Material::setParam(StrView name,		Texture3D*		v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
-inline void Material::setParam(StrView name,		TextureCube*	v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
-inline void Material::setParam(StrView name, const	SamplerState&	v)										{ return _setSamplerParam(name, v); }
+inline void Material::setParam(StrView name,		Texture2D*			v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
+inline void Material::setParam(StrView name,		Texture3D*			v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
+inline void Material::setParam(StrView name,		TextureCube*		v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
+inline void Material::setParam(StrView name,		Texture2DArray*		v, const SamplerState& samplerState)	{ return _setTexParam(name, v, samplerState); }
+inline void Material::setParam(StrView name, const	SamplerState&	v)											{ return _setSamplerParam(name, v); }
 
 inline void Material::setParam(StrView name, const bool&		v)		{ return _setParam(name, v); }
 inline void Material::setParam(StrView name, const i32&			v)		{ return _setParam(name, v); }

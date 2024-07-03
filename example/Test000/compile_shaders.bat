@@ -9,7 +9,10 @@ set COMPILE_SHADER_PATH=%RDS_ROOT%\built-in\script\compile_shader
 pushd %COMPILE_SHADER_PATH%
 
 python rds_compile_shaders.py %PROJECT_ROOT%
+set exitCode=%ERRORLEVEL%
 
 popd
+
+EXIT exitCode
 
 @rem pause

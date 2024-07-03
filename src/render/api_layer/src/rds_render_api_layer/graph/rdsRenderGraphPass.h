@@ -31,27 +31,33 @@ RDS_ENUM_ALL_OPERATOR(RdgPassTypeFlags);
 RDS_ENUM_CLASS(RdgPassFlags, u8);
 RDS_ENUM_ALL_OPERATOR(RdgPassFlags);
 
-struct RdgRenderTarget
+
+#if 0
+#pragma mark --- rdsRdgTarget-Decl ---
+#endif // 0
+#if 1
+
+struct RdgTarget
 {
-	ColorType format() const { return targetHnd.format(); }
-	explicit operator bool() const { return targetHnd.resource(); }
+	ColorType			format()	const { return targetHnd.format(); }
+	explicit operator	bool()		const { return targetHnd.resource(); }
 
 	RdgTextureHnd		targetHnd;
 	RenderTargetLoadOp	loadOp;
-	RenderTargetStoreOp	storeOp;
+
+	u32					layerIndex = 0;
 	int					_localId = -1;
 };
 
-struct RdgDepthStencil
+struct RdgRenderTarget : public RdgTarget
 {
-	ColorType format() const { return targetHnd.format(); }
-	explicit operator bool() const { return targetHnd.resource(); }
+	RenderTargetStoreOp	storeOp;
+};
 
-	RdgTextureHnd		targetHnd;
-	RenderTargetLoadOp	loadOp;
+struct RdgDepthStencil : public RdgTarget
+{
 	RenderTargetLoadOp	stencilLoadOp;
 	RdgAccess			access = RdgAccess::None;
-	int					_localId = -1;
 };
 
 struct RdgResourceAccess
@@ -68,6 +74,8 @@ public:
 	//State			srcState	= {};
 	//State			dstState	= {};
 };
+
+#endif // 1
 
 #if 0
 #pragma mark --- rdsRdgPass-Decl ---
@@ -125,7 +133,8 @@ public:
 
 	void setRenderTarget(RdgTextureHnd		hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp);
 	//void setRenderTarget(RdgTextureHndSpan	hnds);
-	void setDepthStencil(RdgTextureHnd		hnd, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp);
+	void setDepthStencil(RdgTextureHnd		hnd,				 Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp);
+	void setDepthStencil(RdgTextureHnd		hnd, u32 layerIndex, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp);
 
 	void readTexture	(RdgTextureHnd		hnd,	TextureUsageFlags		 usage = TextureUsageFlags::ShaderResource,		ShaderStageFlag useStage = ShaderStageFlag::Pixel);
 	void readTextures	(RdgTextureHndSpan	hnds);

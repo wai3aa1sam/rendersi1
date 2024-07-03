@@ -6,6 +6,8 @@
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/rdsRenderContext_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture3D_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture2DArray_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -119,17 +121,41 @@ Vk_FramebufferPool::request(RdgPass* pass, Vk_RenderPass_T* vkRdPassHnd)
 	if (!vkRdPassHnd || !pass)
 		return nullptr;
 
+	auto getSrvImageViewHandle = [](RdgTarget& target) -> Vk_ImageView_T*
+		{
+			using SRC = RenderDataType;
+			auto			type	= target.targetHnd.desc().type;
+			VkImageView_T*	hnd		= VK_NULL_HANDLE;
+			switch (type)
+			{
+				case SRC::Texture2D:
+				{
+					auto* texVk	= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(target.targetHnd));
+					hnd = texVk->srvVkImageViewHnd();
+				} break;
+				case SRC::Texture2DArray:
+				{
+					auto* texVk	= sCast<Texture2DArray_Vk*>(RdgResourceAccessor::access(target.targetHnd));
+					hnd = texVk->srvLayerVkImageViewHnd(target.layerIndex);
+				} break;
+
+				default: { RDS_THROW("invalid render target type: {}", type); }
+			}
+			RDS_CORE_ASSERT(hnd, "invalid handle");
+			return hnd;
+		};
+
 	Vector<Vk_ImageView_T*, 16> vkImageViewHnds;
 	for (auto& rdTarget : pass->renderTargets())
 	{
-		auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(rdTarget.targetHnd));
-		vkImageViewHnds.emplace_back(texVk->srvVkImageViewHnd());
+		VkImageView_T* hnd = getSrvImageViewHandle(rdTarget);
+		vkImageViewHnds.emplace_back(hnd);
 	}
 
 	if (auto depthStencil = pass->depthStencil())
 	{
-		auto* texVk		= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(depthStencil->targetHnd));
-		vkImageViewHnds.emplace_back(texVk->srvVkImageViewHnd());
+		VkImageView_T* hnd = getSrvImageViewHandle(*depthStencil);
+		vkImageViewHnds.emplace_back(hnd);
 	}
 
 	Vk_Framebuffer* o = nullptr;

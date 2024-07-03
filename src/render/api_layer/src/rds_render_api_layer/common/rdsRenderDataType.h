@@ -9,6 +9,7 @@ class Texture1D;
 class Texture2D;
 class Texture3D;
 class TextureCube;
+class Texture2DArray;
 
 #if 0
 #pragma mark --- rdsRenderDataType-Decl ---
@@ -116,10 +117,11 @@ template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Mat
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Color4b>()	{ return Type::UNorm8x4; };
 template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Color4f>()	{ return Type::Float32x4; };
 
-template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture1D>()		{ return Type::Texture1D; };
-template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture2D>()		{ return Type::Texture2D; };
-template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture3D>()		{ return Type::Texture3D; };
-template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<TextureCube>()		{ return Type::TextureCube; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture1D>()			{ return Type::Texture1D; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture2D>()			{ return Type::Texture2D; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture3D>()			{ return Type::Texture3D; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<TextureCube>()			{ return Type::TextureCube; };
+template<> inline constexpr RenderDataTypeUtil::Type RenderDataTypeUtil::get<Texture2DArray>()		{ return Type::Texture2DArray; };
 
 inline constexpr 
 RenderDataTypeUtil::SizeType 

@@ -64,6 +64,9 @@ struct Particle
 RDS_BUFFER(Particle, in_particle_buffer);
 RDS_RW_BUFFER(Particle, out_particle_buffer);
 
+float4x4 light_vps[16];
+
+
 //StructuredBuffer	<Particle> in_particle_buffer;
 //RWStructuredBuffer	<Particle> out_particle_buffer;
 
@@ -113,6 +116,8 @@ PixelIn vs_main(VertexIn i)
     //o.positionHCS = i.positionOS;
     o.color       = i.color;
     o.velocity    = i.velocity;
+
+	o.velocity.x = light_vps[0][0].x;
 
 	RDS_SET_PT_SIZE(o.ptSize, 3.0);
     

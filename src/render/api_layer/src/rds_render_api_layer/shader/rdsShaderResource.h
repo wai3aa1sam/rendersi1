@@ -6,6 +6,7 @@
 #include "rds_render_api_layer/texture/rdsTexture.h"
 #include "rds_render_api_layer/texture/rdsTexture3D.h"
 #include "rds_render_api_layer/texture/rdsTextureCube.h"
+#include "rds_render_api_layer/texture/rdsTexture2DArray.h"
 
 #define RDS_NO_BINDLESS 0
 

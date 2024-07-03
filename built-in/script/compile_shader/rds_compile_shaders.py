@@ -244,7 +244,7 @@ class CompileShaders:
         is_rds_root_exist = os.path.exists(rds_root + "/build") and os.path.exists(rds_root + "/CMakeLists.txt") # TODO: need proper check
         if not (is_rds_root_exist):
             raise Exception("in correct rds_root")
-            return
+            return -1
 
         shader_src_paths   = MyPathLib.getListOfFiles_Ext(project_root, ".shader")
         shader_paths       = MyPathLib.getRelativePath(shader_src_paths, project_root)
@@ -274,11 +274,13 @@ class CompileShaders:
         for i in range(batchCount):
             CompileShaders.compileShaderBatch(errorList, cmpDesc, shader_paths, i * batchSize, batchSize, timeoutSec)
 
-        if (len(errorList)):
+        hasError = len(errorList)
+        if (hasError):
             printRedText("\n***\n total {} shaders has error".format(len(errorList)))
             for i, err in enumerate(errorList):
                 print(" - {}".format(errorList[i]))
 
-        return
+        return hasError
     
-CompileShaders.main(sys.argv)
+returnCode = CompileShaders.main(sys.argv)
+sys.exit(returnCode)

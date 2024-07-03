@@ -129,8 +129,9 @@ protected:
 	u32		_curFrameIdx = 0;
 	u32		_curImageIdx = 0;	// cache the current image index for backend
 
-	RenderUiContext _rdUiCtx;
-	Backbuffers		_backbuffers;
+	RenderUiContext			_rdUiCtx;
+	Backbuffers				_backbuffers;
+	SPtr<RenderGpuBuffer>	_dummyVtxBuf;
 
 private:
 

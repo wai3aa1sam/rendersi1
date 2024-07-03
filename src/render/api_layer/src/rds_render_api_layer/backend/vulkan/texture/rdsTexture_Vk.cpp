@@ -4,6 +4,7 @@
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 #include "rdsTexture3D_Vk.h"
 #include "rdsTextureCube_Vk.h"
+#include "rdsTexture2DArray_Vk.h"
 
 #include "../transfer/rdsTransferContext_Vk.h"
 
@@ -214,7 +215,7 @@ Vk_Sampler::create(const SamplerState& samplerState, RenderDevice_Vk* rdDevVk)
 #if 1
 
 void 
-Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, u32 baseMipLevel, u32 mipCount, RenderDevice_Vk* rdDevVk)
+Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, u32 baseMipLevel, u32 mipCount, u32 baseLayerLevel, u32 layerCount, RenderDevice_Vk* rdDevVk)
 {
 	throwIf(!vkImageHnd, "no VkImage while creating image view");
 	VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -237,9 +238,9 @@ Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, u32 baseM
 
 	cInfo.subresourceRange.aspectMask		= aspectFlags;
 	cInfo.subresourceRange.baseMipLevel		= baseMipLevel;
-	cInfo.subresourceRange.baseArrayLayer	= 0;
 	cInfo.subresourceRange.levelCount		= mipCount;
-	cInfo.subresourceRange.layerCount		= desc.layerCount;
+	cInfo.subresourceRange.baseArrayLayer	= baseLayerLevel;
+	cInfo.subresourceRange.layerCount		= layerCount;
 
 	auto* vkDev			= rdDevVk->vkDevice();
 	auto* vkAllocCbs	= rdDevVk->allocCallbacks();
@@ -257,7 +258,7 @@ Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, u32 baseM
 #if 1
 
 void 
-Vk_Texture::createVkImage		(Vk_Image*		o, Texture* tex, RenderDevice_Vk* rdDevVk)
+Vk_Texture::createVkImage(Vk_Image*		o, Texture* tex, RenderDevice_Vk* rdDevVk)
 {
 	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
 
@@ -268,9 +269,15 @@ Vk_Texture::createVkImage		(Vk_Image*		o, Texture* tex, RenderDevice_Vk* rdDevVk
 }
 
 void 
-Vk_Texture::createVkImageView	(Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, RenderDevice_Vk* rdDevVk)
+Vk_Texture::createVkImageView(Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, u32 baseLayerLevel, u32 layerCount, RenderDevice_Vk* rdDevVk)
 {
-	o->create(getVkImageHnd(tex), tex->desc(), baseMipLevel, mipCount, rdDevVk);
+	o->create(getVkImageHnd(tex), tex->desc(), baseMipLevel, mipCount, baseLayerLevel, layerCount, rdDevVk);
+}
+
+void 
+Vk_Texture::createVkImageView(Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, RenderDevice_Vk* rdDevVk)
+{
+	createVkImageView(o ,tex, baseMipLevel, mipCount, 0, tex->layerCount(), rdDevVk);
 }
 
 //void 
