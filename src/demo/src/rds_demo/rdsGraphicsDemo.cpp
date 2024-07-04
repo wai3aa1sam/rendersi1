@@ -168,7 +168,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 
 				auto* light = ent->addComponent<CLight>();
 				light->setType(isPoint ? LightType::Point : LightType::Spot);
-				light->setType(LightType::Point);
+				//light->setType(LightType::Point);
 				if (isDirectional)
 				{
 					light->setType(LightType::Directional);

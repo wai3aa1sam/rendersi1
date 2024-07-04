@@ -883,7 +883,7 @@ void
 RenderContext_Vk::onRenderCommand_SetViewport(RenderCommand_SetViewport* cmd, void* userData)
 {
 	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
-	vkCmdBuf->setViewport(cmd->rect);
+	vkCmdBuf->setViewportReverse(cmd->rect);
 }
 
 //void
@@ -1183,7 +1183,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 			vkCmdBuf->beginSecondaryRecord(_graphicsQueue, _renderPass, _vkFrameBuf, _subpassIdx);
 
 			vkCmdBuf->setViewport(_framebufferRect2f);
-			vkCmdBuf->setScissor (_framebufferRect2f);
+			vkCmdBuf->setScissor( _framebufferRect2f);
 		}
 
 		virtual void onEnd()

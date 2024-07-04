@@ -10,7 +10,7 @@ namespace rds
 * view screen viewport as a grid, blocks in a grid, and each block has n tile
 */
 
-struct RpfForwardPlusRendering_Result
+struct RpfForwardPlusRendering_Result : public RenderPassFeature_Result
 {
 	RdgBufferHnd	cullingFrustum;
 
@@ -25,6 +25,11 @@ struct RpfForwardPlusRendering_Result
 public:
 	RdgBufferHnd	lightIndexList(	bool isOpaque) { return isOpaque ? opaque_lightIndexList	: transparent_lightIndexList; }
 	RdgTextureHnd	lightGrid(		bool isOpaque) { return isOpaque ? opaque_lightGrid			: transparent_lightGrid; }
+
+};
+
+struct RpfForwardPlusRendering_Param : public RenderPassFeature_Param
+{
 
 };
 

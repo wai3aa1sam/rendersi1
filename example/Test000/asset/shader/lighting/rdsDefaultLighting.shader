@@ -15,11 +15,14 @@ Shader {
 		Texture2D 	RDS_MATERIAL_TEXTURE_Normal
 		Texture2D 	RDS_MATERIAL_TEXTURE_RoughnessMetalness
 		Texture2D 	RDS_MATERIAL_TEXTURE_Emissive
+
+		Float 		csm_depth_baias = 0.005
+		Float		csm_pcf_scale   = 0.75;
 	}
 	
 	Pass {
 		// Queue	"Transparent"
-		//Cull		Front
+		//Cull		None
 
 		//DepthTest	LessEqual
 		//DepthWrite	false
@@ -43,6 +46,7 @@ Shader {
 
 #include "built-in/shader/rds_shader.hlsl"
 #include "built-in/shader/lighting/rdsDefaultLighting.hlsl"
+#include "built-in/shader/shadow/cascaded_shadow_mapping/rdsCascadedShadowMapping.hlsl"
 
 struct VertexIn
 {
@@ -88,7 +92,7 @@ PixelIn vs_main(VertexIn input)
 
 	o.positionHcs 	= SpaceTransform_objectToClip(	input.positionOs, 	drawParam);
     o.positionWs  	= SpaceTransform_objectToWorld( input.positionOs, 	objTransf).xyz;
-    o.positionVs  	= SpaceTransform_objectToView(  input.positionOs,   drawParam).xyz;
+    o.positionVs  	= SpaceTransform_worldToView(   o.positionWs,   	drawParam).xyz;
     o.normal 	  	= SpaceTransform_toWorldNormal( input.normal, 		objTransf);
     o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		objTransf, drawParam);
 
@@ -111,12 +115,11 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	float3 normal;
 	float3 viewDir;
 
-
 	pos 	= input.positionVs;
 	normal 	= normalize(input.normalVs);
 	
-	pos 	= input.positionWs;
-	normal 	= normalize(input.normal);
+	//pos 	= input.positionWs;
+	//normal 	= normalize(input.normal);
 
 	Surface surface = Material_makeSurface(uv, pos, normal);
 	surface.ambient				= ambient;
@@ -126,11 +129,11 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	//surface.metalness = 1.0;
 	//surface.roughness = 0.0;
 
+	LightingResult oLightingResult = (LightingResult)0;
 	{
-		LightingResult oLightingResult = (LightingResult)0;
-		oLightingResult = Lighting_computeForwardLighting_Ws(surface, drawParam.camera_pos, viewDir);
+		oLightingResult = Lighting_computeForwardLighting_Vs(surface, drawParam.camera_pos, viewDir);
 
-		o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
+		//o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 		//o.rgb = oLightingResult.specular.rgb;
 
 		//o.rgb = rds_Lights_get(0).directionVs.rgb;
@@ -139,7 +142,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		//o.rgb = oLightingResult.diffuse.rgb;
 		//o.rgb = surface.color.rgb;
 	}
-
+	
 	if (RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, uv).a != 0.0)
     {
 		float3 dirRefl 			= reflect(viewDir, normal);
@@ -151,6 +154,13 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		LightingResult indirectLight = Pbr_computeIndirectLighting(surface, irradiance, prefilteredRefl, brdf, dotNV);
 		o.rgb += indirectLight.diffuse.rgb + indirectLight.specular.rgb;
 	}
+
+	//float3 lightDir = rds_Lights_get(0).directionWs.xyz;
+	//input.positionWs.y = -input.positionWs.y;
+	//input.positionVs.y = -input.positionVs.y;
+
+	float shadow = csm_computeShadow(input.positionWs, input.positionVs);
+	o.rgb += (1.0 - shadow) * oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 
 	o.rgb = ToneMapping_reinhard(o.rgb);
 	o.rgb = PostProc_gammaEncoding(o.rgb);

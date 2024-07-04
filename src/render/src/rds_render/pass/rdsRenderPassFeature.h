@@ -21,6 +21,7 @@ protected:										\
 	using Base		= RenderPassFeature;		\
 public:											\
 	using Result	= RDS_CONCAT(T, _Result);	\
+	using Param		= RDS_CONCAT(T, _Param);	\
 private:										\
 // ---
 
@@ -34,18 +35,23 @@ struct RenderPassFeature_Result
 
 };
 
+struct RenderPassFeature_Param
+{
+
+};
+
 class RenderPassFeature : public NonCopyable
 {
 	friend class RenderPassPipeline;
 public:
-	RdgPass* addClearImage2DPass(SPtr<Material>& material, RdgTextureHnd image);
-	RdgPass* addClearImage3DPass(SPtr<Material>& material, RdgTextureHnd image);
+	RdgPass* _addClearImage2DPass(SPtr<Material>& material, RdgTextureHnd image);
+	RdgPass* _addClearImage3DPass(SPtr<Material>& material, RdgTextureHnd image);
 
 
 public:
-	RenderGraph*		renderGraph();
-	DrawData_Base*		drawDataBase();
-	template<class T> T	getDrawDataT();
+	RenderGraph*			renderGraph();
+	DrawData_Base*			drawDataBase();
+	template<class T> T*	drawDataT();
 
 	RenderDevice*		renderDevice();
 
@@ -61,10 +67,10 @@ private:
 };
 
 template<class T> 
-T	
-RenderPassFeature::getDrawDataT()
+T*
+RenderPassFeature::drawDataT()
 {
-	return sCast<T>(_rdPassPipeline->drawData());
+	return _rdPassPipeline->drawDataT<T>();
 }
 
 #endif
@@ -78,12 +84,14 @@ struct RenderUtil
 {
 	RenderUtil() = delete;
 public:
-	static void createShader(  SPtr<Shader>* oShader, StrView filename);
-	static void createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam = {});
-	static void createMaterial(Shader*		 shader,  SPtr<Material>* oMtl);
+	static void createShader(	SPtr<Shader>* oShader, StrView filename);
+	static void createMaterial(	SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam = {});
+	static void createMaterial(	Shader*		  shader,  SPtr<Material>* oMtl);
+	static void createMaterials(SPtr<Shader>* oShader,  Span<SPtr<Material> > oMtls, StrView filename);
 
 	static void destroyShader(			SPtr<Shader>&			shader);
-	static void destroyShaderMaterial(	SPtr<Shader>&			shader, SPtr<Material>&	material);
+	static void destroyShaderMaterial(	SPtr<Shader>&			shader, SPtr<Material>&			material);
+	static void destroyShaderMaterials(	SPtr<Shader>&			shader, Span<SPtr<Material> >	materials);
 	static void destroyMaterial(		SPtr<Material>&			material);
 	static void destroyMaterials(		Span<SPtr<Material> >	materials);
 

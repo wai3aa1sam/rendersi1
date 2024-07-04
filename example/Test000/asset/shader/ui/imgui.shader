@@ -43,7 +43,7 @@ PixelIn vs_main(VertexIn i)
 	o.col = i.col;
 	o.uv  = i.uv;
 	#if RDS_SHADER_VULKAN
-	o.pos.y = -o.pos.y;
+	//o.pos.y = -o.pos.y;
 	#endif
 
 	return o;

@@ -75,10 +75,10 @@ void makeFrustums_csMain(ComputeIn input)
 	// view space
 	const float3 posCamera = float3(0, 0, 0);
 
-	float4 frustumFarVtxSs_topLeft		= float4(float2(input.dispatchThreadId.x, 		input.dispatchThreadId.y) 		* BLOCK_SIZE, 1.0, 1.0);
-	float4 frustumFarVtxSs_topRight		= float4(float2(input.dispatchThreadId.x + 1, 	input.dispatchThreadId.y) 		* BLOCK_SIZE, 1.0, 1.0);
-	float4 frustumFarVtxSs_bottomLeft	= float4(float2(input.dispatchThreadId.x, 		input.dispatchThreadId.y + 1) 	* BLOCK_SIZE, 1.0, 1.0);
-	float4 frustumFarVtxSs_bottomRight	= float4(float2(input.dispatchThreadId.x + 1, 	input.dispatchThreadId.y + 1) 	* BLOCK_SIZE, 1.0, 1.0);
+	float4 frustumFarVtxSs_topLeft		= float4(float2(input.dispatchThreadId.x, 		input.dispatchThreadId.y) 		* BLOCK_SIZE, -1.0, 1.0);
+	float4 frustumFarVtxSs_topRight		= float4(float2(input.dispatchThreadId.x + 1, 	input.dispatchThreadId.y) 		* BLOCK_SIZE, -1.0, 1.0);
+	float4 frustumFarVtxSs_bottomLeft	= float4(float2(input.dispatchThreadId.x, 		input.dispatchThreadId.y + 1) 	* BLOCK_SIZE, -1.0, 1.0);
+	float4 frustumFarVtxSs_bottomRight	= float4(float2(input.dispatchThreadId.x + 1, 	input.dispatchThreadId.y + 1) 	* BLOCK_SIZE, -1.0, 1.0);
     
     DrawParam drawParam = rds_DrawParam_get();
 	float3 frustumFarVtxVs_topLeft		= SpaceTransform_screenToView(frustumFarVtxSs_topLeft, 		drawParam).xyz;

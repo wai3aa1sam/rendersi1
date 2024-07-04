@@ -148,7 +148,12 @@ void cullLights(ComputeIn input)
 		bool isEnabled 	= Light_isEnabled(light);
 		if (!isEnabled)
 			continue;
-
+			
+		#if 0
+		transparent_appendLight(i);
+		opaque_appendLight(i);
+		continue;
+		#endif
 
 		switch (light.type)
 		{

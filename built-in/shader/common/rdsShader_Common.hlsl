@@ -436,6 +436,7 @@ float4 SpaceTransform_screenUvToClip(float2 screenUv, float depth, float w)
 {
 	float2 uv = screenUv;
     float4 clip = float4(float2(uv.x, 1.0 - uv.y) * 2.0 - 1.0, depth, w);
+    //float4 clip = float4(float2(uv.x, uv.y) * 2.0 - 1.0, depth, w);       // vulkan origin ndc (y is down)
 	return clip;
 }
 

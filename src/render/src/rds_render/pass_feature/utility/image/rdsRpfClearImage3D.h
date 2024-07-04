@@ -11,6 +11,11 @@ struct RpfClearImage3D_Result : public RenderPassFeature_Result
 	
 };
 
+struct RpfClearImage3D_Param : public RenderPassFeature_Param
+{
+
+};
+
 #if 0
 #pragma mark --- rdsRpfClearImage3D-Decl ---
 #endif // 0

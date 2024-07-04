@@ -185,12 +185,12 @@ RpfForwardPlusRendering::addLightCullingPass(Result& oResult, RdgBufferHnd frust
 	RdgBufferHnd	transparent_lightIndexList		= rdGraph->createBuffer( "fwdp_transparent_lightIndexList",		RenderGpuBuffer_CreateDesc{ lightIdxListSize	* uintSize, uintSize, RenderGpuBufferTypeFlags::Compute});
 	RdgTextureHnd	transparent_lightGrid			= rdGraph->createTexture("fwdp_transparent_lightGrid",			Texture2D_CreateDesc{		nThreadGrps, ColorType::RGu, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::RenderTarget});
 
-	addClearImage2DPass(_mtlClearOpaqueLightGrid,				opaque_lightGrid);
-	addClearBufferPass( _mtlClearOpaqueLightIndexCounter,		opaque_lightIndexCounter);
-	addClearBufferPass( _mtlClearOpaqueLightIndexList,			opaque_lightIndexList);
-	addClearImage2DPass(_mtlClearTransparentLightGrid,			transparent_lightGrid);
-	addClearBufferPass( _mtlClearTransparentLightIndexCounter,	transparent_lightIndexCounter);
-	addClearBufferPass( _mtlClearTransparentLightIndexList,		transparent_lightIndexList);
+	_addClearImage2DPass(	_mtlClearOpaqueLightGrid,				opaque_lightGrid);
+	addClearBufferPass(		_mtlClearOpaqueLightIndexCounter,		opaque_lightIndexCounter);
+	addClearBufferPass(		_mtlClearOpaqueLightIndexList,			opaque_lightIndexList);
+	_addClearImage2DPass(	_mtlClearTransparentLightGrid,			transparent_lightGrid);
+	addClearBufferPass(		_mtlClearTransparentLightIndexCounter,	transparent_lightIndexCounter);
+	addClearBufferPass(		_mtlClearTransparentLightIndexList,		transparent_lightIndexList);
 
 	Material* mtl = _mtlLightsCulling;
 	{

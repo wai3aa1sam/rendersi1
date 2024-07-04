@@ -53,6 +53,7 @@ RpfPbrIbl::addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const Render
 	auto* result = oResult;
 
 	bool isFirst = createTexture(*result, texHdrEnvMap->debugName(), cubeSize, irradianceCubeSize);
+	RdgPass* passPrefilteredEnvCube = nullptr;
 
 	#if 1
 	RdgPass* passHdrToCube			= addRenderToCubePass("hdrToCube",				result->cubeEnvMap, _shaderHdrToCube, box, nullptr
@@ -77,7 +78,7 @@ RpfPbrIbl::addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const Render
 	); RDS_UNUSED(passIrradianceEnvCube);
 	#endif // 0
 	#if 1
-	RdgPass* passPrefilteredEnvCube = addRenderToCubePass("PrefilteredEnvCube",		result->cubePrefilteredMap, _shaderPrefilteredEnvCube, box, passIrradianceEnvCube
+	passPrefilteredEnvCube = addRenderToCubePass("PrefilteredEnvCube",		result->cubePrefilteredMap, _shaderPrefilteredEnvCube, box, passIrradianceEnvCube
 		, _mtlsPrefilteredEnvCube
 		, [=](Material* mtl, u32 mip, u32 face)
 		{
@@ -185,7 +186,6 @@ RpfPbrIbl::addRenderToCubePass(StrView name, TextureCube* outCube, Shader* shade
 
 	ColorType	outFormat	= outCube->format();
 	auto		cubeSize	= sCast<float>(outCube->size());
-	auto		center		= Vec3f{ 0.0f, 0.0f, 0.0f};
 	auto		mipCount	= Texture_mipCount(sCast<u32>(cubeSize));
 
 	if (mtls.size() < TextureCube::s_kFaceCount * mipCount)
@@ -230,13 +230,20 @@ RpfPbrIbl::addRenderToCubePass(StrView name, TextureCube* outCube, Shader* shade
 					[=](RenderRequest& rdReq) 
 					{
 						rdReq.reset(rdGraph->renderContext(), drawData);
-
+						
+						auto center	= Vec3f{ 0.0f, 0.0f, 0.0f};
 						Vector<Mat4f, TextureCube::s_kFaceCount> matViews = 
 						{
 							Mat4f::s_lookAt(center, Vec3f::s_right(),	Vec3f{0.0f, -1.0f,   0.0f}),
 							Mat4f::s_lookAt(center, Vec3f::s_left(),	Vec3f{0.0f, -1.0f,   0.0f}),
+							#if 1
+							Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,    1.0f}),
+							Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f,   -1.0f}),
+							#else
 							Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f,  -1.0f}),
 							Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,   1.0f}),
+							#endif // 0
+
 							Mat4f::s_lookAt(center, Vec3f::s_forward(), Vec3f{0.0f, -1.0f,   0.0f}),
 							Mat4f::s_lookAt(center, Vec3f::s_back(),	Vec3f{0.0f, -1.0f,   0.0f}),
 						};

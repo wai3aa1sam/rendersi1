@@ -92,6 +92,7 @@ Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBuff
 void 
 Vk_Allocator::freeBuf(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd)
 {
+	RDS_CORE_ASSERT(vkBuf, "");
 	vmaDestroyBuffer(_allocator, vkBuf, *allocHnd);
 }
 

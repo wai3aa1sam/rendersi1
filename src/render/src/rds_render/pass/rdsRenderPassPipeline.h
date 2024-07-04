@@ -36,9 +36,9 @@ public:
 	template<class T, class... ARGS> T* addRenderPassFeature(ARGS&&... args);
 
 public:
-	RenderGraph*		renderGraph();
-	DrawData_Base*		drawDataBase();
-	template<class T> T	drawDataT();
+	RenderGraph*			renderGraph();
+	DrawData_Base*			drawDataBase();
+	template<class T> T*	drawDataT();
 
 
 protected:
@@ -72,7 +72,7 @@ RenderPassPipeline::addRenderPassFeature(ARGS&&... args)
 
 inline RenderGraph*			RenderPassPipeline::renderGraph()	{ return _rdGraph; }
 inline DrawData_Base*		RenderPassPipeline::drawDataBase()	{ return _drawData; }
-template<class T> inline T	RenderPassPipeline::drawDataT()		{ return sCast<T>(_drawData); }
+template<class T> inline T*	RenderPassPipeline::drawDataT()		{ return sCast<T*>(_drawData); }
 
 
 

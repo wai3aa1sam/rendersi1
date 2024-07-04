@@ -6,12 +6,17 @@
 namespace rds
 {
 
-struct RpfPbrIbl_Result
+struct RpfPbrIbl_Result : public RenderPassFeature_Result
 {
 	SPtr<TextureCube>	cubeEnvMap;
 	SPtr<TextureCube>	cubeIrradinceMap;
 	SPtr<TextureCube>	cubePrefilteredMap;
 	SPtr<Texture2D>		brdfLut;
+};
+
+struct RpfPbrIbl_Param : public RenderPassFeature_Param
+{
+
 };
 
 #if 0
@@ -22,7 +27,7 @@ struct RpfPbrIbl_Result
 class RpfPbrIbl : public RenderPassFeature
 {
 	RDS_RPF_COMMON_BODY(RpfPbrIbl);
-	using CubeMaterial = Vector<SPtr<Material>, TextureCube::s_kFaceCount >;
+	using CubeMaterial = Vector<SPtr<Material>/*, TextureCube::s_kFaceCount */>;
 public:
 	RdgPass* addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const RenderMesh& box, u32 cubeSize = 512, u32 irradianceCubeSize = 32);
 	RdgPass* addLightingPass(const DrawSettings& drawSettings, RdgTextureHnd rtColor, RdgTextureHnd dsBuf);

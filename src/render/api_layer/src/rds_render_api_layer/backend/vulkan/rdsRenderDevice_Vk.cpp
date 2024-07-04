@@ -299,6 +299,7 @@ i64 RenderDevice_Vk::_rateVkPhyDevice(const RenderAdapterInfo& info)
 void 
 RenderDevice_Vk::loadVkInstFn(Vk_ExtensionInfo& vkExtInfo)
 {
+	#if 1
 	#define RDS_VK_LOAD_INST_FN_EXT(VAR, FALLBACK_FN) \
 	VAR = vkExtInfo.getInstanceExtFunction<RDS_CONCAT(RDS_CONCAT(PFN_, VAR), EXT)>(RDS_CONCAT_TO_STR(VAR, EXT)); \
 	if (VAR == nullptr) \
@@ -309,17 +310,23 @@ RenderDevice_Vk::loadVkInstFn(Vk_ExtensionInfo& vkExtInfo)
 		VAR = FALLBACK_FN; \
 	} \
 	// ---
+	#else
+	#define RDS_VK_LOAD_INST_FN_EXT(VAR, FALLBACK_FN) \
+	VAR = FALLBACK_FN; \
+	// ---
+	#endif // 0
+
 
 	#define RDS_VK_LOAD_INST_FN_KHR(var, fn) \
 	var = vkExtInfo.getDeviceExtFunction<fn>(RDS_STRINGIFY(fn)); throwIf(!var, "cannot load vk fn: {}", RDS_STRINGIFY(fn)) \
 	// ---
 	
-	RDS_VK_LOAD_INST_FN_EXT(vkSetDebugUtilsObjectName,	[](VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) { return VK_SUCCESS; });
-	RDS_VK_LOAD_INST_FN_EXT(vkSetDebugUtilsObjectTag,	[](VkDevice device, const VkDebugUtilsObjectTagInfoEXT*  pTagInfo)	{ return VK_SUCCESS; });
+	RDS_VK_LOAD_INST_FN_EXT(vkSetDebugUtilsObjectName,		[](VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) { return VK_SUCCESS; });
+	RDS_VK_LOAD_INST_FN_EXT(vkSetDebugUtilsObjectTag,		[](VkDevice device, const VkDebugUtilsObjectTagInfoEXT*  pTagInfo)	{ return VK_SUCCESS; });
 	//RDS_VK_LOAD_INST_FN_EXT(vkDebugMarkerSetObjectTag,	[](VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo)	{ return VK_SUCCESS; });
-	RDS_VK_LOAD_INST_FN_EXT(vkCmdBeginDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
-	RDS_VK_LOAD_INST_FN_EXT(vkCmdEndDebugUtilsLabel,	[](VkCommandBuffer commandBuffer) {});
-	RDS_VK_LOAD_INST_FN_EXT(vkCmdInsertDebugUtilsLabel,	[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
+	RDS_VK_LOAD_INST_FN_EXT(vkCmdBeginDebugUtilsLabel,		[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
+	RDS_VK_LOAD_INST_FN_EXT(vkCmdEndDebugUtilsLabel,		[](VkCommandBuffer commandBuffer) {});
+	RDS_VK_LOAD_INST_FN_EXT(vkCmdInsertDebugUtilsLabel,		[](VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {});
 
 	RDS_VK_LOAD_INST_FN_EXT(vkQueueBeginDebugUtilsLabel,	[](VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo)	{});
 	RDS_VK_LOAD_INST_FN_EXT(vkQueueEndDebugUtilsLabel,		[](VkQueue queue)											{});

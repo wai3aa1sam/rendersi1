@@ -93,21 +93,12 @@ ForwardPlus::onCreateScene(Scene* oScene)
 		camera.setPos(-0.348f, 4.011f, 3.894f);
 		//camera.setPos(-0.572f, 6.589f, 6.397f); // threshold to reproduce the bug
 
+		camera.setPos(10.485f, 31.731f, 56.813f);
+
 		camera.setFov(45.0f);
 		camera.setAim(0, 0, 0);
 		camera.setNearClip(0.1f);
 		camera.setFarClip(1000.0f);
-
-		#if 0
-		Vec3f scale;
-		Quat4f rotation;
-		Vec3f translation;
-		Vec3f skew;
-		Vec4f perspective;
-		glm::decompose(camera.viewMatrix(), scale, rotation, translation, skew, perspective);
-		RDS_DUMP_VAR(scale, rotation, translation, skew, perspective);
-		RDS_DUMP_VAR(scale, rotation, translation, skew, perspective);
-		#endif // 0
 	}
 }
 
@@ -130,7 +121,7 @@ ForwardPlus::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	#endif // 0
 
 	auto*	rdGraph		= renderPassPipeline->renderGraph();
-	auto*	drawData	= renderPassPipeline->drawDataT<DrawData*>();
+	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 	auto	screenSize	= drawData->resolution2u();
 
 	//Renderer::rdDev()->waitIdle();

@@ -66,14 +66,20 @@ RpfGeometryBuffer::addGeometryPass(Result& oResult, const DrawSettings& drawSett
 		passGeom = &pass;
 	}
 
-	auto& result = oResult;
-	result.normal			= texNormal;
-	result.albedo			= texAlbedo;
-	result.debugPosition	= texDebugPosition;
+	oResult.normal			= texNormal;
+	oResult.albedo			= texAlbedo;
+	oResult.debugPosition	= texDebugPosition;
 
 	return passGeom;
 }
 
+RdgPass* 
+RpfGeometryBuffer::addGeometryPass(const DrawSettings& drawSettings, RdgTextureHnd dsBuf)
+{
+	RdgPass*	passGeom	= nullptr;
+	passGeom = addGeometryPass(result, drawSettings, dsBuf);
+	return passGeom;
+}
 
 #endif
 

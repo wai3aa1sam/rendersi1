@@ -11,6 +11,11 @@ struct RpfSkybox_Result : public RenderPassFeature_Result
 	
 };
 
+struct RpfSkybox_Param : public RenderPassFeature_Param
+{
+
+};
+
 #if 0
 #pragma mark --- rdsRpfSkybox-Decl ---
 #endif // 0

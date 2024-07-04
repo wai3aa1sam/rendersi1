@@ -106,7 +106,7 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	if (true)		loadFileFlags	|= aiProcess_FlipUVs;
 	if (true)		loadFileFlags	|= aiProcess_SortByPType;			// split by primitive type
 	//if (true)		loadFileFlags	|= aiProcess_GenBoundingBoxes;
-	if (true)		loadFileFlags	|= aiProcess_MakeLeftHanded;
+	//if (true)		loadFileFlags	|= aiProcess_MakeLeftHanded;
 	//if (true)		loadFileFlags	|= aiProcess_ConvertToLeftHanded;
 	
 

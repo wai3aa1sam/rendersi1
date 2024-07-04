@@ -14,6 +14,11 @@ struct RpfGeometryBuffer_Result : public RenderPassFeature_Result
 	RdgTextureHnd debugPosition;
 };
 
+struct RpfGeometryBuffer_Param : public RenderPassFeature_Param
+{
+
+};
+
 #if 0
 #pragma mark --- rdsRpfGeometryBuffer-Decl ---
 #endif // 0
@@ -23,7 +28,11 @@ class RpfGeometryBuffer : public RenderPassFeature
 {
 	RDS_RPF_COMMON_BODY(RpfGeometryBuffer);
 public:
+	Result result;
+
+public:
 	RdgPass* addGeometryPass(Result& oResult, const DrawSettings& drawSettings, RdgTextureHnd dsBuf);
+	RdgPass* addGeometryPass(const DrawSettings& drawSettings, RdgTextureHnd dsBuf);
 
 protected:
 	RpfGeometryBuffer();

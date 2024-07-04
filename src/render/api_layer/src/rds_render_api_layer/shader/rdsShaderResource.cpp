@@ -442,7 +442,7 @@ ShaderResources::ConstBuffer::destroy()
 void 
 ShaderResources::ConstBuffer::uploadToGpu()
 {
-	if (!_isDirty)
+	if (!_isDirty || info().size > _gpuBuffer->bufSize())
 		return;
 
 	// ByteSpan{_cpuBuf.data(), _cpuBuf.size()}

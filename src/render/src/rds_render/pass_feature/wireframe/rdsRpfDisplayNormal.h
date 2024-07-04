@@ -11,6 +11,11 @@ struct RpfDisplayNormal_Result : public RenderPassFeature_Result
 	
 };
 
+struct RpfDisplayNormal_Param : public RenderPassFeature_Param
+{
+
+};
+
 #if 0
 #pragma mark --- rdsRpfDisplayNormal-Decl ---
 #endif // 0

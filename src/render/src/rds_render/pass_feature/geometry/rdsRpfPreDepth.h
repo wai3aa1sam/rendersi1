@@ -11,6 +11,11 @@ struct RpfPreDepth_Result : public RenderPassFeature_Result
 
 };
 
+struct RpfPreDepth_Param : public RenderPassFeature_Param
+{
+
+};
+
 #if 0
 #pragma mark --- rdsRpfPreDepth-Decl ---
 #endif // 0

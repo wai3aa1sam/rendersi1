@@ -38,7 +38,7 @@ HelloTriangle::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	Base::onExecuteRender(renderPassPipeline);
 
 	auto*	rdGraph		= renderPassPipeline->renderGraph();
-	auto*	drawData	= renderPassPipeline->drawDataT<DrawData*>();
+	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 	auto	screenSize	= drawData->resolution2u();
 
 	RdgTextureHnd rtColor	= rdGraph->createTexture("hello_triangle_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});

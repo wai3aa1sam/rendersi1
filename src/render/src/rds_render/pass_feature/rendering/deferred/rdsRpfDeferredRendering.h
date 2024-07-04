@@ -6,9 +6,14 @@
 namespace rds
 {
 
-struct RpfDeferredRendering_Result
+struct RpfDeferredRendering_Result : public RenderPassFeature_Result
 {
 	
+};
+
+struct RpfDeferredRendering_Param : public RenderPassFeature_Param
+{
+
 };
 
 #if 0

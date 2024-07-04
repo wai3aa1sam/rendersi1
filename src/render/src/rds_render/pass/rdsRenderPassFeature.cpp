@@ -23,8 +23,8 @@ RenderPassFeature::~RenderPassFeature()
 
 }
 
-RdgPass* RenderPassFeature::addClearImage2DPass(SPtr<Material>& material, RdgTextureHnd image) { return _rdPassPipeline->_rpfClearImage2D->addClearImage2DPass(material, image); }
-RdgPass* RenderPassFeature::addClearImage3DPass(SPtr<Material>& material, RdgTextureHnd image) { return _rdPassPipeline->_rpfClearImage3D->addClearImage3DPass(material, image); }
+RdgPass* RenderPassFeature::_addClearImage2DPass(SPtr<Material>& material, RdgTextureHnd image) { return _rdPassPipeline->_rpfClearImage2D->addClearImage2DPass(material, image); }
+RdgPass* RenderPassFeature::_addClearImage3DPass(SPtr<Material>& material, RdgTextureHnd image) { return _rdPassPipeline->_rpfClearImage3D->addClearImage3DPass(material, image); }
 
 void 
 RenderPassFeature::setRenderPassPipeline(RenderPassPipeline* v)
@@ -71,6 +71,16 @@ RenderUtil::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView 
 }
 
 void 
+RenderUtil::createMaterials(SPtr<Shader>* oShader,  Span<SPtr<Material> > oMtls, StrView filename)
+{
+	createShader(oShader, filename);
+	for (auto& e : oMtls)
+	{
+		createMaterial(*oShader, &e);
+	}
+}
+
+void 
 RenderUtil::createMaterial(Shader* shader, SPtr<Material>* oMtl)
 {
 	//auto& shader	= *oShader;
@@ -93,6 +103,13 @@ void
 RenderUtil::destroyShaderMaterial(SPtr<Shader>& shader, SPtr<Material>& material)
 {
 	destroyMaterial(material);
+	destroyShader(shader);
+}
+
+void 
+RenderUtil::destroyShaderMaterials(SPtr<Shader>& shader, Span<SPtr<Material> >	materials)
+{
+	destroyMaterials(materials);
 	destroyShader(shader);
 }
 

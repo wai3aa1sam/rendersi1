@@ -8,7 +8,7 @@ Shader {
 		// Queue	"Transparent"
 		//Cull		None
 
-		DepthTest	Less
+		DepthTest	LessEqual
 
 //		DepthTest	Always
 //		DepthWrite	false
@@ -49,7 +49,8 @@ float linearizeDepth(float depth, DrawParam drawParam)
 PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
-    o.positionHcs = mul(RDS_MATRIX_MVP, input.positionOs);
+    DrawParam drawParam = rds_DrawParam_get();
+	o.positionHcs 		= SpaceTransform_objectToClip(input.positionOs, 	drawParam);
     return o;
 }
 
