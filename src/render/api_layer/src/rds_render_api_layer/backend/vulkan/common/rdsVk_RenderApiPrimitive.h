@@ -767,6 +767,9 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_DescriptorPool_T, VK_OBJECT_TYPE_DESCRIPTOR_POOL>;
 
 public:
+	Atm<int> usedCount = 0;
+
+public:
 	Vk_DescriptorPool()		= default;
 	~Vk_DescriptorPool()	= default;
 
@@ -792,17 +795,21 @@ public:
 	using Base = Vk_RenderApiPrimitive<Vk_DescriptorSet_T, VK_OBJECT_TYPE_DESCRIPTOR_SET>;
 
 public:
+	//static constexpr u32 s_kInvalidId = NumLimit<u32>::max();
+
+public:
 	Vk_DescriptorSet()	= default;
 	~Vk_DescriptorSet();
 
 	Vk_DescriptorSet(Vk_DescriptorSet&& rhs) noexcept : Base(rds::move(rhs)) {}
 	void operator=	(Vk_DescriptorSet&& rhs) noexcept { return Base::operator=(rds::move(rhs)); }
 
-	VkResult	create (VkDescriptorSetAllocateInfo* pAllocateInfo, RenderDevice_Vk* rdDevVk);
+	VkResult	create(Vk_DescriptorPool* vkDescrPool, VkDescriptorSetAllocateInfo* pAllocateInfo, RenderDevice_Vk* rdDevVk);
 	void		destroy();
 
 protected:
-
+	//u32 _poolId = s_kInvalidId;
+	Vk_DescriptorPool* _vkDescrPool = nullptr;
 };
 
 #endif

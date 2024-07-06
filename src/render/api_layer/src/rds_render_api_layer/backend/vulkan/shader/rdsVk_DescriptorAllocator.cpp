@@ -69,64 +69,73 @@ Vk_DescriptorAllocator::createBindless(CreateDesc& cDesc, RenderDevice_Vk* rdDev
 void 
 Vk_DescriptorAllocator::destroy()
 {
-	for (auto& e : _freePools)
+	for (auto* e : _pools)
 	{
-		e.destroy(_rdDevVk);
+		e->destroy(_rdDevVk);
 	}
-	for (auto& e : _usedPools)
-	{
-		e.destroy(_rdDevVk);
-	}
-
 	_freePools.clear();
-	_usedPools.clear();
+	_pools.clear();
+	_alloc.clear();
 
-	_curPool.destroy(_rdDevVk);
 	_rdDevVk = nullptr;
 }
 
 void 
 Vk_DescriptorAllocator::reset()
 {
-	for (auto& e : _usedPools)
+	RDS_TODO("seesm should have a smutex to lock, but since we are using 4 frame design, all material should be held until next same frame idx, but it will wait beforehand");
+	RDS_TODO("alothugh currently bindDescriptorSet is in RenderThread, maybe bind all first in UpdateThread when create? then no need smutex, otherwise, we need a smutex");
+	RDS_TODO("I think bind all first in UpdateThread is better, it is non-sense to create material in other threads");
+	for (auto* e : _pools)
 	{
-		e.reset(sCast<VkDescriptorPoolResetFlags>(0), _rdDevVk);
-		_freePools.emplace_back(rds::move(e));
+		auto usedCount = e->usedCount.load();
+		if (usedCount == 0 
+			&& /*bool isUnique = */_freePools.find(e) == _freePools.end())
+		{
+			e->reset(sCast<VkDescriptorPoolResetFlags>(0), _rdDevVk);
+			_freePools.emplace_back(rds::move(e));
+		}
 	}
-	_usedPools.clear();
-	//_curPool = requestPool();
 
-	RDS_TODO("handle reset or use different approach to handle [free] desc set, since reset and update in each frame would have great overhead");
+	// this mechanism seems ok, but it will slowly increase pool size, 100 mins -> 12 pools, seems some reseted pools cannot allocate...
+	#if 0
+	{
+		RDS_LOG("// === \n _pools size: {}, free pools size: {}", _pools.size(), _freePools.size());
+		TempString buf;
+		for (size_t i = 0; i < _pools.size(); ++i)
+		{
+			auto* e = _pools[i];
+			RDS_LOG("_pools[i] usedCount: {}", e->usedCount.load());
+		}
+	}
+	#endif // 0
 }
 
-
-Vk_DescriptorSet
-Vk_DescriptorAllocator::alloc(const Vk_DescriptorSetLayout* layout)
+void
+Vk_DescriptorAllocator::alloc(Vk_DescriptorSet* oSet, const Vk_DescriptorSetLayout* layout)
 {
-	RDS_ASSERT(_curPool.hnd(), "");
+	checkMainThreadExclusive(RDS_SRCLOC);		// need think the statement in Vk_DescriptorAllocator::reset() when multi thread
 
-	Vk_DescriptorSet out;
-	auto ret = createSet(out, layout, &_curPool);
+	RDS_ASSERT(_curPool && _curPool->hnd(), "invalid _curPool");
 
-	if (!Util::isSuccess(ret))
+	Vk_DescriptorSet& out = *oSet;
+	auto ret = createSet(out, layout, _curPool);
+
+	while (!Util::isSuccess(ret))
 	{
-		_usedPools.emplace_back(rds::move(_curPool));
 		_curPool = requestPool();
-		ret = createSet(out, layout, &_curPool);
+		ret = createSet(out, layout, _curPool);
 	}
-
-	RDS_TODO("allocation debug name");
+	Util::throwIfError(ret);
+	//Util::throwIfError(ret);
+	RDS_ASSERT(out, "alloc vkDescrSet failed");
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(out);
-
-	RDS_ASSERT(out.hnd(), "");
-
-	return out;
 }
 
-Vk_DescriptorPool
+Vk_DescriptorPool*
 Vk_DescriptorAllocator::requestPool()
 {
-	Vk_DescriptorPool out;
+	Vk_DescriptorPool* out = nullptr;
 
 	if (!_freePools.is_empty())
 	{
@@ -134,15 +143,17 @@ Vk_DescriptorAllocator::requestPool()
 	}
 	else
 	{
-		createPool(out, _cDesc.poolSizes, _cDesc.descrCount, _cDesc.cFlag, _rdDevVk);
-		RDS_VK_SET_DEBUG_NAME_SRCLOC(out);
+		createPool(&out, _cDesc.poolSizes, _cDesc.descrCount, _cDesc.cFlag, _rdDevVk);
+		RDS_VK_SET_DEBUG_NAME_FMT(*out, "VkDescPools[{}]", _pools.size());
 	}
+
+	throwIf(!out, "requestPool() failed");
 
 	return out;
 }
 
 VkResult 
-Vk_DescriptorAllocator::createPool(Vk_DescriptorPool& out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk)
+Vk_DescriptorAllocator::createPool(Vk_DescriptorPool** out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk)
 {
 	Vector<VkDescriptorPoolSize, 32> sizes;
 	sizes.reserve(poolSizes.size());
@@ -158,7 +169,11 @@ Vk_DescriptorAllocator::createPool(Vk_DescriptorPool& out, const PoolSizes& pool
 	poolCInfo.poolSizeCount = sCast<u32>(sizes.size());
 	poolCInfo.pPoolSizes	= sizes.data();
 
-	return out.create(&poolCInfo, _rdDevVk);
+	auto& vkDescrPool = *out;
+	vkDescrPool = _pools.emplace_back(_alloc.newT<Vk_DescriptorPool>());
+	auto ret = vkDescrPool->create(&poolCInfo, _rdDevVk);
+	Util::throwIfError(ret);
+	return ret;
 }
 
 VkResult 
@@ -170,7 +185,7 @@ Vk_DescriptorAllocator::createSet(Vk_DescriptorSet& out, const Vk_DescriptorSetL
 	allocInfo.descriptorSetCount	= 1;
 	allocInfo.pSetLayouts			= layout->hndArray();
 
-	return out.create(&allocInfo, _rdDevVk);
+	return out.create(pool, &allocInfo, _rdDevVk);
 }
 
 void 
@@ -206,7 +221,7 @@ bool
 Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
 	_notYetSupported(RDS_SRCLOC);	/// all vk info need resize first, not enought will trigger resize and gg
-	dstSet = _alloc->alloc(&layout);
+	_alloc->alloc(&dstSet, &layout);
 	if (!dstSet)
 	{
 		return false;
@@ -256,7 +271,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 bool 
 Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
-	dstSet = _alloc->alloc(&layout);
+	_alloc->alloc(&dstSet, &layout);
 	if (!dstSet)
 	{
 		RDS_THROW("vk descriptor allocate failed");

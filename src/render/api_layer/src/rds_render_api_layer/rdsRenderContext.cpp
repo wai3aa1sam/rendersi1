@@ -103,10 +103,10 @@ RenderContext::destroy()
 	if (!Base::hasCreated())
 		return;
 
+	_rdUiCtx.destroy();
+
 	onDestroy();
 	Base::destroy();
-
-	_rdUiCtx.destroy();
 }
 
 void

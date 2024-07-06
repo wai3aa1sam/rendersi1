@@ -109,6 +109,7 @@ PixelIn vs_main(VertexIn input)
     return o;
 }
 
+
 //[earlydepthstencil]
 float4 ps_main(PixelIn input) : SV_TARGET
 {

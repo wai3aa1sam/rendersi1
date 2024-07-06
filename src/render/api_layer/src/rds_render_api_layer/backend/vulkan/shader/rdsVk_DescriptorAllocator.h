@@ -58,7 +58,7 @@ public:
 	void destroy();
 
 	void reset();
-	Vk_DescriptorSet alloc(const Vk_DescriptorSetLayout* layout);
+	void alloc(Vk_DescriptorSet* oSet, const Vk_DescriptorSetLayout* layout);
 
 public:
 	u32 descriptorCount() const;
@@ -67,9 +67,9 @@ public:
 	RenderDevice_Vk*	renderDeviceVk();
 
 protected:
-	Vk_DescriptorPool requestPool();
+	Vk_DescriptorPool* requestPool();
 
-	VkResult createPool	(Vk_DescriptorPool& out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk);
+	VkResult createPool	(Vk_DescriptorPool** out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk);
 	VkResult createSet	(Vk_DescriptorSet& out, const Vk_DescriptorSetLayout* layout, Vk_DescriptorPool* pool);
 
 protected:
@@ -77,11 +77,12 @@ protected:
 
 private:
 	RenderDevice_Vk*	_rdDevVk = nullptr;
-	Vk_DescriptorPool	_curPool;
 	CreateDesc			_cDesc;
 	
-	Vector<Vk_DescriptorPool, 8> _usedPools;
-	Vector<Vk_DescriptorPool, 8> _freePools;
+	Vk_DescriptorPool*				_curPool = nullptr;
+	LinearAllocator					_alloc;
+	Vector<Vk_DescriptorPool*, 16>	_pools;
+	Vector<Vk_DescriptorPool*, 8>	_freePools;
 };
 
 inline u32 Vk_DescriptorAllocator::descriptorCount() const { return _cDesc.descrCount; }

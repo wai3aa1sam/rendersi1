@@ -879,12 +879,19 @@ Vk_DescriptorSet::~Vk_DescriptorSet()
 }
 
 VkResult 
-Vk_DescriptorSet::create(VkDescriptorSetAllocateInfo* cInfo, RenderDevice_Vk* rdDevVk)
+Vk_DescriptorSet::create(Vk_DescriptorPool* vkDescrPool, VkDescriptorSetAllocateInfo* cInfo, RenderDevice_Vk* rdDevVk)
 {
 	cInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 
 	auto* vkDev	= rdDevVk->vkDevice();
 	auto ret = vkAllocateDescriptorSets(vkDev, cInfo, hndForInit());
+	
+	if (Util::isSuccess(ret))
+	{
+		_vkDescrPool = vkDescrPool;
+		_vkDescrPool->usedCount++;
+	}
+
 	return ret;
 }
 
@@ -892,6 +899,12 @@ void
 Vk_DescriptorSet::destroy()
 {
 	Base::destroy();
+
+	if (_vkDescrPool)
+	{
+		_vkDescrPool->usedCount--;
+		_vkDescrPool = nullptr;
+	}
 }
 
 #endif

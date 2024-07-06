@@ -65,13 +65,14 @@ RenderDevice_Vk::onDestroy()
 {
 	waitIdle();
 
-	_bindlessRscsVk.destroy();
-
 	if (_tsfCtx)
 		_tsfCtx->destroy();
 
 	_rdFrames.clear();
 	_tsfFrames.clear();
+
+	_bindlessRscsVk.destroy();
+	_bindlessRscs = nullptr;
 
 	_vkMemoryContext.destroy();
 

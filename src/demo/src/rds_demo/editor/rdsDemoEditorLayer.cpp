@@ -7,6 +7,8 @@
 
 #include "imgui_internal.h"
 
+#include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
+
 namespace rds
 {
 
@@ -125,6 +127,28 @@ DemoEditorLayer::onUpdate()
 	}
 	//Renderer::rdDev()->waitIdle();
 	Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
+	
+	// testing for check vk descr alloc
+	#if 0
+	{
+		Vector<u8> data;
+		{
+			FileStream fs;
+			fs.openWrite(ProjectSetting::instance()->shaderRecompileListPath(), false);
+			auto lock = fs.scopedLock();
+			data.resize(fs.fileSize());
+			fs.readBytes(data);
+
+			StrView str = "asset/shader/lighting/rdsDefaultLighting.shader";
+			fs.writeBytes(makeByteSpan(str));
+		}
+
+		ShaderCompileRequest::hotReload(Renderer::instance(), JobSystem::instance(), ProjectSetting::instance());
+
+		//OsUtil::sleep_ms(1);
+	}
+	#endif // 0
+
 	#endif // 0
 
 	auto clientRect = mainWnd.clientRect();
