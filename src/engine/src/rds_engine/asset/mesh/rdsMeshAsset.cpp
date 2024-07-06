@@ -21,6 +21,8 @@ namespace shaderInterop
 }
 }
 
+#define RDS_USE_ASSIMP_LOAD_TANGENT 1
+
 namespace rds
 {
 
@@ -96,19 +98,23 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	TempString buf;
 	buf = filename;
 
-	u32				loadFileFlags	 = aiProcess_Triangulate	| aiProcess_SortByPType 
-									 | aiProcess_GenUVCoords	| aiProcess_GenSmoothNormals 
-									 | aiProcess_OptimizeMeshes	| aiProcess_ValidateDataStructure;
+	u32				loadFileFlags	 = aiProcess_Triangulate			| aiProcess_SortByPType 
+									 | aiProcess_ValidateDataStructure	| aiProcess_JoinIdenticalVertices
+									 | aiProcess_OptimizeMeshes			;
 
-	if (false)		loadFileFlags	|= aiProcess_CalcTangentSpace;
 	if (false)		loadFileFlags	|= aiProcess_GlobalScale;			// convert cm to m
+
+	#if RDS_USE_ASSIMP_LOAD_TANGENT
+	if (true)		loadFileFlags	|= aiProcess_CalcTangentSpace;
+	#endif
 
 	if (true)		loadFileFlags	|= aiProcess_FlipUVs;
 	if (true)		loadFileFlags	|= aiProcess_SortByPType;			// split by primitive type
+	if (true)		loadFileFlags	|= aiProcess_GenSmoothNormals;
+	if (true)		loadFileFlags	|= aiProcess_GenUVCoords;
 	//if (true)		loadFileFlags	|= aiProcess_GenBoundingBoxes;
 	//if (true)		loadFileFlags	|= aiProcess_MakeLeftHanded;
 	//if (true)		loadFileFlags	|= aiProcess_ConvertToLeftHanded;
-	
 
 	const aiScene* srcScene = importer.ReadFile(buf.c_str(), loadFileFlags);
 	bool isLoadFailed = !srcScene || srcScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !srcScene->mRootNode;
@@ -156,8 +162,8 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	{
 		auto& aabbox = aabboxs[i];
 		const aiMesh* pAiMesh = srcScene->mMeshes[i]; 
-		if (!loadVertices(	&edMesh, &aabbox,	*pAiMesh)) return false;
 		if (!loadIndices(	&edMesh,			*pAiMesh)) return false;
+		if (!loadVertices(	&edMesh, &aabbox,	*pAiMesh)) return false;
 		if (!loadBones(		&edMesh,			*pAiMesh)) return false;
 		//aabbox = toAABBox3<f32>(pAiMesh->mAABB);
 	}
@@ -197,6 +203,11 @@ AssimpMeshLoader::loadVertices(EditMesh* oEdMesh, AABBox3* oAabbox, const aiMesh
 	//auto& mesh = subMeshes[iMeshes];
 	bool hasTangents	= aiMesh.mTangents		!= nullptr && aiMesh.mNumVertices > 0;
 	bool hasBitangents	= aiMesh.mBitangents	!= nullptr && aiMesh.mNumVertices > 0;
+	#if !RDS_USE_ASSIMP_LOAD_TANGENT
+	hasTangents   = true;
+	hasBitangents = true;
+	#endif // !RDS_USE_ASSIMP_LOAD_TANGENT
+
 
 	if (aiMesh.HasPositions())
 	{
@@ -214,22 +225,6 @@ AssimpMeshLoader::loadVertices(EditMesh* oEdMesh, AABBox3* oAabbox, const aiMesh
 		for (u32 iVertex = 0; iVertex < nVertices; iVertex++)
 		{
 			edMesh.normal.emplace_back(toVec3(aiMesh.mNormals[iVertex]));
-		}
-	}
-
-	if (hasTangents)
-	{
-		for (u32 iVertex = 0; iVertex < nVertices; iVertex++)
-		{
-			edMesh.tangent.emplace_back(toVec3(aiMesh.mTangents[iVertex]));
-		}
-	}
-
-	if (hasBitangents)
-	{
-		for (u32 iVertex = 0; iVertex < nVertices; iVertex++)
-		{
-			edMesh.binormal.emplace_back(toVec3(aiMesh.mBitangents[iVertex]));
 		}
 	}
 
@@ -258,6 +253,120 @@ AssimpMeshLoader::loadVertices(EditMesh* oEdMesh, AABBox3* oAabbox, const aiMesh
 			}
 		}
 	}
+
+	#if !RDS_USE_ASSIMP_LOAD_TANGENT
+
+	if (hasTangents)
+	{
+		auto&		tangents	= edMesh.tangent;
+		auto&		binormals	= edMesh.binormal;
+
+		const auto& positions	= edMesh.pos;
+		const auto& uv			= edMesh.uvs[0];
+		const auto& normals		= edMesh.normal;
+
+
+		auto&	indices		= edMesh.indices;
+
+		u32		vtxCount	= sCast<u32>(positions.size());
+		u32		idxCount	= sCast<u32>(indices.size());
+
+		tangents.resize( vtxCount);
+		binormals.resize(vtxCount);
+
+		for (u32 i = 0; i < idxCount; i += 3)
+		{
+			u32 i0 = indices[i + 0];
+			u32 i1 = indices[i + 1];
+			u32 i2 = indices[i + 2];
+
+			auto edge1 = Vec3f{positions[i1]} - Vec3f{positions[i0]};
+			auto edge2 = Vec3f{positions[i2]} - Vec3f{positions[i0]};
+
+			auto deltaUv1 = Vec2f{ uv[i1] } - Vec2f{ uv[i0] };
+			auto deltaUv2 = Vec2f{ uv[i2] } - Vec2f{ uv[i0] };
+			
+			/*
+			* references:
+			* ~ http://www.thetenthplanet.de/archives/1180
+			*/
+			#if 1
+
+			auto normal = Vec3f{normals[i0]};
+
+			Vec3f dp2perp = edge2.cross(normal);
+			Vec3f dp1perp = normal.cross(edge1);
+
+			Vec3f tangent	= dp2perp * deltaUv1.x + dp1perp * deltaUv2.x;
+			Vec3f binormal	= dp2perp * deltaUv1.y + dp1perp * deltaUv2.y;
+
+			float invmax = math::rsqrt(math::max(tangent.dot(tangent), binormal.dot(binormal)));
+			tangent		= invmax * tangent;
+			binormal	= invmax * binormal;
+
+			tangents[i0] = (tangent);
+			tangents[i1] = (tangent);
+			tangents[i2] = (tangent);
+
+			binormals[i0] = (binormal);
+			binormals[i1] = (binormal);
+			binormals[i2] = (binormal);
+
+			#else
+
+			float f = 1.0f / (deltaUv1.x * deltaUv2.y - deltaUv2.x * deltaUv1.y);		// f may == nan 
+
+			Vec3f tangent;
+			tangent.x = f * (deltaUv2.y * edge1.x - deltaUv1.y * edge2.x);
+			tangent.y = f * (deltaUv2.y * edge1.y - deltaUv1.y * edge2.y);
+			tangent.z = f * (deltaUv2.y * edge1.z - deltaUv1.y * edge2.z);
+
+			f32 handedness = ((deltaUv1.y * deltaUv2.x - deltaUv2.y * deltaUv1.x) < 0.0f) ? -1.0f : 1.0f;
+
+			tangent = tangent.normalize();
+			tangent = tangent * handedness;
+
+			tangents[i0] = (tangent);
+			tangents[i1] = (tangent);
+			tangents[i2] = (tangent);
+
+			#if 1
+			Vec3f binormal;
+			binormal.x = f * (-deltaUv2.x * edge1.x + deltaUv1.x * edge2.x);
+			binormal.y = f * (-deltaUv2.x * edge1.y + deltaUv1.x * edge2.y);
+			binormal.z = f * (-deltaUv2.x * edge1.z + deltaUv1.x * edge2.z);
+
+			binormal = binormal.normalize();
+			binormal = binormal * handedness;
+
+			binormals[i0] = (binormal);
+			binormals[i1] = (binormal);
+			binormals[i2] = (binormal);
+			#endif // 0
+
+			#endif // 0
+
+		}
+	}
+	#else
+
+	if (hasTangents)
+	{
+		for (u32 iVertex = 0; iVertex < nVertices; iVertex++)
+		{
+			edMesh.tangent.emplace_back(toVec3(aiMesh.mTangents[iVertex]));
+		}
+	}
+
+	if (hasBitangents)
+	{
+		for (u32 iVertex = 0; iVertex < nVertices; iVertex++)
+		{
+			edMesh.binormal.emplace_back(toVec3(aiMesh.mBitangents[iVertex]));
+		}
+	}
+	#endif
+
 	/*
 	* useless, just as a reference
 	*/

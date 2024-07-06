@@ -96,7 +96,8 @@ Vk_RenderApiUtil::debugCallback(
 
 	if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 	{
-		return VK_FALSE;		// for break point only
+		RDS_THROW("Vulkan validation layer: {}\n", pCallbackData->pMessage);
+		//return VK_FALSE;		// for break point only
 	}
 	return VK_FALSE;
 }

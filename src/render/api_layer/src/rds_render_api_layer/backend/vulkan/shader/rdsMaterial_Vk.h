@@ -183,7 +183,7 @@ public:
 	RenderDevice_Vk* renderDeviceVk();
 
 	Vk_DescriptorSetLayout& vkDescriptorSetLayout();
-	Vk_DescriptorSet&		vkDescriptorSet();
+	Vk_DescriptorSet&		vkDescriptorSet(u32 iFrame);
 
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass) override;
@@ -235,8 +235,8 @@ inline MaterialPass_Vk::GeometryStage&					MaterialPass_Vk::vkGeometryStage_noCh
 inline MaterialPass_Vk::PixelStage&						MaterialPass_Vk::vkPixelStage_noCheck()						{ return _vkPixelStage; }
 inline MaterialPass_Vk::ComputeStage&					MaterialPass_Vk::vkComputeStage_noCheck()					{ return _vkComputeStage; }
 
-inline Vk_DescriptorSetLayout&			MaterialPass_Vk::vkDescriptorSetLayout()	{ return shaderPass()->vkDescriptorSetLayout(); }
-inline Vk_DescriptorSet&				MaterialPass_Vk::vkDescriptorSet()			{ return _vkFramedDescrSets[iFrame()]; }
+inline Vk_DescriptorSetLayout&			MaterialPass_Vk::vkDescriptorSetLayout()		{ return shaderPass()->vkDescriptorSetLayout(); }
+inline Vk_DescriptorSet&				MaterialPass_Vk::vkDescriptorSet(u32 iFrame)	{ return _vkFramedDescrSets[iFrame]; }
 
 
 #endif

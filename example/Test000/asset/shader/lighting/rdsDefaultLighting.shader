@@ -53,16 +53,20 @@ struct VertexIn
     float4 positionOs   : SV_POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal   	: NORMAL;
+    float3 tangent      : TANGENT;
+    float3 binormal     : BINORMAL;		// adding binormal instead of cross(normal, tangent) solve texture seam problem
 };
 
 struct PixelIn 
 {
-	float4 positionHcs  : SV_POSITION;
-    float2 uv           : TEXCOORD0;
-	float3 normal   	: NORMAL;
-	float3 normalVs   	: TEXCOORD1;
-	float3 positionWs   : TEXCOORD2;
-	float3 positionVs   : TEXCOORD3;
+	float4 		positionHcs  	: SV_POSITION;
+    float2 		uv           	: TEXCOORD0;
+	float3 		normal   		: NORMAL;
+	float3 		normalVs   		: TEXCOORD1;
+	float3 		positionWs   	: TEXCOORD2;
+	float3 		positionVs   	: TEXCOORD3;
+    float3 		tangentWs      	: TEXCOORD4;
+    float3 		tangentVs      	: TEXCOORD5;
 };
 
 #if 0
@@ -95,9 +99,11 @@ PixelIn vs_main(VertexIn input)
     o.positionVs  	= SpaceTransform_worldToView(   o.positionWs,   	drawParam).xyz;
     o.normal 	  	= SpaceTransform_toWorldNormal( input.normal, 		objTransf);
     o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		objTransf, drawParam);
-
     o.uv          	= input.uv;
-    
+
+    o.tangentWs 	= SpaceTransform_toWorldNormal( input.tangent, 		objTransf);
+	o.tangentVs 	= SpaceTransform_toViewNormal(  input.tangent,		objTransf, drawParam);
+
 	//o.positionHcs 	= input.positionOs;
 
     return o;
@@ -113,15 +119,18 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	float2 uv = input.uv;
 	float3 pos;
 	float3 normal;
+	float3 tangent;
 	float3 viewDir;
 
 	pos 	= input.positionVs;
 	normal 	= normalize(input.normalVs);
-	
-	//pos 	= input.positionWs;
-	//normal 	= normalize(input.normal);
+	tangent = normalize(input.tangentVs);
 
-	Surface surface = Material_makeSurface(uv, pos, normal);
+	normal 	= normalize(input.normal);
+	tangent = normalize(input.tangentWs);
+
+	Surface surface = Material_makeSurface(uv, pos, normal, tangent);
+	//surface = Material_makeSurface(uv, pos, normal);
 	surface.ambient				= ambient;
 	surface.diffuse				= diffuse;
 	surface.specular			= specular;
@@ -131,7 +140,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 
 	LightingResult oLightingResult = (LightingResult)0;
 	{
-		oLightingResult = Lighting_computeForwardLighting_Vs(surface, drawParam.camera_pos, viewDir);
+		oLightingResult = Lighting_computeForwardLighting_Ws(surface, drawParam.camera_pos, viewDir);
 
 		//o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 		//o.rgb = oLightingResult.specular.rgb;
@@ -160,10 +169,14 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	//input.positionVs.y = -input.positionVs.y;
 
 	float shadow = csm_computeShadow(input.positionWs, input.positionVs);
+	shadow = 0.0;
 	o.rgb += (1.0 - shadow) * oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 
 	o.rgb = ToneMapping_reinhard(o.rgb);
 	o.rgb = PostProc_gammaEncoding(o.rgb);
+
+	//o.rgb = remapNeg11To01(normal);
+	o.rgb = remapNeg11To01(surface.normal);
 
     return o;
 }

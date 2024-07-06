@@ -58,6 +58,7 @@ CRenderableSystem::update(DrawData& drawData)
 		_objTransformBuf.resize(renderables_.size() * 10 + 1);		// id start at 1, not using 2 table mapping currently
 
 		auto mat_vp = drawData.camera->viewProjMatrix();
+		auto mat_v	= drawData.camera->viewMatrix();
 
 		// or loop dirty transform only
 		for (auto* rdable : renderables_)
@@ -67,8 +68,11 @@ CRenderableSystem::update(DrawData& drawData)
 
 			auto idx = ent.id();
 			auto& objTransform = _objTransformBuf.at(idx);
-			objTransform.matrix_model	= transform.localMatrix();
-			objTransform.matrix_mvp		= mat_vp * objTransform.matrix_model;
+			objTransform.matrix_model		= transform.localMatrix();
+			objTransform.matrix_mvp			= mat_vp * objTransform.matrix_model;
+			objTransform.matrix_mv			= mat_v  * objTransform.matrix_model;
+			objTransform.matrix_m_inv_t		= objTransform.matrix_model.inverse().transpose();
+			objTransform.matrix_mv_inv_t	= mat_v * objTransform.matrix_m_inv_t;
 		}
 		// for all materials and setParam
 		_objTransformBuf.uploadToGpu();

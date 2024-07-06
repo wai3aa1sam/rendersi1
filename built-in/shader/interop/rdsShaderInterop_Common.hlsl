@@ -48,6 +48,9 @@ struct ObjectTransform
 {
     float4x4 matrix_model;
     float4x4 matrix_mvp;
+    float4x4 matrix_mv;
+    float4x4 matrix_m_inv_t;
+    float4x4 matrix_mv_inv_t;
 };
 
 struct Surface 

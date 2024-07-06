@@ -104,7 +104,7 @@ LightingResult Lighting_computeLighting_Vs(Light light, Surface surface, float3 
 {
 	LightingResult o = (LightingResult)0;
 
-	viewDir = Lighting_computeViewDir_Vs(surface.pos,cameraPos);
+	viewDir = Lighting_computeViewDir_Vs(surface.pos, cameraPos);
 	o = Lighting_computeLighting_Impl(light, light.positionVs.xyz, light.directionVs.xyz, surface, viewDir);
 	return o;
 }

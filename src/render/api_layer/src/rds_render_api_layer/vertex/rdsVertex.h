@@ -602,6 +602,9 @@ template<size_t NORMAL_COUNT>						using Vertex_PosNormal	= VertexT_PosNormal<De
 template<class UV_TYPE, size_t UV_COUNT, size_t COLOR_COUNT = 1>	using VertexT_PosColorUv	= VertexT_Uv<UV_TYPE, UV_COUNT, Vertex_PosColor<COLOR_COUNT> >;
 template<size_t UV_COUNT, size_t COLOR_COUNT = 1>					using Vertex_PosColorUv		= VertexT_Uv<DefaultUvType, UV_COUNT, Vertex_PosColor<COLOR_COUNT> >;
 
+/*
+* TODO: same order as its name
+*/
 template<class NORMAL_TYPE, size_t NORMAL_COUNT, size_t UV_COUNT, size_t COLOR_COUNT>	using VertexT_PosColorUvNormal	= VertexT_Normal<NORMAL_TYPE,		NORMAL_COUNT, Vertex_PosColorUv<UV_COUNT, COLOR_COUNT> >;
 template<size_t UV_COUNT, size_t NORMAL_COUNT = 1, size_t COLOR_COUNT = 1>				using Vertex_PosColorUvNormal	= VertexT_Normal<DefaultNormalType, NORMAL_COUNT, Vertex_PosColorUv<UV_COUNT, COLOR_COUNT> >;
 
@@ -611,10 +614,18 @@ template<size_t UV_COUNT, size_t TANGENT_COUNT = 1, size_t NORMAL_COUNT = 1, siz
 template<class NORMAL_TYPE, size_t BINORMAL_COUNT, size_t TANGENT_COUNT, size_t NORMAL_COUNT, size_t UV_COUNT, size_t COLOR_COUNT>	using VertexT_PosColorUvNTB	= VertexT_Binormal<NORMAL_TYPE,			BINORMAL_COUNT, Vertex_PosColorUvNT<UV_COUNT, TANGENT_COUNT, NORMAL_COUNT, COLOR_COUNT> >;
 template<size_t UV_COUNT, size_t BINORMAL_COUNT = 1, size_t TANGENT_COUNT = 1, size_t NORMAL_COUNT = 1, size_t COLOR_COUNT = 1>		using Vertex_PosColorUvNTB	= VertexT_Binormal<DefaultBinormalType,	BINORMAL_COUNT, Vertex_PosColorUvNT<UV_COUNT, TANGENT_COUNT, NORMAL_COUNT, COLOR_COUNT> >;
 
-template<class NORMAL_TYPE, size_t NORMAL_COUNT, size_t UV_COUNT>	using VertexT_PosUvNormal	= VertexT_Normal<NORMAL_TYPE,		NORMAL_COUNT, Vertex_PosUv<UV_COUNT> >;
-template<size_t UV_COUNT, size_t NORMAL_COUNT = 1>					using Vertex_PosUvNormal	= VertexT_Normal<DefaultNormalType, NORMAL_COUNT, Vertex_PosUv<UV_COUNT> >;
+/*
+* different order to above
+*/
 
+template<class UV_TYPE, class NORMAL_TYPE, size_t UV_COUNT, size_t NORMAL_COUNT>												using VertexT_PosUvNormal	= VertexT_Normal<		NORMAL_TYPE, NORMAL_COUNT, VertexT_PosUv<UV_TYPE, UV_COUNT> >;
+template<size_t UV_COUNT, size_t NORMAL_COUNT = 1>																				using Vertex_PosUvNormal	= VertexT_PosUvNormal<	DefaultUvType, DefaultNormalType, UV_COUNT, NORMAL_COUNT>;
 
+template<class UV_TYPE, class NORMAL_TYPE, size_t UV_COUNT, size_t NORMAL_COUNT, size_t TANGENT_COUNT>							using VertexT_PosUvNT		= VertexT_Tangent<NORMAL_TYPE, TANGENT_COUNT, VertexT_PosUvNormal<UV_TYPE, NORMAL_TYPE,  UV_COUNT, NORMAL_COUNT> >;
+template<size_t UV_COUNT, size_t NORMAL_COUNT = 1, size_t TANGENT_COUNT = 1>													using Vertex_PosUvNT		= VertexT_PosUvNT<DefaultUvType, DefaultTangentType, UV_COUNT, NORMAL_COUNT, TANGENT_COUNT>;
+
+template<class UV_TYPE, class NORMAL_TYPE, size_t UV_COUNT, size_t NORMAL_COUNT, size_t TANGENT_COUNT, size_t BINORMAL_COUNT>	using VertexT_PosUvNTB		= VertexT_Binormal<NORMAL_TYPE, BINORMAL_COUNT, VertexT_PosUvNT<UV_TYPE, NORMAL_TYPE, UV_COUNT, NORMAL_COUNT, TANGENT_COUNT> >;
+template<size_t UV_COUNT, size_t NORMAL_COUNT = 1, size_t TANGENT_COUNT = 1, size_t BINORMAL_COUNT = 1>							using Vertex_PosUvNTB		= VertexT_PosUvNTB<DefaultUvType, DefaultBinormalType,	UV_COUNT, NORMAL_COUNT, TANGENT_COUNT, BINORMAL_COUNT>;
 
 #endif
 

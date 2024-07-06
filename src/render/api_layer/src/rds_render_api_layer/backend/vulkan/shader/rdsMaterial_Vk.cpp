@@ -639,18 +639,19 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 		shaderRsc.uploadToGpu(shaderPass());
 		material()->_internal_resetFrame();
 
-		auto& vkDescrSet = vkDescriptorSet();
+		auto& vkDescrSet = _vkFramedDescrSets[iFrame];
 		if (!vkDescrSet)
 		{
 			auto&	descriptorAlloc	= vkCtx->vkRdFrame().descriptorAllocator();
 			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
-			builder.buildBindless(vkDescriptorSet(), shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
+			builder.buildBindless(vkDescrSet, shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
 		}
 
 		auto				vkPipelineLayoutHnd = vkPipelineLayout().hnd();
 		auto				set					= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());
 		//renderDeviceVk()->bindlessResourceVk().bind(vkCmdBuf->hnd(), vkBindPt);
-		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayoutHnd, set, 1, vkDescrSet.hndArray(), 0, nullptr);
+		Vk_DescriptorSet_T* vkDescrSetHnds[] = { vkDescrSet.hnd() };
+		vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayoutHnd, set, 1, vkDescrSetHnds, 0, nullptr);
 	}
 }
 

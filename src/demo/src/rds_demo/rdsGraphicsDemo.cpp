@@ -75,7 +75,8 @@ GraphicsDemo::onCreate()
 	createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/skybox.shader"
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 
-	createMaterial(&_shaderScreenQuad,		&_mtlScreenQuad,		"asset/shader/util/rdsScreenQuad.shader");
+	RenderUtil::createMaterial(&_shaderScreenQuad,		&_mtlScreenQuad,		"asset/shader/util/rdsScreenQuad.shader");
+	RenderUtil::createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/rdsDisplayNormals.shader");
 }
 
 void 
@@ -123,24 +124,6 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 	auto row	= size.x;
 	auto col	= size.y;
 	auto depth	= size.z;
-
-	for (u32 d = 0; d < depth; d++)
-	{
-		for (u32 c = 0; c < col; c++)
-		{
-			for (u32 r = 0; r < row; r++)
-			{
-				auto* ent = scene.addEntityWithDefaultName();
-
-				auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-				rdableMesh->material = Renderer::rdDev()->createMaterial(shader);
-				rdableMesh->meshAsset = meshAsset;
-
-				auto* transform	= ent->getComponent<CTransform>();
-				transform->setLocalPosition(startPos + step * Vec3f::s_cast(Vec3u{r, c, d}));
-			}
-		}
-	}
 
 	#if 1
 	if (isCreateLights)
@@ -191,6 +174,23 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 	}
 	#endif // 1
 
+	for (u32 d = 0; d < depth; d++)
+	{
+		for (u32 c = 0; c < col; c++)
+		{
+			for (u32 r = 0; r < row; r++)
+			{
+				auto* ent = scene.addEntityWithDefaultName();
+
+				auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+				rdableMesh->material = Renderer::rdDev()->createMaterial(shader);
+				rdableMesh->meshAsset = meshAsset;
+
+				auto* transform	= ent->getComponent<CTransform>();
+				transform->setLocalPosition(startPos + step * Vec3f::s_cast(Vec3u{r, c, d}));
+			}
+		}
+	}
 }
 
 void 

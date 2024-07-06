@@ -5,6 +5,7 @@
 references:
 ~ https://gist.github.com/mattatz/86fff4b32d198d0928d0fa4ff32cf6fa
 ~ http://filmicgames.com/archives/75
+~ https://notargs.hateblo.jp/entry/invert_matrix
 */
 
 #include "rdsMarco_Common.hlsl"
@@ -361,6 +362,24 @@ float2 SampleUtil_sequence_hammersley(uint i, uint N)
 
 #endif
 
+/*
+~ reference:
+- https://notargs.hateblo.jp/entry/invert_matrix
+*/
+float3x3 inverse(float3x3 m)
+{
+    return 1.0 / determinant(m) *
+        float3x3(
+            m._22 * m._33 - m._23 * m._32,       -(m._12 * m._33 - m._13 * m._32),       m._12 * m._23 - m._13 * m._22,
+            -(m._21 * m._33 - m._23 * m._31),    m._11 * m._33 - m._13 * m._31,          -(m._11 * m._23 - m._13 * m._21),
+            m._21 * m._32 - m._22 * m._31,       -(m._11 * m._32 - m._12 * m._31),       m._11 * m._22 - m._12 * m._21
+        );
+}
+
+/*
+~ reference:
+- https://gist.github.com/mattatz/86fff4b32d198d0928d0fa4ff32cf6fa
+*/
 float4x4 inverse(float4x4 m) 
 {
     float n11 = m[0][0], n12 = m[1][0], n13 = m[2][0], n14 = m[3][0];
@@ -475,7 +494,8 @@ float3 SpaceTransform_computeNormal(float2 normalXy)
 
 float3 SpaceTransform_toWorldNormal(float3 normal, ObjectTransform objectTransform)
 {
-    float3 o = (mul((float3x3)transpose(inverse(objectTransform.matrix_model)), normal));
+    //float3 o = (mul((float3x3)transpose(inverse(objectTransform.matrix_model)), normal));
+    float3   o = mul((float3x3)objectTransform.matrix_m_inv_t, normal);
 	return o;
 }
 
@@ -486,8 +506,8 @@ float3 SpaceTransform_toWorldNormal(float3 normal)
 
 float3 SpaceTransform_toViewNormal(float3 normal, ObjectTransform objectTransform, DrawParam drawParam)
 {
-    float3 o = SpaceTransform_toWorldNormal(normal, objectTransform);
-    o = mul((float3x3)drawParam.matrix_view, o);
+    //float3   o = mul((float3x3)drawParam.matrix_view, mul((float3x3)transpose(inverse(objectTransform.matrix_model)), normal));
+    float3   o = mul((float3x3)objectTransform.matrix_mv_inv_t, normal);
 	return (o);
 }
 
@@ -508,7 +528,8 @@ float4 SpaceTransform_objectToWorld(float4 v)
 
 float4 SpaceTransform_objectToView(float4 v, DrawParam drawParam, ObjectTransform objectTransform)
 {
-	return mul(drawParam.matrix_view, SpaceTransform_objectToWorld(v, objectTransform));
+	//return mul(drawParam.matrix_view, SpaceTransform_objectToWorld(v, objectTransform));
+	return mul(objectTransform.matrix_mv, v);
 }
 
 float4 SpaceTransform_objectToView(float4 v, DrawParam drawParam)
@@ -523,7 +544,7 @@ float4 SpaceTransform_objectToView(float4 v)
 
 float4 SpaceTransform_objectToClip(float4 v)
 {
-	return mul(RDS_MATRIX_MVP, v);
+	return mul(rds_ObjectTransform_get().matrix_mvp, v);
 }
 
 float4 SpaceTransform_objectToClip(float4 v, DrawParam drawParam, ObjectTransform objectTransform)

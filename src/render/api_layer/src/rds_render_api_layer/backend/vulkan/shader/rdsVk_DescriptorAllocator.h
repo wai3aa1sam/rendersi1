@@ -114,6 +114,8 @@ public:
 	bool buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass);
 
 protected:
+	void create(ShaderResources& shaderRscs);
+
 	void clear();
 
 	void bindConstantBuffer	(Vk_DescriptorSet& dstSet, ConstBuffer&		constBuf,		VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);

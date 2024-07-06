@@ -205,11 +205,13 @@ Vk_DescriptorBuilder::Vk_DescriptorBuilder()
 bool
 Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
+	_notYetSupported(RDS_SRCLOC);	/// all vk info need resize first, not enought will trigger resize and gg
 	dstSet = _alloc->alloc(&layout);
 	if (!dstSet)
 	{
 		return false;
 	}
+	create(shaderRscs);
 
 	RDS_TODO("since the TransferContext is committed before RenderContext, using staging will not cause it failed to upload (cleared)");
 	shaderRscs.uploadToGpu(pass);
@@ -257,8 +259,10 @@ Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_Descripto
 	dstSet = _alloc->alloc(&layout);
 	if (!dstSet)
 	{
-		return false;
+		RDS_THROW("vk descriptor allocate failed");
+		//return false;
 	}
+	create(shaderRscs);
 
 	auto shaderStageFlag = VkShaderStageFlagBits::VK_SHADER_STAGE_ALL;
 
@@ -278,6 +282,17 @@ Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_Descripto
 	clear();
 
 	return true;
+}
+
+void 
+Vk_DescriptorBuilder::create(ShaderResources& shaderRscs)
+{
+	auto bufInfoCount	= shaderRscs.constBufs().size() + shaderRscs.bufferParams().size();
+	auto imageInfoCount = shaderRscs.texParams().size() + shaderRscs.imageParams().size() + shaderRscs.samplerParams().size();
+
+	_bufInfos.reserve(bufInfoCount);
+	_imageInfos.reserve(imageInfoCount);
+	_writeDescs.reserve(bufInfoCount + imageInfoCount);
 }
 
 void 

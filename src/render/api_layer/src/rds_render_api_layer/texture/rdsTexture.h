@@ -50,12 +50,12 @@ public:
 	using HashValue	= SizeType;
 
 public:
-	Filter	minFliter = Filter::Nearest;
-	Filter	magFliter = Filter::Nearest;
+	Filter	minFliter = Filter::Linear;
+	Filter	magFliter = Filter::Linear;
 
-	Wrap	wrapU = Wrap::ClampToBorder;
-	Wrap	wrapV = Wrap::ClampToBorder;
-	Wrap	wrapS = Wrap::ClampToBorder;
+	Wrap	wrapU = Wrap::Repeat;
+	Wrap	wrapV = Wrap::Repeat;
+	Wrap	wrapS = Wrap::Repeat;
 
 	// TODO: Border Color
 
@@ -68,9 +68,8 @@ public:
 
 
 public:
-	SamplerState()
-		: isAnisotropy(true)
-	{}
+	SamplerState();
+	~SamplerState() = default;
 
 	bool isValidMaxLod() const { return maxLod != math::inf<float>(); }
 
