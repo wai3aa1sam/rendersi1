@@ -34,22 +34,21 @@ public:
 		using Util = Vk_RenderApiUtil;
 		for (const auto& paramInfo : infos)
 		{
-			#if 0
-			if (type	== VK_DESCRIPTOR_TYPE_STORAGE_BUFFER			&& StrUtil::isSame(paramInfo.name.c_str(), "bufferTable")
-				|| type	== VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE				&& StrUtil::isSame(paramInfo.name.c_str(), "texture2DTable")
-				|| type == VK_DESCRIPTOR_TYPE_SAMPLER					&& StrUtil::isSame(paramInfo.name.c_str(), "samplerTable")
-				|| type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER	&& StrUtil::isSame(paramInfo.name.c_str(), "samplerTable")
-				)
-			{
-				continue;
-			}
-			#endif // 0
-
+			#if RDS_SHADER_USE_BINDLESS
 			bool isBindless =  type	== VK_DESCRIPTOR_TYPE_STORAGE_BUFFER	
 				|| type	== VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE		|| type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 				|| type == VK_DESCRIPTOR_TYPE_SAMPLER			|| type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			if (isBindless && !StrUtil::isSame(paramInfo.name.c_str(), "rds_sampler"))
+
+			bool isIgnore = isBindless;
+
+			#if !RDS_VK_USE_IMMUTABLE_SAMPLER
+			isIgnore &= !StrUtil::isSame(paramInfo.name.c_str(), "rds_samplers");
+			#endif // !RDS_VK_USE_IMMUTABLE_SAMPLER
+
+			if (isIgnore)
 				continue;
+
+			#endif // RDS_SHADER_USE_BINDLESS
 
 			auto& e = dst.emplace_back();
 			e.descriptorType		= type;
@@ -57,8 +56,6 @@ public:
 			e.binding				= paramInfo.bindPoint;
 			e.descriptorCount		= paramInfo.bindCount;
 			e.pImmutableSamplers	= nullptr;
-
-			RDS_TODO("manual shader stage flag for optimize?");
 			e.stageFlags			= VK_SHADER_STAGE_ALL;
 
 			RDS_CORE_ASSERT(e.descriptorCount != 0, "");
@@ -75,13 +72,12 @@ public:
 
 		bindings.reserve(bindingCount);
 		createShaderResourceLayoutBinding(bindings, info.constBufs,		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			info.stageFlag);
+		
+		#if !RDS_VK_USE_IMMUTABLE_SAMPLER
+		createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_SAMPLER,					info.stageFlag);
+		#endif // RDS_VK_USE_IMMUTABLE_SAMPLER
 
-		if (true)
-		{
-			createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_SAMPLER,					info.stageFlag);
-		}
-		#if RDS_NO_BINDLESS
-
+		#if !RDS_SHADER_USE_BINDLESS
 		//createShaderResourceLayoutBinding(bindings, info.textures,		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,			info.stageFlag);
 		//createShaderResourceLayoutBinding(bindings, info.samplers,		VK_DESCRIPTOR_TYPE_SAMPLER,					info.stageFlag);
 
@@ -89,7 +85,6 @@ public:
 
 		createShaderResourceLayoutBinding(bindings, info.storageBufs,	VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,			info.stageFlag);
 		createShaderResourceLayoutBinding(bindings, info.storageImages,	VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,			info.stageFlag);
-
 		#endif // RDS_NO_BINDLESS
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
@@ -99,42 +94,6 @@ public:
 
 		dst->create(&layoutInfo, rdDevVk);
 	}
-
-	#if 0
-	template<class STAGE> static 
-		void 
-		createVkDescriptorSet(STAGE* stage, RenderDevice_Vk* rdDevVk)
-	{
-		//createVkDescriptorSetLayout(&stage->_vkDescriptorSetLayout, stage, rdDevVk);
-		//stage->_vkFramedDescSets.resize(1);
-	}
-
-	template<class STAGE> static 
-		void 
-		bind(STAGE* stage, VkPipelineBindPoint vkBindPt, u32 set, Vk_PipelineLayout_T* vkPipelineLayout, RenderContext_Vk* ctx, Vk_CommandBuffer* vkCmdBuf, const VertexLayout* vtxLayout, MaterialPass_Vk* pass)
-	{
-		if (!stage->shaderStage())
-			return;
-
-		//auto* mtl		= pass->material();
-		//auto& shaderRsc = stage->shaderResources(mtl);
-
-		//auto& vkDescSet = vkDescriptorSet(stage, mtl);
-
-		RDS_TODO("rotate rsc, framed resource should in each shader resource, not in resources");
-
-		RDS_TODO("temporary solution for binding, also, DescriptorAllocator is leaking memory since the Vk_DescriptorSet (it's debugName) has not destroy?");
-
-		//if (!vkDescSet || shaderRsc.isDirty() || true)
-		{
-			auto&	descriptorAlloc	= ctx->vkRdFrame().descriptorAllocator();
-			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
-			//builder.build(vkDescSet, stage->_vkDescriptorSetLayout, shaderRsc);
-		}
-
-		//vkCmdBindDescriptorSets(vkCmdBuf->hnd(), vkBindPt, vkPipelineLayout, set, 1, vkDescSet.hndArray(), 0, nullptr);
-	}
-	#endif // 0
 };
 
 #endif

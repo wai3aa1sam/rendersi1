@@ -50,6 +50,17 @@ public:
 	using HashValue	= SizeType;
 
 public:
+	static constexpr SamplerState makeNearestRepeat();
+	static constexpr SamplerState makeNearestMirrored();
+	static constexpr SamplerState makeNearestClampToEdge();
+	static constexpr SamplerState makeNearestClampToBorder();
+
+	static constexpr SamplerState makeLinearRepeat();
+	static constexpr SamplerState makeLinearMirrored();
+	static constexpr SamplerState makeLinearClampToEdge();
+	static constexpr SamplerState makeLinearClampToBorder();
+
+public:
 	Filter	minFliter = Filter::Linear;
 	Filter	magFliter = Filter::Linear;
 
@@ -68,9 +79,6 @@ public:
 
 
 public:
-	SamplerState();
-	~SamplerState() = default;
-
 	bool isValidMaxLod() const { return maxLod != math::inf<float>(); }
 
 	bool operator<(const SamplerState& rhs) const
@@ -101,6 +109,29 @@ public:
 };
 
 #endif // 1
+
+#if 0
+#pragma mark --- rdsSamplerState-Impl ---
+#endif // 0
+#if 1
+
+#define RDS_Fliter(	o, v)	o.minFliter = v;	o.magFliter = v
+#define RDS_Wrap(	o, v)	o.wrapU		= v;	o.wrapV		= v;	o.wrapS		= v
+
+inline constexpr SamplerState SamplerState::makeNearestRepeat()				{ SamplerState o; RDS_Fliter(o, Filter::Nearest); RDS_Wrap(o, Wrap::Repeat);		return o; }
+inline constexpr SamplerState SamplerState::makeNearestMirrored()			{ SamplerState o; RDS_Fliter(o, Filter::Nearest); RDS_Wrap(o, Wrap::Mirrored);		return o; }
+inline constexpr SamplerState SamplerState::makeNearestClampToEdge()		{ SamplerState o; RDS_Fliter(o, Filter::Nearest); RDS_Wrap(o, Wrap::ClampToEdge);	return o; }
+inline constexpr SamplerState SamplerState::makeNearestClampToBorder()		{ SamplerState o; RDS_Fliter(o, Filter::Nearest); RDS_Wrap(o, Wrap::ClampToBorder); return o; }
+
+inline constexpr SamplerState SamplerState::makeLinearRepeat()				{ SamplerState o; RDS_Fliter(o, Filter::Linear); RDS_Wrap(o, Wrap::Repeat);			return o; }
+inline constexpr SamplerState SamplerState::makeLinearMirrored()			{ SamplerState o; RDS_Fliter(o, Filter::Linear); RDS_Wrap(o, Wrap::Mirrored);		return o; }
+inline constexpr SamplerState SamplerState::makeLinearClampToEdge()			{ SamplerState o; RDS_Fliter(o, Filter::Linear); RDS_Wrap(o, Wrap::ClampToEdge);	return o; }
+inline constexpr SamplerState SamplerState::makeLinearClampToBorder()		{ SamplerState o; RDS_Fliter(o, Filter::Linear); RDS_Wrap(o, Wrap::ClampToBorder);	return o; }
+
+#undef RDS_Fliter
+#undef RDS_Wrap
+
+#endif
 
 #if 0
 #pragma mark --- rdsTexture_CreateDesc-Impl ---

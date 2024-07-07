@@ -115,7 +115,7 @@ public:
 	bool buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass);
 
 protected:
-	void create(ShaderResources& shaderRscs);
+	void create(ShaderResources& shaderRscs, ShaderPass_Vk* pass);
 
 	void clear();
 
@@ -128,7 +128,8 @@ protected:
 
 	void bindTextureWithSampler(Vk_DescriptorSet& dstSet, TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
 
-	void _bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam, Vk_Sampler_T* samplerHnd,	VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
+	void bindSamplers( Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam, Span<Vk_Sampler> samplerHnds,				VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
+	void _bindSampler( Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam, Vk_Sampler_T*	   samplerHnd, u32 dstIdx,	VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
 
 protected:
 	Vk_DescriptorBuilder();

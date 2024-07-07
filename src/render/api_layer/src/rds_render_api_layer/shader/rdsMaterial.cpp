@@ -179,14 +179,14 @@ Material::getParamId(StrView name) const
 }
 
 void 
-Material::setParam(StrView name, Texture* v, const SamplerState& samplerState)
+Material::setParam(StrView name, Texture* v)
 {
 	using SRC = RenderDataType;
 	switch (v->type())
 	{
-		case SRC::Texture2D:		{ setParam(name, sCast<Texture2D*>(		v), samplerState); } break;
-		case SRC::Texture3D:		{ setParam(name, sCast<Texture3D*>(		v), samplerState); } break;
-		case SRC::Texture2DArray:	{ setParam(name, sCast<Texture2DArray*>(v), samplerState); } break;
+		case SRC::Texture2D:		{ setParam(name, sCast<Texture2D*>(		v)); } break;
+		case SRC::Texture3D:		{ setParam(name, sCast<Texture3D*>(		v)); } break;
+		case SRC::Texture2DArray:	{ setParam(name, sCast<Texture2DArray*>(v)); } break;
 		default: { RDS_THROW("invalid texture type"); } break;
 	}
 }
@@ -194,12 +194,16 @@ Material::setParam(StrView name, Texture* v, const SamplerState& samplerState)
 void 
 Material::_setSamplerParam(StrView name, const SamplerState& v)
 {
-	/*for (auto& pass : _passes)
-	{
-	pass->setSamplerParam(name, v);
-	}*/
+	TempString samplerName;
+	ShaderResources::getSamplerNameTo(samplerName, name);
 
-	setParam(name, renderDevice()->bindlessResource().findSamplerIndex(v));
+	auto* rdDev = renderDevice();
+	u32 samplerIndex = rdDev->bindlessResource().findSamplerIndex(v);
+
+	for (auto& pass : _passes)
+	{
+		pass->setSamplerParam(samplerName, samplerIndex);
+	}
 }
 
 void 

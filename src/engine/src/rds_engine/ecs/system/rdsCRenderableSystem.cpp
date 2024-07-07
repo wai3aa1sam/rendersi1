@@ -55,7 +55,7 @@ CRenderableSystem::update(DrawData& drawData)
 		auto& renderables_ = renderables();
 
 		// should resize as scene ent size, * 10 is a temp dirty fix
-		_objTransformBuf.resize(renderables_.size() * 10 + 1);		// id start at 1, not using 2 table mapping currently
+		_objTransformBuf.resize(renderables_.size() * 100 + 1);		// id start at 1, not using 2 table mapping currently
 
 		auto mat_vp = drawData.camera->viewProjMatrix();
 		auto mat_v	= drawData.camera->viewMatrix();

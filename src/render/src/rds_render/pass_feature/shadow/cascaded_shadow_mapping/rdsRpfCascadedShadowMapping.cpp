@@ -141,7 +141,7 @@ RpfCascadedShadowMapping::addCascadedShadowMappingPass(Materials& materials, Res
 
 	auto viewport = Rect2f{ Tuple2f::s_zero(), Tuple2f{param.mapSize, param.mapSize} };
 
-	oResult->depthMaps.resize(	cascadedLevelCount);
+	//oResult->depthMaps.resize(	cascadedLevelCount);
 	materials.resize(			cascadedLevelCount);
 	RenderUtil::createMaterials(&_shaderCsmShadowMap, materials, "asset/shader/pass_feature/shadow/cascaded_shadow_mapping/rdsCsm_ShadowMap.shader");
 

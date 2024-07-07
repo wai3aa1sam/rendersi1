@@ -184,9 +184,8 @@ ShaderCompiler_Vk::_reflect_constBufs(ShaderStageInfo& outInfo, SpirvCompiler& c
 	outInfo.constBufs.reserve(res.uniform_buffers.size());
 	for (const Resource& e : res.uniform_buffers)
 	{
-		ConstBuffer& dst = outInfo.constBufs.emplace_back();
-
-		const SPIRType& type = compiler.get_type(e.base_type_id);
+		ConstBuffer&	dst		= outInfo.constBufs.emplace_back();
+		const SPIRType& type	= compiler.get_type(e.base_type_id);
 
 		size_t size = compiler.get_declared_struct_size(type);
 
@@ -261,8 +260,9 @@ ShaderCompiler_Vk::_reflect_textures(ShaderStageInfo& outInfo, SpirvCompiler& co
 	
 	for (const Resource& resource : res.separate_images)
 	{
-		Texture& dst = outInfo.textures.emplace_back();
-		const SPIRType& type = compiler.get_type(resource.base_type_id);
+		Texture&				dst		= outInfo.textures.emplace_back();
+		const SPIRType&			type	= compiler.get_type(resource.type_id);		// type_id has array information
+
 		//size_t size = compiler.get_declared_struct_size(type);
 
 		const std::string& name = compiler.get_name(resource.id);
@@ -273,7 +273,7 @@ ShaderCompiler_Vk::_reflect_textures(ShaderStageInfo& outInfo, SpirvCompiler& co
 		dst.name		= name.c_str();
 		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
-		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
+		dst.bindCount	= type.array.empty() ? 1 : sCast<u16>(type.array[0]);
 
 		switch (type.image.dim)
 		{
@@ -302,7 +302,7 @@ ShaderCompiler_Vk::_reflect_samplers(ShaderStageInfo& outInfo, SpirvCompiler& co
 	for (const Resource& resource : res.separate_samplers)
 	{
 		Sampler& dst = outInfo.samplers.emplace_back();
-		const SPIRType& type = compiler.get_type(resource.base_type_id);
+		const SPIRType& type = compiler.get_type(resource.type_id);		// type_id has array information
 		//size_t size = compiler.get_declared_struct_size(type);
 
 		const std::string& name = compiler.get_name(resource.id);
@@ -313,7 +313,7 @@ ShaderCompiler_Vk::_reflect_samplers(ShaderStageInfo& outInfo, SpirvCompiler& co
 		dst.name		= name.c_str();
 		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
-		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
+		dst.bindCount	= type.array.empty() ? 1 : sCast<u16>(type.array[0]);
 
 		log("Sampler name: {}, set: {}, binding: {}", name, set, binding);
 		_appendStageUnionInfo_samplers(_allStageUnionInfo, dst);
@@ -333,7 +333,7 @@ ShaderCompiler_Vk::_reflect_storageBufs	(ShaderStageInfo& outInfo, SpirvCompiler
 	for (const Resource& resource : res.storage_buffers)
 	{
 				StorageBuffer&	dst		= outInfo.storageBufs.emplace_back();
-		const	SPIRType&		type	= compiler.get_type(resource.base_type_id);
+		const SPIRType&			type	= compiler.get_type(resource.type_id);		// type_id has array information
 
 		#if 0
 		size_t memberCount = type.member_types.size();
@@ -374,7 +374,7 @@ ShaderCompiler_Vk::_reflect_storageBufs	(ShaderStageInfo& outInfo, SpirvCompiler
 		dst.name		= name.c_str();
 		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
-		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
+		dst.bindCount	= type.array.empty() ? 1 : sCast<u16>(type.array[0]);
 
 		log("StorageBuffer name: {}, set: {}, binding: {}", name, set, binding);
 		_appendStageUnionInfo_storageBufs(_allStageUnionInfo, dst);
@@ -393,8 +393,8 @@ ShaderCompiler_Vk::_reflect_storageImages	(ShaderStageInfo& outInfo, SpirvCompil
 
 	for (const Resource& resource : res.storage_images)
 	{
-		StorageImage& dst		= outInfo.storageImages.emplace_back();
-		const SPIRType& type	= compiler.get_type(resource.base_type_id);
+		StorageImage&			dst		= outInfo.storageImages.emplace_back();
+		const SPIRType&			type	= compiler.get_type(resource.type_id);		// type_id has array information
 		//size_t size = compiler.get_declared_struct_size(type);
 
 		const std::string& name = compiler.get_name(resource.id);
@@ -405,7 +405,7 @@ ShaderCompiler_Vk::_reflect_storageImages	(ShaderStageInfo& outInfo, SpirvCompil
 		dst.name		= name.c_str();
 		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
-		dst.bindCount	= sCast<u16>(math::clamp(type.array.size(), sCast<size_t>(1), type.array.size()));
+		dst.bindCount	= type.array.empty() ? 1 : sCast<u16>(type.array[0]);
 
 		log("StorageImage name: {}, set: {}, binding: {}", name, set, binding);
 		_appendStageUnionInfo_storageImages(_allStageUnionInfo, dst);

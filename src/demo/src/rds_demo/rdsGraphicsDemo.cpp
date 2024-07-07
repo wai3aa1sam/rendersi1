@@ -100,7 +100,7 @@ GraphicsDemo::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 void 
 GraphicsDemo::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 {
-
+	
 }
 
 void 
@@ -128,12 +128,12 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 	#if 1
 	if (isCreateLights)
 	{
-		row = 5;
-		col = 5;
+		auto row_ = 5;
+		auto col_ = 5;
 
-		for (size_t r = 0; r < row; r++)
+		for (size_t r = 0; r < row_; r++)
 		{
-			for (size_t c = 0; c < col; c++)
+			for (size_t c = 0; c < col_; c++)
 			{
 				auto* ent = scene.addEntity();
 
@@ -230,48 +230,6 @@ GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCu
 			rdReq.drawMesh(RDS_SRCLOC, meshAssets().box->renderMesh, mtl);
 		});
 	return &skyboxPass;
-}
-
-RdgPass* 
-GraphicsDemo::addPreDepthPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* oDsBufHnd, RdgTextureHnd* oTexDepthHnd, Color4f clearColor)
-{
-	auto* rdGraph		= oRdGraph;
-	auto& dsBuf			= *oDsBufHnd;
-	auto& texDepth		= *oTexDepthHnd;
-	auto& passPreDepth	= rdGraph->addPass("pre_depth", RdgPassTypeFlags::Graphics);
-
-	{
-		auto& pass = passPreDepth;
-		if (oTexDepthHnd)
-			pass.setRenderTarget(texDepth, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		pass.setDepthStencil(dsBuf, RenderAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				rdReq.reset(rdGraph->renderContext(), drawData);
-				auto mtl = _mtlPreDepth;
-
-				auto* clearValue = rdReq.clearFramebuffers();
-				clearValue->setClearColor(clearColor);
-				clearValue->setClearDepth();
-
-				drawData->setupMaterial(mtl);
-				drawData->drawScene(rdReq, mtl);
-			});
-	}
-
-	/*if (oTexDepthHnd)
-	{
-		auto& pass = rdGraph->addPass(fmtAs_T<TempString>("{}_transit", passPreDepth.name()), RdgPassTypeFlags::Graphics);
-		pass.readTexture(texDepth);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-			}
-		);
-	}*/
-
-	return &passPreDepth;
 }
 
 RdgPass* 

@@ -242,12 +242,8 @@ public:
 	static constexpr SizeType s_kLocalBufferSize	= 4;
 	static constexpr SizeType s_kLocalImageSize		= 4;
 
-	static constexpr const char* s_kAutoSamplerNamePrefix = "_rds_";
-	static constexpr const char* s_kAutoSamplerNameSuffix = "_sampler";
-
-	static constexpr const char* s_kAutoTextureNamePrefix = "_rds_";
-	static constexpr const char* s_kAutoTextureNameSuffix = "_texture";
-
+	//static constexpr const char* s_kAutoSamplerNamePrefix = "_rds_";
+	static constexpr const char* s_kAutoSamplerNameSuffix	= "_sampler";
 	static constexpr const char* s_kAutoTextureStNameSuffix = "_ST_";
 
 public:
@@ -657,7 +653,7 @@ void
 ShaderResources::getSamplerNameTo(TempString& out, StrView name)
 {
 	out.clear();
-	fmtTo(out, "{}{}{}", s_kAutoSamplerNamePrefix, name, s_kAutoSamplerNameSuffix);
+	fmtTo(out, "{}{}", name, s_kAutoSamplerNameSuffix);
 }
 
 inline

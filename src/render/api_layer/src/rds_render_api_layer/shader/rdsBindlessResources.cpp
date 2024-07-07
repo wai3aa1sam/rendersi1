@@ -20,7 +20,7 @@ BindlessResources::CreateDesc BindlessResources::makeCDesc()
 BindlessResources::SizeType     
 BindlessResources::supportSamplerCount()
 {
-	return 3;
+	return 16;
 }
 
 BindlessResources::SizeType     
@@ -30,18 +30,32 @@ BindlessResources::createSamplerListTable(SamplerStateListTable& o)
 	{
 		auto& table = o;
 
+		SamplerState defaultSampler = SamplerState::makeLinearRepeat();
+		table.add(defaultSampler);
+
+		bool hasAddedDefault = false;
+
 		SamplerState s;
-		table.add(s);
+		for (size_t i = 1; i < enumInt(SamplerFilter::_kCount); i++)
+		{
+			for (size_t j = 1; j < enumInt(SamplerWrap::_kCount); j++)
+			{
+				s.minFliter = sCast<SamplerFilter>(j);
+				s.magFliter = sCast<SamplerFilter>(j);
 
-		s = {};
-		s.minFliter = SamplerFilter::Nearest;
-		s.magFliter = SamplerFilter::Linear;
-		table.add(s);
+				s.wrapU		= sCast<SamplerWrap>(i);
+				s.wrapV		= sCast<SamplerWrap>(i);
+				s.wrapS		= sCast<SamplerWrap>(i);
 
-		s = {};
-		s.minFliter = SamplerFilter::Nearest;
-		s.magFliter = SamplerFilter::Bilinear;
-		table.add(s);
+				if (!hasAddedDefault && defaultSampler.hash() == s.hash())
+				{
+					hasAddedDefault = true;
+					continue;
+				}
+
+				table.add(s);
+			}
+		}
 	}
 
 	RDS_CORE_ASSERT(supportSamplerCount() == o.size(), "invalid support count");

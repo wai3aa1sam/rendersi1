@@ -17,13 +17,7 @@ references:
 #endif
 #if 1
 
-// typedef uint64_t u64; // this is ok
-#define u64 uint64_t
-
-#define UINT_MAX 0xffffffff
-
-#define RDS_BINDLESS 1
-#if RDS_BINDLESS
+#if RDS_SHADER_USE_BINDLESS
 
     /* 
     --- define space for bindless type
@@ -43,7 +37,6 @@ references:
     /* 
     --- define bindless type
     */
-    SamplerState rds_sampler : register(s13, RDS_CONSTANT_BUFFER_SPACE);   // immutable sampler behave differently, so use this temp solution
 
     // ByteAddressBuffer
     ByteAddressBuffer 	    rds_bufferTable[] 						    : register(t0, RDS_BUFFER_SPACE);
@@ -96,22 +89,34 @@ references:
     --- define Texture
     */
 
+    #define RDS_SAMPLER_NAME(NAME)      RDS_CONCAT(NAME, _sampler)
+    #if 0
+    #define RDS_SAMPLER_GET(NAME)       rds_samplerTable[NonUniformResourceIndex(RDS_SAMPLER_NAME(NAME))]
+    #else
+    // immutable sampler behave differently, so use this temp solution
+    /*
+    * since immutable sampler does not work as expected
+    * , it only support with numeric constant eg. rds_samplerTable[NonUniformResourceIndex(1))]
+    * maybe it is my fault, btw we change the strategy.
+    * currently using SamplerState array to replace the immutable sampler,
+    * the frontend part should be compatible with immutable sampler,
+    * However, this method is not portable for gpu that only has minimum bind slot count (16)
+    */
+    SamplerState rds_samplers[RDS_K_SAMPLER_COUNT] : register(s17, RDS_CONSTANT_BUFFER_SPACE);
+    #define RDS_SAMPLER_GET(NAME)       rds_samplers[RDS_SAMPLER_NAME(NAME)]
+    #endif
+
     #define RDS_TEXTURE_ST_SUFFIX _ST_
+    #define RDS_TEXTURE_UV2(NAME, UV)          float2(UV.xy * RDS_TEXTURE_ST(NAME).xy + RDS_TEXTURE_ST(NAME).zw)
 
     #define RDS_TEXTURE_NAME(           NAME)  NAME
     #define RDS_TEXTURE_ST(             NAME)  RDS_CONCAT(NAME, RDS_TEXTURE_ST_SUFFIX)
-    #define RDS_SAMPLER_NAME(           NAME)  RDS_CONCAT(RDS_CONCAT(_rds_, NAME), _sampler)
     #define RDS_TEXTURE_1D(             NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
     #define RDS_TEXTURE_2D(             NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME); float4 RDS_TEXTURE_ST(NAME)
     #define RDS_TEXTURE_3D(             NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
     #define RDS_TEXTURE_CUBE(           NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
     #define RDS_TEXTURE_2D_ARRAY(       NAME)  uint RDS_TEXTURE_NAME(NAME); uint RDS_SAMPLER_NAME(NAME)
 
-    #define RDS_SAMPLER_GET(NAME)       rds_sampler
-
-    #define RDS_TEXTURE_UV2(NAME, UV) float2(UV.xy * RDS_TEXTURE_ST(NAME).xy + RDS_TEXTURE_ST(NAME).zw)
-
-    //#define RDS_SAMPLER_GET(NAME)       rds_samplerTable[NonUniformResourceIndex(RDS_SAMPLER_NAME(NAME))]
     #define RDS_TEXTURE_1D_GET(             NAME) rds_texture1DTable[           NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
     #define RDS_TEXTURE_2D_GET(             NAME) rds_texture2DTable[           NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
     #define RDS_TEXTURE_3D_GET(             NAME) rds_texture3DTable[           NonUniformResourceIndex(RDS_TEXTURE_NAME(NAME))]
@@ -139,11 +144,11 @@ references:
     #define RDS_TEXTURE_2D_ARRAY_GET_DIMENSIONS(        TEX, OUT_WH)    RDS_TEXTURE_2D_ARRAY_GET(TEX).GetDimensions(OUT_WH.x,   OUT_WH.y)
 
     #define RDS_TEXTURE_T_NAME(         T, NAME) (NAME)
-    #define RDS_TEXTURE_1D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
-    #define RDS_TEXTURE_2D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); float4 RDS_TEXTURE_ST(NAME)
-    #define RDS_TEXTURE_3D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
-    #define RDS_TEXTURE_CUBE_T(         T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
-    #define RDS_TEXTURE_2D_ARRAY_T(     T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME)
+    #define RDS_TEXTURE_1D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_2D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); uint RDS_SAMPLER_NAME(NAME); float4 RDS_TEXTURE_ST(NAME)
+    #define RDS_TEXTURE_3D_T(           T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_CUBE_T(         T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); uint RDS_SAMPLER_NAME(NAME)
+    #define RDS_TEXTURE_2D_ARRAY_T(     T, NAME) uint RDS_TEXTURE_T_NAME(T, NAME); uint RDS_SAMPLER_NAME(NAME)
 
     #define RDS_TEXTURE_1D_T_GET(           T, NAME) RDS_TEXTURE_TABLE_T_NAME(1D,           T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]
     #define RDS_TEXTURE_2D_T_GET(           T, NAME) RDS_TEXTURE_TABLE_T_NAME(2D,           T)[NonUniformResourceIndex(RDS_TEXTURE_T_NAME(T, NAME))]

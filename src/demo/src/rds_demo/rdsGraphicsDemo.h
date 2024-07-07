@@ -50,7 +50,6 @@ public:
 
 public:
 	RdgPass* addSkyboxPass(		RenderGraph* oRdGraph, DrawData* drawData, TextureCube* texSkybox, RdgTextureHnd texColor, RdgTextureHnd texDepth);
-	RdgPass* addPreDepthPass(	RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* oDsBuf, RdgTextureHnd* oTexDepthHnd, Color4f clearColor);
 	RdgPass* addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrView passName, RdgTextureHnd rtColor, RdgTextureHnd texColor, Material* material);
 	RdgPass* addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, Material* material);
 	RdgPass* addDisplayNormalPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor);

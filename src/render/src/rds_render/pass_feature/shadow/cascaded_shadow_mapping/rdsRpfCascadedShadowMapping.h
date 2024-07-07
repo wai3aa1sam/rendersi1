@@ -18,12 +18,11 @@ public:
 	static constexpr u32 s_kCascadeLevelCount = 4;
 
 public:
-	using DepthMaps			= Vector<RdgTextureHnd,	 s_kCascadeLevelCount>;
-	using LightMatrices		= Vector<Mat4f,			 s_kCascadeLevelCount>;
+	//using DepthMaps			= Vector<RdgTextureHnd,	 s_kCascadeLevelCount>;
+	using LightMatrices		= Vector<Mat4f>;
 	using CascaedPlaneDists	= Vector<float,			 s_kCascadeLevelCount>;
 
 public:
-	DepthMaps			depthMaps;
 	RdgTextureHnd		shadowMap;
 	LightMatrices		lightMatrices;
 	CascaedPlaneDists	cascadePlaneDists;
@@ -31,7 +30,7 @@ public:
 
 struct RpfCascadedShadowMapping_Param : public RenderPassFeature_Param
 {
-	u32		mapSize				= 1024 * 2;
+	u32		mapSize				= 1024 * 4;
 	u32		cascadedSplitCount	= 3;
 	float	cascadeSplitLambda	= 0.95f;
 };
@@ -48,7 +47,7 @@ public:
 	static constexpr u32 s_kCascadeLevelCount = Result::s_kCascadeLevelCount;
 
 public:
-	using DepthMaps			= Result::DepthMaps;
+	//using DepthMaps			= Result::DepthMaps;
 	using LightMatrices		= Result::LightMatrices;
 	using CascaedPlaneDists	= Result::CascaedPlaneDists;
 	using Materials			= Vector<SPtr<Material>, s_kCascadeLevelCount>;

@@ -109,7 +109,6 @@ PixelIn vs_main(VertexIn input)
     return o;
 }
 
-
 //[earlydepthstencil]
 float4 ps_main(PixelIn input) : SV_TARGET
 {
@@ -127,11 +126,12 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	normal 	= normalize(input.normalVs);
 	tangent = normalize(input.tangentVs);
 
+	pos 	= input.positionWs;
 	normal 	= normalize(input.normal);
 	tangent = normalize(input.tangentWs);
 
 	Surface surface = Material_makeSurface(uv, pos, normal, tangent);
-	//surface = Material_makeSurface(uv, pos, normal);
+	surface = Material_makeSurface(uv, pos, normal);
 	surface.ambient				= ambient;
 	surface.diffuse				= diffuse;
 	surface.specular			= specular;
@@ -175,9 +175,9 @@ float4 ps_main(PixelIn input) : SV_TARGET
 
 	o.rgb = ToneMapping_reinhard(o.rgb);
 	o.rgb = PostProc_gammaEncoding(o.rgb);
-
+	
 	//o.rgb = remapNeg11To01(normal);
-	o.rgb = remapNeg11To01(surface.normal);
+	//o.rgb = remapNeg11To01(surface.normal);
 
     return o;
 }

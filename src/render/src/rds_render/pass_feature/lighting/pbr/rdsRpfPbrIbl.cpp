@@ -55,12 +55,22 @@ RpfPbrIbl::addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const Render
 	bool isFirst = createTexture(*result, texHdrEnvMap->debugName(), cubeSize, irradianceCubeSize);
 	RdgPass* passPrefilteredEnvCube = nullptr;
 
+	SamplerState samplerState;
+
+	samplerState.minFliter	= SamplerFilter::Linear;
+	samplerState.magFliter	= SamplerFilter::Linear;
+
+	samplerState.wrapU		= SamplerWrap::ClampToEdge;
+	samplerState.wrapV		= SamplerWrap::ClampToEdge;
+	samplerState.wrapS		= SamplerWrap::ClampToEdge;
+
 	#if 1
 	RdgPass* passHdrToCube			= addRenderToCubePass("hdrToCube",				result->cubeEnvMap, _shaderHdrToCube, box, nullptr
 		, _mtlsHdrToCube
 		, [=](Material* mtl, u32 mip, u32 face)
 		{
 			mtl->setParam("tex_equirectangular", texHdrEnvMap);
+			mtl->setParam("tex_equirectangular", samplerState);
 		}
 	); RDS_UNUSED(passHdrToCube);
 	#if 1
@@ -74,16 +84,18 @@ RpfPbrIbl::addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const Render
 			mtl->setParam("delta_phi",		0.025f);
 			mtl->setParam("delta_theta",	0.025f);
 			mtl->setParam("cube_env",		result->cubeEnvMap);
+			mtl->setParam("cube_env",		samplerState);
 		}
 	); RDS_UNUSED(passIrradianceEnvCube);
 	#endif // 0
 	#if 1
-	passPrefilteredEnvCube = addRenderToCubePass("PrefilteredEnvCube",		result->cubePrefilteredMap, _shaderPrefilteredEnvCube, box, passIrradianceEnvCube
+	passPrefilteredEnvCube			= addRenderToCubePass("PrefilteredEnvCube",		result->cubePrefilteredMap, _shaderPrefilteredEnvCube, box, passIrradianceEnvCube
 		, _mtlsPrefilteredEnvCube
 		, [=](Material* mtl, u32 mip, u32 face)
 		{
 			mtl->setParam("roughness",	sCast<float>(mip) / result->cubePrefilteredMap->mipCount());
-			mtl->setParam("cube_env", result->cubeEnvMap);
+			mtl->setParam("cube_env",	result->cubeEnvMap);
+			mtl->setParam("cube_env",	samplerState);
 		}
 	); RDS_UNUSED(passPrefilteredEnvCube);
 	pass = passPrefilteredEnvCube;
@@ -236,7 +248,7 @@ RpfPbrIbl::addRenderToCubePass(StrView name, TextureCube* outCube, Shader* shade
 						{
 							Mat4f::s_lookAt(center, Vec3f::s_right(),	Vec3f{0.0f, -1.0f,   0.0f}),
 							Mat4f::s_lookAt(center, Vec3f::s_left(),	Vec3f{0.0f, -1.0f,   0.0f}),
-							#if 1
+							#if 0
 							Mat4f::s_lookAt(center, Vec3f::s_up(),		Vec3f{0.0f,  0.0f,    1.0f}),
 							Mat4f::s_lookAt(center, Vec3f::s_down(),	Vec3f{0.0f,  0.0f,   -1.0f}),
 							#else
@@ -304,30 +316,25 @@ RpfPbrIbl::createTexture(Result& result_, StrView name, u32 cubeSize, u32 irradi
 	auto irrCubeSize	= irradianceCubeSize;
 	auto cubeFormat		= ColorType::RGBAh;
 
-	SamplerState samplerState;
-	samplerState.wrapU = SamplerWrap::ClampToEdge;
-	samplerState.wrapV = SamplerWrap::ClampToEdge;
-	samplerState.wrapS = SamplerWrap::ClampToEdge;
-
 	auto texCubeCDesc = TextureCube::makeCDesc(RDS_SRCLOC);
 
 	TempString cubeName;
 
 	auto& cubeEnvMap = result_.cubeEnvMap;
 	fmtToNew(cubeName, "{}-cubeHdrEnvMap",			name);
-	texCubeCDesc.create(cubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst, samplerState);
+	texCubeCDesc.create(cubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst);
 	cubeEnvMap = renderDevice()->createTextureCube(texCubeCDesc);
 	cubeEnvMap->setDebugName(cubeName);
 
 	auto& cubeIrradinceMap = result_.cubeIrradinceMap;
 	fmtToNew(cubeName, "{}-cubeIrradianceEnvMap",	name);
-	texCubeCDesc.create(irrCubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst, samplerState);
+	texCubeCDesc.create(irrCubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst);
 	cubeIrradinceMap = renderDevice()->createTextureCube(texCubeCDesc);
 	cubeIrradinceMap->setDebugName(cubeName);
 
 	auto& cubePrefilteredMap = result_.cubePrefilteredMap;
 	fmtToNew(cubeName, "{}-cubePrefilteredMap",	name);
-	texCubeCDesc.create(cubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst, samplerState);
+	texCubeCDesc.create(cubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst);
 	cubePrefilteredMap = renderDevice()->createTextureCube(texCubeCDesc);
 	cubePrefilteredMap->setDebugName(cubeName);
 
@@ -335,7 +342,7 @@ RpfPbrIbl::createTexture(Result& result_, StrView name, u32 cubeSize, u32 irradi
 	if (isFirst)
 	{
 		auto texCDesc = Texture2D::makeCDesc(RDS_SRCLOC);
-		texCDesc = Texture2D_CreateDesc{ Tuple2u{ cubeSize, cubeSize }, ColorType::RGh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource, samplerState };
+		texCDesc = Texture2D_CreateDesc{ Tuple2u{ cubeSize, cubeSize }, ColorType::RGh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource };
 
 		auto& brdfLut = result_.brdfLut;
 		brdfLut = renderDevice()->createTexture2D(texCDesc);

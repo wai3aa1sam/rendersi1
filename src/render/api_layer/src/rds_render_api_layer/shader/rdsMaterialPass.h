@@ -67,7 +67,7 @@ protected:
 #endif // 0
 #if 1
 
-#if RDS_NO_BINDLESS
+#if !RDS_SHADER_USE_BINDLESS
 template<class T> inline 
 void 
 MaterialPass_Stage::setParam(Material* mtl, StrView name, const T& v)
@@ -222,7 +222,7 @@ public:
 	template<class TEX> void setTexParam	(	StrView name, TEX*					v);
 	template<class T>	void setArray(			StrView name, const Span<T>&		v);
 	template<class T>	void setParam(			StrView name, const T&				v);
-						void setSamplerParam(	StrView name, const SamplerState&	v);
+						void setSamplerParam(	StrView name, u32					samplerIndex);
 						void setBufferParam(	StrView name, RenderGpuBuffer*		v);
 	template<class TEX> void setImageParam(		StrView name, TEX*					v, u32 mipLevel);
 
@@ -267,13 +267,13 @@ MaterialPass::setParam(StrView name, const T& v)
 {
 	auto* mtl = _material; RDS_UNUSED(mtl);
 
-	#if RDS_NO_BINDLESS
+	#if RDS_SHADER_USE_BINDLESS
+	_framedShaderRscs.setParam(name, v);
+	#else
 	if (_vertexStage)	_vertexStage ->setParam(mtl, name, v);
 	if (_pixelStage)	_pixelStage	 ->setParam(mtl, name, v);
 	if (_computeStage)	_computeStage->setParam(mtl, name, v);
 	#endif
-
-	_framedShaderRscs.setParam(name, v);
 }
 
 template<class T> inline
@@ -290,28 +290,28 @@ MaterialPass::setTexParam(StrView name, TEX* v)
 {
 	auto* mtl = _material; RDS_UNUSED(mtl);
 
-	#if RDS_NO_BINDLESS
+	#if RDS_SHADER_USE_BINDLESS
+	_framedShaderRscs.setParam(name, v);
+	#else
 	if (_vertexStage)	_vertexStage ->setTexParam(mtl, name, v);
 	if (_pixelStage)	_pixelStage  ->setTexParam(mtl, name, v);
 	if (_computeStage)	_computeStage->setTexParam(mtl, name, v);
-	#endif // RDS_NO_BINDLESS
-	
-	_framedShaderRscs.setTexParam(name, v);
+	#endif
 }
 
 inline
 void 
-MaterialPass::setSamplerParam(StrView name, const SamplerState& v)
+MaterialPass::setSamplerParam(StrView name, u32 samplerIndex)
 {
 	auto* mtl = _material; RDS_UNUSED(mtl);
 
-	#if RDS_NO_BINDLESS
+	#if RDS_SHADER_USE_BINDLESS
+	_framedShaderRscs.setParam(name, samplerIndex);
+	#else
 	if (_vertexStage)	_vertexStage ->setSamplerParam(mtl, name, v);
 	if (_pixelStage)	_pixelStage  ->setSamplerParam(mtl, name, v);
 	if (_computeStage)	_computeStage->setSamplerParam(mtl, name, v);
 	#endif
-
-	_framedShaderRscs.setSamplerParam(name, v);
 }
 
 inline
@@ -320,11 +320,11 @@ MaterialPass::setBufferParam(StrView name, RenderGpuBuffer* v)
 {
 	auto* mtl = _material; RDS_UNUSED(mtl);
 
-	#if RDS_NO_BINDLESS
+	#if RDS_SHADER_USE_BINDLESS
+	_framedShaderRscs.setParam(name, v);
+	#else
 	if (_computeStage)	_computeStage->setBufferParam(mtl, name, v);
 	#endif
-
-	_framedShaderRscs.setBufferParam(name, v);
 }
 
 inline const MaterialPass::Info& MaterialPass::info() const { return _shaderPass->info(); }

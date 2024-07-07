@@ -226,7 +226,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 	{
 		return false;
 	}
-	create(shaderRscs);
+	create(shaderRscs, pass);
 
 	RDS_TODO("since the TransferContext is committed before RenderContext, using staging will not cause it failed to upload (cleared)");
 	shaderRscs.uploadToGpu(pass);
@@ -277,19 +277,21 @@ Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_Descripto
 		RDS_THROW("vk descriptor allocate failed");
 		//return false;
 	}
-	create(shaderRscs);
+	create(shaderRscs, pass);
 
 	auto shaderStageFlag = VkShaderStageFlagBits::VK_SHADER_STAGE_ALL;
 
 	for (auto& e : shaderRscs.constBufs()) bindConstantBuffer(dstSet, e, shaderStageFlag, pass);
 
+	#if !RDS_VK_USE_IMMUTABLE_SAMPLER
 	for (auto& e : shaderRscs.samplerParams())
 	{
-		if (StrUtil::isSame(e.name().c_str(), "rds_sampler"))
+		if (StrUtil::isSame(e.name().c_str(), "rds_samplers"))
 		{
-			bindSampler	(dstSet, e, shaderStageFlag, pass);
+			bindSamplers(dstSet, e, pass->renderDeviceVk()->bindlessResourceVk().vkSamplers(), shaderStageFlag, pass);
 		}
 	}
+	#endif // RDS_VK_USE_IMMUTABLE_SAMPLER
 
 	if (!_writeDescs.is_empty())
 		vkUpdateDescriptorSets(_alloc->vkDevHnd(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
@@ -300,10 +302,12 @@ Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_Descripto
 }
 
 void 
-Vk_DescriptorBuilder::create(ShaderResources& shaderRscs)
+Vk_DescriptorBuilder::create(ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
+	auto samplerCount = pass->renderDeviceVk()->bindlessResourceVk().vkSamplers().size();
+
 	auto bufInfoCount	= shaderRscs.constBufs().size() + shaderRscs.bufferParams().size();
-	auto imageInfoCount = shaderRscs.texParams().size() + shaderRscs.imageParams().size() + shaderRscs.samplerParams().size();
+	auto imageInfoCount = shaderRscs.texParams().size() + shaderRscs.imageParams().size() + shaderRscs.samplerParams().size() + samplerCount;
 
 	_bufInfos.reserve(bufInfoCount);
 	_imageInfos.reserve(imageInfoCount);
@@ -371,7 +375,7 @@ Vk_DescriptorBuilder::bindSampler(Vk_DescriptorSet& dstSet, SamplerParam& sample
 {
 	#if 1
 
-	_bindSampler(dstSet, samplerParam, pass->renderDeviceVk()->bindlessResourceVk().vkSamplers()[0].hnd(), stageFlag, pass);
+	_bindSampler(dstSet, samplerParam, pass->renderDeviceVk()->bindlessResourceVk().vkSamplers()[0].hnd(), 0, stageFlag, pass);
 
 	#else
 
@@ -447,12 +451,12 @@ Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, TexParam&
 	{
 		auto& bindlessRscVk = renderDeviceVk()->bindlessResourceVk();
 		auto samplerIdx = bindlessRscVk.findSamplerIndex(samplerParam->samplerState());
-		_bindSampler(dstSet, *samplerParam, bindlessRscVk.vkSamplers()[samplerIdx].hnd(), stageFlag, pass);
+		_bindSampler(dstSet, *samplerParam, bindlessRscVk.vkSamplers()[samplerIdx].hnd(), 0, stageFlag, pass);
 	}
 }
 
 void 
-Vk_DescriptorBuilder::_bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam& samplerParam, Vk_Sampler_T* samplerHnd, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass)
+Vk_DescriptorBuilder::_bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam& samplerParam, Vk_Sampler_T* samplerHnd, u32 dstIdx, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass)
 {
 	const auto& info = samplerParam.info();
 
@@ -466,12 +470,22 @@ Vk_DescriptorBuilder::_bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&
 	out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	out.dstSet				= dstSet.hnd();
 	out.dstBinding			= info.bindPoint;
-	out.dstArrayElement		= 0;
+	out.dstArrayElement		= dstIdx;
 	out.descriptorType		= Util::toVkDescriptorType(info.paramType());
 	out.descriptorCount		= 1;
 	out.pBufferInfo			= nullptr;
 	out.pImageInfo			= &imageInfo;
 	out.pTexelBufferView	= nullptr;
+}
+
+void 
+Vk_DescriptorBuilder::bindSamplers(Vk_DescriptorSet& dstSet, const SamplerParam& samplerParam, Span<Vk_Sampler> samplers, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass)
+{
+	for (u32 i = 0; i < samplers.size(); i++)
+	{
+		auto& sampler = samplers[i];
+		_bindSampler(dstSet, samplerParam, sampler.hnd(), i, stageFlag, pass);
+	}
 }
 
 #endif

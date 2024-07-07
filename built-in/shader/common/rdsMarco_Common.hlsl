@@ -20,6 +20,10 @@ E(uint2,) \
 E(uint4,) \
 // ---
 
+// typedef uint64_t u64; // this is ok
+#define u64 uint64_t
+#define UINT_MAX 0xffffffff
+
 #endif
 
 #endif

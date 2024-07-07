@@ -37,16 +37,16 @@ RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
 	return p;
 }
 
-SamplerState::SamplerState()
-	: isAnisotropy(true)
-{
-	minFliter	= Filter::Linear;
-	magFliter	= Filter::Linear;
-
-	wrapU		= Wrap::Repeat;
-	wrapV		= Wrap::Repeat;
-	wrapS		= Wrap::Repeat;
-}
+//SamplerState::SamplerState()
+//	: isAnisotropy(true)
+//{
+//	minFliter	= Filter::Linear;
+//	magFliter	= Filter::Linear;
+//
+//	wrapU		= Wrap::Repeat;
+//	wrapV		= Wrap::Repeat;
+//	wrapS		= Wrap::Repeat;
+//}
 
 #if 0
 #pragma mark --- rdsTexture2D-Impl ---
