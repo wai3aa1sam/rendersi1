@@ -86,26 +86,7 @@ public:
 		return hash() < rhs.hash();
 	}
 
-	HashValue hash() const
-	{
-		HashValue o = {};
-
-		math::hashCombine(o, enumInt(minFliter));
-		math::hashCombine(o, enumInt(magFliter));
-
-		math::hashCombine(o, enumInt(wrapU));
-		math::hashCombine(o, enumInt(wrapV));
-		math::hashCombine(o, enumInt(wrapS));
-
-		Hash<decltype(minLod)> hasher;
-
-		math::hashCombine(o, hasher(minLod));
-		math::hashCombine(o, hasher(maxLod));
-
-		math::hashCombine(o, isAnisotropy);
-
-		return o;
-	}
+	HashValue hash() const;
 };
 
 #endif // 1

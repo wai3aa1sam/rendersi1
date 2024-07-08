@@ -40,17 +40,21 @@ RpfGeometryBuffer::addGeometryPass(Result& oResult, const DrawSettings& drawSett
 
 	auto screenSize	= drawData->resolution2u();
 
-	RdgTextureHnd texNormal			= rdGraph->createTexture("gBuf_normal",			Texture2D_CreateDesc{ screenSize, ColorType::RGh,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
-	RdgTextureHnd texAlbedo			= rdGraph->createTexture("gBuf_albedo",			Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
-	RdgTextureHnd texDebugPosition	= rdGraph->createTexture("gBuf_debugPosition",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAf,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+	RdgTextureHnd texNormal				= rdGraph->createTexture("gBuf_normal",				Texture2D_CreateDesc{ screenSize, ColorType::RGh,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+	RdgTextureHnd texBaseColor			= rdGraph->createTexture("gBuf_baseColor",			Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+	RdgTextureHnd texRoughnessMetalness = rdGraph->createTexture("gBuf_roughnessMetalness",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+	RdgTextureHnd texEmission			= rdGraph->createTexture("gBuf_emission",			Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+	RdgTextureHnd texDebugPosition		= rdGraph->createTexture("gBuf_debugPosition",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAf,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 
 	Material* mtl = _mtlGeometryBuffer;
 	{
 		auto& pass = rdGraph->addPass("geometry_pass", RdgPassTypeFlags::Graphics);
-		pass.setRenderTarget(texNormal,			RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		pass.setRenderTarget(texAlbedo,			RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		pass.setRenderTarget(texDebugPosition,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		pass.setDepthStencil(dsBuf, RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);
+		pass.setRenderTarget(texNormal,					RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setRenderTarget(texBaseColor,				RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setRenderTarget(texRoughnessMetalness,		RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setRenderTarget(texEmission,				RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setRenderTarget(texDebugPosition,			RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setDepthStencil(dsBuf, RdgAccess::Write,	RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
@@ -66,9 +70,11 @@ RpfGeometryBuffer::addGeometryPass(Result& oResult, const DrawSettings& drawSett
 		passGeom = &pass;
 	}
 
-	oResult.normal			= texNormal;
-	oResult.albedo			= texAlbedo;
-	oResult.debugPosition	= texDebugPosition;
+	oResult.normal				= texNormal;
+	oResult.baseColor			= texBaseColor;
+	oResult.roughnessMetalness	= texRoughnessMetalness;
+	oResult.emission			= texEmission;
+	oResult.debugPosition		= texDebugPosition;
 
 	return passGeom;
 }

@@ -299,12 +299,6 @@ inline BindlessResources::SizeType BindlessResources::samplerCount()        cons
 
 inline BindlessResources::SizeType BindlessResources::size() const { return _size; }
 
-inline u32 BindlessResources::findSamplerIndex(const SamplerState& samplerState) const 
-{ 
-    auto idx = _samplerStateListTable.findIndex(samplerState);
-    RDS_CORE_ASSERT(idx != _samplerStateListTable.s_kInvalid, "not found");
-    return sCast<u32>(idx);
-}
 
 
 #endif

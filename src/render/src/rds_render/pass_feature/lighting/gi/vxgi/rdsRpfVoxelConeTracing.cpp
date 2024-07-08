@@ -319,7 +319,7 @@ RpfVoxelConeTracing::addVoxelizationDebugPass(RdgTextureHnd rtColor, RdgTextureH
 
 				mtl->setParam("voxel_extent",		1.0f);
 				mtl->setParam("voxel_resolution",	voxelResolution);
-				mtl->setParam("voxel_tex3D",		voxelTexColor.texture3D());
+				mtl->setParam("voxel_tex_radiance",		voxelTexColor.texture3D());
 
 				drawData->setupMaterial(mtl);
 				rdReq.drawMesh(RDS_SRCLOC, drawData->meshAssets->plane->renderMesh, mtl);
@@ -363,7 +363,7 @@ RpfVoxelConeTracing::addVoxelVisualizationPass(RdgTextureHnd rtColor, RdgTexture
 
 				setupCommonParam(mtl, visualizeLevel, drawData);
 
-				mtl->setParam("voxel_tex3D",		voxelTexColor.texture3D());
+				mtl->setParam("voxel_tex_radiance",		voxelTexColor.texture3D());
 
 				drawData->setupMaterial(mtl);
 				setupMipmapParam(mtl);
@@ -613,7 +613,7 @@ RpfVoxelConeTracing::addVoxelConeTracingPass(RpfGeometryBuffer_Result& gBuf, Rdg
 					mtl->setImage("out_indirect_specular",	texSpecular.texture2D(), 0);
 				}
 
-				mtl->setParam("voxel_tex3D",		result.voxelTexColor.texture3D());
+				mtl->setParam("voxel_tex_radiance",		result.voxelTexColor.texture3D());
 
 				mtl->setParam("tex_depth",			depth.texture2D());
 				mtl->setParam("gBuf_normal",		gBuf.normal.texture2D());

@@ -183,6 +183,22 @@ BindlessResources::onCommit()
 
 }
 
+u32 
+BindlessResources::findSamplerIndex(const SamplerState& samplerState) const 
+{ 
+	auto idx = _samplerStateListTable.findIndex(samplerState);
+
+	/*
+	RDS_DUMP_VAR(idx);
+	RDS_DUMP_VAR(_samplerStateListTable.size());
+	RDS_DUMP_VAR(samplerState.minFliter, samplerState.magFliter);
+	RDS_DUMP_VAR(samplerState.wrapU, samplerState.wrapV, samplerState.wrapS);
+	RDS_DUMP_VAR(samplerState.minLod, samplerState.maxLod);
+	*/
+
+	RDS_CORE_ASSERT(idx != _samplerStateListTable.s_kInvalid, "not found");
+	return sCast<u32>(idx);
+}
 
 #endif
 

@@ -87,7 +87,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
     Surface surface;
     surface.pos                 = input.positionWs;
     surface.normal              = normalize(input.normal);
-    surface.color.rgb           = color;
+    surface.baseColor.rgb           = color;
     surface.roughness           = roughness;
     surface.metalness            = metalness;
     surface.ambientOcclusion    = ao;

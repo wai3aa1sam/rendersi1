@@ -79,7 +79,7 @@ float Pbr_geometrySmith_ibl(float dotNV, float dotNL, float roughness)
 LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3 L, float3 colorLight, float intensity)
 {
     float3 normal   = surface.normal;
-    float3 albedo   = surface.color.rgb;
+    float3 albedo   = surface.baseColor.rgb;
 
     //float3 viewDir  = normalize(posView - posWs);
     //float3 dirLight = normalize(posLight - posWs);
@@ -128,7 +128,7 @@ float3 Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3 lightPo
 {
     float3 pos      = surface.pos;
     float3 normal   = surface.normal;
-    float3 albedo   = surface.color.rgb;
+    float3 albedo   = surface.baseColor.rgb;
 
     float3 lightPosDir 	= lightPos - pos;
 
@@ -142,7 +142,7 @@ float3 Pbr_indirectDiffuse_ibl(Surface surface, float3 viewDir, float3 irradianc
 {
     float3 normal    = surface.normal;
 
-    float3 albedo    = surface.color.rgb;
+    float3 albedo    = surface.baseColor.rgb;
     float3 baselRefl = float3(0.04, 0.04, 0.04); 
     baselRefl = lerp(baselRefl, albedo, surface.metalness);
 
@@ -219,7 +219,7 @@ LightingResult Pbr_computeIndirectLighting(Surface surface, float3 irradianceEnv
 {
     LightingResult o = (LightingResult)0;
 
-    float3 albedo   = surface.color.rgb;
+    float3 albedo   = surface.baseColor.rgb;
     float3 baseRefl = float3(0.04, 0.04, 0.04); 
     baseRefl        = lerp(baseRefl, albedo, surface.metalness);
 

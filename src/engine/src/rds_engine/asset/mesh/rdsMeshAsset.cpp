@@ -78,7 +78,7 @@ AssimpMeshLoader::toAiTextureType(MaterialData_TextureType v)
 		case SRC::Albedo:				{ return aiTextureType::aiTextureType_DIFFUSE; }			break;
 		case SRC::Normal:				{ return aiTextureType::aiTextureType_NORMALS; }			break;
 		case SRC::RoughnessMetalness:	{ return aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS; }	break;
-		case SRC::Emissive:				{ return aiTextureType::aiTextureType_EMISSIVE; }			break;
+		case SRC::Emission:				{ return aiTextureType::aiTextureType_EMISSIVE; }			break;
 		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
 	}
 }
@@ -629,7 +629,7 @@ AssimpMeshLoader::loadMaterials(Shader* shader, const aiScene* srcScene)
 
 				if (isSuccess(srcMaterial.Get(AI_MATKEY_COLOR_DIFFUSE, bufColor4f)))
 				{
-					materialDatum.albedo = toColor4(bufColor4f);
+					materialDatum.baseColor = toColor4(bufColor4f);
 				}
 
 				if (isSuccess(srcMaterial.Get(AI_MATKEY_COLOR_EMISSIVE, bufColor4f)))
@@ -774,15 +774,15 @@ MeshAssetMaterialList::setupMaterial(Material* mtl, SizeType mtlIdx)
 
 	const auto& mtlDatum = materialData[mtlIdx];
 
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Albedo))				mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Albedo),				tex);
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Normal))				mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Normal),				tex);
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::RoughnessMetalness))	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_RoughnessMetalness),	tex);
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Emissive))			mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_Emissive),				tex);
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Albedo))				{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_baseColor),				tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexBaseColor),				sCast<u32>(1)); }
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Normal))				{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_normal),				tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexNormal),				sCast<u32>(1)); }
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::RoughnessMetalness))	{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_roughnessMetalness),	tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexRoughnessMetalness),	sCast<u32>(1)); }
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Emission))			{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_emission),			tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexEmisson),				sCast<u32>(1)); }
 
-	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_albedo),				mtlDatum.albedo);
-	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_emission),			mtlDatum.emission);
+	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_baseColor),			mtlDatum.baseColor);
 	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_metalness),			mtlDatum.metalness);
 	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_roughness),			mtlDatum.roughness);
+	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_emission),			mtlDatum.emission);
 }
 
 

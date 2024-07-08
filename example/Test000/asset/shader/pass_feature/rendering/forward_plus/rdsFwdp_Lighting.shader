@@ -1,15 +1,15 @@
 #if 0
 Shader {
 	Properties {
-		Color4f  	RDS_MATERIAL_PROPERTY_albedo	= {1.0, 1.0, 1.0, 1.0}
+		Color4f  	RDS_MATERIAL_PROPERTY_baseColor	= {1.0, 1.0, 1.0, 1.0}
 		Color4f  	RDS_MATERIAL_PROPERTY_emission	= {1.0, 1.0, 1.0, 1.0}
 		Float   	RDS_MATERIAL_PROPERTY_metalness	= 0.0
 		Float   	RDS_MATERIAL_PROPERTY_roughness	= 0.5
 
-		Texture2D 	RDS_MATERIAL_TEXTURE_Albedo
-		Texture2D 	RDS_MATERIAL_TEXTURE_Normal
-		Texture2D 	RDS_MATERIAL_TEXTURE_RoughnessMetalness
-		Texture2D 	RDS_MATERIAL_TEXTURE_Emissive
+		Texture2D 	RDS_MATERIAL_TEXTURE_baseColor
+		Texture2D 	RDS_MATERIAL_TEXTURE_normal
+		Texture2D 	RDS_MATERIAL_TEXTURE_roughnessMetalness
+		Texture2D 	RDS_MATERIAL_TEXTURE_emission
 	}
 	
 	Pass {
@@ -49,6 +49,7 @@ struct VertexIn
     float4 positionOs   : SV_POSITION;
     float2 uv           : TEXCOORD0;
     float3 normal   	: NORMAL;
+	float3 tangent		: TANGENT;
 };
 
 struct PixelIn 
@@ -59,6 +60,8 @@ struct PixelIn
 	float3 normalVs   	: TEXCOORD1;
 	float3 positionWs   : TEXCOORD2;
 	float3 positionVs   : TEXCOORD3;
+	float3 tangentWs	: TEXCOORD4;
+	float3 tangentVs	: TEXCOORD5;
 };
 
 #if 0
@@ -85,6 +88,9 @@ PixelIn vs_main(VertexIn input)
     o.normal 	  	= SpaceTransform_toWorldNormal( input.normal, 		objTransf);
     o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		objTransf, drawParam);
 
+    o.tangentWs   	= SpaceTransform_toWorldNormal(input.tangent, 		objTransf);
+	o.tangentVs   	= SpaceTransform_toViewNormal( input.tangent,		objTransf, drawParam);
+
     return o;
 }
 
@@ -103,7 +109,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
  	uint  lightIdxStartOffset 	= lightBlock.x;
     uint  lightCount 			= lightBlock.y;
 
-	Surface surface = Material_makeSurface(uv, input.positionVs, normalize(input.normalVs));
+	Surface surface = Material_makeSurface(uv, input.positionVs, normalize(input.normalVs), normalize(input.tangentVs));
 
 	LightingResult oLightingResult = (LightingResult)0;
 	for (uint i = 0; i < lightCount; ++i)

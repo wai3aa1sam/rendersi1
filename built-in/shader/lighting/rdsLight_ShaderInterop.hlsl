@@ -1,10 +1,10 @@
-#ifndef __rdsLightInterop_HLSL__
-#define __rdsLightInterop_HLSL__
+#ifndef __rdsLight_ShaderInterop_HLSL__
+#define __rdsLight_ShaderInterop_HLSL__
 
 //#include "rdsLighting_Common.hlsl"
 
 #if 0
-#pragma mark --- LightInterop-Impl ---
+#pragma mark --- Light_ShaderInterop-Impl ---
 #endif
 #if 1
 

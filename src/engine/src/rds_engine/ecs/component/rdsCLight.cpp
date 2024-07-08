@@ -11,7 +11,7 @@ namespace rds
 {
 namespace shaderInterop
 {
-#include <../../../../built-in/shader/lighting/rdsLightInterop.hlsl>
+#include <../../../../built-in/shader/lighting/rdsLight_ShaderInterop.hlsl>
 }
 }
 

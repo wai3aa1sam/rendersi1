@@ -1,7 +1,7 @@
 #if 0
 Shader {
 	Properties {
-		Color4f  	RDS_MATERIAL_PROPERTY_albedo	= {1.0, 1.0, 1.0, 1.0}
+		Color4f  	RDS_MATERIAL_PROPERTY_baseColor	= {1.0, 1.0, 1.0, 1.0}
 		Color4f  	RDS_MATERIAL_PROPERTY_emission	= {1.0, 1.0, 1.0, 1.0}
 		Float   	RDS_MATERIAL_PROPERTY_metalness	= 0.0
 		Float   	RDS_MATERIAL_PROPERTY_roughness	= 0.5
@@ -11,10 +11,10 @@ Shader {
 		Color4f 	specular			= {1.0, 1.0, 1.0, 1.0}
 		Float		ambientOcclusion	= 0.0
 
-		Texture2D 	RDS_MATERIAL_TEXTURE_Albedo
-		Texture2D 	RDS_MATERIAL_TEXTURE_Normal
-		Texture2D 	RDS_MATERIAL_TEXTURE_RoughnessMetalness
-		Texture2D 	RDS_MATERIAL_TEXTURE_Emissive
+		Texture2D 	RDS_MATERIAL_TEXTURE_baseColor
+		Texture2D 	RDS_MATERIAL_TEXTURE_normal
+		Texture2D 	RDS_MATERIAL_TEXTURE_roughnessMetalness
+		Texture2D 	RDS_MATERIAL_TEXTURE_emission
 
 		Float 		csm_depth_baias = 0.005
 		Float		csm_pcf_scale   = 0.75;
@@ -54,7 +54,7 @@ struct VertexIn
     float2 uv           : TEXCOORD0;
     float3 normal   	: NORMAL;
     float3 tangent      : TANGENT;
-    float3 binormal     : BINORMAL;		// adding binormal instead of cross(normal, tangent) solve texture seam problem
+    //float3 binormal     : BINORMAL;		// adding binormal instead of cross(normal, tangent) solve texture seam problem in assimp
 };
 
 struct PixelIn 
@@ -131,7 +131,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	tangent = normalize(input.tangentWs);
 
 	Surface surface = Material_makeSurface(uv, pos, normal, tangent);
-	surface = Material_makeSurface(uv, pos, normal);
+	//surface = Material_makeSurface(uv, pos, normal);
 	surface.ambient				= ambient;
 	surface.diffuse				= diffuse;
 	surface.specular			= specular;
@@ -150,7 +150,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		//o.rgb = remapNeg11To01(surface.normalVs.rgb);
 		//o.rgb = remapNeg11To01(normal);
 		//o.rgb = oLightingResult.diffuse.rgb;
-		//o.rgb = surface.color.rgb;
+		//o.rgb = surface.baseColor.rgb;
 	}
 	
 	if (RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, uv).a != 0.0)

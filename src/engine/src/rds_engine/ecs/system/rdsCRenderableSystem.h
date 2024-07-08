@@ -42,7 +42,7 @@ public:
 	void create(EngineContext* egCtx);
 	void destroy();
 
-	void update(DrawData& drawData);
+	void update(const Scene& scene, DrawData& drawData);
 	void render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent, bool isDrawUi = true);
 	void present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh& fullScreenTriangle, Material* mtlPresent);
 

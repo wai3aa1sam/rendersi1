@@ -18,7 +18,7 @@ class Scene;
 	E(Albedo, = 0) \
 	E(Normal,) \
 	E(RoughnessMetalness,) \
-	E(Emissive,) \
+	E(Emission,) \
 	\
 	E(_kCount,) \
 //---
@@ -34,13 +34,13 @@ public:
 
 	//Vector<Texture2D*, s_kTextureTypeCount> textures;
 
-	Color4f albedo			= Color4f{1.0f, 1.0f, 1.0f, 1.0f};
+	Color4f baseColor		= Color4f{1.0f, 1.0f, 1.0f, 1.0f};
 	Color4f emission		= Color4f{1.0f, 1.0f, 1.0f, 1.0f};
 	float	metalness		= 0.0f;
 	float	roughness		= 0.6f;
 
 	#if 1
-	/*Texture2D* texAlbedo				= nullptr;
+	/*Texture2D* texBaseColor			= nullptr;
 	Texture2D* texNormal				= nullptr;
 	Texture2D* texRoughnessMetalness	= nullptr;
 	Texture2D* texEmissive				= nullptr;*/

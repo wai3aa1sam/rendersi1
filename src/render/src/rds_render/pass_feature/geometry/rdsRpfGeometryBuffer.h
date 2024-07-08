@@ -9,7 +9,9 @@ namespace rds
 struct RpfGeometryBuffer_Result : public RenderPassFeature_Result
 {
 	RdgTextureHnd normal;
-	RdgTextureHnd albedo;
+	RdgTextureHnd baseColor;
+	RdgTextureHnd roughnessMetalness;
+	RdgTextureHnd emission;
 
 	RdgTextureHnd debugPosition;
 };

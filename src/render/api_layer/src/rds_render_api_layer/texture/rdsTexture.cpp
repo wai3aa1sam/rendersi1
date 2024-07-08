@@ -48,6 +48,31 @@ RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
 //	wrapS		= Wrap::Repeat;
 //}
 
+
+SamplerState::HashValue 
+SamplerState::hash() const
+{
+	HashValue o = {};
+
+	math::hashCombine(o, enumInt(minFliter));
+	math::hashCombine(o, enumInt(magFliter));
+
+	math::hashCombine(o, enumInt(wrapU));
+	math::hashCombine(o, enumInt(wrapV));
+	math::hashCombine(o, enumInt(wrapS));
+
+	/*
+	* hashing these 2 value will crash in Release
+	*/
+	//Hash<decltype(minLod)> hasher;
+	//math::hashCombine(o, hasher(minLod));
+	//math::hashCombine(o, hasher(maxLod));
+
+	math::hashCombine(o, isAnisotropy);
+
+	return o;
+}
+
 #if 0
 #pragma mark --- rdsTexture2D-Impl ---
 #endif // 0

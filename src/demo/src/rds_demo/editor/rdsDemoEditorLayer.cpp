@@ -91,7 +91,7 @@ DemoEditorLayer::onCreate()
 
 		_gfxDemo->prepareRender(&rdGraph, &drawData);
 
-		renderableSystem().update(drawData);
+		renderableSystem().update(scene(), drawData);
 		renderableSystem().render(&rdCtx, _fullScreenTriangle, nullptr, false);
 
 		rdCtx.transferRequest().commit();
@@ -176,7 +176,7 @@ DemoEditorLayer::onUpdate()
 
 			// present
 			renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
-			renderableSystem().update(drawData);
+			renderableSystem().update(scene(), drawData);
 
 			drawEditorUi(uiDrawReq, _texHndPresent);
 			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, drawData.camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());

@@ -58,14 +58,15 @@ struct Surface
     float3 pos;
 	float3 normal;
 
-	float4 color;
+	float4 baseColor;
 	float4 ambient;
 	float4 diffuse;
 	float4 specular;
 
-    float  roughness;
-    float  metalness;
-    float  ambientOcclusion;
+    float   roughness;
+    float   metalness;
+    float4  emission;
+    float   ambientOcclusion;
 };
 
 struct Light

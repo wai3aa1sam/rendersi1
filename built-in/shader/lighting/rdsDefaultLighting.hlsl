@@ -4,22 +4,25 @@
 #include "built-in/shader/common/rdsShader_Common.hlsl"
 #include "built-in/shader/interop/rdsShaderInterop_Material.hlsl"
 
-
-
 #if 0
 #pragma mark --- default_lighting-Param ---
 #endif // 0
 #if 1
 
-float4  RDS_MATERIAL_PROPERTY_albedo;
-float4  RDS_MATERIAL_PROPERTY_emission;
+float4  RDS_MATERIAL_PROPERTY_baseColor;
 float   RDS_MATERIAL_PROPERTY_metalness;
 float   RDS_MATERIAL_PROPERTY_roughness;
+float4  RDS_MATERIAL_PROPERTY_emission;
 
-RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_Albedo);
-RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_Normal);
-RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_RoughnessMetalness);
-RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_Emissive);
+uint    RDS_MATERIAL_PROPERTY_useTexBaseColor;
+uint    RDS_MATERIAL_PROPERTY_useTexNormal;
+uint    RDS_MATERIAL_PROPERTY_useTexRoughnessMetalness;
+uint    RDS_MATERIAL_PROPERTY_useTexEmisson;
+
+RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_baseColor);
+RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_normal);
+RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_roughnessMetalness);
+RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_emission);
 
 #endif
 
@@ -28,22 +31,30 @@ RDS_TEXTURE_2D(RDS_MATERIAL_TEXTURE_Emissive);
 #endif // 0
 #if 1
 
-float4      Material_sampleTexture_Albedo(              float2 uv)      { return RDS_TEXTURE_2D_SAMPLE(RDS_MATERIAL_TEXTURE_Albedo,             uv); }
-float4      Material_sampleTexture_Normal(              float2 uv)      { return RDS_TEXTURE_2D_SAMPLE(RDS_MATERIAL_TEXTURE_Normal,             uv); }
-float4      Material_sampleTexture_RoughnessMetalness(  float2 uv)      { return RDS_TEXTURE_2D_SAMPLE(RDS_MATERIAL_TEXTURE_RoughnessMetalness, uv); }
-float4      Material_sampleTexture_Emissive(            float2 uv)      { return RDS_TEXTURE_2D_SAMPLE(RDS_MATERIAL_TEXTURE_Emissive,           uv); }
+float4      Material_sampleTexture_BaseColor(           float2 uv)      { return RDS_TEXTURE_2D_SAMPLE(RDS_MATERIAL_TEXTURE_baseColor,             uv); }
+float4      Material_sampleTexture_Normal(              float2 uv)      { return RDS_TEXTURE_2D_SAMPLE(RDS_MATERIAL_TEXTURE_normal,             uv); }
+float4      Material_sampleTexture_RoughnessMetalness(  float2 uv)      { return RDS_TEXTURE_2D_SAMPLE(RDS_MATERIAL_TEXTURE_roughnessMetalness, uv); }
+float4      Material_sampleTexture_Emission(            float2 uv)      { return RDS_TEXTURE_2D_SAMPLE(RDS_MATERIAL_TEXTURE_emission,           uv); }
 
-Texture2D   Material_getTexture_Albedo()                                { return RDS_TEXTURE_2D_GET(RDS_MATERIAL_TEXTURE_Albedo); }
-Texture2D   Material_getTexture_Normal()                                { return RDS_TEXTURE_2D_GET(RDS_MATERIAL_TEXTURE_Normal); }
-Texture2D   Material_getTexture_RoughnessMetalness()                    { return RDS_TEXTURE_2D_GET(RDS_MATERIAL_TEXTURE_RoughnessMetalness); }
-Texture2D   Material_getTexture_Emissive()                              { return RDS_TEXTURE_2D_GET(RDS_MATERIAL_TEXTURE_Emissive); }
+Texture2D   Material_getTexture_BaseColor()                             { return RDS_TEXTURE_2D_GET(RDS_MATERIAL_TEXTURE_baseColor); }
+Texture2D   Material_getTexture_Normal()                                { return RDS_TEXTURE_2D_GET(RDS_MATERIAL_TEXTURE_normal); }
+Texture2D   Material_getTexture_RoughnessMetalness()                    { return RDS_TEXTURE_2D_GET(RDS_MATERIAL_TEXTURE_roughnessMetalness); }
+Texture2D   Material_getTexture_Emission()                              { return RDS_TEXTURE_2D_GET(RDS_MATERIAL_TEXTURE_emission); }
 
-float4      Material_getProperty_Albedo()                               { return RDS_MATERIAL_PROPERTY_albedo; }
+float       Material_unpackRoughness(float4 roughnessMetalness)         { return roughnessMetalness.r; }
+float       Material_unpackMetalness(float4 roughnessMetalness)         { return roughnessMetalness.g; }
+
+float4      Material_getProperty_BaseColor()                            { return RDS_MATERIAL_PROPERTY_baseColor; }
 float4      Material_getProperty_Emission()                             { return RDS_MATERIAL_PROPERTY_emission; }
 float       Material_getProperty_Metalness()                            { return RDS_MATERIAL_PROPERTY_metalness; }
 float       Material_getProperty_Roughness()                            { return RDS_MATERIAL_PROPERTY_roughness; }
 
-// adding binormal instead of cross(normal, tangent) solve texture seam problem
+bool        Material_getProperty_useTexBaseColor()                      { return RDS_MATERIAL_PROPERTY_useTexBaseColor; }
+bool        Material_getProperty_useTexNormal()                         { return RDS_MATERIAL_PROPERTY_useTexNormal; }
+bool        Material_getProperty_useTexRoughnessMetalness()             { return RDS_MATERIAL_PROPERTY_useTexRoughnessMetalness; }
+bool        Material_getProperty_useTexEmissive()                       { return RDS_MATERIAL_PROPERTY_useTexEmisson; }
+
+// adding binormal instead of cross(normal, tangent) solve texture seam problem in assimp
 float3x3 computeTbn(float3 tangent, float3 normal)
 {
     tangent                 = normalize(tangent - dot(tangent, normal) * normal);
@@ -53,9 +64,8 @@ float3x3 computeTbn(float3 tangent, float3 normal)
     return tbn;
 }
 
-float4 sampleNormalMap(float3x3 tbn, float2 uv)
+float4 sampleNormalMap(float3x3 tbn, float4 sampleNormal)
 {
-    float4 sampleNormal = Material_sampleTexture_Normal(uv);
     float3 normal       = remap01ToNeg11(sampleNormal.xyz);
     //normal.y = -normal.y;
 
@@ -65,29 +75,68 @@ float4 sampleNormalMap(float3x3 tbn, float2 uv)
     return float4(normalize(normal), sampleNormal.a);
 }
 
-Surface Material_makeSurface(float2 uv, float3 pos, float3 normal, float3 tangent)
+float4 Material_sampleBaseColor(float2 uv)
+{
+    float4 sampleBaseColor          = Material_sampleTexture_BaseColor(uv);
+    float  useTexBaseColor          = Material_getProperty_useTexBaseColor();
+    sampleBaseColor                 = lerp(Material_getProperty_BaseColor(), sampleBaseColor, useTexBaseColor);
+    
+    float4 o = sampleBaseColor;
+    return o;
+}
+
+float3 Material_sampleNormal(float2 uv, float3 normal, float3 tangent)
+{
+    float3x3    tbn                 = computeTbn(tangent, normal);
+    float4      sampleNormal        = sampleNormalMap(tbn, Material_sampleTexture_Normal(uv));
+    float       useTexNormal        = Material_getProperty_useTexNormal();
+    sampleNormal.xyz                = lerp(normal, sampleNormal.rgb, useTexNormal);
+    sampleNormal.xyz                = normalize(sampleNormal.xyz);
+
+    float3 o = sampleNormal.xyz;
+    return o;
+}
+
+float2 Material_sampleRoughnessMetalness(float2 uv)
+{
+    float4 roughnessMetalness       = Material_sampleTexture_RoughnessMetalness(uv);
+    float  useTexRoughnessMetalness = Material_getProperty_useTexRoughnessMetalness();
+    float  roughness                = lerp(Material_getProperty_Roughness(), Material_unpackRoughness(roughnessMetalness), useTexRoughnessMetalness);
+    float  metalness                = lerp(Material_getProperty_Metalness(), Material_unpackMetalness(roughnessMetalness), useTexRoughnessMetalness);
+    
+    float2 o;
+    o.x = roughness;
+    o.y = metalness;
+    return o;
+}
+
+float4 Material_sampleEmission(float2 uv)
+{
+    float4 sampleEmission           = Material_sampleTexture_Emission(uv);
+    float  useTexEmission           = Material_getProperty_useTexBaseColor();
+    sampleEmission                  = lerp(Material_getProperty_Emission(), sampleEmission, useTexEmission);
+
+    float4 o = sampleEmission;
+    return o;
+}
+
+Surface Material_makeSurface(float2 uv, float3 pos, float3 normal_, float3 tangent)
 {
     Surface o = (Surface)0;
 
-    float4 sampleAlbedo         = Material_sampleTexture_Albedo(uv);
-    sampleAlbedo.rgb            = lerp(Material_getProperty_Albedo().rgb, sampleAlbedo.rgb, sampleAlbedo.a);
-
-    float2      normalUv        = float2(uv.x, uv.y);
-    float3x3    tbn             = computeTbn(tangent, normal);
-    float4      sampleNormal    = sampleNormalMap(tbn, normalUv);
-    sampleNormal.xyz            = lerp(normal, sampleNormal.rgb, sampleNormal.a);
-
-    float4 roughnessMetalness = Material_sampleTexture_RoughnessMetalness(uv);
-    float roughness = lerp(Material_getProperty_Roughness(), roughnessMetalness.r, roughnessMetalness.a);
-    float metalness = lerp(Material_getProperty_Metalness(), roughnessMetalness.g, roughnessMetalness.a);
+    float4 baseColor            = Material_sampleBaseColor(uv);
+    float3 normal               = Material_sampleNormal(uv, normal_, tangent);
+    float2 roughnessMetalness   = Material_sampleRoughnessMetalness(uv);
+    float4 emission             = Material_sampleEmission(uv);
 
     o.pos                 = pos;
-    o.normal              = float3(sampleNormal.xyz);
-    o.color               = float4(sampleAlbedo.rgb, 1.0);
-    o.roughness           = roughness;
-    o.metalness           = metalness;
+    o.normal              = normal;
+    o.baseColor           = baseColor;
+    o.roughness           = roughnessMetalness.x;
+    o.metalness           = roughnessMetalness.y;
+    o.emission            = emission;
     
-    //o.ambientOcclusion    = 0.2;
+    o.ambientOcclusion    = 0.2;
 	o.ambient             = float4(1.0, 1.0, 1.0, 1.0);
 	o.diffuse             = float4(1.0, 1.0, 1.0, 1.0);
 	o.specular            = float4(1.0, 1.0, 1.0, 1.0);
@@ -98,31 +147,11 @@ Surface Material_makeSurface(float2 uv, float3 pos, float3 normal, float3 tangen
 Surface Material_makeSurface(float2 uv, float3 pos, float3 normal)
 {
     Surface o = (Surface)0;
-
-    float4 sampleAlbedo = Material_sampleTexture_Albedo(uv);
-    sampleAlbedo.rgb    = lerp(Material_getProperty_Albedo().rgb, sampleAlbedo.rgb, sampleAlbedo.a);
-
-    float4 sampleNormal = float4(normal.xyz, 0.0);
-
-    float4 roughnessMetalness = Material_sampleTexture_RoughnessMetalness(uv);
-    float roughness = lerp(Material_getProperty_Roughness(), roughnessMetalness.r, roughnessMetalness.a);
-    float metalness = lerp(Material_getProperty_Metalness(), roughnessMetalness.g, roughnessMetalness.a);
-
-    o.pos                 = pos;
-    o.normal              = float3(sampleNormal.xyz);
-    o.color               = float4(sampleAlbedo.rgb, 1.0);
-    o.roughness           = roughness;
-    o.metalness           = metalness;
-    
-    //o.ambientOcclusion    = 0.2;
-	o.ambient             = float4(1.0, 1.0, 1.0, 1.0);
-	o.diffuse             = float4(1.0, 1.0, 1.0, 1.0);
-	o.specular            = float4(1.0, 1.0, 1.0, 1.0);
-
+    o           = Material_makeSurface(uv, pos, normal, float3(0.0, 0.0, 0.0));
+    o.normal    = normal;
     return o;
 }
 
 #endif
-
 
 #endif

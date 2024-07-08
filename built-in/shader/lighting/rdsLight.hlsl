@@ -2,7 +2,7 @@
 #define __rdsLight_HLSL__
 
 #include "rdsLighting_Common.hlsl"
-#include "rdsLightInterop.hlsl"
+#include "rdsLight_ShaderInterop.hlsl"
 #include "built-in/shader/geometry/rdsGeometryPrimitive.hlsl"
 
 #if 0
