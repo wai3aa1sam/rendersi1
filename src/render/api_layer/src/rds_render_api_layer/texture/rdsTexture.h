@@ -77,16 +77,14 @@ public:
 
 	//u32 sampleCount = 1;
 
-
 public:
-	bool isValidMaxLod() const { return maxLod != math::inf<float>(); }
+	bool		isValidMaxLod() const { return maxLod != math::inf<float>(); }
+	HashValue	hash()			const;
 
-	bool operator<(const SamplerState& rhs) const
-	{
-		return hash() < rhs.hash();
-	}
-
-	HashValue hash() const;
+	bool operator<( const SamplerState& rhs) const;
+	bool operator>( const SamplerState& rhs) const;
+	bool operator==(const SamplerState& rhs) const;
+	bool operator!=(const SamplerState& rhs) const;
 };
 
 #endif // 1

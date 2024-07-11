@@ -126,6 +126,8 @@ public:
 
 	void drawBox(const Vec3f pts[AABBox3f::s_kVertexCount], const Color4b& color = Color4b(0,  255,    0,  255));
 
+	void drawSceneQuad(RDS_RD_CMD_DEBUG_PARAM, Material* mtl);
+
 public:
 	Span<RenderCommand*>			commands();
 			RenderCommandBuffer&	commandBuffer();

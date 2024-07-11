@@ -8,6 +8,9 @@
 namespace rds
 {
 
+static Material*		s_mtl			= nullptr;
+static CRenderableMesh* s_rdableMesh	= nullptr;
+
 #if 0
 #pragma mark --- rdsPbrIbl-Impl ---
 #endif // 0
@@ -31,32 +34,39 @@ PbrIbl::onCreateScene(Scene* oScene)
 
 	auto shader = Renderer::rdDev()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
 	createDefaultScene(oScene, shader, meshAssets().sphere, Vec3u{objCount, objCount, 1});
+	createLights(oScene, Vec3u{ objCount, objCount, 1 });
 
-	auto totalCount = (objCount * objCount - 1);
-	auto metalnessStep = 1.0f / totalCount;
-	auto roughnessStep = 1.0f / totalCount;
-
-	auto i = 0;
-	for (auto& e : scene().entities())
 	{
-		auto* transf = e->getComponent<CTransform>();
+		auto totalCount = (objCount * objCount - 1);
+		totalCount = math::clamp<u32>(totalCount, 1, (objCount * objCount - 1));
+		auto metalnessStep = 1.0f / totalCount;
+		auto roughnessStep = 1.0f / totalCount;
 
+		auto i = 0;
+		for (auto& e : scene().entities())
 		{
-			auto* light = e->getComponent<CLight>();
-			if (light)
-			{
-				transf->setLocalRotation(Vec3f(math::radians(134.398f), math::radians(20.0f), math::radians(-4.4f)));
-			}
-		}
-		auto* rdable = e->getComponent<CRenderableMesh>();
-		if (!rdable)
-			continue;
+			auto* transf = e->getComponent<CTransform>();
 
-		auto& mtl = rdable->material;
-		mtl->setParam("metalness",			metalnessStep * (totalCount - i));
-		mtl->setParam("roughness",			roughnessStep * i);
-		mtl->setParam("ambientOcclusion",	0.2f);
-		++i;
+			{
+				auto* light = e->getComponent<CLight>();
+				if (light)
+				{
+					transf->setLocalRotation(Vec3f(math::radians(134.398f), math::radians(20.0f), math::radians(-4.4f)));
+				}
+			}
+			auto* rdable = e->getComponent<CRenderableMesh>();
+			if (!rdable)
+				continue;
+
+			auto& mtl = rdable->material;
+			mtl->setParam("metalness",			metalnessStep * math::clamp((totalCount - i), sCast<u32>(0), sCast<u32>(totalCount)));
+			mtl->setParam("roughness",			roughnessStep * i);
+			mtl->setParam("ambientOcclusion",	0.2f);
+			++i;
+
+			s_mtl			= mtl;
+			s_rdableMesh	= rdable;
+		}
 	}
 
 	{
@@ -75,7 +85,7 @@ PbrIbl::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 	Base::onPrepareRender(renderPassPipeline);
 
 	//auto*	rdGraph		= renderPassPipeline->renderGraph();
-	auto*	drawData	= renderPassPipeline->drawDataT<DrawData*>();
+	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 	auto	screenSize	= drawData->resolution2u();
 
 	auto* rpfPbrIbl	= _rpfPbrIbl;
@@ -88,7 +98,7 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	Base::onExecuteRender(renderPassPipeline);
 
 	auto*	rdGraph		= renderPassPipeline->renderGraph();
-	auto*	drawData	= renderPassPipeline->drawDataT<DrawData*>();
+	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 	auto	screenSize	= drawData->resolution2u();
 
 	//auto* rpfPbrIbl	= _rpfPbrIbl;
@@ -117,11 +127,52 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 					mtl_->setParam("cube_irradianceEnv",	_rpfPbrIblResult.cubeIrradinceMap);
 					mtl_->setParam("cube_prefilteredEnv",	_rpfPbrIblResult.cubePrefilteredMap);
 				};
-
 			drawData->drawScene(rdReq, drawSettings);
+
+			#if 0
+			{
+				auto* mtl = s_mtl;
+				drawData->setupMaterial(mtl);
+				{
+					auto&	ent				= s_rdableMesh->entity();
+					auto	id				= ent.id();
+					auto&	meshAsset		= s_rdableMesh->meshAsset;
+					auto	subMeshIndex	= s_rdableMesh->subMeshIndex;
+
+					PerObjectParam perObjParam;
+					perObjParam.id				= sCast<u32>(id);
+					//perObjParam.drawParamIdx	= drawData ? sCast<u32>(drawData->drawParamIdx) : 0;
+
+					if (auto& fn = drawSettings.setMaterialFn)
+					{
+						fn(mtl);
+					}
+
+					//auto&		transform	= ent.transform();
+					//const auto& matrix		= transform.worldMatrix();
+					auto&		rdMesh		= meshAsset->renderMesh;
+
+					if (subMeshIndex == NumLimit<u32>::max())
+					{
+						rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, rdMesh, mtl, perObjParam);
+					}
+					else
+					{
+						auto& subMesh = rdMesh.subMeshes()[subMeshIndex];
+						rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+					}
+				}
+				/*auto drawCall = rdReq.addDrawCall();
+				drawCall->setDebugSrcLoc(RDS_SRCLOC);
+				drawCall->vertexCount = 3;
+				drawCall->setMaterial(mtl);*/
+			}
+			#endif // 0
+
 		}
 	);
 
+	addDrawLightOutlinePass(rdGraph, drawData, rtColor, drawData->mtlLine());
 	addSkyboxPass(rdGraph, drawData, _rpfPbrIblResult.cubeEnvMap, rtColor, dsBuf);
 
 	drawData->oTexPresent = rtColor;

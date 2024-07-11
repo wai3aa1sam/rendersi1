@@ -306,7 +306,6 @@ protected:
 	SPtr<RenderResource>	_spRdRsc;
 };
 
-
 inline void RdgResource::setImport(bool v) { _isImported = v; }
 inline void RdgResource::setExport(bool v) { _isExported = v; }
 

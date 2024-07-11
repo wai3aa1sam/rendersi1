@@ -11,8 +11,6 @@ Shader {
 		
 		VsFunc		vs_main
 		PsFunc		ps_main
-
-		RenderPrimitiveType Line	// TODO: remove
 	}
 }
 #endif

@@ -1,7 +1,20 @@
 #if 0
 Shader {
 	Properties {
-		
+		Color4f  	RDS_MATERIAL_PROPERTY_baseColor	= {1.0, 1.0, 1.0, 1.0}
+		Color4f  	RDS_MATERIAL_PROPERTY_emission	= {1.0, 1.0, 1.0, 1.0}
+		Float   	RDS_MATERIAL_PROPERTY_metalness	= 0.0
+		Float   	RDS_MATERIAL_PROPERTY_roughness	= 0.0
+
+		Color4f 	ambient				= {1.0, 1.0, 1.0, 1.0}
+		Color4f 	diffuse				= {1.0, 1.0, 1.0, 1.0}
+		Color4f 	specular			= {1.0, 1.0, 1.0, 1.0}
+		Float		ambientOcclusion	= 0.0
+
+		Texture2D 	RDS_MATERIAL_TEXTURE_baseColor
+		Texture2D 	RDS_MATERIAL_TEXTURE_normal
+		Texture2D 	RDS_MATERIAL_TEXTURE_roughnessMetalness
+		Texture2D 	RDS_MATERIAL_TEXTURE_emission
 	}
 	
 	Pass {
@@ -103,9 +116,14 @@ PixelOut ps_main(PixelIn input)
 	tangent = normalize(input.tangentWs.xyz);
 	
     Surface surface = Material_makeSurface(uv, pos, normal, tangent);
-	o.normal   				= surface.normal.xy;
+	//surface = Material_makeSurface(uv, pos, normal);
+
+	if (surface.baseColor.a == 0)
+		discard;
+
+	o.normal   				= remapNeg11To01(surface.normal.xy);
 	o.baseColor   			= surface.baseColor;
-	o.roughnessMetalness 	= float4(surface.roughness, surface.metalness, 1.0, 1.0);
+	o.roughnessMetalness 	= Material_packRoughnessMetalness(surface.roughness, surface.metalness);
 	o.emission 				= surface.emission;
 
 	o.position = float4(input.positionWs.xyz, 1.0);

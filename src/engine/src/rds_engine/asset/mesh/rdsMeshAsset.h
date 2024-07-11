@@ -15,7 +15,7 @@ class Scene;
 
 #define MaterialData_TextureType_ENUM_LIST(E) \
 	\
-	E(Albedo, = 0) \
+	E(BaseColor, = 0) \
 	E(Normal,) \
 	E(RoughnessMetalness,) \
 	E(Emission,) \

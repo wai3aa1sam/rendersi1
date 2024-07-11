@@ -59,13 +59,6 @@ ForwardPlus::onCreateScene(Scene* oScene)
 	{
 		auto& scene = *oScene;
 		auto* ent = scene.addEntity("Debug Frustum"); RDS_UNUSED(ent);
-
-		//auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-		//rdableMesh->material	= _rfpForwardPlus->mtlFwdp;
-		//rdableMesh->meshAsset	= meshAssets().fullScreenTriangle;
-
-		//auto* transform	= ent->getComponent<CTransform>();
-		//transform->setLocalPosition(startPos.x + step.x * c, 0.0f, startPos.y + step.y * r);
 	}
 	#if 0
 	{
@@ -78,13 +71,9 @@ ForwardPlus::onCreateScene(Scene* oScene)
 
 	#endif // 0
 
-	createDefaultScene(oScene, nullptr, meshAssets().plane, Vec3u::s_one());
-	for (auto& e : scene().entities())
-	{
-		auto& transform = e->transform();
-		float scaleFactor = 64.0f; RDS_UNUSED(scaleFactor);
-		transform.setLocalScale(Vec3f{ scaleFactor, 1.0, scaleFactor });
-	}
+	float scaleFactor = 64.0f; RDS_UNUSED(scaleFactor);
+	createDefaultScene(oScene, nullptr, meshAssets().plane, Vec3u::s_one(), Vec3f::s_zero(), Vec3f::s_one() * 3, Vec3f{ scaleFactor, 1.0, scaleFactor });
+	createLights(oScene, Vec3u{ 5, 5, 1 });
 
 	{
 		auto& camera = app().mainWindow().camera();

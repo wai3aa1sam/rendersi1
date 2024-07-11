@@ -116,20 +116,45 @@ GraphicsDemo::onUiKeyboardEvent(UiKeyboardEvent& ev)
 }
 
 void 
-GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u size, Vec3f startPos, Vec3f step, bool isCreateLights)
+GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u objectCount, Vec3f startPos, Vec3f step, Vec3f scale)
 {
 	auto& scene = *oScene;
 
-	//auto n = 25;
-	auto row	= size.x;
-	auto col	= size.y;
-	auto depth	= size.z;
+	auto row	= objectCount.x;
+	auto col	= objectCount.y;
+	auto depth	= objectCount.z;
 
-	#if 1
-	if (isCreateLights)
+	for (u32 d = 0; d < depth; d++)
 	{
-		auto row_ = 5;
-		auto col_ = 5;
+		for (u32 c = 0; c < col; c++)
+		{
+			for (u32 r = 0; r < row; r++)
+			{
+				auto* ent = scene.addEntityWithDefaultName();
+
+				auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+				if (shader)
+					rdableMesh->material = Renderer::rdDev()->createMaterial(shader);
+				rdableMesh->meshAsset = meshAsset;
+
+				auto* transform	= ent->getComponent<CTransform>();
+				transform->setLocalPosition(startPos + step * Vec3f::s_cast(Vec3u{r, c, d}));
+				transform->setLocalScale(scale);
+			}
+		}
+	}
+}
+
+CTransform*
+GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec3f step, Quat4f direction, float range, float intensity)
+{
+
+	CTransform* directionalLightTransf = nullptr;
+	#if 1
+	auto& scene = *oScene;
+	{
+		auto row_ = objectCount.x;
+		auto col_ = objectCount.y;
 
 		for (size_t r = 0; r < row_; r++)
 		{
@@ -140,6 +165,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 				auto* transform	= ent->getComponent<CTransform>();
 				transform->setLocalPosition(startPos.x + step.x * c, 1.0f, startPos.y + step.y * r);
 				transform->setLocalRotation(Vec3f{math::radians(90.0f), 0.0f, 0.0f});
+				transform->setLocalRotation(direction);
 
 				//auto* rdableMesh = ent->addComponent<CRenderableMesh>();
 				//rdableMesh->material = mtl;
@@ -155,6 +181,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 				if (isDirectional)
 				{
 					light->setType(LightType::Directional);
+					directionalLightTransf = transform;
 				}
 
 				if (light->lightType() == LightType::Spot)
@@ -163,7 +190,8 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 					light->setSpotInnerAngle(math::radians(30.0f));
 				}
 
-				light->setRange(4);
+				light->setRange(range);
+				light->setIntensity(intensity);
 
 				TempString buf;
 				fmtTo(buf, "{}-{}", enumStr(light->lightType()), sCast<u64>(ent->id()));
@@ -174,23 +202,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 	}
 	#endif // 1
 
-	for (u32 d = 0; d < depth; d++)
-	{
-		for (u32 c = 0; c < col; c++)
-		{
-			for (u32 r = 0; r < row; r++)
-			{
-				auto* ent = scene.addEntityWithDefaultName();
-
-				auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-				rdableMesh->material = Renderer::rdDev()->createMaterial(shader);
-				rdableMesh->meshAsset = meshAsset;
-
-				auto* transform	= ent->getComponent<CTransform>();
-				transform->setLocalPosition(startPos + step * Vec3f::s_cast(Vec3u{r, c, d}));
-			}
-		}
-	}
+	return directionalLightTransf;
 }
 
 void 

@@ -29,6 +29,8 @@ public:
 public:
 	virtual void drawScene(RenderRequest& rdReq, Material* mtl)										= 0;
 	virtual void drawScene(RenderRequest& rdReq, Material* mtl, const DrawSettings& drawSettings)	= 0;
+	virtual void drawScene(RenderRequest& rdReq, const DrawSettings& drawSettings)					= 0;
+
 
 	virtual void setupMaterial(Material* oMtl) = 0;
 

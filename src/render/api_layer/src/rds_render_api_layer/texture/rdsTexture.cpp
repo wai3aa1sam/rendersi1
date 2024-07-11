@@ -37,6 +37,11 @@ RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
 	return p;
 }
 
+#if 0
+#pragma mark --- rdsSamplerState-Impl ---
+#endif // 0
+#if 1
+
 //SamplerState::SamplerState()
 //	: isAnisotropy(true)
 //{
@@ -48,11 +53,10 @@ RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
 //	wrapS		= Wrap::Repeat;
 //}
 
-
 SamplerState::HashValue 
 SamplerState::hash() const
 {
-	HashValue o = {};
+	HashValue o = 0;
 
 	math::hashCombine(o, enumInt(minFliter));
 	math::hashCombine(o, enumInt(magFliter));
@@ -68,10 +72,36 @@ SamplerState::hash() const
 	//math::hashCombine(o, hasher(minLod));
 	//math::hashCombine(o, hasher(maxLod));
 
-	math::hashCombine(o, isAnisotropy);
+	//math::hashCombine(o, isAnisotropy);
 
 	return o;
 }
+
+bool 
+SamplerState::operator<(const SamplerState & rhs) const
+{
+	return hash() < rhs.hash();
+}
+
+bool 
+SamplerState::operator>(const SamplerState& rhs) const
+{
+	return hash() > rhs.hash();
+}
+
+bool 
+SamplerState::operator==(const SamplerState& rhs) const
+{
+	return hash() == rhs.hash();
+}
+
+bool 
+SamplerState::operator!=(const SamplerState& rhs) const
+{
+	return !operator==(rhs);
+}
+
+#endif
 
 #if 0
 #pragma mark --- rdsTexture2D-Impl ---

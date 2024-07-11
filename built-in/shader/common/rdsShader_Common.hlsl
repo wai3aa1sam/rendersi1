@@ -466,8 +466,8 @@ float4 SpaceTransform_screenUvToClip(float2 screenUv, float depth, float w)
 
 float4 SpaceTransform_screenToClip(float4 screen, DrawParam drawParam)
 {
-	float2 uv = screen.xy / drawParam.resolution;
-    float4 clip = SpaceTransform_screenUvToClip(uv, screen.z, screen.w);
+	float2 screenUv = screen.xy / drawParam.resolution;
+    float4 clip = SpaceTransform_screenUvToClip(screenUv, screen.z, screen.w);
 	return clip;
 }
 
@@ -483,11 +483,24 @@ float4 SpaceTransform_screenToView(float4 screen)
     return SpaceTransform_screenToView(screen, drawParam);
 }
 
-float4 SpaceTransform_computePositionWs(float2 screenUv, float z, DrawParam drawParam)
+float3 SpaceTransform_computePositionWs(float2 screen, float ndcZ, DrawParam drawParam)
 {
-	float4 clip = SpaceTransform_screenUvToClip(screenUv, z, 1.0);
+	float4 clip = SpaceTransform_screenUvToClip(screen, ndcZ, 1.0);
 	float4 o = SpaceTransform_clipToWorld(clip, drawParam);
-	return o;
+	return o.xyz;
+}
+
+float SpaceTransform_linearDepthWsToVs(float3 posWs, float4x4 viewMatrix)
+{
+    float3 o = viewMatrix[0].xyz * posWs.x + viewMatrix[1].xyz * posWs.y + viewMatrix[2].xyz * posWs.z;
+    return o.z;
+}
+
+float3 SpaceTransform_computePositionWs(float2 screen, float ndcZ, DrawParam drawParam, out float linearDepthVs)
+{
+	float3 posWs = SpaceTransform_computePositionWs(screen, ndcZ, drawParam).xyz;
+    linearDepthVs = SpaceTransform_linearDepthWsToVs(posWs, drawParam.matrix_view);
+	return posWs;
 }
 
 float3 SpaceTransform_computeNormal(float2 normalXy)
@@ -590,6 +603,11 @@ float4 SpaceTransform_viewToClip(float4 v, DrawParam drawParam)
 float4 SpaceTransform_viewToClip(float4 v)
 {
 	return SpaceTransform_viewToClip(v, rds_DrawParam_get());
+}
+
+bool SpaceTransform_isInvalidDepth(float depth)
+{
+    return depth == 1.0;
 }
 
 #endif

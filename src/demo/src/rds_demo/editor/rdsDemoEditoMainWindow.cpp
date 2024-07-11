@@ -68,19 +68,21 @@ DemoEditorMainWindow::hotReloadShaders()
 {
 	{
 		HiResTimer timer;
+		int errorShaderCount = 0;
 		{ 
 			Process proc;
 			Process::CreateDesc cDesc;
 			cDesc.isCreateStdout = true;
 			proc.execute("compile_shaders.bat", "", cDesc);
 			proc.awaitAllStdout(consoleBuf, 1000 * 2);
-			if (proc.returncode() != 0)
+			errorShaderCount = proc.returncode();
+			if (errorShaderCount != 0)
 			{
 				RDS_CORE_LOG("{}", makeStrView(consoleBuf.byteSpan()));
 			}
 		}
 		ShaderCompileRequest::hotReload(Renderer::instance(), JobSystem::instance(), ProjectSetting::instance());
-		fmtTo(consoleBuf, "--- compile shaders end, tooks {}s", timer.get());
+		fmtTo(consoleBuf, "--- compile shaders end, {} errors, tooks {}s", errorShaderCount, timer.get());
 	}
 }
 

@@ -12,6 +12,7 @@ namespace rds
 
 class Shader_Vk;
 class ShaderPass_Vk;
+class Vk_RenderPass;
 
 #if 0
 #pragma mark --- rdsShaderPass_Vk-Decl ---
@@ -83,7 +84,14 @@ public:
 	using Base = Vk_ShaderStage<VertexShaderStage>;
 
 public:
-	
+	static constexpr SizeType s_kVtxInputAttrLocalSize = 32;
+	using Vk_VertexInputAttrs = Vector<VkVertexInputAttributeDescription, s_kVtxInputAttrLocalSize>;
+
+public:
+	const Vk_VertexInputAttrs& createUnqiueVtxInputAttrCDesc(const VertexLayout* vtxLayout);
+
+protected:
+	VectorMap<const VertexLayout*, Vk_VertexInputAttrs>	_vtxInputAttrsMap;
 };
 
 struct Vk_TessellationControlShaderStage : public Vk_ShaderStage<TessellationControlShaderStage>
@@ -144,12 +152,17 @@ public:
 	using PixelStage					= Vk_PixelShaderStage;
 	using ComputeStage					= Vk_ComputeShaderStage;
 
+	using Vk_PipelineHash				= Pair<Vk_RenderPass*, RenderPrimitiveType>;
+	using Vk_PipelineMap				= VectorMap<Vk_PipelineHash, Vk_Pipeline>;
+
 public:
 	ShaderPass_Vk();
 	virtual ~ShaderPass_Vk();
 	
 	template<size_t N>	void createVkShaderStageCInfos			(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos);
 						void createComputeVkShaderStageCInfo	(VkPipelineShaderStageCreateInfo& out);
+
+	Vk_Pipeline_T* createUnqiueVkPipeline(Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout, RenderPrimitiveType primitive);
 
 public:
 	Shader_Vk*			shaderVk();
@@ -164,10 +177,16 @@ public:
 
 	Vk_DescriptorSetLayout&	vkDescriptorSetLayout();
 
+	Vk_PipelineLayout&				vkPipelineLayout();
+	Vk_Pipeline&					computeVkPipeline();;
+
 protected:
 	virtual void onCreate(Shader* shader, const Info* info, StrView passPath) override;
 	virtual void onDestroy() override;
 
+protected:
+	void			createVkPipeline(		Vk_Pipeline& out, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout, RenderPrimitiveType primitive);
+	void			createComputeVkPipeline(Vk_Pipeline& out);
 
 protected:
 	VertexStage						_vkVertexStage;
@@ -176,6 +195,10 @@ protected:
 	GeometryStage					_vkGeometryStage;
 	PixelStage						_vkPixelStage;
 	ComputeStage					_vkComputeStage;
+
+	Vk_PipelineLayout		_vkPipelineLayout;				// maybe should in shader, since it does not need to recreate if no push_constant
+	Vk_PipelineMap			_vkPipelineMap;
+	Vk_Pipeline				_computeVkPipeline;
 
 	Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
 };
@@ -204,6 +227,9 @@ inline ShaderPass_Vk::PixelStage*					ShaderPass_Vk::vkPixelStage		()				{ retur
 inline ShaderPass_Vk::ComputeStage*					ShaderPass_Vk::vkComputeStage	()				{ return &_vkComputeStage; }
 
 inline Vk_DescriptorSetLayout&		ShaderPass_Vk::vkDescriptorSetLayout()	{ return _vkDescriptorSetLayout; }
+
+inline Vk_PipelineLayout&			ShaderPass_Vk::vkPipelineLayout()		{ return _vkPipelineLayout; }
+inline Vk_Pipeline&					ShaderPass_Vk::computeVkPipeline()		{ return _computeVkPipeline; }
 
 #endif
 

@@ -37,13 +37,13 @@ public:
 
 public:
 	RenderGraph*			renderGraph();
-	DrawData_Base*			drawDataBase();
+	DrawData_Base*			drawDataBase();	// TODO: need framed when multi-thread
 	template<class T> T*	drawDataT();
 
 
 protected:
 	RenderGraph*	_rdGraph	= nullptr;
-	DrawData_Base*	_drawData	= nullptr;
+	DrawData_Base*	_drawData	= nullptr;		// TODO: need framed when multi-thread
 
 	LinearAllocator					_alloc;
 	Vector<RenderPassFeature*, 4>	_rpfs;

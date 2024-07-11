@@ -137,9 +137,17 @@ public:
 	void cmd_addBufferMemoryBarrier(); // use for queue family tansfer
 
 public:
+	void cmd_bindPipeline(		VkPipelineBindPoint vkBindPt, Vk_Pipeline_T*		hnd);
+	void cmd_bindDescriptorSet(	VkPipelineBindPoint vkBindPt, u32 setIndex, Vk_DescriptorSet_T*	hnd, Vk_PipelineLayout_T* layoutHnd);
+
+public:
 	void insertDebugLabel(	const char* name, const Color4f& color = Color4f{0.824f, 0.949f, 0.945f, 1.0f});
 	void beginDebugLabel(	const char* name, const Color4f& color = Color4f{0.831f, 0.949f, 0.824f, 1.0f});
 	void endDebugLabel();
+
+public:
+	bool hasBoundPipeline(		Vk_Pipeline_T*		vkPipelineHnd) const;
+	bool hasBoundDescriptorSet(	Vk_DescriptorSet_T* vkDescrSetHnd) const;
 
 protected:
 
@@ -149,6 +157,10 @@ protected:
 	Vk_RenderPass*			_vkRdPass		= nullptr;
 
 	VkCommandBufferLevel	_level;
+
+	// TODO: temporary solution, maybe need to revise
+	Vk_Pipeline_T*			_boundVkPipelineHnd = nullptr;
+	Vk_DescriptorSet_T*		_boundVkDescrSetHnd = nullptr;
 };
 
 inline bool Vk_CommandBuffer::isPrimiary()	const { return _level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
@@ -157,6 +169,7 @@ inline bool Vk_CommandBuffer::isSecondary()	const { return _level == VK_COMMAND_
 
 
 inline Vk_RenderPass* Vk_CommandBuffer::getVkRenderPass() { return _vkRdPass; }
+
 
 #endif
 

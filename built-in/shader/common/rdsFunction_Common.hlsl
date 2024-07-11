@@ -16,6 +16,11 @@ uint3 unflatten3D(uint idx, uint3 dimensions)
 	return uint3(x, y, z);
 }
 
+float2 remapNeg11To01(float2 v)
+{
+    return 0.5 * v + 0.5;
+}
+
 float3 remapNeg11To01(float3 v)
 {
     return 0.5 * v + 0.5;
@@ -24,6 +29,11 @@ float3 remapNeg11To01(float3 v)
 float3 remapNeg11To01_Inv_Y(float3 v)
 {
     return float3(0.5f, -0.5f, 0.5f) * v + 0.5;
+}
+
+float2 remap01ToNeg11(float2 v)
+{
+    return 2.0 * v - 1.0;
 }
 
 float3 remap01ToNeg11(float3 v)

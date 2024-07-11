@@ -75,7 +75,7 @@ AssimpMeshLoader::toAiTextureType(MaterialData_TextureType v)
 	using SRC = MaterialData_TextureType;
 	switch (v)
 	{
-		case SRC::Albedo:				{ return aiTextureType::aiTextureType_DIFFUSE; }			break;
+		case SRC::BaseColor:			{ return aiTextureType::aiTextureType_DIFFUSE; }			break;
 		case SRC::Normal:				{ return aiTextureType::aiTextureType_NORMALS; }			break;
 		case SRC::RoughnessMetalness:	{ return aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS; }	break;
 		case SRC::Emission:				{ return aiTextureType::aiTextureType_EMISSIVE; }			break;
@@ -769,12 +769,12 @@ void
 MeshAssetMaterialList::setupMaterial(Material* mtl, SizeType mtlIdx)
 {
 	auto* shader = mtl->shader();
-	if (!shader)
+	if (!shader || mtlIdx >= materialData.size())
 		return;
 
 	const auto& mtlDatum = materialData[mtlIdx];
 
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Albedo))				{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_baseColor),				tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexBaseColor),				sCast<u32>(1)); }
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::BaseColor))			{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_baseColor),			tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexBaseColor),			sCast<u32>(1)); }
 	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Normal))				{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_normal),				tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexNormal),				sCast<u32>(1)); }
 	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::RoughnessMetalness))	{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_roughnessMetalness),	tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexRoughnessMetalness),	sCast<u32>(1)); }
 	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Emission))			{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_emission),			tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexEmisson),				sCast<u32>(1)); }
@@ -866,10 +866,9 @@ MeshAsset::_setupEntity(Entity* dst, MeshAssetNode* node, const Mat4f& localMatr
 	auto* rdableMesh = ent->addComponent<CRenderableMesh>();
 	rdableMesh->meshAsset		= this;
 	rdableMesh->subMeshIndex	= node->meshIdx;
+	rdableMesh->materialIndex	= node->materialIdx;
 	rdableMesh->material		= node->materialIdx < materialList.materials.size() ? materialList.materials[node->materialIdx] : nullptr;
 }
-
-
 
 #endif
 

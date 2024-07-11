@@ -55,7 +55,47 @@ SceneView::drawScene(RenderRequest& rdReq, Material* mtl, DrawData* drawData, co
 void 
 SceneView::drawScene(RenderRequest& rdReq, DrawData* drawData, const DrawSettings& drawSettings)
 {
-	drawScene(rdReq, nullptr, drawData, drawSettings);
+	if (auto* shader = drawSettings.overrideShader)
+	{
+		auto* rdDev = renderableSystem().renderGraph().renderContext()->renderDevice();
+
+		auto&	rdableSys		= renderableSystem();
+		auto	renderableCount = rdableSys.renderables().size();
+
+		auto& mtls = rdableSys._overrideMtls[shader];
+		if (mtls.size() == 0)
+		{
+			mtls.resize(renderableCount);
+
+			RDS_TODO("when multi thread, drawScene may call from other thread, then we need to modify vulkan material to fit this");
+			for (auto* e : rdableSys.renderables())
+			{
+				auto& mtl = mtls[e->entity().id()];
+				mtl = rdDev->createMaterial(shader);
+
+				RDS_CORE_ASSERT(e->isRenderableMesh, "isRenderableMesh");
+				auto* rdableMesh = sCast<CRenderableMesh*>(e);
+				if (MeshAsset * meshAsset = rdableMesh->meshAsset)
+				{
+					meshAsset->materialList.setupMaterial(mtl, rdableMesh->materialIndex);
+				}
+			}
+		}
+		
+		for (auto* e : rdableSys.renderables())
+		{
+			auto& mtl = mtls[e->entity().id()];
+
+			if (mtl)
+				drawData->setupMaterial(mtl);
+
+			e->render(rdReq, mtl, drawData, drawSettings);
+		}
+	}
+	else
+	{
+		drawScene(rdReq, nullptr, drawData, drawSettings);
+	}
 }
 
 void 

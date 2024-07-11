@@ -147,13 +147,11 @@ public:
 	using PixelStage					= Vk_MaterialPass_PixelStage;
 	using ComputeStage					= Vk_MaterialPass_ComputeStage;
 
-	using Vk_PipelineMap = VectorMap<Vk_RenderPass*, Vk_Pipeline>;
-
 public:
 	MaterialPass_Vk();
 	virtual ~MaterialPass_Vk();
 
-	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
+	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout, RenderPrimitiveType primitive, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
 	virtual void onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
 
 protected:
@@ -179,7 +177,6 @@ public:
 	ComputeStage&					vkComputeStage_noCheck();
 
 	Vk_PipelineLayout& vkPipelineLayout();
-
 	RenderDevice_Vk* renderDeviceVk();
 
 	Vk_DescriptorSetLayout& vkDescriptorSetLayout();
@@ -189,11 +186,7 @@ protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass) override;
 	virtual void onDestroy() override;
 
-	void bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout);
-
-protected:
-	void createVkPipeline		(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout);
-	void createComputeVkPipeline(Vk_Pipeline& out);
+	void bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPass, const VertexLayout* vtxLayout, RenderPrimitiveType primitive);
 
 protected:
 	VertexStage						_vkVertexStage;
@@ -203,19 +196,12 @@ protected:
 	PixelStage						_vkPixelStage;
 	ComputeStage					_vkComputeStage;
 
-	Vk_PipelineLayout	_vkPipelineLayout;				// maybe should in shader, since it does not need to recreate if no push_constant
-	Vk_PipelineMap		_vkPipelineMap;
-	Vk_Pipeline			_computeVkPipeline;
-
 	// TODO: use a union reflection, no, use bindless then only the Material_Vk has it
-	//Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
 	Vk_FramedDescrSets		_vkFramedDescrSets;
 	
 	// per Renderer Pipeline state, created if not find 
 	// after submit add to _vkPipelineMap
 };
-
-inline Vk_PipelineLayout&				MaterialPass_Vk::vkPipelineLayout()				{ return _vkPipelineLayout; }
 
 inline Material_Vk*						MaterialPass_Vk::material()				{ return sCast<Material_Vk*>(_material); }
 inline Shader_Vk*						MaterialPass_Vk::shader()				{ return reinCast<Shader_Vk*>(_material->shader()); }

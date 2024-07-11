@@ -200,8 +200,8 @@ void ShaderParser::_parsePass()
 		if (token.isIdentifier("BlendAlpha") )	{ nextToken(); readBlendFunc(o.renderState.blend.alpha);	continue; }
 
 
-		RDS_TODO("remove");
-		if (token.isIdentifier("RenderPrimitiveType") )	{ nextToken(); readEnum(o.renderState.primitiveType); continue; }
+		//RDS_TODO("remove");
+		//if (token.isIdentifier("RenderPrimitiveType") )	{ nextToken(); readEnum(o.renderState.primitiveType); continue; }
 
 		return errorUnexpectedToken();
 	}

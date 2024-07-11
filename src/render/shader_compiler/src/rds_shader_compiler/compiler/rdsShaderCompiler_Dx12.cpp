@@ -145,10 +145,8 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 		compileArgs.emplace_back(L"-HV");	compileArgs.emplace_back(L"2021");							// 2021 has change vector ternary op to select/any/...
 		
 		compileArgs.emplace_back(DXC_ARG_WARNINGS_ARE_ERRORS);
-		compileArgs.emplace_back(DXC_ARG_ALL_RESOURCES_BOUND);
+		//compileArgs.emplace_back(DXC_ARG_ALL_RESOURCES_BOUND);
 		compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
-
-		compileArgs.emplace_back(L"-Qstrip_debug");			// adding this then can extract DXC_OUT_PDB
 
 		bool isBypassReflection = false;
 		if (opt.isToSpirv)
@@ -190,13 +188,23 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 			compileArgs.emplace_back(L"-Qstrip_reflect");		// adding this then can extract DXC_OUT_REFLECTION, spv do not support it
 		}
 
+		/*
+		* ~ https://www.khronos.org/assets/uploads/developers/presentations/Source-level_Shader_Debugging_in_Vulkan_with_RenderDoc_VULOCT2022.pdf
+		*/
 		if (opt.isDebug)
 		{
 			compileArgs.emplace_back(DXC_ARG_DEBUG);
+			compileArgs.emplace_back(DXC_ARG_SKIP_OPTIMIZATIONS);
+			if (opt.isToSpirv)
+			{
+				//compileArgs.emplace_back(L"-fspv-extension=SPV_KHR_non_semantic_info");		// Not required for Vulkan 1.3
+				compileArgs.emplace_back(L"-fspv-debug=vulkan-with-source");					// need wait dxc update to get rid of the warning
+			}
 		}
 		else
 		{
 			compileArgs.emplace_back(DXC_ARG_OPTIMIZATION_LEVEL3);
+			compileArgs.emplace_back(L"-Qstrip_debug");			// adding this then can extract DXC_OUT_PDB
 		}
 
 		compileArgs.appendIncludes(includes);

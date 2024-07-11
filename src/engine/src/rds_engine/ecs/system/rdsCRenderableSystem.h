@@ -55,9 +55,7 @@ public:
 protected:
 	RenderRequest& renderRequest();
 
-
 protected:
-
 	/*
 		all of this should have a Vector<Data>, for multi cameras
 	*/
@@ -69,6 +67,8 @@ protected:
 	*/
 	ParamBuffer<ObjectTransform>	_objTransformBuf;		
 	ParamBuffer<DrawParam>			_drawPramBuf;
+	
+	VectorMap<SPtr<Shader>, VectorMap<EntityId, SPtr<Material> > > _overrideMtls;		// TODO: temporary solution
 };
 
 inline RenderGraph&				CRenderableSystem::renderGraph()	{ return _rdGraph; }

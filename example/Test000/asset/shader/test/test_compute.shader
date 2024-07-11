@@ -15,9 +15,6 @@ Shader {
 		// Queue	"Transparent"
 		//Cull		None
 
-		RenderPrimitiveType Point	// TODO: remove
-		//RenderPrimitiveType Triangle	// TODO: remove
-
 		DepthTest	LessEqual
 
 //		DepthTest	Always

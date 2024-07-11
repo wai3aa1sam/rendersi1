@@ -77,7 +77,7 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 		// for all materials and setParam
 		_objTransformBuf.uploadToGpu();
 	}
-
+	
 	{
 		auto n = 1;
 		_drawPramBuf.resize(n);

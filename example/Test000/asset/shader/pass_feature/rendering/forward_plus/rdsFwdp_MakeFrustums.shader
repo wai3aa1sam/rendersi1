@@ -11,8 +11,6 @@ Shader {
 		BlendRGB 	Add One OneMinusSrcAlpha
 		BlendAlpha	Add One OneMinusSrcAlpha
 
-		RenderPrimitiveType Line	// TODO: remove
-
 		CsFunc		makeFrustums_csMain
 		VsFunc		makeFrustums_vsMain
 		PsFunc		makeFrustums_psMain

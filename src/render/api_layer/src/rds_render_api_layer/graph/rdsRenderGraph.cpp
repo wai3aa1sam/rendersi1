@@ -163,6 +163,8 @@ RenderGraph::reset()
 void 
 RenderGraph::compile()
 {
+	RDS_PROFILE_SCOPED();
+
 	if (!_rdCtx->isValidFramebufferSize())
 		return;
 
@@ -260,6 +262,8 @@ RenderGraph::compile()
 			}
 		};
 
+		RDS_PROFILE_SECTION("topological sort RdgPass");
+
 		RdgPassSorter sorter;
 		sorter.topologicalSort(sortedPasses, passes());
 		sorter.getPassDepthsTo(passDepths, sortedPasses);
@@ -272,42 +276,48 @@ RenderGraph::compile()
 
 	}
 
-	for (auto& e : resources)
 	{
-		if (e->_pRdRsc || e->_spRdRsc)
-			continue;
+		RDS_PROFILE_SECTION("create resources");
 
-		StrView name = e->name(); RDS_UNUSED(name);
-
-		switch (e->type())
+		for (auto& e : resources)
 		{
-			case RdgResourceType::Texture:
-			{
-				auto* rsc = sCast<RdgTexture*>(e);
-				auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
-				cDesc.create(rsc->desc());
-				auto* rdRsc = resourcePool().createTexture(cDesc, renderDevice());
-				rdRsc->setDebugName(rsc->name());
-				rsc->commitRenderResouce(rdRsc);
-			} break;
+			if (e->_pRdRsc || e->_spRdRsc)
+				continue;
 
-			case RdgResourceType::Buffer:
-			{
-				auto* rsc = sCast<RdgBuffer*>(e);
-				auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
-				cDesc.create(rsc->desc());
-				auto* rdRsc = resourcePool().createBuffer(cDesc, renderDevice());
-				rdRsc->setDebugName(rsc->name());
-				rsc->commitRenderResouce(rdRsc);
-			} break;
+			StrView name = e->name(); RDS_UNUSED(name);
 
-			default: { RDS_THROW("unknow Render Graph Resource"); } break;
+			switch (e->type())
+			{
+				case RdgResourceType::Texture:
+			{
+					auto* rsc = sCast<RdgTexture*>(e);
+					auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+					cDesc.create(rsc->desc());
+					auto* rdRsc = resourcePool().createTexture(cDesc, renderDevice());
+					rdRsc->setDebugName(rsc->name());
+					rsc->commitRenderResouce(rdRsc);
+				} break;
+
+				case RdgResourceType::Buffer:
+			{
+					auto* rsc = sCast<RdgBuffer*>(e);
+					auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+					cDesc.create(rsc->desc());
+					auto* rdRsc = resourcePool().createBuffer(cDesc, renderDevice());
+					rdRsc->setDebugName(rsc->name());
+					rsc->commitRenderResouce(rdRsc);
+				} break;
+
+				default: { RDS_THROW("unknow Render Graph Resource"); } break;
+			}
 		}
-	}
 
+	}
 
 	// export resources
 	{
+		RDS_PROFILE_SECTION("export resources");
+
 		for (auto& expBuf : exportedBuffers())
 		{
 			if (!expBuf.outRdRsc)
@@ -328,6 +338,8 @@ void
 RenderGraph::execute()
 {
 	RDS_CORE_ASSERT(_rdCtx, "");
+
+	RDS_PROFILE_SCOPED();
 
 	for (auto& pass : resultPasses())
 	{

@@ -368,8 +368,6 @@ RenderDevice_Vk::_setDebugName()
 	}
 	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice, debugName());
 	RDS_VK_SET_DEBUG_NAME(_vkDevice, debugName());
-
-
 }
 
 #endif

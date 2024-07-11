@@ -17,6 +17,7 @@ struct DrawSettings
 public:
 	CullingSettings				cullingSetting;
 	Function<void(Material*)>	setMaterialFn;
+	Shader*						overrideShader = nullptr;
 
 public:
 	DrawSettings();

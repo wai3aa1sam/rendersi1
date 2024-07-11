@@ -21,7 +21,8 @@ public:
 public:
 	SPtr<MeshAsset> meshAsset;
 	SPtr<Material>	material;
-	u32				subMeshIndex = s_kInvalidSubMeshIndex;
+	u32				subMeshIndex	= s_kInvalidSubMeshIndex;
+	u32				materialIndex	= s_kInvalidSubMeshIndex;
 
 public:
 	CRenderableMesh();

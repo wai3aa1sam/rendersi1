@@ -105,6 +105,9 @@ void
 Vk_CommandBuffer::reset(Vk_Queue* vkQueue)
 {
 	_vkQueue = vkQueue;
+
+	_boundVkPipelineHnd = nullptr;
+	_boundVkDescrSetHnd = nullptr;
 }
 
 void 
@@ -730,6 +733,38 @@ Vk_CommandBuffer::insertDebugLabel(const char* name, const Color4f& color)
 //Renderer_Vk*		Vk_CommandBuffer::renderer()	{ return _vkCommandPool-> }
 //RenderDevice_Vk*	Vk_CommandBuffer::device()		{ return _vkC }
 
+void 
+Vk_CommandBuffer::cmd_bindPipeline(VkPipelineBindPoint vkBindPt, Vk_Pipeline_T* hnd)
+{
+	if (!hasBoundPipeline(hnd))
+	{
+		vkCmdBindPipeline(this->hnd(), vkBindPt, hnd);
+		_boundVkPipelineHnd = hnd;
+	}
+}
+
+void 
+Vk_CommandBuffer::cmd_bindDescriptorSet(VkPipelineBindPoint vkBindPt, u32 setIndex, Vk_DescriptorSet_T* hnd, Vk_PipelineLayout_T* layoutHnd)
+{
+	if (!hasBoundDescriptorSet(hnd))
+	{
+		Vk_DescriptorSet_T* vkDescrSetHnds[] = { hnd };
+		vkCmdBindDescriptorSets(this->hnd(), vkBindPt, layoutHnd, setIndex, 1, vkDescrSetHnds, 0, nullptr);
+		_boundVkDescrSetHnd = hnd;
+	}
+}
+
+bool 
+Vk_CommandBuffer::hasBoundPipeline(Vk_Pipeline_T* vkPipelineHnd) const
+{ 
+	return _boundVkPipelineHnd == vkPipelineHnd; 
+}
+
+bool 
+Vk_CommandBuffer::hasBoundDescriptorSet(Vk_DescriptorSet_T* vkDescrSetHnd) const
+{
+	return _boundVkDescrSetHnd == vkDescrSetHnd; 
+}
 
 #endif
 

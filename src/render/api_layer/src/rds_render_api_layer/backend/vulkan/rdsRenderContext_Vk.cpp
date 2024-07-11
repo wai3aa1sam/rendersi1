@@ -951,7 +951,7 @@ RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderComm
 	{
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
 
-		vkMtlPass->onBind(this, vtxLayout, cmdBuf, cmd->materialFrameIndex());
+		vkMtlPass->onBind(this, vtxLayout, cmd->renderPrimitiveType, cmdBuf, cmd->materialFrameIndex());
 
 		for (const auto& e : vkMtlPass->info().allStageUnionInfo.pushConstants)
 		{

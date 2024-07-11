@@ -56,7 +56,9 @@ DemoEditorApp::onCreate(const CreateDesc_Base& cDesc)
 		mainWnd.setWindowTitle(cDesc.title);
 	}
 
-	pushLayer(makeUPtr<DemoEditorLayer>(makeDemo()));
+	auto upGfxDemo = makeDemo();
+	gfxDemo = upGfxDemo.ptr();
+	pushLayer(makeUPtr<DemoEditorLayer>(rds::move(upGfxDemo)));
 }
 
 void 

@@ -26,11 +26,11 @@ public:
 	RdgTextureHnd	oTexPresent;
 
 public:
-	virtual void drawScene(			RenderRequest& rdReq, Material* mtl) override;
-	virtual void drawScene(			RenderRequest& rdReq, Material* mtl, const DrawSettings& drawSettings) override;
+	virtual void drawScene(RenderRequest& rdReq, Material* mtl)										override;
+	virtual void drawScene(RenderRequest& rdReq, Material* mtl, const DrawSettings& drawSettings)	override;
+	virtual void drawScene(RenderRequest& rdReq, const DrawSettings& drawSettings)					override;
 
 			void drawScene(			RenderRequest& rdReq);
-			void drawScene(			RenderRequest& rdReq, const DrawSettings& drawSettings);
 			void drawSceneAABBox(	RenderRequest& rdReq, const DrawSettings& drawSettings);
 
 	virtual void setupMaterial(	Material*	oMtl) override;

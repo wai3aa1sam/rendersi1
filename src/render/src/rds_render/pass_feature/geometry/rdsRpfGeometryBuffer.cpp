@@ -46,7 +46,7 @@ RpfGeometryBuffer::addGeometryPass(Result& oResult, const DrawSettings& drawSett
 	RdgTextureHnd texEmission			= rdGraph->createTexture("gBuf_emission",			Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 	RdgTextureHnd texDebugPosition		= rdGraph->createTexture("gBuf_debugPosition",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAf,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 
-	Material* mtl = _mtlGeometryBuffer;
+	//Material* mtl = _mtlGeometryBuffer;
 	{
 		auto& pass = rdGraph->addPass("geometry_pass", RdgPassTypeFlags::Graphics);
 		pass.setRenderTarget(texNormal,					RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
@@ -56,15 +56,16 @@ RpfGeometryBuffer::addGeometryPass(Result& oResult, const DrawSettings& drawSett
 		pass.setRenderTarget(texDebugPosition,			RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		pass.setDepthStencil(dsBuf, RdgAccess::Write,	RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);
 		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
+			[=, drawSettings = drawSettings](RenderRequest& rdReq)
 			{
 				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor();
 				clearValue->setClearDepth();
-
-				drawData->drawScene(rdReq, mtl, drawSettings);
+				
+				constCast(drawSettings).overrideShader = _shaderGeometryBuffer;
+				drawData->drawScene(rdReq, drawSettings);
 			}
 		);
 		passGeom = &pass;

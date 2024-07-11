@@ -21,6 +21,7 @@ ShaderCompilerConsoleApp::parseCmdLine(const CmdLineArgsView& cmdArgs)
 {
 	ShaderCmdLineParser parser;
 	parser.readCmdLineArgsView(&_compileDesc, cmdArgs);
+	_compileDesc.compileOption.isDebug = RDS_DEBUG;
 }
 
 void 

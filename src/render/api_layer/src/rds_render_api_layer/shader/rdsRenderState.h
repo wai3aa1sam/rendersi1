@@ -74,7 +74,7 @@ struct RenderState
 	using BlendOp		= RenderState_BlendOp;
 	using BlendFactor	= RenderState_BlendFactor;
 
-	RenderPrimitiveType primitiveType	= RenderPrimitiveType::Triangle;
+	//RenderPrimitiveType primitiveType	= RenderPrimitiveType::Triangle;
 	bool				wireframe		= false;
 	Cull				cull			= Cull::Back;
 
@@ -146,7 +146,7 @@ struct RenderState
 	template<class SE>
 	void onJsonIo(SE& se) 
 	{
-		RDS_NAMED_FIXED_IO(se, primitiveType);
+		//RDS_NAMED_FIXED_IO(se, primitiveType);
 		RDS_NAMED_FIXED_IO(se, wireframe);
 		RDS_NAMED_FIXED_IO(se, cull);
 		RDS_NAMED_FIXED_IO(se, depthTest);

@@ -395,6 +395,17 @@ RenderRequest::drawBox(const Vec3f pts[AABBox3f::s_kVertexCount], const Color4b&
 	drawLines(vertices, indices);
 }
 
+void 
+RenderRequest::drawSceneQuad(RDS_RD_CMD_DEBUG_PARAM, Material* mtl)
+{
+	auto* p = addDrawCall();
+	RDS_RD_CMD_DEBUG_ASSIGN(p);
+
+	p->setDebugSrcLoc(RDS_SRCLOC);
+	p->vertexCount = 3;
+	p->setMaterial(mtl);
+}
+
 #if 0
 
 void 

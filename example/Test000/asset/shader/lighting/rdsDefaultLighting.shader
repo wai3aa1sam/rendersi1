@@ -46,7 +46,6 @@ Shader {
 
 #include "built-in/shader/rds_shader.hlsl"
 #include "built-in/shader/lighting/rdsDefaultLighting.hlsl"
-#include "built-in/shader/shadow/cascaded_shadow_mapping/rdsCascadedShadowMapping.hlsl"
 
 struct VertexIn
 {
@@ -169,7 +168,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	//input.positionWs.y = -input.positionWs.y;
 	//input.positionVs.y = -input.positionVs.y;
 
-	float shadow = csm_computeShadow(input.positionWs, input.positionVs);
+	float shadow = csm_computeShadow(input.positionWs, input.positionVs.z);
 	shadow = 0.0;
 	o.rgb += (1.0 - shadow) * oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 

@@ -770,6 +770,13 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		srcAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		dstAccess	= VK_ACCESS_SHADER_READ_BIT;
 	}
+	else if (srcLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) // shader rsc -> depth
+	{
+		srcStage	= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dstStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		srcAccess	= VK_ACCESS_NONE;
+		dstAccess	= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	}
 	else if (srcLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && dstLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) // depth -> depth
 	{
 		srcStage	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -884,7 +891,7 @@ Vk_RenderApiUtil::toVkStageAccess(VkImageLayout srcLayout, VkImageLayout dstLayo
 		}
 	else 
 	{
-		throwError("");
+		throwError("unknow srcLayout -> dstLayout");
 	}
 
 	if (srcPipelineStage != VK_PIPELINE_STAGE_NONE)

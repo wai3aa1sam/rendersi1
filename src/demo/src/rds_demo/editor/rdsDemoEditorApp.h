@@ -29,6 +29,9 @@ public:
 	static DemoEditorApp* instance();
 
 public:
+	GraphicsDemo* gfxDemo = nullptr;
+
+public:
 	DemoEditorApp();
 	~DemoEditorApp();
 

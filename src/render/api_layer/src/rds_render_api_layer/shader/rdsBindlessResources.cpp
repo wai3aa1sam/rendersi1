@@ -27,8 +27,9 @@ BindlessResources::SizeType
 BindlessResources::createSamplerListTable(SamplerStateListTable& o)
 {
 	supportSamplerCount();
+
+	auto& table = o;
 	{
-		auto& table = o;
 
 		SamplerState defaultSampler = SamplerState::makeLinearRepeat();
 		table.add(defaultSampler);
@@ -47,7 +48,7 @@ BindlessResources::createSamplerListTable(SamplerStateListTable& o)
 				s.wrapV		= sCast<SamplerWrap>(i);
 				s.wrapS		= sCast<SamplerWrap>(i);
 
-				if (!hasAddedDefault && defaultSampler.hash() == s.hash())
+				if (!hasAddedDefault && defaultSampler == s)
 				{
 					hasAddedDefault = true;
 					continue;
@@ -58,7 +59,7 @@ BindlessResources::createSamplerListTable(SamplerStateListTable& o)
 		}
 	}
 
-	RDS_CORE_ASSERT(supportSamplerCount() == o.size(), "invalid support count");
+	RDS_CORE_ASSERT(supportSamplerCount() == table.size(), "invalid support count, supportSamplerCount(): {}, samplerListTable count: {}", supportSamplerCount(), table.size());
 
 	return supportSamplerCount();
 }
