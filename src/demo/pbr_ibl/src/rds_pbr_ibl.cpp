@@ -61,7 +61,7 @@ PbrIbl::onCreateScene(Scene* oScene)
 			auto& mtl = rdable->material;
 			mtl->setParam("metalness",			metalnessStep * math::clamp((totalCount - i), sCast<u32>(0), sCast<u32>(totalCount)));
 			mtl->setParam("roughness",			roughnessStep * i);
-			mtl->setParam("ambientOcclusion",	0.2f);
+			mtl->setParam("ambientOcclusion",	1.0f);
 			++i;
 
 			s_mtl			= mtl;

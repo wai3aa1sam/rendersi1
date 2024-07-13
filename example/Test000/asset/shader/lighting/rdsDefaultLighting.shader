@@ -167,10 +167,11 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	//float3 lightDir = rds_Lights_get(0).directionWs.xyz;
 	//input.positionWs.y = -input.positionWs.y;
 	//input.positionVs.y = -input.positionVs.y;
-
 	float shadow = csm_computeShadow(input.positionWs, input.positionVs.z);
-	shadow = 0.0;
+	//shadow = 0.0;
 	o.rgb += (1.0 - shadow) * oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
+
+	//o.rgb *= csm_debugCascadeLevel(input.positionVs.z);
 
 	o.rgb = ToneMapping_reinhard(o.rgb);
 	o.rgb = PostProc_gammaEncoding(o.rgb);

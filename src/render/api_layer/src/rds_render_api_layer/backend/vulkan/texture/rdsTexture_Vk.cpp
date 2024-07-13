@@ -229,7 +229,7 @@ Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, u32 baseM
 	cInfo.format							= Util::toVkFormat(desc.format);
 
 	if (desc.isSrgb)
-		cInfo.format = Util::toVkFormat_srgb(cInfo.format);		// if is srgb, vulkan will decode ( ^1/(2.2) ) when sample, so change back to linear
+		cInfo.format = Util::toVkFormat_srgb(cInfo.format);		// if is srgb, vulkan will decode ( ^2.2 ) when sample, so change back to linear
 
 	cInfo.components.r						= VK_COMPONENT_SWIZZLE_IDENTITY;
 	cInfo.components.g						= VK_COMPONENT_SWIZZLE_IDENTITY;

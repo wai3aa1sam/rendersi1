@@ -33,7 +33,7 @@ public:
 	virtual ~GraphicsDemo();
 
 	void		createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshAsset, Vec3u objectCount, Vec3f startPos = Vec3f::s_zero(), Vec3f step = Vec3f::s_one() * 3.0f, Vec3f scale = Vec3f::s_one());
-	CTransform* createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos = Vec3f::s_zero(), Vec3f step = Vec3f::s_one() * 3.0f, Quat4f direction = Quat4f::s_eulerDegX(141.4f), float range = 4.0f, float intensity = 4.0f);
+	CTransform* createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos = Vec3f::s_zero(), Vec3f step = Vec3f::s_one() * 3.0f, Quat4f direction = Quat4f::s_eulerDegX(141.4f), float range = 4.0f, float intensity = 1.0f);
 
 	void prepareRender(RenderGraph* oRdGraph, DrawData* drawData);
 	void executeRender(RenderGraph* oRdGraph, DrawData* drawData);

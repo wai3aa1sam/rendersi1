@@ -8,17 +8,23 @@
 #endif
 #if 1
 
-RDS_OUT(float) Light_getSpotAngle(RDS_OUT(Light) light)
+/*
+	set cos radian in app side
+*/
+
+RDS_OUT(float) Light_getSpotCosAngle(RDS_OUT(Light) light)
 {
 	return light.param.x;
 }
 
-/*
-	set cos radian in app side
-*/
 RDS_OUT(float) Light_getSpotInnerCosAngle(RDS_OUT(Light) light)
 {
 	return light.param.y;
+}
+
+RDS_OUT(float) Light_getSpotAngle(RDS_OUT(Light) light)
+{
+	return light.param.z;
 }
 
 #endif

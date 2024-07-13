@@ -75,7 +75,6 @@ GraphicsDemo::onCreate()
 	createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/skybox.shader"
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 
-	RenderUtil::createMaterial(&_shaderScreenQuad,		&_mtlScreenQuad,		"asset/shader/util/rdsScreenQuad.shader");
 	RenderUtil::createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/rdsDisplayNormals.shader");
 }
 
@@ -148,7 +147,6 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 CTransform*
 GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec3f step, Quat4f direction, float range, float intensity)
 {
-
 	CTransform* directionalLightTransf = nullptr;
 	#if 1
 	auto& scene = *oScene;

@@ -11,7 +11,7 @@ namespace rds
 
 DrawSettings::DrawSettings()
 {
-
+	overrideShader = nullptr;
 }
 
 

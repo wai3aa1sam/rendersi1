@@ -22,7 +22,7 @@ float3 Pbr_fresnelSchlick(float cosTheta, float3 baseRefl)
 float3 Pbr_fresnelSchlick(float cosTheta, float3 baseRefl, float roughness)
 {
     //return baseRefl + (max(float3(1.0 - roughness), baseRefl) - baseRefl) * pow(1.0 - cosTheta, 5.0);
-    return baseRefl + (max(float3(1.0 - roughness, 1.0 - roughness, 1.0 - roughness), baseRefl) - baseRefl) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return baseRefl + (max(1.0 - roughness, baseRefl) - baseRefl) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float Pbr_distributionGGX(float dotNH, float roughness)
@@ -76,10 +76,12 @@ float Pbr_geometrySmith_ibl(float dotNV, float dotNL, float roughness)
     return ggx1 * ggx2;
 }
 
-LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3 L, float3 colorLight, float intensity)
+LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3 L, float3 colorLight, float attenutaion)
 {
-    float3 normal   = surface.normal;
-    float3 albedo   = surface.baseColor.rgb;
+    float3 normal       = surface.normal;
+    float3 albedo       = surface.baseColor.rgb;
+    float  roughness    = surface.roughness;
+    float  metalness    = surface.metalness;
 
     //float3 viewDir  = normalize(posView - posWs);
     //float3 dirLight = normalize(posLight - posWs);
@@ -91,26 +93,22 @@ LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3
     float dotNL = max(dot(normal,   L),        0.0);
 
     float3 baseRefl = float3(0.04, 0.04, 0.04);   // non-metalness surfaces
-    baseRefl        = lerp(baseRefl, albedo, surface.metalness);
+    baseRefl        = lerp(baseRefl, albedo, metalness);
 
     float3  fresnel     = Pbr_fresnelSchlick(dotHV, baseRefl);                  // dotNV or dotHV
-    float   normalDist  = Pbr_distributionGGX(dotNH, surface.roughness);        // speculat highlight, distriGGX give us % of mircofacet align H 
-    float   geo         = Pbr_geometrySmith(dotNV, dotNL, surface.roughness);
+    float   normalDistr = Pbr_distributionGGX(dotNH, roughness);        // speculat highlight, distriGGX give us % of mircofacet align H 
+    float   geo         = Pbr_geometrySmith(dotNV, dotNL, roughness);
 
-    float3  spec_numer  = normalDist * geo * fresnel;
+    float3  spec_numer  = normalDistr * geo * fresnel;
     float   spec_denom  = 4.0 * dotNV * dotNL + rds_epsilon;
     float3  specular    = spec_numer / spec_denom;
 
     float3 kSpecular = fresnel;
-    float3 kDiffuse  = float3(1.0, 1.0, 1.0) - kSpecular;
-    kDiffuse        *= 1.0 - surface.metalness;  // metalness surface absorb all diffuse 
+    float3 kDiffuse  = 1.0 - kSpecular;
+    kDiffuse        *= 1.0 - metalness;  // metalness surface absorb all diffuse 
     
-    float3  lambert = albedo / rds_pi;
-    //float3  brdf    = kDiffuse * lambert + specular;
-
-    //float   attenuation = Lighting_attenuation(posWs, posLight);
-    float3  radiance    = colorLight * intensity;
-    //float3  result      = brdf * radiance * dotNL;
+    float3  lambert     = albedo / rds_pi;
+    float3  radiance    = colorLight * attenutaion;
 
     float3 brdfDiffuse  = kDiffuse * lambert;
     float3 brdfSpecular = specular;

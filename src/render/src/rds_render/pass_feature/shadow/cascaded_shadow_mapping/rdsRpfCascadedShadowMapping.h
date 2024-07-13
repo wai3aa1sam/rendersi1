@@ -30,9 +30,9 @@ public:
 
 struct RpfCascadedShadowMapping_Param : public RenderPassFeature_Param
 {
-	u32		mapSize				= 1024 * 4;
+	u32		mapSize				= 1024 * 2;
 	u32		cascadedSplitCount	= 3;
-	float	cascadeSplitLambda	= 0.95f;
+	float	cascadeSplitLambda	= 0.9f;
 };
 
 #if 0

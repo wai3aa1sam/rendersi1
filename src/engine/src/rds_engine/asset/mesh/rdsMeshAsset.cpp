@@ -595,7 +595,12 @@ AssimpMeshLoader::loadMaterials(Shader* shader, const aiScene* srcScene)
 								auto& dst = textures.emplace_back();
 								auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);	
 								cDesc.create(texFilename);
+								
+								if (texType == MaterialData_TextureType::BaseColor)
+									cDesc.isSrgb = true;
+
 								dst = Renderer::rdDev()->createTexture2D(cDesc);
+								dst->setDebugName(texFilename);
 
 								u32 texIdx = sCast<u32>(textureIndexMap.size());
 								textureIndexMap[texName] = texIdx;

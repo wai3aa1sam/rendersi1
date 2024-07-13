@@ -52,6 +52,8 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 {
 	// transform system update
 	{
+		RDS_PROFILE_SECTION("transform buffer update");
+
 		auto& renderables_ = renderables();
 
 		// should resize as scene ent size, * 10 is a temp dirty fix
@@ -101,6 +103,8 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 
 	// record command
 	{
+		RDS_PROFILE_SECTION("record render command");
+
 		auto& rdGraph = renderGraph();
 
 		//rdGraph.reset();
@@ -115,6 +119,8 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 void
 CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent, bool isDrawUi)
 {
+	RDS_PROFILE_SCOPED();
+
 	auto& rdGraph = renderGraph();
 	
 	// rdGraph.execute(); // execute in render thread, then later need to copy struct renderableObject list to render thread, keep simple first

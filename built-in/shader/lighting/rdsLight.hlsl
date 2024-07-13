@@ -30,12 +30,7 @@ bool Light_isDirectionalLight(Light light)
 	return light.type == rds_LightType_Directional;
 }
 
-float Light_getSpotCosAngle(Light light)
-{
-	return cos(light.param.x);
-}
-
-Sphere Light_makeSphere(Light light)
+Sphere Light_makeSphereVs(Light light)
 {
 	Sphere sphere;
 	sphere.center = light.positionVs.xyz;
@@ -43,7 +38,7 @@ Sphere Light_makeSphere(Light light)
 	return sphere;
 }
 
-Cone Light_makeCone(Light light)
+Cone Light_makeConeVs(Light light)
 {
 	Cone cone;
 	cone.tip 		= light.positionVs.xyz;

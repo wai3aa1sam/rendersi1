@@ -62,7 +62,11 @@ EditorCameraController::update(Camera* camera, float dt, const UiMouseEvent& mou
 		if		(uiInput.isKeyPressed(Button::A))	dir += Vec3f::s_right();
 		else if (uiInput.isKeyPressed(Button::D))	dir -= Vec3f::s_right();
 
-		dir = dir * (_speed * dt);
+		auto speed = _speed;
+		if (uiInput.isKeyPressed(Button::Shift))
+			speed *= 4.0f;
+
+		dir = dir * (speed * dt);
 		if (!math::equals0(dir))
 			cam.move(dir.x, dir.y, dir.z);
 	}

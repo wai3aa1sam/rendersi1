@@ -4,6 +4,7 @@
 
 #include "rds_render/pass_feature/utility/image/rdsRpfClearImage2D.h"
 #include "rds_render/pass_feature/utility/image/rdsRpfClearImage3D.h"
+#include "rds_render/pass_feature/utility/image/rdsRpfScreenQuad.h"
 
 namespace rds
 {
@@ -23,8 +24,9 @@ RenderPassFeature::~RenderPassFeature()
 
 }
 
-RdgPass* RenderPassFeature::_addClearImage2DPass(SPtr<Material>& material, RdgTextureHnd image) { return _rdPassPipeline->_rpfClearImage2D->addClearImage2DPass(material, image); }
-RdgPass* RenderPassFeature::_addClearImage3DPass(SPtr<Material>& material, RdgTextureHnd image) { return _rdPassPipeline->_rpfClearImage3D->addClearImage3DPass(material, image); }
+RdgPass* RenderPassFeature::_addClearImage2DPass(	SPtr<Material>& material, RdgTextureHnd image)								{ return _rdPassPipeline->_rpfClearImage2D->addClearImage2DPass(material, image); }
+RdgPass* RenderPassFeature::_addClearImage3DPass(	SPtr<Material>& material, RdgTextureHnd image)								{ return _rdPassPipeline->_rpfClearImage3D->addClearImage3DPass(material, image); }
+RdgPass* RenderPassFeature::_addDrawScreenQuadPass(	SPtr<Material>& material, RdgTextureHnd rtColor, RdgTextureHnd texColor)	{ return _rdPassPipeline->_rpfScreenQuad->addDrawScreenQuadPass(material, rtColor, texColor); }
 
 void 
 RenderPassFeature::setRenderPassPipeline(RenderPassPipeline* v)

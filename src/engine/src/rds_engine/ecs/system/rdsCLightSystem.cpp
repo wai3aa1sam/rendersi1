@@ -60,7 +60,7 @@ CLightSystem::updateLight(CLight* light, CTransform& transform, const Mat4f& vie
 	}
 
 	auto posWs		= transform.localPosition();
-	auto dirWs		= transform.forward().normalize();
+	auto dirWs		= transform.forward();
 
 	auto posVs		= viewMatrix.mulPoint4x3(posWs);
 	auto dirVs		= viewMatrix.mulVector(dirWs).normalize();

@@ -5,6 +5,7 @@
 
 #include "rds_render/pass_feature/utility/image/rdsRpfClearImage2D.h"
 #include "rds_render/pass_feature/utility/image/rdsRpfClearImage3D.h"
+#include "rds_render/pass_feature/utility/image/rdsRpfScreenQuad.h"
 
 namespace rds
 {
@@ -52,8 +53,9 @@ protected:
 	* TODO: temporary, later have a hash to get the rpf instead of caching
 	*/
 	friend class RenderPassFeature;
-	RpfClearImage2D* _rpfClearImage2D = nullptr;
-	RpfClearImage3D* _rpfClearImage3D = nullptr;
+	RpfClearImage2D*	_rpfClearImage2D	= nullptr;
+	RpfClearImage3D*	_rpfClearImage3D	= nullptr;
+	RpfScreenQuad*		_rpfScreenQuad		= nullptr;
 };
 
 template<class T, class... ARGS> inline

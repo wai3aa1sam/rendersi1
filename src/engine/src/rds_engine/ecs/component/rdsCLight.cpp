@@ -93,7 +93,7 @@ CLight::setColor(const Color4f& v)
 
 void CLight::setRange(float v)
 {
-	lightData().range= v;
+	lightData().range = v;
 	_setDirty();
 }
 
@@ -108,6 +108,9 @@ CLight::setSpotAngle(float radian)
 {
 	auto& spotAngle = shaderInterop::Light_getSpotAngle(lightData());
 	spotAngle = radian;
+
+	auto& spotCosAngle = shaderInterop::Light_getSpotCosAngle(lightData());
+	spotCosAngle = math::cos(radian);
 	_setDirty();
 }
 
@@ -197,7 +200,7 @@ Vec3f CLight::directionVs()	const { const auto& dir = lightData().directionVs;	r
 Vec3f CLight::positionWs()	const { const auto& pos = lightData().positionWs;	return Vec3f{ pos.x, pos.y, pos.z }; }
 Vec3f CLight::directionWs()	const { const auto& dir = lightData().directionWs;	return Vec3f{ dir.x, dir.y, dir.z }; }
 
-float CLight::spotAngle()			const	{ RDS_CORE_ASSERT(lightType() == LightType::Spot, ""); return shaderInterop::Light_getSpotAngle(constCast(lightData())); }
+float CLight::spotAngle()			const	{ RDS_CORE_ASSERT(lightType() == LightType::Spot, ""); return acos(shaderInterop::Light_getSpotCosAngle(constCast(lightData()))); }
 float CLight::spotInnerAngle()		const	{ RDS_CORE_ASSERT(lightType() == LightType::Spot, ""); return acos(shaderInterop::Light_getSpotInnerCosAngle(constCast(lightData()))); }
 
 //void 

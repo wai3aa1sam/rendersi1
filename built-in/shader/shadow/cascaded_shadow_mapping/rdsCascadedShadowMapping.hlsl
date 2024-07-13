@@ -67,30 +67,31 @@ float csm_sampleShadowMap_Pcf(float4 shadowCoord, float2 offset, uint cascadeLev
     return shadow / count;
 }
 
-uint csm_computeCascadeLevel(float3 posVs)
+uint csm_computeCascadeLevel(float linearDepthVs)
 {
     uint cascadeLevel = 0;
     #if 0
     for(uint i = 0; i < csm_level_count - 1; ++i) 
     {
-	    if(posVs.z < csm_plane_dists[i]) 
+	    if(linearDepthVs < csm_plane_dists[i]) 
         {
 		    cascadeLevel = i + 1;
 	    }
     }
     #else
     float3 planDists    = float3(csm_plane_dists[0], csm_plane_dists[1], csm_plane_dists[2]);
-    float3 result       = step(posVs.zzz, planDists);
+    float3 result       = step(float3(linearDepthVs, linearDepthVs, linearDepthVs), planDists);
     cascadeLevel = result.x + result.y + result.z;
+    // TODO: lerp cascade index
     #endif
 
     return cascadeLevel;
 }
 
-float csm_computeShadow(float3 posWs, float3 posVs)
+float csm_computeShadow(float3 posWs, float linearDepthVs)
 {
     uint cascadeLevel = 0;
-    cascadeLevel = csm_computeCascadeLevel(posVs);
+    cascadeLevel = csm_computeCascadeLevel(linearDepthVs);
     
     float4 shadowCoord = mul(csm_bias_matrix, mul(csm_matrices[cascadeLevel], float4(posWs, 1.0)));
     shadowCoord /= shadowCoord.w;
@@ -101,28 +102,21 @@ float csm_computeShadow(float3 posWs, float3 posVs)
     return shadow;
 }
 
-float3 csm_debugCascadeLevel(float3 posVs)
+float3 csm_debugCascadeLevel(float linearDepthVs)
 {
     float3 o = float3(0.0, 0.0, 0.0);
     #if 1
 	{
+        static const float3 colors[] = {
+            float3(1.0, 0.0, 0.0),
+            float3(0.0, 1.0, 0.0),
+            float3(1.0, 1.0, 0.0),
+            float3(0.0, 0.0, 1.0),
+        };
+
 		uint cascadeLevel = 0;
-        cascadeLevel = csm_computeCascadeLevel(posVs);
-		switch(cascadeLevel) 
-		{
-		case 0 :
-			o.rgb = float3(1.0f, 0.0f, 0.0f);
-			break;
-		case 1 :
-			o.rgb = float3(0.0f, 1.0f, 0.0f);;
-			break;
-		case 2 :
-			o.rgb = float3(0.0f, 0.0f, 1.0f);
-			break;
-		case 3 :
-			o.rgb = float3(1.0f, 1.0f, 1.0f);
-			break;
-		}
+        cascadeLevel = csm_computeCascadeLevel(linearDepthVs);
+		o.rgb = colors[cascadeLevel];
 	}
 	#endif
 

@@ -15,8 +15,9 @@ namespace rds
 
 RenderPassPipeline::RenderPassPipeline()
 {
-	_rpfClearImage2D = addRenderPassFeature<RpfClearImage2D>();
-	_rpfClearImage3D = addRenderPassFeature<RpfClearImage3D>();
+	_rpfClearImage2D	= addRenderPassFeature<RpfClearImage2D>();
+	_rpfClearImage3D	= addRenderPassFeature<RpfClearImage3D>();
+	_rpfScreenQuad		= addRenderPassFeature<RpfScreenQuad>();
 }
 
 RenderPassPipeline::~RenderPassPipeline()

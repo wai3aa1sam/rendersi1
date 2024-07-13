@@ -44,9 +44,9 @@ class RenderPassFeature : public NonCopyable
 {
 	friend class RenderPassPipeline;
 public:
-	RdgPass* _addClearImage2DPass(SPtr<Material>& material, RdgTextureHnd image);
-	RdgPass* _addClearImage3DPass(SPtr<Material>& material, RdgTextureHnd image);
-
+	RdgPass* _addClearImage2DPass(	SPtr<Material>& material, RdgTextureHnd image);
+	RdgPass* _addClearImage3DPass(	SPtr<Material>& material, RdgTextureHnd image);
+	RdgPass* _addDrawScreenQuadPass(SPtr<Material>& material, RdgTextureHnd rtColor, RdgTextureHnd texColor);
 
 public:
 	RenderGraph*			renderGraph();
