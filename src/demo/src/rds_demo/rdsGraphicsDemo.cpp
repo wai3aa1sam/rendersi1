@@ -145,7 +145,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 }
 
 CTransform*
-GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec3f step, Quat4f direction, float range, float intensity)
+GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec3f step, Quat4f direction, float range, float intensity, const AABBox3f& rndBounding)
 {
 	CTransform* directionalLightTransf = nullptr;
 	#if 1
@@ -161,9 +161,23 @@ GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec
 				auto* ent = scene.addEntity();
 
 				auto* transform	= ent->getComponent<CTransform>();
-				transform->setLocalPosition(startPos.x + step.x * c, 1.0f, startPos.y + step.y * r);
-				transform->setLocalRotation(Vec3f{math::radians(90.0f), 0.0f, 0.0f});
-				transform->setLocalRotation(direction);
+
+				Vec3f pos;
+				pos = Vec3f{ startPos.x + step.x * c, 1.0f, startPos.y + step.y * r };
+
+				Quat4f dir;
+				dir = direction;
+
+				auto* rnd = Random::instance();
+				bool isRandom = rndBounding.isValid();
+				if (isRandom)
+				{
+					pos = rnd->range(rndBounding.min, rndBounding.max);
+					dir = rnd->rangeEulerDeg(0.0f, 360.0f);
+				}
+
+				transform->setLocalPosition(pos);
+				transform->setLocalRotation(dir);
 
 				//auto* rdableMesh = ent->addComponent<CRenderableMesh>();
 				//rdableMesh->material = mtl;
@@ -172,14 +186,20 @@ GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec
 				#if 1
 				bool isPoint		= r % 2 == 0;
 				bool isDirectional	= r == 0 && c == 0;
+				isPoint	= true;
 
 				auto* light = ent->addComponent<CLight>();
 				light->setType(isPoint ? LightType::Point : LightType::Spot);
+				light->setRange(range);
+				light->setIntensity(intensity);
+
 				//light->setType(LightType::Point);
 				if (isDirectional)
 				{
 					light->setType(LightType::Directional);
 					directionalLightTransf = transform;
+					transform->setLocalRotation(direction);
+					light->setIntensity(1.0);
 				}
 
 				if (light->lightType() == LightType::Spot)
@@ -188,8 +208,13 @@ GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec
 					light->setSpotInnerAngle(math::radians(30.0f));
 				}
 
-				light->setRange(range);
-				light->setIntensity(intensity);
+				if (!isDirectional)
+				{
+					auto color = rnd->rangeColorRGBA<float>();
+					color.a = 1.0f;
+					light->setColor(color);
+				}
+
 
 				TempString buf;
 				fmtTo(buf, "{}-{}", enumStr(light->lightType()), sCast<u64>(ent->id()));

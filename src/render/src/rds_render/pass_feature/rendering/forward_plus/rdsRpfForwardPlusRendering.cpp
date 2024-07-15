@@ -12,7 +12,6 @@ namespace shaderInterop
 namespace rds
 {
 
-
 #if 0
 #pragma mark --- rdsRpfForwardPlusRendering-Impl ---
 #endif // 0
@@ -39,7 +38,9 @@ RpfForwardPlusRendering::getLightCulllingThreadParamTo(Vec2u* oNThreads, Vec2u* 
 
 RpfForwardPlusRendering::RpfForwardPlusRendering()
 {
-
+	#if RDS_DEVELOPMENT
+	isDebug = true;
+	#endif // RDS_DEVELOPMENT
 }
 
 RpfForwardPlusRendering::~RpfForwardPlusRendering()
@@ -56,6 +57,8 @@ RpfForwardPlusRendering::create()
 
 	RenderUtil::createShader(&_shaderClearBuffer,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_ClearBuffer.shader");
 	RenderUtil::createShader(&_shaderDebugBuffer,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_DebugBuffer.shader");
+
+	RenderUtil::createMaterial(&_shaderLightHeatmap,	&_mtlLightHeatmap,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_Heatmap.shader");
 }
 
 void 
@@ -185,6 +188,14 @@ RpfForwardPlusRendering::addLightCullingPass(Result& oResult, RdgBufferHnd frust
 	RdgBufferHnd	transparent_lightIndexList		= rdGraph->createBuffer( "fwdp_transparent_lightIndexList",		RenderGpuBuffer_CreateDesc{ lightIdxListSize	* uintSize, uintSize, RenderGpuBufferTypeFlags::Compute});
 	RdgTextureHnd	transparent_lightGrid			= rdGraph->createTexture("fwdp_transparent_lightGrid",			Texture2D_CreateDesc{		nThreadGrps, ColorType::RGu, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::RenderTarget});
 
+	#if 0
+	RdgTextureHnd	texLightHeatmap;
+	if (isDebug)
+	{
+		texLightHeatmap	= rdGraph->createTexture("fwdp_tex_lightHeatmap", Texture2D_CreateDesc{ drawData->resolution2u(), ColorType::RGBAb, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::RenderTarget});
+	}
+	#endif // 0
+
 	_addClearImage2DPass(	_mtlClearOpaqueLightGrid,				opaque_lightGrid);
 	addClearBufferPass(		_mtlClearOpaqueLightIndexCounter,		opaque_lightIndexCounter);
 	addClearBufferPass(		_mtlClearOpaqueLightIndexList,			opaque_lightIndexList);
@@ -206,6 +217,12 @@ RpfForwardPlusRendering::addLightCullingPass(Result& oResult, RdgBufferHnd frust
 		pass.writeBuffer(transparent_lightIndexCounter);
 		pass.writeBuffer(transparent_lightIndexList);
 		pass.writeTexture(transparent_lightGrid);
+
+		/*if (isDebug)
+		{
+			pass.writeTexture(texLightHeatmap);
+		}*/
+
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
@@ -243,6 +260,9 @@ RpfForwardPlusRendering::addLightCullingPass(Result& oResult, RdgBufferHnd frust
 				mtl->setParam("transparent_lightIndexList",		transparent_lightIndexList.renderResource());
 				mtl->setImage("transparent_lightGrid",			transparent_lightGrid.renderResource(), 0);
 
+				/*if (texLightHeatmap)
+					mtl->setImage("debug_tex_lightHeatmap",		texLightHeatmap.renderResource(), 0);*/
+
 				drawData->setupMaterial(mtl);
 				rdReq.dispatch(RDS_SRCLOC, mtl, 0, Vec3u{nThreadGrps, 1});
 			}
@@ -256,6 +276,8 @@ RpfForwardPlusRendering::addLightCullingPass(Result& oResult, RdgBufferHnd frust
 	result.opaque_lightGrid				= opaque_lightGrid;
 	result.transparent_lightIndexList	= transparent_lightIndexList;
 	result.transparent_lightGrid		= transparent_lightGrid;
+
+	//result.lightHeatmap					= texLightHeatmap;
 
 	return passLightCulling;
 }
@@ -272,7 +294,7 @@ RpfForwardPlusRendering::addLightCullingPass(Result& oResult, RdgTextureHnd texD
 }
 
 RdgPass*
-RpfForwardPlusRendering::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd dsBuf, Result& result, bool isOpaque, bool isClearColor)
+RpfForwardPlusRendering::addLightingPass(const DrawSettings& drawSettings, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, Result& result, bool isOpaque, bool isClearColor)
 {
 	auto*		rdGraph			= renderGraph();
 	auto*		drawData		= drawDataBase();
@@ -281,8 +303,7 @@ RpfForwardPlusRendering::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd ds
 	if (!result.lightCullingPass)
 		return passLighting;
 
-
-	Material* mtl = _mtlLighting;
+	//Material* mtl = _mtlLighting;
 	{
 		auto& pass = rdGraph->addPass("fwdp_lighting", RdgPassTypeFlags::Graphics);
 
@@ -296,7 +317,7 @@ RpfForwardPlusRendering::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd ds
 		pass.setRenderTarget(rtColor,	isClearColor ? RenderTargetLoadOp::Clear : RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
 		pass.setDepthStencil(dsBuf,	RdgAccess::Read, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
 		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
+			[=, drawSettings = drawSettings](RenderRequest& rdReq)
 			{
 				rdReq.reset(rdGraph->renderContext(), drawData);
 
@@ -321,8 +342,14 @@ RpfForwardPlusRendering::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd ds
 				}
 				#endif // 0
 
-				mtl->setParam("lightIndexList",		lightIndexList.renderResource());
-				mtl->setParam("lightGrid",			lightGrid.renderResource());
+				
+				auto& ds = constCast(drawSettings);
+				ds.overrideShader = _shaderLighting;
+				ds.setMaterialFn = [=](Material* mtl)
+					{
+						mtl->setParam("lightIndexList",		lightIndexList.renderResource());
+						mtl->setParam("lightGrid",			lightGrid.renderResource());
+					};
 
 				#if RDS_DEBUG_MATERIAL
 				{
@@ -339,7 +366,7 @@ RpfForwardPlusRendering::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd ds
 				}
 				#endif // RDS_DEBUG_MATERIAL
 
-				drawData->drawScene(rdReq, mtl);
+				drawData->drawScene(rdReq, ds);
 			}
 		);
 		passLighting = &pass;
@@ -348,7 +375,7 @@ RpfForwardPlusRendering::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd ds
 }
 
 RdgPass*
-RpfForwardPlusRendering::addRenderDebugFrustumsPass(RdgTextureHnd rtColor)
+RpfForwardPlusRendering::addDebugFrustumsPass(RdgTextureHnd rtColor)
 {
 	auto*		rdGraph				= renderGraph();
 	auto*		drawData			= drawDataBase();
@@ -366,7 +393,7 @@ RpfForwardPlusRendering::addRenderDebugFrustumsPass(RdgTextureHnd rtColor)
 	Material* mtl = _mtlMakeFrustums;
 	#if 1
 	{
-		auto& pass = rdGraph->addPass("fwdp_render_debug_frustums", RdgPassTypeFlags::Graphics);
+		auto& pass = rdGraph->addPass("fwdp_debug_frustums", RdgPassTypeFlags::Graphics);
 		pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
@@ -396,6 +423,49 @@ RpfForwardPlusRendering::addRenderDebugFrustumsPass(RdgTextureHnd rtColor)
 	#endif // 1
 
 	return passRenderFrustums;
+}
+
+RdgPass* 
+RpfForwardPlusRendering::addDrawLightHeatmapPass(RdgTextureHnd rtColor, Result& oResult, bool isOpaque)
+{
+	auto*		rdGraph				= renderGraph();
+	auto*		drawData			= drawDataBase();
+	RdgPass*	passScreenQuad	= nullptr;
+
+	Material* mtl = _mtlLightHeatmap;
+	{
+		auto passName = fmtAs_T<TempString>("fwdp-light_heatmap");
+		auto& pass = rdGraph->addPass(passName, RdgPassTypeFlags::Graphics);
+
+		auto& result = oResult;
+		RdgBufferHnd	lightIndexList	= result.lightIndexList(isOpaque);
+		RdgTextureHnd	lightGrid		= result.lightGrid(isOpaque);
+		//RdgTextureHnd	lightHeatmap	= result.lightHeatmap;
+
+		pass.readBuffer(result.lightIndexList(isOpaque));
+		pass.readTexture(result.lightGrid(isOpaque));
+
+		pass.setRenderTarget(rtColor, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), drawData);
+
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor();
+
+				mtl->setParam("lightIndexList",		lightIndexList.renderResource());
+				mtl->setParam("lightGrid",			lightGrid.renderResource());
+				//mtl->setParam("tex_color",			lightHeatmap.texture2D());
+				drawData->setupMaterial(mtl);
+				rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
+				//drawData->drawScene(rdReq, mtl);
+			}
+		);
+		passScreenQuad = &pass;
+	}
+
+	return passScreenQuad;
 }
 
 RdgPass* 

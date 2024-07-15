@@ -57,12 +57,9 @@ struct PixelIn
 {
 	float4 positionHcs  : SV_POSITION;
     float2 uv           : TEXCOORD0;
+	float3 normal   	: NORMAL;
 	float3 positionWs   : TEXCOORD1;
-	float3 positionVs   : TEXCOORD2;
-    float3 normal       : TEXCOORD3;
-    float3 normalVs     : TEXCOORD4;
-    float3 tangentWs    : TEXCOORD5;
-    float3 tangentVs    : TEXCOORD6;
+	float3 tangent		: TEXCOORD2;
 };
 
 struct PixelOut
@@ -79,21 +76,15 @@ struct PixelOut
 PixelIn vs_main(VertexIn input)
 {
     PixelIn o = (PixelIn)0;
+	
+    ObjectTransform objTransf = rds_ObjectTransform_get();
+    DrawParam       drawParam = rds_DrawParam_get();
 
-	ObjectTransform objTransf = rds_ObjectTransform_get();
-	DrawParam		drawParam = rds_DrawParam_get();
-
-    o.positionHcs = SpaceTransform_objectToClip(input.positionOs,   drawParam, objTransf);
-	o.uv		  = input.uv;
-
-    o.positionWs  = SpaceTransform_objectToWorld(input.positionOs, 	objTransf).xyz;
-    o.positionVs  = SpaceTransform_objectToView(input.positionOs, 	drawParam, objTransf).xyz;
-
-    o.normal 	  = SpaceTransform_toWorldNormal(input.normal, 		objTransf);
-    o.normalVs	  = SpaceTransform_toViewNormal( input.normal, 		objTransf, drawParam).xyz;
-
-    o.tangentWs   = SpaceTransform_toWorldNormal(input.tangent, 	objTransf);
-	o.tangentVs   = SpaceTransform_toViewNormal( input.tangent,		objTransf, drawParam);
+	o.positionHcs 	= SpaceTransform_objectToClip( input.positionOs, 	drawParam);
+	o.uv 			= input.uv;
+    o.positionWs  	= SpaceTransform_objectToWorld(input.positionOs, 	objTransf);
+    o.normal 	  	= SpaceTransform_toWorldNormal(input.normal, 		objTransf);
+    o.tangent   	= SpaceTransform_toWorldNormal(input.tangent, 		objTransf);
 
     return o;
 }
@@ -108,17 +99,14 @@ PixelOut ps_main(PixelIn input)
 	float3 normal;
 	float3 tangent;
 
-	//float3 pos 		= input.positionVs.xyz;
-	normal 	= normalize(input.normalVs);
-
-	//pos 	= input.positionWs.xyz;
+	pos		= input.positionWs;
 	normal 	= normalize(input.normal.xyz);
-	tangent = normalize(input.tangentWs.xyz);
+	tangent = normalize(input.tangent.xyz);
 	
     Surface surface = Material_makeSurface(uv, pos, normal, tangent);
 	//surface = Material_makeSurface(uv, pos, normal);
 
-	if (surface.baseColor.a == 0)
+	if (surface.baseColor.a < rds_alphaCutOff)
 		discard;
 
 	o.normal   				= remapNeg11To01(surface.normal.xy);

@@ -2,7 +2,7 @@
 
 #include "rds_core_base/common/rds_core_base_common.h"
 #include "rds_math_common.h"
-
+#include "rdsRandom.h"
 
 namespace rds
 {

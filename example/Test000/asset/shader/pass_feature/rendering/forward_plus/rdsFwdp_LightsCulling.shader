@@ -43,6 +43,7 @@ uint3 nThreadGroups;
 
 RDS_TEXTURE_2D(texDepth);
 RDS_BUFFER(Frustum, frustums);
+RDS_IMAGE_2D(float4, debug_tex_lightHeatmap);
 
 /*
 	lightGrid : uint2{lightIdxOffset, lightCount}
@@ -106,9 +107,9 @@ transparent_appendLight(uint i)
 [numThreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
 void cullLights(ComputeIn input)
 {
-	int2  uv 	 = input.dispatchThreadId.xy;
-    float depth  = RDS_TEXTURE_2D_GET(texDepth).Load(int3(uv, 0)).r;
-	uint  uDepth = asuint(depth);
+	int2  imageCoord 	= input.dispatchThreadId.xy;
+    float depth  		= RDS_TEXTURE_2D_GET(texDepth).Load(int3(imageCoord, 0)).r;
+	uint  uDepth 		= asuint(depth);
 	
 	bool isFirstThread = input.groupIndex == 0;
 	if (isFirstThread)
@@ -159,7 +160,7 @@ void cullLights(ComputeIn input)
 		{
 			case rds_LightType_Point:
 			{
-				Sphere sphere = Light_makeSphere(light);
+				Sphere sphere = Light_makeSphereVs(light);
 				if (Geometry_isInside_sphereFrustum(sphere, groupFrustum, nearClipVs, maxDepthVs))
 				{
 					transparent_appendLight(i);
@@ -172,7 +173,7 @@ void cullLights(ComputeIn input)
 			
 			case rds_LightType_Spot:
 			{
-				Cone cone = Light_makeCone(light);
+				Cone cone = Light_makeConeVs(light);
 				if (Geometry_isInside_coneFrustum(cone, groupFrustum, nearClipVs, maxDepthVs))
 				{
 					transparent_appendLight(i);
@@ -212,4 +213,32 @@ void cullLights(ComputeIn input)
 	{
 		RDS_RW_BUFFER_STORE_I(uint, transparent_lightIndexList, transparent_lightIndexStartOffset + i, 	transparent_lightList[i]);
 	}
+
+	#if 0
+	{
+		uint lightCount = opaque_lightCount;
+
+		uint2 imageExtent;
+		RDS_IMAGE_2D_GET(float4, debug_tex_lightHeatmap).GetDimensions(imageExtent.x, imageExtent.y);
+		if (Image_isInBoundary(input.dispatchThreadId, imageExtent))
+		{
+			float4 oDebugColor 	= float4(0.0, 0.0, 0.0, 0.8);
+			float4 borderColor1 = float4(0.0, 0.0, 0.0, 0.0);
+			float4 borderColor2 = float4(1.0, 1.0, 1.0, 0.0);
+
+			// border color
+			if (input.groupThreadId.x == 0 || input.groupThreadId.y == 0)
+			{
+				oDebugColor = borderColor2;
+			}
+			else if (lightCount > 0)
+			{
+				float 	f 		= (float)(lightCount) / LIGHT_LIST_LOCAL_SIZE;
+				oDebugColor.rgb = f * float3(1.0, 1.0, 1.0) * 1;
+			}
+			
+			RDS_IMAGE_2D_GET(float4, debug_tex_lightHeatmap)[imageCoord] = oDebugColor;
+		}
+	}
+	#endif
 }

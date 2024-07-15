@@ -61,11 +61,12 @@ struct PixelIn
 	float4 		positionHcs  	: SV_POSITION;
     float2 		uv           	: TEXCOORD0;
 	float3 		normal   		: NORMAL;
-	float3 		normalVs   		: TEXCOORD1;
-	float3 		positionWs   	: TEXCOORD2;
+	float3 		positionWs   	: TEXCOORD1;
+    float3 		tangent      	: TEXCOORD2;
 	float3 		positionVs   	: TEXCOORD3;
-    float3 		tangentWs      	: TEXCOORD4;
-    float3 		tangentVs      	: TEXCOORD5;
+
+	//float3 		normalVs   		: TEXCOORD1;
+    //float3 		tangentVs      	: TEXCOORD5;
 };
 
 #if 0
@@ -88,22 +89,20 @@ float   ambientOcclusion;
 
 PixelIn vs_main(VertexIn input)
 {
-    PixelIn o;
-
+    PixelIn o = (PixelIn)0;
+	
     ObjectTransform objTransf = rds_ObjectTransform_get();
     DrawParam       drawParam = rds_DrawParam_get();
 
-	o.positionHcs 	= SpaceTransform_objectToClip(	input.positionOs, 	drawParam);
-    o.positionWs  	= SpaceTransform_objectToWorld( input.positionOs, 	objTransf).xyz;
-    o.positionVs  	= SpaceTransform_worldToView(   o.positionWs,   	drawParam).xyz;
-    o.normal 	  	= SpaceTransform_toWorldNormal( input.normal, 		objTransf);
-    o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		objTransf, drawParam);
-    o.uv          	= input.uv;
+	o.positionHcs 	= SpaceTransform_objectToClip( input.positionOs, 	drawParam);
+	o.uv 			= input.uv;
+    o.positionWs  	= SpaceTransform_objectToWorld(input.positionOs, 	objTransf);
+    o.normal 	  	= SpaceTransform_toWorldNormal(input.normal, 		objTransf);
+    o.tangent   	= SpaceTransform_toWorldNormal(input.tangent, 		objTransf);
+  	o.positionVs  	= SpaceTransform_worldToView(  o.positionWs,   		drawParam);
 
-    o.tangentWs 	= SpaceTransform_toWorldNormal( input.tangent, 		objTransf);
-	o.tangentVs 	= SpaceTransform_toViewNormal(  input.tangent,		objTransf, drawParam);
-
-	//o.positionHcs 	= input.positionOs;
+    //o.normalVs 	  	= SpaceTransform_toViewNormal(  input.normal, 		objTransf, drawParam);
+	//o.tangentVs   	= SpaceTransform_toViewNormal( input.tangent,		objTransf, drawParam);
 
     return o;
 }
@@ -121,13 +120,9 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	float3 tangent;
 	float3 viewDir;
 
-	pos 	= input.positionVs;
-	normal 	= normalize(input.normalVs);
-	tangent = normalize(input.tangentVs);
-
 	pos 	= input.positionWs;
 	normal 	= normalize(input.normal);
-	tangent = normalize(input.tangentWs);
+	tangent = normalize(input.tangent);
 
 	Surface surface = Material_makeSurface(uv, pos, normal, tangent);
 	//surface = Material_makeSurface(uv, pos, normal);
@@ -137,10 +132,13 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	surface.ambientOcclusion    = ambientOcclusion;
 	//surface.metalness = 1.0;
 	//surface.roughness = 0.0;
+	
+	if (surface.baseColor.a < rds_alphaCutOff)
+		discard;
 
 	LightingResult oLightingResult = (LightingResult)0;
 	{
-		oLightingResult = Lighting_computeForwardLighting_Ws(surface, drawParam.camera_pos, viewDir);
+		oLightingResult = Lighting_computeForwardLighting_Vs(surface, drawParam.camera_pos, viewDir);
 
 		//o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 		//o.rgb = oLightingResult.specular.rgb;

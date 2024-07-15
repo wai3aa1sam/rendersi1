@@ -128,47 +128,6 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 					mtl_->setParam("cube_prefilteredEnv",	_rpfPbrIblResult.cubePrefilteredMap);
 				};
 			drawData->drawScene(rdReq, drawSettings);
-
-			#if 0
-			{
-				auto* mtl = s_mtl;
-				drawData->setupMaterial(mtl);
-				{
-					auto&	ent				= s_rdableMesh->entity();
-					auto	id				= ent.id();
-					auto&	meshAsset		= s_rdableMesh->meshAsset;
-					auto	subMeshIndex	= s_rdableMesh->subMeshIndex;
-
-					PerObjectParam perObjParam;
-					perObjParam.id				= sCast<u32>(id);
-					//perObjParam.drawParamIdx	= drawData ? sCast<u32>(drawData->drawParamIdx) : 0;
-
-					if (auto& fn = drawSettings.setMaterialFn)
-					{
-						fn(mtl);
-					}
-
-					//auto&		transform	= ent.transform();
-					//const auto& matrix		= transform.worldMatrix();
-					auto&		rdMesh		= meshAsset->renderMesh;
-
-					if (subMeshIndex == NumLimit<u32>::max())
-					{
-						rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, rdMesh, mtl, perObjParam);
-					}
-					else
-					{
-						auto& subMesh = rdMesh.subMeshes()[subMeshIndex];
-						rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
-					}
-				}
-				/*auto drawCall = rdReq.addDrawCall();
-				drawCall->setDebugSrcLoc(RDS_SRCLOC);
-				drawCall->vertexCount = 3;
-				drawCall->setMaterial(mtl);*/
-			}
-			#endif // 0
-
 		}
 	);
 

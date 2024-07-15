@@ -11,6 +11,8 @@ static const int rds_LightType_Area         = RDS_LIGHT_TYPE_AREA;
 
 static const float rds_pi           = 3.14159265359;
 static const float rds_epsilon      = 0.00001;
+static const float rds_alphaCutOff  = 0.05;
+
 
 
 #endif

@@ -67,6 +67,7 @@ void
 DemoEditorMainWindow::hotReloadShaders()
 {
 	{
+		RDS_CORE_LOG("--- begin compile shaders");
 		HiResTimer timer;
 		int errorShaderCount = 0;
 		{ 

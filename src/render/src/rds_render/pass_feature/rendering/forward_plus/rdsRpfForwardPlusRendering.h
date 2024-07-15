@@ -22,6 +22,8 @@ struct RpfForwardPlusRendering_Result : public RenderPassFeature_Result
 	RdgBufferHnd	transparent_lightIndexList;
 	RdgTextureHnd	transparent_lightGrid;
 
+	//RdgTextureHnd	lightHeatmap;
+
 public:
 	RdgBufferHnd	lightIndexList(	bool isOpaque) { return isOpaque ? opaque_lightIndexList	: transparent_lightIndexList; }
 	RdgTextureHnd	lightGrid(		bool isOpaque) { return isOpaque ? opaque_lightGrid			: transparent_lightGrid; }
@@ -47,7 +49,7 @@ public:
 public:
 	static constexpr u32			s_kTileCount		= 32;
 	static constexpr u32			s_kBlockSize		= s_kTileCount;
-	static constexpr u32			s_kEstLightPerGrid	= 128;
+	static constexpr u32			s_kEstLightPerGrid	= 128 * 4;
 
 	static constexpr DebugIndexType s_debugFrustumIndices[] = 
 	{	
@@ -65,8 +67,8 @@ public:
 	static void getLightCulllingThreadParamTo(Vec2u* oNThreads, Vec2u* oNThreadGrps, Vec2f resolution_, u32 tileCount);
 
 public:
-
-	Vec2f					resolution = Vec2f::s_zero();
+	bool					isDebug		= false;
+	Vec2f					resolution	= Vec2f::s_zero();
 
 	SPtr<RenderGpuBuffer>	gpuFrustums;
 	SPtr<RenderGpuBuffer>	debugFrustumsPts;
@@ -76,12 +78,15 @@ public:
 	RdgPass* addMakeFrustumsPass(RdgBufferHnd& oBufFrustums);
 	RdgPass* addLightCullingPass(Result& oResult, RdgBufferHnd frustums, RdgTextureHnd texDepth);
 	RdgPass* addLightCullingPass(Result& oResult, RdgTextureHnd texDepth);
-	RdgPass* addLightingPass(RdgTextureHnd colorRt, RdgTextureHnd dsBuf, Result& lightCulling, bool isOpaque, bool isClearColor);
-	RdgPass* addRenderDebugFrustumsPass(RdgTextureHnd colorRt);
+	RdgPass* addLightingPass(const DrawSettings& drawSettings, RdgTextureHnd colorRt, RdgTextureHnd dsBuf, Result& lightCulling, bool isOpaque, bool isClearColor);
 
-	RdgPass* addClearBufferPass(SPtr<Material>& material, RdgBufferHnd buffer);
+	RdgPass* addDebugFrustumsPass(RdgTextureHnd rtColor);
+	RdgPass* addDrawLightHeatmapPass(RdgTextureHnd rtColor, Result& oResult, bool isOpaque);
 
 	RdgPass* addFwdpDebugBufferPass();
+
+protected:
+	RdgPass* addClearBufferPass(SPtr<Material>& material, RdgBufferHnd buffer);
 
 protected:
 	bool isInvalidate(const Vec2f& resoluton_) const;
@@ -115,6 +120,9 @@ private:
 	SPtr<Material>			_mtlDebugBuffer;
 	SPtr<Material>			_mtlClearDebugBuffer0;
 	SPtr<Material>			_mtlClearDebugBuffer1;
+
+	SPtr<Shader>			_shaderLightHeatmap;
+	SPtr<Material>			_mtlLightHeatmap;
 };
 #endif
 

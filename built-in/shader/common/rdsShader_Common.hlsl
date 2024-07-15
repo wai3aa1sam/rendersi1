@@ -534,30 +534,30 @@ float3 SpaceTransform_toViewNormal(float3 normal)
 	return SpaceTransform_toViewNormal(normal, rds_ObjectTransform_get(), rds_DrawParam_get());
 }
 
-float4 SpaceTransform_objectToWorld(float4 v, ObjectTransform objectTransform)
+float3 SpaceTransform_objectToWorld(float4 v, ObjectTransform objectTransform)
 {
-	return mul(objectTransform.matrix_model, v);
+	return mul(objectTransform.matrix_model, v).xyz;
 }
 
-float4 SpaceTransform_objectToWorld(float4 v)
+float3 SpaceTransform_objectToWorld(float4 v)
 {
 	return SpaceTransform_objectToWorld(v, rds_ObjectTransform_get());
 }
 
-float4 SpaceTransform_objectToView(float4 v, DrawParam drawParam, ObjectTransform objectTransform)
+float3 SpaceTransform_objectToView(float4 v, DrawParam drawParam, ObjectTransform objectTransform)
 {
 	//return mul(drawParam.matrix_view, SpaceTransform_objectToWorld(v, objectTransform));
-	return mul(objectTransform.matrix_mv, v);
+	return mul(objectTransform.matrix_mv, v).xyz;
 }
 
-float4 SpaceTransform_objectToView(float4 v, DrawParam drawParam)
+float3 SpaceTransform_objectToView(float4 v, DrawParam drawParam)
 {
 	return SpaceTransform_objectToView(v, drawParam, rds_ObjectTransform_get());
 }
 
-float4 SpaceTransform_objectToView(float4 v)
+float3 SpaceTransform_objectToView(float4 v)
 {
-	return SpaceTransform_objectToView(SpaceTransform_objectToWorld(v), rds_DrawParam_get());
+	return SpaceTransform_objectToView(float4(SpaceTransform_objectToWorld(v), 1.0), rds_DrawParam_get());
 }
 
 float4 SpaceTransform_objectToClip(float4 v)
@@ -567,7 +567,7 @@ float4 SpaceTransform_objectToClip(float4 v)
 
 float4 SpaceTransform_objectToClip(float4 v, DrawParam drawParam, ObjectTransform objectTransform)
 {
-	return mul(drawParam.matrix_vp, SpaceTransform_objectToWorld(v, objectTransform));
+	return mul(drawParam.matrix_vp, float4(SpaceTransform_objectToWorld(v, objectTransform), 1.0));
 }
 
 float4 SpaceTransform_objectToClip(float4 v, DrawParam drawParam)
@@ -575,12 +575,12 @@ float4 SpaceTransform_objectToClip(float4 v, DrawParam drawParam)
 	return SpaceTransform_objectToClip(v, drawParam, rds_ObjectTransform_get());
 }
 
-float4 SpaceTransform_worldToView(float3 v, DrawParam drawParam)
+float3 SpaceTransform_worldToView(float3 v, DrawParam drawParam)
 {
-	return mul(drawParam.matrix_view, float4(v, 1.0));
+	return mul(drawParam.matrix_view, float4(v, 1.0)).xyz;
 }
 
-float4 SpaceTransform_worldToView(float3 v)
+float3 SpaceTransform_worldToView(float3 v)
 {
 	return SpaceTransform_worldToView(v, rds_DrawParam_get());
 }

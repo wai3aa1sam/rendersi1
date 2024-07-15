@@ -34,6 +34,8 @@ protected:
 	RpfPreDepth*				_rpfPreDepth		= nullptr;
 	RpfForwardPlusRendering*	_rpfFwdpRendering	= nullptr;
 
+	bool isShowHeatmap = false;
+
 };
 RDS_DEMO(ForwardPlus);
 #endif

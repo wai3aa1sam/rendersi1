@@ -41,7 +41,7 @@ float4x4 light_vp;
 PixelIn vs_main(VertexIn input)
 {
     PixelIn o;
-    o.positionHcs = SpaceTransform_objectToWorld(input.positionOs);
+    o.positionHcs = float4(SpaceTransform_objectToWorld(input.positionOs), 1.0);
     o.positionHcs = mul(light_vp, o.positionHcs);
 
 	// vulkan reversed viewport

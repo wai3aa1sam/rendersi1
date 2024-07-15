@@ -74,13 +74,17 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 			objTransform.matrix_mvp			= mat_vp * objTransform.matrix_model;
 			objTransform.matrix_mv			= mat_v  * objTransform.matrix_model;
 			objTransform.matrix_m_inv_t		= objTransform.matrix_model.inverse().transpose();
-			objTransform.matrix_mv_inv_t	= mat_v * objTransform.matrix_m_inv_t;
+			//objTransform.matrix_mv_inv_t	= mat_v * objTransform.matrix_m_inv_t;
+			objTransform.matrix_mv_inv_t	= (mat_v * objTransform.matrix_model).inverse().transpose();
+
 		}
 		// for all materials and setParam
 		_objTransformBuf.uploadToGpu();
 	}
 	
 	{
+		RDS_PROFILE_SECTION("draw param update");
+
 		auto n = 1;
 		_drawPramBuf.resize(n);
 		for (size_t i = 0; i < n; i++)
@@ -91,6 +95,8 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 
 			// lights
 			{
+				RDS_PROFILE_SECTION("light update");
+
 				RDS_CORE_ASSERT(n == 1, "only support 1 set lights, otherwise, there should be multi ParamBuffer<T>");
 				auto& sysLight = engineContext().lightSystem();
 				sysLight.update(drawData);
