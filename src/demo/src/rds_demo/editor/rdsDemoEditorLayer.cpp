@@ -51,17 +51,8 @@ DemoEditorLayer::onCreate()
 
 	// load asset
 	#if 1
-	auto fullScreenTriangleMesh = EditMeshUtil::getFullScreenTriangle();
-	_fullScreenTriangle.create(fullScreenTriangleMesh);
-
-	auto* rdDev		= Renderer::rdDev();
-
-	_shaderPresent	= rdDev->createShader("asset/shader/present.shader");
-	_mtlPresent		= rdDev->createMaterial(_shaderPresent);
-
 	// TODO: temporary
-	_shaderLine		= rdDev->createShader("asset/shader/line.shader");
-	_mtlLine		= rdDev->createMaterial(_shaderLine);		
+	RenderUtil::createMaterial(&_mtlLine, "asset/shader/line.shader");
 	#endif // 1
 
 	_meshAssets = makeUPtr<MeshAssets>();
@@ -92,7 +83,8 @@ DemoEditorLayer::onCreate()
 		_gfxDemo->prepareRender(&rdGraph, &drawData);
 
 		renderableSystem().update(scene(), drawData);
-		renderableSystem().render(&rdCtx, _fullScreenTriangle, nullptr, false);
+		renderableSystem().render();
+		renderableSystem().present(&rdCtx, false, false);
 
 		rdCtx.transferRequest().commit();
 
@@ -175,12 +167,15 @@ DemoEditorLayer::onUpdate()
 			auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
 
 			// present
-			renderableSystem().present(rdGraph, drawData, _fullScreenTriangle, _mtlPresent);
 			renderableSystem().update(scene(), drawData);
 
-			drawEditorUi(uiDrawReq, _texHndPresent);
-			_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, drawData.camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());
-			_gfxDemo->onDrawGui(uiDrawReq);
+			{
+				RDS_PROFILE_SECTION("draw editor ui");
+
+				drawEditorUi(uiDrawReq, _texHndPresent);
+				_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, drawData.camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());
+				_gfxDemo->onDrawGui(uiDrawReq);
+			}
 
 			rdUiCtx.onEndRender(&rdCtx);
 		}
@@ -207,7 +202,8 @@ DemoEditorLayer::onRender()
 	rdCtx.beginRender();
 
 	//renderableSystem().render(&rdCtx, _fullScreenTriangle, _mtlPresent);
-	renderableSystem().render(&rdCtx, _fullScreenTriangle, nullptr);
+	renderableSystem().render();
+	renderableSystem().present(&rdCtx, true, true);
 
 	tsfReq.commit();
 

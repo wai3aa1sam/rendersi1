@@ -869,6 +869,7 @@ RenderContext_Vk::onRenderCommand_ClearFramebuffers(RenderCommand_ClearFramebuff
 void 
 RenderContext_Vk::onRenderCommand_SwapBuffers(RenderCommand_SwapBuffers* cmd, void* userData)
 {
+	_notYetSupported(RDS_SRCLOC);
 	_shdSwapBuffers = true;		// seems useless
 
 	/*auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);

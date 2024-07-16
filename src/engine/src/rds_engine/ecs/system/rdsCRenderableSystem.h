@@ -43,8 +43,11 @@ public:
 	void destroy();
 
 	void update(const Scene& scene, DrawData& drawData);
-	void render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent, bool isDrawUi = true);
-	void present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh& fullScreenTriangle, Material* mtlPresent);
+	void render();
+	void present(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen);
+
+protected:
+	void transitPresentTexture(RenderGraph& rdGraph, DrawData& drawData);
 
 public:
 	Vector<CRenderable*>& renderables();
@@ -56,6 +59,8 @@ protected:
 	RenderRequest& renderRequest();
 
 protected:
+	SPtr<Material>	_mtlScreenQuad;
+
 	/*
 		all of this should have a Vector<Data>, for multi cameras
 	*/

@@ -51,9 +51,7 @@ private:
 	CRenderableSystem& renderableSystem();
 
 protected:
-	RenderMesh		_fullScreenTriangle;
-	SPtr<Shader>	_shaderPresent;
-	SPtr<Material>	_mtlPresent;
+	
 
 private:
 	EngineContext	_egCtx;
@@ -73,7 +71,6 @@ private:
 
 	UPtr<MeshAssets> _meshAssets;
 
-	SPtr<Shader>	_shaderLine;
 	SPtr<Material>	_mtlLine;
 };
 

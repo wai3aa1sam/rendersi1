@@ -112,9 +112,16 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	if (true)		loadFileFlags	|= aiProcess_SortByPType;			// split by primitive type
 	if (true)		loadFileFlags	|= aiProcess_GenSmoothNormals;
 	if (true)		loadFileFlags	|= aiProcess_GenUVCoords;
+	//if (true)		loadFileFlags	|= aiProcess_OptimizeGraph;			// TODO: opt for optimize load, also use Assimp::Exporter::Export to dump a bin, next time can load faster
 	//if (true)		loadFileFlags	|= aiProcess_GenBoundingBoxes;
 	//if (true)		loadFileFlags	|= aiProcess_MakeLeftHanded;
 	//if (true)		loadFileFlags	|= aiProcess_ConvertToLeftHanded;
+
+	importer.SetPropertyFloat( AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f );
+
+	bool isExcludePointAndLine = true;
+	if (isExcludePointAndLine)
+		importer.SetPropertyInteger( AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE );
 
 	const aiScene* srcScene = importer.ReadFile(buf.c_str(), loadFileFlags);
 	bool isLoadFailed = !srcScene || srcScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !srcScene->mRootNode;

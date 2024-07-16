@@ -22,8 +22,6 @@ namespace rds
 void 
 ForwardPlus::onCreate()
 {
-	
-
 	Base::onCreate();
 
 	auto& rdPassPipeline = *_rdPassPipelines[0];
@@ -112,10 +110,6 @@ ForwardPlus::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	_rpfFwdpRendering->addLightCullingPass(fwdpResult, texDepth);
 	 _rpfFwdpRendering->addLightingPass(drawSettings, rtColor, dsBuf, fwdpResult, true, true);
 
-	if (isShowHeatmap)
-	{
-		_rpfFwdpRendering->addDrawLightHeatmapPass(rtColor, fwdpResult, true);
-	}
 	#endif // 0
 
 	//addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);	
@@ -124,6 +118,11 @@ ForwardPlus::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	//_rfpForwardPlus->renderDebugMakeFrustums(, rtColor);
 	//addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);	
+
+	if (isShowHeatmap)
+	{
+		_rpfFwdpRendering->addDrawLightHeatmapPass(rtColor, fwdpResult, true);
+	}
 
 	drawData->oTexPresent = rtColor;
 }

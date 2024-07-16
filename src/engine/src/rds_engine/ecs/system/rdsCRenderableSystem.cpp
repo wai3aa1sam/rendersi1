@@ -38,6 +38,8 @@ CRenderableSystem::create(EngineContext* egCtx)
 
 	_objTransformBuf.setDebugName(	"rds_objTransforms");
 	_drawPramBuf.setDebugName(		"rds_drawPrams");
+
+	RenderUtil::createMaterial(&_mtlScreenQuad, "asset/shader/pass_feature/utility/image/rdsScreenQuad.shader");
 }
 
 void 
@@ -82,6 +84,7 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 		_objTransformBuf.uploadToGpu();
 	}
 	
+	auto& rdGraph   = renderGraph();
 	{
 		RDS_PROFILE_SECTION("draw param update");
 
@@ -90,6 +93,7 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 		for (size_t i = 0; i < n; i++)
 		{
 			auto& drawParam = _drawPramBuf.at(i);
+
 			drawData.setupDrawParam(&drawParam);
 			_drawPramBuf.uploadToGpu();
 
@@ -101,6 +105,8 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 				auto& sysLight = engineContext().lightSystem();
 				sysLight.update(drawData);
 			}
+
+			transitPresentTexture(rdGraph, drawData);
 		}
 
 		drawData.setupMaterial(drawData._mtlLine); // TODO: temporary
@@ -111,19 +117,13 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 	{
 		RDS_PROFILE_SECTION("record render command");
 
-		auto& rdGraph = renderGraph();
-
-		//rdGraph.reset();
-		// update
-		// present
-
 		rdGraph.compile();
 		rdGraph.execute();
 	}
 }
 
 void
-CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle, Material* mtlPresent, bool isDrawUi)
+CRenderableSystem::render()
 {
 	RDS_PROFILE_SCOPED();
 
@@ -131,47 +131,59 @@ CRenderableSystem::render(RenderContext* rdCtx_, RenderMesh& fullScreenTriangle,
 	
 	// rdGraph.execute(); // execute in render thread, then later need to copy struct renderableObject list to render thread, keep simple first
 	rdGraph.commit();
+}
+
+void 
+CRenderableSystem::present(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen)
+{
+	// present pass
+	auto* rdCtx = renderContext;
 
 	// record present
 	{
-		auto* rdCtx = rdGraph.renderContext();
 		auto& rdReq = renderRequest();
-		RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
+		//RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
 
 		rdReq.reset(rdCtx);
 		auto* clearValue = rdReq.clearFramebuffers();
 		clearValue->setClearColor();
 		clearValue->setClearDepth();
 
-		if (mtlPresent)
-		{
-			rdReq.drawMesh(RDS_SRCLOC, fullScreenTriangle, mtlPresent);
-			rdReq.swapBuffers();
-		}
 		if (isDrawUi)
-			rdCtx->drawUI(rdReq);		
+			rdCtx->drawUI(rdReq);
+		else
+		{
+			if (isDrawToScreen)
+				rdReq.drawSceneQuad(RDS_SRCLOC, _mtlScreenQuad);
+			//rdReq.swapBuffers();
+		}
+
 		rdCtx->commit(rdReq);
 	}
 }
 
 void 
-CRenderableSystem::present(RenderGraph& rdGraph, DrawData& drawData, RenderMesh& fullScreenTriangle, Material* mtlPresent)
+CRenderableSystem::transitPresentTexture(RenderGraph& rdGraph, DrawData& drawData)
 {
-	// present pass
-	auto* rdCtx = rdGraph.renderContext();
+	//auto* rdCtx = rdGraph.renderContext();
 
 	auto texPresent		= drawData.oTexPresent;
 	if (!texPresent)
 		return;
 	//auto backBufferRt	= rdGraph.importTexture("back_buffer", rdCtx.backBuffer()); RDS_UNUSED(backBufferRt);
 
-	auto& finalComposePass = rdGraph.addPass("final_composite", RdgPassTypeFlags::Graphics);
+	Material* mtl = _mtlScreenQuad;
+
+	auto& finalComposePass = rdGraph.addPass("present_transition", RdgPassTypeFlags::Graphics);
 	finalComposePass.readTexture(texPresent);
 	//finalComposePass.setRenderTarget(backBufferRt, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 	finalComposePass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdCtx);
+			rdReq.reset(nullptr);
+			mtl->setParam("tex_color",			texPresent.texture2D());
+
+			//rdReq.reset(rdCtx);
 			/*auto* clearValue = rdReq.clearFramebuffers();
 			clearValue->setClearColor();
 			clearValue->setClearDepth();*/

@@ -87,6 +87,7 @@ public:
 	static void createShader(	SPtr<Shader>* oShader, StrView filename);
 	static void createMaterial(	SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam = {});
 	static void createMaterial(	Shader*		  shader,  SPtr<Material>* oMtl);
+	static void createMaterial(	SPtr<Material>* oMtl, StrView filename);		// ShaderStock has hold the SPtr<Shader>
 	static void createMaterials(SPtr<Shader>* oShader,  Span<SPtr<Material> > oMtls, StrView filename);
 
 	static void destroyShader(			SPtr<Shader>&			shader);

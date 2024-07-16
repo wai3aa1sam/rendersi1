@@ -33,6 +33,8 @@ FrameControl::beginFrame()
 void 
 FrameControl::endFrame(bool isWait)
 {
+	RDS_PROFILE_SECTION("wait end frame");
+
 	double startTime  = _timer.get();
 	double frameTime  = startTime - _elapsedTime;
 	double timeToWait = _frameTargetTime - frameTime;

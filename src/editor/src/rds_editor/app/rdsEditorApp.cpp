@@ -81,6 +81,8 @@ EditorApp::onRun()
 void 
 EditorApp::onExecuteRun()
 {
+	RDS_PROFILE_SCOPED();
+
 	_frameControl.beginFrame();
 
 	pollMsg();

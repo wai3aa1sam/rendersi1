@@ -95,6 +95,13 @@ RenderUtil::createMaterial(Shader* shader, SPtr<Material>* oMtl)
 	mtl->setShader(shader);
 }
 
+void 
+RenderUtil::createMaterial(SPtr<Material>* oMtl, StrView filename)
+{
+	SPtr<Shader> shader;
+	createMaterial(&shader, oMtl, filename);
+}
+
 void
 RenderUtil::destroyShader(SPtr<Shader>& shader)
 {
