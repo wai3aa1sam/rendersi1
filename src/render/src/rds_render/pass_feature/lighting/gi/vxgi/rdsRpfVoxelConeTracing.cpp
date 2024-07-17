@@ -695,13 +695,14 @@ RpfVoxelConeTracing::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd depth,
 	{
 		auto shaderStageFlag = ShaderStageFlag::Pixel;
 
+		RDS_TODO("change to compute");
 		auto& pass = rdGraph->addPass("vct_lighting", RdgPassTypeFlags::Graphics);
 
 		pass.readTexture(vctResult.texDiffuse,			TextureUsageFlags::ShaderResource, shaderStageFlag);
 		pass.readTexture(vctResult.texSpecular,			TextureUsageFlags::ShaderResource, shaderStageFlag);
 		gBuf.setupRdgPassForRead(pass, depth, shaderStageFlag);
 
-		pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+		pass.setRenderTarget(rtColor, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
