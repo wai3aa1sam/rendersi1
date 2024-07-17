@@ -11,7 +11,7 @@ Shader {
 		// Queue	"Transparent"
 		//Cull		None
 
-//		DepthTest	Always
+		DepthTest	LessEqual
 //		DepthWrite	false
 
 //		Wireframe true
@@ -22,8 +22,6 @@ Shader {
 		VsFunc		vs_main
 		GeomFunc    geom_main
 		PsFunc		ps_main
-
-		RenderPrimitiveType Point	// TODO: remove
 	}
 }
 #endif
@@ -31,20 +29,20 @@ Shader {
 /*
 references:
 ~ https://github.com/compix/VoxelConeTracingGI/tree/master
+~ https://github.com/turanszkij/WickedEngine
 */
 
 #include "rdsVct_Common.hlsl"
 
 struct VertexIn
 {
-    uint vertexId       : SV_VertexID;
+    uint vertexId     : SV_VertexID;
 };
 
 struct GeometryIn
 {
-    float4 positionHcs  : SV_POSITION;
-	float4 color		: COLOR;
-
+	uint vertexId     : TEXCOORD0;
+	
 	RDS_DECLARE_PT_SIZE(ptSize);
 };
 
@@ -60,7 +58,9 @@ float4 	border_color;
 
 float 	voxel_size_scale;
 
-RDS_TEXTURE_3D_T(float4, voxel_tex3D);
+uint visualize_level;
+
+RDS_TEXTURE_3D_T(float4, voxel_tex_radiance);
 	
 RDS_TEXTURE_3D_T(float4, voxel_tex_pos_x);
 RDS_TEXTURE_3D_T(float4, voxel_tex_neg_x);
@@ -101,37 +101,23 @@ void createQuad(inout TriangleStream<PixelIn> outStream, float4 vtx0, float4 vtx
     outStream.RestartStrip();
 }
 
-float4 toWorldVoxel(float3 v)
+float4 toWorldVoxel(float3 v, VoxelClipmap clipmap)
 {
-	float voxelScale = voxel_size * voxel_size_scale;
+	float voxelScale = clipmap.voxelSize * voxel_size_scale;
 	float4 o = float4(v, 1.0);
-	o.xyz = (o.xyz * voxelScale) + clipmap_center;
-	o = SpaceTransform_objectToWorld(o);
+	o.xyz = (o.xyz * voxelScale) + clipmap.center;
+	//o = SpaceTransform_objectToWorld(o);
+	o.xyz += 0.01;		// prevent z flight
 	return o;
 }
-
 
 GeometryIn vs_main(VertexIn input)
 {
 	GeometryIn o = (GeometryIn)0;
 	RDS_SET_PT_SIZE(o.ptSize, 1.0);
 
-	uint3 dimensions;
-	RDS_TEXTURE_3D_T_GET_DIMENSIONS(float4, voxel_tex3D, dimensions);
-
-	float3 position = (float3)0;
-	
-	// just like for (x, y, z) to generate [0, width], [0, height], [0, depth] points
-	#if 0
-	position.x = input.vertexId % dimensions.x;
-	position.y = input.vertexId / (dimensions.x * dimensions.x);
-	position.z = (input.vertexId / dimensions.x) % dimensions.x;
-	o.positionHcs 	= float4(position.xyz - ((dimensions.x) / 2) + 0.5, 1.0);		// [0, dim] -> [-dim / 2, dim / 2]
-	#endif
-	
-	position 		= unflatten3D(input.vertexId, dimensions);
-	o.positionHcs 	= float4(position.xyz, 1.0);;
-	o.color 		= RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex3D, position.xyz, 0);
+	o.vertexId		= input.vertexId;
+	//o.color 		= RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex_radiance, position.xyz, 0);
 
     return o;
 }
@@ -142,21 +128,83 @@ void geom_main(point GeometryIn input[1], inout TriangleStream<PixelIn> outStrea
 	PixelIn o = (PixelIn)0;
 
 	DrawParam 	drawParam 			= rds_DrawParam_get();
-	float 		voxelResolutionInv 	= 1.0 / voxel_resolution;
 
-	float3 pos 	 = input[0].positionHcs.xyz;
-	float4 color = input[0].color;
+	float 		voxelResolution		= Vct_computeVoxelResolutionWithBorder(voxel_resolution);
+	float 		voxelResolutionInv 	= 1.0 / voxelResolution;
 
-	float3 center		= (pos + 0.5);
+	uint3  dimensions 	= uint3(voxel_resolution, voxel_resolution, voxel_resolution);
+
+	uint vertexId		= input[0].vertexId;
+	uint visualizeLevel = visualize_level;
+	uint clipmapLevel 	= visualize_level;
+	uint voxelIndex		= vertexId;
+
+	bool isVisualizeAllLevel = visualizeLevel == VCT_MAX_CLIPMAP_LEVEL;
+	if (isVisualizeAllLevel)
+	{
+		uint voxelCount = dimensions.x * dimensions.y * dimensions.z;
+		voxelIndex   = vertexId % voxelCount;
+		clipmapLevel = vertexId / voxelCount;
+	}
+
+	float3 pos 			= unflatten3D(voxelIndex, dimensions);
+	float3 center		= (pos + 0.5) + Vct_kVoxelBorders;
 	float3 uvw 			= (center) * voxelResolutionInv;
-	float3 posVoxel 	= Vct_clipmapUvwToVoxel(uvw, voxel_resolution);
+	float3 posVoxel 	= Vct_clipmapUvwToVoxel(uvw, voxelResolution);
 
-	float3 imageCoords = pos;
-	color = RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex3D, imageCoords, 0);
+	float3 			imageCoords 	= Vct_computeImageCoords(pos, clipmapLevel, voxelResolution);
+	VoxelClipmap 	clipmap 		= Vct_getVoxelClipmap(clipmapLevel);
 
+	// cull if it exist in current level
+	// use world space in current level to map in previous level uvw, if it is map in bound, then it must be exist in previous level
+	/*
+	reference:
+	~ https://github.com/turanszkij/WickedEngine
+	*/
+	if (isVisualizeAllLevel && clipmapLevel > 0)
+	{
+		VoxelClipmap prevClipmap = Vct_getVoxelClipmap(clipmapLevel - 1);
+		float3 p 	= Vct_clipmapUvwToWorld((pos - 0.5 + Vct_kVoxelBorders) / (voxelResolution - 2), clipmap, voxelResolution);
+		float3 diff = (p - prevClipmap.center) * voxelResolutionInv / prevClipmap.voxelSize;
+		float3 uvw  = remapNeg11To01_Inv_Y(diff);
+		if (isInBoundary01(uvw))
+			return;
+	}
+
+	#if VCT_USE_6_FACES_CLIPMAP
+	
+	float4 faceColors[6] = {
+		RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex_radiance, imageCoords + float3(0.0 * voxelResolution, 0.0, 0.0), 0),
+		RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex_radiance, imageCoords + float3(1.0 * voxelResolution, 0.0, 0.0), 0),
+		RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex_radiance, imageCoords + float3(2.0 * voxelResolution, 0.0, 0.0), 0),
+		RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex_radiance, imageCoords + float3(3.0 * voxelResolution, 0.0, 0.0), 0),
+		RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex_radiance, imageCoords + float3(4.0 * voxelResolution, 0.0, 0.0), 0),
+		RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex_radiance, imageCoords + float3(5.0 * voxelResolution, 0.0, 0.0), 0),
+	};
+	if (
+		   faceColors[0].a == 0 && faceColors[1].a == 0 && faceColors[2].a == 0 
+		&& faceColors[3].a == 0 && faceColors[4].a == 0 && faceColors[5].a == 0
+		)
+	{
+		return;
+	}
+
+	//faceColors[0].rgb = faceColors[0].aaa * 100;
+	//faceColors[1].rgb = faceColors[1].aaa * 100;
+	//faceColors[2].rgb = faceColors[2].aaa * 100;
+	//faceColors[3].rgb = faceColors[3].aaa * 100;
+	//faceColors[4].rgb = faceColors[4].aaa * 100;
+	//faceColors[5].rgb = faceColors[5].aaa * 100;
+
+	#else
+	
+	color = RDS_TEXTURE_3D_T_LOAD(float4, voxel_tex_radiance, imageCoords, 0);
+	float4 faceColors[6] = { color, color, color, color, color, color };
 	if (!any(color))
 		return;
 
+	#endif
+	
 	/*
 		4 5	
 		6 7
@@ -164,22 +212,22 @@ void geom_main(point GeometryIn input[1], inout TriangleStream<PixelIn> outStrea
 			2 3
 	*/
 	float halfExtent = 1.0;
-	float4 vtx0 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3(-halfExtent,  halfExtent,  halfExtent)), drawParam);
-	float4 vtx1 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3( halfExtent,  halfExtent,  halfExtent)), drawParam);
-	float4 vtx2 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3(-halfExtent, -halfExtent,  halfExtent)), drawParam);
-	float4 vtx3 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3( halfExtent, -halfExtent,  halfExtent)), drawParam);
-	float4 vtx4 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3(-halfExtent,  halfExtent, -halfExtent)), drawParam);
-	float4 vtx5 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3( halfExtent,  halfExtent, -halfExtent)), drawParam);
-	float4 vtx6 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3(-halfExtent, -halfExtent, -halfExtent)), drawParam);
-	float4 vtx7 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3( halfExtent, -halfExtent, -halfExtent)), drawParam);
+	float4 vtx0 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3(-halfExtent,  halfExtent,  halfExtent), clipmap), drawParam);
+	float4 vtx1 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3( halfExtent,  halfExtent,  halfExtent), clipmap), drawParam);
+	float4 vtx2 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3(-halfExtent, -halfExtent,  halfExtent), clipmap), drawParam);
+	float4 vtx3 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3( halfExtent, -halfExtent,  halfExtent), clipmap), drawParam);
+	float4 vtx4 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3(-halfExtent,  halfExtent, -halfExtent), clipmap), drawParam);
+	float4 vtx5 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3( halfExtent,  halfExtent, -halfExtent), clipmap), drawParam);
+	float4 vtx6 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3(-halfExtent, -halfExtent, -halfExtent), clipmap), drawParam);
+	float4 vtx7 = SpaceTransform_worldToClip(toWorldVoxel(posVoxel + float3( halfExtent, -halfExtent, -halfExtent), clipmap), drawParam);
 	
 	// uv is wrong now
-	createQuad(outStream, vtx0, vtx2, vtx4, vtx6, color);		// left 	face
-	createQuad(outStream, vtx7, vtx3, vtx5, vtx1, color);		// right 	face
-	createQuad(outStream, vtx2, vtx3, vtx6, vtx7, color);		// bottom 	face
-	createQuad(outStream, vtx5, vtx1, vtx4, vtx0, color);		// top 		face
-	createQuad(outStream, vtx7, vtx5, vtx6, vtx4, color);		// back 	face
-	createQuad(outStream, vtx0, vtx1, vtx2, vtx3, color);		// front 	face
+	if (faceColors[0].a != 0.0) { createQuad(outStream, vtx7, vtx3, vtx5, vtx1, faceColors[0]); }		// right 	face
+	if (faceColors[1].a != 0.0) { createQuad(outStream, vtx0, vtx2, vtx4, vtx6, faceColors[1]); }		// left 	face
+	if (faceColors[2].a != 0.0) { createQuad(outStream, vtx5, vtx1, vtx4, vtx0, faceColors[2]); }		// top 		face
+	if (faceColors[3].a != 0.0) { createQuad(outStream, vtx2, vtx3, vtx6, vtx7, faceColors[3]); }		// bottom 	face
+	if (faceColors[4].a != 0.0) { createQuad(outStream, vtx0, vtx1, vtx2, vtx3, faceColors[4]); }		// front 	face
+	if (faceColors[5].a != 0.0) { createQuad(outStream, vtx7, vtx5, vtx6, vtx4, faceColors[5]); }		// back 	face
 }
 
 float4 ps_main(PixelIn input) : SV_TARGET

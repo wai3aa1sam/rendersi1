@@ -19,6 +19,12 @@ Shader {
 }
 #endif
 
+/*
+references:
+~ https://github.com/compix/VoxelConeTracingGI/tree/master
+~ https://github.com/steaklive/DXR-Sandbox-GI
+*/
+
 #include "rdsVct_Common.hlsl"
 
 struct ComputeIn 

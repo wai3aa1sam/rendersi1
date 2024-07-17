@@ -1,5 +1,7 @@
 #include "rds_render-pch.h"
 #include "rdsRpfVoxelConeTracing.h"
+#include "../../../geometry/rdsRpfGeometryBuffer.h"
+#include "../../../shadow/cascaded_shadow_mapping/rdsRpfCascadedShadowMapping.h"
 
 #define RDS_VCT_USE_6_FACES_CLIPMAP 0
 
@@ -9,7 +11,7 @@ namespace rds
 #if 0
 #pragma mark --- rdsVoxelClipmapRegion-Decl ---
 #endif // 0
-#if 0
+#if 1
 
 struct VoxelClipmapRegion
 {
@@ -24,7 +26,7 @@ public:
 	T		voxelSize	= T(0);				// half extent
 };
 
-struct VoxelClipmapUtil
+struct VctVoxelClipmapUtil
 {
 public:
 	using SizeType	= RenderTraits::SizeType;
@@ -67,14 +69,15 @@ public:
 
 #endif
 
+
 #if 0
 #pragma mark --- rdsRpfVoxelConeTracing-Impl ---
 #endif // 0
-#if 0
+#if 1
 
 RpfVoxelConeTracing::RpfVoxelConeTracing()
 {
-	create();
+
 }
 
 RpfVoxelConeTracing::~RpfVoxelConeTracing()
@@ -87,39 +90,28 @@ RpfVoxelConeTracing::create()
 {
 	destroy();
 
-	createMaterial(&shaderVoxelConeTracing,			&mtlVoxelConeTracing,			"asset/shader/demo/voxel_cone_tracing/rdsVct_VoxelConeTracing.shader");
-	createMaterial(&shaderVoxelization,				&mtlVoxelization,				"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization.shader");
+	RenderUtil::createMaterial(&_shaderVoxelConeTracing,				&_mtlVoxelConeTracing,			"asset/shader/demo/voxel_cone_tracing/rdsVct_VoxelConeTracing.shader");
+	RenderUtil::createMaterial(&_shaderVoxelization,					&_mtlVoxelization,				"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization.shader");
+	RenderUtil::createMaterial(&_shaderOpacityAlpha,					&_mtlOpacityAlpha,				"asset/shader/demo/voxel_cone_tracing/rdsVct_OpacityAlpha.shader");
+	RenderUtil::createMaterial(&_shaderCheckAlpha,						&_mtlCheckAlpha,				"asset/shader/demo/voxel_cone_tracing/rdsVct_CheckAlpha.shader");
 
-	createMaterial(&shaderVoxelizationDebug,			&mtlVoxelizationDebug,		"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization_Debug.shader");
-	createMaterial(&shaderVoxelVisualization,			&mtlVoxelVisualization,		"asset/shader/demo/voxel_cone_tracing/rdsVct_VoxelVisualization.shader");
+	RenderUtil::createMaterial(&_shaderVoxelizationDebug,				&_mtlVoxelizationDebug,			"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization_Debug.shader");
+	RenderUtil::createMaterial(&_shaderVoxelVisualization,				&_mtlVoxelVisualization,		"asset/shader/demo/voxel_cone_tracing/rdsVct_VoxelVisualization.shader");
 
-	createMaterial(&shaderClearVoxelClipmap,			&mtlClearVoxelClipmap,		"asset/shader/demo/voxel_cone_tracing/rdsVctClearVoxelClipmap.shader");
+	RenderUtil::createMaterial(&_shaderClearVoxelClipmap,				&_mtlClearVoxelClipmap,			"asset/shader/demo/voxel_cone_tracing/rdsVct_ClearVoxelClipmap.shader");
 
-	createMaterial(&shaderClearImage3D,				&mtlClearImage3D,				"asset/shader/util/rdsClearImage3D.shader");
+	RenderUtil::createMaterial(&_shaderLighting,						&_mtlLighting,					"asset/shader/demo/voxel_cone_tracing/rdsVct_Lighting.shader");
 
-	mtlClearImage2D.resize(2);
-	for (auto& e : mtlClearImage2D)
-	{
-		createMaterial(&shaderClearImage2D,			&e,								"asset/shader/util/rdsClearImage2D.shader");
-	}
+	_mtlsAnisotropicMipmapping.resize(clipmapMaxLevel);
+	RenderUtil::createMaterials(&_shaderAnisotropicMipmapping,			_mtlsAnisotropicMipmapping,		"asset/shader/demo/voxel_cone_tracing/rdsVct_AnisotropicMipmapping.shader");
 
-	mtlAnisotropicMipmappings.resize(clipmapMaxLevel);
-	for (auto& e : mtlAnisotropicMipmappings)
-	{
-		createMaterial(&shaderAnisotropicMipmapping,	&e,							"asset/shader/demo/voxel_cone_tracing/rdsVct_AnisotropicMipmapping.shader");
-	}
-
-	mtlVoxelizations.resize(clipmapMaxLevel);
-	for (auto& e : mtlVoxelizations)
-	{
-		createMaterial(&shaderVoxelization,			&e,								"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization.shader");
-	}
+	_mtlClearImage2Ds.resize(2);
 
 	{
 		Vec3u clipmapSize3u;
 		Vec2u dummmySize;
 
-		#if RDS_VCT_USE_6_FACES_CLIPMAP
+		#if VCT_USE_6_FACES_CLIPMAP
 		auto voxelResolutionWithBorder = VctVoxelClipmapUtil::computeVoxelResolutionWithBorder(voxelResolution);
 		clipmapSize3u	= Vec3u{voxelResolutionWithBorder * sCast<u32>(TextureCube::s_kFaceCount), voxelResolutionWithBorder * clipmapMaxLevel, voxelResolutionWithBorder};
 		dummmySize		= Vec2u{voxelResolutionWithBorder, voxelResolutionWithBorder};
@@ -128,34 +120,47 @@ RpfVoxelConeTracing::create()
 		dummmySize		= Vec2u{voxelResolution, voxelResolution};
 		#endif // 0
 		auto cDesc = Texture3D::makeCDesc(RDS_SRCLOC);
-		cDesc = Texture3D_CreateDesc{ clipmapSize3u,	ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst };
-		voxelTexRadiance = Renderer::rdDev()->createTexture3D(cDesc);
+		cDesc = Texture3D_CreateDesc{ clipmapSize3u,	ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst | TextureUsageFlags::TransferSrc};
+		_voxelTexRadiance = Renderer::rdDev()->createTexture3D(cDesc);
+		_voxelTexRadiance->setDebugName("vct_voxelTexRadiance");
 	}
+
+	voxelClipmaps.resize(s_kMaxClipmapLevel);
+	voxelClipmaps.setDebugName("VoxelClipmaps");
 }
 
 void 
 RpfVoxelConeTracing::destroy()
 {
-	shaderVoxelConeTracing.reset(nullptr);
-	mtlVoxelConeTracing.reset(	 nullptr);
+	RenderUtil::destroyShaderMaterial(_shaderVoxelization, _mtlVoxelization);
+	RenderUtil::destroyShaderMaterial(_shaderOpacityAlpha, _mtlOpacityAlpha);
+	RenderUtil::destroyShaderMaterial(_shaderVoxelConeTracing, _mtlVoxelConeTracing);
+
+	RenderUtil::destroyShaderMaterial(_shaderVoxelizationDebug, _mtlVoxelizationDebug);
+	RenderUtil::destroyShaderMaterial(_shaderVoxelVisualization, _mtlVoxelVisualization);
+	RenderUtil::destroyShaderMaterial(_shaderClearVoxelClipmap, _mtlClearVoxelClipmap);
+
+	RenderUtil::destroyShaderMaterials(_shaderAnisotropicMipmapping, _mtlsAnisotropicMipmapping);
+
+	RenderUtil::destroyMaterials(_mtlClearImage2Ds);
 }
 
 RdgPass* 
-RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, RpfGeometryBuffer_Result& gBuf)
+RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, const RpfCascadedShadowMapping::Result& csmResult)
 {
-	auto*	rdGraph		= renderGraph();
-	auto*	drawData	= getDrawData();
-
-	RdgPass*	voxelizationPass	= nullptr;
+	auto*		rdGraph				= renderGraph();
+	auto*		drawData			= drawDataBase();
+	RdgPass*	passVoxelization	= nullptr;
 
 	u32 level = curLevel;
+	updateClipmap(level, drawData);
 
-	auto	screenSize	= Vec2u::s_cast(Vec2f(drawData->resolution())).toTuple2();
+	auto	screenSize	= drawData->resolution2u();
 
 	Vec3u clipmapSize3u;
 	Vec2u dummmySize;
 
-	#if RDS_VCT_USE_6_FACES_CLIPMAP
+	#if VCT_USE_6_FACES_CLIPMAP
 	auto voxelResolutionWithBorder = VctVoxelClipmapUtil::computeVoxelResolutionWithBorder(voxelResolution);
 	clipmapSize3u	= Vec3u{voxelResolutionWithBorder * sCast<u32>(TextureCube::s_kFaceCount), voxelResolutionWithBorder * clipmapMaxLevel, voxelResolutionWithBorder};
 	dummmySize		= Vec2u{voxelResolutionWithBorder, voxelResolutionWithBorder};
@@ -164,63 +169,72 @@ RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, RpfG
 	dummmySize		= Vec2u{voxelResolution, voxelResolution};
 	#endif // 0
 
-
 	// TODO: remove
 	RdgTextureHnd rtDummy		= rdGraph->createTexture("vct_dummy",			Texture2D_CreateDesc{ dummmySize,		ColorType::Rb,		TextureUsageFlags::RenderTarget});
-	//RdgTextureHnd voxelTexColor = rdGraph->createTexture("vct_voxelTexColor",	Texture3D_CreateDesc{ clipmapSize3u,	ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
-	RdgTextureHnd voxelTexColor = rdGraph->importTexture("vct_voxelTexColor", voxelTexRadiance);
-	result.voxelTexColor		= voxelTexColor;
-	//RDS_LOG("------------ addVoxelizationPass {}", result.voxelTexColor.name());
+	//RdgTextureHnd voxelTexRadiance = rdGraph->createTexture("vct_voxelTexRadiance",	Texture3D_CreateDesc{ clipmapSize3u,	ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
+	//RdgTextureHnd voxelTexRadiance = rdGraph->importTexture("vct_voxelTexRadiance", _voxelTexRadiance);
+
+	#if 1
+	#if VCT_USE_6_FACES_CLIPMAP
+
+	RdgTextureHnd voxelTexRadiance = rdGraph->importTexture("vct_voxelTexRadiance", _voxelTexRadiance);
+
+	#if 0
+	auto clipmap6FacesSize			= Vec3u{voxelResolutionWithBorder * sCast<u32>(TextureCube::s_kFaceCount), voxelResolutionWithBorder * clipmapMaxLevel, voxelResolutionWithBorder};
+
+	RdgTextureHnd voxelTexRadiancePrev = rdGraph->importTexture("vct_voxelTexRadiancePrev",	_voxelTexRadianceRaw ? _voxelTexRadianceRaw : _voxelTexRadiance.ptr());
+	RdgTextureHnd voxelTexRadiance		= rdGraph->createTexture("vct_voxelTexRadiance",		Texture3D_CreateDesc{ clipmap6FacesSize,	ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst | TextureUsageFlags::TransferSrc});
+	rdGraph->exportTexture(&_voxelTexRadianceRaw, voxelTexRadiance, TextureUsageFlags::TransferSrc);
+
+	if (s_frame != 0)
+	{
+		auto& passCopy = rdGraph->addPass("vct_copy_voxel_tex", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
+		passCopy.readTexture(voxelTexRadiancePrev);
+		passCopy.writeTexture(voxelTexRadiance);
+		passCopy.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.copyTexture(RDS_SRCLOC, voxelTexRadiance.renderResource(), voxelTexRadiancePrev.renderResource(), 0, 0, 0, 0);
+			}
+		);
+	}
+	#endif // 0
+
+	#else
+	RdgTextureHnd voxelTexRadiance = rdGraph->importTexture("vct_voxelTexRadiance", _voxelTexRadiance);
+	#endif // 0
+	#endif // 0
+
+	result.voxelTexRadiance = voxelTexRadiance;
+	//RDS_LOG("------------ addVoxelizationPass {}", result.voxelTexRadiance.name());
 
 	{
-		#if RDS_VCT_USE_6_FACES_CLIPMAP
+		#if VCT_USE_6_FACES_CLIPMAP
+
+		Material* mtl = _mtlClearVoxelClipmap;
 		{
 			//auto& pass = rdGraph->addPass("vct_clearImage3D", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
-			//pass.writeTexture(voxelTexColor, TextureUsageFlags::TransferDst);
+			//pass.writeTexture(voxelTexRadiance, TextureUsageFlags::TransferDst);
 			auto& pass = rdGraph->addPass("vct_clearVoxelClipmap", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-			pass.writeTexture(voxelTexColor, TextureUsageFlags::UnorderedAccess);
+			pass.writeTexture(voxelTexRadiance, TextureUsageFlags::UnorderedAccess);
 			pass.setExecuteFunc(
 				[=](RenderRequest& rdReq)
 				{
-					auto mtl = mtlClearVoxelClipmap;
-
-					bool clearAll = false;
-					auto	imageExtent		= clearAll ? voxelTexColor.texture3D()->size() : Vec3u{ voxelResolutionWithBorder, voxelResolutionWithBorder, voxelResolutionWithBorder };
-					Vec3u	threadGroup		= (Vec3u::s_one() * 8);
-					Vec3f   dispatchGroup	= Vec3f::s_cast(imageExtent) / Vec3f::s_cast(threadGroup);
+					bool clearAll		= false;
+					auto imageExtent	= clearAll ? voxelTexRadiance.texture3D()->size() : Vec3u{ voxelResolutionWithBorder, voxelResolutionWithBorder, voxelResolutionWithBorder };
 
 					mtl->setParam("image_extent",			imageExtent);
 					mtl->setParam("image_extent_offset",	Vec3u::s_zero());
 					mtl->setParam("clear_value",			Vec4f::s_zero());
-					mtl->setImage("image",					voxelTexColor.texture3D(), 0);
-					setupCommonParam(mtl, level, drawData);
-					rdReq.dispatch(RDS_SRCLOC, mtl, Vec3u::s_cast(Vec3f{math::ceil(dispatchGroup.x), math::ceil(dispatchGroup.y), math::ceil(dispatchGroup.z)}));
+					mtl->setImage("image",					voxelTexRadiance.texture3D(), 0);
+					setupCommonParam(mtl, level);
+					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, imageExtent);
 				}
 			);
 		}
 		#else
 		{
-			//auto& pass = rdGraph->addPass("vct_clearImage3D", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
-			//pass.writeTexture(voxelTexColor, TextureUsageFlags::TransferDst);
-			auto& pass = rdGraph->addPass("vct_clearImage3D", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-			pass.writeTexture(voxelTexColor, TextureUsageFlags::UnorderedAccess);
-			pass.setExecuteFunc(
-				[=](RenderRequest& rdReq)
-				{
-					auto mtl = mtlClearImage3D;
-
-					auto	imageExtent		= voxelTexColor.texture3D()->size();
-					Vec3u	threadGroup		= (Vec3u::s_one() * 8);
-					Vec3f   dispatchGroup	= Vec3f::s_cast(imageExtent) / Vec3f::s_cast(threadGroup);
-
-					mtl->setParam("image_extent",			imageExtent);
-					mtl->setParam("image_extent_offset",	Vec3u::s_zero());
-					mtl->setParam("clear_value",			Vec4f::s_zero());
-					mtl->setImage("image",					voxelTexColor.texture3D(), 0);
-					setupCommonParam(mtl, 0, drawData);
-					rdReq.dispatch(RDS_SRCLOC, mtl, Vec3u::s_cast(Vec3f{math::ceil(dispatchGroup.x), math::ceil(dispatchGroup.y), math::ceil(dispatchGroup.z)}));
-				}
-			);
+			_addClearImage3DPass(_mtlClearImage3D, voxelTexRadiance);
 		}
 		#endif
 	}
@@ -229,13 +243,15 @@ RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, RpfG
 	{
 		fmtToNew(passName, "{}-l{}", "vct_voxelization", level);
 		auto& pass = rdGraph->addPass(passName, RdgPassTypeFlags::Graphics/*, RdgPassFlags::NoRenderTarget*/);
-		pass.writeTexture(voxelTexColor, TextureUsageFlags::UnorderedAccess, ShaderStageFlag::Pixel);
+		if (csmResult.shadowMap)
+			pass.readTexture(csmResult.shadowMap);
+		pass.writeTexture(voxelTexRadiance, TextureUsageFlags::UnorderedAccess, ShaderStageFlag::Pixel);
 		pass.setRenderTarget(rtDummy, RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
 				//auto mtl = mtlVoxelization;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 				rdReq.setViewport(		Tuple2f::s_zero(), Vec2f::s_cast(dummmySize));
 				rdReq.setScissorRect(	Tuple2f::s_zero(), Vec2f::s_cast(dummmySize));
 
@@ -243,58 +259,130 @@ RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, RpfG
 				clearValue->setClearColor();
 				clearValue->setClearDepth();
 
-				//auto uav = voxelTexColor.texture3D()->uavBindlessHandle().getResourceIndex(0);
-
-				//RDS_LOG("setParam {} - idx: {}", voxelTexColor.name(), voxelTexColor.texture3D()->bindlessHandle().getResourceIndex());
 				DrawSettings drawSettings = drawSettings_;
 				drawSettings.setMaterialFn = [=](Material* mtl_)
 					{
-						setupCommonParam(mtl_, level, drawData);
-						mtl_->setImage("voxel_tex_albedo",	voxelTexColor.texture3D(), 0);
+						setupCommonParam(mtl_, level);
+						mtl_->setImage("voxel_tex_radiance",	voxelTexRadiance.texture3D(), 0);
 
-						/*auto* vTex = mtl_->passes()[0]->shaderResources().findParamT<u32>("voxel_tex_albedo");
-						auto mtlUav = vTex ? *vTex : NumLimit<u32>::max();
-						if (mtlUav != uav )
+						if (csmResult.shadowMap)
 						{
-						RDS_CORE_LOG_WARN("uav: {} != mtlUav: {}", uav, mtlUav);
-						}*/
-						//RDS_CORE_LOG_WARN("uav: {}", voxelTexColor.texture3D()->uavBindlessHandle().getResourceIndex(0));
+							mtl_->setArray("csm_matrices",		csmResult.lightMatrices);
+							mtl_->setArray("csm_plane_dists",	csmResult.cascadePlaneDists);
+							mtl_->setParam("csm_level_count",	sCast<u32>(csmResult.cascadePlaneDists.size()));
+							mtl_->setParam("csm_shadowMap",		csmResult.shadowMap.texture2DArray());
+							mtl_->setParam("csm_shadowMap",		SamplerState::makeNearestClampToEdge());
+						}
 					};
 
 				auto clipmapRegion = VctVoxelClipmapUtil::makeClipmapRegion(level, clipmapRegionWorldExtentL0, voxelResolution);
 				drawSettings.cullingSetting.setAABBox(VctVoxelClipmapUtil::computeAABBox(clipmapRegion, drawData->camera->pos(), voxelResolution));
 
-				//RDS_LOG_ERROR("Begin {}", passName);
+				constCast(drawSettings).overrideShader = _shaderVoxelization;
 				drawData->drawScene(rdReq, drawSettings);
-				//RDS_LOG_ERROR("=== End {}", passName);
 			}
 		);
-		voxelizationPass = &pass;
+		passVoxelization = &pass;
 	}
-	return voxelizationPass;
+
+	return passVoxelization;
+}
+
+RdgPass* 
+RpfVoxelConeTracing::addOpacityAlphaPass(RpfVoxelConeTracing_Result* oResult)
+{
+	auto*		rdGraph					= renderGraph();
+	auto*		drawData				= drawDataBase();
+	RdgPass*	passOpacityAlphaPass	= nullptr;
+
+	auto* result_ = oResult;
+
+	u32				level						= curLevel;
+	u32				voxelResolutionWithBorder	= VctVoxelClipmapUtil::computeVoxelResolutionWithBorder(voxelResolution);
+	RdgTextureHnd	voxelTexRadiance			= result_->voxelTexRadiance;
+
+	Material* mtl = _mtlOpacityAlpha;
+	TempString passName;
+	{
+		fmtToNew(passName, "vct_opacityAlpha-l{}", level);
+		auto& pass = rdGraph->addPass(passName, RdgPassTypeFlags::Compute);
+		pass.writeTexture(voxelTexRadiance);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), drawData);
+
+				auto imageExtent = Vec3u{ voxelResolutionWithBorder, voxelResolutionWithBorder, voxelResolutionWithBorder };
+				mtl->setParam("image_extent",			imageExtent);
+				mtl->setParam("image_extent_offset",	Vec3u::s_zero());
+				mtl->setImage("voxel_tex_radiance",		voxelTexRadiance.texture3D(), 0);
+
+				setupCommonParam(mtl, level);
+				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, imageExtent);
+			}
+		);
+		passOpacityAlphaPass = &pass;
+	}
+	return passOpacityAlphaPass;
+}
+
+RdgPass* 
+RpfVoxelConeTracing::addCheckAlphaPass()
+{
+	auto*		rdGraph					= renderGraph();
+	auto*		drawData				= drawDataBase();
+	RdgPass*	passCheckAlphaPass	= nullptr;
+
+	u32				level						= curLevel;
+	RdgTextureHnd	voxelTexRadiance			= result.voxelTexRadiance;
+
+	Material* mtl = _mtlCheckAlpha;
+	TempString passName;
+	{
+		fmtToNew(passName, "vct_checkAlpha-l{}", level);
+		auto& pass = rdGraph->addPass(passName, RdgPassTypeFlags::Compute);
+		pass.writeTexture(voxelTexRadiance);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), drawData);
+
+				mtl->setParam("image_extent",			voxelTexRadiance.size());
+				mtl->setParam("image_extent_offset",	Vec3u::s_zero());
+				mtl->setImage("image",					voxelTexRadiance.texture3D(), 0);
+
+				setupCommonParam(mtl, level);
+				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, voxelTexRadiance.size());
+			}
+		);
+		passCheckAlphaPass = &pass;
+	}
+	return passCheckAlphaPass;
 }
 
 RdgPass* 
 RpfVoxelConeTracing::addVoxelizationDebugPass(RdgTextureHnd rtColor, RdgTextureHnd dsBuf)
 {
-	auto*		rdGraph					= oRdGraph;
+	auto*		rdGraph					= renderGraph();
+	auto*		drawData				= drawDataBase();
 	RdgPass*	passVoxelizationDebug	= nullptr;
 
-	auto	screenSize	= Vec2u::s_cast(Vec2f(drawData->resolution())).toTuple2();
+	auto	screenSize	= drawData->resolution2u();
 
 	Tuple3u clipmapSizes;
 	clipmapSizes.setAll(voxelResolution);
 	clipmapSizes.set(screenSize.x, screenSize.y, 4);
 
-	RdgTextureHnd voxelTexColor			= result.voxelTexColor;		// must copy here
+	RdgTextureHnd voxelTexRadiance			= result.voxelTexRadiance;		// must copy here
 
 	auto level = curLevel;
 
+	Material* mtl = _mtlVoxelizationDebug;
 	{
 		auto& pass = rdGraph->addPass("vct_voxelization_debug", RdgPassTypeFlags::Graphics);
 
 		setupPassReadMipmap(pass, ShaderStageFlag::Pixel);
-		//pass.writeTexture(voxelTexColor,	TextureUsageFlags::UnorderedAccess, ShaderStageFlag::Pixel);
+		//pass.writeTexture(voxelTexRadiance,	TextureUsageFlags::UnorderedAccess, ShaderStageFlag::Pixel);
 		//pass.writeTexture(tex2D_color,		TextureUsageFlags::UnorderedAccess, ShaderStageFlag::Pixel);
 
 		pass.setRenderTarget(rtColor,	RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
@@ -302,27 +390,26 @@ RpfVoxelConeTracing::addVoxelizationDebugPass(RdgTextureHnd rtColor, RdgTextureH
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				auto mtl = mtlVoxelizationDebug;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				auto* clearValue = rdReq.clearFramebuffers();
 				clearValue->setClearColor();
 				clearValue->setClearDepth();
 
-				//RDS_LOG("setParam {} - idx: {}", voxelTexColor.name(), voxelTexColor.texture3D()->bindlessHandle().getResourceIndex());
+				//RDS_LOG("setParam {} - idx: {}", voxelTexRadiance.name(), voxelTexRadiance.texture3D()->bindlessHandle().getResourceIndex());
 
-				setupCommonParam(mtl, level, drawData);
+				setupCommonParam(mtl, level);
 				setupMipmapParam(mtl);
 
 				float scale = 32.0f;
-				mtl->setParam("matrix_world",		Mat4f::s_TRS(Vec3f{0.0f, scale, -10.0f}, Quat4f::s_eulerDegX(90.0f), Vec3f::s_one() * scale));
+				mtl->setParam("matrix_world",		Mat4f::s_TRS(Vec3f{0.0f, scale, -10.0f}, Quat4f::s_identity(), Vec3f::s_one() * scale)); // Quat4f::s_eulerDegX(90.0f)
 
 				mtl->setParam("voxel_extent",		1.0f);
 				mtl->setParam("voxel_resolution",	voxelResolution);
-				mtl->setParam("voxel_tex_radiance",		voxelTexColor.texture3D());
+				mtl->setParam("voxel_tex_radiance",		voxelTexRadiance.texture3D());
 
 				drawData->setupMaterial(mtl);
-				rdReq.drawMesh(RDS_SRCLOC, drawData->meshAssets->plane->renderMesh, mtl);
+				rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
 			}
 		);
 		passVoxelizationDebug = &pass;
@@ -333,23 +420,27 @@ RpfVoxelConeTracing::addVoxelizationDebugPass(RdgTextureHnd rtColor, RdgTextureH
 RdgPass* 
 RpfVoxelConeTracing::addVoxelVisualizationPass(RdgTextureHnd rtColor, RdgTextureHnd dsBuf)
 {
-	auto*		rdGraph					= oRdGraph;
+	auto*		rdGraph					= renderGraph();
+	auto*		drawData				= drawDataBase();
 	RdgPass*	passVoxelVisualization	= nullptr;
 
-	auto	screenSize	= Vec2u::s_cast(Vec2f(drawData->resolution())).toTuple2();
+	auto	screenSize	= drawData->resolution2u();
 
 	Tuple3u clipmapSizes;
 	clipmapSizes.setAll(voxelResolution);
 	clipmapSizes.set(screenSize.x, screenSize.y, 4);
 
-	RdgTextureHnd voxelTexColor			= result.voxelTexColor;		// must copy here
+	RdgTextureHnd voxelTexRadiance			= result.voxelTexRadiance;		// must copy here
 
 	TempString passName = "vct_voxel_visualization";
 	for (u32 i = 0; i < 1; ++i)
 	{
+		Material* mtl = _mtlVoxelVisualization;
+		setupCommonParam(mtl, curLevel);
+
 		fmtToNew(passName, "{}-l{}", "vct_voxel_visualization", i);
 		auto& pass = rdGraph->addPass(passName, RdgPassTypeFlags::Graphics);
-		pass.readTexture(voxelTexColor,			TextureUsageFlags::ShaderResource, ShaderStageFlag::Pixel);
+		pass.readTexture(voxelTexRadiance,			TextureUsageFlags::ShaderResource, ShaderStageFlag::Pixel);
 		setupPassReadMipmap(pass, ShaderStageFlag::Pixel);
 
 		pass.setRenderTarget(rtColor,	RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
@@ -358,24 +449,23 @@ RpfVoxelConeTracing::addVoxelVisualizationPass(RdgTextureHnd rtColor, RdgTexture
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				auto mtl = mtlVoxelVisualization;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 
-				setupCommonParam(mtl, visualizeLevel, drawData);
-
-				mtl->setParam("voxel_tex_radiance",		voxelTexColor.texture3D());
+				mtl->setParam("voxel_tex_radiance",		voxelTexRadiance.texture3D());
+				mtl->setParam("visualize_level",		clipmapMaxLevel);
 
 				drawData->setupMaterial(mtl);
 				setupMipmapParam(mtl);
 
 				auto drawCall = rdReq.addDrawCall(sizeof(PerObjectParam));
 				drawCall->setDebugSrcLoc(RDS_SRCLOC);
-				drawCall->vertexCount = voxelResolution * voxelResolution * voxelResolution;
+				drawCall->renderPrimitiveType = RenderPrimitiveType::Point;
+				drawCall->vertexCount = voxelResolution * voxelResolution * voxelResolution * (clipmapMaxLevel * 2 / 3);
 				drawCall->setMaterial(mtl);
 
-				PerObjectParam objParam;
+				/*PerObjectParam objParam;
 				objParam.id = sCast<decltype(PerObjectParam::id)>(s_entVctVoxelVisualizationId);
-				drawCall->setExtraData(objParam);
+				drawCall->setExtraData(objParam);*/
 			}
 		);
 		passVoxelVisualization = &pass;
@@ -385,68 +475,60 @@ RpfVoxelConeTracing::addVoxelVisualizationPass(RdgTextureHnd rtColor, RdgTexture
 }
 
 RdgPass* 
-RpfVoxelConeTracing::addAnisotropicMipmappingPass(RenderGraph* oRdGraph, DrawData* drawData)
+RpfVoxelConeTracing::addAnisotropicMipmappingPass()
 {
-	auto*		rdGraph						= oRdGraph;
+	auto*		rdGraph						= renderGraph();
+	auto*		drawData					= drawDataBase();
 	RdgPass*	passAnisotropicMipmapping	= nullptr;
 
 	u32		mipDimension	= math::max<u32>(voxelResolution >> 1, 1);
 	Vec3u	mipDimensions	= Tuple3u{ mipDimension, mipDimension, mipDimension };
 
-	RdgTextureHnd voxelTexColorMip_PosX = rdGraph->createTexture("vct_voxelTexColorMip_PosX", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
-	RdgTextureHnd voxelTexColorMip_NegX = rdGraph->createTexture("vct_voxelTexColorMip_NegX", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
-	RdgTextureHnd voxelTexColorMip_PosY = rdGraph->createTexture("vct_voxelTexColorMip_PosY", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
-	RdgTextureHnd voxelTexColorMip_NegY = rdGraph->createTexture("vct_voxelTexColorMip_NegY", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
-	RdgTextureHnd voxelTexColorMip_PosZ = rdGraph->createTexture("vct_voxelTexColorMip_PosZ", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
-	RdgTextureHnd voxelTexColorMip_NegZ = rdGraph->createTexture("vct_voxelTexColorMip_NegZ", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
+	RdgTextureHnd voxelTexRadianceMip_PosX = rdGraph->createTexture("vct_voxelTexRadianceMip_PosX", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
+	RdgTextureHnd voxelTexRadianceMip_NegX = rdGraph->createTexture("vct_voxelTexRadianceMip_NegX", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
+	RdgTextureHnd voxelTexRadianceMip_PosY = rdGraph->createTexture("vct_voxelTexRadianceMip_PosY", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
+	RdgTextureHnd voxelTexRadianceMip_NegY = rdGraph->createTexture("vct_voxelTexRadianceMip_NegY", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
+	RdgTextureHnd voxelTexRadianceMip_PosZ = rdGraph->createTexture("vct_voxelTexRadianceMip_PosZ", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
+	RdgTextureHnd voxelTexRadianceMip_NegZ = rdGraph->createTexture("vct_voxelTexRadianceMip_NegZ", Texture3D_CreateDesc{ mipDimensions, ColorType::RGBAb, clipmapMaxLevel, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst});
 
-	RdgTextureHnd voxelTexColor		= result.voxelTexColor;		// must copy here
-
-	result.voxelTexColorMip_PosX = voxelTexColorMip_PosX;
-	result.voxelTexColorMip_NegX = voxelTexColorMip_NegX;
-	result.voxelTexColorMip_PosY = voxelTexColorMip_PosY;
-	result.voxelTexColorMip_NegY = voxelTexColorMip_NegY;
-	result.voxelTexColorMip_PosZ = voxelTexColorMip_PosZ;
-	result.voxelTexColorMip_NegZ = voxelTexColorMip_NegZ;
+	RdgTextureHnd voxelTexRadiance		= result.voxelTexRadiance;		// must copy here
 
 	{
 		TempString passName;
 		RdgPass* lastPass = nullptr;
 
 		{
+			Material* mtl = _mtlsAnisotropicMipmapping[0];
+
 			auto& pass = rdGraph->addPass("vct_anisotropic_pre_mipmapping", RdgPassTypeFlags::Compute | RdgPassTypeFlags::Graphics);
-			pass.readTexture(voxelTexColor);
-			pass.writeTexture(voxelTexColorMip_PosX);
-			pass.writeTexture(voxelTexColorMip_NegX);
-			pass.writeTexture(voxelTexColorMip_PosY);
-			pass.writeTexture(voxelTexColorMip_NegY);
-			pass.writeTexture(voxelTexColorMip_PosZ);
-			pass.writeTexture(voxelTexColorMip_NegZ);
+			pass.readTexture(voxelTexRadiance);
+			pass.writeTexture(voxelTexRadianceMip_PosX);
+			pass.writeTexture(voxelTexRadianceMip_NegX);
+			pass.writeTexture(voxelTexRadianceMip_PosY);
+			pass.writeTexture(voxelTexRadianceMip_NegY);
+			pass.writeTexture(voxelTexRadianceMip_PosZ);
+			pass.writeTexture(voxelTexRadianceMip_NegZ);
 			pass.setExecuteFunc(
 				[=](RenderRequest& rdReq)
 				{
-					auto mtl = mtlAnisotropicMipmappings[0];
-					rdReq.reset(rdGraph->renderContext(), *drawData);
+					rdReq.reset(rdGraph->renderContext(), drawData);
 
 					u32 mipLevel = 0;
 					mtl->setParam("mip_dimemsions",		mipDimensions);
 					mtl->setParam("mip_level",			mipLevel);
 
-					mtl->setParam("src_image",			voxelTexColor.texture3D());
+					mtl->setParam("src_image",			voxelTexRadiance.texture3D());
 
 					//RDS_LOG("------------------");
-					mtl->setImage("dst_image_pos_x",	voxelTexColorMip_PosX.texture3D(), mipLevel);
-					mtl->setImage("dst_image_neg_x",	voxelTexColorMip_NegX.texture3D(), mipLevel);
-					mtl->setImage("dst_image_pos_y",	voxelTexColorMip_PosY.texture3D(), mipLevel);
-					mtl->setImage("dst_image_neg_y",	voxelTexColorMip_NegY.texture3D(), mipLevel);
-					mtl->setImage("dst_image_pos_z",	voxelTexColorMip_PosZ.texture3D(), mipLevel);
-					mtl->setImage("dst_image_neg_z",	voxelTexColorMip_NegZ.texture3D(), mipLevel);
+					mtl->setImage("dst_image_pos_x",	voxelTexRadianceMip_PosX.texture3D(), mipLevel);
+					mtl->setImage("dst_image_neg_x",	voxelTexRadianceMip_NegX.texture3D(), mipLevel);
+					mtl->setImage("dst_image_pos_y",	voxelTexRadianceMip_PosY.texture3D(), mipLevel);
+					mtl->setImage("dst_image_neg_y",	voxelTexRadianceMip_NegY.texture3D(), mipLevel);
+					mtl->setImage("dst_image_pos_z",	voxelTexRadianceMip_PosZ.texture3D(), mipLevel);
+					mtl->setImage("dst_image_neg_z",	voxelTexRadianceMip_NegZ.texture3D(), mipLevel);
 
-					Vec3u	threadGroup		= (Vec3u::s_one() * 8);
-					Vec3f   dispatchGroup	= Vec3f::s_cast(mipDimensions) / Vec3f::s_cast(threadGroup);
-
-					setupCommonParam(mtl, mipLevel, drawData);
-					rdReq.dispatch(RDS_SRCLOC, mtl, 0, Vec3u::s_cast(Vec3f{math::ceil(dispatchGroup.x), math::ceil(dispatchGroup.y), math::ceil(dispatchGroup.z)}));
+					setupCommonParam(mtl, mipLevel);
+					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, mipDimensions);
 				}
 			);
 			lastPass = &pass;
@@ -454,44 +536,42 @@ RpfVoxelConeTracing::addAnisotropicMipmappingPass(RenderGraph* oRdGraph, DrawDat
 
 		for (u32 i = 1; i < clipmapMaxLevel; i++)
 		{
+			Material* mtl = _mtlsAnisotropicMipmapping[i];
+
 			fmtToNew(passName, "vct_anisotropic_mipmapping-mip{}", i);
 			auto& pass = rdGraph->addPass(passName, RdgPassTypeFlags::Compute | RdgPassTypeFlags::Graphics);
 			pass.runAfter(lastPass);
-			pass.writeTexture(voxelTexColorMip_PosX);
-			pass.writeTexture(voxelTexColorMip_NegX);
-			pass.writeTexture(voxelTexColorMip_PosY);
-			pass.writeTexture(voxelTexColorMip_NegY);
-			pass.writeTexture(voxelTexColorMip_PosZ);
-			pass.writeTexture(voxelTexColorMip_NegZ);
+			pass.writeTexture(voxelTexRadianceMip_PosX);
+			pass.writeTexture(voxelTexRadianceMip_NegX);
+			pass.writeTexture(voxelTexRadianceMip_PosY);
+			pass.writeTexture(voxelTexRadianceMip_NegY);
+			pass.writeTexture(voxelTexRadianceMip_PosZ);
+			pass.writeTexture(voxelTexRadianceMip_NegZ);
 			pass.setExecuteFunc(
 				[=](RenderRequest& rdReq)
 				{
-					auto mtl = mtlAnisotropicMipmappings[i];
-					rdReq.reset(rdGraph->renderContext(), *drawData);
+					rdReq.reset(rdGraph->renderContext(), drawData);
 
 					u32 mipLevel = i;
 					mtl->setParam("mip_dimemsions",		mipDimensions);
 					mtl->setParam("mip_level",			mipLevel);
 
-					mtl->setImage("src_image_pos_x",	voxelTexColorMip_PosX.texture3D(), mipLevel - 1);
-					mtl->setImage("src_image_neg_x",	voxelTexColorMip_NegX.texture3D(), mipLevel - 1);
-					mtl->setImage("src_image_pos_y",	voxelTexColorMip_PosY.texture3D(), mipLevel - 1);
-					mtl->setImage("src_image_neg_y",	voxelTexColorMip_NegY.texture3D(), mipLevel - 1);
-					mtl->setImage("src_image_pos_z",	voxelTexColorMip_PosZ.texture3D(), mipLevel - 1);
-					mtl->setImage("src_image_neg_z",	voxelTexColorMip_NegZ.texture3D(), mipLevel - 1);
+					mtl->setImage("src_image_pos_x",	voxelTexRadianceMip_PosX.texture3D(), mipLevel - 1);
+					mtl->setImage("src_image_neg_x",	voxelTexRadianceMip_NegX.texture3D(), mipLevel - 1);
+					mtl->setImage("src_image_pos_y",	voxelTexRadianceMip_PosY.texture3D(), mipLevel - 1);
+					mtl->setImage("src_image_neg_y",	voxelTexRadianceMip_NegY.texture3D(), mipLevel - 1);
+					mtl->setImage("src_image_pos_z",	voxelTexRadianceMip_PosZ.texture3D(), mipLevel - 1);
+					mtl->setImage("src_image_neg_z",	voxelTexRadianceMip_NegZ.texture3D(), mipLevel - 1);
 
-					mtl->setImage("dst_image_pos_x",	voxelTexColorMip_PosX.texture3D(), mipLevel);
-					mtl->setImage("dst_image_neg_x",	voxelTexColorMip_NegX.texture3D(), mipLevel);
-					mtl->setImage("dst_image_pos_y",	voxelTexColorMip_PosY.texture3D(), mipLevel);
-					mtl->setImage("dst_image_neg_y",	voxelTexColorMip_NegY.texture3D(), mipLevel);
-					mtl->setImage("dst_image_pos_z",	voxelTexColorMip_PosZ.texture3D(), mipLevel);
-					mtl->setImage("dst_image_neg_z",	voxelTexColorMip_NegZ.texture3D(), mipLevel);
+					mtl->setImage("dst_image_pos_x",	voxelTexRadianceMip_PosX.texture3D(), mipLevel);
+					mtl->setImage("dst_image_neg_x",	voxelTexRadianceMip_NegX.texture3D(), mipLevel);
+					mtl->setImage("dst_image_pos_y",	voxelTexRadianceMip_PosY.texture3D(), mipLevel);
+					mtl->setImage("dst_image_neg_y",	voxelTexRadianceMip_NegY.texture3D(), mipLevel);
+					mtl->setImage("dst_image_pos_z",	voxelTexRadianceMip_PosZ.texture3D(), mipLevel);
+					mtl->setImage("dst_image_neg_z",	voxelTexRadianceMip_NegZ.texture3D(), mipLevel);
 
-					Vec3u	threadGroup		= (Vec3u::s_one() * 8);
-					Vec3f   dispatchGroup	= Vec3f::s_cast(mipDimensions) / Vec3f::s_cast(threadGroup);
-
-					setupCommonParam(mtl, mipLevel, drawData);
-					rdReq.dispatch(RDS_SRCLOC, mtl, 1, Vec3u::s_cast(Vec3f{math::ceil(dispatchGroup.x), math::ceil(dispatchGroup.y), math::ceil(dispatchGroup.z)}));
+					setupCommonParam(mtl, mipLevel);
+					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 1, mipDimensions);
 				}
 			);
 			mipDimension	= math::max<u32>(mipDimension >> 1, 1);
@@ -501,94 +581,57 @@ RpfVoxelConeTracing::addAnisotropicMipmappingPass(RenderGraph* oRdGraph, DrawDat
 		passAnisotropicMipmapping = lastPass;
 	}
 
+	result.voxelTexRadianceMip_PosX = voxelTexRadianceMip_PosX;
+	result.voxelTexRadianceMip_NegX = voxelTexRadianceMip_NegX;
+	result.voxelTexRadianceMip_PosY = voxelTexRadianceMip_PosY;
+	result.voxelTexRadianceMip_NegY = voxelTexRadianceMip_NegY;
+	result.voxelTexRadianceMip_PosZ = voxelTexRadianceMip_PosZ;
+	result.voxelTexRadianceMip_NegZ = voxelTexRadianceMip_NegZ;
+
 	return passAnisotropicMipmapping;
 }
 
 RdgPass* 
-RpfVoxelConeTracing::addVoxelConeTracingPass(RpfGeometryBuffer_Result& gBuf, RdgTextureHnd depth)
+RpfVoxelConeTracing::addVoxelConeTracingPass(RdgTextureHnd depth, RpfGeometryBuffer_Result& gBuf)
 {
-	bool isUsingCompute = true;
-
-	auto*		rdGraph					= oRdGraph;
+	auto*		rdGraph					= renderGraph();
+	auto*		drawData				= drawDataBase();
 	RdgPass*	passVoxelConeTracing	= nullptr;
 
-	auto	screenSize	= Vec2u::s_cast(Vec2f(drawData->resolution())).toTuple2();
+	bool isUsingCompute = true;
+
+	auto	screenSize	= drawData->resolution2u();
 
 	result.texDiffuse	= rdGraph->createTexture("vct_diffuse",		Texture2D_CreateDesc{ screenSize, ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::RenderTarget | TextureUsageFlags::TransferDst});
 	result.texSpecular	= rdGraph->createTexture("vct_specular",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::RenderTarget | TextureUsageFlags::TransferDst});
 
-	auto texDiffuse		= result.texDiffuse;
-	auto texSpecular	= result.texSpecular;
+	auto level = curLevel;
 
-	{
-		{
-			//auto& pass = rdGraph->addPass(fmtAs_T<TempString>("clearImage2D_{}", texDiffuse.name()), RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
-			//pass.writeTexture(texDiffuse, TextureUsageFlags::TransferDst);
-			auto& pass = rdGraph->addPass(fmtAs_T<TempString>("clearImage2D_{}", texDiffuse.name()), RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-			pass.writeTexture(texDiffuse, TextureUsageFlags::UnorderedAccess);
-			pass.setExecuteFunc(
-				[=](RenderRequest& rdReq)
-				{
-					auto mtl = mtlClearImage2D[0];
+	auto texDiffuse			= result.texDiffuse;
+	auto texSpecular		= result.texSpecular;
+	auto voxelTexRadiance	= result.voxelTexRadiance;
 
-					auto	imageExtent		= texDiffuse.size();
-					Vec3u	threadGroup		= (Vec3u::s_one() * 8);
-					Vec3f   dispatchGroup	= Vec3f::s_cast(imageExtent) / Vec3f::s_cast(threadGroup);
+	_addClearImage2DPass(_mtlClearImage2Ds[0], texDiffuse);
+	_addClearImage2DPass(_mtlClearImage2Ds[1], texSpecular);
 
-					mtl->setParam("image_extent",			imageExtent);
-					mtl->setParam("image_extent_offset",	Vec3u::s_zero());
-					mtl->setParam("clear_value",			Vec4f::s_zero());
-					mtl->setImage("image",					texDiffuse.texture2D(), 0);
-					drawData->setupMaterial(mtl);
-					rdReq.dispatch(RDS_SRCLOC, mtl, Vec3u::s_cast(Vec3f{math::ceil(dispatchGroup.x), math::ceil(dispatchGroup.y), math::ceil(dispatchGroup.z)}));
-				}
-			);
-		}
-
-		{
-			//auto& pass = rdGraph->addPass(fmtAs_T<TempString>("clearImage2D_{}", texSpecular.name()), RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Transfer);
-			//pass.writeTexture(texSpecular, TextureUsageFlags::TransferDst);
-			auto& pass = rdGraph->addPass(fmtAs_T<TempString>("clearImage2D_{}", texSpecular.name()), RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-			pass.writeTexture(texSpecular, TextureUsageFlags::UnorderedAccess);
-			pass.setExecuteFunc(
-				[=](RenderRequest& rdReq)
-				{
-					auto mtl = mtlClearImage2D[1];
-
-					auto	imageExtent		= texSpecular.size();
-					Vec3u	threadGroup		= (Vec3u::s_one() * 8);
-					Vec3f   dispatchGroup	= Vec3f::s_cast(imageExtent) / Vec3f::s_cast(threadGroup);
-
-					mtl->setParam("image_extent",			imageExtent);
-					mtl->setParam("image_extent_offset",	Vec3u::s_zero());
-					mtl->setParam("clear_value",			Vec4f::s_zero());
-					mtl->setImage("image",					texSpecular.texture2D(), 0);
-					drawData->setupMaterial(mtl);
-					rdReq.dispatch(RDS_SRCLOC, mtl, Vec3u::s_cast(Vec3f{math::ceil(dispatchGroup.x), math::ceil(dispatchGroup.y), math::ceil(dispatchGroup.z)}));
-				}
-			);
-		}
-	}
-
+	Material* mtl = _mtlVoxelConeTracing;
 	{
 		auto rdgPassTypeFlag = isUsingCompute ? RdgPassTypeFlags::Compute | RdgPassTypeFlags::Graphics : RdgPassTypeFlags::Compute | RdgPassTypeFlags::Graphics;
 		auto shaderStageFlag = isUsingCompute ? ShaderStageFlag::Compute : ShaderStageFlag::Pixel;
 
 		auto& pass = rdGraph->addPass("vct_voxel_cone_tracing", rdgPassTypeFlag);
-		pass.readTexture(result.voxelTexColor,			TextureUsageFlags::ShaderResource, shaderStageFlag);
+		pass.readTexture(voxelTexRadiance,			TextureUsageFlags::ShaderResource, shaderStageFlag);
 
-		#if !RDS_VCT_USE_6_FACES_CLIPMAP
-		pass.readTexture(result.voxelTexColorMip_PosX,	TextureUsageFlags::ShaderResource, shaderStageFlag);
-		pass.readTexture(result.voxelTexColorMip_NegX,	TextureUsageFlags::ShaderResource, shaderStageFlag);
-		pass.readTexture(result.voxelTexColorMip_PosY,	TextureUsageFlags::ShaderResource, shaderStageFlag);
-		pass.readTexture(result.voxelTexColorMip_NegY,	TextureUsageFlags::ShaderResource, shaderStageFlag);
-		pass.readTexture(result.voxelTexColorMip_PosZ,	TextureUsageFlags::ShaderResource, shaderStageFlag);
-		pass.readTexture(result.voxelTexColorMip_NegZ,	TextureUsageFlags::ShaderResource, shaderStageFlag);
-		#endif // !RDS_VCT_USE_6_FACES_CLIPMAP
+		#if !VCT_USE_6_FACES_CLIPMAP
+		pass.readTexture(result.voxelTexRadianceMip_PosX,	TextureUsageFlags::ShaderResource, shaderStageFlag);
+		pass.readTexture(result.voxelTexRadianceMip_NegX,	TextureUsageFlags::ShaderResource, shaderStageFlag);
+		pass.readTexture(result.voxelTexRadianceMip_PosY,	TextureUsageFlags::ShaderResource, shaderStageFlag);
+		pass.readTexture(result.voxelTexRadianceMip_NegY,	TextureUsageFlags::ShaderResource, shaderStageFlag);
+		pass.readTexture(result.voxelTexRadianceMip_PosZ,	TextureUsageFlags::ShaderResource, shaderStageFlag);
+		pass.readTexture(result.voxelTexRadianceMip_NegZ,	TextureUsageFlags::ShaderResource, shaderStageFlag);
+		#endif // !VCT_USE_6_FACES_CLIPMAP
 
-		pass.readTexture(gBuf.albedo,	TextureUsageFlags::ShaderResource, shaderStageFlag);
-		pass.readTexture(gBuf.normal,	TextureUsageFlags::ShaderResource, shaderStageFlag);
-		pass.readTexture(depth,			TextureUsageFlags::ShaderResource, shaderStageFlag);
+		gBuf.setupRdgPassForRead(pass, depth, shaderStageFlag);
 
 		if (isUsingCompute)
 		{
@@ -604,8 +647,7 @@ RpfVoxelConeTracing::addVoxelConeTracingPass(RpfGeometryBuffer_Result& gBuf, Rdg
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				auto mtl = mtlVoxelConeTracing;
-				rdReq.reset(rdGraph->renderContext(), *drawData);
+				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				if (isUsingCompute)
 				{
@@ -613,30 +655,21 @@ RpfVoxelConeTracing::addVoxelConeTracingPass(RpfGeometryBuffer_Result& gBuf, Rdg
 					mtl->setImage("out_indirect_specular",	texSpecular.texture2D(), 0);
 				}
 
-				mtl->setParam("voxel_tex_radiance",		result.voxelTexColor.texture3D());
+				mtl->setParam("voxel_tex_radiance",			voxelTexRadiance.texture3D());
+				mtl->setParam("voxel_tex_radiance",			SamplerState::makeLinearClampToEdge());
 
-				mtl->setParam("tex_depth",			depth.texture2D());
-				mtl->setParam("gBuf_normal",		gBuf.normal.texture2D());
-				mtl->setParam("gBuf_albedo",		gBuf.albedo.texture2D());
-				mtl->setParam("gBuf_position",		gBuf.debugPosition.texture2D());
+				constCast(gBuf).setupMaterial(mtl, depth);
 
-
-				Vec3u	threadGroup		= (Vec3u::s_one() * 8);
-				Vec3f   dispatchGroup	= Vec3f::s_cast(Vec3u{screenSize, 1}) / Vec3f::s_cast(threadGroup);
-
-				setupCommonParam(mtl, curLevel, drawData);
+				setupCommonParam(mtl, level);
 				setupMipmapParam(mtl);
 				drawData->setupMaterial(mtl);
 				if (isUsingCompute)
 				{
-					rdReq.dispatch(RDS_SRCLOC, mtl, 0, Vec3u::s_cast(Vec3f{math::ceil(dispatchGroup.x), math::ceil(dispatchGroup.y), math::ceil(dispatchGroup.z)}));
+					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u{screenSize, 1});
 				}
 				else
 				{
-					auto drawCall = rdReq.addDrawCall();
-					drawCall->setDebugSrcLoc(RDS_SRCLOC);
-					drawCall->vertexCount = 3;
-					drawCall->setMaterial(mtl);
+					rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
 				}
 			}
 		);
@@ -646,8 +679,63 @@ RpfVoxelConeTracing::addVoxelConeTracingPass(RpfGeometryBuffer_Result& gBuf, Rdg
 	return passVoxelConeTracing;
 }
 
+RdgPass* 
+RpfVoxelConeTracing::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd depth, RpfGeometryBuffer_Result& gBuf)
+{
+	auto*		rdGraph			= renderGraph();
+	auto*		drawData		= drawDataBase();
+	RdgPass*	passVctLighting	= nullptr;
+
+	auto	screenSize	= drawData->resolution2u();
+	auto level = curLevel;
+
+	auto vctResult = result;
+
+	Material* mtl = _mtlLighting;
+	{
+		auto shaderStageFlag = ShaderStageFlag::Pixel;
+
+		auto& pass = rdGraph->addPass("vct_lighting", RdgPassTypeFlags::Graphics);
+
+		pass.readTexture(vctResult.texDiffuse,			TextureUsageFlags::ShaderResource, shaderStageFlag);
+		pass.readTexture(vctResult.texSpecular,			TextureUsageFlags::ShaderResource, shaderStageFlag);
+		gBuf.setupRdgPassForRead(pass, depth, shaderStageFlag);
+
+		pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), drawData);
+
+				mtl->setParam("indirect_diffuse",	vctResult.texDiffuse.texture2D());
+				mtl->setParam("indirect_specular",	vctResult.texSpecular.texture2D());
+				constCast(gBuf).setupMaterial(mtl, depth);
+
+				setupCommonParam(mtl, level);
+				drawData->setupMaterial(mtl);
+				rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
+				//rdReq.drawMesh(RDS_SRCLOC, DemoEditorApp::instance()->gfxDemo->meshAssets().fullScreenTriangle->renderMesh, mtl);
+			}
+		);
+		passVctLighting = &pass;
+}
+
+	return passVctLighting;
+}
+
 void 
-RpfVoxelConeTracing::setupCommonParam(Material* mtl, u32 level, DrawData* drawData)
+RpfVoxelConeTracing::updateClipmap(u32 level, DrawData_Base* drawData)
+{
+	auto clipmapRegion = VctVoxelClipmapUtil::makeClipmapRegion(level, clipmapRegionWorldExtentL0, voxelResolution);
+
+	auto& clipmap = voxelClipmaps.at(level);
+	clipmap.center		= VctVoxelClipmapUtil::getCenter(clipmapRegion, drawData->camera->pos());
+	clipmap.voxelSize	= clipmapRegion.voxelSize;
+	voxelClipmaps.uploadToGpu();
+}
+
+void 
+RpfVoxelConeTracing::setupCommonParam(Material* mtl, u32 level)
 {
 	auto clipmapRegion		= VctVoxelClipmapUtil::makeClipmapRegion(level, clipmapRegionWorldExtentL0, voxelResolution);
 	auto clipmapRegionL0	= VctVoxelClipmapUtil::makeClipmapRegion(0,		clipmapRegionWorldExtentL0, voxelResolution);
@@ -663,31 +751,33 @@ RpfVoxelConeTracing::setupCommonParam(Material* mtl, u32 level, DrawData* drawDa
 	mtl->setParam("voxel_sizeL0",			clipmapRegionL0.voxelSize);
 	mtl->setParam("clipmap_level",			level);
 	mtl->setParam("clipmap_maxLevel",		clipmapMaxLevel);
+
+	mtl->setParam("clipmaps",				voxelClipmaps.gpuBuffer());
 }
 
 void
 RpfVoxelConeTracing::setupMipmapParam(Material* mtl)
 {
-	#if !RDS_VCT_USE_6_FACES_CLIPMAP
-	mtl->setParam("voxel_tex_pos_x",	result.voxelTexColorMip_PosX.texture3D());
-	mtl->setParam("voxel_tex_neg_x",	result.voxelTexColorMip_NegX.texture3D());
-	mtl->setParam("voxel_tex_pos_y",	result.voxelTexColorMip_PosY.texture3D());
-	mtl->setParam("voxel_tex_neg_y",	result.voxelTexColorMip_NegY.texture3D());
-	mtl->setParam("voxel_tex_pos_z",	result.voxelTexColorMip_PosZ.texture3D());
-	mtl->setParam("voxel_tex_neg_z",	result.voxelTexColorMip_NegZ.texture3D());
-	#endif // !RDS_VCT_USE_6_FACES_CLIPMAP
+	#if !VCT_USE_6_FACES_CLIPMAP
+	mtl->setParam("voxel_tex_pos_x",	result.voxelTexRadianceMip_PosX.texture3D());
+	mtl->setParam("voxel_tex_neg_x",	result.voxelTexRadianceMip_NegX.texture3D());
+	mtl->setParam("voxel_tex_pos_y",	result.voxelTexRadianceMip_PosY.texture3D());
+	mtl->setParam("voxel_tex_neg_y",	result.voxelTexRadianceMip_NegY.texture3D());
+	mtl->setParam("voxel_tex_pos_z",	result.voxelTexRadianceMip_PosZ.texture3D());
+	mtl->setParam("voxel_tex_neg_z",	result.voxelTexRadianceMip_NegZ.texture3D());
+	#endif // !VCT_USE_6_FACES_CLIPMAP
 }
 
 void 
 RpfVoxelConeTracing::setupPassReadMipmap(RdgPass& pass, ShaderStageFlag stage)
 {
-	#if !RDS_VCT_USE_6_FACES_CLIPMAP
-	pass.readTexture(result.voxelTexColorMip_PosX,	TextureUsageFlags::ShaderResource, stage);
-	pass.readTexture(result.voxelTexColorMip_NegX,	TextureUsageFlags::ShaderResource, stage);
-	pass.readTexture(result.voxelTexColorMip_PosY,	TextureUsageFlags::ShaderResource, stage);
-	pass.readTexture(result.voxelTexColorMip_NegY,	TextureUsageFlags::ShaderResource, stage);
-	pass.readTexture(result.voxelTexColorMip_PosZ,	TextureUsageFlags::ShaderResource, stage);
-	pass.readTexture(result.voxelTexColorMip_NegZ,	TextureUsageFlags::ShaderResource, stage);
+	#if !VCT_USE_6_FACES_CLIPMAP
+	pass.readTexture(result.voxelTexRadianceMip_PosX,	TextureUsageFlags::ShaderResource, stage);
+	pass.readTexture(result.voxelTexRadianceMip_NegX,	TextureUsageFlags::ShaderResource, stage);
+	pass.readTexture(result.voxelTexRadianceMip_PosY,	TextureUsageFlags::ShaderResource, stage);
+	pass.readTexture(result.voxelTexRadianceMip_NegY,	TextureUsageFlags::ShaderResource, stage);
+	pass.readTexture(result.voxelTexRadianceMip_PosZ,	TextureUsageFlags::ShaderResource, stage);
+	pass.readTexture(result.voxelTexRadianceMip_NegZ,	TextureUsageFlags::ShaderResource, stage);
 	#endif
 }
 
