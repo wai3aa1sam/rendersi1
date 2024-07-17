@@ -5,8 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 include(cmake_utility.cmake)
 
-#set(CMAKE_BUILD_TYPE Debug)
-
+set(CMAKE_BUILD_TYPE Release)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(project_name rendersi1)
@@ -76,4 +75,4 @@ add_subdirectory(src/test/editor)
 
 message("--- end for add_subdirectory ---")
 
-set_property (DIRECTORY PROPERTY VS_STARTUP_PROJECT ${project_namespace}_core_test)
+set_property (DIRECTORY PROPERTY VS_STARTUP_PROJECT ${project_namespace}_forward_plus)

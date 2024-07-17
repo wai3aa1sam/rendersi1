@@ -233,8 +233,8 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 		ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode; RDS_UNUSED(dockspace_flags);
 		dockspace_flags |= ImGuiDockNodeFlags_DockSpace; // ImGuiDockNodeFlags_CentralNode
 
-		ImGuiViewport*	pViewport = ImGui::GetMainViewport();
-		ImGuiID			dockspace = ImGui::DockSpaceOverViewport(pViewport); RDS_UNUSED(dockspace);
+		ImGuiViewport*	pViewport = ImGui::GetMainViewport();						RDS_UNUSED(pViewport);
+		ImGuiID			dockspace = ImGui::DockSpaceOverViewport(pViewport->ID);	RDS_UNUSED(dockspace);
 		uiDrawReq.dockspaceId = dockspace;
 
 		#if 0

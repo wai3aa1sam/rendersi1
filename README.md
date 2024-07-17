@@ -25,6 +25,7 @@ script/generate_project/install_vcpkg_packages.bat
 script/generate_project/gen_vs-2022.bat
 build/rendersi1-x64-windows/rendersi1.sln
 ```
+if failed to generate visual studio solution, probably due to fail to install packages in vcpkg, please execute the above step once more
 
 ## Demos
 

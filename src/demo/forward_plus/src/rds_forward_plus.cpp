@@ -41,7 +41,7 @@ ForwardPlus::onCreateScene(Scene* oScene)
 	AABBox3f b;
 	b.min = Vec3f{-300.0f,   0.0f, -150.0f};
 	b.max = Vec3f{+300.0f, 200.0f, +150.0f};
-	createLights(oScene, Vec3u{ 50, 50, 1 }, Vec3f::s_zero(), Vec3f::s_zero(), Quat4f::s_eulerDegX(141.4f), 100, 50, b);
+	createLights(oScene, Vec3u{ 25, 25, 1 }, Vec3f::s_zero(), Vec3f::s_zero(), Quat4f::s_eulerDegX(141.4f), 100, 50, b);
 
 	meshAssets().loadSponza(nullptr);
 	if (meshAssets().sponza)
@@ -102,7 +102,7 @@ ForwardPlus::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	//_rfpForwardPlus->renderDebugMakeFrustums(, rtColor);
 	//addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);	
-	addDisplayAABBoxPass(rdGraph, drawData, rtColor, drawSettings);
+	//addDisplayAABBoxPass(rdGraph, drawData, rtColor, drawSettings);
 
 	if (isShowHeatmap)
 	{
