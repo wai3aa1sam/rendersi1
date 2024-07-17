@@ -218,7 +218,7 @@ VoxelConeTracing::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 		addSkyboxPass(rdGraph, drawData, skyboxDefault(), rtColor, dsBuf);
 		addPostProcessingPass(rdGraph, drawData, &rtColor);
 
-		addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);
+		//addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);
 		//addDisplayNormalPass(rdGraph, drawData, rtColor);
 		//addDisplayAABBoxPass(rdGraph, drawData, rtColor, drawSettings);
 	}

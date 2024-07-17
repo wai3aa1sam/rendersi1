@@ -8,9 +8,6 @@
 namespace rds
 {
 
-static Material*		s_mtl			= nullptr;
-static CRenderableMesh* s_rdableMesh	= nullptr;
-
 #if 0
 #pragma mark --- rdsPbrIbl-Impl ---
 #endif // 0
@@ -55,8 +52,8 @@ PbrIbl::onCreateScene(Scene* oScene)
 
 			auto& mtl = rdable->material;
 			
-			mtl->setParam("metalness",			math::clamp((float)row / (objCount - 1), 0.0f, 1.0f));
-			mtl->setParam("roughness",			math::clamp((float)col / (objCount - 1), 0.0f, 1.0f));
+			mtl->setParam("metalness",			math::clamp((float)row / (objCount - 1), 0.0f,  1.0f));
+			mtl->setParam("roughness",			math::clamp((float)col / (objCount - 1), 0.05f, 1.0f));
 			mtl->setParam("ambientOcclusion",	1.0f);
 
 			if (col < objCount)
@@ -68,9 +65,6 @@ PbrIbl::onCreateScene(Scene* oScene)
 				row++;
 				col = 0;
 			}
-
-			s_mtl			= mtl;
-			s_rdableMesh	= rdable;
 		}
 	}
 
@@ -142,7 +136,7 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	addSkyboxPass(rdGraph, drawData, _rpfPbrIblResult.cubeEnvMap, rtColor, dsBuf);
 	addPostProcessingPass(rdGraph, drawData, &rtColor);
-	addDrawLightOutlinePass(rdGraph, drawData, rtColor, drawData->mtlLine());
+	//addDrawLightOutlinePass(rdGraph, drawData, rtColor, drawData->mtlLine());
 
 	drawData->oTexPresent = rtColor;
 }

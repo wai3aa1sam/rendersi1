@@ -155,7 +155,13 @@ CRenderableSystem::present(RenderContext* renderContext, bool isDrawUi, bool isD
 		else
 		{
 			if (isDrawToScreen)
+			{
+				RDS_TODO("temporary fix");
+				RenderRequest temp;
+				rdCtx->drawUI(temp);
+
 				rdReq.drawSceneQuad(RDS_SRCLOC, _mtlScreenQuad);
+			}
 			//rdReq.swapBuffers();
 		}
 

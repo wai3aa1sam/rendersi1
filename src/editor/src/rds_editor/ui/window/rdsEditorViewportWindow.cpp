@@ -15,7 +15,7 @@ namespace rds
 #if 1
 
 void 
-EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, math::Camera3f* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput)
+EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, bool isFullScreen, math::Camera3f* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput)
 {
 	auto& uiDrawReq = *edtDrawReq;
 	auto wnd = window(edtDrawReq, label());
@@ -23,7 +23,7 @@ EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, math
 	if (tex)
 		uiDrawReq.showImage(tex);
 
-	if (wnd.isFocused())
+	if (wnd.isFocused() || isFullScreen)
 	{
 		_camCtrl.update(camera, dt, mouseEv, uiInput);
 	}

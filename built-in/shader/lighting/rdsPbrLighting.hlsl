@@ -60,18 +60,18 @@ float Pbr_geometrySchlickGGX_ibl(float cosTheta, float roughness)
     return Pbr_geometrySchlickGGX_impl(k, cosTheta);
 }
 
-float Pbr_geometrySmith(float dotNV, float dotNL, float roughness)
+float Pbr_geometrySmith(float dotNL, float dotNV, float roughness)
 {
-    float ggx2  = Pbr_geometrySchlickGGX(dotNV, roughness);
     float ggx1  = Pbr_geometrySchlickGGX(dotNL, roughness);
+    float ggx2  = Pbr_geometrySchlickGGX(dotNV, roughness);
 	
     return ggx1 * ggx2;
 }
 
-float Pbr_geometrySmith_ibl(float dotNV, float dotNL, float roughness)
+float Pbr_geometrySmith_ibl(float dotNL, float dotNV, float roughness)
 {
-    float ggx2  = Pbr_geometrySchlickGGX_ibl(dotNV, roughness);
     float ggx1  = Pbr_geometrySchlickGGX_ibl(dotNL, roughness);
+    float ggx2  = Pbr_geometrySchlickGGX_ibl(dotNV, roughness);
 	
     return ggx1 * ggx2;
 }
@@ -87,17 +87,17 @@ LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3
     //float3 dirLight = normalize(posLight - posWs);
     float3 dirHalf  = normalize(viewDir + L);
 
-    float dotHV = max(dot(dirHalf,  viewDir),  0.0);
-    float dotNH = max(dot(normal,   dirHalf),  0.0);
-    float dotNV = max(dot(normal,   viewDir),  0.0);
-    float dotNL = max(dot(normal,   L),        0.0);
+    float dotHV = clamp(dot(dirHalf,  viewDir),  0.0, 1.0);
+    float dotNH = clamp(dot(normal,   dirHalf),  0.0, 1.0);
+    float dotNV = clamp(dot(normal,   viewDir),  0.0, 1.0);
+    float dotNL = clamp(dot(normal,   L),        0.0, 1.0);
 
     float3 baseRefl = float3(0.04, 0.04, 0.04);   // non-metalness surfaces
     baseRefl        = lerp(baseRefl, albedo, metalness);
 
-    float3  fresnel     = Pbr_fresnelSchlick(dotHV, baseRefl);                  // dotNV or dotHV
+    float3  fresnel     = Pbr_fresnelSchlick(dotNV, baseRefl);          // dotNV or dotHV
     float   normalDistr = Pbr_distributionGGX(dotNH, roughness);        // speculat highlight, distriGGX give us % of mircofacet align H 
-    float   geo         = Pbr_geometrySmith(dotNV, dotNL, roughness);
+    float   geo         = Pbr_geometrySmith(dotNL, dotNV, roughness);
 
     float3  spec_numer  = normalDistr * geo * fresnel;
     float   spec_denom  = 4.0 * dotNV * dotNL + rds_epsilon;
@@ -200,8 +200,8 @@ float2 Pbr_integrateBrdf(float dotNV, float roughness, uint sampleCount)
 
         if(dotNL > 0.0)
         {
-            float geo       = Pbr_geometrySmith_ibl(dotNV, dotNL, roughness);
-            float geoVis    = (geo * dotVH) / (dotNH * dotNV + 0.00001);
+            float geo       = Pbr_geometrySmith_ibl(dotNL, dotNV, roughness);
+            float geoVis    = (geo * dotVH) / (dotNH * dotNV + rds_epsilon);
             float fresnel   = pow(1.0 - dotVH, 5.0);
 
             o.x += (1.0 - fresnel) * geoVis;
@@ -229,10 +229,10 @@ LightingResult Pbr_computeIndirectLighting(Surface surface, float3 irradianceEnv
     kD             *= 1.0 - surface.metalness;
 
     float3 specular = prefilteredRefl * (fresnel * brdf.x + brdf.y);
-    float3 ambient  = (kD * diffuse)    * surface.ambientOcclusion;
+    float3 ambient  = (kD * diffuse)  * surface.ambientOcclusion;
 
     o.diffuse.rgb   = ambient;
-    o.specular.rgb  = (specular)        * surface.ambientOcclusion;
+    o.specular.rgb  = (specular)      * surface.ambientOcclusion;
     //o = fresnel * brdf.x + brdf.y;
 
     return o; 

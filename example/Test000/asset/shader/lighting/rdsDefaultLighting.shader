@@ -150,24 +150,25 @@ float4 ps_main(PixelIn input) : SV_TARGET
 		//o.rgb = surface.baseColor.rgb;
 	}
 	
-	if (RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, uv).a != 0.0)
-    {
-		float3 dirRefl 			= reflect(viewDir, normal);
-		float  dotNV            = max(dot(surface.normal, viewDir), 0.0);
-		float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(cube_irradianceEnv, surface.normal).rgb;
-		float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(cube_prefilteredEnv, dirRefl, surface.roughness * s_kMaxLod).rgb;
-		float2 brdf             = RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, float2(dotNV, surface.roughness)).rg;
-
-		LightingResult indirectLight = Pbr_computeIndirectLighting(surface, irradiance, prefilteredRefl, brdf, dotNV);
-		o.rgb += indirectLight.diffuse.rgb + indirectLight.specular.rgb;
-	}
-
 	//float3 lightDir = rds_Lights_get(0).directionWs.xyz;
 	//input.positionWs.y = -input.positionWs.y;
 	//input.positionVs.y = -input.positionVs.y;
 	float shadow = csm_computeShadow(input.positionWs, input.positionVs.z);
 	//shadow = 0.0;
 	o.rgb += (1.0 - shadow) * oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
+
+	if (RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, uv).a != 0.0)
+    {
+		float  roughness		= surface.roughness;
+		float3 dirRefl 			= reflect(viewDir, normal);
+		float  dotNV            = max(dot(normal, viewDir), 0.0);
+		float3 irradiance       = RDS_TEXTURE_CUBE_SAMPLE(cube_irradianceEnv, normal).rgb;
+		float3 prefilteredRefl  = RDS_TEXTURE_CUBE_SAMPLE_LOD(cube_prefilteredEnv, dirRefl, roughness * s_kMaxLod).rgb;
+		float2 brdf             = RDS_TEXTURE_2D_SAMPLE(tex_brdfLut, float2(dotNV, roughness)).rg;
+
+		LightingResult indirectLight = Pbr_computeIndirectLighting(surface, irradiance, prefilteredRefl, brdf, dotNV);
+		o.rgb += indirectLight.diffuse.rgb + indirectLight.specular.rgb;
+	}
 
 	//o.rgb *= csm_debugCascadeLevel(input.positionVs.z);
 	

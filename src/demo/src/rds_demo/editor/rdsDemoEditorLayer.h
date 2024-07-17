@@ -72,6 +72,8 @@ private:
 	UPtr<MeshAssets> _meshAssets;
 
 	SPtr<Material>	_mtlLine;
+
+	bool _isFullScreen = false;
 };
 
 inline EngineContext&		DemoEditorLayer::engineContext()	{ return _egCtx; }

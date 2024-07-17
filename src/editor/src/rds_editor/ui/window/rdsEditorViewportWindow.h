@@ -20,7 +20,7 @@ public:
 	static const char* label();
 
 public:
-	void draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, math::Camera3f* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput);
+	void draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, bool isFullScreen, math::Camera3f* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput);
 
 
 private:

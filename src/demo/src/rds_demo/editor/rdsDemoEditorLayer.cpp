@@ -22,8 +22,8 @@ DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 	_gfxDemo = rds::move(gfxDemo);
 	_gfxDemo->_demoLayer = this;
 	
-	mainWindow().uiMouseFn		= [this](UiMouseEvent& ev)		{ return _gfxDemo->onUiMouseEvent(ev); };
-	mainWindow().uiKeyboardFn	= [this](UiKeyboardEvent& ev)	{ return _gfxDemo->onUiKeyboardEvent(ev); };
+	mainWindow().uiMouseFn		= [this](UiMouseEvent& ev)		{ onUiMouseEvent(ev);	 return _gfxDemo->onUiMouseEvent(ev); };
+	mainWindow().uiKeyboardFn	= [this](UiKeyboardEvent& ev)	{ onUiKeyboardEvent(ev); return _gfxDemo->onUiKeyboardEvent(ev); };
 }
 
 DemoEditorLayer::~DemoEditorLayer()
@@ -173,7 +173,8 @@ DemoEditorLayer::onUpdate()
 				RDS_PROFILE_SECTION("draw editor ui");
 
 				drawEditorUi(uiDrawReq, _texHndPresent);
-				_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, drawData.camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());
+				_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, _isFullScreen
+									, drawData.camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());
 				_gfxDemo->onDrawGui(uiDrawReq);
 			}
 
@@ -203,7 +204,7 @@ DemoEditorLayer::onRender()
 
 	//renderableSystem().render(&rdCtx, _fullScreenTriangle, _mtlPresent);
 	renderableSystem().render();
-	renderableSystem().present(&rdCtx, true, true);
+	renderableSystem().present(&rdCtx, !_isFullScreen, true);
 
 	tsfReq.commit();
 
@@ -293,6 +294,8 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 		int targetFrameRate = sCast<int>(frameControl.targetFrameRate());
 		uiDrawReq.dragInt("target fps", &targetFrameRate, 0.1f, 10);
 		frameControl.setTargetFrameRate(targetFrameRate);
+
+		uiDrawReq.makeCheckbox("full screen (F1)", &_isFullScreen);
 	}
 
 	{
@@ -327,7 +330,10 @@ DemoEditorLayer::onUiMouseEvent(UiMouseEvent& ev)
 void 
 DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
-
+	if (ev.isPressed(UiKeyboardEventButton::F1))
+	{
+		_isFullScreen = !_isFullScreen;
+	}
 }
 
 
