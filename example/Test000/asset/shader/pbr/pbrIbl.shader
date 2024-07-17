@@ -26,6 +26,7 @@ Shader {
 
 #include "built-in/shader/rds_shader.hlsl"
 #include "built-in/shader/lighting/rdsPbrLighting.hlsl"
+#include "built-in/shader/post_processing/rdsPostProcessing.hlsl"
 
 struct VertexIn
 {

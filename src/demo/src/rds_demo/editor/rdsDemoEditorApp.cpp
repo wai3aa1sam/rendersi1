@@ -20,7 +20,7 @@ DemoEditorApp::DemoEditorApp()
 
 DemoEditorApp::~DemoEditorApp()
 {
-	
+	_log("leak 1304 bytes due to 3rd-party libraries are correct, no memory leak actually");
 }
 
 void 

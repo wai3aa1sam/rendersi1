@@ -138,7 +138,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 
 	LightingResult oLightingResult = (LightingResult)0;
 	{
-		oLightingResult = Lighting_computeForwardLighting_Vs(surface, drawParam.camera_pos, viewDir);
+		oLightingResult = Lighting_computeForwardLighting_Ws(surface, drawParam.camera_pos, viewDir);
 
 		//o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 		//o.rgb = oLightingResult.specular.rgb;
@@ -170,9 +170,6 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	o.rgb += (1.0 - shadow) * oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 
 	//o.rgb *= csm_debugCascadeLevel(input.positionVs.z);
-
-	o.rgb = ToneMapping_reinhard(o.rgb);
-	o.rgb = PostProc_gammaEncoding(o.rgb);
 	
 	//o.rgb = remapNeg11To01(normal);
 	//o.rgb = remapNeg11To01(surface.normal);

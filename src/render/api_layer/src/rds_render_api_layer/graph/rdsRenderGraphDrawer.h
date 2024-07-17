@@ -20,7 +20,7 @@ class RenderGraph;
 #if 1
 
 // for dumping graphviz
-// visualization in https://dreampuf.github.io/GraphvizOnline/
+// visualize in https://dreampuf.github.io/GraphvizOnline/
 class RdgDrawer
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();

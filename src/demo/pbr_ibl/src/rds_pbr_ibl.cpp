@@ -30,39 +30,44 @@ PbrIbl::onCreateScene(Scene* oScene)
 {
 	Base::onCreateScene(oScene);
 
-	u32 objCount = 6;
+	u32 objCount = 7;
 
 	auto shader = Renderer::rdDev()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
 	createDefaultScene(oScene, shader, meshAssets().sphere, Vec3u{objCount, objCount, 1});
-	createLights(oScene, Vec3u{ objCount, objCount, 1 });
+	createLights(oScene, Vec3u{ 1, 1, 1 }, Vec3f::s_zero(), Vec3f::s_one() * 3.0f, Quat4f::s_euler(Vec3f{math::radians(134.398f), math::radians(20.0f), math::radians(-4.4f)}));
 
 	{
-		auto totalCount = (objCount * objCount - 1);
-		totalCount = math::clamp<u32>(totalCount, 1, (objCount * objCount - 1));
+		/*auto totalCount = (objCount * objCount - 1);
+		totalCount = math::clamp<u32>(totalCount, 1, totalCount);
 		auto metalnessStep = 1.0f / totalCount;
-		auto roughnessStep = 1.0f / totalCount;
+		auto roughnessStep = 1.0f / totalCount;*/
+		objCount = math::max(2, (int)objCount);
 
-		auto i = 0;
+		u32 row = 0;
+		u32 col = 0;
+
 		for (auto& e : scene().entities())
 		{
-			auto* transf = e->getComponent<CTransform>();
-
-			{
-				auto* light = e->getComponent<CLight>();
-				if (light)
-				{
-					transf->setLocalRotation(Vec3f(math::radians(134.398f), math::radians(20.0f), math::radians(-4.4f)));
-				}
-			}
+			//auto* transf = e->getComponent<CTransform>();
 			auto* rdable = e->getComponent<CRenderableMesh>();
 			if (!rdable)
 				continue;
 
 			auto& mtl = rdable->material;
-			mtl->setParam("metalness",			metalnessStep * math::clamp((totalCount - i), sCast<u32>(0), sCast<u32>(totalCount)));
-			mtl->setParam("roughness",			roughnessStep * i);
+			
+			mtl->setParam("metalness",			math::clamp((float)row / (objCount - 1), 0.0f, 1.0f));
+			mtl->setParam("roughness",			math::clamp((float)col / (objCount - 1), 0.0f, 1.0f));
 			mtl->setParam("ambientOcclusion",	1.0f);
-			++i;
+
+			if (col < objCount)
+			{
+				col++;
+			}
+			else
+			{
+				row++;
+				col = 0;
+			}
 
 			s_mtl			= mtl;
 			s_rdableMesh	= rdable;
@@ -71,8 +76,8 @@ PbrIbl::onCreateScene(Scene* oScene)
 
 	{
 		auto& camera = app().mainWindow().camera();
-		camera.setPos(12.987f,	14.578f,	20.333f);
-		camera.setAim(8.021f,	7.989f,		-0.492f);
+		camera.setPos(11.656f,	14.808f,	26.251f);
+		camera.setAim(8.410f,	9.803f,		0.226f);
 		camera.setFov(45.0f);
 		camera.setNearClip(	0.1f	* 10.0f);
 		camera.setFarClip(	1000.0f * 10.0f);
@@ -103,7 +108,7 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	//auto* rpfPbrIbl	= _rpfPbrIbl;
 
-	RdgTextureHnd rtColor	= rdGraph->createTexture("pbr_ibl_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd rtColor	= rdGraph->createTexture("pbr_ibl_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 	RdgTextureHnd dsBuf		= rdGraph->createTexture("pbr_ibl_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
 	auto& passPbrIbl = rdGraph->addPass("pbr_ibl", RdgPassTypeFlags::Graphics);
@@ -126,13 +131,18 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 					mtl_->setParam("tex_brdfLut",			_rpfPbrIblResult.brdfLut);
 					mtl_->setParam("cube_irradianceEnv",	_rpfPbrIblResult.cubeIrradinceMap);
 					mtl_->setParam("cube_prefilteredEnv",	_rpfPbrIblResult.cubePrefilteredMap);
+
+					mtl_->setParam("tex_brdfLut",			SamplerState::makeLinearClampToEdge());
+					mtl_->setParam("cube_irradianceEnv",	SamplerState::makeLinearClampToEdge());
+					mtl_->setParam("cube_prefilteredEnv",	SamplerState::makeLinearClampToEdge());
 				};
 			drawData->drawScene(rdReq, drawSettings);
 		}
 	);
 
-	addDrawLightOutlinePass(rdGraph, drawData, rtColor, drawData->mtlLine());
 	addSkyboxPass(rdGraph, drawData, _rpfPbrIblResult.cubeEnvMap, rtColor, dsBuf);
+	addPostProcessingPass(rdGraph, drawData, &rtColor);
+	addDrawLightOutlinePass(rdGraph, drawData, rtColor, drawData->mtlLine());
 
 	drawData->oTexPresent = rtColor;
 }

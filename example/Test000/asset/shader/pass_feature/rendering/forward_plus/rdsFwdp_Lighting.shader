@@ -128,9 +128,6 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 
 	//o.rgb = surface.baseColor.rgb;
-
-	o.rgb = ToneMapping_reinhard(o.rgb);
-	o.rgb = PostProc_gammaEncoding(o.rgb);
 	
     return o;
 }

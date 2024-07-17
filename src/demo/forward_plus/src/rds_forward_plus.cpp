@@ -35,22 +35,6 @@ ForwardPlus::onCreateScene(Scene* oScene)
 {
 	Base::onCreateScene(oScene);
 
-	#if 1
-	{
-		auto& scene = *oScene;
-		auto* ent = scene.addEntity("Debug Frustum"); RDS_UNUSED(ent);
-	}
-	#if 0
-	{
-		auto& scene = *oScene;
-		auto* ent = scene.addEntity("fwdp culling"); RDS_UNUSED(ent);
-		auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-		rdableMesh->material	= _rpfFwdpRendering->_mtlFwdp;
-	}
-	#endif // 0
-
-	#endif // 0
-
 	float scaleFactor = 64.0f; RDS_UNUSED(scaleFactor);
 	createDefaultScene(oScene, nullptr, meshAssets().plane, Vec3u::s_one(), Vec3f{0.0f, -1.0f, 0.0f}, Vec3f::s_one() * 3, Vec3f{ scaleFactor, 1.0, scaleFactor });
 
@@ -95,7 +79,7 @@ ForwardPlus::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	//Renderer::rdDev()->waitIdle();
 
-	RdgTextureHnd rtColor		= rdGraph->createTexture("fwdp_rtColor",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd rtColor		= rdGraph->createTexture("fwdp_rtColor",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 	RdgTextureHnd dsBuf			= rdGraph->createTexture("fwdp_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferSrc});
 	RdgTextureHnd texDepth		= rdGraph->createTexture("fwdp_texDepth",	Texture2D_CreateDesc{ screenSize, ColorType::Rf,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource /*| TextureUsageFlags::TransferDst*/});
 
@@ -114,7 +98,8 @@ ForwardPlus::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	//addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);	
 	addSkyboxPass(rdGraph, drawData, skyboxDefault(), rtColor, dsBuf);
-	//addPostProcessPass(, "debug_fwdp", rtColor,)
+
+	addPostProcessingPass(rdGraph, drawData, &rtColor);
 
 	//_rfpForwardPlus->renderDebugMakeFrustums(, rtColor);
 	//addDrawLightOutlinePass(rdGraph, drawData, rtColor, nullptr);	

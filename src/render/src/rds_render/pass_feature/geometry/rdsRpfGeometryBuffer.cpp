@@ -4,6 +4,40 @@
 namespace rds
 {
 
+void 
+RpfGeometryBuffer_Result::setupRdgPassForRead(RdgPass& pass, ShaderStageFlag shaderStageFlag)
+{
+	pass.readTexture(normal,				TextureUsageFlags::ShaderResource, shaderStageFlag);
+	pass.readTexture(baseColor,				TextureUsageFlags::ShaderResource, shaderStageFlag);
+	pass.readTexture(roughnessMetalness,	TextureUsageFlags::ShaderResource, shaderStageFlag);
+	pass.readTexture(emission,				TextureUsageFlags::ShaderResource, shaderStageFlag);
+}
+
+void 
+RpfGeometryBuffer_Result::setupRdgPassForRead(RdgPass& pass, RdgTextureHnd depth, ShaderStageFlag shaderStageFlag)
+{
+	pass.readTexture(depth, TextureUsageFlags::ShaderResource, shaderStageFlag);
+	setupRdgPassForRead(pass, shaderStageFlag);
+}
+
+void 
+RpfGeometryBuffer_Result::setupMaterial(Material* mtl)
+{
+	mtl->setParam("gBuf_normal",				normal.texture2D());
+	mtl->setParam("gBuf_baseColor",				baseColor.texture2D());
+	mtl->setParam("gBuf_roughnessMetalness",	roughnessMetalness.texture2D());
+	mtl->setParam("gBuf_emission",				emission.texture2D());
+	mtl->setParam("gBuf_position",				debugPosition.texture2D());
+}
+
+void 
+RpfGeometryBuffer_Result::setupMaterial(Material* mtl, RdgTextureHnd depth)
+{
+	mtl->setParam("tex_depth",					depth.texture2D());
+	setupMaterial(mtl);
+}
+
+
 #if 0
 #pragma mark --- rdsRpfGeometryBuffer-Impl ---
 #endif // 0
@@ -39,8 +73,9 @@ RpfGeometryBuffer::addGeometryPass(Result& oResult, const DrawSettings& drawSett
 	RdgPass*	passGeom	= nullptr;
 
 	auto screenSize	= drawData->resolution2u();
-
-	RdgTextureHnd texNormal				= rdGraph->createTexture("gBuf_normal",				Texture2D_CreateDesc{ screenSize, ColorType::RGh,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
+	
+	RDS_TODO("pack the normal as RG16s");
+	RdgTextureHnd texNormal				= rdGraph->createTexture("gBuf_normal",				Texture2D_CreateDesc{ screenSize, ColorType::RGBAh,	TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 	RdgTextureHnd texBaseColor			= rdGraph->createTexture("gBuf_baseColor",			Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 	RdgTextureHnd texRoughnessMetalness = rdGraph->createTexture("gBuf_roughnessMetalness",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });
 	RdgTextureHnd texEmission			= rdGraph->createTexture("gBuf_emission",			Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource });

@@ -786,10 +786,10 @@ MeshAssetMaterialList::setupMaterial(Material* mtl, SizeType mtlIdx)
 
 	const auto& mtlDatum = materialData[mtlIdx];
 
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::BaseColor))			{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_baseColor),			tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexBaseColor),			sCast<u32>(1)); }
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Normal))				{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_normal),				tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexNormal),				sCast<u32>(1)); }
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::RoughnessMetalness))	{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_roughnessMetalness),	tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexRoughnessMetalness),	sCast<u32>(1)); }
-	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Emission))			{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_emission),			tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexEmisson),				sCast<u32>(1)); }
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::BaseColor))			{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_baseColor),			tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_baseColor),			SamplerState::makeLinearRepeat());		mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexBaseColor),				sCast<u32>(1)); }
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Normal))				{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_normal),				tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_normal),				SamplerState::makeLinearRepeat());		mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexNormal),				sCast<u32>(1)); }
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::RoughnessMetalness))	{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_roughnessMetalness),	tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_roughnessMetalness),	SamplerState::makeLinearRepeat());		mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexRoughnessMetalness),	sCast<u32>(1)); }
+	if (auto* tex = mtlDatum.getTexture(MaterialData_TextureType::Emission))			{ mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_emission),			tex); mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_TEXTURE_emission),			SamplerState::makeLinearRepeat());		mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_useTexEmisson),				sCast<u32>(1)); }
 
 	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_baseColor),			mtlDatum.baseColor);
 	mtl->setParam(RDS_STRINGIFY(RDS_MATERIAL_PROPERTY_metalness),			mtlDatum.metalness);

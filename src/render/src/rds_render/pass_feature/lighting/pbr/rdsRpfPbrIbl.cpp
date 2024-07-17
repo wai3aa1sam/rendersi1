@@ -55,14 +55,7 @@ RpfPbrIbl::addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const Render
 	bool isFirst = createTexture(*result, texHdrEnvMap->debugName(), cubeSize, irradianceCubeSize);
 	RdgPass* passPrefilteredEnvCube = nullptr;
 
-	SamplerState samplerState;
-
-	samplerState.minFliter	= SamplerFilter::Linear;
-	samplerState.magFliter	= SamplerFilter::Linear;
-
-	samplerState.wrapU		= SamplerWrap::ClampToEdge;
-	samplerState.wrapV		= SamplerWrap::ClampToEdge;
-	samplerState.wrapS		= SamplerWrap::ClampToEdge;
+	SamplerState samplerState = SamplerState::makeLinearClampToEdge();
 
 	#if 1
 	RdgPass* passHdrToCube			= addRenderToCubePass("hdrToCube",				result->cubeEnvMap, _shaderHdrToCube, box, nullptr

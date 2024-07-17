@@ -14,6 +14,13 @@ struct RpfGeometryBuffer_Result : public RenderPassFeature_Result
 	RdgTextureHnd emission;
 
 	RdgTextureHnd debugPosition;
+
+public:
+	void setupRdgPassForRead(	RdgPass& pass, ShaderStageFlag shaderStageFlag);
+	void setupRdgPassForRead(	RdgPass& pass, RdgTextureHnd depth, ShaderStageFlag shaderStageFlag);
+
+	void setupMaterial(			Material* mtl);
+	void setupMaterial(			Material* mtl, RdgTextureHnd depth);
 };
 
 struct RpfGeometryBuffer_Param : public RenderPassFeature_Param

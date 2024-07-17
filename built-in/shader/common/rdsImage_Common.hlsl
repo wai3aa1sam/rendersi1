@@ -1,6 +1,8 @@
 #ifndef __rdsImage_Common_HLSL__
 #define __rdsImage_Common_HLSL__
 
+#include "built-in/shader/interop/rdsShaderInterop.hlsl"
+
 /*
 reference:
 ~ OpenGL Insights Chapter 22 "Octree-Based Sparse Voxelization Using the GPU Hardware Rasterizer" [Cyril Crassin, Simon Green]
@@ -74,6 +76,11 @@ void AtomicOp_avgRGBA8(RWTexture3D<uint> dst, uint3 coords, float3 v)
 #endif
 #if 1
 
+bool Image_isInBoundary(uint2 dispatchThreadId, uint2 imageExtent)
+{
+	return all(dispatchThreadId.xy < imageExtent);
+}
+
 bool Image_isInBoundary(uint3 dispatchThreadId, uint2 imageExtent)
 {
 	return all(dispatchThreadId.xy < imageExtent);
@@ -98,6 +105,12 @@ bool Image_isInBoundary(uint3 dispatchThreadId, uint3 imageExtent, uint3 imageEx
 	// return isInBoundary;
 }
 
+float2 Image_computeUv(uint2 dispatchThreadId, DrawParam drawParam)
+{
+	uint2 	resolution 	= drawParam.resolution;
+	float2 	uv 			= (float2(dispatchThreadId.xy) + 0.5) / resolution.xy;
+	return uv;
+}
 
 #endif
 

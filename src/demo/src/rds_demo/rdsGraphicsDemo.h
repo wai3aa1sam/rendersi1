@@ -51,11 +51,18 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 
 public:
-	RdgPass* addSkyboxPass(		RenderGraph* oRdGraph, DrawData* drawData, TextureCube* texSkybox, RdgTextureHnd texColor, RdgTextureHnd texDepth);
-	RdgPass* addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrView passName, RdgTextureHnd rtColor, RdgTextureHnd texColor, Material* material);
-	RdgPass* addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, Material* material);
-	RdgPass* addDisplayNormalPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor);
-	RdgPass* addDisplayAABBoxPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, const DrawSettings& drawSettings);
+	/*
+	* TODO: change to RenderPassFeature
+	*/
+	RdgPass* addSkyboxPass(				RenderGraph* oRdGraph, DrawData* drawData, TextureCube* texSkybox, RdgTextureHnd texColor, RdgTextureHnd texDepth);
+	RdgPass* addPostProcessingPass(		RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* outColor, RdgTextureHnd texColor);
+	RdgPass* addPostProcessingPass(		RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* outRtColor);
+	RdgPass* addDrawLightOutlinePass(	RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, Material* material);
+	RdgPass* addDisplayNormalPass(		RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor);
+	RdgPass* addDisplayAABBoxPass(		RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd rtColor, const DrawSettings& drawSettings);
+
+public:
+	Entity* addEntity(Material* mtl);
 
 public:
 	DemoEditorApp& app();
@@ -68,6 +75,8 @@ public:
 	Texture2D*		texUvChecker();
 	Texture2D*		defaultHdrEnv();
 	TextureCube*	skyboxDefault();
+
+	CTransform* directionalLightTransform();
 
 private:
 	DemoEditorLayer*	_demoLayer	= nullptr;
@@ -82,13 +91,14 @@ protected:
 	SPtr<Shader>	_shaderSkybox;
 	SPtr<Material>	_mtlSkybox;
 
-	SPtr<Shader>	_shaderPreDepth;
-	SPtr<Material>	_mtlPreDepth;
-
 	SPtr<Shader>	_shaderDisplayNormals;
 	SPtr<Material>	_mtlDisplayNormals;
 
+	SPtr<Material>	_mtlPostProcessing;
+
 	Vector<UPtr<RenderPassPipeline>, 2>	_rdPassPipelines;
+
+	CTransform*		_directionalLightTransf	= nullptr;
 };
 
 inline Scene&		GraphicsDemo::scene()			{ return *_scene; }
@@ -96,6 +106,8 @@ inline Scene&		GraphicsDemo::scene()			{ return *_scene; }
 inline Texture2D*	GraphicsDemo::texUvChecker()	{ return _texUvChecker; }
 inline Texture2D*	GraphicsDemo::defaultHdrEnv()	{ return _texDefaultHdrEnv; }
 inline TextureCube* GraphicsDemo::skyboxDefault()	{ return _texDefaultSkybox; }
+
+inline CTransform*	GraphicsDemo::directionalLightTransform() { return _directionalLightTransf; }
 
 #endif
 

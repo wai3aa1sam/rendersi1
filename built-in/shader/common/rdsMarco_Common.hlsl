@@ -24,6 +24,8 @@ E(uint4,) \
 #define u64 uint64_t
 #define UINT_MAX 0xffffffff
 
+#define CS_BLOCK_SIZE 8
+
 #endif
 
 #endif

@@ -30,7 +30,7 @@ uint clear_value;
 
 RDS_RW_BUFFER(uint, buffer);
 
-[numThreads(8, 1, 1)]
+[numThreads(CS_BLOCK_SIZE, 1, 1)]
 void Cs_main(ComputeIn input)
 {
 	bool isInBoundary = input.dispatchThreadId.x < buffer_size;

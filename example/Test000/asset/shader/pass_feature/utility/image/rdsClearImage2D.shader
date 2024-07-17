@@ -31,7 +31,7 @@ float4 clear_value;
 
 RDS_IMAGE_2D(float4, image);
 
-[numThreads(8, 8, 1)]
+[numThreads(CS_BLOCK_SIZE, CS_BLOCK_SIZE, 1)]
 void cs_main(ComputeIn input)
 {
 	bool isInBoundary = Image_isInBoundary(input.dispatchThreadId, image_extent.xy, image_extent_offset.xy);

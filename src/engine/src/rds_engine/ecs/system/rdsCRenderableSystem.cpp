@@ -131,6 +131,7 @@ CRenderableSystem::render()
 	
 	// rdGraph.execute(); // execute in render thread, then later need to copy struct renderableObject list to render thread, keep simple first
 	rdGraph.commit();
+	//rdGraph.dumpGraphviz();
 }
 
 void 

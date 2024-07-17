@@ -49,7 +49,7 @@ public:
 public:
 	static constexpr u32			s_kTileCount		= 32;
 	static constexpr u32			s_kBlockSize		= s_kTileCount;
-	static constexpr u32			s_kEstLightPerGrid	= 128 * 4;
+	static constexpr u32			s_kEstLightPerGrid	= 128 * 8;
 
 	static constexpr DebugIndexType s_debugFrustumIndices[] = 
 	{	

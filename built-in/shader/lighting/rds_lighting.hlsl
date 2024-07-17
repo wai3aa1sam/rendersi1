@@ -5,4 +5,6 @@
 #include "rdsLight.hlsl"
 #include "rdsLighting.hlsl"
 
+#include "built-in/shader/post_processing/rdsToneMapping.hlsl"
+
 #endif

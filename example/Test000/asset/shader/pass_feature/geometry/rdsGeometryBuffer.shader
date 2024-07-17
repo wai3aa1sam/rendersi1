@@ -64,7 +64,7 @@ struct PixelIn
 
 struct PixelOut
 {
-    float2 normal				: SV_Target0;
+    float4 normal				: SV_Target0;
 	float4 baseColor			: SV_Target1;
 	float4 roughnessMetalness	: SV_Target2;
 	float4 emission				: SV_Target3;
@@ -109,7 +109,8 @@ PixelOut ps_main(PixelIn input)
 	if (surface.baseColor.a < rds_alphaCutOff)
 		discard;
 
-	o.normal   				= remapNeg11To01(surface.normal.xy);
+	// TODO: pack the normal as RG16s
+	o.normal.xyz   			= (remapNeg11To01(surface.normal.xyz));		// do not normalize
 	o.baseColor   			= surface.baseColor;
 	o.roughnessMetalness 	= Material_packRoughnessMetalness(surface.roughness, surface.metalness);
 	o.emission 				= surface.emission;

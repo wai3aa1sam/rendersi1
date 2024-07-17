@@ -10,7 +10,7 @@
 #include "built-in/shader/geometry/rdsGeometry.hlsl"
 
 #define BLOCK_SIZE 32
-#define LIGHT_LIST_LOCAL_SIZE 512
+#define LIGHT_LIST_LOCAL_SIZE 1024
 
 
 #endif

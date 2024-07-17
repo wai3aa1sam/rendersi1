@@ -287,85 +287,9 @@ uint rds_Lights_getLightCount()
 #endif
 
 #if 0
-#pragma mark --- Texture-Impl ---
+#pragma mark --- Math-Impl ---
 #endif
 #if 1
-
-#endif
-
-#if 0
-#pragma mark --- ColorUtil-Impl ---
-#endif
-#if 1
-
-#if 0
-
-float3 Color_Linear_to_sRGB(float3 x) { return x < 0.0031308 ? 12.92 * x : 1.13005 * sqrt(x - 0.00228) - 0.13448 * x + 0.005719; }
-float3 Color_sRGB_to_Linear(float3 x) { return x < 0.04045 ? x / 12.92 : -7.43605 * x - 31.24297 * sqrt(-0.53792 * x + 1.279924) + 35.34864; }
-
-#else
-
-float3 Color_Linear_to_sRGB(float3 x) { return select(x < 0.0031308, 12.92 * x, 1.13005 * sqrt(x - 0.00228) - 0.13448 * x + 0.005719); }
-float3 Color_sRGB_to_Linear(float3 x) { return select(x < 0.04045, x / 12.92, -7.43605 * x - 31.24297 * sqrt(-0.53792 * x + 1.279924) + 35.34864); }
-
-#endif
-
-
-#endif
-
-#if 0
-#pragma mark --- PostProcessingUtil-Impl ---
-#endif
-#if 1
-
-float3 PostProc_gammaEncoding(float3 v) { return pow(v, 1.0 / 2.2); }
-float3 PostProc_gammaDecoding(float3 v) { return pow(v, 2.2); }
-
-#if 0
-#pragma mark --- ToneMappingUtil-Impl ---
-#endif
-#if 1
-
-float3 ToneMapping_reinhard(float3 v) { return v / (v + float3(1.0, 1.0, 1.0)); }
-
-// From http://filmicgames.com/archives/75
-float3 ToneMapping_uncharted2(float3 x)
-{
-	float A = 0.15;
-	float B = 0.50;
-	float C = 0.10;
-	float D = 0.20;
-	float E = 0.02;
-	float F = 0.30;
-	return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
-}
-
-
-#endif
-
-#endif
-
-#if 0
-#pragma mark --- SampleUtil-Impl ---
-#endif
-#if 1
-
-float SampleUtil_sequence_vdc(uint bits) 
-{
-    bits = (bits << 16u) | (bits >> 16u);
-    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-    return float(bits) * 2.3283064365386963e-10; // / 0x100000000
-}
-
-float2 SampleUtil_sequence_hammersley(uint i, uint N)
-{
-    return float2(float(i)/float(N), SampleUtil_sequence_vdc(i));
-}  
-
-#endif
 
 /*
 ~ reference:
@@ -424,6 +348,8 @@ float4x4 inverse(float4x4 m)
 
     return ret;
 }
+
+#endif
 
 #if 0
 #pragma mark --- SpaceTransform-Impl ---
@@ -611,7 +537,6 @@ bool SpaceTransform_isInvalidDepth(float depth)
 }
 
 #endif
-
 
 #if 0
 #pragma mark --- ScreenQuad-Impl ---

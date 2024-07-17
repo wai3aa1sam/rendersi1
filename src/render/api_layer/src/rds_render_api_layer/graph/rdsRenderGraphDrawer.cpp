@@ -90,6 +90,7 @@ void
 RdgDrawer::dump(StrView filename, RenderGraph* graph)
 {
 	RDS_TODO("change the information vertical line to horizontal line");
+	RDS_TODO("resource state and follow execution order");
 
 	reset(filename, graph);
 
@@ -101,7 +102,8 @@ RdgDrawer::dump(StrView filename, RenderGraph* graph)
 	StrView exportedResourceName	= "resource_exported";
 
 	{
-		write("digraph \"{}\"", graphName);
+		writeLine("# visualize in https://dreampuf.github.io/GraphvizOnline/");
+		writeLine("digraph \"{}\"", graphName);
 		scopedBracket();
 		write		("graph	[style = invis,	rankdir = \"{}\"	ordering = out,		splines = spline]",			style().rankDir);
 		writeLine	("node	[shape = record, fontname = \"{}\",	fontsize= \"{}\",	margin = \"0.2, 0.03\"]",	style().font.name, style().font.size);
@@ -129,12 +131,13 @@ RdgDrawer::_dumpPasses()
 	{
 		auto id					= e->id();
 		const char* passColor	= e->isCulled() ? style().color.pass.culled : style().color.pass.executed;
-		auto refCount			= 0;
+		//auto refCount			= 0;
 
 		newLine();
 		writePassNodeName(id);
 		_write("[");
-		_write("label = < {{ <B>{}</B>}} | {{ Id: {} {} Refs: {} }}>",	e->name(), id, sideEffectStr, refCount);
+		//_write("label = < {{ <B>{}</B>}} | {{ Id: {} {} Refs: {} }}>",	e->name(), id, sideEffectStr, refCount);
+		_write("label = < {{ <B>{}</B>}} | {{ Id: {} {} }}>",	e->name(), id, sideEffectStr);
 		_write("style = \"rounded, filled\", fillcolor = {}",					passColor);
 		_write("]");
 	}
@@ -150,7 +153,7 @@ void RdgDrawer::_dumpResources()
 		const auto& name	= e->name();
 		auto type			= e->type();
 		auto fillColor		= e->isExported() ? style().color.resource.imported : style().color.resource.transient;
-		auto refCount		= 0;
+		//auto refCount		= 0;
 
 		/*
 		if want to have resource state, we have to save a VectorMap for each transition and its corresponding pass
@@ -168,7 +171,8 @@ void RdgDrawer::_dumpResources()
 		newLine();
 		writeResourceNodeName(id);
 		_write("[");
-		_write("label = < {{ \t<B>\"{}\"</B> <BR/>{} }} \t|\t {{ Id: {} \t Refs: {} }} > ",	name, enumStr(type), id, refCount);
+		//_write("label = < {{ \t<B>\"{}\"</B> <BR/>{} }} \t|\t {{ Id: {} \t Refs: {} }} > ",	name, enumStr(type), id, refCount);
+		_write("label = < {{ \t<B>\"{}\"</B> <BR/>{} }} \t|\t {{ Id: {} }} > ",	name, enumStr(type), id);
 		_write("style = filled, fillcolor = {}",											fillColor);
 		_write("]");
 	}

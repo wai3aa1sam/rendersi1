@@ -61,6 +61,7 @@ GraphicsDemo::onCreate()
 		filenames.emplace_back("asset/texture/skybox/default/back.png");
 
 		texCDesc.create(filenames);
+		texCDesc.isSrgb = true;
 		_texDefaultSkybox = Renderer::rdDev()->createTextureCube(texCDesc);
 		_texDefaultSkybox->setDebugName("skybox_default");
 	}
@@ -68,6 +69,7 @@ GraphicsDemo::onCreate()
 	{
 		auto texCDesc = Texture2D::makeCDesc();
 		texCDesc.create("asset/texture/hdr/newport_loft.hdr");
+		texCDesc.isSrgb = true;
 		_texDefaultHdrEnv = Renderer::rdDev()->createTexture2D(texCDesc);
 		_texDefaultHdrEnv->setDebugName("texHdrEnvMap");
 	}
@@ -76,12 +78,16 @@ GraphicsDemo::onCreate()
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 
 	RenderUtil::createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/rdsDisplayNormals.shader");
+
+	RenderUtil::createMaterial(&_mtlPostProcessing, "asset/shader/pass_feature/post_processing/rdsPostProcessing.shader");
 }
 
 void 
 GraphicsDemo::onCreateScene(Scene* oScene)
 {
 	_scene = oScene;
+
+	addEntity(_mtlPostProcessing);
 }
 
 void 
@@ -200,6 +206,7 @@ GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec
 					directionalLightTransf = transform;
 					transform->setLocalRotation(direction);
 					light->setIntensity(1.0);
+					_directionalLightTransf = directionalLightTransf;
 				}
 
 				if (light->lightType() == LightType::Spot)
@@ -268,27 +275,48 @@ GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCu
 }
 
 RdgPass* 
-GraphicsDemo::addPostProcessPass(RenderGraph* oRdGraph, DrawData* drawData, StrView passName, RdgTextureHnd rtColor, RdgTextureHnd texColor, Material* material)
+GraphicsDemo::addPostProcessingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* outColor, RdgTextureHnd texColor)
 {
 	if (!texColor)
 		return nullptr;
 
-	auto*	rdGraph		= oRdGraph;
+	auto*		rdGraph				= oRdGraph;
+	auto		screenSize			= drawData->resolution2u();
+	RdgPass*	passPostProcessing	= nullptr;
 
-	auto& pass = rdGraph->addPass(passName, RdgPassTypeFlags::Graphics);
-	pass.readTexture(texColor);
-	pass.setRenderTarget(rtColor, RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
-	pass.setExecuteFunc(
-		[=](RenderRequest& rdReq)
-		{
-			rdReq.reset(rdGraph->renderContext(), drawData);
-			auto mtl = material;
+	RdgTextureHnd dstColor = rdGraph->createTexture("rtColor_postProcessing", Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource | TextureUsageFlags::UnorderedAccess});
 
-			mtl->setParam("texColor", texColor.renderResource());
-			drawData->setupMaterial(mtl);
-			rdReq.drawMesh(RDS_SRCLOC, meshAssets().fullScreenTriangle->renderMesh, mtl);
-		});
-	return &pass;
+	Material* mtl = _mtlPostProcessing;
+	{
+		auto& pass = rdGraph->addPass("post_processing", RdgPassTypeFlags::Compute);
+		pass.readTexture(texColor);
+		pass.writeTexture(dstColor);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				rdReq.reset(rdGraph->renderContext(), drawData);
+
+				mtl->setParam("tex_color", texColor.texture2D());
+				mtl->setImage("out_image", dstColor.texture2D(), 0);
+
+				drawData->setupMaterial(mtl);
+				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{ screenSize, 1 });
+			});
+		passPostProcessing = &pass;
+	}
+
+	*outColor = dstColor;
+
+	return passPostProcessing;
+}
+
+RdgPass* 
+GraphicsDemo::addPostProcessingPass(RenderGraph* oRdGraph, DrawData* drawData, RdgTextureHnd* outRtColor)
+{
+	RdgTextureHnd dstColor;
+	RdgPass* pass = addPostProcessingPass(oRdGraph, drawData, &dstColor, *outRtColor);
+	*outRtColor = dstColor;
+	return pass;
 }
 
 RdgPass* 
@@ -489,6 +517,15 @@ addDrawLineTest()
 	#endif // 0
 }
 #endif // 0
+
+Entity* 
+GraphicsDemo::addEntity(Material* mtl)
+{
+	auto* ent = scene().addEntity(Path::basename(mtl->filename())); RDS_UNUSED(ent);
+	auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+	rdableMesh->material = mtl;
+	return ent;
+}
 
 
 DemoEditorApp&	GraphicsDemo::app()				{ return _demoLayer->app(); }

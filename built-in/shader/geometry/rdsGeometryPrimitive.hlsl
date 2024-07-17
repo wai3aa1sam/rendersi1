@@ -44,6 +44,12 @@ struct Cone
     float   radius;
 };
 
+struct AABBox
+{
+	float3 min;
+	float3 max;
+};
+
 #endif
 
 #endif

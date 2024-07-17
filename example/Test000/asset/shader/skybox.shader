@@ -23,6 +23,7 @@ Shader {
 #endif
 
 #include "built-in/shader/rds_shader.hlsl"
+#include "built-in/shader/post_processing/rdsPostProcessing.hlsl"
 
 struct VertexIn
 {
@@ -67,7 +68,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	//o = RDS_TEXTURE_CUBE_GET(skybox).SampleLevel(_sampler, uv, 8).rgb;
 	
     //o = ToneMapping_reinhard(o);
-    //o = PostProc_gammaEncoding(o);
+    //o = PostProc_gammaDecoding(o);
 
     return float4(o, 1.0);
 }
