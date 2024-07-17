@@ -12,7 +12,7 @@
 namespace rds
 {
 
-struct RpfCascadedShadowMapping_Result : public RenderPassFeature_Result
+struct RpfCascadedShadowMaps_Result : public RenderPassFeature_Result
 {
 public:
 	static constexpr u32 s_kCascadeLevelCount = 4;
@@ -28,7 +28,7 @@ public:
 	CascaedPlaneDists	cascadePlaneDists;
 };
 
-struct RpfCascadedShadowMapping_Param : public RenderPassFeature_Param
+struct RpfCascadedShadowMaps_Param : public RenderPassFeature_Param
 {
 	u32		mapSize				= 1024 * 2;
 	u32		cascadedSplitCount	= 3;
@@ -36,13 +36,13 @@ struct RpfCascadedShadowMapping_Param : public RenderPassFeature_Param
 };
 
 #if 0
-#pragma mark --- rdsRpfCascadedShadowMapping-Decl ---
+#pragma mark --- rdsRpfCascadedShadowMaps-Decl ---
 #endif // 0
 #if 1
 
-class RpfCascadedShadowMapping : public RenderPassFeature
+class RpfCascadedShadowMaps : public RenderPassFeature
 {
-	RDS_RPF_COMMON_BODY(RpfCascadedShadowMapping);
+	RDS_RPF_COMMON_BODY(RpfCascadedShadowMaps);
 public:
 	static constexpr u32 s_kCascadeLevelCount = Result::s_kCascadeLevelCount;
 
@@ -70,8 +70,8 @@ public:
 	RdgPass* addDebugFrustumsPass(Material* mtl_, RdgTextureHnd rtColor, const math::Camera3f& camera, const Vec3f& lightDir, bool isUpdateCamera);
 
 protected:
-	RpfCascadedShadowMapping();
-	virtual ~RpfCascadedShadowMapping();
+	RpfCascadedShadowMaps();
+	virtual ~RpfCascadedShadowMaps();
 
 	void create();
 	void destroy();

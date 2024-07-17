@@ -17,7 +17,7 @@ namespace rds
 {
 
 struct RpfGeometryBuffer_Result;
-struct RpfCascadedShadowMapping_Result;
+struct RpfCascadedShadowMaps_Result;
 
 struct RpfVoxelConeTracing_Result : public RenderPassFeature_Result
 {
@@ -72,7 +72,7 @@ public:
 	ParamBuffer<VoxelClipmap> voxelClipmaps;
 
 public:
-	RdgPass* addVoxelizationPass(const DrawSettings& drawSettings, const RpfCascadedShadowMapping_Result& csmResult);
+	RdgPass* addVoxelizationPass(const DrawSettings& drawSettings, const RpfCascadedShadowMaps_Result& csmResult);
 	RdgPass* addOpacityAlphaPass(RpfVoxelConeTracing_Result* oResult);
 	RdgPass* addCheckAlphaPass();
 

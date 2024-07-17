@@ -1,16 +1,16 @@
 #include "rds_render-pch.h"
-#include "rdsRpfCascadedShadowMapping.h"
+#include "rdsRpfCascadedShadowMaps.h"
 
 namespace rds
 {
 
 #if 0
-#pragma mark --- rdsRpfCascadedShadowMapping-Impl ---
+#pragma mark --- rdsRpfCascadedShadowMaps-Impl ---
 #endif // 0
 #if 1
 
 void 
-RpfCascadedShadowMapping::computeCasadedSplits(float* dst, size_t cascadedLevelCount, float cascadeSplitLambda, const math::Camera3f camera)
+RpfCascadedShadowMaps::computeCasadedSplits(float* dst, size_t cascadedLevelCount, float cascadeSplitLambda, const math::Camera3f camera)
 {
 	float nearClip	= camera.nearClip();
 	float farClip	= camera.farClip();
@@ -35,7 +35,7 @@ RpfCascadedShadowMapping::computeCasadedSplits(float* dst, size_t cascadedLevelC
 }
 
 void 
-RpfCascadedShadowMapping::computeCascadedFrustum(Frustum3f& o, const Mat4f& camVpInv, float splitDist, float lastSplitDist)
+RpfCascadedShadowMaps::computeCascadedFrustum(Frustum3f& o, const Mat4f& camVpInv, float splitDist, float lastSplitDist)
 {
 	Frustum3f& frustum = o;
 	frustum.setByInvViewProjMatrix(camVpInv);
@@ -50,7 +50,7 @@ RpfCascadedShadowMapping::computeCascadedFrustum(Frustum3f& o, const Mat4f& camV
 }
 
 Mat4f
-RpfCascadedShadowMapping::computeLightSpaceMatrix(CascaedPlaneDists& oDists, const math::Camera3f camera, const Mat4f& camVpInv, float splitDist, float lastSplitDist, const Vec3f& lightDir)
+RpfCascadedShadowMaps::computeLightSpaceMatrix(CascaedPlaneDists& oDists, const math::Camera3f camera, const Mat4f& camVpInv, float splitDist, float lastSplitDist, const Vec3f& lightDir)
 {
 	Frustum3f frustum;
 	computeCascadedFrustum(frustum, camVpInv, splitDist, lastSplitDist);
@@ -78,7 +78,7 @@ RpfCascadedShadowMapping::computeLightSpaceMatrix(CascaedPlaneDists& oDists, con
 }
 
 void  
-RpfCascadedShadowMapping::computeLightSpaceMatrices(Result& oResult, const Param& param, const math::Camera3f camera, const Vec3f& lightDir, float zMultiplier)
+RpfCascadedShadowMaps::computeLightSpaceMatrices(Result& oResult, const Param& param, const math::Camera3f camera, const Vec3f& lightDir, float zMultiplier)
 {
 	auto  cascadedLevelCount	= getCascadedLevelCount(param.cascadedSplitCount);
 	Mat4f camVpInv				= camera.viewProjMatrix().inverse();
@@ -104,32 +104,32 @@ RpfCascadedShadowMapping::computeLightSpaceMatrices(Result& oResult, const Param
 	}
 }
 
-u32 RpfCascadedShadowMapping::getCascadedLevelCount(size_t cascadedSplitCount) { return sCast<u32>(cascadedSplitCount + 1); }
+u32 RpfCascadedShadowMaps::getCascadedLevelCount(size_t cascadedSplitCount) { return sCast<u32>(cascadedSplitCount + 1); }
 
-RpfCascadedShadowMapping::RpfCascadedShadowMapping()
+RpfCascadedShadowMaps::RpfCascadedShadowMaps()
 {
 
 }
 
-RpfCascadedShadowMapping::~RpfCascadedShadowMapping()
+RpfCascadedShadowMaps::~RpfCascadedShadowMaps()
 {
 	destroy();
 }
 
 void 
-RpfCascadedShadowMapping::create()
+RpfCascadedShadowMaps::create()
 {
-	//RenderUtil::createMaterials(&_shaderCsmShadowMap, _mtlsCsmDepth, "asset/shader/pass_feature/shadow/cascaded_shadow_mapping/rdsCsm_Depth.shader");
+	//RenderUtil::createMaterials(&_shaderCsmShadowMap, _mtlsCsmDepth, "asset/shader/pass_feature/shadow/cascaded_shadow_maps/rdsCsm_Depth.shader");
 }
 
 void 
-RpfCascadedShadowMapping::destroy()
+RpfCascadedShadowMaps::destroy()
 {
 	RenderUtil::destroyShaderMaterials(_shaderCsmShadowMap, _mtlsCsmShadowMap);
 }
 
 RdgPass* 
-RpfCascadedShadowMapping::addCascadedShadowMappingPass(Materials& materials, Result* oResult, Param& param_, const math::Camera3f& camera, const Vec3f& lightDir)
+RpfCascadedShadowMaps::addCascadedShadowMappingPass(Materials& materials, Result* oResult, Param& param_, const math::Camera3f& camera, const Vec3f& lightDir)
 {
 	auto*		rdGraph						= renderGraph();
 	auto*		drawData					= drawDataBase();
@@ -143,7 +143,7 @@ RpfCascadedShadowMapping::addCascadedShadowMappingPass(Materials& materials, Res
 
 	//oResult->depthMaps.resize(	cascadedLevelCount);
 	materials.resize(			cascadedLevelCount);
-	RenderUtil::createMaterials(&_shaderCsmShadowMap, materials, "asset/shader/pass_feature/shadow/cascaded_shadow_mapping/rdsCsm_ShadowMap.shader");
+	RenderUtil::createMaterials(&_shaderCsmShadowMap, materials, "asset/shader/pass_feature/shadow/cascaded_shadow_maps/rdsCsm_ShadowMap.shader");
 
 	computeLightSpaceMatrices(*oResult, param_, camera, lightDir);
 
@@ -196,14 +196,14 @@ RpfCascadedShadowMapping::addCascadedShadowMappingPass(Materials& materials, Res
 }
 
 RdgPass* 
-RpfCascadedShadowMapping::addCascadedShadowMappingPass(const math::Camera3f& camera, const Vec3f& lightDir)
+RpfCascadedShadowMaps::addCascadedShadowMappingPass(const math::Camera3f& camera, const Vec3f& lightDir)
 {
 	RdgPass* passCascadedShadowMapping = addCascadedShadowMappingPass(_mtlsCsmShadowMap, &result, param, camera, lightDir);
 	return passCascadedShadowMapping;
 }
 
 RdgPass* 
-RpfCascadedShadowMapping::addDebugFrustumsPass(Material* mtl_, RdgTextureHnd rtColor, const math::Camera3f& camera_, const Vec3f& lightDir, bool isUpdateCamera)
+RpfCascadedShadowMaps::addDebugFrustumsPass(Material* mtl_, RdgTextureHnd rtColor, const math::Camera3f& camera_, const Vec3f& lightDir, bool isUpdateCamera)
 {
 	auto*		rdGraph				= renderGraph();
 	auto*		drawData			= drawDataBase();

@@ -4,7 +4,7 @@
 #include "rds_editor/ui/property/rdsEditorPropertyDrawer.h"
 
 #include "rds_render/pass_feature/geometry/rdsRpfGeometryBuffer.h"
-#include "rds_render/pass_feature/shadow/cascaded_shadow_mapping/rdsRpfCascadedShadowMapping.h"
+#include "rds_render/pass_feature/shadow/cascaded_shadow_maps/rdsRpfCascadedShadowMaps.h"
 #include "rds_render/pass_feature/lighting/gi/vxgi/rdsRpfVoxelConeTracing.h"
 
 #define RDS_LOAD_SPONZA 1
@@ -91,7 +91,7 @@ VoxelConeTracing::onCreate()
 
 	_rpfGeomBuf = rdPassPipeline.addRenderPassFeature<RpfGeometryBuffer>();
 	_rpfVct		= rdPassPipeline.addRenderPassFeature<RpfVoxelConeTracing>();
-	_rpfCsm		= rdPassPipeline.addRenderPassFeature<RpfCascadedShadowMapping>();
+	_rpfCsm		= rdPassPipeline.addRenderPassFeature<RpfCascadedShadowMaps>();
 }
 
 void 
@@ -298,7 +298,7 @@ VoxelConeTracing::onUiKeyboardEvent(UiKeyboardEvent& ev)
 }
 
 RdgPass* 
-VoxelConeTracing::addTestCascadedShadowMappingPass(RenderGraph* oRdGraph, DrawData* drawData, const DrawSettings& drawSettings, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, RpfCascadedShadowMapping_Result& csmResult)
+VoxelConeTracing::addTestCascadedShadowMappingPass(RenderGraph* oRdGraph, DrawData* drawData, const DrawSettings& drawSettings, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, RpfCascadedShadowMaps_Result& csmResult)
 {
 	auto*	 rdGraph						= oRdGraph;
 	RdgPass* passTestCascadedShadowMapping	= nullptr;

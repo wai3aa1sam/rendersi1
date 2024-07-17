@@ -245,7 +245,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	o.rgb = lerp(color.rgb, border_color.rgb, isBorder);
 
 	//o.rg = uv;
-	//o.rgb = float3(1.0, 1.0, 1.0);
+	//o.rgb = float3(1.0, 0.0, 0.0);
 
 	return o;
 }

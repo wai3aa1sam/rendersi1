@@ -59,6 +59,7 @@ PixelIn vs_main(VertexIn input)
     o.positionWs  = mul(matrix_world, ScreenQuad_makePositionHcs(uv)).xyz;
 	o.positionHcs = SpaceTransform_worldToClip(float4(o.positionWs, 1.0));
     o.uv          = uv;
+	o.positionHcs = ScreenQuad_makePositionHcs(uv);
 
     return o;
 }

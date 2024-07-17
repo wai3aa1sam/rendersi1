@@ -14,8 +14,8 @@ namespace rds
 class	RpfGeometryBuffer;
 struct	RpfGeometryBuffer_Result;
 
-class	RpfCascadedShadowMapping;
-struct  RpfCascadedShadowMapping_Result;
+class	RpfCascadedShadowMaps;
+struct  RpfCascadedShadowMaps_Result;
 
 class	RpfVoxelConeTracing;
 
@@ -37,7 +37,7 @@ public:
 	bool	isShowDebugVoxelClipmap = false;
 
 public:
-	RdgPass* addTestCascadedShadowMappingPass(RenderGraph* oRdGraph, DrawData* drawData, const DrawSettings& drawSettings, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, RpfCascadedShadowMapping_Result& csmResult);
+	RdgPass* addTestCascadedShadowMappingPass(RenderGraph* oRdGraph, DrawData* drawData, const DrawSettings& drawSettings, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, RpfCascadedShadowMaps_Result& csmResult);
 
 public:
 	virtual void onCreate()								override;
@@ -52,7 +52,7 @@ public:
 
 protected:
 	RpfGeometryBuffer*			_rpfGeomBuf = nullptr;
-	RpfCascadedShadowMapping*	_rpfCsm		= nullptr;
+	RpfCascadedShadowMaps*	_rpfCsm		= nullptr;
 	RpfVoxelConeTracing*		_rpfVct		= nullptr;
 };
 RDS_DEMO(VoxelConeTracing);

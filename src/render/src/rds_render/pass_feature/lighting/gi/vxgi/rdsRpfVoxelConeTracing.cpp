@@ -1,7 +1,7 @@
 #include "rds_render-pch.h"
 #include "rdsRpfVoxelConeTracing.h"
 #include "../../../geometry/rdsRpfGeometryBuffer.h"
-#include "../../../shadow/cascaded_shadow_mapping/rdsRpfCascadedShadowMapping.h"
+#include "../../../shadow/cascaded_shadow_maps/rdsRpfCascadedShadowMaps.h"
 
 #define RDS_VCT_USE_6_FACES_CLIPMAP 0
 
@@ -146,7 +146,7 @@ RpfVoxelConeTracing::destroy()
 }
 
 RdgPass* 
-RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, const RpfCascadedShadowMapping::Result& csmResult)
+RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, const RpfCascadedShadowMaps::Result& csmResult)
 {
 	auto*		rdGraph				= renderGraph();
 	auto*		drawData			= drawDataBase();

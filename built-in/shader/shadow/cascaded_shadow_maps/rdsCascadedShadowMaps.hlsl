@@ -1,5 +1,5 @@
-#ifndef __rdsCascadedShadowMapping_HLSL__
-#define __rdsCascadedShadowMapping_HLSL__
+#ifndef __rdsCascadedShadowMaps_HLSL__
+#define __rdsCascadedShadowMaps_HLSL__
 
 #include "built-in/shader/rds_shader.hlsl"
 

@@ -3,7 +3,7 @@
 
 #include "built-in/shader/common/rdsShader_Common.hlsl"
 #include "built-in/shader/interop/rdsShaderInterop_Material.hlsl"
-#include "built-in/shader/shadow/cascaded_shadow_mapping/rdsCascadedShadowMapping.hlsl"
+#include "built-in/shader/shadow/cascaded_shadow_maps/rdsCascadedShadowMaps.hlsl"
 #include "built-in/shader/post_processing/rdsPostProcessing.hlsl"
 #include "built-in/shader/post_processing/rdsToneMapping.hlsl"
 
