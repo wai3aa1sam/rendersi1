@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.25)
 
 set(CMAKE_TOOLCHAIN_FILE "./external/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(CMAKE_CXX_STANDARD 17)
@@ -13,6 +13,8 @@ set(project_namespace rds)
 set(project_root ${CMAKE_CURRENT_SOURCE_DIR})
 set(project_namespace_marco RDS)
 
+set(vulkan_min_ver 1.2)
+
 project(${project_name})
 my_set_opt(${project_namespace_marco}_ENABLE_PROFILER           1)
 my_set_opt(${project_namespace_marco}_ENABLE_SANITIZER          0)
@@ -23,8 +25,11 @@ find_package(imgui                  CONFIG REQUIRED)
 find_package(assimp                 CONFIG REQUIRED)
 
 # --- vulkan
-find_package(Vulkan)
+Vulkan_findPackage(${project_namespace_marco} ${vulkan_min_ver} "")
 find_package(VulkanMemoryAllocator  CONFIG REQUIRED)
+
+set(vulkan_inc_dir ${${project_namespace_marco}_VULKAN_INCLUDE_DIR})
+set(vulkan_lib_dir ${${project_namespace_marco}_VULKAN_LIBRARY_DIR})
 
 # --- dx12
 find_package(directx-headers        CONFIG REQUIRED)

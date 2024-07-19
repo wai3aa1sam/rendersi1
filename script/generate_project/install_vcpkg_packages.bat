@@ -7,6 +7,8 @@
 @cd %~dp0
 
 set dir=..\..\external\vcpkg
+set manifest_dir=..\..\script\generate_project
+
 
 mkdir %dir%
 
@@ -35,6 +37,16 @@ vcpkg install directx-dxc:x64-windows 	            	--recurse
 vcpkg install directx-headers:x64-windows 	        	--recurse
 vcpkg install imgui[docking-experimental]:x64-windows 	--recurse
 vcpkg install assimp:x64-windows 						--recurse
+
+@rem reference: "https://learn.microsoft.com/en-us/vcpkg/consume/lock-package-versions?tabs=inspect-powershell"
+@rem vcpkg --feature-flags=manifests --x-manifest-root="%manifest_dir%" --x-install-root=installed install
+
+@rem vcpkg install vulkan-headers:x64-windows -v 1.3.268.0	    --recurse 
+@rem vcpkg install vulkan-loader:x64-windows 				--recurse 
+@rem vcpkg install vulkan-sdk-components:x64-windows 		--recurse 
+@rem vcpkg install vulkan-validationlayers:x64-windows 		--recurse 
+@rem vcpkg install vulkan-tools:x64-windows 			--recurse 
+@rem vcpkg install vulkan-utility-libraries:x64-windows --recurse 
 
 POPD
 

@@ -55,6 +55,12 @@ RDS_RESTORE_ALL_WARNINGS();
 	#define RDS_VK_VER_1_2 1
 #endif // 1
 
+#if !RDS_VK_VER_1_3
+	#error "please download Vulkan 1.3 sdk from https://www.lunarg.com/vulkan-sdk/"
+	#error "delete CMakeCache.txt and also make sure the environment variable [VULKAN_SDK] is set to version 1.3"
+	#error "or pass a full vulkan sdk path to customSdkRoot in cmake function Vulkan_findPackage()"
+#endif
+
 #if 0
 #pragma mark --- rdsVkInstFn-Decl ---
 #endif // 0

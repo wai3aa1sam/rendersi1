@@ -1,0 +1,12 @@
+{
+    "name": "rendersi1",
+    "version-semver": "1.0.0",
+    "dependencies": [
+      { "name": "vulkan" }
+    ],
+    "builtin-baseline":"198d68dbcc6c907cb3d0b9b1d93c3df6ecf93c62",
+
+    "overrides": [ 
+        { "name": "vulkan", "version": "1.3.268.0" }
+    ]
+  }

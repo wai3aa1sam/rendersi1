@@ -16,6 +16,73 @@ endfunction()
 set(OsTraits_kThreadCount 0)
 ProcessorCount(OsTraits_kThreadCount)
 
+# --- Vulkan-Impl-begin
+
+function(Vulkan_findPackage namespace vulkanMinVer_ customSdkRoot)
+
+    find_package(Vulkan)
+    # Vulkan_checkVulkanValid(${vulkan_min_ver} 0)
+    message(("--- Vulkan_findPackage, [VULKAN_SDK]: \"$ENV{VULKAN_SDK}\""))
+    if (${Vulkan_FOUND})
+      message("find_package(Vulkan) success, vulkan version ${Vulkan_VERSION}")
+    else()
+      message("find_package(Vulkan) failed")
+    endif()
+
+    if ((${Vulkan_VERSION} GREATER_EQUAL ${vulkanMinVer_}) AND (${Vulkan_FOUND}))
+        message("use environment vulkan sdk path")
+        set(${namespace}_VULKAN_SDK_PATH            $ENV{VULKAN_SDK})
+        set(${namespace}_VULKAN_INCLUDE_DIR         ${Vulkan_INCLUDE_DIRS})
+        set(${namespace}_VULKAN_LIBRARY_DIR         ${Vulkan_LIBRARIES})
+        set(${namespace}_VULKAN_VERSION             ${Vulkan_VERSION})
+        set(${namespace}_VULKAN_IS_PRESENT          ${Vulkan_FOUND})
+    else()
+
+        if ((customSdkRoot STREQUAL ""))
+            message("*** error")
+            message("please download Vulkan ${vulkanMinVer_} sdk from https://www.lunarg.com/vulkan-sdk/")
+            message("delete CMakeCache.txt and make sure the environment variable [VULKAN_SDK] is set to version ${vulkanMinVer_}")
+            message("or pass a full vulkan sdk path to customSdkRoot in cmake function Vulkan_findPackage()")
+            message("***")
+            message(FATAL_ERROR "")
+        endif()
+
+        message("use custom vulkan sdk path, make sure all the path inside that has not be changed")
+        set(${namespace}_VULKAN_SDK_PATH            ${customSdkRoot})
+        set(${namespace}_VULKAN_INCLUDE_DIR 	      ${RDS_VULKAN_SDK_PATH}/Include)
+        set(${namespace}_VULKAN_LIBRARY_DIR 	      ${RDS_VULKAN_SDK_PATH}/Lib/vulkan-1.lib)
+        set(${namespace}_VULKAN_VERSION             ${vulkanMinVer_})
+        set(${namespace}_VULKAN_IS_PRESENT          1)
+    endif()
+
+    return(PROPAGATE ${namespace}_VULKAN_SDK_PATH ${namespace}_VULKAN_INCLUDE_DIR 
+                       ${namespace}_VULKAN_LIBRARY_DIR ${namespace}_VULKAN_VERSION ${namespace}_VULKAN_IS_PRESENT)
+
+endfunction()
+
+function(Vulkan_checkVulkanValid vulkanMinVer_ isAbort_)
+    #set(vulkanMinVer_    1.3)
+    set(isVulkanValid_   0)
+    if (${Vulkan_FOUND})
+        message("found Vulkan ${Vulkan_VERSION}, currently only support Vulkan ${vulkanMinVer_} or above")
+        if ((${Vulkan_VERSION} GREATER_EQUAL ${vulkanMinVer_}))
+            set(isVulkanValid_   1)
+        else()
+            message("vulkan version must > ${vulkanMinVer_}, currently is ${Vulkan_VERSION}")
+        endif()
+    endif()
+    
+    if (NOT ${isVulkanValid_})
+        message("please download Vulkan ${vulkanMinVer_} sdk from https://www.lunarg.com/vulkan-sdk/")
+        message("also make sure the environment variable [VULKAN_SDK] is set to version ${vulkanMinVer_} or above")
+        if (${isAbort_})
+            message(FATAL_ERROR "")
+        endif()
+    endif()
+endfunction()
+
+# --- Vulkan-Impl-end
+
 function(my_source_group src_path src_files)
   foreach(FILE ${src_files}) 
       get_filename_component(PARENT_DIR "${FILE}" PATH)

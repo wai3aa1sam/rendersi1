@@ -11,21 +11,13 @@ target_link_libraries(${sub_project_name}
     PUBLIC  ${project_namespace}_core
     )
 
-# init vulkan
-if(NOT DEFINED ENV{VK_SDK_PATH})
-    message(FATAL_ERROR "VK_SDK_PATH (env var) is not defined! Try to install VulkanSDK in online")
-endif()
-set(VK_SDK_PATH 			$ENV{VK_SDK_PATH})
-set(Vulkan_INCLUDE_DIRS 	${VK_SDK_PATH}/Include)
-set(Vulkan_LIBRARY 			${VK_SDK_PATH}/Lib/vulkan-1.lib)
-
 target_compile_definitions(${sub_project_name}  
     PUBLIC  SPIRV_CROSS_STATIC=1
     )
 
-target_include_directories  (${sub_project_name} PUBLIC ${Vulkan_INCLUDE_DIRS})
-target_link_libraries       (${sub_project_name} PUBLIC ${Vulkan_LIBRARY})
-target_link_libraries       (${sub_project_name} PUBLIC Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator
+target_include_directories  (${sub_project_name} PUBLIC ${vulkan_inc_dir})
+target_link_libraries       (${sub_project_name} PUBLIC ${vulkan_lib_dir})
+target_link_libraries       (${sub_project_name} PUBLIC GPUOpen::VulkanMemoryAllocator
                                                             Microsoft::DirectX-Guids Microsoft::DirectX-Headers)
 
 #function(my_link_sub_module target_name sub_module_project_name sub_module_namespace sub_module_section proj_root)

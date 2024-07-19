@@ -10,9 +10,9 @@ target_link_libraries(${sub_project_name}
     PUBLIC  ${project_namespace}_render
     )
 
-target_include_directories  (${sub_project_name} PUBLIC ${Vulkan_INCLUDE_DIRS})
-target_link_libraries       (${sub_project_name} PUBLIC ${Vulkan_LIBRARY})
-target_link_libraries       (${sub_project_name} PRIVATE Vulkan::Vulkan 
+target_include_directories  (${sub_project_name} PUBLIC ${vulkan_inc_dir})
+target_link_libraries       (${sub_project_name} PUBLIC ${vulkan_lib_dir})
+target_link_libraries       (${sub_project_name} PRIVATE  
                                 spirv-cross-core spirv-cross-hlsl spirv-cross-msl spirv-cross-glsl 
                                 unofficial::shaderc::shaderc Microsoft::DirectXShaderCompiler)
 

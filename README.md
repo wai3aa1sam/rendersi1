@@ -1,6 +1,8 @@
 
 # rendersi1
-rendersi1 is a personal renderer for demo purpose, easy to use and maintain
+rendersi1 is a personal renderer for demo purpose, easy to use and maintain.\
+[nmsp](https://github.com/wai3aa1sam/nmsplib) - personal C++ library
+
 
 **Table of Contents**
 - Requirement
@@ -14,9 +16,10 @@ rendersi1 is a personal renderer for demo purpose, easy to use and maintain
 ## Requirement
 
 - Visual Studio 2022 (C++17)
-- Windows only
-- Vulkan 1.3 (download from https://www.lunarg.com/vulkan-sdk/)
-- CMake
+- Windows only (sdk: 10.0.22621.0, only tested in Windows 10)
+- Vulkan 1.3.283.0 or above (download from https://www.lunarg.com/vulkan-sdk/)
+- CMake 3.25
+- Python 3.12.0 or above
 
 ## Build
 
@@ -25,7 +28,12 @@ script/generate_project/install_vcpkg_packages.bat
 script/generate_project/gen_vs-2022.bat
 build/rendersi1-x64-windows/rendersi1.sln
 ```
-if failed to generate visual studio solution, probably due to fail to install packages in vcpkg, please execute the above step once more
+- if failed to generate visual studio solution, probably due to fail to install packages in vcpkg, please execute the above step once more.
+
+- if your machine has different version of vulkan sdk, please pass a root path to Vulkan_findPackage() in CMakeLists.txt or set the environment variable [VULKAN_SDK]
+
+- if the vulkan validation layer has link to different version, please check the version in VkLayer_override.json\
+details: [https://vulkan.lunarg.com/doc/view/1.3.283.0/windows/layer_configuration.html]
 
 ## Demos
 
@@ -67,6 +75,7 @@ if failed to generate visual studio solution, probably due to fail to install pa
 - ecs
 - job system
 - editor ui
+- allocator interface
 
 ## Architecture / Design
 
@@ -106,6 +115,8 @@ Render thread resolve those render commands to backend graphics api commands. It
     - [ ] reorder
     - [ ] resource alias
     - [ ] dump graph with extra info (vk transition / our StateTrack)
+  - revise texture upload
+  - render queue
   
 
 ## References
