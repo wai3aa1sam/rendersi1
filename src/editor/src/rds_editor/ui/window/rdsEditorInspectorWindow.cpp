@@ -79,95 +79,136 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 		auto&			comp	= *sCast<CRenderableMesh*>(c);
 		const char*		label	= "RenderableMesh";
 		auto			header	= edtDrawReq.makeCollapsingHeader(label);
-		auto			pushId	= edtDrawReq.makePushID(label);
+		//auto			pushId	= edtDrawReq.makePushID(label);
 
+		/*
+		* this whole part should be in a separate class
+		*/
 		if (comp.material)
 		{
-			auto& mtl = *comp.material.ptr();
+			auto& rdableSys = comp.getSystem(comp.engineContext());
+			auto* rdDev		= rdableSys.renderDevice();
+			
+			auto& textureStock = rdDev->textureStock();
+			auto& shadersTable = rdDev->shaderStock().shadersTable();
 
-			auto* shader = mtl.shader();
-			edtDrawReq.showText(shader ? mtl.shader()->shadername().c_str() : " null shader");
+			Material*	mtl		= comp.material;
+			Shader*		shader	= mtl->shader();
 
-			for (size_t iPass = 0; iPass < mtl.passes().size(); iPass++)
+			// select materials
 			{
-				auto& pass		= *mtl.getPass(iPass);
-				auto& shaderRsc	= pass.shaderResources();
-
-				edtDrawReq.showText("Pass{}", iPass);
-
-				for (const auto& e : mtl.info().props)
+				auto popupShaders = edtDrawReq.makePopup("materials");
+				if (popupShaders.isOpen())
 				{
-					using SRC = ShaderPropType;
-
-					const auto& name	= !e.displayName.is_empty() ? e.displayName : e.name;
-
-					switch (e.type)
+					for (auto& e : shadersTable)
 					{
-						case SRC::Bool:
-						case SRC::Int:
-						case SRC::Float:
-						case SRC::Vec2f:
-						case SRC::Vec3f:
-						case SRC::Vec4f:
-						case SRC::Color4f:
+						const Shader*	popupShader	= e.second.at(0);
+						const char*		shadername	= popupShader->shadername().c_str();
+
+						Material* overrideMaterial = rdableSys.getOverrideMaterial(comp.id(), popupShader);
+						if (!overrideMaterial)
+							continue;
+
+						auto popupMiShader = edtDrawReq.makePopupMenuItem(shadername);
+						if (popupMiShader.isPressed())
 						{
-							auto* drawer	= edtCtx.findPropertyDrawer(e.type);
-							auto* value		= shaderRsc.findParam(e.name);
-							if (!value)
-								continue;
-							bool hasValueChanged = drawer->draw(propDrawReq, name.c_str(), value); RDS_UNUSED(hasValueChanged);
-						} break;
-						case SRC::Texture2D:
-						{
-							// bindless do not have TexParam...
-							#if 0
-							auto* rsc = shaderRsc.findTexParam(e.name);
-							if (!rsc)
-								continue;
-							RDS_CORE_ASSERT(rsc->info().dataType == RenderDataType::Texture2D, "only support Texture2D");
-							auto* tex = sCast<Texture2D*>(rsc->resource());
-							#endif // 0
-
-							{
-								auto* drawer	= edtCtx.findPropertyDrawer(e.type);
-								bool hasChanged = false;
-
-								TempString buf;
-								ShaderResources::getTextureNameTo(buf, e.name);
-								auto* value = sCast<BindlessResourceHandle::IndexT*>(shaderRsc.findParam(buf));
-								if (!value)
-								{
-									continue;
-								}
-								auto* texture	= mtl.renderDevice()->textureStock().textures.find(*value);
-								RDS_CORE_ASSERT(texture->type() == RenderDataType::Texture2D, "only support Texture2D");
-								auto* tex		= sCast<Texture2D*>(texture);
-
-								hasChanged = drawer->draw(propDrawReq, name, tex); RDS_UNUSED(hasChanged);
-								if (hasChanged)
-									mtl.setParam(e.name, tex);
-							}
-							{
-								auto* drawer = edtCtx.findPropertyDrawer(ShaderPropType::Vec2f);
-								bool hasChanged = false;
-								
-								TempString buf;
-								ShaderResources::getTextureStNameTo(buf, e.name);
-								auto* texSt	= sCast<Vec4f*>(shaderRsc.findParam(buf));
-								if (texSt)
-								{
-									auto tiling = Vec2f{ texSt->x, texSt->y };
-									auto offset = Vec2f{ texSt->z, texSt->w };
-									
-									hasChanged = drawer->draw(propDrawReq, "tiling", &tiling);
-									hasChanged = drawer->draw(propDrawReq, "offset", &offset);
-									*texSt = Vec4f{ tiling.x, tiling.y, offset.x, offset.y };
-								}
-							}
-
-						} break;
+							mtl		= rdableSys.getOverrideMaterial(comp.id(), popupShader);
+							shader	= constCast(popupShader);
+							comp.material = overrideMaterial;
+						}
 					}
 				}
+			}
+
+			edtDrawReq.showText(shader ? shader->shadername().c_str() : "null shader");
+
+			if (mtl)
+			{
+				for (size_t iPass = 0; iPass < mtl->passes().size(); iPass++)
+				{
+					auto& pass		= *mtl->getPass(iPass);
+					auto& shaderRsc	= pass.shaderResources();
+
+					edtDrawReq.showText("Pass{}", iPass);
+
+					int id = 0;
+					for (const auto& e : mtl->info().props)
+					{
+						using SRC = ShaderPropType;
+
+						const auto& name	= !e.displayName.is_empty() ? e.displayName : e.name;
+						auto pushId			= edtDrawReq.makePushID(id);
+
+
+						switch (e.type)
+						{
+							case SRC::Bool:
+							case SRC::Int:
+							case SRC::Float:
+							case SRC::Vec2f:
+							case SRC::Vec3f:
+							case SRC::Vec4f:
+							case SRC::Color4f:
+							{
+								auto* drawer	= edtCtx.findPropertyDrawer(e.type);
+								auto* value		= shaderRsc.findParam(e.name);
+								if (!value)
+									continue;
+								bool hasValueChanged = drawer->draw(propDrawReq, name.c_str(), value); RDS_UNUSED(hasValueChanged);
+							} break;
+							case SRC::Texture2D:
+							{
+								// bindless do not have TexParam...
+								#if 0
+								auto* rsc = shaderRsc.findTexParam(e.name);
+								if (!rsc)
+									continue;
+								RDS_CORE_ASSERT(rsc->info().dataType == RenderDataType::Texture2D, "only support Texture2D");
+								auto* tex = sCast<Texture2D*>(rsc->resource());
+								#endif // 0
+
+								{
+									auto* drawer	= edtCtx.findPropertyDrawer(e.type);
+									bool hasChanged = false;
+
+									TempString buf;
+									ShaderResources::getTextureNameTo(buf, e.name);
+									auto* value = sCast<BindlessResourceHandle::IndexT*>(shaderRsc.findParam(buf));
+									if (!value)
+									{
+										continue;
+									}
+									auto* texture	= textureStock.textures.find(*value);
+									RDS_CORE_ASSERT(texture->type() == RenderDataType::Texture2D, "only support Texture2D");
+									auto* tex		= sCast<Texture2D*>(texture);
+
+									hasChanged = drawer->draw(propDrawReq, name, tex); RDS_UNUSED(hasChanged);
+									if (hasChanged)
+										mtl->setParam(e.name, tex);
+								}
+								{
+									auto* drawer = edtCtx.findPropertyDrawer(ShaderPropType::Vec2f);
+									bool hasChanged = false;
+
+									TempString buf;
+									ShaderResources::getTextureStNameTo(buf, e.name);
+									auto* texSt	= sCast<Vec4f*>(shaderRsc.findParam(buf));
+									if (texSt)
+									{
+										auto tiling = Vec2f{ texSt->x, texSt->y };
+										auto offset = Vec2f{ texSt->z, texSt->w };
+
+										hasChanged = drawer->draw(propDrawReq, "tiling", &tiling);
+										hasChanged = drawer->draw(propDrawReq, "offset", &offset);
+										*texSt = Vec4f{ tiling.x, tiling.y, offset.x, offset.y };
+									}
+								}
+							} break;
+						}
+
+						++id;
+					}
+			}
 			}
 		}
 	}
@@ -177,7 +218,6 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 		auto&			comp	= *sCast<CLight*>(c);
 		const char*		label	= "Light";
 		auto			header	= edtDrawReq.makeCollapsingHeader(label);
-		auto			pushId	= edtDrawReq.makePushID(label);
 		
 		auto lightType = comp.lightType();
 		{

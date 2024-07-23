@@ -1829,7 +1829,10 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(RenderAdapterInfo& outAdapterInfo, c
 	//emplaceIfExist(o, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,		availablePhyDeviceExts());
 	emplaceIfExist(o, VK_KHR_MAINTENANCE1_EXTENSION_NAME,				availablePhyDeviceExts());
 	//emplaceIfExist(o, VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME,	availablePhyDeviceExts());
-	outAdapterInfo.feature.hasAccelerationStruct = emplaceIfExist(o, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,		availablePhyDeviceExts());	
+	outAdapterInfo.feature.hasAccelerationStruct = emplaceIfExist(o, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,		availablePhyDeviceExts());
+
+	RDS_TODO("currently must not support acceralte struct as I am using amd gpu...");
+	outAdapterInfo.feature.hasAccelerationStruct = false;
 
 	if (outAdapterInfo.isDebug)
 	{

@@ -7,7 +7,6 @@
 #include "rds_render/pass_feature/geometry/rdsRpfPreDepth.h"
 #include "rds_render/pass_feature/rendering/forward_plus/rdsRpfForwardPlusRendering.h"
 
-
 namespace rds
 {
 

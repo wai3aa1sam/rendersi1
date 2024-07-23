@@ -22,6 +22,10 @@ public:
 	using CollapsingHeader	= EditorUiWidget_CollapsingHeader;
 	using PushID			= EditorUiWidget_PushID;
 
+	using Button			= EditorUiWidget_Button;
+	using Popup				= EditorUiWidget_Popup;
+	using PopupMenuItem		= EditorUiWidget_PopupMenuItem;
+
 	using EditorUiWindow	= EditorUiWidget_EditorUiWindow;
 
 public:
@@ -61,6 +65,12 @@ public:
 	RDS_NODISCARD CollapsingHeader		makeCollapsingHeader(	const char* label);
 	RDS_NODISCARD PushID				makePushID(				const void* id);
 	RDS_NODISCARD PushID				makePushID(					  int	id);
+
+	RDS_NODISCARD Button				makeButton(				const char* label);
+
+	RDS_NODISCARD Popup					makePopup(				const char* label);
+	RDS_NODISCARD PopupMenuItem			makePopupMenuItem(		const char* label);
+
 
 	RDS_NODISCARD EditorUiWindow		makeEditorUiWindow(EditorWindow* edtWnd, const char* label);
 

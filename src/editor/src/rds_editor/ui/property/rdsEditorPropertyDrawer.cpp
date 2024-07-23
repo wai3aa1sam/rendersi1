@@ -30,6 +30,7 @@ static void sameLineWithText(const char* label)
 bool
 EditorPropertyDrawer::draw(DrawRequest* drawReq)
 {
+	_notYetSupported(RDS_SRCLOC);
 	return false;
 }
 

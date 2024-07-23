@@ -1,7 +1,7 @@
 
 # rendersi1
 rendersi1 is a personal renderer for demo purpose, easy to use and maintain.\
-[nmsp](https://github.com/wai3aa1sam/nmsplib) - personal C++ library
+[nmsplib](https://github.com/wai3aa1sam/nmsplib) - personal C++ library
 
 
 **Table of Contents**

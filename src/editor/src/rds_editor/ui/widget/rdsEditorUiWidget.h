@@ -97,7 +97,7 @@ public:
 class EditorUiWidget_Menu : public EditorUiWidget 
 {
 public:
-	EditorUiWidget_Menu(const char* label)	{ ImGui::BeginMenu(label); }
+	EditorUiWidget_Menu(const char* label)	{ _isOpen = ImGui::BeginMenu(label); }
 	~EditorUiWidget_Menu()			
 	{ 
 		if (isOpen())
@@ -113,6 +113,62 @@ protected:
 	bool  _isOpen = true;
 };
 
+class EditorUiWidget_Button : public EditorUiWidget 
+{
+public:
+	EditorUiWidget_Button(const char* label)	{ _isPressed = ImGui::Button(label); }
+	~EditorUiWidget_Button() = default;
+
+public:
+	bool isPressed() const { return _isPressed; }
+
+protected:
+	bool  _isPressed = true;
+};
+
+class EditorUiWidget_Popup : public EditorUiWidget 
+{
+public:
+	EditorUiWidget_Popup(const char* label)	
+	{ 
+		if (ImGui::Button(label))
+			ImGui::OpenPopup(label);
+
+		_isOpen = ImGui::BeginPopup(label);
+	}
+	~EditorUiWidget_Popup()
+	{
+		if (isOpen())
+		{
+			ImGui::EndPopup(); 
+		}
+	}
+
+public:
+	bool isOpen() const { return _isOpen; }
+
+protected:
+	bool  _isOpen = true;
+};
+
+class EditorUiWidget_PopupMenuItem : public EditorUiWidget 
+{
+public:
+	EditorUiWidget_PopupMenuItem(const char* label)	{ _isPressed = ImGui::MenuItem(label); }
+	~EditorUiWidget_PopupMenuItem()
+	{
+		if (isPressed())
+		{
+			ImGui::CloseCurrentPopup();
+		}
+	}
+
+public:
+	bool isPressed() const { return _isPressed; }
+
+protected:
+	bool  _isPressed = true;
+};
 
 class EditorUiWidget_EditorUiWindow : public EditorUiWidget_Window
 {

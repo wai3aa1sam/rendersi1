@@ -114,7 +114,7 @@ float4 ps_main(PixelIn input) : SV_TARGET
 
 	if (surface.baseColor.a < rds_alphaCutOff)
 		discard;
-
+	
 	LightingResult oLightingResult = (LightingResult)0;
 	for (uint i = 0; i < lightCount; ++i)
 	{
@@ -127,7 +127,8 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	}
 	o.rgb = oLightingResult.diffuse.rgb + oLightingResult.specular.rgb;
 
-	//o.rgb = surface.baseColor.rgb;
+	//o.rgb = (surface.baseColor.rgb);
+	//o.rgb = remapNeg11To01(surface.normal.rgb);
 	
     return o;
 }

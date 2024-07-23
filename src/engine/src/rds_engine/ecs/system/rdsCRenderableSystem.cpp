@@ -203,6 +203,26 @@ CRenderableSystem::transitPresentTexture(RenderGraph& rdGraph, DrawData& drawDat
 	);
 }
 
+Material* 
+CRenderableSystem::getOverrideMaterial(EntityId id, const Shader* shader)
+{
+	SPtr<Shader> s = constCast(shader);
+	auto it = _overrideMtls.find(s);
+	if (it == _overrideMtls.end())
+		return nullptr;
+
+	auto& mtlTable = it->second;
+
+	auto itMtl = mtlTable.find(id);
+	if (itMtl == mtlTable.end())
+		return nullptr;
+
+	return itMtl->second;
+}
+
+RenderDevice* CRenderableSystem::renderDevice() { return renderGraph().renderContext()->renderDevice(); }
+
+
 #endif
 
 }

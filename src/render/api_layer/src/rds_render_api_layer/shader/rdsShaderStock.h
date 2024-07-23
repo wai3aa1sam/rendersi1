@@ -25,6 +25,9 @@ public:
 	using Shaders	= Vector<SPtr<Shader>,	2>;
 	using Materials = Vector<Material*,		2>;		// owning material will cause it persistent
 
+	using ShadersTable		= Map<String,	Shaders>;
+	using MaterialsTable	= Map<Shader*,	Materials>;
+
 	using PermutRequest = VectorMap<SPtr<Material>, SPtr<Shader> >;
 	//using PermutRequest = VectorMap<Material*, Shader*>;
 
@@ -63,18 +66,22 @@ public:
 	PermutRequest& permutationRequest();
 	const	PermutRequest& permutationRequest() const;
 
+	const ShadersTable& shadersTable() const;
+
 protected:
 	RenderDevice& renderDevice();
 
 private:
-	RenderDevice*					_rdDev = nullptr;
-	Map<String,			Shaders>	_shaders;
-	Map<Shader*,		Materials>	_mtlTable;
-	PermutRequest					_permutReq;
+	RenderDevice*	_rdDev = nullptr;
+	ShadersTable	_shadersTable;
+	MaterialsTable	_mtlsTable;
+	PermutRequest	_permutReq;
 };
 
 inline			ShaderStock::PermutRequest& ShaderStock::permutationRequest()		{ return _permutReq; }
 inline const	ShaderStock::PermutRequest&	ShaderStock::permutationRequest() const { return _permutReq; }
+
+inline const	ShaderStock::ShadersTable&	ShaderStock::shadersTable() const		{ return _shadersTable; }
 
 inline RenderDevice&						ShaderStock::renderDevice()				{ return *_rdDev; }
 

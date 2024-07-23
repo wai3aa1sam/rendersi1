@@ -111,6 +111,24 @@ EditorUiDrawRequest::makePushID(int id)
 	return PushID{id};
 }
 
+EditorUiDrawRequest::Button				
+EditorUiDrawRequest::makeButton(const char* label)
+{
+	return Button{ label };
+}
+
+EditorUiDrawRequest::Popup					
+EditorUiDrawRequest::makePopup(const char* label)
+{
+	return Popup{ label };
+}
+
+EditorUiDrawRequest::PopupMenuItem			
+EditorUiDrawRequest::makePopupMenuItem(const char* label)
+{
+	return PopupMenuItem{ label };
+}
+
 EditorUiDrawRequest::EditorUiWindow
 EditorUiDrawRequest::makeEditorUiWindow(EditorWindow* edtWnd, const char* label)
 {

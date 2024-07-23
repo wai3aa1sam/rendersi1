@@ -51,7 +51,7 @@ namespace rds
 namespace rds
 {
 
-using PColor = ::nmsp::PColor;
+//using PColor = ::nmsp::PColor;
 
 }
 

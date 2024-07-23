@@ -46,6 +46,11 @@ public:
 	void render();
 	void present(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen);
 
+public:
+	Material* getOverrideMaterial(EntityId id, const Shader* shader);
+
+	RenderDevice* renderDevice();
+
 protected:
 	void transitPresentTexture(RenderGraph& rdGraph, DrawData& drawData);
 

@@ -369,7 +369,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 		void _commitPass(RdgPass* pass)
 		{
-			const char* passName = pass->name().c_str();
+			const char* passName = pass->name().c_str();	RDS_UNUSED(passName);
 
 			RDS_PROFILE_SCOPED();
 			RDS_PROFILE_TAG(passName);

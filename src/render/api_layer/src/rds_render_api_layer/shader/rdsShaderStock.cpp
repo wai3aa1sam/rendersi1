@@ -32,8 +32,8 @@ void
 ShaderStock::destroy()
 {
 	clearPermutationRequest();
-	_mtlTable.clear();
-	_shaders.clear();
+	_mtlsTable.clear();
+	_shadersTable.clear();
 }
 
 SPtr<Shader>
@@ -43,14 +43,14 @@ ShaderStock::createShader(const Shader_CreateDesc& cDesc)
 	auto filename	= cDesc.filename;
 
 	// find shader
-	auto it = _shaders.find(filename);
-	bool hasFound = it != _shaders.end();
+	auto it = _shadersTable.find(filename);
+	bool hasFound = it != _shadersTable.end();
 	if (hasFound && !isPermut) 
 	{
 		return it->second.front();
 	}
 
-	auto& shaders = hasFound ? it->second : _shaders[filename];
+	auto& shaders = hasFound ? it->second : _shadersTable[filename];
 	if (isPermut)
 	{
 		auto& permuts = *cDesc.permuts;
@@ -68,12 +68,12 @@ ShaderStock::createShader(const Shader_CreateDesc& cDesc)
 	*/
 	auto& rdDev = renderDevice();
 	cDesc._internal_create(&rdDev);
-	auto shader = rdDev.onCreateShader(cDesc);
+	SPtr<Shader> shader = rdDev.onCreateShader(cDesc);
 
 	shaders.emplace_back(shader);
 	if (!isPermut)
 	{
-		_mtlTable[shader];
+		_mtlsTable[shader];
 	}
 	return shader;
 }
@@ -84,19 +84,19 @@ ShaderStock::createShader(StrView filename_)
 {
 	TempString tmpName = filename_;
 
-	auto it = _shaders.find(tmpName.c_str());
-	if (it != _shaders.end()) 
+	auto it = _shadersTable.find(tmpName.c_str());
+	if (it != _shadersTable.end()) 
 	{
 		return it->second.front();
 	}
 
-	auto& shaders = _shaders[tmpName.c_str()];
+	auto& shaders = _shadersTable[tmpName.c_str()];
 	RDS_CORE_ASSERT(shaders.size() == 0, "");
 
 	auto& rdDev = renderDevice();
 	auto s = rdDev.createShader(tmpName);
 	shaders.emplace_back(s.ptr());
-	_mtlTable[s.ptr()];
+	_mtlsTable[s.ptr()];
 	return s;
 }
 
@@ -105,13 +105,13 @@ ShaderStock::createShader(Shader* shader, const ShaderPermutations& permuts)
 {
 	const auto& filename = shader->filename();
 
-	auto it = _shaders.find(filename.c_str());
-	if (it == _shaders.end()) 
+	auto it = _shadersTable.find(filename.c_str());
+	if (it == _shadersTable.end()) 
 	{
 		RDS_CORE_ASSERT(false, "no shader for permutation");
 	}
 
-	auto& shaders = _shaders[filename.c_str()];
+	auto& shaders = _shadersTable[filename.c_str()];
 	for (auto& s : shaders)
 	{
 		if (s->permutations() == permuts)
@@ -141,8 +141,8 @@ ShaderStock::removeShader(Shader* shader)
 
 	const auto& filename = shader->filename();
 
-	auto it = _mtlTable.find(shader);
-	if (it == _mtlTable.end())
+	auto it = _mtlsTable.find(shader);
+	if (it == _mtlsTable.end())
 		return;
 
 	auto& mtls = it->second;
@@ -151,8 +151,8 @@ ShaderStock::removeShader(Shader* shader)
 		mtl->setShader(nullptr);
 	}
 
-	_mtlTable.erase(shader);
-	_shaders.erase(filename);
+	_mtlsTable.erase(shader);
+	_shadersTable.erase(filename);
 }
 
 void 
@@ -163,7 +163,7 @@ ShaderStock::appendUniqueMaterial(Material* mtl, Shader* shader)
 		return;
 	}
 
-	auto& mtlTable = _mtlTable[shader];
+	auto& mtlTable = _mtlsTable[shader];
 	for (auto& m : mtlTable)
 	{
 		if (m == mtl)
@@ -219,8 +219,8 @@ ShaderStock::findShader(StrView filename)
 ShaderStock::Shaders*
 ShaderStock::getShaders(StrView filename)
 {
-	auto it = _shaders.find(filename);
-	if (it == _shaders.end())
+	auto it = _shadersTable.find(filename);
+	if (it == _shadersTable.end())
 		return nullptr;
 	return &it->second; 
 }
@@ -229,8 +229,8 @@ ShaderStock::Materials*
 ShaderStock::getMaterials(Shader* shader)
 {
 	//const auto& filename = shader->filename();
-	auto it = _mtlTable.find(shader);
-	if (it == _mtlTable.end())
+	auto it = _mtlsTable.find(shader);
+	if (it == _mtlsTable.end())
 		return nullptr;
 	return &it->second; 
 }
