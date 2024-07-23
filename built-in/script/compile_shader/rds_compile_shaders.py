@@ -1,5 +1,5 @@
 import math
-import os, sys, pathlib
+import os, sys, platform, pathlib
 import subprocess
 from enum import Enum
 
@@ -168,7 +168,9 @@ def printRedText(str):
     print("{}{}{}".format(BColors.Red, str, BColors.EndC))
 
 class ShaderCompileDesc:
-    rds_make            = ''
+    #rds_make            = ''
+    gnu_make_root       = ''
+    mk_gnu_make         = ''
     mk_rds_root         = ''
     mk_project_root     = ''
     mk_shader_file_path = ''
@@ -200,7 +202,7 @@ class CompileShaders:
             # if (i > 1):
             #     break
             
-            shader_file_path = shaderCompileDesc.mk_shader_file_path + path
+            mk_shader_file_path = shaderCompileDesc.mk_shader_file_path + path
             
             # print("mk_rds_root:         {}".format(mk_rds_root))
             # print("mk_project_root:     {}".format(mk_project_root))
@@ -208,7 +210,11 @@ class CompileShaders:
             # print("shader path:         {}".format(path))
             
             proc = subprocess.Popen(
-                args = [shaderCompileDesc.rds_make, shaderCompileDesc.mk_rds_root, shaderCompileDesc.mk_project_root, shader_file_path, ]
+                args = [shaderCompileDesc.gnu_make_root
+                        , shaderCompileDesc.mk_rds_root
+                        , shaderCompileDesc.mk_project_root, mk_shader_file_path
+                        , shaderCompileDesc.mk_gnu_make
+                        ]
                 #, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE
                 , stdout = subprocess.PIPE, stderr = subprocess.STDOUT
             )
@@ -240,11 +246,12 @@ class CompileShaders:
 
         rds_root        = os.path.abspath(cur_dir + "/../../..")
         project_root    = os.path.dirname(args[CmdLineArg.Project_root.value])
+        gnu_make_root   = ""
 
         is_rds_root_exist = os.path.exists(rds_root + "/build") and os.path.exists(rds_root + "/CMakeLists.txt") # TODO: need proper check
         if not (is_rds_root_exist):
-            raise Exception("in correct rds_root")
-            return -1
+            str = "in correct rds_root: [{}]".format(rds_root)
+            raise Exception()
 
         shader_src_paths   = MyPathLib.getListOfFiles_Ext(project_root, ".shader")
         shader_paths       = MyPathLib.getRelativePath(shader_src_paths, project_root)
@@ -252,11 +259,23 @@ class CompileShaders:
         #print(os.path.abspath(project_root))
         #print(shaders_src_path)
         #print(shaders_path)
-
+        
+        if (platform.system() == 'Windows'):
+            gnu_make_root = rds_root + "/external/gnu_make/windows/make.exe"
+        else:
+            str = "currentlt platform: {}, only support windows currently".format(platform.system())
+            raise Exception(str)
+        
+        if (not os.path.exists(gnu_make_root)):
+            str = "gnu_make_root: [{}] does not exist".format(gnu_make_root)
+            raise Exception(str)
+        
         # === TODO: no hardcode, load variable name
         imported_path       = "local_temp/imported"
         cmpDesc = ShaderCompileDesc
         cmpDesc.rds_make            = "make"
+        cmpDesc.gnu_make_root       = gnu_make_root
+        cmpDesc.mk_gnu_make         = "GNU_MAKE"            + "=" + gnu_make_root
         cmpDesc.mk_rds_root         = "RDS_ROOT"            + "=" + rds_root
         cmpDesc.mk_project_root     = "PROJECT_ROOT"        + "=" + project_root
         cmpDesc.mk_shader_file_path = "SHADER_FILE_PATH"    + "=" + ""

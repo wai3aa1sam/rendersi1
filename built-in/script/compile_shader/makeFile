@@ -16,6 +16,8 @@ RDS_ROOT 			:=
 PROJECT_ROOT 		:=
 SHADER_FILE_PATH 	:=
 
+GNU_MAKE			:=
+
 BUILT_IN_ROOT			:= $(RDS_ROOT)/$(BUILT_IN_PATH)
 BUILT_IN_SHADER_ROOT	:= $(RDS_ROOT)/$(BUILT_IN_SHADER_PATH)
 
@@ -25,6 +27,7 @@ SHADER_MAKE_ROOT	:= $(SHADER_BIN_ROOT)/$(RDS_MAKEFILE)
 
 RDS_SHADER_COMPILER_PATH:=build/rendersi1-x64-windows/src/render/shader_compiler/$(BUILD_CONFIG)/rds_shader_compiler.exe
 
+gnumake			 :=$(GNU_MAKE)
 rdsShaderCompiler:=$(RDS_ROOT)/$(RDS_SHADER_COMPILER_PATH)
 glslc:=glslc
 
@@ -32,7 +35,7 @@ export RDS_ROOT PROJECT_ROOT SHADER_FILE_PATH \
 BUILT_IN_ROOT BUILT_IN_SHADER_ROOT \
 SHADER_FILE_ROOT SHADER_BIN_ROOT SHADER_MAKE_ROOT \
 RDS_SHADER_COMPILER_PATH \
-rdsShaderCompiler glslc \
+gnumake rdsShaderCompiler glslc \
 #
 
 ifneq ("$(wildcard $(SHADER_MAKE_ROOT))", "")
@@ -42,7 +45,7 @@ all: project_compile_shader_make
 project_compile_shader_make: $(SHADER_FILE_ROOT) $(SHADER_MAKE_ROOT)
 #@	@echo === project_compile_shader_make
 	@echo --- compile shader --- $(SHADER_FILE_PATH)
-	$(RDS_MAKE) -C $(SHADER_BIN_ROOT)
+	$(gnumake) -C $(SHADER_BIN_ROOT)
 #@echo SHADER_MAKE_ROOT --- $(SHADER_MAKE_ROOT)
 
 else
