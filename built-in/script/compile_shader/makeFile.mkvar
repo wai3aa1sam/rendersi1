@@ -16,9 +16,6 @@ BUILT_IN_SHADER_PATH 	:= built-in/shader
 IMPORTED_PATH 			:= local_temp/imported
 IMPORTED_SHADER_PATH 	:= local_temp/imported/shader
 
-# Release Debug
-BUILD_CONFIG = Release
-
 DX11 := dx11
 SPIRV := spirv
 

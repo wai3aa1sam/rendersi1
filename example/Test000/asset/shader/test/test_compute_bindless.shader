@@ -41,6 +41,8 @@ struct VertexIn
     float2 velocity     : TEXCOORD0;
 
     uint vertexId       : SV_VertexID;
+
+
 };
 
 struct PixelIn 
@@ -48,7 +50,6 @@ struct PixelIn
 	float4 positionHCS  : SV_POSITION;
     float4 color        : COLOR;
     float2 velocity     : TEXCOORD0;
-	RDS_DECLARE_PT_SIZE(ptSize);
 };
 
 struct Particle 
@@ -116,8 +117,6 @@ PixelIn vs_main(VertexIn i)
 
 	o.velocity.x = light_vps[0][0].x;
 
-	RDS_SET_PT_SIZE(o.ptSize, 3.0);
-    
     return o;
 }
 

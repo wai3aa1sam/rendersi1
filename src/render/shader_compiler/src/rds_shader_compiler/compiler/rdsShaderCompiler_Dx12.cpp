@@ -198,7 +198,7 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 			if (opt.isToSpirv)
 			{
 				//compileArgs.emplace_back(L"-fspv-extension=SPV_KHR_non_semantic_info");		// Not required for Vulkan 1.3
-				compileArgs.emplace_back(L"-fspv-debug=vulkan-with-source");					// need wait dxc update to get rid of the warning
+				//compileArgs.emplace_back(L"-fspv-debug=vulkan-with-source");					// need wait dxc update to get rid of the warning
 			}
 		}
 		else

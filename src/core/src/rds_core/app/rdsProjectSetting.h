@@ -28,6 +28,7 @@ public:
 	
 	StrView spirvPath()		const;
 
+	StrView compileShaderScriptPath()	const;
 	StrView shaderRecompileListPath()	const;
 
 public:

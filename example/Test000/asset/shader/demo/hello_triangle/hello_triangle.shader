@@ -15,7 +15,7 @@ Shader {
 //		DepthTest	Always
 //		DepthWrite	false
 
-		DepthWrite	false		// pre_depth
+//		DepthWrite	false		// pre_depth
 		Wireframe false
 
 		//BlendRGB 	Add One OneMinusSrcAlpha

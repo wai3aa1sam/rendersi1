@@ -100,6 +100,55 @@ ShaderCompileRequest::hotReload(Renderer* renderer, JobSystem* jobSystem, const 
 	return hasCompileShaders;
 }
 
+bool 
+ShaderCompileRequest::generateCompileShaderScript(StrView rdsRoot, StrView projectRoot, StrView buildConfig, ProjectSetting* projectSetting)
+{
+	RDS_TODO("class FileSerializer");
+
+	bool hasChanges = false;
+	#if RDS_OS_WINDOWS
+	{
+		TempString outpath;
+		fmtTo(outpath, "{}/{}", projectRoot, projectSetting->compileShaderScriptPath());
+
+		String data;
+		data.reserve(4096);
+
+		auto appendLine = [](String& out, StrView data) { out += data; out += "\n"; };
+
+		appendLine(data, "@REM #change current directory to this file");
+		appendLine(data, "@%~d0");
+		appendLine(data, "@cd %~dp0");
+
+		appendLine(data, "");
+
+		fmtTo(data,			"set BUILD_CONFIG={}\n",			buildConfig);
+		fmtTo(data,			"set PROJECT_ROOT={}\n",			projectRoot);
+		fmtTo(data,			"set RDS_ROOT={}\n",				rdsRoot);
+		fmtTo(data,			"set SHADER_COMPILER_PATH={}\n",	projectSetting->shaderCompilerPath());
+		appendLine(data,	"set COMPILE_SHADER_PATH=%RDS_ROOT%\\built-in\\script\\compile_shader");
+
+		appendLine(data, "");
+
+		appendLine(data, "pushd \"%COMPILE_SHADER_PATH%\"");
+		fmtTo(data,	"python rds_compile_shaders.py \"%BUILD_CONFIG%\" \"%RDS_ROOT%\" \"%PROJECT_ROOT%\" \"%SHADER_COMPILER_PATH%\" \n");
+		appendLine(data, "set exitCode=%ERRORLEVEL%");
+		appendLine(data, "popd");
+
+		appendLine(data, "");
+
+		appendLine(data, "EXIT exitCode");
+		appendLine(data, "@REM pause");
+
+		char ret = File::writeFileIfChanged(outpath, data, true);
+		hasChanges |= ret == 'U';
+	}
+
+	#endif
+
+	return hasChanges;
+}
+
 void 
 ShaderCompileRequest::processPermutationRequests(RenderDevice* renderDevice, const ProjectSetting& projectSetting)
 {

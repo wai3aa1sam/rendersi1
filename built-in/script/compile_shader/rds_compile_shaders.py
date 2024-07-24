@@ -1,6 +1,7 @@
 import math
 import os, sys, platform, pathlib
 import subprocess
+import time
 from enum import Enum
 
 class MyPathLib:
@@ -147,9 +148,11 @@ class MyPathLib_Impl:
         return subfolders
 
 class CmdLineArg(Enum):
-    Program = 0
-    Project_root = 1
-
+    Program             = 0
+    BuildConfig         = 1
+    RdsRoot             = 2
+    ProjectRoot         = 3
+    ShaderCompilerPath  = 4
 
 class BColors:
     Header      = '\033[95m'
@@ -169,11 +172,13 @@ def printRedText(str):
 
 class ShaderCompileDesc:
     #rds_make            = ''
-    gnu_make_root       = ''
-    mk_gnu_make         = ''
-    mk_rds_root         = ''
-    mk_project_root     = ''
-    mk_shader_file_path = ''
+    gnu_make_root               = ''
+    mk_build_config             = ''
+    mk_gnu_make                 = ''
+    mk_rds_shader_compiler_path = ''
+    mk_rds_root                 = ''
+    mk_project_root             = ''
+    mk_shader_file_path         = ''
 
 class CompileShaders:
     
@@ -211,9 +216,11 @@ class CompileShaders:
             
             proc = subprocess.Popen(
                 args = [shaderCompileDesc.gnu_make_root
+                        , shaderCompileDesc.mk_build_config
                         , shaderCompileDesc.mk_rds_root
                         , shaderCompileDesc.mk_project_root, mk_shader_file_path
                         , shaderCompileDesc.mk_gnu_make
+                        , shaderCompileDesc.mk_rds_shader_compiler_path
                         ]
                 #, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE
                 , stdout = subprocess.PIPE, stderr = subprocess.STDOUT
@@ -239,19 +246,18 @@ class CompileShaders:
         #print("=== Compile Shaders End ===")
 
     def main(args):
-        cur_dir = os.getcwd()
-
         #print("Project_root:")
         #print(args[CmdLineArg.Project_root.value])
+        #print("args[CmdLineArg.RdsRoot.value]: {}".format(args[CmdLineArg.RdsRoot.value]))
 
-        rds_root        = os.path.abspath(cur_dir + "/../../..")
-        project_root    = os.path.dirname(args[CmdLineArg.Project_root.value])
+        rds_root        = os.path.abspath(args[CmdLineArg.RdsRoot.value])
+        project_root    = os.path.abspath(args[CmdLineArg.ProjectRoot.value])
         gnu_make_root   = ""
 
         is_rds_root_exist = os.path.exists(rds_root + "/build") and os.path.exists(rds_root + "/CMakeLists.txt") # TODO: need proper check
         if not (is_rds_root_exist):
             str = "in correct rds_root: [{}]".format(rds_root)
-            raise Exception()
+            raise Exception(str)
 
         shader_src_paths   = MyPathLib.getListOfFiles_Ext(project_root, ".shader")
         shader_paths       = MyPathLib.getRelativePath(shader_src_paths, project_root)
@@ -273,12 +279,14 @@ class CompileShaders:
         # === TODO: no hardcode, load variable name
         imported_path       = "local_temp/imported"
         cmpDesc = ShaderCompileDesc
-        cmpDesc.rds_make            = "make"
-        cmpDesc.gnu_make_root       = gnu_make_root
-        cmpDesc.mk_gnu_make         = "GNU_MAKE"            + "=" + gnu_make_root
-        cmpDesc.mk_rds_root         = "RDS_ROOT"            + "=" + rds_root
-        cmpDesc.mk_project_root     = "PROJECT_ROOT"        + "=" + project_root
-        cmpDesc.mk_shader_file_path = "SHADER_FILE_PATH"    + "=" + ""
+        cmpDesc.rds_make                    = "make"
+        cmpDesc.gnu_make_root               = gnu_make_root
+        cmpDesc.mk_build_config             = "BUILD_CONFIG"                + "=" + args[CmdLineArg.BuildConfig.value]
+        cmpDesc.mk_gnu_make                 = "GNU_MAKE"                    + "=" + gnu_make_root
+        cmpDesc.mk_rds_shader_compiler_path = "RDS_SHADER_COMPILER_PATH"    + "=" + args[CmdLineArg.ShaderCompilerPath.value]
+        cmpDesc.mk_rds_root                 = "RDS_ROOT"                    + "=" + rds_root
+        cmpDesc.mk_project_root             = "PROJECT_ROOT"                + "=" + project_root
+        cmpDesc.mk_shader_file_path         = "SHADER_FILE_PATH"            + "=" + ""
         # ===
 
         timeoutSec      = 4 # sec

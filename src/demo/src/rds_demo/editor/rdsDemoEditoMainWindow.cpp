@@ -67,6 +67,9 @@ void
 DemoEditorMainWindow::hotReloadShaders()
 {
 	{
+		auto* ps = ProjectSetting::instance();
+		ShaderCompileRequest::generateCompileShaderScript(ps->rdsRoot(), ps->projectRoot(), RDS_BUILD_CONFIG_STR, ps);
+
 		RDS_CORE_LOG("--- begin compile shaders");
 		HiResTimer timer;
 		int errorShaderCount = 0;
@@ -74,7 +77,7 @@ DemoEditorMainWindow::hotReloadShaders()
 			Process proc;
 			Process::CreateDesc cDesc;
 			cDesc.isCreateStdout = true;
-			proc.execute("compile_shaders.bat", "", cDesc);
+			proc.execute(ps->compileShaderScriptPath(), "", cDesc);
 			proc.awaitAllStdout(consoleBuf, 1000 * 2);
 			errorShaderCount = proc.returncode();
 			if (errorShaderCount != 0)

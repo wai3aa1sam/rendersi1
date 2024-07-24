@@ -22,6 +22,8 @@ public:
 public:
 	static bool hotReload(Renderer* renderer, JobSystem* jobSystem, const ProjectSetting* projectSetting);
 
+	static bool generateCompileShaderScript(StrView rdsRoot, StrView projectRoot, StrView buildConfig, ProjectSetting* projectSetting);
+
 public:
 	template<class STR> static void getImportedShaderDirTo(			STR& o, StrView filename,		const ProjectSetting& ps);
 	template<class STR> static void getShaderPermutationDirTo(		STR& o, StrView impShaderDir,	StrView permutName, const ProjectSetting& projSetting);

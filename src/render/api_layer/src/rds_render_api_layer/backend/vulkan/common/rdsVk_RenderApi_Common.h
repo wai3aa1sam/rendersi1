@@ -391,7 +391,7 @@ template<class T> inline
 T 
 Vk_ExtensionInfo::getInstanceExtFunction(const char* funcName) const
 {
-	auto& table = _deviceExtFuncTable;
+	auto& table = _instanceExtFuncTable;
 	auto it = table.find(funcName);
 	if (it == table.end())
 	{

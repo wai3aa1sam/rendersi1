@@ -45,6 +45,16 @@ StrView ProjectSetting::shaderCompilerPath()		const { return "build/rendersi1-x6
 
 StrView ProjectSetting::spirvPath()					const { return "spirv"; }
 
+StrView ProjectSetting::compileShaderScriptPath()	const 
+{
+	#if RDS_OS_WINDOWS
+	return RDS_IMPORTED_PATH "/compile_shaders.bat"; 
+	#else
+	#error "unsupported platform"
+	return "";
+	#endif
+}
+
 StrView ProjectSetting::shaderRecompileListPath()	const { return RDS_IMPORTED_PATH "/shader_recompile_list.txt"; }
 
 

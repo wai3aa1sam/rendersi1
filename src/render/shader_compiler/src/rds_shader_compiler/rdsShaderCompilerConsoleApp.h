@@ -27,7 +27,6 @@ public:
 public:
 	template<class STR> static void toOutpath(STR& out, StrView fileBasename);
 
-
 public:
 	~ShaderCompilerConsoleApp();
 

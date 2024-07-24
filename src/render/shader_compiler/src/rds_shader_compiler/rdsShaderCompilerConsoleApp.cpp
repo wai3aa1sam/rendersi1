@@ -6,6 +6,7 @@
 namespace rds
 {
 
+
 #if 0
 #pragma mark --- rdsShaderCompilerConsoleApp-Impl ---
 #endif // 0
