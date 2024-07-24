@@ -11,7 +11,4 @@ target_link_libraries(${sub_project_name}
             ${project_namespace}_editor
     )
 
-
-target_compile_definitions(${sub_project_name} 
-    PRIVATE RDS_TEST_ALL_MODULE=0
-    )
+ProjectUtil_addMarco(${sub_project_name} RDS_TEST_ALL_MODULE 0)

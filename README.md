@@ -32,7 +32,7 @@ build/rendersi1-x64-windows/rendersi1.sln
 
 - if your machine has different version of vulkan sdk, please pass a root path to Vulkan_findPackage() in CMakeLists.txt or set the environment variable [VULKAN_SDK]
 
-- if the vulkan validation layer has link to different version, please check the version in VkLayer_override.json\
+- if the vulkan validation layer has link to different version, please open vkconfig.exe and check the version in VkLayer_override.json\
 details: [https://vulkan.lunarg.com/doc/view/1.3.283.0/windows/layer_configuration.html]
 
 ## Demos

@@ -13,11 +13,4 @@ set_target_properties (${sub_project_name} PROPERTIES FOLDER ${project_namespace
 
 my_link_sub_module(${sub_project_name} nmsplib nmsp core ${project_root})
 
-# should only link during testing other library or development
-if(${${project_namespace_marco}_ENABLE_PROFILER})
-message("--- ${project_namespace_marco}_ENABLE_PROFILER")
-target_compile_definitions(${sub_project_name}  
-    PUBLIC  TRACY_ENABLE
-            ${project_namespace_marco}_ENABLE_PROFILER=1
-    )
-endif()
+ProjectUtil_addMarcoIfPresent(${sub_project_name} ${project_namespace_marco}_ENABLE_PROFILER Profiler_enableProfiler)

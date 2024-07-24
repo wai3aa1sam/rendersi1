@@ -135,12 +135,13 @@ RenderDevice_Vk::createVkInstance()
 		VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
 		VkValidationFeaturesEXT features = {};
 		features.sType							= VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-		features.enabledValidationFeatureCount	= 1;
+		features.enabledValidationFeatureCount	= arraySizeT<u32>(enables);
 		features.pEnabledValidationFeatures		= enables;
 		
 		Util::createDebugMessengerInfo(debugCreateInfo);
-		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 		//createInfo.pNext = &features;
+
+		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 	}
 
 	_vkInstance.create(&createInfo, allocCallbacks(), this);

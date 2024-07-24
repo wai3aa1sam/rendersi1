@@ -8,16 +8,22 @@ include(cmake_utility.cmake)
 set(CMAKE_BUILD_TYPE Release)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(project_name rendersi1)
-set(project_namespace rds)
-set(project_root ${CMAKE_CURRENT_SOURCE_DIR})
+set(project_name            rendersi1)
+set(project_namespace       rds)
+set(project_root            ${CMAKE_CURRENT_SOURCE_DIR})
 set(project_namespace_marco RDS)
 
-set(vulkan_min_ver 1.2)
-
 project(${project_name})
-my_set_opt(${project_namespace_marco}_ENABLE_PROFILER           1)
-my_set_opt(${project_namespace_marco}_ENABLE_SANITIZER          0)
+
+set(vulkan_minVer 1.3)
+
+set(Project_enableSanitizer 0)
+
+set(Profiler_enableProfiler         1)
+set(Profiler_enableInternalProfiler 0)
+
+set(JobSystem_isDevelopment       1)
+set(JobSystem_kMaxFrameInFlight   4)
 
 find_package(fmt                    CONFIG REQUIRED)
 find_package(benchmark              CONFIG REQUIRED)
@@ -25,11 +31,8 @@ find_package(imgui                  CONFIG REQUIRED)
 find_package(assimp                 CONFIG REQUIRED)
 
 # --- vulkan
-Vulkan_findPackage(${project_namespace_marco} ${vulkan_min_ver} "")
+Vulkan_findPackage(${project_namespace_marco} ${vulkan_minVer} "")  # C:/VulkanSDK/1.3.283.0
 find_package(VulkanMemoryAllocator  CONFIG REQUIRED)
-
-set(vulkan_inc_dir ${${project_namespace_marco}_VULKAN_INCLUDE_DIR})
-set(vulkan_lib_dir ${${project_namespace_marco}_VULKAN_LIBRARY_DIR})
 
 # --- dx12
 find_package(directx-headers        CONFIG REQUIRED)
@@ -42,27 +45,32 @@ find_package(spirv_cross_msl        CONFIG REQUIRED)
 find_package(unofficial-shaderc     CONFIG REQUIRED)
 find_package(directx-dxc            CONFIG REQUIRED)
 
+# message("${Vulkan_sdkRoot}/bin: \"${Vulkan_sdkRoot}/bin\"")
+# set(ENV{VK_ADD_LAYER_PATH} "${Vulkan_sdkRoot}/bin")
+# message("VK_ADD_LAYER_PATH: ${VK_ADD_LAYER_PATH}, ENV{VK_ADD_LAYER_PATH}: $ENV{VK_ADD_LAYER_PATH}")
+
 # --- git_submodule ---
 my_add_git_submodule(external/nmsplib)
 
 message("--- rendersi1 ---")
+
 # --- core ---
 add_subdirectory(src/core/base)
 add_subdirectory(src/core)
 
-#-- render --
+#--- render ---
 add_subdirectory(src/render)
 add_subdirectory(src/render/api_layer)
 add_subdirectory(src/render/shader_compiler)
 
-#-- engine
+#--- engine
 add_subdirectory(src/engine)
 
-#-- editor
+#--- editor
 add_subdirectory(src/editor)
 add_subdirectory(src/editor/editor_app)
 
-#-- demo
+#--- demo
 add_subdirectory(src/demo)
 add_subdirectory(src/demo/hello_triangle)
 add_subdirectory(src/demo/forward_plus)
@@ -70,13 +78,12 @@ add_subdirectory(src/demo/voxel_cone_tracing)
 add_subdirectory(src/demo/pbr_ibl)
 
 message("--- rendersi1_test ---")
-#test
+#--- test
 add_subdirectory(src/test/base)
 add_subdirectory(src/test/core)
 add_subdirectory(src/test/render)
 add_subdirectory(src/test/engine)
 add_subdirectory(src/test/editor)
-
 
 message("--- end for add_subdirectory ---")
 

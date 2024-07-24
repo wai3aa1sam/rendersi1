@@ -15,8 +15,8 @@ target_compile_definitions(${sub_project_name}
     PUBLIC  SPIRV_CROSS_STATIC=1
     )
 
-target_include_directories  (${sub_project_name} PUBLIC ${vulkan_inc_dir})
-target_link_libraries       (${sub_project_name} PUBLIC ${vulkan_lib_dir})
+target_include_directories  (${sub_project_name} PUBLIC ${Vulkan_includeDir})
+target_link_libraries       (${sub_project_name} PUBLIC ${Vulkan_libraryDir})
 target_link_libraries       (${sub_project_name} PUBLIC GPUOpen::VulkanMemoryAllocator
                                                             Microsoft::DirectX-Guids Microsoft::DirectX-Headers)
 

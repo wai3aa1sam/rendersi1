@@ -20,44 +20,59 @@ ProcessorCount(OsTraits_kThreadCount)
 
 function(Vulkan_findPackage namespace vulkanMinVer_ customSdkRoot)
 
-    find_package(Vulkan)
-    # Vulkan_checkVulkanValid(${vulkan_min_ver} 0)
-    message(("--- Vulkan_findPackage, [VULKAN_SDK]: \"$ENV{VULKAN_SDK}\""))
-    if (${Vulkan_FOUND})
-      message("find_package(Vulkan) success, vulkan version ${Vulkan_VERSION}")
-    else()
-      message("find_package(Vulkan) failed")
+  unset(${namespace}_VULKAN_SDK_PATH            CACHE)
+  unset(${namespace}_VULKAN_INCLUDE_DIR         CACHE)
+  unset(${namespace}_VULKAN_LIBRARY_DIR         CACHE)
+  unset(${namespace}_VULKAN_VERSION             CACHE)
+  unset(${namespace}_VULKAN_IS_PRESENT          CACHE)
+
+  unset(Vulkan_includeDir                       CACHE)
+  unset(Vulkan_libraryDir                       CACHE)
+
+  find_package(Vulkan)
+  # Vulkan_checkVulkanValid(${vulkan_min_ver} 0)
+  message(("--- Vulkan_findPackage, env var [VULKAN_SDK]: \"$ENV{VULKAN_SDK}\""))
+  if (${Vulkan_FOUND})
+    message("find_package(Vulkan) success, vulkan version ${Vulkan_VERSION}")
+  else()
+    message("find_package(Vulkan) failed")
+  endif()
+
+  if ((${Vulkan_VERSION} GREATER_EQUAL ${vulkanMinVer_}) AND (${Vulkan_FOUND}))
+    message("use environment vulkan sdk path")
+    set(${namespace}_VULKAN_SDK_PATH            $ENV{VULKAN_SDK})
+    set(${namespace}_VULKAN_INCLUDE_DIR         ${Vulkan_INCLUDE_DIRS})
+    set(${namespace}_VULKAN_LIBRARY_DIR         ${Vulkan_LIBRARIES})
+    set(${namespace}_VULKAN_VERSION             ${Vulkan_VERSION})
+    set(${namespace}_VULKAN_IS_PRESENT          ${Vulkan_FOUND})
+  else()
+
+    if ((customSdkRoot STREQUAL ""))
+      message("*** error")
+      message("please download Vulkan ${vulkanMinVer_} sdk from https://www.lunarg.com/vulkan-sdk/")
+      message("delete CMakeCache.txt and make sure the environment variable [VULKAN_SDK] is set to version ${vulkanMinVer_}")
+      message("or pass a full vulkan sdk path to customSdkRoot in cmake function Vulkan_findPackage()")
+      message("***")
+      message(FATAL_ERROR "")
     endif()
 
-    if ((${Vulkan_VERSION} GREATER_EQUAL ${vulkanMinVer_}) AND (${Vulkan_FOUND}))
-        message("use environment vulkan sdk path")
-        set(${namespace}_VULKAN_SDK_PATH            $ENV{VULKAN_SDK})
-        set(${namespace}_VULKAN_INCLUDE_DIR         ${Vulkan_INCLUDE_DIRS})
-        set(${namespace}_VULKAN_LIBRARY_DIR         ${Vulkan_LIBRARIES})
-        set(${namespace}_VULKAN_VERSION             ${Vulkan_VERSION})
-        set(${namespace}_VULKAN_IS_PRESENT          ${Vulkan_FOUND})
-    else()
+    message("use custom vulkan sdk path, make sure all the path inside that has not be changed")
+    set(${namespace}_VULKAN_SDK_PATH            ${customSdkRoot})
+    set(${namespace}_VULKAN_INCLUDE_DIR 	      ${RDS_VULKAN_SDK_PATH}/Include)
+    set(${namespace}_VULKAN_LIBRARY_DIR 	      ${RDS_VULKAN_SDK_PATH}/Lib/vulkan-1.lib)
+    set(${namespace}_VULKAN_VERSION             ${vulkanMinVer_})
+    set(${namespace}_VULKAN_IS_PRESENT          1)
+  endif()
+  
+  set(Vulkan_sdkRoot    ${${project_namespace_marco}_VULKAN_SDK_PATH})
+  set(Vulkan_includeDir ${${project_namespace_marco}_VULKAN_INCLUDE_DIR})
+  set(Vulkan_libraryDir ${${project_namespace_marco}_VULKAN_LIBRARY_DIR})
 
-        if ((customSdkRoot STREQUAL ""))
-            message("*** error")
-            message("please download Vulkan ${vulkanMinVer_} sdk from https://www.lunarg.com/vulkan-sdk/")
-            message("delete CMakeCache.txt and make sure the environment variable [VULKAN_SDK] is set to version ${vulkanMinVer_}")
-            message("or pass a full vulkan sdk path to customSdkRoot in cmake function Vulkan_findPackage()")
-            message("***")
-            message(FATAL_ERROR "")
-        endif()
-
-        message("use custom vulkan sdk path, make sure all the path inside that has not be changed")
-        set(${namespace}_VULKAN_SDK_PATH            ${customSdkRoot})
-        set(${namespace}_VULKAN_INCLUDE_DIR 	      ${RDS_VULKAN_SDK_PATH}/Include)
-        set(${namespace}_VULKAN_LIBRARY_DIR 	      ${RDS_VULKAN_SDK_PATH}/Lib/vulkan-1.lib)
-        set(${namespace}_VULKAN_VERSION             ${vulkanMinVer_})
-        set(${namespace}_VULKAN_IS_PRESENT          1)
-    endif()
-
-    return(PROPAGATE ${namespace}_VULKAN_SDK_PATH ${namespace}_VULKAN_INCLUDE_DIR 
-                       ${namespace}_VULKAN_LIBRARY_DIR ${namespace}_VULKAN_VERSION ${namespace}_VULKAN_IS_PRESENT)
-
+  return(PROPAGATE  ${namespace}_VULKAN_SDK_PATH ${namespace}_VULKAN_INCLUDE_DIR 
+                    ${namespace}_VULKAN_LIBRARY_DIR ${namespace}_VULKAN_VERSION ${namespace}_VULKAN_IS_PRESENT
+                    Vulkan_sdkRoot Vulkan_includeDir Vulkan_libraryDir
+  )
+  
 endfunction()
 
 function(Vulkan_checkVulkanValid vulkanMinVer_ isAbort_)
@@ -135,7 +150,7 @@ function(my_add_library target_name src_path)
   #my_set_target_unity_build_mode(${target_name})
   my_set_multi_core_compile(${target_name})
 
-  if(${${project_namespace_marco}_ENABLE_SANITIZER})
+  if(Project_enableSanitizer)
     my_enable_sanitizer(${target_name})
   endif()
   
@@ -154,7 +169,7 @@ function(my_add_executable target_name src_path)
   #my_set_target_unity_build_mode(${target_name})
   my_set_multi_core_compile(${target_name})
 
-  if(${${project_namespace_marco}_ENABLE_SANITIZER})
+  if(Project_enableSanitizer)
     my_enable_sanitizer(${target_name})
   endif()
   
@@ -196,21 +211,21 @@ endfunction()
 function(my_enable_sanitizer target_name)
 
   if(MSVC)
-  message("--- ${project_namespace_marco}_ENABLE_SANITIZER for MSVC")
-    #set_property(TARGET ${target_name}     PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    target_compile_options(${target_name}  
-      PRIVATE 
-              "$<$<CONFIG:DEBUG>:/fsanitize=address>"
-              "$<$<CONFIG:DEBUG>:/fsanitize=fuzzer>"
-              "$<$<CONFIG:DEBUG>:/Zi>"
-    )
+    message("--- ${project_namespace_marco}_ENABLE_SANITIZER for MSVC")
+      #set_property(TARGET ${target_name}     PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+      target_compile_options(${target_name}  
+        PRIVATE 
+                "$<$<CONFIG:DEBUG>:/fsanitize=address>"
+                "$<$<CONFIG:DEBUG>:/fsanitize=fuzzer>"
+                "$<$<CONFIG:DEBUG>:/Zi>"
+      )
 
-              
-    target_link_options(${target_name}     
-      PRIVATE 
-              "$<$<CONFIG:DEBUG>:/fsanitize=fuzzer>"
-              "$<$<CONFIG:DEBUG>:/Zi>"
-    )
+                
+      target_link_options(${target_name}     
+        PRIVATE 
+                "$<$<CONFIG:DEBUG>:/fsanitize=fuzzer>"
+                "$<$<CONFIG:DEBUG>:/Zi>"
+      )
 
     set(asan_dst_path     "$<TARGET_FILE:${target_name}>/../")
     set(asan_asan_dbg_dll "$(MsvcAnalysisToolsPath)/clang_rt.asan_dbg_dynamic-x86_64.dll")
@@ -229,26 +244,28 @@ function(my_enable_sanitizer target_name)
   endif()
 endfunction()
 
-# this function only for 0 / 1 marco
-function(my_set_opt opt val)
-  unset (${opt} CACHE)
-  option(${opt} "" ${val}) # ${ARGV2}
+function(CMakeUtil_setVar var val)
+  unset(${var} CACHE)
+  set(  ${var} ${val})
+  #option(${opt} "" ${val}) # ${ARGV2}
   # my_print_var(opt)
   # my_print_var(val)
 endfunction()
 
-function(ProjectUtil_addMarco name value)
-  unset (${name} CACHE)
-  add_compile_definitions(${name}=${value})
+function(ProjectUtil_addMarco target name value)
+  message("target: ${target} defined ${name} = ${value}")
+  target_compile_definitions(${target} PUBLIC ${name}=${value})
+
+  #add_compile_definitions(${name}=${value})    // only in cmake, use variable is better
   # my_print_var(name)
   # my_print_var(value)
 endfunction()
-# another approach to add marco
-# target_compile_definitions(${project_namespace}_job_system PUBLIC
-#                             ${project_namespace_marco}_JOB_SYSTEM_DEVELOPMENT=1
-#                             ${project_namespace_marco}_JOB_SYSTEM_MAX_FRAME_IN_FLIGHT_COUNT=4
-#                             ${project_namespace_marco}_JOB_SYSTEM_LOGICAL_THREAD_COUNT=${OsTraits_kThreadCount}
-#                             )
+
+function(ProjectUtil_addMarcoIfPresent target name value)
+    if (${value})
+      ProjectUtil_addMarco(${target} ${name} ${${value}})
+    endif()
+endfunction()
 
 function(my_only_one_opt_could_on_3 opt1 opt2 opt3)
   if( (${opt1} AND (${opt2} OR ${opt3}) )
