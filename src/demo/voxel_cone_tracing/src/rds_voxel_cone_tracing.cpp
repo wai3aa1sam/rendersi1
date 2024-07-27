@@ -123,7 +123,7 @@ VoxelConeTracing::onCreateScene(Scene* oScene)
 		auto& meshes		= meshAssets();
 		
 
-		createLights(oScene, Vec3u{ 5, 5, 1 });
+		createLights(oScene, Vec3u{ 1, 1, 1 }, Vec3f::s_zero(), Vec3f::s_one(), Quat4f::s_eulerDeg(Vec3f{66.099f, 26.20f, 0.0f}));
 
 		if (meshes.sponza)
 		{
@@ -141,11 +141,8 @@ VoxelConeTracing::onCreateScene(Scene* oScene)
 			camera.setNearClip(	0.1f	* 10.0f);
 			camera.setFarClip(	1000.0f * 10.0f);
 
-			camera.setPos(-36.930f, 41.249f, -24.413f);
-			camera.setAim(-34.879f, 38.978f, -21.249f);
-
-			camera.setPos(-123.558f, 74.239f, -7.161f);
-			camera.setAim(-111.791f, 69.775f, -7.801f);
+			camera.setPos(-101.024f, 52.899f, -7.018f);
+			camera.setAim(-88.501f,  51.490f, -7.072f);
 		}
 	}
 }
