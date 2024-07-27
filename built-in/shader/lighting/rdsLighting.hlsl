@@ -88,7 +88,7 @@ LightingResult Lighting_computeLighting_Impl(Light light, float3 lightPos, float
 	attenutaion = !isSpotLight ? attenutaion : attenutaion * Lighting_computeSpotIntensity(light, lightDir, -L);
 
 	o = Pbr_computeDirectLighting(surface, viewDir, L, light.color.xyz, attenutaion);
-	//o = Phong_computeDirectLighting(surface, viewDir, L, light.color.xyz, intensity);
+	//o = Phong_computeDirectLighting(surface, viewDir, L, light.color.xyz, attenutaion);
 
 	//o.diffuse.rgb = float3(lightSqLen, lightSqLen, lightSqLen);
 	//o.diffuse.rgb = lightPosDir;

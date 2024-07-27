@@ -145,6 +145,9 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 				auto* transform	= ent->getComponent<CTransform>();
 				transform->setLocalPosition(startPos + step * Vec3f::s_cast(Vec3u{r, c, d}));
 				transform->setLocalScale(scale);
+
+				//transform->setLocalPosition(Vec3f{c - (col / 2) * 2.5f, r - (row / 2) * 2.5f, 0.0});
+				//transform->setLocalScale(scale / 2.0f);
 			}
 		}
 	}

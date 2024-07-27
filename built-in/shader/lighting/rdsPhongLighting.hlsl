@@ -20,7 +20,7 @@ LightingResult Phong_computeDirectLighting(Surface surface, float3 viewDir, floa
     float3 	diffuse = diff * baseColor.xyz * colorLight;
 
     float3  halfwayDir 	= normalize(L + viewDir);
-    float3  spec 		= pow(max(dot(normal, halfwayDir), 0.0), 16.0);
+    float3  spec 		= pow(max(dot(normal, halfwayDir), 0.0), 32.0);
     float3 	specular 	= surface.specular.xyz * spec;
 
     o.diffuse.rgb 	+= diffuse  * intensity;

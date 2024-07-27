@@ -56,8 +56,8 @@ ForwardPlus::onCreateScene(Scene* oScene)
 		camera.setNearClip(0.1f);
 		camera.setFarClip(1000.0f);
 
-		camera.setPos(-226.403f, 132.114f, -13.010f);
-		camera.setAim(-158.399f, 120.766f, -16.858f);
+		camera.setPos(-239.736f, 194.696f, -7.515f);
+		camera.setAim(-172.920f, 177.273f, -7.738f);
 	}
 }
 

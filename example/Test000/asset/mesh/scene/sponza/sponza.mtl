@@ -12,6 +12,7 @@ illum 2
 map_Kd texture/lion.png
 map_Kn texture/lion_ddn.png
 map_Ka texture/lion.png
+map_Pr texture/lion_roughness.png
 
 newmtl Material__298
 Ns 7.843137
@@ -24,6 +25,7 @@ illum 2
 map_Kd texture/background.png
 map_Kn texture/background_ddn.png
 map_Ka texture/background.png
+map_Pr texture/background_roughness.png
 
 newmtl Material__47
 Ns 7.843137

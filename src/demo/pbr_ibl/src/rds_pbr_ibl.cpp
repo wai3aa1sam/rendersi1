@@ -47,13 +47,13 @@ PbrIbl::onCreateScene(Scene* oScene)
 		{
 			//auto* transf = e->getComponent<CTransform>();
 			auto* rdable = e->getComponent<CRenderableMesh>();
-			if (!rdable)
+			if (!rdable || !rdable->meshAsset)
 				continue;
 
 			auto& mtl = rdable->material;
 			
-			mtl->setParam("metalness",			math::clamp((float)row / (objCount - 1), 0.0f,  1.0f));
-			mtl->setParam("roughness",			math::clamp((float)col / (objCount - 1), 0.05f, 1.0f));
+			mtl->setParam("metalness",			math::clamp((float)row / (objCount - 1), 0.0f, 1.0f));
+			mtl->setParam("roughness",			math::clamp((float)col / (objCount - 1), 0.0f, 1.0f));
 			mtl->setParam("ambientOcclusion",	1.0f);
 
 			if (col < objCount)

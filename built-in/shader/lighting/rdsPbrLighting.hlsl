@@ -118,6 +118,7 @@ LightingResult Pbr_computeDirectLighting(Surface surface, float3 viewDir, float3
     o.specular.rgb  = brdfSpecular * radiance * dotNL;
 
     //o.diffuse.rgb   = float3(dotNL, dotNL, dotNL);
+    //o.diffuse.rgb = fresnel;
 
     return o;
 }

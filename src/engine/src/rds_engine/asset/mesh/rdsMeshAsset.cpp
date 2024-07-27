@@ -117,7 +117,7 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	//if (true)		loadFileFlags	|= aiProcess_MakeLeftHanded;
 	//if (true)		loadFileFlags	|= aiProcess_ConvertToLeftHanded;
 
-	importer.SetPropertyFloat( AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f );
+	importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
 
 	bool isExcludePointAndLine = true;
 	if (isExcludePointAndLine)
@@ -603,7 +603,9 @@ AssimpMeshLoader::loadMaterials(Shader* shader, const aiScene* srcScene)
 								auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);	
 								cDesc.create(texFilename);
 								
-								if (texType == MaterialData_TextureType::BaseColor)
+								if (texType == MaterialData_TextureType::BaseColor
+									|| texType == MaterialData_TextureType::Emission
+									)
 									cDesc.isSrgb = true;
 
 								dst = Renderer::rdDev()->createTexture2D(cDesc);

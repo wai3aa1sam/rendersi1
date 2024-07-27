@@ -37,7 +37,7 @@ public:
 	Color4f baseColor		= Color4f{1.0f, 1.0f, 1.0f, 1.0f};
 	Color4f emission		= Color4f{1.0f, 1.0f, 1.0f, 1.0f};
 	float	metalness		= 0.0f;
-	float	roughness		= 0.6f;
+	float	roughness		= 0.5f;
 
 	#if 1
 	/*Texture2D* texBaseColor			= nullptr;
