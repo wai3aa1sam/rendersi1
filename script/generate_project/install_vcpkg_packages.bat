@@ -13,12 +13,13 @@ mkdir %dir%
 
 git clone --recurse https://github.com/microsoft/vcpkg.git %dir%
 
-@rem since --x-manifest-root, --x-install-root=installed, ... are experimental, and we are using them
-git checkout 6672bab62b2c351cf0ce4c578fd2ec2490610586       @rem this SHA should sync %manifest_dir%/vcpkg.json
-
 PUSHD %dir%
 
 git pull
+
+@rem since --x-manifest-root, --x-install-root=installed, ... are experimental, and we are using them
+@rem this SHA should sync %manifest_dir%/vcpkg.json
+git checkout 6672bab62b2c351cf0ce4c578fd2ec2490610586
 
 call bootstrap-vcpkg.bat
 
