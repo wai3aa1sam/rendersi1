@@ -25,6 +25,7 @@ demo video:\
 - Vulkan 1.3.283.0 or above (download from https://www.lunarg.com/vulkan-sdk/)
 - CMake 3.25
 - Python 3.12.0 or above
+- Git
 
 ## Build
 
