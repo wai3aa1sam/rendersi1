@@ -394,7 +394,7 @@ public:
 
 public:
 	void create(QueueTypeFlags type, RenderDevice_Vk* rdDevVk);
-	void create(u32 familyIdx, Vk_Device_T* vkDevice);
+	void create(QueueTypeFlags type, u32 familyIdx, Vk_Device_T* vkDevice);
 	void destroy();
 
 	void submit(const VkSubmitInfo2& submitInfo, Vk_Fence_T* signalFenceHnd, const RenderDebugLabel& debugLabel);
@@ -405,16 +405,20 @@ public:
 	void endDebugLabel();
 
 public:
-	u32 familyIdx() const;
-	u32 queueIdx()	const;
+	QueueTypeFlags	queueType() const;
+	u32				familyIdx() const;
+	u32				queueIdx()	const;
+
 
 protected:
-	u32 _familyIdx = ~u32(0);
-	u32 _queueIdx  = 0;
+	QueueTypeFlags	_queueType	= QueueTypeFlags::None;
+	u32				_familyIdx	= ~u32(0);
+	u32				_queueIdx	= 0;
 };
 
-inline u32 Vk_Queue::familyIdx()	const { return _familyIdx; }
-inline u32 Vk_Queue::queueIdx()		const { return _queueIdx; }
+inline QueueTypeFlags	Vk_Queue::queueType()	const { return _queueType; }
+inline u32				Vk_Queue::familyIdx()	const { return _familyIdx; }
+inline u32				Vk_Queue::queueIdx()	const { return _queueIdx; }
 
 
 #endif

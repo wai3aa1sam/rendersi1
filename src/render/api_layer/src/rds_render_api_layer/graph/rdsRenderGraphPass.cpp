@@ -83,8 +83,6 @@ RdgPass::execute()
 	if (_isExecuted)
 		return;
 	
-	RDS_PROFILE_SCOPED();
-	RDS_PROFILE_TAG(name().c_str());
 	_executeFunc(_rdReq);
 	_isExecuted = true;
 }

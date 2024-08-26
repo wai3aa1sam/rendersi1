@@ -40,6 +40,8 @@ Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Queue* vkQueue, 
 		auto& info = cmdBufSubmitInfos.emplace_back();
 		info.sType			= VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
 		info.commandBuffer	= hnd;
+
+		//RDS_CORE_LOG_DEBUG("submit [{}]: vkCmdBuf: {}", debugLabel.name, (void*)hnd);
 	}
 
 	VkSubmitInfo2KHR submitInfo = {};
@@ -70,7 +72,8 @@ Vk_CommandBuffer::Vk_CommandBuffer()
 Vk_CommandBuffer::~Vk_CommandBuffer()
 {
 	// when vk cmd pool desttroy, all cmd buf will destroy too
-	Base::destroy();
+	auto* rdDevVk = _vkCommandPool->renderDeviceVk();
+	destroy(rdDevVk);
 }
 
 void Vk_CommandBuffer::create(Vk_CommandPool* vkCommandPool, VkCommandBufferLevel level, RenderDevice_Vk* rdDevVk)
@@ -93,6 +96,8 @@ void Vk_CommandBuffer::create(Vk_CommandPool* vkCommandPool, VkCommandBufferLeve
 void 
 Vk_CommandBuffer::destroy(RenderDevice_Vk* rdDevVk)
 {
+	if (!rdDevVk)
+		return;
 	// when vk cmd pool desttroy, all cmd buf will destroy too
 	auto* vkDev = rdDevVk->vkDevice();
 	Vk_CommandBuffer_T* vkCmdBufs[] = { hnd()};
@@ -203,6 +208,8 @@ Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFen
 	submitInfo.pSignalSemaphoreInfos	= &signalVkSmpInfo;
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
+
+	//RDS_CORE_LOG_DEBUG("submit [{}]: vkCmdBuf: {}", debugLabel.name, (void*)hnd());
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
 	_vkQueue->submit(submitInfo, signalFence->hnd(), debugLabel);
 }
@@ -247,6 +254,7 @@ Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel)
 	submitInfo.commandBufferInfoCount	= 1;
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
+	//RDS_CORE_LOG_DEBUG("submit [{}]: vkCmdBuf: {}", debugLabel.name, (void*)hnd());
 	_vkQueue->submit(submitInfo, VK_NULL_HANDLE, debugLabel);
 }
 
@@ -765,6 +773,8 @@ Vk_CommandBuffer::hasBoundDescriptorSet(Vk_DescriptorSet_T* vkDescrSetHnd) const
 {
 	return _boundVkDescrSetHnd == vkDescrSetHnd; 
 }
+
+QueueTypeFlags Vk_CommandBuffer::queueTypeFlags() const { RDS_CORE_ASSERT(_vkQueue); return _vkQueue->queueType(); }
 
 #endif
 

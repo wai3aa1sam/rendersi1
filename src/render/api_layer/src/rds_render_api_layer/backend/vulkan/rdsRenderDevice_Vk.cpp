@@ -269,6 +269,11 @@ i64	RenderDevice_Vk::_rateAndInitVkPhyDevice(Vk_PhysicalDeviceFeatures* oVkPhyDe
 				_queueFamilyIndices.graphics = i;
 			}
 
+			if (BitUtil::has(prop.queueFlags, sCast<VkQueueFlags>(VK_QUEUE_COMPUTE_BIT)) && !_queueFamilyIndices.isUniqueCompute()) 
+			{
+				_queueFamilyIndices.compute = i;
+			}
+
 			if (BitUtil::hasButNot(prop.queueFlags, sCast<VkQueueFlags>(VK_QUEUE_TRANSFER_BIT), sCast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT)) && !_queueFamilyIndices.isUniqueTransfer()) 
 			{
 				_queueFamilyIndices.transfer = i;

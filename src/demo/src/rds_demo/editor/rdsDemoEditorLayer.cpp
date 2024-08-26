@@ -110,7 +110,7 @@ DemoEditorLayer::onUpdate()
 
 	#if 1
 	{
-		RDS_PROFILE_SECTION("wait frame");
+		RDS_PROFILE_SECTION("wait gpu");
 		RDS_TODO("temp, recitfy");
 		while (!rdCtx.isFrameCompleted())
 		{

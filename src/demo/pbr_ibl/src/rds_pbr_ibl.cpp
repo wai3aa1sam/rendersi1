@@ -5,8 +5,15 @@
 #include "rds_editor/ui/property/rdsEditorPropertyDrawer.h"
 
 
+#define ZoneNamedTest( varname, name ) \
+tracy::SourceLocationData TracyConcat(__tracy_source_location,TracyLine) { name, TracyFunction,  TracyFile, (uint32_t)TracyLine, 0 };  \
+tracy::ScopedZone varname( &TracyConcat(__tracy_source_location,TracyLine), TRACY_CALLSTACK, true ) \
+// ---
+
 namespace rds
 {
+
+static String name;
 
 #if 0
 #pragma mark --- rdsPbrIbl-Impl ---
@@ -20,6 +27,9 @@ PbrIbl::onCreate()
 	// temporary
 	auto& rdPassPipeline = *_rdPassPipelines[0];
 	_rpfPbrIbl	= rdPassPipeline.addRenderPassFeature<RpfPbrIbl>();
+
+	name.reserve(10000);
+	name = "HELLOOOOOOOOOOOOOOOOOO";
 }
 
 void 
@@ -94,6 +104,8 @@ PbrIbl::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 void 
 PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
+	ZoneNamedS(_asdasd, 32, true);
+
 	Base::onExecuteRender(renderPassPipeline);
 
 	auto*	rdGraph		= renderPassPipeline->renderGraph();
@@ -158,6 +170,7 @@ PbrIbl::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
 	Base::onUiKeyboardEvent(ev);
 }
+
 #endif
 
 }

@@ -31,8 +31,8 @@ public:
 	void*	mappedStagingBufData(StagingHandle  hnd);
 
 public:
-	void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags queueType);
-	void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout dstLayout, QueueTypeFlags queueType);
+	//void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags queueType);
+	//void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout dstLayout, QueueTypeFlags queueType);
 
 public:
 	void onTransferCommand_CopyBuffer	(TransferCommand_CopyBuffer*	cmd);

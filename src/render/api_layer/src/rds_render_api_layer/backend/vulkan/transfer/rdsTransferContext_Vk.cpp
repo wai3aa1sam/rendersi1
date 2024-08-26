@@ -221,21 +221,21 @@ TransferContext_Vk::mappedStagingBufData(StagingHandle  hnd)
 	return vkTransferFrame().mappedStagingBufData(hnd);
 }
 
-void 
-TransferContext_Vk::transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags srcQueueType)
-{
-	auto& vkTsfFrame	= vkTransferFrame();
-	auto* hndVkCmd		= vkTsfFrame.requestCommandBuffer(srcQueueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "TransferContext_Vk::transitImageLayout");
-	auto* srcQueue		= requestVkQueue(srcQueueType);
-
-	Util::transitionImageLayout(hnd, desc, Util::toVkFormat(desc.format), dstLayout, srcLayout, nullptr, srcQueue, hndVkCmd);
-}
-
-void 
-TransferContext_Vk::transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout dstLayout, QueueTypeFlags queueType)
-{
-	transitImageLayout(hnd, desc, VK_IMAGE_LAYOUT_UNDEFINED, dstLayout, queueType);
-}
+//void 
+//TransferContext_Vk::transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags srcQueueType)
+//{
+//	auto& vkTsfFrame	= vkTransferFrame();
+//	auto* hndVkCmd		= vkTsfFrame.requestCommandBuffer(srcQueueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "TransferContext_Vk::transitImageLayout");
+//	auto* srcQueue		= requestVkQueue(srcQueueType);
+//
+//	Util::transitionImageLayout(hnd, desc, Util::toVkFormat(desc.format), dstLayout, srcLayout, nullptr, srcQueue, hndVkCmd);
+//}
+//
+//void 
+//TransferContext_Vk::transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout dstLayout, QueueTypeFlags queueType)
+//{
+//	transitImageLayout(hnd, desc, VK_IMAGE_LAYOUT_UNDEFINED, dstLayout, queueType);
+//}
 
 void 
 TransferContext_Vk::_setDebugName()

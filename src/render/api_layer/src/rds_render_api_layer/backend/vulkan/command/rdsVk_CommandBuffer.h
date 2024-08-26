@@ -93,11 +93,14 @@ public:
 	void beginRenderPass(Vk_RenderPass*		 vkRdPass, Vk_Framebuffer*		vkFramebuf, const Rect2f& rect2, Span<VkClearValue> vkClearValues, VkSubpassContents subpassContents);
 	void endRenderPass();
 
+public:
 	bool isPrimiary() const;
 	bool isSecondary() const;
 	
 	//Vk_RenderPass_T* getVkRenderPassHnd();
 	Vk_RenderPass* getVkRenderPass();
+
+	QueueTypeFlags queueTypeFlags() const;
 
 public:
 	//RenderDevice_Vk*	renderDeviceVk();

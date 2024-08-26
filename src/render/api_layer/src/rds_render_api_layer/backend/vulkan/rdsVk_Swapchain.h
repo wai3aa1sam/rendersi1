@@ -37,7 +37,7 @@ template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<Vk_Framebuffer, N>;
 
 struct Vk_Swapchain_CreateDesc
 {
-	RenderContext_Vk*	rdCtx			= nullptr;
+	RenderContext_Vk*	rdCtxVk			= nullptr;
 	NativeUIWindow*		wnd				= nullptr;
 	Backbuffers*		outBackbuffers	= nullptr;
 	Rect2f				framebufferRect2f;
@@ -115,11 +115,12 @@ protected:
 	void _setDebugName();
 
 protected:
-	RenderDevice_Vk* renderDeviceVk();
+	RenderDevice_Vk*	renderDeviceVk();
+	RenderContext_Vk*	renderContextVk();
 
 protected:
-	RenderContext_Vk*	_rdCtx	= nullptr;
-	NativeUIWindow*		_wnd	= nullptr;
+	RenderContext_Vk*	_rdCtxVk	= nullptr;
+	NativeUIWindow*		_wnd		= nullptr;
 
 	Vk_SwapchainInfo	_swapchainInfo;
 

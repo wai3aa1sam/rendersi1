@@ -68,7 +68,7 @@ EditMesh makeRndColorTriangleMesh(float z = 0.0f, bool isRnd = true)
 	{
 		auto& e = editMesh.pos;
 		e.reserve(s_kVtxCount);
-		auto v = isRnd ? rnd.range(0.0, 1.0) : 0.5;
+		auto v = isRnd ? rnd.range(0.0f, 1.0f) : 0.5f;
 		//v = 0.5f;
 
 		e.emplace_back(-0.5f, -v,	 z);

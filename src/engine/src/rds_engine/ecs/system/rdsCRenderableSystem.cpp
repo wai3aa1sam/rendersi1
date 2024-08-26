@@ -112,7 +112,6 @@ CRenderableSystem::update(const Scene& scene, DrawData& drawData)
 		drawData.setupMaterial(drawData._mtlLine); // TODO: temporary
 	}
 
-
 	// record command
 	{
 		RDS_PROFILE_SECTION("record render command");

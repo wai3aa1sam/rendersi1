@@ -29,18 +29,21 @@ public:
 	Vk_CommandPool(Vk_CommandPool&& rhs) { throwIf(true, ""); }
 	void operator=(Vk_CommandPool&& rhs) { throwIf(true, ""); }
 
-	void create	(u32 familyIdx, VkCommandPoolCreateFlags createFlags /* = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT*/, RenderDevice_Vk* rdDevVk);
+	void create( u32 familyIdx, VkCommandPoolCreateFlags createFlags /* = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT*/, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 
 	Vk_CommandBuffer* requestCommandBuffer(VkCommandBufferLevel level, StrView debugName, RenderDevice_Vk* rdDevVk);
 	void reset(RenderDevice_Vk* rdDevVk);
+
+public:
+	RenderDevice_Vk* renderDeviceVk();
 
 protected:
 	template<size_t N> Vk_CommandBuffer* _requestCommandBuffer(Vector<Vk_CommandBuffer*, N>& vkCmdBufs, u32& activeCount, VkCommandBufferLevel level, StrView debugName, RenderDevice_Vk* rdDevVk);
 	void resetCommandBuffers();
 
 protected:
-	//Vk_Device* _vkDev = nullptr;
+	RenderDevice_Vk*				_rdDevVk = nullptr;
 	Vector<Vk_CommandBuffer*, 8>	_primaryVkCmdBufs;
 	Vector<Vk_CommandBuffer*, 16>	_secondaryVkCmdBufs;
 	LinearAllocator _alloc;
@@ -60,7 +63,7 @@ Vk_CommandPool::_requestCommandBuffer(Vector<Vk_CommandBuffer*, N>& vkCmdBufs, u
 	}
 	else
 	{
-		auto* obj		= sCast<Vk_CommandBuffer*>(_alloc.alloc(sizeof(Vk_CommandBuffer)));
+		auto* obj		= _alloc.newT<Vk_CommandBuffer>();
 		auto& cmdBuf	= vkCmdBufs.emplace_back(obj);
 		cmdBuf->create(this, level, rdDevVk);
 		p = cmdBuf;
@@ -70,6 +73,8 @@ Vk_CommandPool::_requestCommandBuffer(Vector<Vk_CommandBuffer*, N>& vkCmdBufs, u
 	activeCount++;
 	return p;
 }
+
+inline RenderDevice_Vk* Vk_CommandPool::renderDeviceVk() { return _rdDevVk; }
 
 
 #endif

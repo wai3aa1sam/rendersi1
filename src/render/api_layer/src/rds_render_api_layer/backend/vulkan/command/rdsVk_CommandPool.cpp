@@ -18,7 +18,7 @@ Vk_CommandPool::Vk_CommandPool()
 
 Vk_CommandPool::~Vk_CommandPool()
 {
-	
+	destroy(_rdDevVk);
 }
 
 void 
@@ -36,12 +36,14 @@ Vk_CommandPool::create(u32 familyIdx, VkCommandPoolCreateFlags createFlags, Rend
 
 	auto ret = vkCreateCommandPool(vkDev, &cInfo, vkAllocCbs, hndForInit());
 	Util::throwIfError(ret);
+
+	_rdDevVk = rdDevVk;
 }
 
 void 
 Vk_CommandPool::destroy(RenderDevice_Vk* rdDevVk)
 {
-	if (!hnd())
+	if (!hnd() || !rdDevVk)
 		return;
 
 	auto* vkDev			= rdDevVk->vkDevice();
@@ -52,6 +54,7 @@ Vk_CommandPool::destroy(RenderDevice_Vk* rdDevVk)
 	_alloc.destructAndClear<Vk_CommandBuffer>(Traits::s_kDefaultAlign);
 
 	vkDestroyCommandPool(vkDev, hnd(), vkAllocCbs);
+	
 	Base::destroy();
 }
 
@@ -62,7 +65,7 @@ Vk_CommandPool::requestCommandBuffer(VkCommandBufferLevel level, StrView debugNa
 	{
 		case VK_COMMAND_BUFFER_LEVEL_PRIMARY:	{ return _requestCommandBuffer(_primaryVkCmdBufs,	_activePrimaryCmdBufCount,	 level, debugName, rdDevVk); }	break;
 		case VK_COMMAND_BUFFER_LEVEL_SECONDARY: { return _requestCommandBuffer(_secondaryVkCmdBufs, _activeSecondaryCmdBufCount, level, debugName, rdDevVk); }	break;
-		default: throwIf(true, "");
+		default: { throwIf(true, ""); } break;
 	}
 	return nullptr;
 }

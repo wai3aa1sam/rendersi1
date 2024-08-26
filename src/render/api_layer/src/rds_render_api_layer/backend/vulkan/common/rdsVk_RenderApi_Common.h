@@ -49,6 +49,7 @@ public:
 	void clear() 
 	{ 
 		graphics.reset();
+		compute.reset();
 		present.reset();
 		transfer.reset();
 	}
@@ -59,15 +60,16 @@ public:
 		switch (flags)
 		{
 			case rds::QueueTypeFlags::Graphics:		{ return graphics.value(); } break;
-			case rds::QueueTypeFlags::Compute:		{ return graphics.value(); } break;
+			case rds::QueueTypeFlags::Compute:		{ return compute.value(); } break;
 			case rds::QueueTypeFlags::Transfer:		{ return transfer.value(); } break;
 			case rds::QueueTypeFlags::Present:		{ return present.value();  } break;
 		}
 		return ~u32(0);
 	}
 
-	bool isFoundAll()		const { return graphics.has_value() && present.has_value() && transfer.has_value(); }
+	bool isFoundAll()		const { return graphics.has_value() && compute.has_value() && present.has_value() && transfer.has_value(); }
 	bool isUniqueGraphics() const { return isFoundAll() && (graphics.value() != present.value()  && graphics.value() != transfer.value()); }
+	bool isUniqueCompute()  const { return isFoundAll() && (compute.value()  != graphics.value() && compute.value()  != transfer.value()); }
 	bool isUniquePresent () const { return isFoundAll() && (present.value()  != graphics.value() && present.value()  != transfer.value()); }
 	bool isUniqueTransfer() const { return isFoundAll() && (transfer.value() != graphics.value() && transfer.value() != present.value()); }
 	bool isAllUnique()		const { return isUniqueGraphics() && isUniquePresent() && isUniqueTransfer(); }
@@ -79,6 +81,7 @@ public:
 		out.clear();
 		out.reserve(count);
 		if (BitUtil::has(flag, QueueTypeFlags::Graphics))	{ out.emplace_back(graphics.value()); }
+		if (BitUtil::has(flag, QueueTypeFlags::Compute))	{ out.emplace_back(compute.value()); }
 		if (BitUtil::has(flag, QueueTypeFlags::Present))	{ out.emplace_back(present.value()); }
 		if (BitUtil::has(flag, QueueTypeFlags::Transfer))	{ out.emplace_back(transfer.value()); }
 		return sCast<u32>(count);
@@ -86,6 +89,7 @@ public:
 
 public:
 	Opt<u32> graphics;
+	Opt<u32> compute;
 	Opt<u32> present;
 	Opt<u32> transfer;
 };
@@ -294,9 +298,10 @@ public:
 
 public:
 	static void copyBuffer				(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDeviceSize size, Vk_CommandPool_T* vkCmdPool, Vk_Queue* vkTransferQueue, RenderDevice_Vk* rdDevVk);
-	static void transitionImageLayout	(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf);
-	static void transitionImageLayout	(Vk_Image_T* hnd, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf);
-	static void transitionImageLayout	(Vk_Image_T* hnd, const Texture_Desc& desc, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf);
+	static void transitionImageLayout	(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* srcQueue, StrView name, RenderDevice_Vk* rdDevVk);
+	static void transitionImageLayout	(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf, bool isImmediateSubmit = true);
+	static void transitionImageLayout	(Vk_Image_T* hnd, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf, bool isImmediateSubmit = true);
+	static void transitionImageLayout	(Vk_Image_T* hnd, const Texture_Desc& desc, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf, bool isImmediateSubmit = true);
 	static void copyBufferToImage		(Vk_Image* dstImage, Vk_Buffer* srcBuf, u32 width, u32 height, Vk_Queue* vkQueue, Vk_CommandBuffer* vkCmdBuf);
 
 public:

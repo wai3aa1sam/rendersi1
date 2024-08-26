@@ -32,14 +32,14 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	_swapchainInfo.rect2f = framebufferRect2f;
 
 	bool isInvalidSize = math::equals0(framebufferRect2f.size.x) || math::equals0(framebufferRect2f.size.y);
-	if (isInvalidSize || !cDesc.rdCtx)
+	if (isInvalidSize || !cDesc.rdCtxVk)
 		return;
 	
 	//bool isInvalidate = !cDesc.wnd || !cDesc.rdCtx;
 
 	destroy(cDesc.wnd);
 
-	_rdCtx = cDesc.rdCtx;
+	_rdCtxVk = cDesc.rdCtxVk;
 	auto* rdDevVk = renderDeviceVk();
 
 	_vkSurface.create(cDesc.wnd, rdDevVk);
@@ -73,7 +73,7 @@ Vk_Swapchain::destroy(NativeUIWindow* wnd)
 
 	destroySwapchain();
 	_vkSurface.destroy(wnd, rdDevVk);
-	_rdCtx = nullptr;
+	_rdCtxVk = nullptr;
 }
 
 VkResult 
@@ -193,7 +193,7 @@ Vk_Swapchain::createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebu
 
 	Util::createSwapchain(hndForInit(), _vkSurface.hnd(), vkDev, info(), rdDevVk->swapchainAvailableInfo(), rdDevVk);
 
-	outBackbuffers.create(_rdCtx, info().imageCount);
+	outBackbuffers.create(_rdCtxVk, info().imageCount);
 
 	createDepthResources();
 
@@ -274,9 +274,9 @@ Vk_Swapchain::createDepthResources()
 	destroyDepthResources();
 
 	auto* rdDevVk			= renderDeviceVk();
+	auto* rdCtxVk			= renderContextVk();
 	auto* vkAlloc			= rdDevVk->memoryContext()->vkAlloc();
-	auto* vkGraphicsQueue	= _rdCtx->vkGraphicsQueue();
-	auto& vkRdFrame			= _rdCtx->vkRdFrame();
+	auto* vkGraphicsQueue	= rdCtxVk->vkGraphicsQueue();
 
 	auto depthFormat = info().depthFormat;
 
@@ -288,14 +288,8 @@ Vk_Swapchain::createDepthResources()
 		, depthFormat, VK_IMAGE_TILING_OPTIMAL, 1, 1, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, QueueTypeFlags::Graphics);
 	_vkDepthImageView.create(_vkDepthImage.hnd(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, rdDevVk);
 
-	{
-		RDS_TODO("maybe modify here, but it is not critical path, simple is better");
-		auto* cmdBuf = vkRdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Vk_Swapchain::createDepthResources-cmdBuf");
-		Util::transitionImageLayout(&_vkDepthImage, depthFormat, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, nullptr, vkGraphicsQueue, cmdBuf);
-
-		//auto* cmdBuf = renderFrame().requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		//Util::transitionImageLayout(&_vkDepthImage, depthFormat, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, &_vkGraphicsQueue, &_vkTransferQueue, cmdBuf);
-	}
+	// beginRender() will reset frame, all cmdBuf generated before will be cleared, so immediate submit here
+	Util::transitionImageLayout(&_vkDepthImage, depthFormat, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, vkGraphicsQueue, "Vk_Swapchain::createDepthResources-cmdBuf", rdDevVk);
 }
 
 void 
@@ -330,9 +324,12 @@ Vk_Swapchain::_setDebugName()
 RenderDevice_Vk* 
 Vk_Swapchain::renderDeviceVk()
 {
-	RDS_CORE_ASSERT(_rdCtx, "");
-	return _rdCtx->renderDeviceVk();
+	RDS_CORE_ASSERT(_rdCtxVk, "");
+	return _rdCtxVk->renderDeviceVk();
 }
+
+RenderContext_Vk* Vk_Swapchain::renderContextVk() { return _rdCtxVk; }
+
 
 #endif
 }

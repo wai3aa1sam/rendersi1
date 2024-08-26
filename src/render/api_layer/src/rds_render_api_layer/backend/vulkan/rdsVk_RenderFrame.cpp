@@ -26,7 +26,7 @@ Vk_RenderFrame::~Vk_RenderFrame()
 
 Vk_RenderFrame::Vk_RenderFrame(Vk_RenderFrame&& rhs)
 {
-	operator=(nmsp::move(rhs));
+	operator=(rds::move(rhs));
 }
 
 void Vk_RenderFrame::operator=(Vk_RenderFrame&& rhs)
@@ -79,6 +79,10 @@ Vk_RenderFrame::destroy()
 void 
 Vk_RenderFrame::reset()
 {
+	RDS_TODO("remove temporary test, frame buf should be cache and reuse, but current solution has problem when cache and reuse when using rdGraph");
+	_vkFramebufPool.destroy();
+	_vkFramebufPool.create(renderDeviceVk());
+
 	resetCommandPools();
 	descriptorAllocator().reset();
 	setSubmitCount(0);
@@ -180,7 +184,7 @@ Vk_RenderFrame::_setDebugName()
 	for (size_t i = 0; i < s_kThreadCount; i++)
 	{
 		RDS_VK_SET_DEBUG_NAME_FMT(_graphicsCommandPools[i], "vk{}CommandPool-threadId: {}", QueueTypeFlags::Graphics, i);
-		RDS_VK_SET_DEBUG_NAME_FMT(_computeCommandPools[i], "vk{}CommandPool-threadId: {}", QueueTypeFlags::Compute, i);
+		RDS_VK_SET_DEBUG_NAME_FMT(_computeCommandPools[i],  "vk{}CommandPool-threadId: {}", QueueTypeFlags::Compute, i);
 		RDS_VK_SET_DEBUG_NAME_FMT(_transferCommandPools[i], "vk{}CommandPool-threadId: {}", QueueTypeFlags::Transfer, i);
 	}
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(_imageAvailableVkSmp);

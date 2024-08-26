@@ -195,12 +195,13 @@ Vk_Surface::destroy(NativeUIWindow* wnd, RenderDevice_Vk* rdDevVk)
 void 
 Vk_Queue::create(QueueTypeFlags type, RenderDevice_Vk* rdDevVk)
 {
-	create(rdDevVk->queueFamilyIndices().getFamilyIdx(type), rdDevVk->vkDevice());
+	create(type, rdDevVk->queueFamilyIndices().getFamilyIdx(type), rdDevVk->vkDevice());
 }
 
 void 
-Vk_Queue::create(u32 familyIdx, Vk_Device_T* vkDevice)
+Vk_Queue::create(QueueTypeFlags type, u32 familyIdx, Vk_Device_T* vkDevice)
 {
+	_queueType = type;
 	vkGetDeviceQueue(vkDevice, familyIdx, _queueIdx, hndForInit());
 	_familyIdx = familyIdx;
 }
@@ -211,6 +212,7 @@ Vk_Queue::destroy()
 	if (!hnd())
 		return;
 
+	_queueType	= QueueTypeFlags::None;
 	_familyIdx	= ~u32(0);
 	_queueIdx	= 0;
 	Base::destroy();

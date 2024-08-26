@@ -1451,22 +1451,31 @@ Vk_RenderApiUtil::copyBuffer(Vk_Buffer* dstBuffer, Vk_Buffer* srcBuffer, VkDevic
 }
 
 void 
-Vk_RenderApiUtil::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
+Vk_RenderApiUtil::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* srcQueue, StrView name, RenderDevice_Vk* rdDevVk)
 {
-	transitionImageLayout(image->hnd(), vkFormat, dstLayout, srcLayout, dstQueue, srcQueue, vkCmdBuf);
+	Vk_CommandPool pool;
+	pool.create(srcQueue->familyIdx(), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, rdDevVk);
+	auto* vkCmdBuf = pool.requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, name, rdDevVk);
+	transitionImageLayout(image->hnd(), vkFormat, dstLayout, srcLayout, nullptr, srcQueue, vkCmdBuf, true);
 }
 
 void 
-Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
+Vk_RenderApiUtil::transitionImageLayout(Vk_Image* image, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf, bool isImmediateSubmit)
+{
+	transitionImageLayout(image->hnd(), vkFormat, dstLayout, srcLayout, dstQueue, srcQueue, vkCmdBuf, isImmediateSubmit);
+}
+
+void 
+Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf, bool isImmediateSubmit)
 {
 	Texture_Desc desc;
 	desc.mipCount	= 1;
 	desc.layerCount = 1;
-	transitionImageLayout(hnd, desc, vkFormat, dstLayout, srcLayout, dstQueue, srcQueue, vkCmdBuf);
+	transitionImageLayout(hnd, desc, vkFormat, dstLayout, srcLayout, dstQueue, srcQueue, vkCmdBuf, isImmediateSubmit);
 }
 
 void 
-Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf)
+Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkFormat vkFormat, VkImageLayout dstLayout, VkImageLayout srcLayout, Vk_Queue* dstQueue, Vk_Queue* srcQueue, Vk_CommandBuffer* vkCmdBuf, bool isImmediateSubmit)
 {
 	vkCmdBuf->beginRecord(srcQueue);
 
@@ -1572,8 +1581,12 @@ Vk_RenderApiUtil::transitionImageLayout(Vk_Image_T* hnd, const Texture_Desc& des
 	#endif // 0
 
 	vkCmdBuf->endRecord();
-	vkCmdBuf->submit(RenderDebugLabel{});
-	vkCmdBuf->waitIdle();
+	
+	if (isImmediateSubmit)
+	{
+		vkCmdBuf->submit(RenderDebugLabel{});
+		vkCmdBuf->waitIdle();
+	}
 }
 
 void 
@@ -1836,7 +1849,7 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(RenderAdapterInfo& outAdapterInfo, c
 
 	if (outAdapterInfo.isDebug)
 	{
-		emplaceIfExist(o, VK_EXT_DEBUG_MARKER_EXTENSION_NAME,			availablePhyDeviceExts());		// deprecated
+		//emplaceIfExist(o, VK_EXT_DEBUG_MARKER_EXTENSION_NAME,			availablePhyDeviceExts());		// deprecated
 		emplaceIfExist(o, VK_EXT_DEBUG_UTILS_EXTENSION_NAME,			availablePhyDeviceExts());
 		
 	}
