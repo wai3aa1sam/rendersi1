@@ -95,8 +95,8 @@ DrawData::mtlLine()
 {
 	/*if (!_mtlLine)
 	{
-		auto* rdDev = Renderer::rdDev();
-		_mtlLine	= Renderer::rdDev()->createMaterial(rdDev->shaderStock().shaderLine);
+		auto* rdDev = Renderer::renderDevice();
+		_mtlLine	= Renderer::renderDevice()->createMaterial(rdDev->shaderStock().shaderLine);
 	}*/
 	RDS_CORE_ASSERT(_mtlLine, "no line material");
 	return _mtlLine;

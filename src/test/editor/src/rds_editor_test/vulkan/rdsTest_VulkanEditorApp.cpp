@@ -255,19 +255,19 @@ public:
 
 		#if 1
 		{
-			_testShader = Renderer::rdDev()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
+			_testShader = Renderer::renderDevice()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
-			_testMaterial = Renderer::rdDev()->createMaterial();
+			_testMaterial = Renderer::renderDevice()->createMaterial();
 			_testMaterial->setShader(_testShader);
 
 			auto texCDesc = Texture2D::makeCDesc();
 
 			texCDesc.create("asset/texture/uvChecker.png");
-			_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
+			_uvCheckerTex = Renderer::renderDevice()->createTexture2D(texCDesc);
 
 			texCDesc.create("asset/texture/uvChecker2.png");
-			_uvChecker2Tex = Renderer::rdDev()->createTexture2D(texCDesc);
+			_uvChecker2Tex = Renderer::renderDevice()->createTexture2D(texCDesc);
 		}
 		#endif // 0
 
@@ -308,7 +308,7 @@ public:
 
 			RenderRequest rdReq;
 			_testRenderGraph.commit();
-			_testRenderGraph.present(&rdCtx, rdReq, Renderer::rdDev()->transferContext().transferRequest(), false);
+			_testRenderGraph.present(&rdCtx, rdReq, Renderer::renderDevice()->transferContext().transferRequest(), false);
 
 			//rdCtx.drawUI(rdReq);
 			//rdCtx.commit(rdReq);
@@ -319,7 +319,7 @@ public:
 
 			rdCtx.endRender();
 
-			Renderer::rdDev()->waitIdle();
+			Renderer::renderDevice()->waitIdle();
 	}
 		#endif // 0
 
@@ -412,7 +412,7 @@ public:
 				OsUtil::sleep_ms(1);
 			}
 		}
-		//Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
+		//Renderer::renderDevice()->nextFrame();		// next frame here will clear those in Layer::onCreate()
 		#endif // 0
 
 		rdCtx.setFramebufferSize(mainWnd->clientRect().size);		// this will invalidate the swapchain
@@ -436,7 +436,7 @@ public:
 		
 		_notYetSupported(RDS_SRCLOC);
 
-		auto* rdDev		= Renderer::rdDev();
+		auto* rdDev		= Renderer::renderDevice();
 
 		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWin->renderContext();

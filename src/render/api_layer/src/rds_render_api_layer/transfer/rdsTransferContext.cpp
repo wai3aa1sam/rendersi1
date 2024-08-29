@@ -21,7 +21,7 @@ TransferContext::make(const CreateDesc& cDesc)
 {
 	_notYetSupported(RDS_SRCLOC);
 	return nullptr;
-	//Renderer::rdDev()->cr
+	//Renderer::renderDevice()->cr
 }
 
 TransferContext::TransferContext()

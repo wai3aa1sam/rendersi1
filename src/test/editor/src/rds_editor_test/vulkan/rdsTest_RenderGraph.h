@@ -178,7 +178,7 @@ public:
 			for (size_t i = 0; i < s_kObjectCount; i++)
 			{
 				auto& dst = _mtls.emplace_back();
-				dst	= Renderer::rdDev()->createMaterial(mtl->shader());
+				dst	= Renderer::renderDevice()->createMaterial(mtl->shader());
 			}
 		}
 
@@ -329,7 +329,7 @@ public:
 			{
 				rdReq.reset(rdGraph->renderContext());
 
-				auto mtl = Renderer::rdDev()->createMaterial(_shaderBrdfLut);
+				auto mtl = Renderer::renderDevice()->createMaterial(_shaderBrdfLut);
 
 				rdReq.setViewport(viewport);
 				rdReq.setScissorRect(viewport);
@@ -369,7 +369,7 @@ public:
 				mtls.resize(TextureCube::s_kFaceCount * mipCount);
 				for (auto& e : mtls)
 				{
-					e = Renderer::rdDev()->createMaterial(shader);
+					e = Renderer::renderDevice()->createMaterial(shader);
 				}
 			}
 
@@ -488,58 +488,58 @@ public:
 			auto texCDesc = Texture2D::makeCDesc();
 
 			texCDesc.create("asset/texture/uvChecker.png");
-			_uvCheckerTex = Renderer::rdDev()->createTexture2D(texCDesc);
+			_uvCheckerTex = Renderer::renderDevice()->createTexture2D(texCDesc);
 			_uvCheckerTex->setDebugName("uvChecker");
 
 			texCDesc.create("asset/texture/uvChecker2.png");
-			_uvCheckerTex2 = Renderer::rdDev()->createTexture2D(texCDesc);
+			_uvCheckerTex2 = Renderer::renderDevice()->createTexture2D(texCDesc);
 			_uvCheckerTex2->setDebugName("uvChecker2");
 		}
 
 		{
 			if (false)
 			{
-				_testShader = Renderer::rdDev()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
-				_testMtl = Renderer::rdDev()->createMaterial();
+				_testShader = Renderer::renderDevice()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
+				_testMtl = Renderer::renderDevice()->createMaterial();
 				_testMtl->setShader(_testShader);
 				_testMtl->setParam("texture0", _uvCheckerTex);
 			}
 
-			_testComputeShader	= Renderer::rdDev()->createShader("asset/shader/test/test_compute_bindless.shader");
-			_testComputeMtl		= Renderer::rdDev()->createMaterial(_testComputeShader);
+			_testComputeShader	= Renderer::renderDevice()->createShader("asset/shader/test/test_compute_bindless.shader");
+			_testComputeMtl		= Renderer::renderDevice()->createMaterial(_testComputeShader);
 			//testCompute(&_rdGraph, nullptr, true);
 
-			_shaderTestBindless	= Renderer::rdDev()->createShader("asset/shader/test/test_bindless.shader");
-			_mtlTestBindless	= Renderer::rdDev()->createMaterial(_shaderTestBindless);
+			_shaderTestBindless	= Renderer::renderDevice()->createShader("asset/shader/test/test_bindless.shader");
+			_mtlTestBindless	= Renderer::renderDevice()->createMaterial(_shaderTestBindless);
 
 			auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
 			bufCDesc.typeFlags		= RenderGpuBufferTypeFlags::Compute;
 			bufCDesc.bufSize		= sizeof(TestBindlessBuffer) * RDS_TEST_BUFFER_ELEMENT_COUNT;
 
 			/*static SPtr<RenderGpuBuffer> k;
-			k = Renderer::rdDev()->createRenderGpuBuffer(bufCDesc);*/
+			k = Renderer::renderDevice()->createRenderGpuBuffer(bufCDesc);*/
 
-			_testBindlessBuffer		= Renderer::rdDev()->createRenderGpuBuffer(bufCDesc);
-			_testBindlessRwBuffer	= Renderer::rdDev()->createRenderGpuBuffer(bufCDesc);
+			_testBindlessBuffer		= Renderer::renderDevice()->createRenderGpuBuffer(bufCDesc);
+			_testBindlessRwBuffer	= Renderer::renderDevice()->createRenderGpuBuffer(bufCDesc);
 		}
 
 		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
 		_fullScreenTriangle.create(fullScreenTriangleMesh);
 
-		_preDepthShader = Renderer::rdDev()->createShader("asset/shader/preDepth.shader");
-		_preDepthMtl	= Renderer::rdDev()->createMaterial(_preDepthShader);
+		_preDepthShader = Renderer::renderDevice()->createShader("asset/shader/preDepth.shader");
+		_preDepthMtl	= Renderer::renderDevice()->createMaterial(_preDepthShader);
 
-		_gBufferShader	= Renderer::rdDev()->createShader("asset/shader/gBuffer.shader");
-		_gBufferMtl		= Renderer::rdDev()->createMaterial(_gBufferShader);
+		_gBufferShader	= Renderer::renderDevice()->createShader("asset/shader/gBuffer.shader");
+		_gBufferMtl		= Renderer::renderDevice()->createMaterial(_gBufferShader);
 
-		_presentShader	= Renderer::rdDev()->createShader("asset/shader/present.shader");
-		_presentMtl		= Renderer::rdDev()->createMaterial(_presentShader);
+		_presentShader	= Renderer::renderDevice()->createShader("asset/shader/present.shader");
+		_presentMtl		= Renderer::renderDevice()->createMaterial(_presentShader);
 		_presentMtl->setParam("texture0", _uvCheckerTex);
 
 
 		{
-			_shaderSkybox	= Renderer::rdDev()->createShader("asset/shader/skybox.shader");
-			_mtlSkybox		= Renderer::rdDev()->createMaterial();
+			_shaderSkybox	= Renderer::renderDevice()->createShader("asset/shader/skybox.shader");
+			_mtlSkybox		= Renderer::renderDevice()->createMaterial();
 			_mtlSkybox->setShader(_shaderSkybox);
 
 			auto texCDesc = TextureCube::makeCDesc();
@@ -552,20 +552,20 @@ public:
 			filenames.emplace_back("asset/texture/skybox/default/back.png");
 
 			texCDesc.create(filenames);
-			_texDefaultSkybox = Renderer::rdDev()->createTextureCube(texCDesc);
+			_texDefaultSkybox = Renderer::renderDevice()->createTextureCube(texCDesc);
 			_texDefaultSkybox->setDebugName("default_skybox");
 		}
 
 		{
-			_shaderPbr					= Renderer::rdDev()->createShader("asset/shader/pbr/pbrBasic.shader");
-			_shaderPbrIbl				= Renderer::rdDev()->createShader("asset/shader/pbr/pbrIbl.shader");
-			_shaderHdrToCube			= Renderer::rdDev()->createShader("asset/shader/pbr/hdrToCube.shader");
-			_shaderIrradianceEnvCube	= Renderer::rdDev()->createShader("asset/shader/pbr/irradianceEnvCube.shader");
-			_shaderPrefilteredEnvCube	= Renderer::rdDev()->createShader("asset/shader/pbr/PrefilteredEnvCube.shader");
-			_shaderBrdfLut				= Renderer::rdDev()->createShader("asset/shader/pbr/brdfLut.shader");
+			_shaderPbr					= Renderer::renderDevice()->createShader("asset/shader/pbr/pbrBasic.shader");
+			_shaderPbrIbl				= Renderer::renderDevice()->createShader("asset/shader/pbr/pbrIbl.shader");
+			_shaderHdrToCube			= Renderer::renderDevice()->createShader("asset/shader/pbr/hdrToCube.shader");
+			_shaderIrradianceEnvCube	= Renderer::renderDevice()->createShader("asset/shader/pbr/irradianceEnvCube.shader");
+			_shaderPrefilteredEnvCube	= Renderer::renderDevice()->createShader("asset/shader/pbr/PrefilteredEnvCube.shader");
+			_shaderBrdfLut				= Renderer::renderDevice()->createShader("asset/shader/pbr/brdfLut.shader");
 
-			_mtlPbr			= Renderer::rdDev()->createMaterial(_shaderPbr);
-			_mtlPbrIbl		= Renderer::rdDev()->createMaterial(_shaderPbrIbl);
+			_mtlPbr			= Renderer::renderDevice()->createMaterial(_shaderPbr);
+			_mtlPbrIbl		= Renderer::renderDevice()->createMaterial(_shaderPbrIbl);
 
 			SamplerState samplerState;
 			samplerState.wrapU = SamplerWrap::ClampToEdge;
@@ -574,25 +574,25 @@ public:
 
 			auto texCDesc = Texture2D::makeCDesc();
 			texCDesc.create("asset/texture/hdr/newport_loft.hdr");
-			_texHdrEnvMap = Renderer::rdDev()->createTexture2D(texCDesc);
+			_texHdrEnvMap = Renderer::renderDevice()->createTexture2D(texCDesc);
 			_texHdrEnvMap->setDebugName("texHdrEnvMap");
 
 			auto texCubeCDesc = TextureCube::makeCDesc();
 			texCubeCDesc.create(512, ColorType::RGBAf, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubeEnvMap = Renderer::rdDev()->createTextureCube(texCubeCDesc);
+			_texCubeEnvMap = Renderer::renderDevice()->createTextureCube(texCubeCDesc);
 			_texCubeEnvMap->setDebugName("texCubeHdrEnvMap");
 
 			texCubeCDesc.create(32, ColorType::RGBAf, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubeIrradianceEnvMap = Renderer::rdDev()->createTextureCube(texCubeCDesc);
+			_texCubeIrradianceEnvMap = Renderer::renderDevice()->createTextureCube(texCubeCDesc);
 			_texCubeIrradianceEnvMap->setDebugName("texCubeIrradianceEnvMap");
 			
 			texCubeCDesc.create(512, ColorType::RGBAh, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubePrefilteredEnvMap = Renderer::rdDev()->createTextureCube(texCubeCDesc);
+			_texCubePrefilteredEnvMap = Renderer::renderDevice()->createTextureCube(texCubeCDesc);
 			_texCubePrefilteredEnvMap->setDebugName("texCubePrefilteredEnvMap");
 
 			texCDesc = Texture2D_CreateDesc{ Tuple2u{ 512, 512 }, ColorType::RGh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource, samplerState };
 			//texCDesc.create("asset/texture/brdf_lut.png");
-			_texBrdfLut = Renderer::rdDev()->createTexture2D(texCDesc);
+			_texBrdfLut = Renderer::renderDevice()->createTexture2D(texCDesc);
 			_texBrdfLut->setDebugName("texBrdfLut");
 		}
 
@@ -762,7 +762,7 @@ public:
 			cDesc.bufSize	= sizeof(Particle) * s_kMaxParticleCount;
 			cDesc.stride	= sizeof(Particle);
 			cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex;
-			_testComputeLastFrameParticles = Renderer::rdDev()->createRenderGpuBuffer(cDesc);
+			_testComputeLastFrameParticles = Renderer::renderDevice()->createRenderGpuBuffer(cDesc);
 			_testComputeLastFrameParticles->uploadToGpu(particles.byteSpan());
 			return {};
 		}

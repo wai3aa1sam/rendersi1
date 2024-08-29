@@ -46,7 +46,7 @@ GraphicsDemo::onCreate()
 		auto texCDesc = Texture2D::makeCDesc(RDS_SRCLOC);
 
 		texCDesc.create("asset/texture/uvChecker.png");
-		_texUvChecker = Renderer::rdDev()->createTexture2D(texCDesc);
+		_texUvChecker = Renderer::renderDevice()->createTexture2D(texCDesc);
 		_texUvChecker->setDebugName("uvChecker");
 	}
 
@@ -62,7 +62,7 @@ GraphicsDemo::onCreate()
 
 		texCDesc.create(filenames);
 		texCDesc.isSrgb = true;
-		_texDefaultSkybox = Renderer::rdDev()->createTextureCube(texCDesc);
+		_texDefaultSkybox = Renderer::renderDevice()->createTextureCube(texCDesc);
 		_texDefaultSkybox->setDebugName("skybox_default");
 	}
 
@@ -70,7 +70,7 @@ GraphicsDemo::onCreate()
 		auto texCDesc = Texture2D::makeCDesc();
 		texCDesc.create("asset/texture/hdr/newport_loft.hdr");
 		texCDesc.isSrgb = true;
-		_texDefaultHdrEnv = Renderer::rdDev()->createTexture2D(texCDesc);
+		_texDefaultHdrEnv = Renderer::renderDevice()->createTexture2D(texCDesc);
 		_texDefaultHdrEnv->setDebugName("texHdrEnvMap");
 	}
 
@@ -139,7 +139,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 
 				auto* rdableMesh = ent->addComponent<CRenderableMesh>();
 				if (shader)
-					rdableMesh->material = Renderer::rdDev()->createMaterial(shader);
+					rdableMesh->material = Renderer::renderDevice()->createMaterial(shader);
 				rdableMesh->meshAsset = meshAsset;
 
 				auto* transform	= ent->getComponent<CTransform>();
@@ -244,8 +244,8 @@ GraphicsDemo::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrVie
 	auto& shader	= *oShader;
 	auto& mtl		= *oMtl;
 
-	shader	= Renderer::rdDev()->createShader(filename);
-	mtl		= Renderer::rdDev()->createMaterial();
+	shader	= Renderer::renderDevice()->createShader(filename);
+	mtl		= Renderer::renderDevice()->createMaterial();
 	mtl->setShader(shader);
 
 	if (fnSetParam)
@@ -605,7 +605,7 @@ MeshAssets::loadSponza(Shader* shader)
 {
 	if (!shader)
 	{
-		shader = Renderer::rdDev()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
+		shader = Renderer::renderDevice()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
 	}
 
 	sponza = makeSPtr<MeshAsset>();

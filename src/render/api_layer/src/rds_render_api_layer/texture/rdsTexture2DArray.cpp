@@ -34,7 +34,7 @@ Texture2DArray::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 SPtr<Texture2DArray>
 Texture2DArray::make(CreateDesc& cDesc)
 {
-	return Renderer::rdDev()->createTexture2DArray(cDesc);
+	return Renderer::renderDevice()->createTexture2DArray(cDesc);
 }
 
 Texture2DArray::Texture2DArray()

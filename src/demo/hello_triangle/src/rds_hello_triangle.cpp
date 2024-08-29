@@ -91,7 +91,7 @@ HelloTriangle::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 		}
 		if (isClearPermutation)
 		{
-			Renderer::rdDev()->waitIdle();
+			Renderer::renderDevice()->waitIdle();
 			mtl->clearPermutation();
 			isClearPermutation = false;
 		}

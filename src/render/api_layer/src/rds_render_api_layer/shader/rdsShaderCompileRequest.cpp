@@ -59,7 +59,7 @@ ShaderCompileRequest::hotReload(Renderer* renderer, JobSystem* jobSystem, const 
 	if (!Path::isFile(ps.shaderRecompileListPath()))
 		return false;
 
-	auto* rdDev = renderer->rdDev();
+	auto* rdDev = renderer->renderDevice();
 	rdDev->waitIdle();
 	//jobSystem->waitIdle();
 	RDS_TODO("jobSystem->waitIdle()");

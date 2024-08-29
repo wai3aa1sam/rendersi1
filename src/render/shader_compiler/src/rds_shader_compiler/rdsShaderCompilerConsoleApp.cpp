@@ -69,7 +69,7 @@ ShaderCompilerConsoleApp::create()
 		includes.emplaceBackDir() = Path::dirname(cmpDesc.inputFilename);
 	}
 	{
-		auto& bindlessRsc = Renderer::rdDev()->bindlessResource();
+		auto& bindlessRsc = Renderer::renderDevice()->bindlessResource();
 		auto& marcos = cmpDesc.marcos;
 
 		_isPermutationCompile = !marcos.is_empty();

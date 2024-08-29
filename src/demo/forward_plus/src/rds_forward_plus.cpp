@@ -76,7 +76,7 @@ ForwardPlus::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 	auto	screenSize	= drawData->resolution2u();
 
-	//Renderer::rdDev()->waitIdle();
+	//Renderer::renderDevice()->waitIdle();
 
 	RdgTextureHnd rtColor		= rdGraph->createTexture("fwdp_rtColor",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 	RdgTextureHnd dsBuf			= rdGraph->createTexture("fwdp_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferSrc});

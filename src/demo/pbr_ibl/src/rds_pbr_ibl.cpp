@@ -28,7 +28,7 @@ PbrIbl::onCreateScene(Scene* oScene)
 
 	u32 objCount = 7;
 
-	auto shader = Renderer::rdDev()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
+	auto shader = Renderer::renderDevice()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
 	createDefaultScene(oScene, shader, meshAssets().sphere, Vec3u{objCount, objCount, 1});
 	createLights(oScene, Vec3u{ 1, 1, 1 }, Vec3f::s_zero(), Vec3f::s_one() * 3.0f, Quat4f::s_euler(Vec3f{math::radians(134.398f), math::radians(20.0f), math::radians(-4.4f)}));
 

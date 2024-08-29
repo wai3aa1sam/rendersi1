@@ -58,7 +58,7 @@ EditorApp::onCreate(const CreateDesc_Base& cd)
 void 
 EditorApp::onDestroy()
 {
-	Renderer::rdDev()->waitIdle();
+	Renderer::renderDevice()->waitIdle();
 }
 
 
@@ -115,8 +115,8 @@ EditorApp::willQuit()
 {
 	pollMsg();
 
-	if (Renderer::rdDev())
-		Renderer::rdDev()->waitIdle();
+	if (Renderer::renderDevice())
+		Renderer::renderDevice()->waitIdle();
 
 	Base::willQuit();
 

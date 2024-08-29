@@ -162,7 +162,7 @@ void
 RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
 	throwIf(true, " store rdCtx, TODO: rework");
-	//auto* drawCalls = Renderer::rdDev()->renderFrame().renderQueue().drawRenderables(settings);
+	//auto* drawCalls = Renderer::renderDevice()->renderFrame().renderQueue().drawRenderables(settings);
 	//auto* cmd = commandBuffer().newCommand<RenderCommand_DrawRenderables>();
 	//cmd->hashedDrawCallCmds = drawCalls;
 }

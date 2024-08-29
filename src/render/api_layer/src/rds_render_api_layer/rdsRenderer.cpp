@@ -17,13 +17,13 @@ Renderer* Renderer::s_instance = nullptr;
 Renderer::CreateDesc Renderer::makeCDesc() { return CreateDesc{}; }
 
 RenderDevice*	
-Renderer::rdDev()
+Renderer::renderDevice()
 {
 	return Renderer::instance()->_rdDevs[0];
 }
 
 RenderDevice* 
-Renderer::rdDev(u32 i)
+Renderer::renderDevice(u32 i)
 {
 	return Renderer::instance()->_rdDevs[i];
 }
@@ -59,7 +59,7 @@ Renderer::create(const CreateDesc& cDesc)
 void 
 Renderer::destroy()
 {
-	Renderer::rdDev()->waitIdle();
+	Renderer::renderDevice()->waitIdle();
 	_rdDevs.clear();
 }
 

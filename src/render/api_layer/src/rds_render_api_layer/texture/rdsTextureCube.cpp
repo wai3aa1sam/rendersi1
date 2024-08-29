@@ -31,7 +31,7 @@ TextureCube::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 SPtr<TextureCube> 
 TextureCube::make(CreateDesc& cDesc)
 {
-	return Renderer::rdDev()->createTextureCube(cDesc);
+	return Renderer::renderDevice()->createTextureCube(cDesc);
 }
 
 TextureCube::TextureCube()

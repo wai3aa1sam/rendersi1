@@ -26,8 +26,10 @@ public:
 
 public:
 	static CreateDesc		makeCDesc();
-	static RenderDevice*	rdDev();
-	static RenderDevice*	rdDev(u32 i);
+
+public:
+	static RenderDevice*	renderDevice();
+	static RenderDevice*	renderDevice(u32 i);
 
 public:
 	Renderer();

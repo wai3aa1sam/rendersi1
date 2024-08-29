@@ -564,7 +564,7 @@ AssimpMeshLoader::loadMaterials(Shader* shader, const aiScene* srcScene)
 			auto& dst = textures.emplace_back();
 			auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);	
 			cDesc.create(texFilename);
-			dst = Renderer::rdDev()->createTexture2D(cDesc);
+			dst = Renderer::renderDevice()->createTexture2D(cDesc);
 
 			u32 texIdx = sCast<u32>(textureIndexMap.size());
 			textureIndexMap[texName] = texIdx;
@@ -608,7 +608,7 @@ AssimpMeshLoader::loadMaterials(Shader* shader, const aiScene* srcScene)
 									)
 									cDesc.isSrgb = true;
 
-								dst = Renderer::rdDev()->createTexture2D(cDesc);
+								dst = Renderer::renderDevice()->createTexture2D(cDesc);
 								dst->setDebugName(texFilename);
 
 								u32 texIdx = sCast<u32>(textureIndexMap.size());
@@ -709,7 +709,7 @@ AssimpMeshLoader::loadMaterials(Shader* shader, const aiScene* srcScene)
 			fmtToNew(buf, "{}[{}]", mtlDatum.name, i);
 
 			auto& mtl = materials.emplace_back();
-			mtl = Renderer::rdDev()->createMaterial(shader);
+			mtl = Renderer::renderDevice()->createMaterial(shader);
 			mtl->setDebugName(buf);
 			meshAsset.materialList.setupMaterial(mtl, i);
 		}

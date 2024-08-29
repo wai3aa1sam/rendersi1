@@ -212,7 +212,7 @@ Texture2D::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 SPtr<Texture2D>
 Texture2D::make(CreateDesc& cDesc)
 {
-	return Renderer::rdDev()->createTexture2D(cDesc);
+	return Renderer::renderDevice()->createTexture2D(cDesc);
 }
 
 Texture2D::Texture2D()

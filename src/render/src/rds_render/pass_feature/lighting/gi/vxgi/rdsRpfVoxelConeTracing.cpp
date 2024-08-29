@@ -121,7 +121,7 @@ RpfVoxelConeTracing::create()
 		#endif // 0
 		auto cDesc = Texture3D::makeCDesc(RDS_SRCLOC);
 		cDesc = Texture3D_CreateDesc{ clipmapSize3u,	ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst | TextureUsageFlags::TransferSrc};
-		_voxelTexRadiance = Renderer::rdDev()->createTexture3D(cDesc);
+		_voxelTexRadiance = Renderer::renderDevice()->createTexture3D(cDesc);
 		_voxelTexRadiance->setDebugName("vct_voxelTexRadiance");
 	}
 

@@ -26,7 +26,7 @@ EditorMainWindow::onCreate(const CreateDesc_Base& cDesc)
 	auto thisCDesc = sCast<const CreateDesc&>(cDesc);
 	Base::onCreate(thisCDesc);
 
-	auto* rdDev = Renderer::rdDev();
+	auto* rdDev = Renderer::renderDevice();
 	//auto* editor = EditorContext::instance();
 
 	{

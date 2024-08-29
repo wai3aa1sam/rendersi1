@@ -74,7 +74,7 @@ RenderContext::makeCDesc()
 SPtr<RenderContext> 
 RenderContext::make(const CreateDesc& cDesc) 
 { 
-	return Renderer::rdDev()->createContext(cDesc); 
+	return Renderer::renderDevice()->createContext(cDesc); 
 }
 
 RenderContext::RenderContext()

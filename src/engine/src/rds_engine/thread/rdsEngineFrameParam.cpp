@@ -43,9 +43,9 @@ EngineFrameParam::reset(RenderContext* rdCtx)
 				OsUtil::sleep_ms(1);		// *** calling isFrameCompleted() frequently will have large overhead
 			}
 		}
-		auto* rdDev = Renderer::rdDev();
+		auto* rdDev = Renderer::renderDevice();
 		rdDev->resetEngineFrame(frameCount);		// next frame here will clear those in Layer::onCreate()
-		//Renderer::rdDev()->waitIdle();
+		//Renderer::renderDevice()->waitIdle();
 	}
 
 	// testing for check vk descr alloc

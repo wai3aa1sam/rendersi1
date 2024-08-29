@@ -46,13 +46,13 @@ Material::makeCDesc()
 SPtr<Material> 
 Material::make(const Material_CreateDesc& cDesc)
 {
-	return Renderer::rdDev()->createMaterial(cDesc);
+	return Renderer::renderDevice()->createMaterial(cDesc);
 }
 
 SPtr<Material>
 Material::make(Shader* shader)
 {
-	return Renderer::rdDev()->createMaterial(shader);
+	return Renderer::renderDevice()->createMaterial(shader);
 }
 
 Material::Material()

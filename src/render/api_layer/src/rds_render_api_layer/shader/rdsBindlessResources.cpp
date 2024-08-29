@@ -74,7 +74,7 @@ BindlessResources::bindlessTypeCount()
 bool
 BindlessResources::isSupportAccelerationStruct()
 {
-	return Renderer::rdDev()->adapterInfo().feature.hasAccelerationStruct;
+	return Renderer::renderDevice()->adapterInfo().feature.hasAccelerationStruct;
 
 }
 

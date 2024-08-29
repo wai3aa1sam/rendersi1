@@ -49,7 +49,7 @@ Shader::makeCDesc()
 SPtr<Shader>
 Shader::make(const CreateDesc& cDesc)
 {
-	return Renderer::rdDev()->createShader(cDesc);
+	return Renderer::renderDevice()->createShader(cDesc);
 }
 
 Shader::Shader()

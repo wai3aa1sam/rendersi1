@@ -341,10 +341,11 @@ RenderGraph::execute()
 
 	RDS_PROFILE_SCOPED();
 
+	auto frameCount = renderContext()->engineFrameCount();
 	for (auto& pass : resultPasses())
 	{
 		const auto& name = pass->name(); RDS_UNUSED(name);
-		RDS_PROFILE_DYNAMIC_SECTION(name.c_str());
+		RDS_PROFILE_DYNAMIC_FMT("{} i[{}] - frame[{}]", name, Traits::rotateFrame(frameCount), frameCount);
 
 		if (pass->isCulled())
 			continue;

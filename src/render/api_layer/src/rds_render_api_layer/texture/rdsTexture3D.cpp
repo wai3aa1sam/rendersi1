@@ -34,7 +34,7 @@ Texture3D::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 SPtr<Texture3D>
 Texture3D::make(CreateDesc& cDesc)
 {
-	return Renderer::rdDev()->createTexture3D(cDesc);
+	return Renderer::renderDevice()->createTexture3D(cDesc);
 }
 
 Texture3D::Texture3D()

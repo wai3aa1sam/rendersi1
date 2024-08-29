@@ -29,7 +29,7 @@ DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 DemoEditorLayer::~DemoEditorLayer()
 {
 	#if 1
-	//Renderer::rdDev()->waitIdle();
+	//Renderer::renderDevice()->waitIdle();
 	_gfxDemo.reset(nullptr);
 	_scene.destroy();
 	_egCtx.destroy();
@@ -90,7 +90,7 @@ DemoEditorLayer::onCreate()
 
 		rdCtx.endRender();
 
-		Renderer::rdDev()->waitIdle();
+		Renderer::renderDevice()->waitIdle();
 	}
 	#endif // 0
 
@@ -164,7 +164,7 @@ DemoEditorLayer::onUpdate()
 		bridge.commit(egFrame);
 	}
 	#else
-	auto* rdDev			= Renderer::rdDev();
+	auto* rdDev			= Renderer::renderDevice();
 	auto& rdFrameParam	= rdDev->renderFrameParam();
 	rdFrameParam.reset(egFrameParam.frameCount());
 	#endif // 0
@@ -176,7 +176,7 @@ DemoEditorLayer::onRender()
 	RDS_TODO("no commit render cmd buf will have error");
 	RDS_TODO("by pass whole fn will have error");
 
-	auto* rdDev			= Renderer::rdDev();
+	auto* rdDev			= Renderer::renderDevice();
 	auto& rdFrameParam	= rdDev->renderFrameParam();
 	RDS_PROFILE_DYNAMIC_FMT("onRender() - frame {}", rdFrameParam.frameCount());
 

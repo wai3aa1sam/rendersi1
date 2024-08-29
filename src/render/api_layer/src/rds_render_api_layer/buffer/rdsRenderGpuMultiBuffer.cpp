@@ -30,7 +30,7 @@ RenderGpuMultiBuffer::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 SPtr<RenderGpuMultiBuffer> 
 RenderGpuMultiBuffer::make(CreateDesc& cDesc) 
 { 
-	return Renderer::rdDev()->createRenderGpuMultiBuffer(cDesc); 
+	return Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc); 
 }
 
 RenderGpuMultiBuffer::RenderGpuMultiBuffer()

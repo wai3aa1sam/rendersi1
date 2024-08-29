@@ -14,7 +14,7 @@ namespace rds
 void 
 RenderSubMesh::create(const EditMesh& editMesh)
 {
-	auto*		rdDev		= Renderer::rdDev();
+	auto*		rdDev		= Renderer::renderDevice();
 	const auto* vtxLayout	= _renderMesh->vertexLayout();
 	
 	Vector<u8, 1024> buf;

@@ -94,7 +94,7 @@ ParamBuffer<T>::resize(SizeType n)
 		cDesc.bufSize	= bufSize;
 		cDesc.stride	= sizeof(T);
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute;
-		_gpuBufs = Renderer::rdDev()->createRenderGpuMultiBuffer(cDesc);
+		_gpuBufs = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);
 	}
 
 	cpuBuffer().resize(bufSize);

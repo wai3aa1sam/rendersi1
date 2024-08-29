@@ -48,7 +48,7 @@ public:
 	void execute(/*RenderRequest& rdReq*/)
 	{
 		DrawingSettings settings = {};
-		auto& rdQueue = Renderer::rdDev()->renderFrame().renderQueue();
+		auto& rdQueue = Renderer::renderDevice()->renderFrame().renderQueue();
 		auto& hashedCmds = rdQueue.prepareDrawRenderables(settings);
 		Span<RenderCommand_DrawCall*> cmds = hashedCmds.drawCallCmds();
 
