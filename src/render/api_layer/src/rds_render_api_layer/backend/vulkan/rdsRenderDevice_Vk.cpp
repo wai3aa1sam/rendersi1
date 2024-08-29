@@ -87,10 +87,10 @@ RenderDevice_Vk::onDestroy()
 }
 
 void 
-RenderDevice_Vk::onNextFrame()
+RenderDevice_Vk::onResetFrame(u64 frameCount)
 {
-	Base::onNextFrame();
-	_transferCtxVk.vkTransferFrame().clear();
+	Base::onResetFrame(frameCount);
+	_transferCtxVk.reset(frameCount);
 }
 
 void 

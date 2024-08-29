@@ -166,6 +166,7 @@ MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPas
 	VkPipelineBindPoint vkBindPt		= VK_PIPELINE_BIND_POINT_GRAPHICS;
 	Vk_Pipeline_T*		vkPipelineHnd	= nullptr;
 
+	// checkRenderThreadExclusive(RDS_SRCLOC);	// TODO: uncomment
 	vkPipelineHnd = shaderPass()->createUnqiueVkPipeline(vkRdPass, vtxLayout, primitive);
 	vkCmdBuf->cmd_bindPipeline(vkBindPt, vkPipelineHnd);
 }
@@ -177,21 +178,13 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
 
 	{
-		//auto* mtl		= pass->material();
-		auto& shaderRsc = _framedShaderRscs.shaderResource(iFrame);
+		auto& shaderRsc		= _framedShaderRscs.shaderResource(iFrame);
+		auto& vkDescrSet	= _vkFramedDescrSets[iFrame];
 
-		/*
-			maybe move to RenderCommand_DrawCall::setMaterial(), but it will have problem too (maybe setParam() then setMaterial twice, will have two rotate in same frame)
-			, upload in Render thread will have sync problem
-		*/
-		RDS_TODO("shaderRsc.uploadToGpu() should in Update loop");
-		shaderRsc.uploadToGpu(shaderPass());
-		material()->_internal_resetFrame();
-
-		auto& vkDescrSet = _vkFramedDescrSets[iFrame];
 		if (!vkDescrSet)
 		{
-			auto&	descriptorAlloc	= vkCtx->vkRdFrame().descriptorAllocator();
+			auto	frameIdx		= vkCtx->frameIndex();
+			auto&	descriptorAlloc	= vkCtx->vkRenderFrame(frameIdx).descriptorAllocator();
 			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
 			builder.buildBindless(vkDescrSet, shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
 		}
@@ -199,7 +192,6 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 		auto* vkDescrSetHnd			= vkDescrSet.hnd();
 		auto* vkPipelineLayoutHnd	= vkPipelineLayout().hnd();
 		auto  setIdx				= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());
-
 		vkCmdBuf->cmd_bindDescriptorSet(vkBindPt, setIdx, vkDescrSetHnd, vkPipelineLayoutHnd);
 	}
 }

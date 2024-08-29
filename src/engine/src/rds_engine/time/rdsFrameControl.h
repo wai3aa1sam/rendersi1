@@ -18,10 +18,13 @@ namespace rds
 class FrameControl : public NonCopyable
 {
 public:
+	bool isWaitFrame = true;
+
+public:
 	FrameControl();
 
 	void beginFrame();
-	void endFrame(bool isWait);
+	void endFrame();
 
 	//bool isFrameReady();
 	void simulate(Function<void(double simElapsedTime, double dt)> simFn);

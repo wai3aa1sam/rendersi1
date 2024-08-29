@@ -81,6 +81,12 @@ MaterialPass::destroy()
 	onDestroy();
 }
 
+void 
+MaterialPass::uploadToGpu()
+{
+	_framedShaderRscs.uploadToGpu();
+}
+
 //void 
 //MaterialPass::bind(RenderContext* ctx, const VertexLayout* vtxLayout) 
 //{ 

@@ -128,9 +128,6 @@ protected:
 
 						void _setPermutation(StrView name, StrView value);
 
-public:
-	void _internal_resetFrame();
-
 protected:
 	SPtr<Shader>		_shader;
 	Passes				_passes;

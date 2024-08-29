@@ -24,11 +24,18 @@ public:
 	TransferContext_Vk();
 	~TransferContext_Vk();
 
-	Vk_TransferFrame& vkTransferFrame();
+	void reset(u64 frameCount);
 
-	void	requestStagingBuf	(StagingHandle& outHnd,	SizeType size);
-	void	uploadToStagingBuf	(StagingHandle& outHnd,	ByteSpan data, SizeType offset = 0);
+	/*
+	* --- Engine Thread only ---
+	*/
+public:
+	void	requestStagingBuf(	StagingHandle& outHnd,	SizeType size);
+	void	uploadToStagingBuf(	StagingHandle& outHnd,	ByteSpan data, SizeType offset = 0);
 	void*	mappedStagingBufData(StagingHandle  hnd);
+	/*
+	* --- Engine Thread only ---
+	*/
 
 public:
 	//void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags queueType);
@@ -39,9 +46,12 @@ public:
 	void onTransferCommand_UploadBuffer	(TransferCommand_UploadBuffer*	cmd);
 	void onTransferCommand_UploadTexture(TransferCommand_UploadTexture* cmd);
 
+public:
+	Vk_TransferFrame& vkTransferFrame(u64 frameIdx);
+
 protected:
-	virtual void onCreate	(const CreateDesc& cDesc)	override;
-	virtual void onDestroy	()							override;
+	virtual void onCreate(const CreateDesc& cDesc)	override;
+	virtual void onDestroy()						override;
 
 	virtual void onCommit(TransferRequest& tsfReq, bool isWaitImmediate) override;
 
@@ -61,7 +71,6 @@ protected:
 
 	Vk_CommandBuffer* _curVkCmdBuf = nullptr;
 };
-
 
 inline 
 Vk_Queue* 

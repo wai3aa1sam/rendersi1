@@ -41,7 +41,7 @@ public:
 
 	void addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd);
 	
-	virtual bool isFrameCompleted() override;
+	virtual bool isFrameCompleted(u64 frameCount) override;
 
 public:
 	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
@@ -52,7 +52,7 @@ public:
 	Vk_Queue* vkTransferQueue();
 	Vk_Queue* vkPresentQueue();
 
-	Vk_RenderFrame& vkRdFrame();
+	Vk_RenderFrame& vkRenderFrame(u64 frameIndex);
 
 public:
 	void onRenderCommand_Dispatch(RenderCommand_Dispatch*	cmd, void* userData);
@@ -62,7 +62,7 @@ public:
 	void onRenderCommand_SetScissorRect		(RenderCommand_SetScissorRect*		cmd, void* userData);
 	void onRenderCommand_SetViewport		(RenderCommand_SetViewport*			cmd, void* userData);
 
-	void _onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd);
+	void _onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, Vk_CommandBuffer* cmdBuf);
 	//void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd);
 	void onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, void* userData);
 
@@ -124,7 +124,7 @@ inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; 
 //inline Vk_CommandBuffer_T*	RenderContext_Vk::vkCommandBuffer()		{ return _curGraphicsVkCmdBuf->hnd(); }
 //inline Vk_CommandBuffer*	RenderContext_Vk::graphicsVkCmdBuf()	{ return _curGraphicsVkCmdBuf; }
 
-inline Vk_RenderFrame& RenderContext_Vk::vkRdFrame()		{ return _vkRdFrames[_curFrameIdx]; }
+inline Vk_RenderFrame& RenderContext_Vk::vkRenderFrame(u64 frameIndex)	{ return _vkRdFrames[frameIndex]; }
 
 #endif
 }

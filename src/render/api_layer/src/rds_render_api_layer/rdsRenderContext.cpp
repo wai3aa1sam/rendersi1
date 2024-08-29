@@ -3,7 +3,6 @@
 #include "rdsRenderContext.h"
 
 #include "rdsRenderer.h"
-#include "rdsRenderFrame.h"
 
 #include "command/rdsRenderRequest.h"
 
@@ -176,7 +175,7 @@ RenderContext::setFramebufferSize(const Vec2f& newSize)
 }
 
 bool 
-RenderContext::isFrameCompleted() 
+RenderContext::isFrameCompleted(u64 frameCount) 
 { 
 	throwIf(true, "should not call this");
 	return false;

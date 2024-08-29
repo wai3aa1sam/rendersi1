@@ -1,7 +1,6 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderRequest.h"
 #include "rds_render_api_layer/mesh/rdsRenderMesh.h"
-#include "rds_render_api_layer/rdsRenderFrame.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
 
@@ -162,10 +161,10 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMes
 void 
 RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
-	throwIf(true, "store rdCtx");
-	auto* drawCalls = Renderer::rdDev()->renderFrame().renderQueue().drawRenderables(settings);
-	auto* cmd = commandBuffer().newCommand<RenderCommand_DrawRenderables>();
-	cmd->hashedDrawCallCmds = drawCalls;
+	throwIf(true, " store rdCtx, TODO: rework");
+	//auto* drawCalls = Renderer::rdDev()->renderFrame().renderQueue().drawRenderables(settings);
+	//auto* cmd = commandBuffer().newCommand<RenderCommand_DrawRenderables>();
+	//cmd->hashedDrawCallCmds = drawCalls;
 }
 
 RenderCommand_ClearFramebuffers* 

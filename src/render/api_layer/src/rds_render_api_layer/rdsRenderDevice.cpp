@@ -55,7 +55,7 @@ RenderDevice::create(const CreateDesc& cDesc)
 	if (cDesc.isShaderCompileMode())
 		return;
 
-	_tsfCtx->transferRequest().reset(_tsfCtx);
+	_tsfCtx->transferRequest().reset(_tsfCtx, 0);
 
 	_shaderStock.create(this);
 	_textureStock.create(this);
@@ -101,22 +101,20 @@ RenderDevice::onDestroy()
 }
 
 void 
-RenderDevice::onNextFrame()
+RenderDevice::resetEngineFrame(u64 engineFrameCount)
 {
-}
+	checkMainThreadExclusive(RDS_SRCLOC);
 
-void 
-RenderDevice::nextFrame()
-{
-	_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
+	auto frameCount = engineFrameCount;
+	auto frameIdx	= Traits::rotateFrame(frameCount);
 
-	// throwIf(true, "all reset should after beginRender, as it will wait that frame to finish");
+	_rdFrames[frameIdx].reset();
+	_tsfFrames[frameIdx].reset();
+	_tsfReq.reset(_tsfCtx, frameCount);
 
-	renderFrame().reset();
-	transferFrame().reset();
-	_tsfReq.reset(_tsfCtx);
+	onResetFrame(frameCount);
 
-	onNextFrame();
+	renderFrameParam().setEngineFrameCount(frameCount);
 }
 
 void 
@@ -138,6 +136,10 @@ RenderDevice::createCheckerboardTexture2D(const Color4b& color)
 
 }
 
+void 
+RenderDevice::onResetFrame(u64 frameCount)
+{
+}
 
 #endif
 

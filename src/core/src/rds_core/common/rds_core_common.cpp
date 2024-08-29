@@ -11,5 +11,4 @@ checkMainThreadExclusive(RDS_DEBUG_SRCLOC_PARAM)
 	throwIf(!OsTraits::isMainThread(), "only could execute in main thread, {}", RDS_DEBUG_SRCLOC_ARG);
 }
 
-
 }

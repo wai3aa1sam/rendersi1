@@ -77,5 +77,7 @@ struct RenderAdapterInfo
 //RDS_ENUM_CLASS(RenderAttachmentStoreOp, u8);
 
 
+void checkRenderThreadExclusive(RDS_DEBUG_SRCLOC_PARAM);
+
 #endif
 }

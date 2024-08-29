@@ -405,8 +405,8 @@ public:
 		#if 1
 		{
 			RDS_PROFILE_SECTION("wait frame");
-			RDS_TODO("temp, recitfy");
-			while (!rdCtx.isFrameCompleted())
+			throwIf(true, "legacy");
+			while (!rdCtx.isFrameCompleted(0))
 			{
 				OsUtil::sleep_ms(1);
 			}

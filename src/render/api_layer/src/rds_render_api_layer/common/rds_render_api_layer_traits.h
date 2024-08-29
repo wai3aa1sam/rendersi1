@@ -33,6 +33,8 @@ public:
 	static constexpr const char* s_appName		= "Rendersi1";
 	static constexpr const char* s_engineName	= "Rendersi1";
 
+	static constexpr int s_kRenderThreadId				= 1;
+
 	static constexpr SizeType s_kShaderStageCount			= 6;
 
 	static constexpr SizeType s_kFrameInFlightCount			= 4;
@@ -46,8 +48,13 @@ public:
 	static_assert(math::isPowOf2(s_kFrameInFlightCount));
 
 public:
-
+	static bool					isRenderThread();
+	template<class T> static T	rotateFrame(T frameCount);
 };
+
+inline bool					RenderApiLayerDefaultTraits_T::isRenderThread()				{ return OsTraits::threadLocalId() == s_kRenderThreadId; }
+
+template<class T> inline T	RenderApiLayerDefaultTraits_T::rotateFrame(T frameCount)	{ return frameCount % s_kFrameInFlightCount; }
 
 
 #if !RDS_RENDER_CUSTOM_TRAITS

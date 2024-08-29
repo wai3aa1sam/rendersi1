@@ -217,6 +217,10 @@ public:
 	void create(Material* material, ShaderPass* shaderPass);
 	void destroy();
 
+public:
+	void uploadToGpu();
+
+public:
 	//void bind(RenderContext* ctx, const VertexLayout* vtxLayout);
 
 	template<class TEX> void setTexParam	(	StrView name, TEX*					v);
@@ -240,7 +244,7 @@ public:
 	ShaderPass&			shaderPass();
 	ShaderResources&	shaderResources();
 
-	u32 iFrame() const;
+	u32 lastEngineFrameIndex() const;
 
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass);
@@ -336,11 +340,11 @@ inline MaterialPass::GeometryStage*					MaterialPass::geometryStage()				{ retur
 inline MaterialPass::PixelStage*					MaterialPass::pixelStage()					{ return _pixelStage; }
 inline MaterialPass::ComputeStage*					MaterialPass::computeStage()				{ return _computeStage; }
 
-inline Material&					MaterialPass::material()		{ return *_material; }
-inline ShaderPass&					MaterialPass::shaderPass()		{ return *_shaderPass; }
-inline ShaderResources&				MaterialPass::shaderResources()	{ return _framedShaderRscs.shaderResource(); }
+inline Material&					MaterialPass::material()					{ return *_material; }
+inline ShaderPass&					MaterialPass::shaderPass()					{ return *_shaderPass; }
+inline ShaderResources&				MaterialPass::shaderResources()				{ return _framedShaderRscs.shaderResource(); }
 
-inline u32							MaterialPass::iFrame() const	{ return _framedShaderRscs.iFrame(); }
+inline u32							MaterialPass::lastEngineFrameIndex() const	{ return _framedShaderRscs.lastEngineFrameIndex(); }
 
 #endif
 

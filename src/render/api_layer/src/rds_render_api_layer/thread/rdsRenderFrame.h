@@ -2,9 +2,9 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 
-#include "command/rdsTransferRequest.h"
-#include "command/rdsRenderCommand.h"
-#include "command/rdsRenderQueue.h"
+#include "rds_render_api_layer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/command/rdsRenderCommand.h"
+#include "rds_render_api_layer/command/rdsRenderQueue.h"
 
 namespace rds
 {

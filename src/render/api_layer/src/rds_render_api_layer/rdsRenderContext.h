@@ -93,7 +93,7 @@ public:
 	bool onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 	void setFramebufferSize(const Vec2f& newSize);
 
-	virtual bool isFrameCompleted();	// maybe can cache too
+	virtual bool isFrameCompleted(u64 frameCount);
 
 	Texture2D* backBuffer();		// this is fake, backBuffer before beginRender() is different with after beginRender()
 
@@ -126,7 +126,7 @@ protected:
 	NativeUIWindow* _nativeUIWindow = nullptr;
 
 	Vec2f	_framebufferSize {0,0};
-	u32		_curFrameIdx = 0;
+	//u32		_curFrameIdx = 0;
 	u32		_curImageIdx = 0;	// cache the current image index for backend
 
 	RenderUiContext			_rdUiCtx;

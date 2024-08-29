@@ -28,6 +28,13 @@ TransferContext_Vk::~TransferContext_Vk()
 }
 
 void 
+TransferContext_Vk::reset(u64 frameCount)
+{
+	auto frameIdx = Traits::rotateFrame(frameCount);
+	vkTransferFrame(frameIdx).clear();
+}
+
+void 
 TransferContext_Vk::onCreate(const CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
@@ -69,7 +76,8 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq, bool isWaitImmediate)
 	}
 
 	auto* rdDevVk		= renderDeviceVk();
-	auto& vkTsfFrame	= vkTransferFrame();
+	auto  frameIdx		= frameIndex();
+	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
 	auto& inFlighVkFence	= vkTsfFrame._inFlightVkFnc;
 	auto& completedVkSmp	= vkTsfFrame._completedVkSmp;
@@ -148,11 +156,13 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq, bool isWaitImmediate)
 void 
 TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLabel, TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType, bool isWaitImmediate)
 {
-	if (queueType == QueueTypeFlags::Graphics	&& !vkTransferFrame().hasTransferedGraphicsResoures())	{ return; }
-	if (queueType == QueueTypeFlags::Compute	&& !vkTransferFrame().hasTransferedComputeResoures())	{ return; }
+	auto  frameIdx		= frameIndex();
+	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
+
+	if (queueType == QueueTypeFlags::Graphics	&& !vkTsfFrame.hasTransferedGraphicsResoures())	{ return; }
+	if (queueType == QueueTypeFlags::Compute	&& !vkTsfFrame.hasTransferedComputeResoures())	{ return; }
 
 	auto* rdDevVk		= renderDeviceVk();
-	auto& vkTsfFrame	= vkTransferFrame();
 	auto* vkCmdBuf		= vkTsfFrame.requestCommandBuffer(queueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, RDS_FMT_DEBUG("_commitUploadCmdsToDstQueue-{}", queueType));
 
 	//auto& srcInFlighVkFence = frame._inFlightVkFnc;
@@ -205,20 +215,23 @@ void
 TransferContext_Vk::requestStagingBuf(StagingHandle& outHnd, SizeType size)
 {
 	RDS_CORE_ASSERT(size > 0, "");
-	vkTransferFrame().requestStagingHandle(outHnd, size);
+	auto frameIdx = engineFrameIndex();
+	vkTransferFrame(frameIdx).requestStagingHandle(outHnd, size);
 }
 
 void 
 TransferContext_Vk::uploadToStagingBuf(StagingHandle& outHnd, ByteSpan data, SizeType offset)
 {
 	RDS_CORE_ASSERT(offset == 0, "not yet supported");
-	vkTransferFrame().uploadToStagingBuf(outHnd, data, offset);
+	auto frameIdx = engineFrameIndex();
+	vkTransferFrame(frameIdx).uploadToStagingBuf(outHnd, data, offset);
 }
 
 void*	
 TransferContext_Vk::mappedStagingBufData(StagingHandle  hnd)
 {
-	return vkTransferFrame().mappedStagingBufData(hnd);
+	auto frameIdx = engineFrameIndex();
+	return vkTransferFrame(frameIdx).mappedStagingBufData(hnd);
 }
 
 //void 
@@ -265,14 +278,16 @@ TransferContext_Vk::onTransferCommand_UploadBuffer	(TransferCommand_UploadBuffer
 	RDS_CORE_ASSERT(cmd->offset == 0, "not yet supported");
 
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");
-	vkTransferFrame()._hasTransferedGraphicsResoures = true;
+	auto  frameIdx		= frameIndex();
+	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
+	vkTsfFrame._hasTransferedGraphicsResoures = true;
 
 	cmd->_stagingHnd.checkValid();
 
 	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
 	auto* dstBufHnd		= dstBuf->vkBufHnd();
 	//auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
-	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingHnd);
+	auto* statingBufHnd = vkTsfFrame.getVkStagingBufHnd(cmd->_stagingHnd);
 
 	RDS_CORE_ASSERT(dstBuf && dstBufHnd && statingBufHnd, "buffer is nullptr");
 
@@ -291,13 +306,15 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	RDS_CORE_ASSERT(cmd->dst,	"");
 
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");
-	vkTransferFrame()._hasTransferedGraphicsResoures = true;
+	auto  frameIdx		= frameIndex();
+	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
+	vkTsfFrame._hasTransferedGraphicsResoures = true;
 
 	cmd->_stagingHnd.checkValid();
 
 	auto* vkCmdBuf		= _curVkCmdBuf;
 	//auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
-	auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingHnd);
+	auto* statingBufHnd = vkTsfFrame.getVkStagingBufHnd(cmd->_stagingHnd);
 
 	auto*			dst			= Vk_Texture::getVkImageHnd(cmd->dst);
 	const auto&		size		= cmd->dst->size();
@@ -349,7 +366,7 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 
 #endif // 1
 
-Vk_TransferFrame& TransferContext_Vk::vkTransferFrame() { return _vkTransferFrames[renderDeviceVk()->iFrame()]; }
+Vk_TransferFrame& TransferContext_Vk::vkTransferFrame(u64 frameIdx) { return _vkTransferFrames[frameIdx]; }
 
 #endif
 

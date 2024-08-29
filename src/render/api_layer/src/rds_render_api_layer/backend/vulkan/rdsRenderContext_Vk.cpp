@@ -5,7 +5,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/transfer/rdsVk_TransferFrame.h"
 #include "rds_render_api_layer/command/rdsTransferRequest.h"
-#include "rds_render_api_layer/rdsRenderFrame.h"
+#include "rds_render_api_layer/thread/rdsRenderFrame.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/shader/rdsMaterial_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
@@ -135,9 +135,12 @@ RenderContext_Vk::addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd)
 }
 
 bool 
-RenderContext_Vk::isFrameCompleted()
+RenderContext_Vk::isFrameCompleted(u64 frameCount)
 {
-	return vkRdFrame().inFlightFence()->isSignaled(renderDeviceVk()) || vkRdFrame().submitCount() == 0;
+	auto	frameIdx	= Traits::rotateFrame(frameCount);
+	auto&	vkRdFrame	= _vkRdFrames[frameIdx];
+	bool	isCompleted = vkRdFrame.inFlightFence()->isSignaled(renderDeviceVk()) || vkRdFrame.submitCount() == 0;
+	return isCompleted;
 }
 
 void
@@ -145,39 +148,34 @@ RenderContext_Vk::onBeginRender()
 {
 	RDS_PROFILE_SCOPED();
 
-	auto*		rdDevVk = renderDeviceVk();
+	auto*		rdDevVk		= renderDeviceVk();
+	auto		frameIdx	= frameIndex();
+	auto&		vkRdFrame	= vkRenderFrame(frameIdx);
+
 	VkResult	ret		= {};
 
 	//RDS_TODO("i tihnk no need to wait too early, since it will block the cpu to record RenderCommands, query the fence and reset the frame if it is signaled");
 	// 2023.12.19: but the cmd buf is still executing, must wait before reset, must wait here
 	{
 		RDS_PROFILE_SECTION("vkWaitForFences()");
-		if (vkRdFrame().submitCount() > 0)
+		if (vkRdFrame.submitCount() != 0)
 		{
-			RDS_PROFILE_SCOPED();
-		}
-		if (vkRdFrame().submitCount() != 0)
-		{
-			vkRdFrame().inFlightFence()->wait(rdDevVk);
+			vkRdFrame.inFlightFence()->wait(rdDevVk);
 		}
 	}
 
 	//vkResetFences(vkDevice, vkFenceCount, vkFences);		// reset too early will cause deadlock, since the invalidate wii cause no work submitted (returned) and then no one will signal it
 
-	ret = _vkSwapchain.acquireNextImage(_curImageIdx, vkRdFrame().imageAvaliableSmp()); RDS_UNUSED(ret);
+	ret = _vkSwapchain.acquireNextImage(_curImageIdx, vkRdFrame.imageAvaliableSmp()); RDS_UNUSED(ret);
 	if (!Util::isSuccess(ret))
 	{
 		//invalidateSwapchain(ret, framebufferSize());
 		////return;
 	}
 
+	if (frameCount() > 0)
 	{
-		static bool isFirst = true;
-		if (!isFirst)
-		{
-			vkRdFrame().reset();
-		}
-		isFirst = false;
+		vkRdFrame.reset();
 	}
 }
 
@@ -186,11 +184,14 @@ RenderContext_Vk::onEndRender()
 {
 	RDS_PROFILE_SCOPED();
 
-	auto* rdDevVk = renderDeviceVk();
+	auto* rdDevVk	= renderDeviceVk();
+	auto  frameIdx	= frameIndex();
+	auto& vkRdFrame	= vkRenderFrame(frameIdx);
+
 	rdDevVk->bindlessResourceVk().commit();
 	_gpuProfilerCtx.commit();
 
-	vkRdFrame().inFlightFence()->reset(rdDevVk);
+	vkRdFrame.inFlightFence()->reset(rdDevVk);
 
 	// submit
 	{
@@ -212,23 +213,23 @@ RenderContext_Vk::onEndRender()
 			Vector<Vk_SmpSubmitInfo, 8> waitSmps;
 			Vector<Vk_SmpSubmitInfo, 8> signalSmps;
 
-			waitSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame().imageAvaliableSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
-			if (auto* tsfCompletedVkSmp = vkTransferFrame().requestCompletedVkSmp(QueueTypeFlags::Graphics))
+			waitSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame.imageAvaliableSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+			if (auto* tsfCompletedVkSmp = vkTransferFrame(frameIdx).requestCompletedVkSmp(QueueTypeFlags::Graphics))
 			{
 				waitSmps.emplace_back	(Vk_SmpSubmitInfo{tsfCompletedVkSmp->hnd(),	VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT});
 			}
 
-			signalSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame().renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+			signalSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame.renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
 
 			RenderDebugLabel debugLabel;
 			debugLabel.name = "RenderContext_Vk::onEndRender()";
-			Vk_CommandBuffer::submit(debugLabel, vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame().inFlightFence(), waitSmps, signalSmps);
+			Vk_CommandBuffer::submit(debugLabel, vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame.inFlightFence(), waitSmps, signalSmps);
 		}
 
 		#if RDS_TEST_DUMMY_FOR_NO_SWAP_BUF && 0
 		if (_pendingGfxVkCmdbufHnds.is_empty())
 		{
-			auto* vkCmdBuf = vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "dummyEnd");
+			auto* vkCmdBuf = vkRdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "dummyEnd");
 			vkCmdBuf->beginRecord(vkGraphicsQueue());
 			vkCmdBuf->endRecord();
 
@@ -236,15 +237,15 @@ RenderContext_Vk::onEndRender()
 			_pendingGfxVkCmdbufHnds.emplace_back(vkCmdBuf->hnd());
 
 			Vector<Vk_SmpSubmitInfo, 1> vkSmpWaitDummy;
-			vkSmpWaitDummy.emplace_back(Vk_SmpSubmitInfo{ vkRdFrame().renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_NONE });
-			Vk_CommandBuffer::submit(vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame().vkFenceDummy(), vkSmpWaitDummy, {});
+			vkSmpWaitDummy.emplace_back(Vk_SmpSubmitInfo{ vkRdFrame.renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_NONE });
+			Vk_CommandBuffer::submit(vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame.vkFenceDummy(), vkSmpWaitDummy, {});
 			//_hasSwapedBuffersInLastFrame = false;
 		}
 		#endif // 0
 	}
 
 	// present if needed
-	auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, vkRdFrame().renderCompletedSmp()); RDS_UNUSED(ret);
+	auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, vkRdFrame.renderCompletedSmp()); RDS_UNUSED(ret);
 
 	if (_shdSwapBuffers)
 	{
@@ -255,10 +256,8 @@ RenderContext_Vk::onEndRender()
 
 	// next frame idx
 	{
-		vkRdFrame().setSubmitCount(_pendingGfxVkCmdbufHnds.size());
+		vkRdFrame.setSubmitCount(_pendingGfxVkCmdbufHnds.size());
 		_pendingGfxVkCmdbufHnds.clear();
-
-		_curFrameIdx = (_curFrameIdx + 1) % s_kFrameInFlightCount;
 	}
 }
 
@@ -359,7 +358,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 		void _commitPass(RdgPass* pass)
 		{
 			const char* passName = pass->name().c_str();	RDS_UNUSED(passName);
-			RDS_PROFILE_TRANSIENT_SECTION(passName);
+			RDS_PROFILE_TRANSIENT_FMT("{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
 
 			if (pass->isCommitted())
 				return;
@@ -402,7 +401,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 			Vk_RenderPassPool&	vkRdPassPool	= _rdCtxVk->_vkRdPassPool;
 			//Vk_FramebufferPool& vkFramebufPool	= _rdCtxVk->_vkFramebufPool;
-			Vk_FramebufferPool& vkFramebufPool = _rdCtxVk->vkRdFrame()._vkFramebufPool;
+			auto				frameIdx		= _rdCtxVk->frameIndex();
+			Vk_FramebufferPool& vkFramebufPool	= _rdCtxVk->vkRenderFrame(frameIdx)._vkFramebufPool;
 
 			bool hasRenderPass	= pass->hasRenderPass();
 
@@ -458,7 +458,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				vkCmdBuf->beginDebugLabel(passName);
 			}
 
-			RDS_VK_PROFILE_GPU_TRANSIENT_ZONE(_rdCtxVk->_gpuProfilerCtx, vkCmdBuf, passName);
+			RDS_VK_PROFILE_GPU_TRANSIENT_FMT(_rdCtxVk->_gpuProfilerCtx, vkCmdBuf, "{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
 
 			#if RDS_DEBUG_RENDER_GRAPH
 			RDS_CORE_LOG("before pass:[{}] record barrier", passName);
@@ -721,11 +721,13 @@ Vk_CommandBuffer*
 RenderContext_Vk::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName)
 {
 	using SRC = rds::QueueTypeFlags;
+	auto	frameIdx	= frameIndex();
+	auto&	vkRdFrame	= vkRenderFrame(frameIdx);
 	switch (queueType)
 	{
-		case SRC::Graphics: { auto* o = vkRdFrame().requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkGraphicsQueue); addPendingGraphicsVkCommandBufHnd(o->hnd());	return o; } break;
-		case SRC::Compute:	{ auto* o = vkRdFrame().requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkComputeQueue);	return o; } break;
-		case SRC::Transfer:	{ auto* o = vkRdFrame().requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkTransferQueue);	return o; } break;
+		case SRC::Graphics: { auto* o = vkRdFrame.requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkGraphicsQueue); addPendingGraphicsVkCommandBufHnd(o->hnd());	return o; } break;
+		case SRC::Compute:	{ auto* o = vkRdFrame.requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkComputeQueue);	return o; } break;
+		case SRC::Transfer:	{ auto* o = vkRdFrame.requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkTransferQueue);	return o; } break;
 		default: { RDS_THROW("invalid vk queue type"); } break;
 	}
 }
@@ -819,7 +821,7 @@ RenderContext_Vk::createPresentRenderPass(Vk_Swapchain_CreateDesc& vkSwapchainCD
 #endif // 1
 
 #if 0
-#pragma mark --- rdsVkonRenderCommand-Impl ---
+#pragma mark --- rdsVk_onRenderCommand-Impl ---
 #endif // 0
 #if 1
 
@@ -885,11 +887,11 @@ void
 RenderContext_Vk::onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, void* userData)
 {
 	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
-	_onRenderCommand_DrawCall(vkCmdBuf, cmd);
+	_onRenderCommand_DrawCall(cmd, vkCmdBuf);
 }
 
 void 
-RenderContext_Vk::_onRenderCommand_DrawCall(Vk_CommandBuffer* cmdBuf, RenderCommand_DrawCall* cmd)
+RenderContext_Vk::_onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, Vk_CommandBuffer* cmdBuf)
 {
 	auto* vtxLayout = cmd->vertexLayout;
 	//if (!vtxLayout) { RDS_CORE_ASSERT(false, "drawcall no vertexLayout"); return; }
@@ -1070,7 +1072,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 		{
 			RDS_PROFILE_SCOPED();
 
-			auto* vkCmdBuf = _rdCtx->vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+			auto* vkCmdBuf = _rdCtx->vkRenderFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
 			vkCmdBuf->beginSecondaryRecord(_graphicsQueue, _renderPass, _vkFrameBuf, _subpassIdx);
 
@@ -1166,7 +1168,9 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 
 		virtual void onBegin()
 		{
-			_vkCmdBuf = _rdCtx->vkRdFrame().requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY, "RenderContext_Vk::ParRecordDrawCall-2ry");
+			auto	frameIdx	= _rdCtx->frameIndex();
+			auto&	vkRdFrame	= _rdCtx->vkRenderFrame(frameIdx);
+			_vkCmdBuf = vkRdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY, "RenderContext_Vk::ParRecordDrawCall-2ry");
 
 			auto* vkCmdBuf = _vkCmdBuf;
 			vkCmdBuf->beginSecondaryRecord(_graphicsQueue, _renderPass, _vkFrameBuf, _subpassIdx);
@@ -1189,7 +1193,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 			auto* vkCmdBuf = _vkCmdBuf;
 
 			const auto& drawCallCmds = _drawCallCmds->drawCallCmds();
-			_rdCtx->_onRenderCommand_DrawCall(vkCmdBuf, drawCallCmds[id]);
+			_rdCtx->_onRenderCommand_DrawCall(drawCallCmds[id], vkCmdBuf);
 		}
 
 	public:

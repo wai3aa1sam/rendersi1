@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_engine/common/rds_engine_common.h"
+#include "thread/rdsEngineFrameParam.h"
 
 namespace rds
 {
@@ -15,20 +16,6 @@ class CLightSystem;
 #pragma mark --- rdsEngineContext-Decl ---
 #endif // 0
 #if 1
-
-
-//template<class T>
-//struct EngineContext_Deleter : public NonCopyable
-//{
-//	void operator() (T* p)
-//	{
-//		if (!p)
-//			return;
-//		auto& egCtx = p->engineContext();
-//		//p->~T();
-//		egCtx.deleteT(p);
-//	}
-//};
 
 class EngineContext : public NonCopyable
 {
@@ -52,14 +39,16 @@ public:
 
 	template<class T> T* registerSystem(T* system);
 
-	template<class T> T& getSystem();
+public:
+	template<class T> T&	getSystem();
+
+	CTransformSystem&		transformSystem();
+	CRenderableSystem&		renderableSystem();
+	CLightSystem&			lightSystem();
 
 public:
-	CTransformSystem&	transformSystem();
-	CRenderableSystem&	renderableSystem();
-	CLightSystem&		lightSystem();
+	EngineFrameParam&  engineFrameParam();
 
-public:
 	EcsAllocator& entityAllocator();
 
 protected:
@@ -69,12 +58,13 @@ protected:
 	template<class T, class... ARGS>	T*		newSystem(ARGS&&... args);
 	void _registerSystem(CSystem* system);
 
-
 protected:
-	LinearAllocator	_alloc;
-	Systems			_systems;
+	EngineFrameParam	_egFrameParam;
 
-	EcsAllocator	_entitiyAlloc;
+	LinearAllocator		_alloc;
+	Systems				_systems;
+
+	EcsAllocator		_entitiyAlloc;
 
 	// since no reflection now, but as a cache is also ok
 	CTransformSystem*	_transformSystem	= nullptr;
@@ -96,7 +86,9 @@ EngineContext::getSystem()
 }
 
 
-inline EcsAllocator& EngineContext::entityAllocator() { return _entitiyAlloc; }
+inline EngineFrameParam&  EngineContext::engineFrameParam()		{ return _egFrameParam; }
+
+inline EcsAllocator& EngineContext::entityAllocator()	{ return _entitiyAlloc; }
 
 
 #if 1

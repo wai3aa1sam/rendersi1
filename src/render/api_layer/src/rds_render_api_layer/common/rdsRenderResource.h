@@ -11,13 +11,14 @@ class RenderResource;
 class Renderer;
 class RenderDevice;
 
+class RenderFrameParam;
+
 class RenderFrame;
 class RenderRequest;
 
 class TransferRequest;
 class TransferFrame;
 class TransferContext;
-
 
 #define RDS_ENABLE_RenderResouce_DEBUG_NAME 1
 
@@ -148,12 +149,19 @@ public:
 	const char*		debugName()		const;
 	RenderApiType	apiType()		const;
 
-public:
-	Renderer*		renderer();
-	RenderDevice*	renderDevice();
-	RenderDevice*	renderDevice() const;
+	u64				engineFrameCount()	const;
+	u32				engineFrameIndex()	const;
+	u64				frameCount()		const;
+	u32				frameIndex()		const;
 
-	RenderFrame&		renderFrame();
+public:
+	Renderer*			renderer();
+	RenderDevice*		renderDevice();
+	RenderDevice*		renderDevice() const;
+
+	RenderFrameParam&	renderFrameParam();
+
+	RenderFrame&		renderFrame(u64 frameIdx);
 
 	TransferContext&	transferContext();
 	TransferRequest&	transferRequest();

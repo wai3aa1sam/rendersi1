@@ -77,15 +77,22 @@ RenderResource::hasCreated() const
 	return _rdDev != nullptr;
 }
 
-RenderApiType			RenderResource::apiType() const			{ return renderDevice()->apiType(); }
+RenderApiType			RenderResource::apiType()		const				{ return renderDevice()->apiType(); }
 
-Renderer*				RenderResource::renderer()				{ return Renderer::instance(); }
+u64						RenderResource::engineFrameCount()	const			{ return renderDevice()->engineFrameCount(); }
+u32						RenderResource::engineFrameIndex()	const			{ return renderDevice()->engineFrameIndex(); }
+u64						RenderResource::frameCount()		const			{ return renderDevice()->frameCount(); }
+u32						RenderResource::frameIndex()		const			{ return renderDevice()->frameIndex(); }
 
-RenderFrame&			RenderResource::renderFrame()			{ return renderDevice()->renderFrame(); }
+Renderer*				RenderResource::renderer()							{ return Renderer::instance(); }
 
-TransferContext&		RenderResource::transferContext()		{ return renderDevice()->transferContext(); }
+RenderFrameParam&		RenderResource::renderFrameParam()					{ return renderDevice()->renderFrameParam(); }
 
-TransferRequest&		RenderResource::transferRequest()		{ return renderDevice()->transferRequest(); }
+RenderFrame&			RenderResource::renderFrame(u64 frameIdx)			{ return renderDevice()->renderFrame(frameIdx); }
+
+TransferContext&		RenderResource::transferContext()					{ return renderDevice()->transferContext(); }
+
+TransferRequest&		RenderResource::transferRequest()					{ return renderDevice()->transferRequest(); }
 
 
 #endif

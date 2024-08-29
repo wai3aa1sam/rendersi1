@@ -101,7 +101,7 @@ EditorApp::onExecuteRun()
 	JobSystem::instance()->_internal_nextFrame();
 	RDS_PROFILE_FRAME();
 
-	_frameControl.endFrame(true);
+	_frameControl.endFrame();
 }
 
 void 

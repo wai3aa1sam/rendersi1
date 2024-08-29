@@ -99,49 +99,24 @@ DemoEditorLayer::onCreate()
 		_gfxDemo->onCreateScene(&_scene);
 		rdCtx.transferRequest().commit(true);		
 	}
+
+	app()._frameControl.isWaitFrame = false;
 }
+
 
 void 
 DemoEditorLayer::onUpdate()
 {
-	RDS_PROFILE_SCOPED();
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();
 
-	#if 1
-	{
-		RDS_PROFILE_SECTION("wait gpu");
-		RDS_TODO("temp, recitfy");
-		while (!rdCtx.isFrameCompleted())
-		{
-			OsUtil::sleep_ms(1);
-		}
-	}
-	//Renderer::rdDev()->waitIdle();
-	Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
-	
-	// testing for check vk descr alloc
-	#if 0
-	{
-		Vector<u8> data;
-		{
-			FileStream fs;
-			fs.openWrite(ProjectSetting::instance()->shaderRecompileListPath(), false);
-			auto lock = fs.scopedLock();
-			data.resize(fs.fileSize());
-			fs.readBytes(data);
+	auto& egCtx			= _egCtx;
+	auto& egFrameParam	= egCtx.engineFrameParam();
 
-			StrView str = "asset/shader/lighting/rdsDefaultLighting.shader";
-			fs.writeBytes(makeByteSpan(str));
-		}
+	auto frameCount = egFrameParam.frameCount() + 1; // reset will increase frameCount
+	RDS_PROFILE_TRANSIENT_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount); 
+	egFrameParam.reset(&rdCtx);
 
-		ShaderCompileRequest::hotReload(Renderer::instance(), JobSystem::instance(), ProjectSetting::instance());
-
-		//OsUtil::sleep_ms(1);
-	}
-	#endif // 0
-
-	#endif // 0
 
 	auto clientRect = mainWnd.clientRect();
 	rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
@@ -181,6 +156,17 @@ DemoEditorLayer::onUpdate()
 			rdUiCtx.onEndRender(&rdCtx);
 		}
 	}
+
+	#if 0
+	{
+		RenderThreadBridge bridge;
+		bridge.commit(egFrame);
+	}
+	#else
+	auto* rdDev			= Renderer::rdDev();
+	auto& rdFrameParam	= rdDev->renderFrameParam();
+	rdFrameParam.reset(egFrameParam.frameCount());
+	#endif // 0
 }
 
 void 
@@ -189,13 +175,13 @@ DemoEditorLayer::onRender()
 	RDS_TODO("no commit render cmd buf will have error");
 	RDS_TODO("by pass whole fn will have error");
 
-	RDS_PROFILE_SCOPED();
-
-	auto* rdDev		= Renderer::rdDev();
+	auto* rdDev			= Renderer::rdDev();
+	auto& rdFrameParam	= rdDev->renderFrameParam();
+	RDS_PROFILE_TRANSIENT_FMT("onRender() - frame {}", rdFrameParam.frameCount());
 
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();
-	auto& rdFrame	= rdDev->renderFrame(); RDS_UNUSED(rdFrame);
+	//auto& rdFrame	= rdDev->renderFrame(); RDS_UNUSED(rdFrame);
 
 	auto& tsfCtx	= rdDev->transferContext();
 	auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);

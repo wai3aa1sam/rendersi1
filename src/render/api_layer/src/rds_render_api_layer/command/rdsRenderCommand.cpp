@@ -1,8 +1,9 @@
 #include "rds_render_api_layer-pch.h"
 
 #include "rdsRenderCommand.h"
-#include "../rdsRenderFrame.h"
 #include "../mesh/rdsRenderMesh.h"
+
+#include "rds_render_api_layer/thread/rdsRenderFrameParam.h"
 
 namespace rds
 {
@@ -77,12 +78,13 @@ RenderCommand_DrawCall::setMaterial(Material* mtl, SizeType mtlPassIdx)
 {
 	RDS_CORE_ASSERT(mtl);
 
-	_mtl			= mtl;
-	_mtlPassIdx		= sCast<u32>(mtlPassIdx);
-	_mtlRscFrameIdx = getMaterialPass()->iFrame();
+	_mtl				= mtl;
+	_mtlPassIdx			= sCast<u32>(mtlPassIdx);
 
-	RDS_TODO("shaderRsc.uploadToGpu() should in Update loop, now in Material_Vk (Render Loop)");
-	//_mtl->_internal_resetFrame();
+	auto& pass = mtl->passes()[_mtlPassIdx];
+	_mtlRscFrameIdx		= pass->lastEngineFrameIndex();
+
+	pass->uploadToGpu();
 }
 
 void 
@@ -109,11 +111,13 @@ RenderCommand_Dispatch::setMaterial(Material* mtl, SizeType mtlPassIdx)
 {
 	RDS_CORE_ASSERT(mtl);
 
-	_mtl			= mtl;
-	_mtlPassIdx		= sCast<u32>(mtlPassIdx);
-	_mtlRscFrameIdx = getMaterialPass()->iFrame();
+	_mtl				= mtl;
+	_mtlPassIdx			= sCast<u32>(mtlPassIdx);
 
-	//_mtl->_internal_resetFrame();
+	auto& pass = mtl->passes()[_mtlPassIdx];
+	_mtlRscFrameIdx		= pass->lastEngineFrameIndex();
+
+	pass->uploadToGpu();
 }
 
 }

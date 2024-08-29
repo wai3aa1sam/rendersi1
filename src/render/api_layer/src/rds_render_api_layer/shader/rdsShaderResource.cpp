@@ -582,8 +582,8 @@ FramedShaderResources::~FramedShaderResources()
 void 
 FramedShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
 {
+	_shaderPass = pass;
 	_shaderRscs.resize(s_kFrameInFlightCount);
-
 	u32 i = 0;
 	for (auto& e : _shaderRscs)
 	{
@@ -599,30 +599,44 @@ FramedShaderResources::destroy()
 }
 
 void 
-FramedShaderResources::rotate()
+FramedShaderResources::rotateFrame()
 {
-	if (_isRotated)
+	if (!shouldRotateFrame())
 	{
 		return;
 	}
 
-	u32 srcFrame = _iFrame;
-	u32 dstFrame = (_iFrame + 1) % s_kFrameInFlightCount;
+	auto frameCount = _shaderPass->shader()->engineFrameCount();
+	auto srcFrame	= Traits::rotateFrame(lastEngineFrameCount());
+	auto dstFrame	= Traits::rotateFrame(frameCount);
+
+	if (srcFrame == dstFrame)
+	{
+		_lastEngineFrameCount = frameCount;
+		return;
+	}
 
 	auto& src = _shaderRscs[srcFrame];
 	auto& dst = _shaderRscs[dstFrame];
 
 	dst.copy(src);
 
-	_iFrame		= dstFrame;
-	_isRotated	= true;
+	_lastEngineFrameCount = frameCount;
+}
+
+bool 
+FramedShaderResources::shouldRotateFrame() const
+{
+	RDS_TODO("add a last thread id to debug whether two / more thread want to access the same material");
+
+	auto frameCount = _shaderPass->shader()->engineFrameCount();
+	return _lastEngineFrameCount != frameCount;
 }
 
 void 
-FramedShaderResources::uploadToGpu(ShaderPass* pass)
+FramedShaderResources::uploadToGpu()
 {
-	shaderResource().uploadToGpu(pass);
-	//_isRotated = false;
+	shaderResource().uploadToGpu(_shaderPass);
 }
 
 

@@ -41,16 +41,18 @@ TransferRequest::TransferRequest()
 
 TransferRequest::~TransferRequest()
 {
-	reset(nullptr);
+	reset(nullptr, 0);
 }
 
 void 
-TransferRequest::reset(TransferContext* tsfCtx)
+TransferRequest::reset(TransferContext* tsfCtx, u64 frameCount)
 {
 	/*if (_uploadTextureJobParentHnd && !isUploadTextureCompleted())
 	{
 		RDS_THROW("upload jobs must be completed before reset");
 	}*/
+	if (!tsfCtx)
+		return;
 
 	RDS_TODO("per frame, then no need to wait too frequently");
 	waitUploadTextureCompleted();
@@ -58,9 +60,12 @@ TransferRequest::reset(TransferContext* tsfCtx)
 	_tsfCtx		= tsfCtx;
 	auto* rdDev = _tsfCtx ?  _tsfCtx->renderDevice() : nullptr;
 
-	_tsfCmdBuf		= _tsfCtx ?  rdDev->transferFrame().requestCommandBuffer()	: nullptr;
-	_uploadBufCmds	= _tsfCtx ? &rdDev->transferFrame()._uploadBufCmds			: nullptr;
-	_uploadTexCmds	= _tsfCtx ? &rdDev->transferFrame()._uploadTexCmds			: nullptr;
+	auto	frameIdx = Traits::rotateFrame(frameCount);
+	auto&	tsfFrame = rdDev->transferFrame(frameIdx);
+
+	_tsfCmdBuf		= tsfFrame.requestCommandBuffer();
+	_uploadBufCmds	= &tsfFrame._uploadBufCmds;
+	_uploadTexCmds	= &tsfFrame._uploadTexCmds;
 
 	if (_tsfCtx)
 	{

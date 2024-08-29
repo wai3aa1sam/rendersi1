@@ -881,21 +881,22 @@ public:
 						bool setBufferParam(	StrView name, RenderGpuBuffer*		v);
 						bool setImageParam(		StrView name, Texture*				v);
 	
-	void uploadToGpu(ShaderPass* pass);
+	void uploadToGpu();
 
 public:
 	ShaderResources&	shaderResource();
-	ShaderResources&	shaderResource(u32 iFrame);
-	u32					iFrame() const;
-
-public:
-	bool _isRotated = false;
+	ShaderResources&	shaderResource(u32 frameIdx);
+	u32					lastEngineFrameIndex()	const;
+	u64					lastEngineFrameCount()	const;
 
 protected:
-	void rotate();
+	void rotateFrame();
+
+	bool shouldRotateFrame() const;
 
 protected:
-	u32							_iFrame = 0;
+	ShaderPass*					_shaderPass				= nullptr;
+	u64							_lastEngineFrameCount	= 0;		// btw can store frameIndex instead
 	FramedT<ShaderResources>	_shaderRscs;
 };
 
@@ -903,14 +904,14 @@ template<class T> inline
 bool 
 FramedShaderResources::setParam(StrView name, const T& v)
 {
-	rotate();
+	rotateFrame();
 	return shaderResource().setParam(name, v);
 }
 
 template<class T> bool 
 FramedShaderResources::setArray(StrView name, const Span<T>& v)
 {
-	rotate();
+	rotateFrame();
 	return shaderResource().setArray(name, v);
 }
 
@@ -918,7 +919,7 @@ template<class TEX>	inline
 bool 
 FramedShaderResources::setTexParam(StrView name, TEX* v)
 {
-	rotate();
+	rotateFrame();
 	return shaderResource().setTexParam(name, v);
 }
 
@@ -926,7 +927,7 @@ inline
 bool 
 FramedShaderResources::setSamplerParam(StrView name, const SamplerState& v)
 {
-	rotate();
+	rotateFrame();
 	return shaderResource().setSamplerParam(name, v);
 }
 
@@ -934,7 +935,7 @@ inline
 bool 
 FramedShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
 {
-	rotate();
+	rotateFrame();
 	return shaderResource().setBufferParam(name, v);
 }
 
@@ -942,15 +943,15 @@ inline
 bool 
 FramedShaderResources::setImageParam(StrView name, Texture* v)
 {
-	rotate();
+	rotateFrame();
 	return shaderResource().setImageParam(name, v);
 }
 
-inline ShaderResources& FramedShaderResources::shaderResource()				{ return _shaderRscs[iFrame()]; }
-inline ShaderResources& FramedShaderResources::shaderResource(u32 iFrame)	{ return _shaderRscs[iFrame]; }
+inline ShaderResources&		FramedShaderResources::shaderResource()					{ return _shaderRscs[lastEngineFrameIndex()]; }
+inline ShaderResources&		FramedShaderResources::shaderResource(u32 frameIdx)		{ return _shaderRscs[frameIdx]; }
 
-inline u32				FramedShaderResources::iFrame() const	{ return _iFrame; }
-
+inline u32					FramedShaderResources::lastEngineFrameIndex()	const	{ return sCast<u32>(Traits::rotateFrame(lastEngineFrameCount())); }
+inline u64					FramedShaderResources::lastEngineFrameCount()	const	{ return _lastEngineFrameCount; }
 
 #endif
 

@@ -117,6 +117,7 @@ protected:
 	Vector<HashedDrawCallCommands, s_kLocalSize> _hashedDrawCmds;
 };
 
+#if 0
 template<class T> inline 
 RenderCmdIter<T>
 RenderQueue::allocCommands(Vector<T*>& out, SizeType n)
@@ -128,7 +129,7 @@ RenderQueue::allocCommands(Vector<T*>& out, SizeType n)
 	auto beg	= RenderCmdIter<T>{p};
 	auto it		= beg;
 
-	for (size_t i = 0; i < n; i++)
+	for (SizeType i = 0; i < n; i++)
 	{
 		out.emplace_back(it);
 		++it;
@@ -141,12 +142,14 @@ T*
 RenderQueue::allocCommands(SizeType n)
 {
 	auto* p = sCast<T*>(alloc(sizeof(T) * n, RenderCommandBuffer::s_kAlign));
-	for (size_t i = 0; i < n; i++)
+	for (SizeType i = 0; i < n; i++)
 	{
 		new(&(p[i])) T();
 	}
 	return p;
 }
+#endif // 0
+
 
 #endif
 

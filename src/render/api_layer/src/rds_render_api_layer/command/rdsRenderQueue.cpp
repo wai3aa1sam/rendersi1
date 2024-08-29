@@ -1,7 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 
 #include "rdsRenderQueue.h"
-#include "rds_render_api_layer/rdsRenderFrame.h"
+#include "rds_render_api_layer/thread/rdsRenderFrame.h"
 #include "rds_render_api_layer/mesh/rdsRenderMesh.h"
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
 #include "rds_render_api_layer/rdsRenderer.h"
@@ -131,8 +131,9 @@ void*
 RenderQueue::alloc(SizeType n, SizeType align) 
 {
 	RDS_TODO("make it per rdDev");
+	throwIf(true, "rework");
 	//RDS_ASSERT(OsTraits::isMainThread(), "only use this in main thread"); 
-	return Renderer::rdDev()->renderFrame().renderCommandAllocator().alloc(n, align); 
+	return Renderer::rdDev()->renderFrame(0).renderCommandAllocator().alloc(n, align); 
 	//return nullptr;
 }
 
@@ -140,10 +141,11 @@ void
 RenderQueue::recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)
 {
 	_notYetSupported(RDS_SRCLOC);
+	#if 0
 	auto materialPassCount = 1;
 	auto nDrawCalls = rdMesh.subMeshCount() * materialPassCount;
 	auto it = allocCommands<RenderCommand_DrawCall>(out, nDrawCalls);
-	
+
 	for (auto& e : rdMesh.subMeshes())
 	{
 		//for (auto& pass : passes)
@@ -152,6 +154,7 @@ RenderQueue::recordDrawCall(Vector<RenderCommand_DrawCall*>& out, const RenderMe
 			++it;
 		}
 	}
+	#endif // 0
 }
 
 HashedDrawCallCommands*  

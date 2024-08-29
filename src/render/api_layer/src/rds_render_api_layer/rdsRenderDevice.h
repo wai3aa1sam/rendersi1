@@ -2,7 +2,9 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "vertex/rdsVertexLayoutManager.h"
-#include "rdsRenderFrame.h"
+#include "thread/rdsRenderFrame.h"
+#include "thread/rdsRenderFrameParam.h"
+
 #include "rds_render_api_layer/transfer/rdsTransferFrame.h"
 #include "rds_render_api_layer/shader/rdsBindlessResources.h"
 
@@ -74,10 +76,11 @@ public:
 	void create(const CreateDesc& cDesc);
 	void destroy();
 
-	void nextFrame();
+	void resetEngineFrame(u64 engineFrameCount);
 
 	virtual void waitIdle();
 
+public:
 	SPtr<RenderContext>			createContext(				const	RenderContext_CreateDesc&		cDesc);
 	SPtr<RenderGpuBuffer>		createRenderGpuBuffer(				RenderGpuBuffer_CreateDesc&		cDesc);
 	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer(			RenderGpuBuffer_CreateDesc&		cDesc);
@@ -101,20 +104,27 @@ public:
 	const	RenderAdapterInfo&	adapterInfo() const;
 			ShaderStock&		shaderStock();
 			TextureStock&		textureStock();
-			RenderFrame&		renderFrame();
-			TransferFrame&		transferFrame();
+			RenderFrame&		renderFrame(u64 frameIdx);
+			TransferFrame&		transferFrame(u64 frameIdx);
 			TransferContext&	transferContext();
 			TransferRequest&	transferRequest();
 
 			BindlessResources&	bindlessResource();
 
-	RenderApiType	apiType()	const;
-	u32				iFrame()	const;
+			RenderFrameParam&	renderFrameParam();
+	const	RenderFrameParam&	renderFrameParam() const;
+
+	RenderApiType	apiType()		const;
+
+	u64				engineFrameCount()	const;
+	u32				engineFrameIndex()	const;
+	u64				frameCount()		const;
+	u32				frameIndex()		const;
 
 protected:
-	virtual void onCreate	(const CreateDesc& cDesc);
-	virtual void onDestroy	();
-	virtual void onNextFrame();
+	virtual void onCreate(const CreateDesc& cDesc);
+	virtual void onDestroy();
+	virtual void onResetFrame(u64 frameCount);
 
 protected:
 	virtual SPtr<RenderContext>			onCreateContext(			const	RenderContext_CreateDesc&		cDesc)	= 0;
@@ -132,9 +142,12 @@ protected:
 	RenderAdapterInfo	_adapterInfo;
 	VertexLayoutManager _vertexLayoutManager;
 
+	RenderFrameParam	_rdFrameParam;
+	/*
+	* TODO: rework
+	*/
 	Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
 	Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
-	u32 _iFrame = 0;
 
 	TransferContext* _tsfCtx = nullptr;
 	TransferRequest	 _tsfReq;
@@ -145,21 +158,28 @@ protected:
 	TextureStock		_textureStock;
 };
 
-inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const	{ return _adapterInfo; }
+inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const		{ return _adapterInfo; }
 
-inline			ShaderStock&			RenderDevice::shaderStock()				{ return _shaderStock; }
-inline			TextureStock&			RenderDevice::textureStock()			{ return _textureStock; }
+inline			ShaderStock&			RenderDevice::shaderStock()					{ return _shaderStock; }
+inline			TextureStock&			RenderDevice::textureStock()				{ return _textureStock; }
 
-inline			RenderFrame&			RenderDevice::renderFrame()				{ return _rdFrames[iFrame()]; }
-inline			TransferFrame&			RenderDevice::transferFrame()			{ return _tsfFrames[iFrame()]; }
+inline			RenderFrame&			RenderDevice::renderFrame(u64 frameIdx)		{ return _rdFrames[frameIdx]; }
+inline			TransferFrame&			RenderDevice::transferFrame(u64 frameIdx)	{ return _tsfFrames[frameIdx]; }
 
-inline			TransferContext&		RenderDevice::transferContext()			{ return *_tsfCtx; }
-inline			TransferRequest&		RenderDevice::transferRequest()			{ return _tsfReq; }
+inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx; }
+inline			TransferRequest&		RenderDevice::transferRequest()				{ return _tsfReq; }
 
-inline			BindlessResources&		RenderDevice::bindlessResource()		{ return *_bindlessRscs; }
+inline			BindlessResources&		RenderDevice::bindlessResource()			{ return *_bindlessRscs; }
 
-inline			RenderApiType			RenderDevice::apiType() const			{ return _apiType; }
-inline			u32						RenderDevice::iFrame()	const			{ return _iFrame; }
+inline			RenderFrameParam&		RenderDevice::renderFrameParam()			{ return _rdFrameParam; }
+inline const	RenderFrameParam&		RenderDevice::renderFrameParam() const		{ return _rdFrameParam; }
+
+inline			RenderApiType			RenderDevice::apiType()		const			{ return _apiType; }
+
+inline			u64						RenderDevice::engineFrameCount()	const	{ return renderFrameParam().engineFrameCount(); }
+inline			u32						RenderDevice::engineFrameIndex()	const	{ return sCast<u32>((engineFrameCount()) % s_kFrameInFlightCount); }
+inline			u64						RenderDevice::frameCount()			const	{ return renderFrameParam().frameCount(); }
+inline			u32						RenderDevice::frameIndex()			const	{ return sCast<u32>((frameCount()) % s_kFrameInFlightCount); }
 
 #endif
 
