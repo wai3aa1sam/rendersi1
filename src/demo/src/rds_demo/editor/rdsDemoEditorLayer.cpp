@@ -114,7 +114,8 @@ DemoEditorLayer::onUpdate()
 	auto& egFrameParam	= egCtx.engineFrameParam();
 
 	auto frameCount = egFrameParam.frameCount() + 1; // reset will increase frameCount
-	RDS_PROFILE_TRANSIENT_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount); 
+	RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount); 
+
 	egFrameParam.reset(&rdCtx);
 
 
@@ -177,7 +178,7 @@ DemoEditorLayer::onRender()
 
 	auto* rdDev			= Renderer::rdDev();
 	auto& rdFrameParam	= rdDev->renderFrameParam();
-	RDS_PROFILE_TRANSIENT_FMT("onRender() - frame {}", rdFrameParam.frameCount());
+	RDS_PROFILE_DYNAMIC_FMT("onRender() - frame {}", rdFrameParam.frameCount());
 
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();

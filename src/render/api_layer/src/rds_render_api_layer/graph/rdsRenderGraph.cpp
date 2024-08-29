@@ -344,7 +344,7 @@ RenderGraph::execute()
 	for (auto& pass : resultPasses())
 	{
 		const auto& name = pass->name(); RDS_UNUSED(name);
-		RDS_PROFILE_TRANSIENT_SECTION(name.c_str());
+		RDS_PROFILE_DYNAMIC_SECTION(name.c_str());
 
 		if (pass->isCulled())
 			continue;

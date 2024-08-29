@@ -282,7 +282,7 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	vkCmdBuf->beginRecord(vkGraphicsQueue());
 
 	{
-		RDS_VK_PROFILE_GPU_TRANSIENT_ZONE(_gpuProfilerCtx, vkCmdBuf, "RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)");
+		RDS_VK_PROFILE_GPU_DYNAMIC_ZONE(_gpuProfilerCtx, vkCmdBuf, "RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)");
 
 		renderDeviceVk()->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
@@ -358,7 +358,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 		void _commitPass(RdgPass* pass)
 		{
 			const char* passName = pass->name().c_str();	RDS_UNUSED(passName);
-			RDS_PROFILE_TRANSIENT_FMT("{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
+			RDS_PROFILE_DYNAMIC_FMT("{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
 
 			if (pass->isCommitted())
 				return;
@@ -458,7 +458,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				vkCmdBuf->beginDebugLabel(passName);
 			}
 
-			RDS_VK_PROFILE_GPU_TRANSIENT_FMT(_rdCtxVk->_gpuProfilerCtx, vkCmdBuf, "{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
+			RDS_VK_PROFILE_GPU_DYNAMIC_FMT(_rdCtxVk->_gpuProfilerCtx, vkCmdBuf, "{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
 
 			#if RDS_DEBUG_RENDER_GRAPH
 			RDS_CORE_LOG("before pass:[{}] record barrier", passName);

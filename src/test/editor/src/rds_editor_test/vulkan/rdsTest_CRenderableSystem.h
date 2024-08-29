@@ -11,6 +11,7 @@ namespace rds
 
 class Test_System_Base {};
 
+#if 0
 class Test_CRenderable : public RefCount_Base
 {
 public:
@@ -75,7 +76,7 @@ public:
 		{
 		public:
 			ParRecordRenderCommandJob(SizeType batchOffset, SizeType batchSize, HashedDrawCallCommands* outCmds, Span<SPtr<Test_CRenderable> > cRenderables
-									, RenderQueue* rdQueue, Mutex* mtx)
+				, RenderQueue* rdQueue, Mutex* mtx)
 			{
 				_batchOffset	= batchOffset;
 				_batchSize		= batchSize;
@@ -144,7 +145,7 @@ public:
 
 			auto batchSize = math::min(batchSizePerThread, remain);
 			remain -= batchSize;
-			
+
 			job = makeUPtr<ParRecordRenderCommandJob>(batchSizePerThread * i, batchSize, &out, _cRenderables.span(), &rdQueue, &mtx);
 
 			auto handle = job->prepareDispatch(scatterJobParent, nullptr);
@@ -180,7 +181,7 @@ public:
 		{
 		public:
 			ParRecordRenderCommandJob(HashedDrawCallCommands* outCmds, Span<SPtr<Test_CRenderable> > cRenderables
-										, RenderQueue* rdQueue, Mutex* mtx)
+				, RenderQueue* rdQueue, Mutex* mtx)
 			{
 				_cRenderables	= cRenderables;
 				_outCmds		= outCmds;
@@ -283,7 +284,7 @@ public:
 		static size_t s_kVtxCount = 4;
 		EditMesh editMesh;
 		auto rnd = Random{};
-		
+
 		{
 			auto& e = editMesh.pos;
 			e.reserve(s_kVtxCount);
@@ -382,5 +383,7 @@ private:
 	Vector<RenderMesh>		_rdMeshes;
 	Test_CRenderableSystem	_cRdSys;
 };
+#endif // 0
+
 
 }

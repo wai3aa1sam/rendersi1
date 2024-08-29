@@ -62,8 +62,8 @@ Vk_GpuProfiler::makeProfileScope(const SrcLoc& srcLoc, Vk_CommandBuffer* vkCmdBu
 	throwIf(BitUtil::has(queueTypeFlags, QueueTypeFlags::Transfer), "queue must support gfx or compute");
 	switch (queueTypeFlags)
 	{
-		case QueueTypeFlags::Graphics:	{ return tracy::VkCtxScope(_gfxCtx,		srcLoc.line, srcLoc.file, ::strlen(srcLoc.file), srcLoc.func, strlen(srcLoc.func), name, strlen(name), vkCmdBuf->hnd(), RDS_PROFILE_CALLSTACK_DEPTH, true); } break;
-		case QueueTypeFlags::Compute:	{ return tracy::VkCtxScope(_computeCtx, srcLoc.line, srcLoc.file, ::strlen(srcLoc.file), srcLoc.func, strlen(srcLoc.func), name, strlen(name), vkCmdBuf->hnd(), RDS_PROFILE_CALLSTACK_DEPTH, true); } break;
+		case QueueTypeFlags::Graphics:	{ return tracy::VkCtxScope(_gfxCtx,		srcLoc.line, srcLoc.file, ::strlen(srcLoc.file), srcLoc.func, strlen(srcLoc.func), name, strlen(name), vkCmdBuf->hnd(), 0, true); } break;
+		case QueueTypeFlags::Compute:	{ return tracy::VkCtxScope(_computeCtx, srcLoc.line, srcLoc.file, ::strlen(srcLoc.file), srcLoc.func, strlen(srcLoc.func), name, strlen(name), vkCmdBuf->hnd(), 0, true); } break;
 		default: { RDS_THROW(""); } break;
 	}
 }

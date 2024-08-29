@@ -35,8 +35,7 @@ EngineFrameParam::reset(RenderContext* rdCtx)
 	#if 1
 	{
 		{
-			//RDS_PROFILE_SECTION("wait gpu");
-			RDS_PROFILE_TRANSIENT_FMT("wait gpu i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
+			RDS_PROFILE_DYNAMIC_FMT("wait gpu i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
 
 			while (!rdCtx->isFrameCompleted(frameCount))
 			{

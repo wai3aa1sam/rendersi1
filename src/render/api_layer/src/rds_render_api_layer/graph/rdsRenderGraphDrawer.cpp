@@ -2,8 +2,8 @@
 #include "rdsRenderGraphDrawer.h"
 #include "rdsRenderGraph.h"
 
-#define scopedBracket()		RDS_UNIQUE_VAR(ScopedBracket)(this)
-#define scopedLine()		RDS_UNIQUE_VAR(ScopedLine)(this)
+#define scopedBracket()		ScopedBracket	RDS_VAR_NAME(_temp){this}
+#define scopedLine()		ScopedLine		RDS_VAR_NAME(_temp){this}
 
 namespace rds
 {

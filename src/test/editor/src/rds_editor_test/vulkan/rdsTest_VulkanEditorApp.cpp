@@ -243,7 +243,7 @@ public:
 		uploadTestMultiBuf();
 
 		//_testMultiThreadDrawCalls.create(10);
-		_testMultiThreadDrawCalls.createFixed(2);
+		//_testMultiThreadDrawCalls.createFixed(2);
 		#endif // 0
 
 		{
@@ -398,6 +398,7 @@ public:
 
 	virtual void onUpdate() override
 	{
+		_notYetSupported(RDS_SRCLOC);
 		RDS_PROFILE_SCOPED();
 		auto* mainWnd	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWnd->renderContext();
@@ -411,7 +412,7 @@ public:
 				OsUtil::sleep_ms(1);
 			}
 		}
-		Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
+		//Renderer::rdDev()->nextFrame();		// next frame here will clear those in Layer::onCreate()
 		#endif // 0
 
 		rdCtx.setFramebufferSize(mainWnd->clientRect().size);		// this will invalidate the swapchain
@@ -433,11 +434,13 @@ public:
 
 		RDS_PROFILE_SCOPED();
 		
+		_notYetSupported(RDS_SRCLOC);
+
 		auto* rdDev		= Renderer::rdDev();
 
 		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWin->renderContext();
-		auto& rdFrame	= rdDev->renderFrame(); RDS_UNUSED(rdFrame);
+		auto& rdFrame	= rdDev->renderFrame(0); RDS_UNUSED(rdFrame);
 
 		auto& tsfCtx	= rdDev->transferContext();
 		auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
@@ -534,7 +537,7 @@ protected:
 	RenderMesh _rdMesh1;
 	RenderMesh _rdMesh2;
 
-	Test_MultiThreadDrawCalls	_testMultiThreadDrawCalls;
+	//Test_MultiThreadDrawCalls	_testMultiThreadDrawCalls;
 	Test_RenderGraph			_testRenderGraph;
 
 	SPtr<Shader>	_testShader;

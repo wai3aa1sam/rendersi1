@@ -27,11 +27,10 @@
 														#v0, (v0), #v1, (v1), #v2, (v2), #v3, (v3), #v4, (v4), #v5, (v5), #v6, (v6), #v7, (v7)); } while(false)
 
 #define RDS_DUMP_VAR_SELECT(COUNT) RDS_DUMP_VAR_##COUNT
-#define RDS_DUMP_VAR(...) NMSP_IDENTITY(NMSP_CALL(RDS_DUMP_VAR_SELECT, NMSP_VA_ARGS_COUNT(__VA_ARGS__) (__VA_ARGS__)))
+#define RDS_DUMP_VAR(...) RDS_IDENTITY(RDS_CALL(RDS_DUMP_VAR_SELECT, RDS_VA_ARGS_COUNT(__VA_ARGS__) (__VA_ARGS__)))
 
-#define RDS_WARN_ONCE(...) do { static RDS_UNIQUE_VAR(bool) = false; if (!RDS_UNIQUE_VAR_NAME(bool)) { RDS_CORE_LOG_WARN(__VA_ARGS__); RDS_UNIQUE_VAR_NAME(bool) = true; } } while(false)
-
-#define RDS_TODO(...) do { static RDS_UNIQUE_VAR(bool) = false; if (!RDS_UNIQUE_VAR_NAME(bool)) { RDS_CORE_LOG_DEBUG("{}", _todo(RDS_SRCLOC, RDS_ARGS(__VA_ARGS__))); RDS_UNIQUE_VAR_NAME(bool) = true; } } while(false)
+#define RDS_WARN_ONCE(...)		do { static bool RDS_VAR_NAME(_temp) = false; if (!RDS_VAR_NAME(_temp)) { RDS_CORE_LOG_WARN(__VA_ARGS__); RDS_VAR_NAME(_temp) = true; } } while(false)
+#define RDS_TODO(...)			do { static bool RDS_VAR_NAME(_temp) = false; if (!RDS_VAR_NAME(_temp)) { RDS_CORE_LOG_DEBUG("{}", _todo(RDS_SRCLOC, RDS_ARGS(__VA_ARGS__))); RDS_VAR_NAME(_temp) = true; } } while(false)
 
 #if RDS_DEBUG || RDS_DEVELOPMENT
 	#define RDS_CORE_LOG_DEBUG(...)	    do{ ::rds::Logger::instance()->coreLog(::rds::LogLevel::Debug,	    __VA_ARGS__); } while(false)

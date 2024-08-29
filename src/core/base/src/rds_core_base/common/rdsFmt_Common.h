@@ -15,6 +15,13 @@
 
 #define RDS_FORMATTER(CLASS) RDS_FORMATTER_T(RDS_EMPTY, CLASS)
 
+#define RDS_FMT(T, FMT, ...)									fmtAs_T<T>(FMT, __VA_ARGS__)
+#define RDS_FMT_TO(VAR, FMT, ...)								fmtTo(VAR, FMT, __VA_ARGS__)
+
+#define RDS_FMT_VAR(STR_NAME, C_STR_NAME, T, FMT, ...)				   auto RDS_VAR_NAME(STR_NAME) = RDS_FMT(T, FMT, __VA_ARGS__);		  const auto* RDS_VAR_NAME(C_STR_NAME) = RDS_VAR_NAME(STR_NAME).c_str()
+#define RDS_FMT_STATIC_VAR(STR_NAME, C_STR_NAME, T, FMT, ...)	static auto RDS_VAR_NAME(STR_NAME) = RDS_FMT(T, FMT, __VA_ARGS__); static const auto* RDS_VAR_NAME(C_STR_NAME) = RDS_VAR_NAME(STR_NAME).c_str()
+
+
 #if RDS_DEVELOPMENT
 
 #define RDS_FMT_DEBUG(...) ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__)

@@ -45,7 +45,7 @@ TransferContext_Vk::onCreate(const CreateDesc& cDesc)
 		e.create(this);
 	}
 
-	auto* rdDevVk		= renderDeviceVk();
+	auto* rdDevVk = renderDeviceVk();
 
 	_vkGraphicsQueue.create(QueueTypeFlags::Graphics, rdDevVk);
 	_vkTransferQueue.create(QueueTypeFlags::Transfer, rdDevVk);
