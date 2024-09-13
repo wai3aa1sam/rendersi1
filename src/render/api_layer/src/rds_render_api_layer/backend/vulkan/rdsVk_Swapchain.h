@@ -2,6 +2,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rdsVk_RenderFrame.h"
+#include "pass/rdsVk_RenderPassPool.h"
 #include "pass/rdsVk_FramebufferPool.h"
 
 #include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
@@ -13,8 +14,9 @@
 namespace rds
 {
 
-class RenderDevice_Vk;
-class RenderContext_Vk;
+class	RenderDevice_Vk;
+class	RenderContext_Vk;
+struct	RenderContext_CreateDesc;
 
 #if 1
 
@@ -37,11 +39,15 @@ template<size_t N>	using SwapChainFramebuffers_Vk_N	= Vector<Vk_Framebuffer, N>;
 
 struct Vk_Swapchain_CreateDesc
 {
-	RenderContext_Vk*	rdCtxVk			= nullptr;
-	NativeUIWindow*		wnd				= nullptr;
+public:
+	using Util = Vk_RenderApiUtil;
+
+public:
+	RenderContext_Vk*	renderContexVk	= nullptr;
+	NativeUIWindow*		window			= nullptr;
 	Backbuffers*		outBackbuffers	= nullptr;
 	Rect2f				framebufferRect2f;
-	Vk_RenderPass*		vkRdPass;
+	//Vk_RenderPass*		vkRdPass;
 
 	/*
 	
@@ -59,6 +65,10 @@ struct Vk_Swapchain_CreateDesc
 	VkFormat			depthFormat	= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 	u32					imageCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
+
+public:
+	void create(NativeUIWindow* window_, RenderContext_Vk* renderContextVk_, Backbuffers* outBackbuffers_, VkFormat colorFormat_, VkColorSpaceKHR colorSpace_, VkFormat depthFormat_);
+	void create(const RenderContext_CreateDesc& rdCtxCDesc, RenderContext_Vk* renderContextVk_, Backbuffers* outBackbuffers_);
 };
 
 class Vk_Swapchain : public Vk_RenderApiPrimitive<Vk_Swapchain_T, VK_OBJECT_TYPE_SWAPCHAIN_KHR>
@@ -85,7 +95,8 @@ public:
 	Vk_ImageView_T*			vkImageViewHnd();
 
 	const Vk_SwapchainInfo& info() const;
-	Vk_Framebuffer*			framebuffer();
+	Vk_Framebuffer*			vkFramebuffer();
+	Vk_RenderPass*			vkRenderPass();
 	u32						curImageIdx() const;
 
 	bool isValid() const;
@@ -112,6 +123,8 @@ protected:
 	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out,	Backbuffers& outBackbuffers, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk
 		, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
+	void createRenderPass(VkFormat colorFormat, VkFormat depthFormat);
+
 	void _setDebugName();
 
 protected:
@@ -132,6 +145,8 @@ protected:
 	Vk_Image		_vkDepthImage;
 	Vk_ImageView	_vkDepthImageView;
 
+	Vk_RenderPass	_vkRdPass;
+
 	u32 _curImageIdx = 0;
 };
 
@@ -139,7 +154,8 @@ inline const Vk_SwapchainInfo& Vk_Swapchain::info() const { return _swapchainInf
 
 inline Vk_Image_T*		Vk_Swapchain::vkImageHnd()			{ return _vkSwapchainImages[curImageIdx()].hnd(); }
 inline Vk_ImageView_T*	Vk_Swapchain::vkImageViewHnd()		{ return _vkSwapchainImageViews[curImageIdx()].hnd(); }
-inline Vk_Framebuffer*	Vk_Swapchain::framebuffer()			{ return !_vkSwapchainFramebuffers.is_empty() ? & _vkSwapchainFramebuffers[curImageIdx()] : nullptr; }
+inline Vk_Framebuffer*	Vk_Swapchain::vkFramebuffer()		{ return !_vkSwapchainFramebuffers.is_empty() ? & _vkSwapchainFramebuffers[curImageIdx()] : nullptr; }
+inline Vk_RenderPass*	Vk_Swapchain::vkRenderPass()		{ return &_vkRdPass; }
 inline u32				Vk_Swapchain::curImageIdx() const	{ return _curImageIdx; }
 
 inline bool Vk_Swapchain::isValid() const { return !math::equals0(info().rect2f.size.x) && !math::equals0(info().rect2f.size.y); }

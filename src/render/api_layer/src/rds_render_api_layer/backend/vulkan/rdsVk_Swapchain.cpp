@@ -8,6 +8,27 @@
 
 namespace rds
 {
+
+void 
+Vk_Swapchain_CreateDesc::create(NativeUIWindow* window_, RenderContext_Vk* renderContextVk_, Backbuffers* outBackbuffers_, VkFormat colorFormat_, VkColorSpaceKHR colorSpace_, VkFormat depthFormat_)
+{
+	this->renderContexVk	= renderContextVk_;
+	this->window			= window_;
+	this->outBackbuffers	= outBackbuffers_;
+	this->framebufferRect2f	= math::toRect2_wh(renderContextVk_->framebufferSize());
+	this->colorFormat		= colorFormat_;
+	this->colorSpace		= colorSpace_;
+	this->depthFormat		= depthFormat_;
+}
+
+void 
+Vk_Swapchain_CreateDesc::create(const RenderContext_CreateDesc& rdCtxCDesc, RenderContext_Vk* renderContextVk_, Backbuffers* outBackbuffers_)
+{
+	create(rdCtxCDesc.window, renderContextVk_, outBackbuffers_
+		, Util::toVkFormat(rdCtxCDesc.backbufferFormat), VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, Util::toVkFormat(rdCtxCDesc.depthFormat));
+}
+
+
 #if 0
 #pragma mark --- rdsVk_Swapchain-Impl ---
 #endif // 0
@@ -32,19 +53,18 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	_swapchainInfo.rect2f = framebufferRect2f;
 
 	bool isInvalidSize = math::equals0(framebufferRect2f.size.x) || math::equals0(framebufferRect2f.size.y);
-	if (isInvalidSize || !cDesc.rdCtxVk)
+	if (isInvalidSize || !cDesc.renderContexVk)
 		return;
 	
 	//bool isInvalidate = !cDesc.wnd || !cDesc.rdCtx;
 
-	destroy(cDesc.wnd);
+	destroy(cDesc.window);
 
-	_rdCtxVk = cDesc.rdCtxVk;
+	_rdCtxVk = cDesc.renderContexVk;
 	auto* rdDevVk = renderDeviceVk();
 
-	_vkSurface.create(cDesc.wnd, rdDevVk);
+	_vkSurface.create(cDesc.window, rdDevVk);
 	
-
 	if (_vkSurface.hnd())
 	{
 		// fix validation layer false positive error: vkCreateSwapchainKHR imageExtent surface capabilities
@@ -60,7 +80,8 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	createSwapchainInfo(_swapchainInfo, cDesc.imageCount, rdDevVk->swapchainAvailableInfo(), framebufferRect2f, cDesc.colorFormat, cDesc.colorSpace, cDesc.depthFormat);
 	//_swapchainInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR; // vsync
 
-	createSwapchain(*cDesc.outBackbuffers, info().rect2f, cDesc.vkRdPass);
+	createRenderPass(_swapchainInfo.surfaceFormat.format, _swapchainInfo.depthFormat);
+	createSwapchain(*cDesc.outBackbuffers, info().rect2f, &_vkRdPass);
 }
 
 void 
@@ -73,6 +94,7 @@ Vk_Swapchain::destroy(NativeUIWindow* wnd)
 
 	destroySwapchain();
 	_vkSurface.destroy(wnd, rdDevVk);
+	_vkRdPass.destroy(rdDevVk);
 	_rdCtxVk = nullptr;
 }
 
@@ -126,6 +148,20 @@ Vk_Swapchain::swapBuffers(Vk_Queue* presentVkQueue, Vk_Semaphore* vkWaitSmp)
 	//Util::throwIfError(ret);
 }
 
+bool findAvailableVkSurfaceFormat(VkSurfaceFormatKHR& out, Span<const VkSurfaceFormatKHR> src, VkFormat colorFormat, VkColorSpaceKHR colorSpace)
+{
+	for (const auto& availableFormat : src)
+	{
+		//if (availableFormat.format == VK_FORMAT_R16G16B16A16_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		if (availableFormat.format == colorFormat && availableFormat.colorSpace == colorSpace)
+		{
+			out = availableFormat;
+			return true;
+		}
+	}
+	return false;
+}
+
 void
 Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, u32 imageCount, const Vk_SwapchainAvailableInfo& info, const Rect2f& framebufferRect2f
 									, VkFormat colorFormat, VkColorSpaceKHR colorSpace, VkFormat depthFormat)
@@ -136,13 +172,15 @@ Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, u32 imageCount, const V
 
 	RDS_CORE_ASSERT(!info.formats.is_empty() || !info.presentModes.is_empty(), "info is not yet init");
 	{
-		for (const auto& availableFormat : info.formats)
+		VkFormat		defulatColorFormat	= VK_FORMAT_B8G8R8A8_UNORM;
+		VkColorSpaceKHR defaultColorSpace	= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+
+		bool hasFound = findAvailableVkSurfaceFormat(out.surfaceFormat, info.formats, colorFormat, colorSpace);
+		if (!hasFound)
 		{
-			//if (availableFormat.format == VK_FORMAT_R16G16B16A16_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-			if (availableFormat.format == colorFormat && availableFormat.colorSpace == colorSpace)
-			{
-				out.surfaceFormat = availableFormat;
-			}
+			RDS_LOG_WARN("cannot find target swapchain format, using default now");
+			hasFound = findAvailableVkSurfaceFormat(out.surfaceFormat, info.formats, defulatColorFormat, defaultColorSpace);
+			throwIf(!hasFound, "cannot find target swapchain format");
 		}
 	}
 
@@ -293,6 +331,86 @@ Vk_Swapchain::createDepthResources()
 }
 
 void 
+Vk_Swapchain::createRenderPass(VkFormat colorFormat, VkFormat depthFormat)
+{
+	//auto* vkDevice = rdDevVk()->vkDevice();
+	//const auto* vkAllocCallbacks = rdDevVk()->allocCallbacks();
+
+	VkAttachmentDescription	colorAttachment = {};
+	colorAttachment.format			= colorFormat; //_vkSwapchain.colorFormat();
+	colorAttachment.samples			= VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.loadOp			= VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp			= VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachment.initialLayout	= VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout		= VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	VkAttachmentDescription depthAttachment{};
+	depthAttachment.format			= depthFormat; // _vkSwapchain.depthFormat();
+	depthAttachment.samples			= VK_SAMPLE_COUNT_1_BIT;
+	depthAttachment.loadOp			= VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthAttachment.storeOp			= VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.stencilLoadOp	= VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthAttachment.stencilStoreOp	= VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.initialLayout	= VK_IMAGE_LAYOUT_UNDEFINED;
+	depthAttachment.finalLayout		= VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference colorAttachmentRef = {};
+	colorAttachmentRef.attachment	= 0;	// index
+	colorAttachmentRef.layout		= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthAttachmentRef = {};
+	depthAttachmentRef.attachment	= 1;	// index
+	depthAttachmentRef.layout		= VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.inputAttachmentCount	= 0;
+	subpass.colorAttachmentCount	= 1;
+	subpass.pInputAttachments		= nullptr;
+	subpass.pColorAttachments		= &colorAttachmentRef;
+	subpass.pDepthStencilAttachment	= &depthAttachmentRef;
+
+	Vector<VkAttachmentDescription, 4> attachments;
+	attachments.reserve(4);
+	attachments.emplace_back(colorAttachment);
+	attachments.emplace_back(depthAttachment);
+
+	// for image layout transition
+	Vector<VkSubpassDependency, 12> subpassDeps;
+	{
+		VkSubpassDependency	subpassDep = {};
+		subpassDep.srcSubpass		= VK_SUBPASS_EXTERNAL;
+		subpassDep.dstSubpass		= 0;
+		subpassDep.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		subpassDep.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		subpassDep.srcAccessMask	= VK_ACCESS_NONE_KHR;
+		subpassDep.dstAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		subpassDeps.emplace_back(subpassDep);
+	}
+	{
+		VkSubpassDependency	subpassDep = {};
+		subpassDep.srcSubpass		= 0;
+		subpassDep.dstSubpass		= VK_SUBPASS_EXTERNAL;
+		subpassDep.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		subpassDep.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		subpassDep.srcAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		subpassDep.dstAccessMask	= VK_ACCESS_NONE_KHR;
+		subpassDeps.emplace_back(subpassDep);
+	}
+
+	VkRenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.sType			= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount	= sCast<u32>(attachments.size());
+	renderPassInfo.subpassCount		= 1;
+	renderPassInfo.dependencyCount	= sCast<u32>(subpassDeps.size());
+	renderPassInfo.pAttachments		= attachments.data();
+	renderPassInfo.pSubpasses		= &subpass;
+	renderPassInfo.pDependencies	= subpassDeps.data();
+
+	_vkRdPass.create(&renderPassInfo, renderDeviceVk());
+}
+
+void 
 Vk_Swapchain::destroyDepthResources()
 {
 	auto* rdDevVk = renderDeviceVk();
@@ -319,6 +437,8 @@ Vk_Swapchain::_setDebugName()
 
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImage);
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImageView);
+
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkRdPass);
 }
 
 RenderDevice_Vk* 

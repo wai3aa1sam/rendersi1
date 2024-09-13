@@ -72,16 +72,7 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	_vkTransferQueue.create(QueueTypeFlags::Transfer,	rdDevVk);
 
 	auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
-	vkSwapchainCDesc.rdCtxVk			= this;
-	vkSwapchainCDesc.wnd				= cDesc.window;
-	vkSwapchainCDesc.outBackbuffers		= &_backbuffers;
-	vkSwapchainCDesc.framebufferRect2f	= math::toRect2_wh(framebufferSize());
-	//vkSwapchainCDesc.vkRdPass			= &_presentVkRenderPass;
-	vkSwapchainCDesc.colorFormat		= Util::toVkFormat(cDesc.backbufferFormat); //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
-	vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	vkSwapchainCDesc.depthFormat		= Util::toVkFormat(cDesc.depthFormat);
-
-	createPresentRenderPass(vkSwapchainCDesc);
+	vkSwapchainCDesc.create(cDesc, this, &_backbuffers);
 	_vkSwapchain.create(vkSwapchainCDesc);
 
 	#if RDS_DEVELOPMENT
@@ -115,7 +106,6 @@ RenderContext_Vk::onDestroy()
 	auto* rdDevVk = renderDeviceVk();
 
 	rdDevVk->waitIdle();
-	_presentVkRenderPass.destroy(rdDevVk);
 
 	_vkRdFrames.clear();
 
@@ -300,7 +290,7 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 			// wait job sysytem handle
 			_curGraphicsVkCmdBuf->beginRenderPass(&_presentVkRenderPass, _vkSwapchain.framebuffer(), fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 			#else
-			vkCmdBuf->beginRenderPass(&_presentVkRenderPass, _vkSwapchain.framebuffer(), fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBuf->beginRenderPass(_vkSwapchain.vkRenderPass(), _vkSwapchain.vkFramebuffer(), fbufRect2, clearValues.span(), VK_SUBPASS_CONTENTS_INLINE);
 			//vkCmdBuf->setViewport(fbufRect2);
 			//vkCmdBuf->setScissor (fbufRect2);
 			#endif // TE
@@ -698,17 +688,8 @@ RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
 	if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
 	{
 		auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
-		vkSwapchainCDesc.rdCtxVk			= this;
-		vkSwapchainCDesc.wnd				= nativeUIWindow();
-		vkSwapchainCDesc.outBackbuffers		= &_backbuffers;
-		vkSwapchainCDesc.framebufferRect2f	= math::toRect2_wh(newSize);
-		vkSwapchainCDesc.vkRdPass			= &_presentVkRenderPass;
-		vkSwapchainCDesc.colorFormat		= _vkSwapchain.colorFormat(); //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
-		vkSwapchainCDesc.colorSpace			= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-		vkSwapchainCDesc.depthFormat		= _vkSwapchain.depthFormat();
-
+		vkSwapchainCDesc.create(nativeUIWindow(), this, &_backbuffers, _vkSwapchain.colorFormat(), VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, _vkSwapchain.depthFormat());
 		_vkSwapchain.create(vkSwapchainCDesc);
-
 		return;
 	}
 	else
@@ -736,87 +717,6 @@ RenderContext_Vk::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBuffer
 #pragma mark --- rdsRenderContext_Vk-createResource
 #endif // 0
 #if 1
-
-void
-RenderContext_Vk::createPresentRenderPass(Vk_Swapchain_CreateDesc& vkSwapchainCDesc)
-{
-	//auto* vkDevice = rdDevVk()->vkDevice();
-	//const auto* vkAllocCallbacks = rdDevVk()->allocCallbacks();
-
-	VkAttachmentDescription	colorAttachment = {};
-	colorAttachment.format			= vkSwapchainCDesc.colorFormat; //_vkSwapchain.colorFormat();
-	colorAttachment.samples			= VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp			= VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp			= VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.initialLayout	= VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout		= VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format			= vkSwapchainCDesc.depthFormat; // _vkSwapchain.depthFormat();
-	depthAttachment.samples			= VK_SAMPLE_COUNT_1_BIT;
-	depthAttachment.loadOp			= VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp			= VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.stencilLoadOp	= VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depthAttachment.stencilStoreOp	= VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.initialLayout	= VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout		= VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment	= 0;	// index
-	colorAttachmentRef.layout		= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference depthAttachmentRef = {};
-	depthAttachmentRef.attachment	= 1;	// index
-	depthAttachmentRef.layout		= VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.inputAttachmentCount	= 0;
-	subpass.colorAttachmentCount	= 1;
-	subpass.pInputAttachments		= nullptr;
-	subpass.pColorAttachments		= &colorAttachmentRef;
-	subpass.pDepthStencilAttachment	= &depthAttachmentRef;
-
-	Vector<VkAttachmentDescription, 4> attachments;
-	attachments.reserve(4);
-	attachments.emplace_back(colorAttachment);
-	attachments.emplace_back(depthAttachment);
-
-	// for image layout transition
-	Vector<VkSubpassDependency, 12> subpassDeps;
-	{
-		VkSubpassDependency	subpassDep = {};
-		subpassDep.srcSubpass		= VK_SUBPASS_EXTERNAL;
-		subpassDep.dstSubpass		= 0;
-		subpassDep.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		subpassDep.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		subpassDep.srcAccessMask	= VK_ACCESS_NONE_KHR;
-		subpassDep.dstAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-		subpassDeps.emplace_back(subpassDep);
-	}
-	{
-		VkSubpassDependency	subpassDep = {};
-		subpassDep.srcSubpass		= 0;
-		subpassDep.dstSubpass		= VK_SUBPASS_EXTERNAL;
-		subpassDep.srcStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		subpassDep.dstStageMask		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		subpassDep.srcAccessMask	= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-		subpassDep.dstAccessMask	= VK_ACCESS_NONE_KHR;
-		subpassDeps.emplace_back(subpassDep);
-	}
-
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType			= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount	= sCast<u32>(attachments.size());
-	renderPassInfo.subpassCount		= 1;
-	renderPassInfo.dependencyCount	= sCast<u32>(subpassDeps.size());
-	renderPassInfo.pAttachments		= attachments.data();
-	renderPassInfo.pSubpasses		= &subpass;
-	renderPassInfo.pDependencies	= subpassDeps.data();
-
-	_presentVkRenderPass.create(&renderPassInfo, renderDeviceVk());
-	vkSwapchainCDesc.vkRdPass = &_presentVkRenderPass;
-}
 
 #endif // 1
 
@@ -1217,7 +1117,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 
 	auto jobClusterHnd = JobCluster::prepare(recordJobs, drawCallCount, s_kMinBatchSize
 		, this, cmd->hashedDrawCallCmds, vkCmdBufs.span(), vkGraphicsQueue()
-		, &_presentVkRenderPass, _vkSwapchain.framebuffer(), 0, _vkSwapchain.framebufferRect2f());
+		, _vkSwapchain.vkRenderPass(), _vkSwapchain.vkFramebuffer(), 0, _vkSwapchain.framebufferRect2f());
 
 	JobSystem::instance()->submit(jobClusterHnd);
 	JobSystem::instance()->waitForComplete(jobClusterHnd);
@@ -1261,7 +1161,6 @@ RenderContext_Vk::onRenderCommand_CopyTexture(RenderCommand_CopyTexture* cmd, vo
 void 
 RenderContext_Vk::_setDebugName()
 {
-	RDS_VK_SET_DEBUG_NAME_FMT(_presentVkRenderPass);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkSwapchain);
 
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkGraphicsQueue);

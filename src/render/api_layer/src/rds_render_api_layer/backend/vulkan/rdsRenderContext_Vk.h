@@ -86,17 +86,12 @@ protected:
 protected:
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
 
-
 	void _setDebugName();
-
-protected:
-	void createPresentRenderPass(Vk_Swapchain_CreateDesc& vkSwapchainCDesc);
 
 protected:
 	Vk_GpuProfiler _gpuProfilerCtx;
 
 	Vk_Swapchain	_vkSwapchain;
-	Vk_RenderPass	_presentVkRenderPass;
 
 	Vk_Queue _vkGraphicsQueue;
 	Vk_Queue _vkComputeQueue;

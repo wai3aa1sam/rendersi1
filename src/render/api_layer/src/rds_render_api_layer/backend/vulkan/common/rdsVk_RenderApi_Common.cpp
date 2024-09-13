@@ -242,29 +242,34 @@ Vk_RenderApiUtil::toVkFormat(ColorType v)
 	switch (v) 
 	{
 		case SRC::Rb:		{ return VK_FORMAT_R8_UNORM;			} break;
-		case SRC::RGb:		{ return VK_FORMAT_R8G8_UNORM;			} break;
-		case SRC::RGBb:		{ return VK_FORMAT_R8G8B8_UNORM;		} break;
-		case SRC::RGBAb:	{ return VK_FORMAT_R8G8B8A8_UNORM;		} break;
-
 		case SRC::Rs:		{ return VK_FORMAT_R16_UNORM;			} break;
-		case SRC::RGs:		{ return VK_FORMAT_R16G16_UNORM;		} break;
-		case SRC::RGBs:		{ return VK_FORMAT_R16G16B16_UNORM;		} break;
-		case SRC::RGBAs:	{ return VK_FORMAT_R16G16B16A16_UNORM;	} break;
-
 		case SRC::Ru:		{ return VK_FORMAT_R32_UINT;			} break;
-		case SRC::RGu:		{ return VK_FORMAT_R32G32_UINT;			} break;
-		case SRC::RGBu:		{ return VK_FORMAT_R32G32B32_UINT;		} break;
-		case SRC::RGBAu:	{ return VK_FORMAT_R32G32B32A32_UINT;	} break;
-
 		case SRC::Rh:		{ return VK_FORMAT_R16_SFLOAT;			} break;
-		case SRC::RGh:		{ return VK_FORMAT_R16G16_SFLOAT;		} break;
-		case SRC::RGBh:		{ return VK_FORMAT_R16G16B16_SFLOAT;	} break;
-		case SRC::RGBAh:	{ return VK_FORMAT_R16G16B16A16_SFLOAT;	} break;
-
 		case SRC::Rf:		{ return VK_FORMAT_R32_SFLOAT;			} break;
+
+		case SRC::RGb:		{ return VK_FORMAT_R8G8_UNORM;			} break;
+		case SRC::RGs:		{ return VK_FORMAT_R16G16_UNORM;		} break;
+		case SRC::RGu:		{ return VK_FORMAT_R32G32_UINT;			} break;
+		case SRC::RGh:		{ return VK_FORMAT_R16G16_SFLOAT;		} break;
 		case SRC::RGf:		{ return VK_FORMAT_R32G32_SFLOAT;		} break;
+
+		case SRC::RGBb:		{ return VK_FORMAT_R8G8B8_UNORM;		} break;
+		case SRC::RGBs:		{ return VK_FORMAT_R16G16B16_UNORM;		} break;
+		case SRC::RGBu:		{ return VK_FORMAT_R32G32B32_UINT;		} break;
+		case SRC::RGBh:		{ return VK_FORMAT_R16G16B16_SFLOAT;	} break;
 		case SRC::RGBf:		{ return VK_FORMAT_R32G32B32_SFLOAT;	} break;
+
+		case SRC::RGBAb:	{ return VK_FORMAT_R8G8B8A8_UNORM;		} break;
+		case SRC::RGBAs:	{ return VK_FORMAT_R16G16B16A16_UNORM;	} break;
+		case SRC::RGBAu:	{ return VK_FORMAT_R32G32B32A32_UINT;	} break;
+		case SRC::RGBAh:	{ return VK_FORMAT_R16G16B16A16_SFLOAT;	} break;
 		case SRC::RGBAf:	{ return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
+
+		case SRC::BGRAb:	{ return VK_FORMAT_B8G8R8A8_UNORM;		} break;
+		//case SRC::BGRAs:	{ return VK_FORMAT_B16G16R16A16_UNORM;	} break;
+		//case SRC::BGRAu:	{ return VK_FORMAT_B32G32R32A32_UINT;	} break;
+		//case SRC::BGRAh:	{ return VK_FORMAT_B16G16R16A16_SFLOAT;	} break;
+		//case SRC::BGRAf:	{ return VK_FORMAT_B32G32R32A32_SFLOAT;	} break;
 
 		case SRC::Depth:	{ return VK_FORMAT_D32_SFLOAT_S8_UINT;	} break;
 
@@ -279,22 +284,24 @@ Vk_RenderApiUtil::toVkFormat_ShaderTexture(VkFormat v)
 	using SRC = VkFormat;
 	switch (v) 
 	{
-		case SRC::VK_FORMAT_R8_UNORM				:
-		case SRC::VK_FORMAT_R8_UINT					: { return VK_FORMAT_R8_UNORM;	} break;
+		case SRC::VK_FORMAT_R8_UNORM:
+		case SRC::VK_FORMAT_R8_UINT:					{ return VK_FORMAT_R8_UNORM;	} break;
 
-		case SRC::VK_FORMAT_R8G8B8A8_UNORM			:
-		case SRC::VK_FORMAT_R8G8B8A8_USCALED		:
-		case SRC::VK_FORMAT_R8G8B8A8_UINT			:
-		case SRC::VK_FORMAT_R8G8B8A8_SRGB			: { return VK_FORMAT_R8G8B8A8_UNORM;	} break;
+		case SRC::VK_FORMAT_R8G8B8A8_UNORM:
+		case SRC::VK_FORMAT_R8G8B8A8_USCALED:
+		case SRC::VK_FORMAT_R8G8B8A8_UINT:
+		case SRC::VK_FORMAT_R8G8B8A8_SRGB:				{ return VK_FORMAT_R8G8B8A8_UNORM;	} break;
 
-		case SRC::VK_FORMAT_R16G16B16A16_UNORM		:
-		case SRC::VK_FORMAT_R16G16B16A16_USCALED	:
-		case SRC::VK_FORMAT_R16G16B16A16_UINT		:
-		case SRC::VK_FORMAT_R16G16B16A16_SFLOAT		: { return VK_FORMAT_R16G16B16A16_UNORM;	} break;
+		case SRC::VK_FORMAT_R16G16B16A16_UNORM:
+		case SRC::VK_FORMAT_R16G16B16A16_USCALED:
+		case SRC::VK_FORMAT_R16G16B16A16_UINT:
+		case SRC::VK_FORMAT_R16G16B16A16_SFLOAT:		{ return VK_FORMAT_R16G16B16A16_UNORM;	} break;
 
-		case SRC::VK_FORMAT_R32G32B32A32_UINT		:
-		case SRC::VK_FORMAT_R32G32B32A32_SINT		:
-		case SRC::VK_FORMAT_R32G32B32A32_SFLOAT		: { return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
+		case SRC::VK_FORMAT_R32G32B32A32_UINT:
+		case SRC::VK_FORMAT_R32G32B32A32_SINT:
+		case SRC::VK_FORMAT_R32G32B32A32_SFLOAT:		{ return VK_FORMAT_R32G32B32A32_SFLOAT;	} break;
+
+		case SRC::VK_FORMAT_B8G8R8A8_UNORM:				{ return VK_FORMAT_B8G8R8A8_UNORM;		} break;
 
 		default: { RDS_THROW("unsupport type"); }	break;
 	}
@@ -306,16 +313,18 @@ Vk_RenderApiUtil::toVkFormat_srgb	(VkFormat v)
 	using SRC = VkFormat;
 	switch (v) 
 	{
-		case SRC::VK_FORMAT_R8_UNORM				:
-		case SRC::VK_FORMAT_R8_UINT					: { return VK_FORMAT_R8_SRGB;	} break;
+		case SRC::VK_FORMAT_R8_UNORM:
+		case SRC::VK_FORMAT_R8_UINT:				{ return VK_FORMAT_R8_SRGB;	} break;
 
-		case SRC::VK_FORMAT_R8G8B8A8_UNORM			:
-		case SRC::VK_FORMAT_R8G8B8A8_SNORM			:
-		case SRC::VK_FORMAT_R8G8B8A8_USCALED		:
-		case SRC::VK_FORMAT_R8G8B8A8_SSCALED		:
-		case SRC::VK_FORMAT_R8G8B8A8_UINT			:
-		case SRC::VK_FORMAT_R8G8B8A8_SINT			:
-		case SRC::VK_FORMAT_R8G8B8A8_SRGB			: { return VK_FORMAT_R8G8B8A8_SRGB;	} break;
+		case SRC::VK_FORMAT_R8G8B8A8_UNORM:
+		case SRC::VK_FORMAT_R8G8B8A8_SNORM:
+		case SRC::VK_FORMAT_R8G8B8A8_USCALED:
+		case SRC::VK_FORMAT_R8G8B8A8_SSCALED:
+		case SRC::VK_FORMAT_R8G8B8A8_UINT:
+		case SRC::VK_FORMAT_R8G8B8A8_SINT:
+		case SRC::VK_FORMAT_R8G8B8A8_SRGB:			{ return VK_FORMAT_R8G8B8A8_SRGB;	} break;
+
+		case SRC::VK_FORMAT_B8G8R8A8_UNORM:			{ return VK_FORMAT_B8G8R8A8_SRGB;	} break;
 
 		default: { RDS_THROW("unsupport type {}", RDS_SRCLOC); }	break;
 	}

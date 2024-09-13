@@ -49,6 +49,12 @@ using ColorRGBAs 	= ColorRGBA<u16>;
 using ColorRGBAu 	= ColorRGBA<u32>;
 using ColorRGBAf 	= ColorRGBA<float>;
 
+template<class T> using ColorBGRA = ::nmsp::ColorBGRA_T<T>;
+using ColorBGRAb 	= ColorBGRA<u8>;
+using ColorBGRAs 	= ColorBGRA<u16>;
+using ColorBGRAu 	= ColorBGRA<u32>;
+using ColorBGRAf 	= ColorBGRA<float>;
+
 using Color1b = ColorRb;
 using Color1s = ColorRs;
 using Color1u = ColorRu;
