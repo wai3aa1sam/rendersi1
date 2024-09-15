@@ -93,8 +93,6 @@ PbrIbl::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 void 
 PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
-	ZoneNamedS(_asdasd, 32, true);
-
 	Base::onExecuteRender(renderPassPipeline);
 
 	auto*	rdGraph		= renderPassPipeline->renderGraph();

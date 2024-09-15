@@ -10,6 +10,8 @@
 namespace rds
 {
 
+using JobSystemTraits = ::nmsp::JobSystemTraits;
+
 using JobSystem             = ::nmsp::JobSystem_T;
 using JobSystem_CreateDesc  = ::nmsp::JobSystem_CreateDesc;
 

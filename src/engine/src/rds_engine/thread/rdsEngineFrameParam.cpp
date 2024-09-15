@@ -85,6 +85,13 @@ EngineFrameParam::frameCount() const
 	return _frameCount; 
 }
 
+u64 
+EngineFrameParam::frameIndex() const
+{
+	return RenderTraits::rotateFrame(frameCount());
+}
+
+
 #endif
 
 }

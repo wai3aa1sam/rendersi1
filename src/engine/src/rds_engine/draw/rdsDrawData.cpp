@@ -70,7 +70,7 @@ void
 DrawData::setupMaterial(Material* oMtl)
 {
 	auto& mtl = oMtl;
-	auto& sysRdable = sceneView->renderableSystem();
+	auto& sysRdable = *renderableSystem;
 	auto& sysLight	= sysRdable.engineContext().lightSystem(); RDS_UNUSED(sysLight);
 
 	mtl->setParam("rds_objTransforms",			sysRdable._objTransformBuf.gpuBuffer());
@@ -90,16 +90,10 @@ DrawData::setupMaterial(Material* oMtl)
 	#endif // 0
 }
 
-Material* 
-DrawData::mtlLine()
+SPtr<Material>& 
+DrawData::lineMaterial() const
 {
-	/*if (!_mtlLine)
-	{
-		auto* rdDev = Renderer::renderDevice();
-		_mtlLine	= Renderer::renderDevice()->createMaterial(rdDev->shaderStock().shaderLine);
-	}*/
-	RDS_CORE_ASSERT(_mtlLine, "no line material");
-	return _mtlLine;
+	return constCast(_mtlLine);
 }
 
 #endif

@@ -25,6 +25,7 @@ public:
 public:
 	u64 engineFrameCount()	const;
 	u64 frameCount()		const;
+	u64 frameIndex()		const;
 
 	/*
 	* only use in engine thread

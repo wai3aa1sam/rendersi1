@@ -42,17 +42,25 @@ public:
 	void create(EngineContext* egCtx);
 	void destroy();
 
-	void update(const Scene& scene, DrawData& drawData);
+	void update(const Scene& scene);
 	void render();
-	void present(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen);
+	void drawUi(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen);
+	void present(RenderContext* renderContext);
+
+public:
+	void addCamera(		math::Camera3f*	camera);
+	void removeCamera(	math::Camera3f*	camera);
 
 public:
 	Material* getOverrideMaterial(EntityId id, const Shader* shader);
 
 	RenderDevice* renderDevice();
 
+	Span<DrawData*>	drawData();
+	DrawData*		mainDrawData();
+
 protected:
-	void transitPresentTexture(RenderGraph& rdGraph, DrawData& drawData);
+	void transitPresentTexture(RenderGraph& rdGraph, DrawData* drawData);
 
 public:
 	Vector<CRenderable*>& renderables();
@@ -61,7 +69,7 @@ public:
 	RenderGraph& renderGraph();
 
 protected:
-	RenderRequest& renderRequest();
+	RenderRequest& renderRequest(u64 renderFrameIdx);
 
 protected:
 	SPtr<Material>	_mtlScreenQuad;
@@ -77,15 +85,19 @@ protected:
 	*/
 	ParamBuffer<ObjectTransform>	_objTransformBuf;		
 	ParamBuffer<DrawParam>			_drawPramBuf;
+
+	Vector<DrawData*, 4>	_drawData;
+	LinearAllocator			_drawDataAlloc;
 	
 	VectorMap<SPtr<Shader>, VectorMap<EntityId, SPtr<Material> > > _overrideMtls;		// TODO: temporary solution
 };
 
-inline RenderGraph&				CRenderableSystem::renderGraph()	{ return _rdGraph; }
-inline RenderRequest&			CRenderableSystem::renderRequest()	{ return _framedRdReq[renderGraph().iFrame()]; }
+inline RenderGraph&				CRenderableSystem::renderGraph()						{ return _rdGraph; }
+inline RenderRequest&			CRenderableSystem::renderRequest(u64 renderFrameIdx)	{ return _framedRdReq[renderFrameIdx]; }
 
-inline Vector<CRenderable*>&	CRenderableSystem::renderables()	{ return components(); }
+inline Vector<CRenderable*>&	CRenderableSystem::renderables()						{ return components(); }
 
+inline Span<DrawData*>			CRenderableSystem::drawData()							{ return _drawData; }
 
 #endif
 

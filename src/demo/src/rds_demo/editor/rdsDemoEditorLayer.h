@@ -3,6 +3,8 @@
 #include "rds_demo/common/rds_demo_common.h"
 #include "rds_engine/draw/rdsSceneView.h"
 
+#include "rds_render_api_layer/thread/rdsRenderThread.h"
+
 namespace rds
 {
 
@@ -71,9 +73,10 @@ private:
 
 	UPtr<MeshAssets> _meshAssets;
 
-	SPtr<Material>	_mtlLine;
-
 	bool _isFullScreen = false;
+
+	UPtr<RenderThread>	_rdThread;
+	RenderThreadQueue	_rdThreadQueue;
 };
 
 inline EngineContext&		DemoEditorLayer::engineContext()	{ return _egCtx; }

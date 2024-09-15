@@ -7,6 +7,7 @@ namespace rds
 {
 
 class	SceneView;
+class	CRenderableSystem;
 struct	MeshAssets;
 struct	DrawSettings;
 
@@ -21,9 +22,10 @@ struct	DrawSettings;
 class DrawData : public DrawData_Base
 {
 public:
-	SceneView*		sceneView	= nullptr;
-	MeshAssets*		meshAssets	= nullptr;
-	RdgTextureHnd	oTexPresent;
+	CRenderableSystem*	renderableSystem	= nullptr;
+	SceneView*			sceneView			= nullptr;
+	MeshAssets*			meshAssets			= nullptr;
+	RdgTextureHnd		oTexPresent;
 
 public:
 	virtual void drawScene(RenderRequest& rdReq, Material* mtl)										override;
@@ -37,13 +39,11 @@ public:
 
 	void setupDrawParam(DrawParam*	oDrawParam);
 
-public:
-	Material* mtlLine();
+	SPtr<Material>& lineMaterial() const;
 
 public:
 	SPtr<Material> _mtlLine;
 };
-
 
 #endif
 

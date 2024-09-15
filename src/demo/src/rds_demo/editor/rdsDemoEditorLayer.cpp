@@ -9,6 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
+
 namespace rds
 {
 
@@ -49,21 +50,19 @@ DemoEditorLayer::onCreate()
 
 	_edtCtx.create();
 
-	// load asset
-	#if 1
-	// TODO: temporary
-	RenderUtil::createMaterial(&_mtlLine, "asset/shader/line.shader");
-	#endif // 1
-
 	_meshAssets = makeUPtr<MeshAssets>();
 
 	RDS_CORE_ASSERT(_gfxDemo, "");
 	_gfxDemo->onCreate();
 
+	//_rdThread = makeUPtr<RenderThread>();
+	//_rdThreadQueue.create(_rdThread);
+
+	renderableSystem().addCamera(&mainWindow().camera());
+
 	// prepare
 	#if 1
 	{
-
 		auto clientRect = mainWnd.clientRect();
 		rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
 		mainWnd.camera().setViewport(clientRect);
@@ -72,22 +71,16 @@ DemoEditorLayer::onCreate()
 		rdGraph.create(mainWindow().title(), &rdCtx);
 		rdGraph.reset();
 
-		rdCtx.beginRender();
+		_gfxDemo->prepareRender(&rdGraph, renderableSystem().mainDrawData());
 
-		DrawData drawData;
-		drawData.sceneView	= &_sceneView;
-		drawData.camera		= &mainWnd.camera();
-		drawData.meshAssets = _meshAssets.ptr();
-		drawData._mtlLine   = _mtlLine;		// TODO: temporary
-
-		_gfxDemo->prepareRender(&rdGraph, &drawData);
-
-		renderableSystem().update(scene(), drawData);
-		renderableSystem().render();
-		renderableSystem().present(&rdCtx, false, false);
+		renderableSystem().update(scene());
+		renderableSystem().drawUi(&rdCtx, false, false);
 
 		rdCtx.transferRequest().commit();
 
+		rdCtx.beginRender();
+		renderableSystem().render();
+		renderableSystem().present(&rdCtx);
 		rdCtx.endRender();
 
 		Renderer::renderDevice()->waitIdle();
@@ -113,55 +106,66 @@ DemoEditorLayer::onUpdate()
 	auto& egCtx			= _egCtx;
 	auto& egFrameParam	= egCtx.engineFrameParam();
 
-	auto frameCount = egFrameParam.frameCount() + 1; // reset will increase frameCount
+	egFrameParam.reset(&rdCtx);
+	auto frameCount = egFrameParam.frameCount();
+
 	RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount); 
 
-	egFrameParam.reset(&rdCtx);
+	{
+		RDS_TODO("this part need to be multi-thread-able");
 
-
-	auto clientRect = mainWnd.clientRect();
-	rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
-	mainWnd.camera().setViewport(clientRect);
+		auto clientRect = mainWnd.clientRect();
+		rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
+		mainWnd.camera().setViewport(clientRect);
+	}
 
 	{
-		auto& rdGraph	= renderableSystem().renderGraph();
+		auto& rdableSys = renderableSystem();
+		auto& rdGraph	= rdableSys.renderGraph();
 		rdGraph.reset();
 
-		DrawData drawData;
-		drawData.sceneView	= &_sceneView;
-		drawData.camera		= &mainWnd.camera();
-		drawData.meshAssets = _meshAssets.ptr();
-		drawData._mtlLine   = _mtlLine;		// TODO: temporary
+		DrawData* mainDrawData = nullptr;
+		{
+			for (auto& e : rdableSys.drawData())
+			{
+				auto& drawData = *e;
+				drawData.sceneView	= &_sceneView;
+				drawData.meshAssets	= _meshAssets.ptr();
 
-		_gfxDemo->executeRender(&rdGraph, &drawData);
-		//RDS_CORE_ASSERT(drawData.oTexPresent, "invalid present tex");
-		_texHndPresent = drawData.oTexPresent;
+				_gfxDemo->executeRender(&rdGraph, &drawData);
+
+				if (drawData.drawParamIdx == 0)
+				{
+					_texHndPresent = drawData.oTexPresent;
+					mainDrawData = &drawData;
+				}
+			}
+			rdableSys.update(scene());
+		}
 
 		{
 			auto& rdUiCtx = rdCtx.renderdUiContex();
 			rdUiCtx.onBeginRender(&rdCtx);
-			auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
-
-			// present
-			renderableSystem().update(scene(), drawData);
-
 			{
-				RDS_PROFILE_SECTION("draw editor ui");
+				auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
+				{
+					RDS_PROFILE_SECTION("draw editor ui");
 
-				drawEditorUi(uiDrawReq, _texHndPresent);
-				_edtViewportWnd.draw(&uiDrawReq, _texHndPresent ? _texHndPresent.texture2D() : nullptr, _isFullScreen
-									, drawData.camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());
-				_gfxDemo->onDrawGui(uiDrawReq);
+					drawEditorUi(uiDrawReq, _texHndPresent);
+					
+					_gfxDemo->onDrawGui(uiDrawReq);
+				}
+
+				rdableSys.drawUi(&rdCtx, !_isFullScreen, true);
 			}
-
 			rdUiCtx.onEndRender(&rdCtx);
 		}
 	}
-
+	
 	#if 0
 	{
-		RenderThreadBridge bridge;
-		bridge.commit(egFrame);
+		auto* rdDev	= Renderer::renderDevice();
+		_rdThreadQueue.submit(rdDev, egFrameParam.frameCount());	
 	}
 	#else
 	auto* rdDev			= Renderer::renderDevice();
@@ -187,13 +191,18 @@ DemoEditorLayer::onRender()
 	auto& tsfCtx	= rdDev->transferContext();
 	auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
 
+	tsfReq.commit();
+
+	RDS_TODO("use this approach when there has a lot of submit? but main context should be submit first");
+	// RenderFrameContext
+	// beginFrame();
+	//		for ... render()
+	// endFrame();		// only submit here
+
 	rdCtx.beginRender();
 
-	//renderableSystem().render(&rdCtx, _fullScreenTriangle, _mtlPresent);
 	renderableSystem().render();
-	renderableSystem().present(&rdCtx, !_isFullScreen, true);
-
-	tsfReq.commit();
+	renderableSystem().present(&rdCtx);
 
 	rdCtx.endRender();
 }
@@ -265,6 +274,11 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	_edtProjectWnd.draw(&uiDrawReq);
 	_edtConsoleWnd.draw(&uiDrawReq);
 	_edtHierarchyWnd.draw(&uiDrawReq, scene());
+	
+	auto&		camera		= app().mainWindow().camera();
+	Texture2D*	texPresent	= _texHndPresent ? _texHndPresent.texture2D() : nullptr;
+	_edtViewportWnd.draw(&uiDrawReq, texPresent, _isFullScreen, &camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());
+
 	//if (!_edtViewportWnd.isFullScreen())
 	{
 		
@@ -286,7 +300,6 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	}
 
 	{
-		auto& camera = app().mainWindow().camera();
 		auto pos		= camera.pos();
 		auto aim		= camera.aim();
 		auto fov		= camera.fov();

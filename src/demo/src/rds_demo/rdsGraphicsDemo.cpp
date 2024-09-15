@@ -336,8 +336,8 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), drawData, drawData->mtlLine());
-			auto mtl = material ? material :drawData->mtlLine();	RDS_UNUSED(mtl);
+			rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
+			auto mtl = material ? material :drawData->lineMaterial();	RDS_UNUSED(mtl);
 			mtl->setParam("rds_matrix_vp", drawData->camera->viewProjMatrix());
 
 			{
@@ -432,7 +432,7 @@ GraphicsDemo::addDisplayAABBoxPass(RenderGraph* oRdGraph, DrawData* drawData, Rd
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				rdReq.reset(rdGraph->renderContext(), drawData, drawData->mtlLine());
+				rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
 
 				#if 0
 				if (drawSettings.cullingSetting.mode == CullingMode::CameraFustrum)
