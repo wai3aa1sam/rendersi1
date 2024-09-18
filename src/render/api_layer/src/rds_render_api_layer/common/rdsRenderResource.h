@@ -165,6 +165,7 @@ public:
 
 	TransferContext&	transferContext();
 	TransferRequest&	transferRequest();
+	TransferRequest&	transferRequest(u64 frameIdx);
 
 	RenderResourceStateFlags renderResourceStateFlags(u32 subResource = RenderResourceState::s_kAllSubResource) const;
 

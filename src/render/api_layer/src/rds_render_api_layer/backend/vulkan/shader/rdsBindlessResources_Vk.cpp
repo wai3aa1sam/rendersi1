@@ -367,7 +367,7 @@ BindlessResources_Vk::_createDescritporSet(Vk_DescriptorSet& dstSet, Vk_Descript
 	layoutInfo.pNext		= &bindingFlags;
 
 	dstLayout.create(&layoutInfo, rdDevVk);
-	_descrAlloc.alloc(&dstSet, &dstLayout);
+	_descrAlloc.alloc(&dstSet, &dstLayout, false);
 }
 
 #endif

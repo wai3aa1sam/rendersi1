@@ -12,6 +12,7 @@ namespace rds
 #if 1
 
 class TransferContext;
+class TransferFrame;
 
 class TransferRequest_UploadTextureJob;
 class TransferRequest_UploadBufferJob;
@@ -35,7 +36,7 @@ public:
 	TransferRequest();
 	~TransferRequest();
 
-	void reset(TransferContext* tsfCtx, u64 frameCount);
+	void reset(TransferContext* tsfCtx, TransferFrame* tsfFrame);
 	void commit(bool isWaitImmediate = false);
 
 	void uploadTexture(Texture2D* tex, StrView filename);
@@ -50,10 +51,11 @@ public:
 	TransferCommandBuffer& uploadTexCmds();
 
 	bool isUploadTextureCompleted() const;
-	void waitUploadTextureCompleted() const;
+	void waitUploadTextureCompleted();
 
 private:
-	TransferContext* _tsfCtx = nullptr;
+	TransferContext* _tsfCtx	= nullptr;
+	TransferFrame*	 _tsfFrame	= nullptr;
 
 	//Vector<TransferCommandBuffer, s_kThreadCount> _transferCommandBuffers;
 
@@ -86,7 +88,7 @@ TransferCommandBuffer& TransferRequest::transferCommandBuffer()
 inline TransferCommandBuffer& TransferRequest::uploadBufCmds() { return *_uploadBufCmds; }
 inline TransferCommandBuffer& TransferRequest::uploadTexCmds() { return *_uploadTexCmds; }
 
-inline bool TransferRequest::isUploadTextureCompleted() const { return _uploadTextureJobParentHnd->isCompleted(); }
+inline bool TransferRequest::isUploadTextureCompleted() const { return !_uploadTextureJobParentHnd || _uploadTextureJobParentHnd->isCompleted(); }
 
 
 #endif

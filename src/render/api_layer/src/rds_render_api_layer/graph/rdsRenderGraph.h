@@ -153,7 +153,7 @@ public:
 
 	void compile();
 	void execute();
-	void commit();
+	void commit(u32 frameIndex);
 	void dumpGraphviz			(StrView filename = "debug/render_graph");				// visualization in https://dreampuf.github.io/GraphvizOnline/
 	void dumpResourceStateGraph	(StrView filename = "debug/render_graph_rsc_state");	// visualization in https://dreampuf.github.io/GraphvizOnline/
 
@@ -185,7 +185,8 @@ public:
 
 	const String& name() const;
 
-	u32 iFrame() const;
+	u32 frameIndex() const;
+	RenderDevice* renderDevice();
 
 protected:
 	template<class T> typename RdgResourceTraits<T>::Hnd createRdgResource(StrView name, const RdgResource_CreateDescT<T>& cDesc);
@@ -198,13 +199,13 @@ protected:
 
 	void _setResourcesState(const Passes& sortedPasses, const PassDepths& passDepths);
 
-	RdgResourcePool&	resourcePool();
+	RenderGraphFrame&	renderGraphFrame(u32 frameIndex);
 	RenderGraphFrame&	renderGraphFrame();
+	RdgResourcePool&	resourcePool(	 u32 frameIndex);
 	
 	Passes&		passes();
 	Resources&	resources();
 
-	RenderDevice* renderDevice();
 
 private:
 	void* alloc(SizeType n, SizeType align);
@@ -212,7 +213,7 @@ private:
 
 protected:
 	String	_name;
-	u32		_iFrame = 0;
+	u32		_frameIdx = 0;
 
 	RenderContext*	_rdCtx = nullptr;
 	IAllocator*		_alloc = nullptr;
@@ -280,14 +281,14 @@ inline RenderContext* RenderGraph::renderContext() { return _rdCtx; }
 
 inline const String&	RenderGraph::name()		const { return _name; }
 
-inline u32				RenderGraph::iFrame()	const { return _iFrame; }
+inline u32				RenderGraph::frameIndex()	const { return _frameIdx; }
 
-inline RdgResourcePool&					RenderGraph::resourcePool()		{ return renderGraphFrame().rscPool; }
-inline RenderGraph::RenderGraphFrame&	RenderGraph::renderGraphFrame()	{ return _rdgFrames[_iFrame]; }
+inline RenderGraph::RenderGraphFrame&	RenderGraph::renderGraphFrame(u32 frameIndex)	{ return _rdgFrames[frameIndex]; }
+inline RenderGraph::RenderGraphFrame&	RenderGraph::renderGraphFrame()					{ return _rdgFrames[frameIndex()]; }
+inline RdgResourcePool&					RenderGraph::resourcePool(u32 frameIndex)		{ return renderGraphFrame(frameIndex).rscPool; }
 
 inline RenderGraph::Passes&		RenderGraph::passes()		{ return renderGraphFrame().passes; }
 inline RenderGraph::Resources&	RenderGraph::resources()	{ return renderGraphFrame().resources; }
-
 
 #endif
 

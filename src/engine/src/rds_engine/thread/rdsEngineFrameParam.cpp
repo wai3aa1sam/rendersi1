@@ -85,10 +85,10 @@ EngineFrameParam::frameCount() const
 	return _frameCount; 
 }
 
-u64 
+u32
 EngineFrameParam::frameIndex() const
 {
-	return RenderTraits::rotateFrame(frameCount());
+	return sCast<u32>(RenderTraits::rotateFrame(frameCount()));
 }
 
 

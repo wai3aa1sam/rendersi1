@@ -19,6 +19,7 @@ class	CRenderable;
 
 struct	MeshAssets;
 struct	DrawParam;
+struct	RenderData_RenderJob;
 
 #if 0
 #pragma mark --- rdsCRenderableSystem-Decl ---
@@ -43,9 +44,10 @@ public:
 	void destroy();
 
 	void update(const Scene& scene);
-	void render();
 	void drawUi(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen);
-	void present(RenderContext* renderContext);
+	void setupRenderJob(RenderData_RenderJob* out);
+
+	void render();
 
 public:
 	void addCamera(		math::Camera3f*	camera);

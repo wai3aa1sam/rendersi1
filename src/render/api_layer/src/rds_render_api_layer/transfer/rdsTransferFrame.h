@@ -6,6 +6,8 @@
 namespace rds
 {
 
+class TransferContext;
+
 #if 0
 #pragma mark --- rdsTransferFrame-Decl ---
 #endif // 0
@@ -28,19 +30,24 @@ public:
 	void create();
 	void destroy();
 
-	void reset();
+	void reset(TransferContext* tsfCtx);
 
 	TransferCommandBuffer* requestCommandBuffer();
 
+public:
+	TransferRequest& transferRequest();
+
 protected:
 	//TransferCommandPool _cmdPool;
+	TransferRequest			_tsfReq;
 
 	// TODO: temporary
-	TransferCommandBuffer _cmdBuf;
-	TransferCommandBuffer _uploadBufCmds;
-	TransferCommandBuffer _uploadTexCmds;
+	TransferCommandBuffer	_cmdBuf;
+	TransferCommandBuffer	_uploadBufCmds;
+	TransferCommandBuffer	_uploadTexCmds;
 };
 
+inline TransferRequest& TransferFrame::transferRequest() { return _tsfReq; }
 
 #endif
 

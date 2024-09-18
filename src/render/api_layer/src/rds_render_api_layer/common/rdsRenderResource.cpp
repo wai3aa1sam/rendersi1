@@ -92,7 +92,8 @@ RenderFrame&			RenderResource::renderFrame(u64 frameIdx)			{ return renderDevice
 
 TransferContext&		RenderResource::transferContext()					{ return renderDevice()->transferContext(); }
 
-TransferRequest&		RenderResource::transferRequest()					{ return renderDevice()->transferRequest(); }
+TransferRequest&		RenderResource::transferRequest()					{ return renderDevice()->transferRequest(engineFrameIndex()); }
+TransferRequest&		RenderResource::transferRequest(u64 frameIdx)		{ return renderDevice()->transferRequest(frameIdx); }
 
 
 #endif

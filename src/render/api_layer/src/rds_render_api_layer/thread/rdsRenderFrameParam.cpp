@@ -49,10 +49,10 @@ RenderFrameParam::frameCount() const
 	return _frameCount;
 }
 
-u64 
+u32
 RenderFrameParam::frameIndex() const
 {
-	return RenderApiLayerTraits::rotateFrame(frameCount());
+	return sCast<u32>(RenderApiLayerTraits::rotateFrame(frameCount()));
 }
 
 

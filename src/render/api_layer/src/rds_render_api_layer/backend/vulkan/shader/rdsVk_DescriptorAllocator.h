@@ -58,7 +58,7 @@ public:
 	void destroy();
 
 	void reset();
-	void alloc(Vk_DescriptorSet* oSet, const Vk_DescriptorSetLayout* layout);
+	void alloc(Vk_DescriptorSet* oSet, const Vk_DescriptorSetLayout* layout, bool checkValid);
 
 public:
 	u32 descriptorCount() const;

@@ -41,31 +41,29 @@ TransferRequest::TransferRequest()
 
 TransferRequest::~TransferRequest()
 {
-	reset(nullptr, 0);
+	reset(nullptr, nullptr);
 }
 
 void 
-TransferRequest::reset(TransferContext* tsfCtx, u64 frameCount)
+TransferRequest::reset(TransferContext* tsfCtx, TransferFrame* tsfFrame)
 {
 	/*if (_uploadTextureJobParentHnd && !isUploadTextureCompleted())
 	{
 		RDS_THROW("upload jobs must be completed before reset");
 	}*/
-	if (!tsfCtx)
+	if (!tsfCtx || !tsfFrame)
 		return;
 
 	RDS_TODO("per frame, then no need to wait too frequently");
 	waitUploadTextureCompleted();
 
 	_tsfCtx		= tsfCtx;
-	auto* rdDev = _tsfCtx ?  _tsfCtx->renderDevice() : nullptr;
+	_tsfFrame	= tsfFrame;
+	//auto* rdDev = _tsfCtx ?  _tsfCtx->renderDevice() : nullptr;
 
-	auto	frameIdx = Traits::rotateFrame(frameCount);
-	auto&	tsfFrame = rdDev->transferFrame(frameIdx);
-
-	_tsfCmdBuf		= tsfFrame.requestCommandBuffer();
-	_uploadBufCmds	= &tsfFrame._uploadBufCmds;
-	_uploadTexCmds	= &tsfFrame._uploadTexCmds;
+	_tsfCmdBuf		= tsfFrame->requestCommandBuffer();
+	_uploadBufCmds	= &tsfFrame->_uploadBufCmds;
+	_uploadTexCmds	= &tsfFrame->_uploadTexCmds;
 
 	if (_tsfCtx)
 	{
@@ -174,10 +172,11 @@ TransferRequest::uploadBufferAsync(RenderGpuBuffer* rdBuf, Vector<u8>&& data)
 }
 
 void 
-TransferRequest::waitUploadTextureCompleted() const
+TransferRequest::waitUploadTextureCompleted()
 {
 	RDS_TODO("make uploadjob in transfer frame to reduce blocking");
 	JobSystem::instance()->waitForComplete(_uploadTextureJobParentHnd);
+	_uploadTextureJobParentHnd = nullptr;	// no clean up will make next frame wait stuck, since the jobSystem next frame will invalid this pointer
 }
 
 #endif

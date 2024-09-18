@@ -112,9 +112,12 @@ Vk_DescriptorAllocator::reset()
 }
 
 void
-Vk_DescriptorAllocator::alloc(Vk_DescriptorSet* oSet, const Vk_DescriptorSetLayout* layout)
+Vk_DescriptorAllocator::alloc(Vk_DescriptorSet* oSet, const Vk_DescriptorSetLayout* layout, bool checkValid)
 {
-	checkMainThreadExclusive(RDS_SRCLOC);		// need think the statement in Vk_DescriptorAllocator::reset() when multi thread
+	#if 0
+	if (checkValid)
+		checkRenderThreadExclusive(RDS_SRCLOC);		// need think the statement in Vk_DescriptorAllocator::reset() when multi thread
+	#endif // 1
 
 	RDS_ASSERT(_curPool && _curPool->hnd(), "invalid _curPool");
 
@@ -221,7 +224,7 @@ bool
 Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
 	_notYetSupported(RDS_SRCLOC);	/// all vk info need resize first, not enought will trigger resize and gg
-	_alloc->alloc(&dstSet, &layout);
+	_alloc->alloc(&dstSet, &layout, true);
 	if (!dstSet)
 	{
 		return false;
@@ -271,7 +274,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 bool 
 Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
-	_alloc->alloc(&dstSet, &layout);
+	_alloc->alloc(&dstSet, &layout, true);
 	if (!dstSet)
 	{
 		RDS_THROW("vk descriptor allocate failed");

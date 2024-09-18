@@ -9,6 +9,8 @@
 #include "../rdsEntity.h"
 #include "../rdsScene.h"
 
+#include "rds_render_api_layer/thread/rdsRenderThreadQueue.h"
+
 namespace rds
 {
 
@@ -89,7 +91,7 @@ CRenderableSystem::update(const Scene& scene)
 		_objTransformBuf.uploadToGpu();
 	}
 	
-	auto& rdGraph   = renderGraph();
+	auto& rdGraph = renderGraph();
 	{
 		RDS_PROFILE_SECTION("draw param update");
 
@@ -127,21 +129,10 @@ CRenderableSystem::update(const Scene& scene)
 
 		rdGraph.compile();
 		rdGraph.execute();
+		//rdGraph.dumpGraphviz();
 	}
 }
 
-void
-CRenderableSystem::render()
-{
-	RDS_PROFILE_SCOPED();
-
-	auto& rdGraph = renderGraph();
-	
-	// rdGraph.execute(); // execute in render thread, then later need to copy struct renderableObject list to render thread, keep simple first
-	rdGraph.commit();
-	//rdGraph.dumpGraphviz();
-
-}
 
 void 
 CRenderableSystem::drawUi(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen)
@@ -151,7 +142,6 @@ CRenderableSystem::drawUi(RenderContext* renderContext, bool isDrawUi, bool isDr
 
 	// record present
 	{
-		
 		auto& rdReq = renderRequest(engineContext().engineFrameParam().frameIndex());
 		//RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
 
@@ -177,14 +167,31 @@ CRenderableSystem::drawUi(RenderContext* renderContext, bool isDrawUi, bool isDr
 	}
 }
 
-void 
-CRenderableSystem::present(RenderContext* renderContext)
+void
+CRenderableSystem::render()
 {
-	{
-		auto* rdCtx = renderContext;
-		auto& rdReq = renderRequest(rdCtx->renderFrameParam().frameIndex());
-		rdCtx->commit(rdReq);
-	}
+	RDS_PROFILE_SCOPED();
+
+	auto&	rdGraph		= renderGraph();
+	auto*	rdCtx		= rdGraph.renderContext();
+	auto	frameIndex	= sCast<u32>(rdCtx->renderFrameParam().frameIndex());
+
+	rdGraph.commit(rdGraph.frameIndex());
+
+	auto& rdReq = renderRequest(frameIndex);
+	rdCtx->commit(rdReq);
+}
+
+void 
+CRenderableSystem::setupRenderJob(RenderData_RenderJob* out)
+{
+	auto& rdJob = *out;
+
+	auto&	rdGraph		= renderGraph();
+	auto	frameIndex	= engineContext().engineFrameParam().frameIndex();
+	auto&	rdReq		= renderRequest(frameIndex);
+
+	rdJob.create(&rdGraph, &rdReq);
 }
 
 void 

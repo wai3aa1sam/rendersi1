@@ -55,7 +55,10 @@ RenderDevice::create(const CreateDesc& cDesc)
 	if (cDesc.isShaderCompileMode())
 		return;
 
-	_tsfCtx->transferRequest().reset(_tsfCtx, 0);
+	for (size_t i = 0; i < s_kFrameInFlightCount; i++)
+	{
+		_tsfCtx->transferRequest(i).reset(_tsfCtx, &_tsfFrames[i]);
+	}
 
 	_shaderStock.create(this);
 	_textureStock.create(this);
@@ -109,8 +112,7 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 	auto frameIdx	= Traits::rotateFrame(frameCount);
 
 	_rdFrames[frameIdx].reset();
-	_tsfFrames[frameIdx].reset();
-	_tsfReq.reset(_tsfCtx, frameCount);
+	_tsfFrames[frameIdx].reset(_tsfCtx);
 
 	onResetFrame(frameCount);
 

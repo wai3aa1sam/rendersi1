@@ -9,6 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
+#define RDS_SINGLE_THREAD_MODE 0
 
 namespace rds
 {
@@ -54,43 +55,23 @@ DemoEditorLayer::onCreate()
 
 	RDS_CORE_ASSERT(_gfxDemo, "");
 	_gfxDemo->onCreate();
-
-	//_rdThread = makeUPtr<RenderThread>();
-	//_rdThreadQueue.create(_rdThread);
+	
+	#if !RDS_SINGLE_THREAD_MODE
+	_rdThread.create(RenderThread::makeCDesc(JobSystem::instance()));
+	#endif // !RDS_SINGLE_THREAD_MODE
+	_rdThreadQueue.create(&_rdThread);
 
 	renderableSystem().addCamera(&mainWindow().camera());
 
-	// prepare
-	#if 1
-	{
-		auto clientRect = mainWnd.clientRect();
-		rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
-		mainWnd.camera().setViewport(clientRect);
+	auto& rdGraph = renderableSystem().renderGraph();
+	rdGraph.create(mainWindow().title(), &rdCtx);
 
-		auto& rdGraph = renderableSystem().renderGraph();
-		rdGraph.create(mainWindow().title(), &rdCtx);
-		rdGraph.reset();
-
-		_gfxDemo->prepareRender(&rdGraph, renderableSystem().mainDrawData());
-
-		renderableSystem().update(scene());
-		renderableSystem().drawUi(&rdCtx, false, false);
-
-		rdCtx.transferRequest().commit();
-
-		rdCtx.beginRender();
-		renderableSystem().render();
-		renderableSystem().present(&rdCtx);
-		rdCtx.endRender();
-
-		Renderer::renderDevice()->waitIdle();
-	}
-	#endif // 0
+	prepare_SingleThreadMode();
 
 	// next frame will clear those upload cmds
 	{
 		_gfxDemo->onCreateScene(&_scene);
-		rdCtx.transferRequest().commit(true);		
+		rdCtx.transferRequest().commit(true);	// TODO: must perform tsf commit here as this moment
 	}
 
 	app()._frameControl.isWaitFrame = false;
@@ -106,6 +87,8 @@ DemoEditorLayer::onUpdate()
 	auto& egCtx			= _egCtx;
 	auto& egFrameParam	= egCtx.engineFrameParam();
 
+	bool isFirstFrame = egFrameParam.frameCount() == 0; RDS_UNUSED(isFirstFrame);
+
 	egFrameParam.reset(&rdCtx);
 	auto frameCount = egFrameParam.frameCount();
 
@@ -119,8 +102,8 @@ DemoEditorLayer::onUpdate()
 		mainWnd.camera().setViewport(clientRect);
 	}
 
+	auto& rdableSys = renderableSystem();
 	{
-		auto& rdableSys = renderableSystem();
 		auto& rdGraph	= rdableSys.renderGraph();
 		rdGraph.reset();
 
@@ -132,7 +115,10 @@ DemoEditorLayer::onUpdate()
 				drawData.sceneView	= &_sceneView;
 				drawData.meshAssets	= _meshAssets.ptr();
 
-				_gfxDemo->executeRender(&rdGraph, &drawData);
+				if (isFirstFrame)
+					_gfxDemo->prepareRender(&rdGraph, &drawData);
+				else
+					_gfxDemo->executeRender(&rdGraph, &drawData);
 
 				if (drawData.drawParamIdx == 0)
 				{
@@ -140,8 +126,9 @@ DemoEditorLayer::onUpdate()
 					mainDrawData = &drawData;
 				}
 			}
-			rdableSys.update(scene());
 		}
+
+		rdableSys.update(scene());
 
 		{
 			auto& rdUiCtx = rdCtx.renderdUiContex();
@@ -162,21 +149,19 @@ DemoEditorLayer::onUpdate()
 		}
 	}
 	
-	#if 0
-	{
-		auto* rdDev	= Renderer::renderDevice();
-		_rdThreadQueue.submit(rdDev, egFrameParam.frameCount());	
-	}
-	#else
-	auto* rdDev			= Renderer::renderDevice();
-	auto& rdFrameParam	= rdDev->renderFrameParam();
-	rdFrameParam.reset(egFrameParam.frameCount());
-	#endif // 0
+	auto* rdDev	= Renderer::renderDevice();
+	RenderData_RenderJob rdJob;
+	rdableSys.setupRenderJob(&rdJob);
+	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rdJob);
+	#if RDS_SINGLE_THREAD_MODE
+	_rdThread._temp_render();
+	#endif // RDS_SINGLE_THREAD_MODE
 }
 
 void 
 DemoEditorLayer::onRender()
 {
+	#if RDS_SINGLE_THREAD_MODE && 0
 	RDS_TODO("no commit render cmd buf will have error");
 	RDS_TODO("by pass whole fn will have error");
 
@@ -200,11 +185,9 @@ DemoEditorLayer::onRender()
 	// endFrame();		// only submit here
 
 	rdCtx.beginRender();
-
 	renderableSystem().render();
-	renderableSystem().present(&rdCtx);
-
 	rdCtx.endRender();
+	#endif // 0
 }
 
 void 
@@ -336,6 +319,33 @@ DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 	}
 }
 
+void 
+DemoEditorLayer::prepare_SingleThreadMode()
+{
+	// prepare
+	#if RDS_SINGLE_THREAD_MODE && 0
+	{
+		auto clientRect = mainWnd.clientRect();
+		rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
+		mainWnd.camera().setViewport(clientRect);
+
+		rdGraph.reset();
+
+		_gfxDemo->prepareRender(&rdGraph, renderableSystem().mainDrawData());
+
+		renderableSystem().update(scene());
+		renderableSystem().drawUi(&rdCtx, false, false);
+
+		rdCtx.transferRequest().commit();
+
+		rdCtx.beginRender();
+		renderableSystem().render();
+		rdCtx.endRender();
+
+		Renderer::renderDevice()->waitIdle();
+	}
+	#endif // 0
+}
 
 DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }
 DemoEditorMainWindow&	DemoEditorLayer::mainWindow()	{ return app().mainWindow(); }

@@ -104,10 +104,10 @@ public:
 	const	RenderAdapterInfo&	adapterInfo() const;
 			ShaderStock&		shaderStock();
 			TextureStock&		textureStock();
-			RenderFrame&		renderFrame(u64 frameIdx);
-			TransferFrame&		transferFrame(u64 frameIdx);
+			RenderFrame&		renderFrame(	u64	frameIdx);
+			TransferFrame&		transferFrame(	u64	frameIdx);
 			TransferContext&	transferContext();
-			TransferRequest&	transferRequest();
+			TransferRequest&	transferRequest(u64 frameIdx);
 
 			BindlessResources&	bindlessResource();
 
@@ -150,7 +150,6 @@ protected:
 	Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
 
 	TransferContext* _tsfCtx = nullptr;
-	TransferRequest	 _tsfReq;
 
 	BindlessResources*	_bindlessRscs = nullptr;
 
@@ -163,11 +162,11 @@ inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const		{ return _a
 inline			ShaderStock&			RenderDevice::shaderStock()					{ return _shaderStock; }
 inline			TextureStock&			RenderDevice::textureStock()				{ return _textureStock; }
 
-inline			RenderFrame&			RenderDevice::renderFrame(u64 frameIdx)		{ return _rdFrames[frameIdx]; }
+inline			RenderFrame&			RenderDevice::renderFrame(	u64	frameIdx)	{ return _rdFrames[frameIdx]; }
 inline			TransferFrame&			RenderDevice::transferFrame(u64 frameIdx)	{ return _tsfFrames[frameIdx]; }
 
 inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx; }
-inline			TransferRequest&		RenderDevice::transferRequest()				{ return _tsfReq; }
+inline			TransferRequest&		RenderDevice::transferRequest(u64 frameIdx)	{ return transferFrame(frameIdx).transferRequest(); }
 
 inline			BindlessResources&		RenderDevice::bindlessResource()			{ return *_bindlessRscs; }
 

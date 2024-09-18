@@ -37,7 +37,7 @@ public:
 
 public:
 	u64 frameCount() const;
-	u64 frameIndex() const;
+	u32 frameIndex() const;
 
 private:
 	u64 _frameCount = 0;

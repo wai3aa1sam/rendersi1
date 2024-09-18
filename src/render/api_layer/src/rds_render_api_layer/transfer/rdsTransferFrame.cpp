@@ -28,12 +28,14 @@ TransferFrame::create()
 void 
 TransferFrame::destroy()
 {
-	reset();
+	reset(nullptr);
 }
 
 void 
-TransferFrame::reset()
+TransferFrame::reset(TransferContext* tsfCtx)
 {
+	_tsfReq.reset(tsfCtx, this);
+
 	_cmdBuf.clear();
 	_uploadBufCmds.clear();
 	_uploadTexCmds.clear();

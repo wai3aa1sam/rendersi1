@@ -145,6 +145,9 @@ TransferContext_Vk::onCommit(TransferRequest& tsfReq, bool isWaitImmediate)
 	{
 		vkCmdBuf->submit(debugLabel, &inFlighVkFence);
 		inFlighVkFence.wait(rdDevVk);
+		
+		// ensure the render part wont need to signal the "completedVkSmp"
+		vkTsfFrame._hasTransferedGraphicsResoures = false;
 		//inFlighVkFence.reset(rdDevVk);
 	}
 

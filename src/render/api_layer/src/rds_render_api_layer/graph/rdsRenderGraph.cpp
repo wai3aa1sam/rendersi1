@@ -153,8 +153,9 @@ void RenderGraph::destroy()
 void 
 RenderGraph::reset() 
 { 
-	RDS_TODO("temporary solution"); 
-	renderGraphFrame().reset();
+	RDS_TODO("temporary solution");
+	rotateFrame();
+	renderGraphFrame(frameIndex()).reset();
 
 	_exportedTexs.clear();
 	_exportedBufs.clear();
@@ -172,7 +173,7 @@ RenderGraph::compile()
 	since we have multi frame, all the RdgPass and RdgResource can not reuse (after hash and confirm same as last frame)
 	, only the order (orderedPassId) can be reuse
 	*/
-	auto& rdgFrame	= renderGraphFrame();
+	auto& rdgFrame	= renderGraphFrame(frameIndex());
 	auto& resources = rdgFrame.resources;
 
 	// cull no reference passes
@@ -276,8 +277,11 @@ RenderGraph::compile()
 
 	}
 
+	// create resources
 	{
 		RDS_PROFILE_SECTION("create resources");
+
+		auto& rscPool = rdgFrame.rscPool;
 
 		for (auto& e : resources)
 		{
@@ -293,7 +297,7 @@ RenderGraph::compile()
 					auto* rsc = sCast<RdgTexture*>(e);
 					auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
 					cDesc.create(rsc->desc());
-					auto* rdRsc = resourcePool().createTexture(cDesc, renderDevice());
+					auto* rdRsc = rscPool.createTexture(cDesc, renderDevice());
 					rdRsc->setDebugName(rsc->name());
 					rsc->commitRenderResouce(rdRsc);
 				} break;
@@ -303,7 +307,7 @@ RenderGraph::compile()
 					auto* rsc = sCast<RdgBuffer*>(e);
 					auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
 					cDesc.create(rsc->desc());
-					auto* rdRsc = resourcePool().createBuffer(cDesc, renderDevice());
+					auto* rdRsc = rscPool.createBuffer(cDesc, renderDevice());
 					rdRsc->setDebugName(rsc->name());
 					rsc->commitRenderResouce(rdRsc);
 				} break;
@@ -355,11 +359,11 @@ RenderGraph::execute()
 }
 
 void 
-RenderGraph::commit()
+RenderGraph::commit(u32 frameIndex)
 {
 	// should call in render thread
 
-	auto& rdgFrame	= renderGraphFrame();
+	auto& rdgFrame	= renderGraphFrame(frameIndex);
 	//auto& resources = rdgFrame.resources;
 
 	Passes&		sortedPasses	= rdgFrame.resultPasses;
@@ -375,7 +379,6 @@ RenderGraph::commit()
 	}
 
 	_rdCtx->commit(*this);
-	rotateFrame();
 }
 
 void 
@@ -527,14 +530,14 @@ void RenderGraph::free(void* p, SizeType align)
 
 void RenderGraph::rotateFrame()
 {
-	auto& iFrame = _iFrame;
-	iFrame = (iFrame + 1) % s_kFrameInFlightCount;
+	auto& frameIdx = _frameIdx;
+	frameIdx = RenderApiLayerTraits::rotateFrame(frameIdx + 1);
 
-	if (_rdgFrames.size() < iFrame + 1)
+	if (_rdgFrames.size() < frameIdx + 1)
 	{
 		// use for first frame
 		if (_rdgFrames.is_empty())
-			iFrame = 0;
+			frameIdx = 0;
 		auto& back = _rdgFrames.emplace_back();
 		back.create(this);
 	}

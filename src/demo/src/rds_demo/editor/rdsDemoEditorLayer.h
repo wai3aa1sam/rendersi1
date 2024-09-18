@@ -53,7 +53,7 @@ private:
 	CRenderableSystem& renderableSystem();
 
 protected:
-	
+	void prepare_SingleThreadMode();
 
 private:
 	EngineContext	_egCtx;
@@ -75,7 +75,7 @@ private:
 
 	bool _isFullScreen = false;
 
-	UPtr<RenderThread>	_rdThread;
+	RenderThread		_rdThread;
 	RenderThreadQueue	_rdThreadQueue;
 };
 
