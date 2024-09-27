@@ -67,7 +67,7 @@ RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 	*/
 	rotate();
 
-	transferRequest().uploadBuffer(makeBufferOnDemand(data.size() - offset), data, offset, this);
+	transferRequest().uploadBuffer(makeBufferOnDemand(data.size() - offset), data, offset);
 	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
 	//onUploadToGpu(data, offset);
 }

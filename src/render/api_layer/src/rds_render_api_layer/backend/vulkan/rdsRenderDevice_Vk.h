@@ -10,7 +10,6 @@
 #include "pass/rdsVk_FramebufferPool.h"
 
 #include "transfer/rdsTransferContext_Vk.h"
-#include "transfer/rdsRenderResourcesContext_Vk.h"
 #include "shader/rdsBindlessResources_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -113,9 +112,8 @@ private:
 	Vk_FramebufferPool	_vkFramebufPool;
 	Vk_RenderPassPool	_vkRdPassPool;
 
-	TransferContext_Vk			_tsfCtxVk;
-	RenderResourcesContext_Vk	_rdRscsCtxVk;
 	BindlessResources_Vk		_bindlessRscsVk;
+	TransferContext_Vk			_tsfCtxVk;
 };
 
 #endif

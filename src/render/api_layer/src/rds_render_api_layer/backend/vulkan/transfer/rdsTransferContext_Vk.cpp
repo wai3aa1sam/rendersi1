@@ -82,9 +82,6 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 	auto& completedVkSmp	= vkTsfFrame._completedVkSmp;
 	auto* vkCmdBuf			= vkTsfFrame.requestTransferCommandBuffer(VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY, "TransferContext_Vk::onCommit-vkCmdBuf");
 
-	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
-	bindlessRscVk.reserve();
-
 	_curVkCmdBuf = vkCmdBuf;
 	vkCmdBuf->beginRecord(&_vkTransferQueue);
 
@@ -143,14 +140,14 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLab
 
 	vkCmdBuf->beginRecord(requestVkQueue(queueType));
 	
-
 	for (auto& e : tsfCmdBuf.commands())
 	{
 		using SRC = TransferCommandType;
 		switch (e->type())
 		{
 			case SRC::UploadBuffer:		{ RDS_TODO("onTransferCommand_UploadBuffer() and here need to add barrier, but validation layer ignore it? (although the buffer is created with VK_SHARING_MODE_EXCLUSIVE)"); } break;
-			case SRC::UploadTexture:	{
+			case SRC::UploadTexture:	
+			{
 			
 				auto*	cmd			= sCast<TransferCommand_UploadTexture*>(e);
 				auto*	dst			= Vk_Texture::getVkImageHnd(cmd->dst);
@@ -180,6 +177,18 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLab
 		vkCmdBuf->submit(debugLabel, &dstInFlighVkFnc);
 		dstInFlighVkFnc.wait(rdDevVk);
 	}
+}
+
+void 
+TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& createQueue, TransferCommandBuffer& destroyQueue)
+{
+	if (renderDevice())
+	{
+		renderDeviceVk()->bindlessResourceVk().reserve();
+	}
+
+	_dispatchCommands(this, createQueue);
+	_dispatchCommands(this, destroyQueue);
 }
 
 //TransferRequest& transferReq, 
@@ -223,12 +232,10 @@ void TransferContext_Vk::onTransferCommand_CreateBuffer(TransferCommand_CreateBu
 {
 	auto* rdDevVk		= renderDeviceVk();
 	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
-	auto* dstBuf		= cmd->dst.ptr();
+	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
 
-	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::CreateBuffer, "");
-
-	bindlessRscVk.onCommit_RenderGpuBuffer(this, dstBuf);
-	// create
+	dstBuf->createRenderResource(rdDevVk->renderFrameParam());
+	bindlessRscVk.onCommit_RenderGpuBuffer(dstBuf);
 }
 
 void TransferContext_Vk::onTransferCommand_CreateTexture(TransferCommand_CreateTexture* cmd)
@@ -237,30 +244,32 @@ void TransferContext_Vk::onTransferCommand_CreateTexture(TransferCommand_CreateT
 	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
 	auto* dstTex		= cmd->dst.ptr();
 
-	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::CreateTexture, "");
+	#if 0
+	dstTex->createRenderResource(rdDevVk->renderFrameParam());
+	switch (dstTex->type())
+	{
+		case RenderDataType::TextureCube: {} break;
+		default: {  } break;
+	}
+	#endif // 0
 
-	bindlessRscVk.onCommit_Texture(this, dstTex);
-	// create
+	bindlessRscVk.onCommit_Texture(dstTex);
 }
 
 void TransferContext_Vk::onTransferCommand_DestroyBuffer(TransferCommand_DestroyBuffer* cmd)
 {
-	//auto* rdDevVk		= renderDeviceVk();
-	//auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
-	//auto* dstBuf		= cmd->dst;
+	auto* rdDevVk		= renderDeviceVk();
+	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst);
 
-	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::DestroyBuffer, "");
-
+	RenderResource::destroyObject(dstBuf, rdDevVk->renderFrameParam());
 }
 
 void TransferContext_Vk::onTransferCommand_DestroyTexture(TransferCommand_DestroyTexture* cmd)
 {
-	//auto* rdDevVk		= renderDeviceVk();
-	//auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
-	//auto* dstTex		= cmd->dst;
+	auto* rdDevVk		= renderDeviceVk();
+	auto* dstTex		= cmd->dst;
 
-	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::DestroyTexture, "");
-
+	RenderResource::destroyObject(dstTex, rdDevVk->renderFrameParam());
 }
 
 void
@@ -279,18 +288,28 @@ TransferContext_Vk::onTransferCommand_UploadBuffer(TransferCommand_UploadBuffer*
 	auto* vkCmdBuf		= _curVkCmdBuf;
 	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
 	auto* dstBufHnd		= dstBuf->vkBufHnd();
-	//auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
-	auto* statingBufHnd = vkTsfFrame.getVkStagingBufHnd(cmd->_stagingHnd);
 	const auto size		= Util::toVkDeviceSize(cmd->data.size());
 
 	cmd->_stagingHnd.checkValid();
-	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::UploadBuffer, "");
-	RDS_CORE_ASSERT(cmd->dst, "RenderGpuBuffer_vk is nullptr");
-	RDS_CORE_ASSERT(cmd->offset == 0, "not yet supported");
-	RDS_CORE_ASSERT(dstBuf && dstBufHnd && statingBufHnd,		"buffer is nullptr");
+	RDS_CORE_ASSERT(cmd->dst,									"RenderGpuBuffer_vk is nullptr");
+	RDS_CORE_ASSERT(cmd->offset == 0,							"not yet supported");
+	RDS_CORE_ASSERT(dstBuf && dstBufHnd,						"buffer is nullptr");
 	RDS_CORE_ASSERT(size > 0 && size <= cmd->dst->bufSize(),	"overflow");
 
-	vkCmdBuf->cmd_copyBuffer(dstBufHnd, statingBufHnd, size, 0, cmd->_stagingHnd.offset);
+	if (dstBuf->isConstantBuffer())
+	{
+		auto memmap = dstBuf->vkBuf()->scopedMemMap();
+		auto& constBufAlloc = renderDevice()->transferFrame(frameIdx).constBufferAllocator();
+		constBufAlloc.uploadToDst(memmap.data<u8*>(), cmd->_stagingHnd, size);
+	}
+	else
+	{
+		//auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
+		auto* statingBufHnd = vkTsfFrame.getVkStagingBufHnd(cmd->_stagingHnd);
+		RDS_CORE_ASSERT(statingBufHnd,		"buffer is nullptr");
+
+		vkCmdBuf->cmd_copyBuffer(dstBufHnd, statingBufHnd, size, 0, cmd->_stagingHnd.offset);
+	}
 }
 
 void 
@@ -300,7 +319,6 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
 	cmd->_stagingHnd.checkValid();
-	RDS_CORE_ASSERT(cmd->type() == TransferCommandType::UploadTexture, "");
 	RDS_CORE_ASSERT(cmd,		"");
 	RDS_CORE_ASSERT(cmd->dst,	"");
 

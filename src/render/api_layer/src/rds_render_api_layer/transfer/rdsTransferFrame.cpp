@@ -35,19 +35,9 @@ void
 TransferFrame::reset(TransferContext* tsfCtx)
 {
 	_tsfReq.reset(tsfCtx, this);
+	_constBufAlloc.clear();
 
-	_cmdBuf.clear();
-	_uploadBufCmds.clear();
-	_uploadTexCmds.clear();
 }
-
-TransferCommandBuffer* 
-TransferFrame::requestCommandBuffer()
-{
-	return &_cmdBuf;
-}
-
-
 
 #endif
 

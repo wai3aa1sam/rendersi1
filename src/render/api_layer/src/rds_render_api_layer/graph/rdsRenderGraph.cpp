@@ -143,7 +143,7 @@ void RenderGraph::destroy()
 	}
 	_passes.clear();
 	#endif // 0
-
+	
 	for (auto& frame : _rdgFrames)
 	{
 		frame.destroy();

@@ -46,7 +46,7 @@ namespace rds
 	E(None, = 0) \
 	E(Vertex,		= BitUtil::bit(0)) \
 	E(Index,		= BitUtil::bit(1)) \
-	E(Const,		= BitUtil::bit(2)) \
+	E(Constant,		= BitUtil::bit(2)) \
 	E(Compute,		= BitUtil::bit(3)) \
 	E(TransferSrc,	= BitUtil::bit(4)) \
 	E(TransferDst,	= BitUtil::bit(5)) \
@@ -164,7 +164,7 @@ public:
 	E(Index_Write,          = RenderResourceStateFlagsUtil::makeInt(RenderGpuBufferTypeFlags::Index,    RenderAccess::Write)) \
 	E(Vertex_Read,          = RenderResourceStateFlagsUtil::makeInt(RenderGpuBufferTypeFlags::Vertex,   RenderAccess::Read)) \
 	E(Vertex_Write,         = RenderResourceStateFlagsUtil::makeInt(RenderGpuBufferTypeFlags::Vertex,   RenderAccess::Write)) \
-	E(Constant,             = RenderResourceStateFlagsUtil::makeInt(RenderGpuBufferTypeFlags::Const,    RenderAccess::Read)) \
+	E(Constant,             = RenderResourceStateFlagsUtil::makeInt(RenderGpuBufferTypeFlags::Constant, RenderAccess::Read)) \
 	E(Compute_Read,         = RenderResourceStateFlagsUtil::makeInt(RenderGpuBufferTypeFlags::Compute,  RenderAccess::Read)) \
 	E(Compute_Write,        = RenderResourceStateFlagsUtil::makeInt(RenderGpuBufferTypeFlags::Compute,  RenderAccess::Write)) \
     \

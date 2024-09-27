@@ -37,7 +37,6 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 
 	Base::onCreate(cDesc);
 	
-
 	loadVkInstFn(_vkExtInfo);
 	loadVkDevFn(_vkExtInfo);
 
@@ -57,31 +56,12 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 		_tsfCtx = &_tsfCtxVk;
 	}
 
-	{
-		auto rdRscsCtxCDesc = RenderResourcesContext::makeCDesc(this);
-		_rdRscsCtxVk.create(rdRscsCtxCDesc);
-		_rdRscsCtx = &_rdRscsCtxVk;
-	}
-
 	_setDebugName();
 }
 
 void
 RenderDevice_Vk::onDestroy()
 {
-	waitIdle();
-
-	_rdFrames.clear();
-	_tsfFrames.clear();
-
-	_tsfCtxVk.destroy();
-	_tsfCtx = nullptr;
-
-	_rdRscsCtxVk.destroy();
-	_rdRscsCtx = nullptr;
-
-	_bindlessRscsVk.destroy();
-	_bindlessRscs = nullptr;
 
 	_vkMemoryContext.destroy();
 

@@ -32,6 +32,13 @@ TransferCommandBuffer::clear()
 	_allocator.clear();
 }
 
+void* 
+TransferCommandBuffer::_internal_allocCommand(size_t size)
+{
+	auto* buf = _allocator.allocate(size);
+	_commands.emplace_back(reinCast<TransferCommand*>(buf));
+	return buf;
+}
 
 #endif
 

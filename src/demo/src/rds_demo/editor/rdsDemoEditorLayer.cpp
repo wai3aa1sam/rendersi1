@@ -31,7 +31,6 @@ DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 DemoEditorLayer::~DemoEditorLayer()
 {
 	#if 1
-	//Renderer::renderDevice()->waitIdle();
 	_gfxDemo.reset(nullptr);
 	_scene.destroy();
 	_egCtx.destroy();
@@ -145,13 +144,8 @@ DemoEditorLayer::onUpdate()
 		}
 	}
 	
-	auto* rdDev	= Renderer::renderDevice();
-	RenderData_RenderJob rdJob;
-	rdableSys.setupRenderJob(&rdJob);
-	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rdJob);
-	#if RDS_SINGLE_THREAD_MODE
-	_rdThread._temp_render();
-	#endif // RDS_SINGLE_THREAD_MODE
+	RenderDevice* rdDev = Renderer::renderDevice();
+	submitRenderJob(rdDev);
 }
 
 void 
@@ -341,6 +335,20 @@ DemoEditorLayer::prepare_SingleThreadMode()
 		Renderer::renderDevice()->waitIdle();
 	}
 	#endif // 0
+}
+
+void 
+DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
+{
+	auto& egFrameParam	= _egCtx.engineFrameParam();
+	auto& rdableSys		= renderableSystem();
+
+	RenderData_RenderJob rdJob;
+	rdableSys.setupRenderJob(&rdJob);
+	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rdJob);
+	#if RDS_SINGLE_THREAD_MODE
+	_rdThread._temp_render();
+	#endif // RDS_SINGLE_THREAD_MODE
 }
 
 DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }

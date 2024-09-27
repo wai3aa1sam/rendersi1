@@ -153,8 +153,8 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 		_uavBindlessHnd	= bindlessRsc.allocImage(this);
 	}
 
-	auto& tsfReq = rdDev->transferContext().transferRequest();
-	tsfReq.createTexture(this);
+	auto& tsfCtx = rdDev->transferContext();
+	tsfCtx.createTexture(this);
 }
 
 void 
@@ -174,17 +174,33 @@ Texture::onDestroy()
 	}
 }
 
-bool 
-Texture::isValid(TextureCreateDesc& cDesc)
+void 
+Texture::_internal_requestDestroyObject()
 {
-	bool isValid = cDesc.size.x > 0 && cDesc.size.y > 0 && cDesc.size.z > 0;
+	Base::_internal_requestDestroyObject();
+
+	auto* rdDev	 = renderDevice();
+	auto& tsfCtx = rdDev->transferContext();
+	tsfCtx.destroyTexture(this);
+}
+
+bool 
+Texture::isValid(const Texture_Desc& desc) const
+{
+	bool isValid = desc.size.x > 0 && desc.size.y > 0 && desc.size.z > 0;
 	return isValid;
 }
 
-void
-Texture::checkValid(TextureCreateDesc& cDesc)
+bool 
+Texture::isValid() const
 {
-	RDS_CORE_ASSERT(isValid(cDesc), "invalid cDesc");
+	return isValid(desc());
+}
+
+void
+Texture::checkValid(const Texture_Desc& desc) const
+{
+	RDS_CORE_ASSERT(isValid(desc), "invalid desc");
 }
 
 bool	Texture::hasMipmapView()	const { return BitUtil::has(usageFlags(), TextureUsageFlags::UnorderedAccess); }
@@ -252,6 +268,11 @@ void
 Texture2D::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
+
+	if (cDesc.uploadImage.isValid())
+	{
+		uploadToGpu(cDesc);
+	}
 }
 
 void 
@@ -266,12 +287,6 @@ Texture2D::onDestroy()
 
 
 	Base::onDestroy();
-}
-
-void 
-Texture2D::onCreateRenderResource()
-{
-
 }
 
 void 

@@ -53,8 +53,6 @@ void RenderGpuBuffer::destroy()
 
 void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 {
-	auto* rdDev	= renderDevice();
-
 	_desc = cDesc;
 	_internal_setSubResourceCount(1);
 	/*
@@ -68,8 +66,7 @@ void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 		_bindlessHnd = renderDevice()->bindlessResource().allocBuffer(this);
 	}
 
-	auto& tsfReq = rdDev->transferContext().transferRequest();
-	tsfReq.createBuffer(this);
+	transferContext().createBuffer(this);
 }
 
 void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
@@ -80,6 +77,14 @@ void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
 void RenderGpuBuffer::onDestroy()
 {
 	renderDevice()->bindlessResource().freeBuffer(this);
+}
+
+
+void 
+RenderGpuBuffer::_internal_requestDestroyObject()
+{
+	Base::_internal_requestDestroyObject();
+	transferContext().destroyBuffer(this);
 }
 
 void 

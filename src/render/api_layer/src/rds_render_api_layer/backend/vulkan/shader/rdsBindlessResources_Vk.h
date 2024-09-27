@@ -31,12 +31,12 @@ public:
 public: 
 	void reserve();
 
-	void onCommit_RenderGpuBuffer(	TransferContext_Vk* ctxVk, RenderGpuBuffer* renderGpuBuf/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
-	void onCommit_Texture(			TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
+	void onCommit_RenderGpuBuffer(	RenderGpuBuffer* renderGpuBuf/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
+	void onCommit_Texture(			Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
 
 protected:
-	void _onCommit_Texture(			TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
-	void _onCommit_Image(			TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
+	void _onCommit_Texture(			Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
+	void _onCommit_Image(			Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
 
 public:
 	Vk_PipelineLayout& vkPipelineLayoutCommon();

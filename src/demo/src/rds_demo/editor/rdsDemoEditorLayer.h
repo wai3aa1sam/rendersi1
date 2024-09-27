@@ -53,6 +53,7 @@ private:
 
 protected:
 	void prepare_SingleThreadMode();
+	void submitRenderJob(RenderDevice* rdDev);
 
 private:
 	EngineContext	_egCtx;

@@ -32,23 +32,21 @@ public:
 
 	void reset(TransferContext* tsfCtx);
 
-	TransferCommandBuffer* requestCommandBuffer();
-
 public:
-	TransferRequest& transferRequest();
+	LinearStagingBuffer&	constBufferAllocator();
+	TransferRequest&		transferRequest();
 
 protected:
 	//TransferCommandPool _cmdPool;
+	LinearStagingBuffer		_constBufAlloc;
 	TransferRequest			_tsfReq;
-
-	// TODO: temporary
-	TransferCommandBuffer	_cmdBuf;
-	TransferCommandBuffer	_uploadBufCmds;
-	TransferCommandBuffer	_uploadTexCmds;
 };
 
-inline TransferRequest& TransferFrame::transferRequest() { return _tsfReq; }
+inline LinearStagingBuffer&	TransferFrame::constBufferAllocator()	{ return _constBufAlloc; }
+inline TransferRequest&		TransferFrame::transferRequest()		{ return _tsfReq; }
 
 #endif
+
+
 
 }

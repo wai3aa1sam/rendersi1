@@ -23,11 +23,13 @@ public:
 	virtual ~RenderResourcesContext_Vk();
 
 public:
+	#if 0
 	void onRenderResource_Create_RenderGpuBuffer(	RenderGpuBuffer*	rdGpuBuf);
 	void onRenderResource_Create_Texture(			Texture*			texture);
 
 	void onRenderResource_Destroy_RenderGpuBuffer(	RenderGpuBuffer*	rdGpuBuf);
 	void onRenderResource_Destroy_Texture(			Texture*			texture);
+	#endif // 0
 
 public:
 	RenderDevice_Vk* renderDeviceVk();
@@ -42,9 +44,9 @@ private:
 	
 };
 
-#endif
 
 inline RenderDevice_Vk* RenderResourcesContext_Vk::renderDeviceVk() { return sCast<RenderDevice_Vk*>(_rdDev); }
 
+#endif
 
 }

@@ -4,6 +4,7 @@
 #include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
+#include "../transfer/rdsLinearStagingBuffer.h"
 
 namespace rds
 {
@@ -44,10 +45,16 @@ public:
 	Type type() const { return _type; }
 
 protected:
-	TransferCommandType _type;
+	TransferCommandType _type = Type::None;
 };
 
+
+
+#if 0
+#pragma mark --- rdsTransferCommand_CreateDestroy-Impl ---
+#endif // 0
 #if 1
+
 class TransferCommand_CreateBuffer : public TransferCommand
 {
 public:
@@ -59,7 +66,7 @@ public:
 	virtual ~TransferCommand_CreateBuffer() {};
 
 public:
-	SPtr<RenderGpuBuffer> dst;
+	SPtr<RenderGpuBuffer> dst = nullptr;
 };
 
 class TransferCommand_CreateTexture : public TransferCommand
@@ -73,7 +80,7 @@ public:
 	virtual ~TransferCommand_CreateTexture() {};
 
 public:
-	SPtr<Texture> dst;
+	SPtr<Texture> dst = nullptr;
 };
 
 class TransferCommand_DestroyBuffer : public TransferCommand
@@ -87,7 +94,7 @@ public:
 	virtual ~TransferCommand_DestroyBuffer() {};
 
 public:
-	RenderGpuBuffer* dst;
+	RenderGpuBuffer* dst = nullptr;
 };
 
 class TransferCommand_DestroyTexture : public TransferCommand
@@ -101,11 +108,12 @@ public:
 	virtual ~TransferCommand_DestroyTexture() {};
 
 public:
-	Texture* dst;
+	Texture* dst = nullptr;
 };
 
 #endif // 0
 
+#if 1
 
 class TransferCommand_CopyBuffer : public TransferCommand
 {
@@ -118,26 +126,9 @@ public:
 	virtual ~TransferCommand_CopyBuffer() {};
 
 public:
-	SPtr<RenderGpuBuffer>	src;
-	SPtr<RenderGpuBuffer>	dst;
+	SPtr<RenderGpuBuffer>	src = nullptr;
+	SPtr<RenderGpuBuffer>	dst = nullptr;
 	QueueTypeFlags			queueTypeflags;
-};
-
-struct StagingHandle
-{
-	using SizeType = RenderApiLayerTraits::SizeType;
-public:
-	static constexpr SizeType s_kInvalid = NumLimit<u32>::max();
-
-	bool isValid()			const { return chunkId != s_kInvalid && offset != s_kInvalid; }
-	void checkValid()		const { RDS_CORE_ASSERT(isValid(), "Invalid StagingHandle"); }
-
-	bool isOffsetValid()	const { return offset != s_kInvalid; }
-	void checkOffsetValid()	const { RDS_CORE_ASSERT(isOffsetValid(), "Invalid StagingHandle"); }
-
-public:
-	u32 chunkId = s_kInvalid;
-	u32 offset	= s_kInvalid;
 };
 
 class TransferCommand_UploadBuffer : public TransferCommand
@@ -155,12 +146,11 @@ public:
 	virtual ~TransferCommand_UploadBuffer() {};
 
 public:
-	SPtr<RenderGpuBuffer>		dst;
+	SPtr<RenderGpuBuffer>		dst		= nullptr;
 	ByteSpan					data;
 	SizeType					offset = 0;
 	QueueTypeFlags				queueTypeflags = QueueTypeFlags::Graphics | QueueTypeFlags::Compute;
 
-	u32				_stagingIdx = s_kInvalid;
 	StagingHandle	_stagingHnd;
 };
 
@@ -179,13 +169,12 @@ public:
 	virtual ~TransferCommand_UploadTexture() {};
 
 public:
-	SPtr<Texture>	dst;
-
-	//void* _stagingHnd = nullptr;
-	u32 _stagingIdx = s_kInvalid;
+	SPtr<Texture>	dst = nullptr;
 
 	StagingHandle _stagingHnd;
 };
+
+#endif
 
 #endif
 
@@ -217,6 +206,10 @@ public:
 
 	Span<TransferCommand*> commands();
 
+public:
+	void* _internal_allocCommand(size_t size);
+	template<class CMD> static CMD* newCommand(void* buf);
+
 private:
 	template<class CMD> CMD* newCommand();
 
@@ -225,12 +218,20 @@ private:
 	Vector<TransferCommand*, s_kLocalSize>	_commands;
 };
 
-template<class CMD> inline
-CMD* TransferCommandBuffer::newCommand() 
+template<class CMD> 
+CMD* 
+TransferCommandBuffer::newCommand(void* buf) 
 {
-	auto* buf = _allocator.allocate(sizeof(CMD));
 	auto* cmd = new(buf) CMD();
-	_commands.emplace_back(cmd);
+	return cmd;
+}
+
+template<class CMD> inline
+CMD* 
+TransferCommandBuffer::newCommand() 
+{
+	auto* buf = _internal_allocCommand(sizeof(CMD));
+	auto* cmd = TransferCommandBuffer::newCommand<CMD>(buf);
 	return cmd;
 }
 

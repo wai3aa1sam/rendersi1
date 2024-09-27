@@ -75,6 +75,9 @@ public:
 	Texture2D_Vk();
 	virtual ~Texture2D_Vk();
 
+	void createRenderResource();
+	void destroyRenderResource();
+
 public:
 	virtual void setDebugName(StrView name) override;
 	virtual void setNull() override;
@@ -148,13 +151,6 @@ struct Vk_Texture
 				createVkImageView(getUavVkImageView(tex, i), tex, i, 1, rdDevVk);
 			}
 		}
-
-		//createVkSampler		(getVkSampler	(tex), tex, rdDevVk);
-		//tex->_vkImgViewShaderRsc.create(getVkImage(tex)->hnd(), tex->desc(), TextureUsageFlags::ShaderResource, rdDevVk);
-
-		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-		tex->setDebugName(tex->_debugName);
-		#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 	}
 
 	static void createVkImage(		Vk_Image*		o, Texture* tex,RenderDevice_Vk* rdDevVk);

@@ -18,12 +18,14 @@ struct TransferContext_CreateDesc : public RenderResource_CreateDesc
 #endif // 0
 #if 1
 
-
 class TransferContext : public RenderResource
 {
 public:
 	using Base			= RenderResource;
 	using CreateDesc	= TransferContext_CreateDesc;
+
+	using CreateQueue	= MutexProtected<UPtr<TransferCommandBuffer> >;
+	using DestroyQueue	= MutexProtected<UPtr<TransferCommandBuffer> >;
 
 public:
 	static CreateDesc				makeCDesc();
@@ -36,18 +38,43 @@ public:
 	void create	(const CreateDesc& cDesc);
 	void destroy();
 
-	//void commit(TransferCommandBuffer& cmdBuf);
 	void commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
+
+public:
+	void createBuffer(	RenderGpuBuffer*	buffer);
+	void createTexture(	Texture*			texture);
+
+	void destroyBuffer(	RenderGpuBuffer*	buffer);
+	void destroyTexture(Texture*			texture);
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
 	virtual void onDestroy	();
 
-	template<class CTX> void _dispatchCommand(CTX* ctx, TransferCommand* cmd);
+	template<class CTX> void _dispatchCommands(	CTX* ctx, TransferCommandBuffer& cmdBuf);
+	template<class CTX> void _dispatchCommand(	CTX* ctx, TransferCommand* cmd);
 	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
 
+			void commitRenderResources(const RenderFrameParam& rdFrameParam);
+	virtual void onCommitRenderResources(TransferCommandBuffer& createQueue, TransferCommandBuffer& destroyQueue);
+
 protected:
+	template<class T, class QUEUE> T* newCommand(QUEUE& queue);
+
+private:
+	CreateQueue		_rdRscCreateQueue;
+	DestroyQueue	_rdRscDestroyQueue;
 };
+
+template<class CTX> inline
+void 
+TransferContext::_dispatchCommands(CTX* ctx, TransferCommandBuffer& cmdBuf)
+{
+	for (auto* cmd : cmdBuf.commands())
+	{
+		_dispatchCommand(ctx, cmd);
+	}
+}
 
 template<class CTX> inline
 void 
@@ -69,6 +96,19 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 		default: { throwError("undefined render command"); } break;
 	}
 	#undef _DISPACH_CMD_CASE
+}
+
+template<class CMD, class QUEUE> inline
+CMD* 
+TransferContext::newCommand(QUEUE& queue)
+{
+	void* buf = nullptr;
+	{
+		auto data = queue.scopedULock();
+		buf = data->ptr()->_internal_allocCommand(sizeof(CMD));
+	}
+	auto* cmd = TransferCommandBuffer::newCommand<CMD>(buf);
+	return cmd;
 }
 
 #endif

@@ -34,28 +34,18 @@ RenderGpuBuffer_Vk::~RenderGpuBuffer_Vk()
 }
 
 void 
-RenderGpuBuffer_Vk::setDebugName(StrView name)
+RenderGpuBuffer_Vk::createRenderResource(const RenderFrameParam& rdFrameParam)
 {
-	Base::setDebugName(name);
-	RDS_VK_SET_DEBUG_NAME(_vkBuf, name);
-}
-
-void
-RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
-{
-	Base::onCreate(cDesc);
-	
 	auto* rdDevVk	= renderDeviceVk();
 	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
 
 	auto targetSize = math::alignTo(bufSize(), s_kAlign);
 
-	RDS_TODO("if it is const buf, no need staging");
-
 	Vk_AllocInfo allocInfo = {};
 
-	VkBufferUsageFlags usageFlags = Util::toVkBufferUsages(cDesc.typeFlags);
-	if (cDesc.typeFlags != RenderGpuBufferTypeFlags::Const)
+	RenderGpuBufferTypeFlags	bufTypeFlags	= typeFlags();
+	VkBufferUsageFlags			usageFlags		= Util::toVkBufferUsages(bufTypeFlags);
+	if (!isConstantBuffer())
 	{
 		usageFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	}
@@ -63,17 +53,38 @@ RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 	{
 		allocInfo.flags |= RenderAllocFlags::HostWrite;
 	}
-	
-	_vkBuf.create(rdDevVk, vkAlloc, &allocInfo, targetSize
-				, usageFlags
-				, QueueTypeFlags::Graphics);
 
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkBuf);
+	_vkBuf.create(rdDevVk, vkAlloc, &allocInfo, targetSize
+		, usageFlags
+		, QueueTypeFlags::Graphics);
 
 	VkBufferDeviceAddressInfo address_info = {};
 	address_info.sType	= VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
 	address_info.buffer = vkBufHnd();
-	_gpuAddress = sCast<u64>(vkGetBufferDeviceAddress(renderDeviceVk()->vkDevice(), &address_info));
+	_gpuAddress = sCast<u64>(vkGetBufferDeviceAddress(rdDevVk->vkDevice(), &address_info));
+
+	RDS_TODO("TransferCommand_setDebugName");
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkBuf);
+}
+
+void 
+RenderGpuBuffer_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	_vkBuf.destroy();
+	_gpuAddress = 0;
+}
+
+void 
+RenderGpuBuffer_Vk::setDebugName(StrView name)
+{
+	Base::setDebugName(name);
+	//RDS_VK_SET_DEBUG_NAME(_vkBuf, name);
+}
+
+void
+RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
+{
+	Base::onCreate(cDesc);
 }
 
 void
@@ -85,8 +96,7 @@ RenderGpuBuffer_Vk::onPostCreate(CreateDesc& cDesc)
 void
 RenderGpuBuffer_Vk::onDestroy()
 {
-	_gpuAddress = 0;
-
+	
 	Base::onDestroy();
 }
 
@@ -95,26 +105,19 @@ RenderGpuBuffer_Vk::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 {
 	Base::onUploadToGpu(cmd);
 
-	// or create each time, but it has to handle destroy, cannot destroy it when using
-	throwIf(!_vkBuf, "RenderGpuBuffer not yet created");
-
-	RDS_TODO("revisit, if the data is large, may be put to other thread");
-	RDS_TODO("should have a inline staging buffer, ");
-
-	if (BitUtil::has(typeFlags(), RenderGpuBufferTypeFlags::Const))
+	if (isConstantBuffer())
 	{
-		auto memmap =_vkBuf.scopedMemMap();
-		memory_copy(memmap.data<u8*>(), cmd->data.data(), cmd->data.size());
+		auto* rdDev		= renderDevice();
+		auto& tsfFrame	= rdDev->transferFrame(rdDev->engineFrameIndex());
+		tsfFrame.constBufferAllocator().uploadToBuffer(cmd->_stagingHnd, cmd->data);
 	}
 	else
 	{
 		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, cmd->data);
-		//transferContextVk().uploadToStagingBuf(cmd->_stagingIdx, cmd->data);
 	}
 }
 
-
-
 #endif
+
 }
 #endif

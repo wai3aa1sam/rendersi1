@@ -12,6 +12,7 @@ namespace rds
 
 GraphicsDemo::~GraphicsDemo()
 {
+
 }
 
 void 
@@ -47,6 +48,8 @@ GraphicsDemo::onCreate()
 
 		texCDesc.create("asset/texture/uvChecker.png");
 		_texUvChecker = Renderer::renderDevice()->createTexture2D(texCDesc);
+		_texUvChecker->setDebugName("uvChecker");
+
 		_texUvChecker->setDebugName("uvChecker");
 	}
 

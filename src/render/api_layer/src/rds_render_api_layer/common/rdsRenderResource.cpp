@@ -60,6 +60,13 @@ RenderResource::setDebugName(StrView name)
 }
 
 void 
+RenderResource::_internal_requestDestroyObject()
+{
+	checkMainThreadExclusive(RDS_SRCLOC);
+	// TODO: TransferRequest should be thread-safe
+}
+
+void 
 RenderResource::_internal_setSubResourceCount(SizeType n)
 {
 	_rdState.setSubResourceCount(n);
@@ -69,18 +76,6 @@ void
 RenderResource::_internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource)
 {
 	_rdState.setState(state, subResource);
-}
-
-void 
-RenderResource::onCreateRenderResource()
-{
-
-}
-
-void 
-RenderResource::onDestroyRenderResource()
-{
-	//RDS_LOG("onDestroyRenderResource() - {}", (void*)this);
 }
 
 bool 

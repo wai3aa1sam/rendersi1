@@ -65,7 +65,6 @@ RenderDevice::create(const CreateDesc& cDesc)
 
 	RDS_CORE_ASSERT(_bindlessRscs,	"");
 	RDS_CORE_ASSERT(_tsfCtx,		"");
-	RDS_CORE_ASSERT(_rdRscsCtx,		"");
 }
 
 void 
@@ -75,12 +74,19 @@ RenderDevice::destroy()
 
 	_shaderStock.destroy();
 	_textureStock.destroy();
+	_rdFrames.clear();
+	_tsfFrames.clear();
+
+	_tsfCtx->destroy();
+	_tsfCtx = nullptr;
+
+	_bindlessRscs->destroy();
+	_bindlessRscs = nullptr;
 
 	onDestroy();
 
 	RDS_CORE_ASSERT(!_bindlessRscs,			"forgot to call destroy() _bindlessRscs");
 	RDS_CORE_ASSERT(!_tsfCtx,				"forgot to call destroy() _tsfCtx");
-	RDS_CORE_ASSERT(!_rdRscsCtx,			"forgot to call destroy() _rdRscsCtx");
 	RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
 	RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");
 }
@@ -105,6 +111,7 @@ RenderDevice::onCreate(const CreateDesc& cDesc)
 void 
 RenderDevice::onDestroy()
 {
+	
 }
 
 void 

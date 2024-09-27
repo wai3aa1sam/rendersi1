@@ -339,7 +339,7 @@ Vk_RenderApiUtil::toVkBufferUsage(RenderGpuBufferTypeFlags v)
 		case SRC::Compute:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; }	break;
 		case SRC::Vertex:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; }	break;
 		case SRC::Index:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_INDEX_BUFFER_BIT; }		break;
-		case SRC::Const:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; }	break;
+		case SRC::Constant:		{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; }	break;
 		case SRC::TransferSrc:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_SRC_BIT; }		break;
 		case SRC::TransferDst:	{ return VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_DST_BIT; }		break;
 		default: { RDS_THROW("unsupport type {}, {}", v, RDS_SRCLOC); }	break;
@@ -357,7 +357,7 @@ Vk_RenderApiUtil::toVkBufferUsages(RenderGpuBufferTypeFlags v)
 	if (BitUtil::has(v, SRC::Compute))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 	if (BitUtil::has(v, SRC::Vertex))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	if (BitUtil::has(v, SRC::Index))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-	if (BitUtil::has(v, SRC::Const))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	if (BitUtil::has(v, SRC::Constant))		o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	if (BitUtil::has(v, SRC::TransferSrc))	o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	if (BitUtil::has(v, SRC::TransferDst))	o |= VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
@@ -950,7 +950,7 @@ Vk_RenderApiUtil::toVkPipelineStageFlag(RenderGpuBufferTypeFlags v)
 		case SRC::Compute:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT; }	break;
 		case SRC::Vertex:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_VERTEX_INPUT_BIT; }		break;
 		case SRC::Index:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_VERTEX_INPUT_BIT; }		break;
-		case SRC::Const:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; }	break;
+		case SRC::Constant:		{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; }	break;
 		case SRC::TransferSrc:	{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT; }			break;
 		case SRC::TransferDst:	{ return VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT; }			break;
 		default: { RDS_THROW("unsupport type {}", v); }	break;
@@ -996,7 +996,7 @@ Vk_RenderApiUtil::toVkAccessFlag(RenderGpuBufferTypeFlags usage, RenderAccess ac
 		return VK_ACCESS_INDEX_READ_BIT;
 	}
 
-	if (usage == RenderGpuBufferTypeFlags::Const)
+	if (usage == RenderGpuBufferTypeFlags::Constant)
 	{
 		RDS_CORE_ASSERT(access == RenderAccess::Read, "buf usage access invalid");
 		return VK_ACCESS_UNIFORM_READ_BIT;

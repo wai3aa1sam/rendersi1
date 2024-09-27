@@ -114,15 +114,18 @@ public:
 	SizeType	elementCount()	const;
 	TypeFlags	typeFlags()		const;
 
+	bool isConstantBuffer()	const;
+	bool isComputeBuffer()	const;
+
 	BindlessResourceHandle	bindlessHandle() const;
 
-	bool isComputeBuffer() const;
+public:
+	void _internal_requestDestroyObject();
 
 protected:
 	virtual void onCreate		(CreateDesc& cDesc);
 	virtual void onPostCreate	(CreateDesc& cDesc);
 	virtual void onDestroy		();
-
 
 protected:
 	Desc					_desc;
@@ -138,6 +141,7 @@ inline RenderGpuBuffer::TypeFlags	RenderGpuBuffer::typeFlags()		const { return _
 
 inline BindlessResourceHandle		RenderGpuBuffer::bindlessHandle()	const { return _bindlessHnd; }
 
+inline bool							RenderGpuBuffer::isConstantBuffer()	const { return BitUtil::hasAny(typeFlags(), RenderGpuBufferTypeFlags::Constant); }
 inline bool							RenderGpuBuffer::isComputeBuffer()	const { return BitUtil::hasAny(typeFlags(), RenderGpuBufferTypeFlags::Compute); }
 
 #endif

@@ -58,7 +58,8 @@ protected:
 	virtual void onCreate(const CreateDesc& cDesc)	override;
 	virtual void onDestroy()						override;
 
-	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate) override;
+	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)			override;
+	virtual void onCommitRenderResources(TransferCommandBuffer& createQueue, TransferCommandBuffer& destroyQueue)	override;
 
 	Vk_Queue* requestVkQueue(QueueTypeFlags type);
 

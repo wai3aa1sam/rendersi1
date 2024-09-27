@@ -72,7 +72,7 @@ private:
 	the impl maybe different, 
 */
 // TODO
-class EcsAllocator : public Mallocator
+class EcsAllocator : public DefaultAllocator
 {
 public:
 	EcsAllocator()
@@ -155,13 +155,12 @@ template<class T, class VALUE> inline
 void 
 EcsVectorTable<T, VALUE>::destroy()
 {
-	_ecsAlloc = nullptr;
-
-	// free by SPtr now, if use DefaultDestructor, then need to loop and _ecsAlloc to free, still thinking
-
 	_elements.clear();
 	_indexTable.clear();
 	_table.clear();
+
+	// free by SPtr now, if use DefaultDestructor, then need to loop and _ecsAlloc to free, still thinking
+	_ecsAlloc = nullptr;
 }
 
 //template<class T, class VALUE> 

@@ -403,7 +403,7 @@ ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass, u32 idx
 	_cpuBuf.resize(bufSize);
 
 	auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
-	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Const;
+	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Constant;
 	bufCDesc.bufSize	= bufSize;
 	_gpuBuffer = rdDev->createRenderGpuBuffer(bufCDesc);
 	_gpuBuffer->setDebugName(fmtAs_T<TempString>("{}-cb-{}-{}", pass->shader()->filename(), info->name, idx));

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
+#include "../command/rdsTransferRequest.h"
 
 namespace rds
 {
@@ -49,8 +50,8 @@ protected:
 	virtual void onCommit(const RenderFrameParam& rdFrameParam);
 
 protected:
-	template<class CTX> void _dispatch_RenderResource_Create(	CTX* ctx, RenderResource* rdRsc);
-	template<class CTX> void _dispatch_RenderResource_Destroy(	CTX* ctx, RenderResource* rdRsc);
+	//template<class CTX> void _dispatch_RenderResource_Create(	CTX* ctx, RenderResource* rdRsc);
+	//template<class CTX> void _dispatch_RenderResource_Destroy(	CTX* ctx, RenderResource* rdRsc);
 
 protected:
 	RenderDevice*	_rdDev		= nullptr;
@@ -60,6 +61,7 @@ protected:
 	MutexProtected<DestroyQueue>	_destroyQueue;
 };
 
+#if 0
 template<class CTX> inline
 void 
 RenderResourcesContext::_dispatch_RenderResource_Create(CTX* ctx, RenderResource* rdRsc)
@@ -91,6 +93,8 @@ RenderResourcesContext::_dispatch_RenderResource_Destroy(CTX* ctx, RenderResourc
 	}
 	#undef _DISPACH_CMD_CASE
 }
+#endif // 0
+
 
 #endif
 

@@ -22,6 +22,9 @@ template<class T, RenderResourceType TYPE>
 class RenderResource_T : public RenderResource
 {
 public:
+	template<class U, class ENABLE> friend struct RdsDeleter;
+
+public:
 	RenderResource_T();
 	virtual ~RenderResource_T();
 };

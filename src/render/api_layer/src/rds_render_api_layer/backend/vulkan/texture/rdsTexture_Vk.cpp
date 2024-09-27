@@ -49,11 +49,7 @@ Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
 
-	if (cDesc.uploadImage.isValid())
-	{
-		uploadToGpu(cDesc);
-	}
-	else if (isValid(cDesc) && !BitUtil::has(cDesc.usageFlags, TextureUsageFlags::BackBuffer))
+	if (!cDesc.uploadImage.isValid() && isValid(cDesc) && !BitUtil::has(cDesc.usageFlags, TextureUsageFlags::BackBuffer))
 	{
 		Vk_Texture::createVkResource(this);
 	}

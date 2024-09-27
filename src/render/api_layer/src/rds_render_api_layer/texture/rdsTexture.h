@@ -292,6 +292,9 @@ public:
 
 	virtual bool isNull() const = 0;
 
+	void createRenderResource( const RenderFrameParam& rdFrameParam) {};
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam) {};
+
 public:
 	RenderDataType			type()				const;
 	const Desc&				desc()				const;
@@ -321,12 +324,16 @@ protected:
 
 	virtual void setNull() = 0;	// only use  for swapchain
 
-	bool isValid(	TextureCreateDesc& cDesc);
-	void checkValid(TextureCreateDesc& cDesc);
+	bool isValid(	const Texture_Desc& desc) const;
+	bool isValid() const;
+	void checkValid(const Texture_Desc& cDesc) const;
 
 protected:
 	void onCreate(TextureCreateDesc& cDesc);
 	virtual void onDestroy();
+
+public:
+	void _internal_requestDestroyObject();
 
 protected:
 	Desc					_desc;
@@ -386,6 +393,7 @@ public:
 	void create(	 CreateDesc& cDesc);
 	void uploadToGpu(CreateDesc& cDesc);
 
+public:
 	Size size() const;
 
 protected:
@@ -393,7 +401,6 @@ protected:
 	virtual void onPostCreate(	CreateDesc& cDesc);
 	virtual void onDestroy();
 
-	virtual void onCreateRenderResource();
 	virtual void onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
 
 private:

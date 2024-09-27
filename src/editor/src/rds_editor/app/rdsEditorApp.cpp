@@ -115,9 +115,6 @@ EditorApp::willQuit()
 {
 	pollMsg();
 
-	if (Renderer::renderDevice())
-		Renderer::renderDevice()->waitIdle();
-
 	Base::willQuit();
 
 	onDestroy();

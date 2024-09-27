@@ -28,31 +28,23 @@ public:
 
 	void reset(TransferContext* tsfCtx, TransferFrame* tsfFrame);
 	void commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate = false);
-
-	void createBuffer(	RenderGpuBuffer*	buffer);
-	void createTexture(	Texture*			texture);
-
-	void destroyBuffer(	RenderGpuBuffer*	buffer);
-	void destroyTexture(Texture*			texture);
 	
 	TransferCommand_UploadTexture* uploadTexture(Texture* tex);
 	//TransferCommand_UploadTexture* uploadTexture(Texture*		tex, StrView filename);
 	//TransferCommand_UploadTexture* uploadTexture(Texture2D*		tex, Texture2D_CreateDesc&&		cDesc);
 	//TransferCommand_UploadTexture* uploadTexture(TextureCube*	tex, TextureCube_CreateDesc&&	cDesc);
 
-	void uploadBuffer		(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType offset, RenderGpuMultiBuffer* rdMultiBuf);
 	void uploadBuffer		(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType offset = 0);
 	void uploadBufferAsync	(RenderGpuBuffer* rdBuf, Vector<u8>&& data); // template<class DATA, size_t N>, DATA -> u8
 
 	TransferCommandBuffer& transferCommandBuffer();
 
 private:
-	TransferContext*		_tsfCtx	= nullptr;
+	TransferContext*		_tsfCtx			= nullptr;
 	TransferCommandBuffer	_tsfCmdBuf;
 
 	//Vector<TransferCommandBuffer, s_kThreadCount> _perThreadTsfCmdBuf;
 };
-
 
 #endif
 

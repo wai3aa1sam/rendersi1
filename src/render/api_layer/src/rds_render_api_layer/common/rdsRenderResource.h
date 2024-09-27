@@ -21,6 +21,9 @@ class TransferRequest;
 class TransferFrame;
 class TransferContext;
 
+class Texture;
+class RenderGpuBuffer;
+
 #define RDS_ENABLE_RenderResouce_DEBUG_NAME 1
 
 #define RDS_RenderResouce_SET_DEBUG_NAME(RSC, NAME) (RSC)->setDebugName(NAME)
@@ -175,12 +178,12 @@ public:
 	ProjectSetting& projectSetting();
 
 public:
+	void _internal_requestDestroyObject();
 	void _internal_setSubResourceCount(SizeType n);
 	void _internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
 
 protected:
-	virtual void onCreateRenderResource();
-	virtual void onDestroyRenderResource();
+	template<class T> static void destroyObject(T* p, const RenderFrameParam& rdFrameParam);
 
 protected:
 	RDS_DEBUG_SRCLOC_DECL;
@@ -231,15 +234,32 @@ inline ProjectSetting& RenderResource::projectSetting() { return *ProjectSetting
 template<class T> 
 struct RdsDeleter<T, EnableIf<IsBaseOf<RenderResource, T> > >
 {
-	static void rds_delete(RenderResource* p) RDS_NOEXCEPT
+	static void rds_delete(T* p) RDS_NOEXCEPT
 	{
 		if (p)
 		{
-			p->onDestroyRenderResource();
+			#if 1
+			if constexpr (IsBaseOf<Texture, T> || IsSame<T, RenderGpuBuffer>)
+			{
+				p->_internal_requestDestroyObject();
+			}
+			else
+			{
+				rds_delete_impl(p);
+			}
+			#else
 			rds_delete_impl(p);
+			#endif // 0
 		}
 	}
 };
 
+template<class T> 
+void 
+RenderResource::destroyObject(T* p, const RenderFrameParam& rdFrameParam)
+{
+	p->destroyRenderResource(rdFrameParam);
+	rds_delete_impl(p);
+}
 
 }

@@ -151,7 +151,7 @@ BindlessResources_Vk::reserve()
 }
 
 void 
-BindlessResources_Vk::onCommit_RenderGpuBuffer(TransferContext_Vk* ctxVk, RenderGpuBuffer* renderGpuBuf/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
+BindlessResources_Vk::onCommit_RenderGpuBuffer(RenderGpuBuffer* renderGpuBuf/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
 {
 	auto& dstSet	= descrSetBuf();
 	auto* rdRsc		= renderGpuBuf;
@@ -187,20 +187,20 @@ BindlessResources_Vk::onCommit_RenderGpuBuffer(TransferContext_Vk* ctxVk, Render
 }
 
 void 
-BindlessResources_Vk::onCommit_Texture(TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
+BindlessResources_Vk::onCommit_Texture(Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
 {
 	if (texture->isTexture())
 	{
-		_onCommit_Texture(ctxVk, texture);
+		_onCommit_Texture(texture);
 	}
 	if (texture->isImage())
 	{
-		_onCommit_Image(ctxVk, texture);
+		_onCommit_Image(texture);
 	}
 }
 
 void 
-BindlessResources_Vk::_onCommit_Texture(TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
+BindlessResources_Vk::_onCommit_Texture(Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
 {
 	auto& dstSet	= descrSetTex();
 	auto* rdRsc		= texture;
@@ -237,7 +237,7 @@ BindlessResources_Vk::_onCommit_Texture(TransferContext_Vk* ctxVk, Texture* text
 }
 
 void 
-BindlessResources_Vk::_onCommit_Image(TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
+BindlessResources_Vk::_onCommit_Image(Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
 {
 	auto& dstSet	= descrSetImg();
 	auto* rdRsc		= texture;

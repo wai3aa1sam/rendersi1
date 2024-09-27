@@ -92,7 +92,6 @@ private:
 	SMutexProtected<Chunks>	_chunks;
 };
 
-
 template<class T> inline
 T 
 Vk_LinearStagingBuffer::Chunks::mappedData(StagingHandle hnd)
