@@ -1,6 +1,8 @@
 #include "rds_engine-pch.h"
 #include "rdsEngineFrameParam.h"
 
+#include "rds_render_api_layer/thread/rdsRenderThreadQueue.h"
+
 namespace rds
 {
 
@@ -27,7 +29,7 @@ namespace rds
 //}
 
 void 
-EngineFrameParam::reset(RenderContext* rdCtx)
+EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue)
 {
 	_frameCount++;
 	auto frameCount = this->frameCount();
@@ -36,13 +38,21 @@ EngineFrameParam::reset(RenderContext* rdCtx)
 	{
 		{
 			RDS_PROFILE_DYNAMIC_FMT("wait gpu i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
-
-			while (!rdCtx->isFrameCompleted(frameCount))
+			volatile bool isWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
+			while (!rdCtx->isFrameCompleted(frameCount) || isWaitRdThread)
 			{
+				if (isWaitRdThread)
+				{
+					RDS_CORE_LOG_ERROR("************ wait render thread - rdLastFrame: {}, engineFrame: {}", renderThreadQueue->lastFinishedFrameCount(), frameCount);
+				}
+
 				// TODO: pick a small job instead of waiting, if so measure the time, and call sleep if the job is too small
 				OsUtil::sleep_ms(1);		// *** calling isFrameCompleted() frequently will have large overhead
+				isWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
 			}
 		}
+
+
 		auto* rdDev = Renderer::renderDevice();
 		rdDev->resetEngineFrame(frameCount);		// next frame here will clear those in Layer::onCreate()
 		//Renderer::renderDevice()->waitIdle();

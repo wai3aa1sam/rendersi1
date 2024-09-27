@@ -39,11 +39,14 @@ public:
 	Vk_ImageView_T* uavVkImageViewHnd(u32 mipLevel);
 
 protected:
-	virtual void onCreate		(CreateDesc& cDesc) override;
-	virtual void onPostCreate	(CreateDesc& cDesc) override;
-	virtual void onDestroy		() override;
+	virtual void onCreate(		CreateDesc& cDesc) override;
+	virtual void onPostCreate(	CreateDesc& cDesc) override;
+	virtual void onDestroy() override;
 
-	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
+	virtual void onUploadToGpu(	CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
+
+	virtual void onCreateRenderResource();
+	virtual void onDestroyRenderResource();
 
 	virtual void setDebugName(StrView name) override;
 	virtual void setNull() override;
@@ -214,6 +217,20 @@ void
 Texture_Vk<TEX_BASE>::onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	Base::onUploadToGpu(cDesc, cmd);
+}
+
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::onCreateRenderResource()
+{
+
+}
+
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::onDestroyRenderResource()
+{
+
 }
 
 template<class TEX_BASE> inline 

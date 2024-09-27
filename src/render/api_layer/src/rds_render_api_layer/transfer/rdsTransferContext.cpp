@@ -49,12 +49,18 @@ TransferContext::destroy()
 }
 
 void 
-TransferContext::commit(TransferRequest& tsfReq, bool isWaitImmediate)
+TransferContext::commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)
 {
-	RDS_WARN_ONCE("Before waitUploadTextureCompleted()");
-	tsfReq.waitUploadTextureCompleted();
+	auto* rdDev	= renderDevice();
+
+	/*auto& rdRscCtx = rdDev->renderResourcesContext();
+	rdRscCtx.commit(rdFrameParam);*/
+
+	//tsfReq.waitUploadTextureCompleted();
 	//tsfReq.waitUploadBufferCompleted();
-	onCommit(tsfReq, isWaitImmediate);
+	onCommit(rdFrameParam, tsfReq, isWaitImmediate);
+
+	rdDev->bindlessResource().commit();
 }
 
 void 
@@ -70,7 +76,7 @@ TransferContext::onDestroy()
 }
 
 void 
-TransferContext::onCommit(TransferRequest& tsfReq, bool isWaitImmediate)
+TransferContext::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)
 {
 
 }

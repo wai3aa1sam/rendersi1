@@ -169,15 +169,26 @@ template<class... ARGS> using Tuple = ::nmsp::Tuple_T<ARGS...>;
 #endif // 0
 #if 1
 
-using ::nmsp::DefaultDeleter;
 template<class T, class DELETER = DefaultDeleter<T> > using UPtr = ::nmsp::UPtr_T<T, DELETER>;
-using ::nmsp::makeUPtr;
+template<class T, class... ARGS> inline
+UPtr<T>
+makeUPtr(ARGS&&... args)
+{
+	T* p = RDS_NEW(T)(rds::forward<ARGS>(args)...);
+	return UPtr<T>{p};
+}
 
-template<class T, class DELETER = DefaultDeleter<T>> using SPtr = ::nmsp::SPtr_T<T, DELETER>;
-using ::nmsp::makeSPtr;
+template<class T, class DELETER = DefaultDeleter<T> > using SPtr = ::nmsp::SPtr_T<T, DELETER>;
+template<class T, class... ARGS> inline
+rds::SPtr<T> 
+makeSPtr(ARGS&&... args)
+{
+	T* p = RDS_NEW(T)(rds::forward<ARGS>(args)...);
+	return SPtr<T>{p};
+}
 
-template<class T> using SharedPtr = ::nmsp::SharedPtr_T<T>;
-using ::nmsp::makeShared;
+//template<class T> using SharedPtr = ::nmsp::SharedPtr_T<T>;
+//using ::nmsp::makeShared;
 
 
 template<class T>

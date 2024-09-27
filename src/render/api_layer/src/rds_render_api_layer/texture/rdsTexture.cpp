@@ -13,7 +13,6 @@ namespace rds
 
 RDS_Define_TypeInfo(Texture2D);
 
-
 SPtr<Texture>
 RenderDevice::createTexture(Texture_CreateDesc& cDesc)
 {
@@ -135,21 +134,17 @@ Texture::destroy()
 void 
 Texture::onCreate(TextureCreateDesc& cDesc)
 {
+	isValid(cDesc);
 	_desc = cDesc;
 	_internal_setSubResourceCount(desc().mipCount);
 
 	auto*	rdDev		= renderDevice();
 	auto&	bindlessRsc	= rdDev->bindlessResource();
 	auto	usageFlags	= desc().usageFlags;
-	/*if (BitUtil::has(usageFlags, TextureUsageFlags::TransferDst))
-	{
-		_internal_setRenderResourceState(RenderResourceStateFlags::Transfer_Dst);
-	}*/
 
 	if (BitUtil::hasAny(usageFlags, TextureUsageFlags::ShaderResource))
 	{
 		_bindlessHnd	= bindlessRsc.allocTexture(this);
-
 		renderDevice()->textureStock().textures.add(this);		// TextureStock only store ShaderResource
 	}
 
@@ -157,6 +152,9 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 	{
 		_uavBindlessHnd	= bindlessRsc.allocImage(this);
 	}
+
+	auto& tsfReq = rdDev->transferContext().transferRequest();
+	tsfReq.createTexture(this);
 }
 
 void 
@@ -193,6 +191,9 @@ bool	Texture::hasMipmapView()	const { return BitUtil::has(usageFlags(), TextureU
 u32		Texture::mipmapViewCount()	const { return hasMipmapView() ? mipCount() : 1; }
 
 bool	Texture::isArray()			const { return type() == RenderDataType::Texture1DArray || type() == RenderDataType::Texture2DArray || type() == RenderDataType::Texture3DArray || type() == RenderDataType::TextureCubeArray; }
+
+bool	Texture::isTexture()		const { return BitUtil::hasAny(usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil); }
+bool	Texture::isImage()			const { return BitUtil::hasAny(usageFlags(), TextureUsageFlags::UnorderedAccess); }
 
 #endif
 
@@ -237,33 +238,13 @@ Texture2D::create(CreateDesc& cDesc)
 void 
 Texture2D::uploadToGpu(CreateDesc& cDesc)
 {
-	using UploadTextureJob = TransferRequest_UploadTextureJob;
+	checkMainThreadExclusive(RDS_SRCLOC);
 
-	throwIf(!OsTraits::isMainThread(), "uploadToGpu must in main thread, otherwise use uploadToGpuAsync instead");
-
-	auto* rdDev		= renderDevice();
-	auto& tsfCtx	= rdDev->transferContext();
-	auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
+	auto& tsfReq	= transferContext().transferRequest();
+	auto* cmd		= tsfReq.uploadTexture(this);
 
 	checkValid(cDesc);
-
-	#if 0
-	TransferRequest_UploadTextureJob* job = nullptr;
-	{
-		RDS_TODO("revisit this part, is upload on every thread needed?");
-		auto lockedData = tsfReq._uploadTextureJobs.scopedULock();
-
-		RDS_TODO("allocator for UploadTextureJob");
-		job = lockedData->emplace_back(makeUPtr<UploadTextureJob>(this, rds::move(cDesc), uploadTexCmds().uploadTexture()));
-}
-
-	auto hnd = job->dispatch(_uploadTextureJobParentHnd)->setName("up"); RDS_UNUSED(hnd);
-	#endif // 0
-	
 	destroy();
-
-	auto* cmd = tsfReq.uploadTexCmds().uploadTexture();
-	cmd->dst	= this;
 	onUploadToGpu(cDesc, cmd);
 }
 
@@ -288,6 +269,12 @@ Texture2D::onDestroy()
 }
 
 void 
+Texture2D::onCreateRenderResource()
+{
+
+}
+
+void 
 Texture2D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	RDS_CORE_ASSERT(cmd, "");
@@ -295,4 +282,6 @@ Texture2D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 }
 
 #endif
+
+
 }

@@ -9,6 +9,9 @@
 namespace rds
 {
 
+class TransferContext_Vk;
+class RenderResourcesContext_Vk;
+
 #if 0
 #pragma mark --- rdsBindlessResources_Vk-Decl ---
 #endif // 0
@@ -16,9 +19,6 @@ namespace rds
 
 class BindlessResources_Vk : public RenderResource_Vk<BindlessResources>
 {
-public:
-
-
 public:
 	BindlessResources_Vk();
 	virtual ~BindlessResources_Vk();
@@ -28,6 +28,15 @@ public:
 
 	template<size_t N> void getDescriptorSetLayoutTo(Vector<Vk_DescriptorSetLayout_T*, N>& o);
 
+public: 
+	void reserve();
+
+	void onCommit_RenderGpuBuffer(	TransferContext_Vk* ctxVk, RenderGpuBuffer* renderGpuBuf/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
+	void onCommit_Texture(			TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
+
+protected:
+	void _onCommit_Texture(			TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
+	void _onCommit_Image(			TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
 
 public:
 	Vk_PipelineLayout& vkPipelineLayoutCommon();
@@ -55,13 +64,17 @@ private:
 
 protected:
 	Vk_DescriptorAllocator	_descrAlloc;
+	Vk_PipelineLayout		_vkPipelineLayoutCommon;
 
 	Vector<Vk_DescriptorSet,		s_kTypeCount> _descrSets;
 	Vector<Vk_DescriptorSetLayout,	s_kTypeCount> _descrSetLayouts;
 
 	Vector<Vk_Sampler, 64> _vkSamplers;
 
-	Vk_PipelineLayout _vkPipelineLayoutCommon;
+	Vector<VkWriteDescriptorSet>	_writeDescrSets;
+	Vector<VkDescriptorBufferInfo>	_bufInfos;
+	Vector<VkDescriptorImageInfo>	_texInfos;
+	Vector<VkDescriptorImageInfo>	_imgInfos;
 };
 
 template<size_t N> inline

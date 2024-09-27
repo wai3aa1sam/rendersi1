@@ -77,7 +77,7 @@ public:
 
 #endif
 
-class RenderGpuBuffer : public RenderResource
+class RenderGpuBuffer : public RenderResource_T<RenderGpuBuffer, RenderResourceType::RenderGpuBuffer>
 {
 	friend class RenderDevice;
 public:
@@ -116,6 +116,8 @@ public:
 
 	BindlessResourceHandle	bindlessHandle() const;
 
+	bool isComputeBuffer() const;
+
 protected:
 	virtual void onCreate		(CreateDesc& cDesc);
 	virtual void onPostCreate	(CreateDesc& cDesc);
@@ -135,6 +137,8 @@ inline RenderGpuBuffer::SizeType	RenderGpuBuffer::elementCount()		const { return
 inline RenderGpuBuffer::TypeFlags	RenderGpuBuffer::typeFlags()		const { return _desc.typeFlags; }
 
 inline BindlessResourceHandle		RenderGpuBuffer::bindlessHandle()	const { return _bindlessHnd; }
+
+inline bool							RenderGpuBuffer::isComputeBuffer()	const { return BitUtil::hasAny(typeFlags(), RenderGpuBufferTypeFlags::Compute); }
 
 #endif
 }

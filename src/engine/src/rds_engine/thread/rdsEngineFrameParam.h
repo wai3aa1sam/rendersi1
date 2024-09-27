@@ -6,6 +6,8 @@ namespace rds
 {
 
 class RenderContext;
+class RenderThreadQueue;
+
 class EngineFrameParam;
 
 //class EngineFrameParamScope
@@ -32,7 +34,7 @@ public:
 	//RDS_NODISCARD EngineFrameParamScope makeScope(RenderContext* rdCtx);
 
 public:
-	void reset(RenderContext* rdCtx);
+	void reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue);
 	void commit();
 
 public:

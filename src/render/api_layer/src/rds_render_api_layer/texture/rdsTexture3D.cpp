@@ -60,21 +60,6 @@ void
 Texture3D::uploadToGpu(CreateDesc& cDesc)
 {
 	_notYetSupported(RDS_SRCLOC);
-	using UploadTextureJob = TransferRequest_UploadTextureJob;
-
-	throwIf(!OsTraits::isMainThread(), "uploadToGpu must in main thread, otherwise use uploadToGpuAsync instead");
-
-	auto* rdDev		= renderDevice();
-	auto& tsfCtx	= rdDev->transferContext();
-	auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
-
-	checkValid(cDesc);
-
-	destroy();
-
-	auto* cmd = tsfReq.uploadTexCmds().uploadTexture();
-	cmd->dst	= this;
-	onUploadToGpu(cDesc, cmd);
 }
 
 void 

@@ -2,6 +2,7 @@
 #include "rdsRenderGpuBuffer.h"
 
 #include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/transfer/rdsTransferContext.h"
 #include "rds_render_api_layer/command/rdsTransferRequest.h"
 
 namespace rds
@@ -52,6 +53,8 @@ void RenderGpuBuffer::destroy()
 
 void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 {
+	auto* rdDev	= renderDevice();
+
 	_desc = cDesc;
 	_internal_setSubResourceCount(1);
 	/*
@@ -60,10 +63,13 @@ void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 	so no need to set the state
 	*/
 
-	if (BitUtil::hasAny(desc().typeFlags, RenderGpuBufferTypeFlags::Compute))
+	if (isComputeBuffer())
 	{
 		_bindlessHnd = renderDevice()->bindlessResource().allocBuffer(this);
 	}
+
+	auto& tsfReq = rdDev->transferContext().transferRequest();
+	tsfReq.createBuffer(this);
 }
 
 void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
@@ -73,10 +79,7 @@ void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
 
 void RenderGpuBuffer::onDestroy()
 {
-	if (/*!isNull() || */bindlessHandle().isValid())
-	{
-		renderDevice()->bindlessResource().freeBuffer(this);
-	}
+	renderDevice()->bindlessResource().freeBuffer(this);
 }
 
 void 

@@ -29,7 +29,7 @@ Vk_RenderApiUtil::throwIfError(Result ret)
 	if (_checkError(ret))
 	{
 		reportError(ret);
-		RDS_THROW("VkResult = {}", enumInt(ret));
+		throwError("VkResult = {}", enumInt(ret));
 	}
 }
 

@@ -127,7 +127,8 @@ RdgDrawer::_dumpPasses()
 
 	headerComment("dump passes");
 
-	for (const auto& e : _rdgGraph->resultPasses()) 
+	auto& rdGraphFrame = _rdgGraph->renderGraphFrame(_rdgGraph->frameIndex());
+	for (const auto& e : rdGraphFrame.resultPasses) 
 	{
 		auto id					= e->id();
 		const char* passColor	= e->isCulled() ? style().color.pass.culled : style().color.pass.executed;

@@ -11,6 +11,8 @@
 #include "texture/rdsTextureStock.h"
 #include "shader/rdsShaderStock.h"
 
+#include "transfer/rdsRenderResourcesContext.h"
+
 namespace rds
 {
 
@@ -101,13 +103,15 @@ public:
 	SPtr<Texture2D>	createCheckerboardTexture2D(const Color4b& color);
 
 public:
-	const	RenderAdapterInfo&	adapterInfo() const;
-			ShaderStock&		shaderStock();
-			TextureStock&		textureStock();
-			RenderFrame&		renderFrame(	u64	frameIdx);
-			TransferFrame&		transferFrame(	u64	frameIdx);
-			TransferContext&	transferContext();
-			TransferRequest&	transferRequest(u64 frameIdx);
+	const	RenderAdapterInfo&		adapterInfo() const;
+			ShaderStock&			shaderStock();
+			TextureStock&			textureStock();
+			RenderFrame&			renderFrame(	u64	frameIdx);
+			TransferFrame&			transferFrame(	u64	frameIdx);
+			TransferContext&		transferContext();
+			TransferRequest&		transferRequest(u64 frameIdx);
+
+			RenderResourcesContext& renderResourcesContext();
 
 			BindlessResources&	bindlessResource();
 
@@ -149,9 +153,9 @@ protected:
 	Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
 	Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
 
-	TransferContext* _tsfCtx = nullptr;
-
-	BindlessResources*	_bindlessRscs = nullptr;
+	TransferContext*		_tsfCtx			= nullptr;
+	RenderResourcesContext*	_rdRscsCtx		= nullptr;
+	BindlessResources*		_bindlessRscs	= nullptr;
 
 	ShaderStock			_shaderStock;
 	TextureStock		_textureStock;
@@ -167,6 +171,8 @@ inline			TransferFrame&			RenderDevice::transferFrame(u64 frameIdx)	{ return _ts
 
 inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx; }
 inline			TransferRequest&		RenderDevice::transferRequest(u64 frameIdx)	{ return transferFrame(frameIdx).transferRequest(); }
+
+inline			RenderResourcesContext& RenderDevice::renderResourcesContext()		{ return *_rdRscsCtx; }
 
 inline			BindlessResources&		RenderDevice::bindlessResource()			{ return *_bindlessRscs; }
 

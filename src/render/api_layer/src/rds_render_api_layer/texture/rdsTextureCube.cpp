@@ -54,20 +54,14 @@ void TextureCube::create(CreateDesc& cDesc)
 void 
 TextureCube::uploadToGpu(CreateDesc& cDesc)
 {
-	using UploadTextureJob = TransferRequest_UploadTextureJob;
+	checkMainThreadExclusive(RDS_SRCLOC);
 
-	throwIf(!OsTraits::isMainThread(), "uploadToGpu must in main thread, otherwise use uploadToGpuAsync instead");
-
-	auto* rdDev		= renderDevice();
-	auto& tsfCtx	= rdDev->transferContext();
-	auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);
+	auto& tsfReq	= transferContext().transferRequest();
+	auto* cmd		= tsfReq.uploadTexture(this);
 
 	checkValid(cDesc);
-
 	destroy();
 
-	auto* cmd = tsfReq.uploadTexCmds().uploadTexture();
-	cmd->dst	= this;
 	onUploadToGpu(cDesc, cmd);
 }
 

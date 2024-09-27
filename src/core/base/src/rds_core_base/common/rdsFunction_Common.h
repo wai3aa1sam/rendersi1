@@ -41,11 +41,18 @@ using ::nmsp::os_aligned_free;
 
 #endif // 0
 
+#if 0
+#pragma mark --- rdsFunction_Common-Impl ---
+#endif // 0
+#if 1
+
 using ::nmsp::throwIf;
 using ::nmsp::throwError;
 using ::nmsp::_log;
 using ::nmsp::_notYetSupported;
 using ::nmsp::_todo;
+
+#endif
 
 }
 #endif

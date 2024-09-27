@@ -5,11 +5,12 @@
 #include "rds_render_api_layer/rdsRenderDevice.h"
 #include "rdsVk_MemoryContext.h"
 #include "rdsVk_RenderFrame.h" 
-#include "transfer/rdsTransferContext_Vk.h"
 
 #include "pass/rdsVk_RenderPassPool.h"
 #include "pass/rdsVk_FramebufferPool.h"
 
+#include "transfer/rdsTransferContext_Vk.h"
+#include "transfer/rdsRenderResourcesContext_Vk.h"
 #include "shader/rdsBindlessResources_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -108,12 +109,13 @@ private:
 	Vk_PhysicalDevice		_vkPhysicalDevice;
 	Vk_Device				_vkDevice;
 
-	TransferContext_Vk		_transferCtxVk;
 
 	Vk_FramebufferPool	_vkFramebufPool;
 	Vk_RenderPassPool	_vkRdPassPool;
 
-	BindlessResources_Vk _bindlessRscsVk;
+	TransferContext_Vk			_tsfCtxVk;
+	RenderResourcesContext_Vk	_rdRscsCtxVk;
+	BindlessResources_Vk		_bindlessRscsVk;
 };
 
 #endif
@@ -126,7 +128,7 @@ private:
 inline			Vk_MemoryContext*				RenderDevice_Vk::memoryContext()					{ return &_vkMemoryContext; }
 inline const	VkAllocationCallbacks*			RenderDevice_Vk::allocCallbacks()					{ return _vkMemoryContext.allocCallbacks(); }
 
-inline			TransferContext_Vk&				RenderDevice_Vk::transferContextVk()				{ return _transferCtxVk; }
+inline			TransferContext_Vk&				RenderDevice_Vk::transferContextVk()				{ return _tsfCtxVk; }
 
 inline			Vk_Instance_T*					RenderDevice_Vk::vkInstance()						{ return _vkInstance.hnd(); }
 inline			Vk_PhysicalDevice_T*			RenderDevice_Vk::vkPhysicalDevice()					{ return _vkPhysicalDevice.hnd(); }

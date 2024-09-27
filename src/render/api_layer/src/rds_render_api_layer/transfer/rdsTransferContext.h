@@ -37,14 +37,14 @@ public:
 	void destroy();
 
 	//void commit(TransferCommandBuffer& cmdBuf);
-	void commit(TransferRequest& tsfReq, bool isWaitImmediate);
+	void commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
 	virtual void onDestroy	();
 
 	template<class CTX> void _dispatchCommand(CTX* ctx, TransferCommand* cmd);
-	virtual void onCommit(TransferRequest& tsfReq, bool isWaitImmediate);
+	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
 
 protected:
 };
@@ -58,6 +58,11 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 	#define _DISPACH_CMD_CASE(TYPE) case SRC::TYPE: { auto* __p = sCast<RDS_CONCAT(TransferCommand_, TYPE)*>(cmd); RDS_CONCAT(ctx->onTransferCommand_, TYPE)(__p); } break
 	switch (cmd->type())
 	{
+		_DISPACH_CMD_CASE(CreateBuffer);
+		_DISPACH_CMD_CASE(CreateTexture);
+		_DISPACH_CMD_CASE(DestroyBuffer);
+		_DISPACH_CMD_CASE(DestroyTexture);
+
 		_DISPACH_CMD_CASE(CopyBuffer);
 		_DISPACH_CMD_CASE(UploadBuffer);
 		_DISPACH_CMD_CASE(UploadTexture);

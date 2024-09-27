@@ -9,6 +9,7 @@
 
 #include "rdsRenderDataType.h"
 #include "rdsRenderResource.h"
+#include "rdsRenderResource_T.h"
 
 namespace rds
 {

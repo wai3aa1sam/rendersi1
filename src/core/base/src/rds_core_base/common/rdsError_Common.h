@@ -16,6 +16,26 @@ namespace rds
 using Error_Base = ::nmsp::Error_Base;
 using Error      = ::nmsp::Error_T;
 
+#if 0
+template<class... ARGS> inline 
+void 
+throwIf(bool cond, const char* fmt, ARGS&&... args)
+{
+	if (cond)
+	{
+		throwError(fmt, rds::forward<ARGS>(args)...);
+	}
+}
+
+template<class... ARGS> inline 
+void 
+throwError(const char* fmt, ARGS&&... args)
+{
+	throw RDS_ERROR(fmt, rds::forward<ARGS>(args)...);
+}
+#endif // 0
+
+
 }
 #endif
 

@@ -16,7 +16,6 @@ class SceneView;
 
 struct MeshAssets;
 
-
 #if 0
 #pragma mark --- rdsDemoEditorLayer-Decl ---
 #endif // 0

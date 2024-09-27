@@ -414,9 +414,9 @@ RenderCommandBuffer::newCommand()
 
 inline RenderCommand_Dispatch*			RenderCommandBuffer::dispatch()				{ return newCommand<RenderCommand_Dispatch>(); }
 
-inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()					{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
-inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()							{ return newCommand<RenderCommand_SwapBuffers>(); }
-inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()							{ return newCommand<RenderCommand_DrawCall>(); }
+inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
+inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()			{ return newCommand<RenderCommand_SwapBuffers>(); }
+inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()			{ return newCommand<RenderCommand_DrawCall>(); }
 
 inline 
 RenderCommand_DrawCall*			

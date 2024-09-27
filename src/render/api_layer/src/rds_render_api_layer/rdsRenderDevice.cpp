@@ -63,7 +63,9 @@ RenderDevice::create(const CreateDesc& cDesc)
 	_shaderStock.create(this);
 	_textureStock.create(this);
 
-	RDS_CORE_ASSERT(_bindlessRscs, "");
+	RDS_CORE_ASSERT(_bindlessRscs,	"");
+	RDS_CORE_ASSERT(_tsfCtx,		"");
+	RDS_CORE_ASSERT(_rdRscsCtx,		"");
 }
 
 void 
@@ -77,6 +79,8 @@ RenderDevice::destroy()
 	onDestroy();
 
 	RDS_CORE_ASSERT(!_bindlessRscs,			"forgot to call destroy() _bindlessRscs");
+	RDS_CORE_ASSERT(!_tsfCtx,				"forgot to call destroy() _tsfCtx");
+	RDS_CORE_ASSERT(!_rdRscsCtx,			"forgot to call destroy() _rdRscsCtx");
 	RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
 	RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");
 }
@@ -108,15 +112,21 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 {
 	checkMainThreadExclusive(RDS_SRCLOC);
 
-	auto frameCount = engineFrameCount;
-	auto frameIdx	= Traits::rotateFrame(frameCount);
+	auto&	rdFrameParam	= renderFrameParam();
+	auto	frameCount		= engineFrameCount;
+	auto	frameIdx		= Traits::rotateFrame(frameCount);
+
+	if (bool isFirstFrame = (frameCount <= 1))
+	{
+		auto& tsfCtx	= transferContext();
+		tsfCtx.transferRequest(0).commit(rdFrameParam, true);		// wait here so that ok to commit here, first frame all committed to frame 0, but queue frame is start from 1
+	}
 
 	_rdFrames[frameIdx].reset();
 	_tsfFrames[frameIdx].reset(_tsfCtx);
-
 	onResetFrame(frameCount);
-
-	renderFrameParam().setEngineFrameCount(frameCount);
+	
+	rdFrameParam.setEngineFrameCount(frameCount);
 }
 
 void 

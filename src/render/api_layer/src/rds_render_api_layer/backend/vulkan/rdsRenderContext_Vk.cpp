@@ -178,7 +178,7 @@ RenderContext_Vk::onEndRender()
 	auto  frameIdx	= frameIndex();
 	auto& vkRdFrame	= vkRenderFrame(frameIdx);
 
-	rdDevVk->bindlessResourceVk().commit();
+	//rdDevVk->bindlessResourceVk().commit();
 	_gpuProfilerCtx.commit();
 
 	vkRdFrame.inFlightFence()->reset(rdDevVk);
@@ -313,19 +313,20 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 }
 
 void 
-RenderContext_Vk::onCommit(RenderGraph& rdGraph)
+RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraphFrame, u32 rdGraphFrameIdx)
 {
 	class Vk_RenderGraph
 	{
 	public:
-		void commit(RenderGraph& rdGraph, RenderContext_Vk* rdCtxVk)
+		void commit(const RenderGraph& rdGraph, RenderGraphFrame* rdgFrame, u32 renderGraphFrameIdx, RenderContext_Vk* rdCtxVk)
 		{
-			_rdCtxVk = rdCtxVk;
+			_rdCtxVk	= rdCtxVk;
+			_rdgFrame	= rdgFrame;
+
 			auto*	rdDevVk			= _rdCtxVk->renderDeviceVk();
 
 			_curVkCmdBufGraphics	= requestVkCmdBuf(RdgPassTypeFlags::Graphics, fmtAs_T<TempString>("{}-main_graphics", rdGraph.name()));
 			//_curVkCmdBufCompute		= requestVkCmdBuf(RdgPassTypeFlags::Compute, "");
-
 
 			{
 				auto* vkCmdBuf = _curVkCmdBufGraphics;
@@ -335,8 +336,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			}
 
 			//_curVkCmdBufCompute->beginRecord();
-
-			Span<RdgPass*> resultPasses = rdGraph.resultPasses();
+			Span<RdgPass*> resultPasses = renderGraphFrame().resultPasses;
 			for (RdgPass* pass : resultPasses)
 			{
 				_commitPass(pass);
@@ -557,9 +557,12 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 		}
 
 		// only transition final
-		void transitExportedResources(RenderGraph& rdGraph)
+		void transitExportedResources()
 		{
-			if (rdGraph.exportedBuffers().is_empty() && rdGraph.exportedTextures().is_empty())
+			auto& expBufs = renderGraphFrame().exportedBuffers;
+			auto& expTexs = renderGraphFrame().exportedTextures;
+
+			if (expBufs.is_empty() && expTexs.is_empty())
 				return;
 
 			// use Transfer Queue should be better as all exported are only avaliable in next frame, but need modify code
@@ -567,7 +570,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 
 			vkCmdBuf->beginRecord();
 
-			for (auto& expBuf : rdGraph.exportedBuffers())
+			for (auto& expBuf : expBufs)
 			{
 				using SRC = RdgResourceType;
 
@@ -590,7 +593,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				vkCmdBuf->cmd_addMemoryBarrier(srcState, expBuf.pendingState);
 			}
 
-			for (auto& expTex : rdGraph.exportedTextures())
+			for (auto& expTex : expTexs)
 			{
 				using SRC = RdgResourceType;
 
@@ -643,6 +646,8 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			return vkCmdBuf == _curVkCmdBufGraphics || vkCmdBuf == _curVkCmdBufCompute;
 		}
 
+		RenderGraphFrame& renderGraphFrame() { return *_rdgFrame; }
+
 		//Span<Vk_CommandBuffer_T*> graphicsVkCmdBufsHnds() { return _graphicsVkCmdBufsHnds; }
 
 		static bool isGraphicsQueue(RdgPass* pass)
@@ -657,21 +662,25 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 		//Vector<Vk_CommandBuffer_T*, 64> _graphicsVkCmdBufsHnds;
 		Vk_CommandBuffer*				_curVkCmdBufGraphics	= nullptr;
 		Vk_CommandBuffer*				_curVkCmdBufCompute		= nullptr;
+
+		RenderGraphFrame* _rdgFrame = nullptr;
 	};
 
 	RDS_PROFILE_SCOPED();
 
-	if (rdGraph.resultPasses().is_empty())
+	auto& rdgFrame = rdGraphFrame;
+
+	if (rdgFrame.resultPasses.is_empty())
 		return;
 
 	//if (!_vkSwapchain.isValid())
 	//	return;
 
-	Base::onCommit(rdGraph);
+	Base::onCommit(rdGraph, rdGraphFrame, rdGraphFrameIdx);
 
 	Vk_RenderGraph vkRdGraph;
-	vkRdGraph.commit(rdGraph, this);
-	vkRdGraph.transitExportedResources(rdGraph);
+	vkRdGraph.commit(rdGraph, &rdGraphFrame, rdGraphFrameIdx, this);
+	vkRdGraph.transitExportedResources();
 }
 
 void 
@@ -916,6 +925,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 	RDS_PROFILE_SCOPED();
 
 	#if 0
+	#if 0
 
 	static constexpr SizeType s_kMinBatchSize = 200;
 
@@ -1126,6 +1136,7 @@ RenderContext_Vk::onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables*
 	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
 	vkCmdBuf->executeSecondaryCmdBufs(vkCmdBufs.span());
 
+	#endif // 0
 	#endif // 0
 }
 

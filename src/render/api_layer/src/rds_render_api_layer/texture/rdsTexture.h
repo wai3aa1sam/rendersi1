@@ -274,7 +274,7 @@ protected:
 #endif // 0
 #if 1
 
-class Texture : public RenderResource
+class Texture : public RenderResource_T<Texture, RenderResourceType::Texture>
 {
 	friend class Backbuffers;
 public:
@@ -288,8 +288,7 @@ public:
 
 public:
 	virtual ~Texture();
-
-	void destroy();
+	void	destroy();
 
 	virtual bool isNull() const = 0;
 
@@ -314,6 +313,8 @@ public:
 	u32						mipmapViewCount()	const;
 
 	bool					isArray()			const;
+	bool					isTexture()			const;
+	bool					isImage()			const;
 
 protected:
 	Texture(RenderDataType type);
@@ -392,7 +393,8 @@ protected:
 	virtual void onPostCreate(	CreateDesc& cDesc);
 	virtual void onDestroy();
 
-	virtual void onUploadToGpu(	CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
+	virtual void onCreateRenderResource();
+	virtual void onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
 
 private:
 	void _create(CreateDesc& cDesc);
@@ -420,6 +422,5 @@ Texture_mipCount(u32 size)
 	const u32 mipCount_ = sCast<u32>(math::floor(sCast<float>(math::log2(size)))) + 1;
 	return mipCount_;
 }
-
 
 }

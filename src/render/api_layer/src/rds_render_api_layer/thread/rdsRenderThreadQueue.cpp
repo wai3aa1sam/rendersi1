@@ -58,6 +58,21 @@ RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&
 	_rdThread->requestRender(rds::move(rdData));
 }
 
+u64 RenderThreadQueue::lastFinishedFrameCount() const { return _rdThread->lastFinishedFrameCount(); }
+
+volatile
+bool
+RenderThreadQueue::isSignaled(u64 engineFrameCount) const
+{
+	auto rdThreadLastFinishedFrameCount = lastFinishedFrameCount();
+
+	return !(
+			engineFrameCount > rdThreadLastFinishedFrameCount
+			&& RenderApiLayerTraits::rotateFrame(engineFrameCount) == RenderApiLayerTraits::rotateFrame(rdThreadLastFinishedFrameCount)
+		);
+}
+
+
 #endif
 
 }

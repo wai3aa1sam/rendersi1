@@ -7,6 +7,11 @@
 
 #include "rds_render_api_layer/backend/vulkan/shader/rdsShader_Vk.h"
 
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture2DArray_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture3D_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rdsTextureCube_Vk.h"
+
 namespace rds
 {
 
@@ -131,166 +136,161 @@ private:
 	SizeType		_size = 0;
 };
 
+
+void 
+BindlessResources_Vk::reserve()
+{
+	SizeType n = this->totalResourcesCount();
+	const size_t est = 6;
+	_writeDescrSets.reserve(n * est);
+	_bufInfos.reserve(		n * est);
+	_texInfos.reserve(		n * est);
+	_imgInfos.reserve(		n * est);
+
+	//RDS_TODO("image has 6 or more uav, n is not enough, need to update twice or more");
+}
+
+void 
+BindlessResources_Vk::onCommit_RenderGpuBuffer(TransferContext_Vk* ctxVk, RenderGpuBuffer* renderGpuBuf/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
+{
+	auto& dstSet	= descrSetBuf();
+	auto* rdRsc		= renderGpuBuf;
+	auto* rdRscVk	= sCast<RenderGpuBuffer_Vk*>(rdRsc);
+
+	if (!rdRsc->isComputeBuffer())
+		return;
+
+	auto& oVkDescrInfo = _bufInfos.emplace_back();
+	{
+		auto& out = oVkDescrInfo;
+		out = {};
+		out.buffer	= rdRscVk->vkBufHnd();
+		out.offset	= 0;
+		out.range	= sCast<VkDeviceSize>(rdRsc->bufSize());		// VK_WHOLE_SIZE
+	}
+
+	auto& oVkWriteDescrSet = _writeDescrSets.emplace_back();
+	{
+		auto& out = oVkWriteDescrSet;
+		out = {};
+		out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		out.dstSet				= dstSet.hnd();
+		out.dstBinding			= 0;
+		out.dstArrayElement		= sCast<u32>(rdRsc->bindlessHandle().getResourceIndex());
+		//out.descriptorType		= BitUtil::has(rscVk->typeFlags(), RenderGpuBufferTypeFlags::Compute) ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		out.descriptorType		= VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		out.descriptorCount		= 1;
+		out.pBufferInfo			= &oVkDescrInfo;
+		out.pImageInfo			= nullptr;
+		out.pTexelBufferView	= nullptr;
+	}
+}
+
+void 
+BindlessResources_Vk::onCommit_Texture(TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
+{
+	if (texture->isTexture())
+	{
+		_onCommit_Texture(ctxVk, texture);
+	}
+	if (texture->isImage())
+	{
+		_onCommit_Image(ctxVk, texture);
+	}
+}
+
+void 
+BindlessResources_Vk::_onCommit_Texture(TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
+{
+	auto& dstSet	= descrSetTex();
+	auto* rdRsc		= texture;
+	//auto* rscVk		= sCast<Texture_Vk*>(texture);
+	auto  type		= rdRsc->type(); RDS_UNUSED(type);
+
+	auto*	srvVkImgViewHnd = Vk_Texture::getSrvVkImageViewHnd(rdRsc);
+	RDS_CORE_ASSERT(srvVkImgViewHnd,	"rsc {}: getSrvVkImageViewHnd == nullptr, refCount: {}", rdRsc->debugName(), rdRsc->_refCount.load());
+	RDS_CORE_ASSERT(rdRsc->isTexture(), "invalid Texture usage, usage has no TextureUsageFlags::ShaderResource or TextureUsageFlags::DepthStencil");
+
+	auto& oVkDescrInfo = _texInfos.emplace_back();
+	{
+		auto& out = oVkDescrInfo;
+		out = {};
+		out.imageLayout	= BitUtil::has(rdRsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		out.imageView	= srvVkImgViewHnd;
+		out.sampler		= nullptr;
+	}
+
+	auto& oVkWriteDescrSet = _writeDescrSets.emplace_back();
+	{
+		auto& out = oVkWriteDescrSet;
+		out = {};
+		out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		out.dstSet				= dstSet.hnd();
+		out.dstBinding			= sCast<u32>(_vkSamplers.size());
+		out.dstArrayElement		= sCast<u32>(rdRsc->bindlessHandle().getResourceIndex());
+		out.descriptorCount		= 1;
+		out.pBufferInfo			= nullptr;
+		out.pImageInfo			= &oVkDescrInfo;
+		out.pTexelBufferView	= nullptr;
+	}
+}
+
+void 
+BindlessResources_Vk::_onCommit_Image(TransferContext_Vk* ctxVk, Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
+{
+	auto& dstSet	= descrSetImg();
+	auto* rdRsc		= texture;
+	//auto* rscVk		= sCast<Texture_Vk*>(texture);
+	auto  type		= rdRsc->type(); RDS_UNUSED(type);
+
+	RDS_CORE_ASSERT(rdRsc->isImage(), "invalid Texture usage, usage has no TextureUsageFlags::UnorderedAccess");
+
+	for (u32 i = 0; i < rdRsc->mipmapViewCount(); i++)
+	{
+		auto* uavVkImgHnd	= Vk_Texture::getUavVkImageViewHnd(rdRsc, i);
+		RDS_CORE_ASSERT(uavVkImgHnd, "getUavVkImageViewHnd[{}] == nullptr, refCount: {}", i, rdRsc->_refCount.load());
+
+		auto& oVkDescrInfo = _imgInfos.emplace_back();
+		{
+			auto& out = oVkDescrInfo;
+			out = {};
+			out.imageLayout	= VK_IMAGE_LAYOUT_GENERAL;
+			out.imageView	= uavVkImgHnd;
+			out.sampler		= nullptr;
+		}
+
+		auto& oVkWriteDescrSet = _writeDescrSets.emplace_back();
+		{
+			auto& out = oVkWriteDescrSet;
+			out = {};
+			out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			out.descriptorType		= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			out.dstSet				= dstSet.hnd();
+			out.dstBinding			= 0;
+			out.dstArrayElement		= sCast<u32>(rdRsc->uavBindlessHandle().getResourceIndex(i));
+			out.descriptorCount		= 1;
+			out.pBufferInfo			= nullptr;
+			out.pImageInfo			= &oVkDescrInfo;
+			out.pTexelBufferView	= nullptr;
+		}
+	}
+}
+
 void 
 BindlessResources_Vk::onCommit()
 {
-	RDS_TODO("currently texture and image is using same Alloc, should be separate, then the bindless handle need to modify too, keep simple first");
-	// update descriptor set
+	auto* rdDevVk			= renderDeviceVk();
+	auto& writeDescrSets	= _writeDescrSets;
+	if (!writeDescrSets.is_empty())
 	{
-		/*
-		* *** VkDescriptorImageInfo / VkDescriptorBufferInfo must need a non resize linear array!!!
-		* PersistentVector is a joke, it will not be linear too when there are other chunks
-		* TODO: better handle for this case is to update multiple times, set a maximum
-		*/
-		static constexpr SizeType s_kLocalSize = 128;
-		Vector<VkWriteDescriptorSet,	s_kLocalSize * 3>	writeDescs;
-		Vector<VkDescriptorBufferInfo,	s_kLocalSize>		bufInfos;
-		Vector<VkDescriptorImageInfo,	s_kLocalSize>		texInfos;
-		Vector<VkDescriptorImageInfo,	s_kLocalSize>		imgInfos;
-
-		auto* rdDevVk = renderDeviceVk();
-
-		{
-			auto data = _bufAlloc.scopedULock();
-			auto& rscs = data->rscs;
-
-			writeDescs.reserve(	writeDescs.size()	+ rscs.size());
-			bufInfos.reserve(	bufInfos.size()		+ data->totalResourceCount());
-
-			for (auto& rsc : rscs)
-			{
-				{
-					auto& dstSet	= descrSetBuf();
-					auto* rscVk		= sCast<RenderGpuBuffer_Vk*>(rsc.ptr());
-
-					auto& info	= bufInfos.emplace_back();
-					info = {};
-					info.buffer	= rscVk->vkBufHnd();
-					info.offset	= 0;
-					info.range	= sCast<VkDeviceSize>(rscVk->bufSize());		// VK_WHOLE_SIZE
-
-					auto& out = writeDescs.emplace_back();
-					out = {};
-					out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					out.dstSet				= dstSet.hnd();
-					out.dstBinding			= 0;
-					out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
-					//out.descriptorType		= BitUtil::has(rscVk->typeFlags(), RenderGpuBufferTypeFlags::Compute) ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-					out.descriptorType		= VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-					out.descriptorCount		= 1;
-					out.pBufferInfo			= &info;
-					out.pImageInfo			= nullptr;
-					out.pTexelBufferView	= nullptr;
-				}
-			}
-		}
-
-		{
-			auto data = _texAlloc.scopedULock();
-			auto& rscs = data->rscs;
-
-			writeDescs.reserve(writeDescs.size()	+ rscs.size());
-			texInfos.reserve(	texInfos.size()		+ data->totalResourceCount());
-
-			auto& dstSet = descrSetTex();
-			for (auto& rsc : rscs)
-			{
-				{
-					RDS_CORE_ASSERT(Vk_Texture::getSrvVkImageViewHnd(rsc), "getSrvVkImageViewHnd == nullptr");
-					bool isTexture	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil);
-					RDS_CORE_ASSERT(isTexture, "invalid Texture usage, usage has no TextureUsageFlags::ShaderResource or TextureUsageFlags::DepthStencil");
-
-					VkDescriptorImageInfo& info	= texInfos.emplace_back();
-					info = {};
-					info.imageLayout = BitUtil::has(rsc->usageFlags(), TextureUsageFlags::DepthStencil) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-					info.imageView		= Vk_Texture::getSrvVkImageViewHnd(rsc);
-					info.sampler		=  nullptr;
-					//info.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
-
-					VkWriteDescriptorSet out;
-					out = {};
-					out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					out.descriptorType		= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-					out.dstSet				= dstSet.hnd();
-					out.dstBinding			= sCast<u32>(_vkSamplers.size());
-					out.dstArrayElement		= sCast<u32>(rsc->bindlessHandle().getResourceIndex());
-					out.descriptorCount		= 1;
-					out.pBufferInfo			= nullptr;
-					out.pImageInfo			= &info;
-					out.pTexelBufferView	= nullptr;
-
-					auto& dst = writeDescs.emplace_back();
-					dst = out;
-				}
-			}
-		}
-
-		{
-			auto data = _imgAlloc.scopedULock();
-			auto& rscs = data->rscs;
-
-			writeDescs.reserve(	writeDescs.size()	+ rscs.size());
-			imgInfos.reserve(	imgInfos.size()		+ data->totalResourceCount());
-
-			auto& dstSet = descrSetImg();
-			for (auto& rsc : rscs)
-			{
-				{
-					//bool isTexture	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil);
-					bool isImage	= BitUtil::hasAny(rsc->usageFlags(), TextureUsageFlags::UnorderedAccess);
-					RDS_CORE_ASSERT(isImage, "invalid Texture usage, usage has no TextureUsageFlags::UnorderedAccess");
-
-					for (u32 i = 0; i < rsc->mipmapViewCount(); i++)
-					{
-						RDS_CORE_ASSERT(Vk_Texture::getUavVkImageViewHnd(rsc, i), "getUavVkImageViewHnd[{}] == nullptr", i);
-
-						VkDescriptorImageInfo& info	= imgInfos.emplace_back();
-						info = {};
-						info.imageLayout	= VK_IMAGE_LAYOUT_GENERAL;
-						info.imageView		= Vk_Texture::getUavVkImageViewHnd(rsc, i);
-						info.sampler		=  nullptr;
-						//info.sampler		= Vk_Texture::getVkSamplerHnd(rsc);
-
-						VkWriteDescriptorSet out;
-						out = {};
-						out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-						out.descriptorType		= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-						out.dstBinding			= 0;
-						out.dstSet				= dstSet.hnd();
-						out.dstArrayElement		= sCast<u32>(rsc->uavBindlessHandle().getResourceIndex(i));
-						out.descriptorCount		= 1;
-						out.pBufferInfo			= nullptr;
-						out.pImageInfo			= &info;
-						out.pTexelBufferView	= nullptr;
-
-						auto& dst = writeDescs.emplace_back();
-						dst = out;
-					}
-				}
-			}
-		}
-
-		vkUpdateDescriptorSets(rdDevVk->vkDevice(), sCast<u32>(writeDescs.size()), writeDescs.data(), 0, nullptr);
+		vkUpdateDescriptorSets(rdDevVk->vkDevice(), sCast<u32>(writeDescrSets.size()), writeDescrSets.data(), 0, nullptr);
 	}
 
-	// clean up
-	{
-		auto data = _bufAlloc.scopedULock();
-		auto& rscs = data->rscs;
-		rscs.clear();
-	}
-
-	{
-		auto data = _texAlloc.scopedULock();
-		auto& rscs = data->rscs;
-		rscs.clear();
-	}
-
-	{
-		auto data = _imgAlloc.scopedULock();
-		auto& rscs = data->rscs;
-		rscs.clear();
-	}
+	writeDescrSets.clear();
+	_bufInfos.clear();
+	_texInfos.clear();
+	_imgInfos.clear();
 }
 
 void 

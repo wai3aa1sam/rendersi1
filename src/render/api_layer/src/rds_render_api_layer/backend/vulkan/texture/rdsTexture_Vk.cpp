@@ -40,6 +40,7 @@ Texture2D_Vk::Texture2D_Vk()
 
 Texture2D_Vk::~Texture2D_Vk()
 {
+	//RDS_LOG_ERROR("~Texture2D_Vk(): {}, refCount: {}, srvVkImageViewHnd: {}", debugName(), _refCount.load(), (void*)srvVkImageViewHnd());
 	destroy();
 }
 

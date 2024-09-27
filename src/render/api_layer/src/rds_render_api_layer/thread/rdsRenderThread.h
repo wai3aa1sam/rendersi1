@@ -40,7 +40,8 @@ public:
 	void terminate();
 
 public:
-	bool isTerminated();
+	bool	isTerminated()				const;
+	u64		lastFinishedFrameCount()	const;
 
 protected:
 	virtual void* onRoutine() override;
@@ -52,6 +53,7 @@ public:		// TODO: remove temp
 private:
 	AtmQueue<UPtr<RenderData> > _rdDataQueue;
 	Atm<bool>					_isTerminated = false;
+	Atm<u64>					_lastFinishedFrameCount = 0;
 };
 
 #endif

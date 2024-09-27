@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include "rds_memory_common.h"
 #include "rdsMemoryContext.h"
@@ -49,12 +49,29 @@ template<size_t LOCAL_SIZE, size_t ALIGN = NmspStlTraits::s_kDefaultAlign> using
 template<size_t LOCAL_SIZE = 0, size_t ALIGN = CoreBaseTraits::s_kDefaultAlign, class FALLBACK_ALLOC = DefaultAllocator> 
 using LocalAllocator = ::nmsp::LocalAllocator_T<LOCAL_SIZE, ALIGN, FALLBACK_ALLOC>;
 
+template<class T> 
+void 
+rds_delete_impl(T* p) RDS_NOEXCEPT
+{
+	p->~T();
+	RDS_FREE_ALIGNED(p); 
+}
+
+template<class T, class ENABLE = void>
+struct RdsDeleter
+{
+	static void rds_delete(T* p) RDS_NOEXCEPT
+	{
+		if (p)
+			rds_delete_impl(p);
+	}
+};
+
 template<class T> inline 
 void
 rds_delete(T* p)	RDS_NOEXCEPT 
 { 
-	p->~T();
-	RDS_FREE_ALIGNED(p); 
+	RdsDeleter<T>::rds_delete(p);
 }
 
 template<class T> inline 
@@ -64,6 +81,15 @@ rds_malloc_delete(T* p)	RDS_NOEXCEPT
 	p->~T();
 	RDS_MALLOC_FREE(p); 
 }
+
+template<class T>
+struct DefaultDeleter : public NonCopyable
+{
+	void operator() (T* p) RDS_NOEXCEPT
+	{
+		RDS_DELETE(p);
+	}
+};
 
 
 template<class T, class BASE> inline

@@ -20,18 +20,22 @@ namespace rds
 class RdgPass;
 class RdgDrawer;
 class RenderGraph;
+class RenderContext;
+
+
 #if 0
 #pragma mark --- rdsRenderGraph-Decl ---
 #endif // 0
 #if 1
 
-class RenderGraph : public NonCopyable
+class RenderGraphFrame : public NonCopyable
 {
-	friend class RdgDrawer;
 	RDS_RENDER_API_LAYER_COMMON_BODY();
-
+	friend class RenderGraph;
 public:
 	using StateUtil = RenderResourceStateFlagsUtil;
+	using Pass		= RdgPass;
+	using Access	= RdgAccess;
 
 	using TextureT			= Texture;
 
@@ -45,88 +49,6 @@ public:
 	template<class T> using RdgResourceHndT = typename RdgResourceTraits<T>::Hnd;
 	using RdgTextureHnd		= RdgResourceHndT<Texture>;
 	using RdgBufferHnd		= RdgResourceHndT<Buffer >;
-
-
-public:
-	static constexpr SizeType s_kPassLocalSize		= 20;
-	static constexpr SizeType s_kResourceLocalSize	= 32;
-	static constexpr SizeType s_kAlign				= 16;
-
-public:
-	using Pass		= RdgPass;
-	using Access	= RdgAccess;
-
-	using Passes			= Vector<RdgPass*,			s_kPassLocalSize>;
-	using Resources			= Vector<RdgResource*,		s_kResourceLocalSize>;
-	using FramedRscPool		= Vector<RdgResourcePool,	s_kFrameInFlightCount>;
-
-	using PassDepths		= Vector<u32, s_kPassLocalSize>;
-	using PendingResources	= Vector<RdgResource*, 128>;
-
-public:
-	struct RenderGraphFrame : public NonCopyable
-	{
-	public:
-		RenderGraph*	rdGraph = nullptr;
-
-		Passes			resultPasses;
-		PassDepths		resultPassDepths;
-
-		Passes			passes;
-		Resources		resources;
-		RdgResourcePool rscPool;
-
-	public:
-		RenderGraphFrame();
-		~RenderGraphFrame();
-
-		RenderGraphFrame(	RenderGraphFrame&&)	{ throwIf(true, ""); };
-		void operator=(		RenderGraphFrame&&)	{ throwIf(true, ""); };
-
-	public:
-		void create(RenderGraph* rdGraph_);
-		void destroy();
-
-		void reset();
-
-		Pass* addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag);
-
-		template<class T>
-		RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc, const RenderGraph& rdGraph)
-		{
-			using Tratis	= RdgResourceTraits<T>;
-			using ResourceT = typename Tratis::ResourceT;
-
-			auto id		= sCast<RdgId>(resources.size());
-			//auto* rdgRsc = newT<RdgResourceT<T> >(cDesc, name, id, false, false);
-			auto* rdgRsc = sCast<ResourceT*>(resources.emplace_back(newT<ResourceT>()));
-			rdgRsc->create(rdGraph, cDesc, name, id, false, false);
-			return rdgRsc;
-		}
-
-	private:
-		template<class T, class... ARGS>
-		T* newT(ARGS&&... args)
-		{
-			void*	buf = _alloc.allocate(sizeof(T));
-			T*		p	= new(buf) T(rds::forward<ARGS>(args)...);
-			return p;
-		}
-
-		template<class T>
-		void deleteT(T* p)
-		{
-			p->~T();
-			_alloc.free(p);
-		}
-
-	private:
-		LinearAllocator _alloc;
-
-		Passes			_freePasses;
-		LinearAllocator _passAlloc;
-	};
-	using RenderGraphFrames = Vector<RenderGraphFrame, s_kFrameInFlightCount>;
 
 	template<class T>
 	struct ExportedResourceT
@@ -143,6 +65,150 @@ public:
 	using ExportedBuffer	= ExportedResourceT<Buffer >;
 
 public:
+	static constexpr SizeType s_kPassLocalSize		= 20;
+	static constexpr SizeType s_kResourceLocalSize	= 32;
+	static constexpr SizeType s_kAlign				= 16;
+
+public:
+	using Passes			= Vector<RdgPass*,			s_kPassLocalSize>;
+	using Resources			= Vector<RdgResource*,		s_kResourceLocalSize>;
+	using FramedRscPool		= Vector<RdgResourcePool,	s_kFrameInFlightCount>;
+	using PassDepths		= Vector<u32,				s_kPassLocalSize>;
+
+public:
+	RenderGraph*	renderGraph = nullptr;
+
+	Passes			resultPasses;
+	PassDepths		resultPassDepths;
+
+	Passes			passes;
+	Resources		resources;
+	RdgResourcePool resourcePool;
+
+	#if 1
+	
+	Vector<ExportedTexture, 4> exportedTextures;
+	Vector<ExportedBuffer , 4> exportedBuffers;
+
+	/*
+
+	struct ExportedResource
+	{
+	RdgResource*			rdgRsc		= nullptr;
+	SPtr<RenderResource>*	outRdRsc	= nullptr;
+	};
+	Vector<ExportedResource> _exportedRscs;
+
+	*/
+
+	#endif // 1
+
+public:
+	RenderGraphFrame();
+	~RenderGraphFrame();
+
+	RenderGraphFrame(	RenderGraphFrame&&)	{ throwIf(true, ""); };
+	void operator=(		RenderGraphFrame&&)	{ throwIf(true, ""); };
+
+public:
+	void create(RenderGraph* rdGraph_);
+	void destroy();
+
+	void reset();
+
+	Pass* addPass(RenderGraph* rdGraph, StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag);
+
+	template<class T>
+	RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc, const RenderGraph& rdGraph)
+	{
+		using Tratis	= RdgResourceTraits<T>;
+		using ResourceT = typename Tratis::ResourceT;
+
+		auto id		= sCast<RdgId>(resources.size());
+		//auto* rdgRsc = newT<RdgResourceT<T> >(cDesc, name, id, false, false);
+		auto* rdgRsc = sCast<ResourceT*>(resources.emplace_back(newT<ResourceT>()));
+		rdgRsc->create(rdGraph, cDesc, name, id, false, false);
+		return rdgRsc;
+	}
+
+private:
+	template<class T, class... ARGS>
+	T* newT(ARGS&&... args)
+	{
+		void*	buf = _alloc.allocate(sizeof(T));
+		T*		p	= new(buf) T(rds::forward<ARGS>(args)...);
+		return p;
+	}
+
+	template<class T>
+	void deleteT(T* p)
+	{
+		p->~T();
+		_alloc.free(p);
+	}
+
+private:
+	LinearAllocator _alloc;
+
+	Passes			_freePasses;
+	LinearAllocator _passAlloc;
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRenderGraph-Decl ---
+#endif // 0
+#if 1
+
+class RenderGraph : public NonCopyable
+{
+	friend class RenderContext;
+	friend class RdgDrawer;
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+
+public:
+	using StateUtil			= RenderGraphFrame::StateUtil;
+	using Pass				= RenderGraphFrame::Pass;
+	using Access			= RenderGraphFrame::Access;
+
+	using TextureT			= RenderGraphFrame::TextureT;
+
+	using Texture			= RenderGraphFrame::Texture;
+	using Buffer			= RenderGraphFrame::Buffer;
+
+	template<class T> using RdgResource_CreateDescT = typename RenderGraphFrame::RdgResource_CreateDescT<T>;
+	using TextureCreateDesc = RenderGraphFrame::TextureCreateDesc;
+	using BufferCreateDesc	= RenderGraphFrame::BufferCreateDesc;
+
+	template<class T> using RdgResourceHndT = typename RenderGraphFrame::RdgResourceHndT<T>;
+	using RdgTextureHnd		= RenderGraphFrame::RdgTextureHnd;
+	using RdgBufferHnd		= RenderGraphFrame::RdgBufferHnd;
+
+	template<class T>
+	struct ExportedResourceT
+	{
+		using Usage		= RdgResourceUsage;
+		using Access	= RdgAccess;
+		using State		= RenderResourceStateFlags;
+
+		RdgResource*	rdgRsc		= nullptr;
+		SPtr<T>*		outRdRsc	= nullptr;
+		State			pendingState;
+	};
+	using ExportedTexture	= ExportedResourceT<Texture>;
+	using ExportedBuffer	= ExportedResourceT<Buffer >;
+
+	using Passes			= RenderGraphFrame::Passes;
+	using Resources			= RenderGraphFrame::Resources;
+	using FramedRscPool		= RenderGraphFrame::FramedRscPool;
+	using PassDepths		= RenderGraphFrame::PassDepths;
+	using RenderGraphFrames = Vector<RenderGraphFrame, s_kFrameInFlightCount>;
+
+public:
+	static constexpr SizeType s_kPassLocalSize = RenderGraphFrame::s_kPassLocalSize;
+
+public:
 	RenderGraph();
 	~RenderGraph();
 
@@ -154,8 +220,8 @@ public:
 	void compile();
 	void execute();
 	void commit(u32 frameIndex);
-	void dumpGraphviz			(StrView filename = "debug/render_graph");				// visualization in https://dreampuf.github.io/GraphvizOnline/
-	void dumpResourceStateGraph	(StrView filename = "debug/render_graph_rsc_state");	// visualization in https://dreampuf.github.io/GraphvizOnline/
+	void dumpGraphviz(			StrView filename = "debug/render_graph");				// visualization in https://dreampuf.github.io/GraphvizOnline/
+	void dumpResourceStateGraph(StrView filename = "debug/render_graph_rsc_state");		// visualization in https://dreampuf.github.io/GraphvizOnline/
 
 	RdgPass& addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag = RdgPassFlags::None);
 
@@ -173,14 +239,6 @@ public:
 	RdgBufferHnd	findBuffer (StrView name);
 
 public:
-	Span<Pass*>				resultPasses();
-	Span<Pass*>				allPasses();
-
-	Span<RdgResource*>		allResources();
-
-	Span<ExportedTexture> exportedTextures();
-	Span<ExportedBuffer > exportedBuffers();
-
 	RenderContext* renderContext();
 
 	const String& name() const;
@@ -219,33 +277,7 @@ protected:
 	IAllocator*		_alloc = nullptr;
 
 	RenderGraphFrames _rdgFrames;
-
-	#if 1
-	
-	Vector<ExportedTexture> _exportedTexs;
-	Vector<ExportedBuffer > _exportedBufs;
-
-	/*
-	
-	struct ExportedResource
-	{
-	RdgResource*			rdgRsc		= nullptr;
-	SPtr<RenderResource>*	outRdRsc	= nullptr;
-	};
-	Vector<ExportedResource> _exportedRscs;
-	
-	*/
-	
-	#endif // 1
 };
-
-inline Span<RenderGraph::Pass*>	RenderGraph::allPasses()	{ return renderGraphFrame().passes; }
-inline Span<RenderGraph::Pass*> RenderGraph::resultPasses() { return renderGraphFrame().resultPasses; }
-
-inline Span<RdgResource*>		RenderGraph::allResources() { return renderGraphFrame().resources; }
-
-inline Span<RenderGraph::ExportedTexture> RenderGraph::exportedTextures()	{ return _exportedTexs; }
-inline Span<RenderGraph::ExportedBuffer > RenderGraph::exportedBuffers()	{ return _exportedBufs; }
 
 template<class T> inline
 typename RdgResourceTraits<T>::Hnd
@@ -281,14 +313,14 @@ inline RenderContext* RenderGraph::renderContext() { return _rdCtx; }
 
 inline const String&	RenderGraph::name()		const { return _name; }
 
-inline u32				RenderGraph::frameIndex()	const { return _frameIdx; }
+inline u32				RenderGraph::frameIndex()	const { checkMainThreadExclusive(RDS_SRCLOC); return _frameIdx; }
 
-inline RenderGraph::RenderGraphFrame&	RenderGraph::renderGraphFrame(u32 frameIndex)	{ return _rdgFrames[frameIndex]; }
-inline RenderGraph::RenderGraphFrame&	RenderGraph::renderGraphFrame()					{ return _rdgFrames[frameIndex()]; }
-inline RdgResourcePool&					RenderGraph::resourcePool(u32 frameIndex)		{ return renderGraphFrame(frameIndex).rscPool; }
+inline RenderGraphFrame&		RenderGraph::renderGraphFrame(u32 frameIndex)	{ return _rdgFrames[frameIndex]; }
+inline RenderGraphFrame&		RenderGraph::renderGraphFrame()					{ return _rdgFrames[frameIndex()]; }
+inline RdgResourcePool&			RenderGraph::resourcePool(u32 frameIndex)		{ return renderGraphFrame(frameIndex).resourcePool; }
 
-inline RenderGraph::Passes&		RenderGraph::passes()		{ return renderGraphFrame().passes; }
-inline RenderGraph::Resources&	RenderGraph::resources()	{ return renderGraphFrame().resources; }
+inline RenderGraph::Passes&		RenderGraph::passes()							{ return renderGraphFrame().passes; }
+inline RenderGraph::Resources&	RenderGraph::resources()						{ return renderGraphFrame().resources; }
 
 #endif
 

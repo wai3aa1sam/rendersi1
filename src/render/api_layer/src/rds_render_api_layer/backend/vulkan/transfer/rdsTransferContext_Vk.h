@@ -30,9 +30,9 @@ public:
 	* --- Engine Thread only ---
 	*/
 public:
-	void	requestStagingBuf(	StagingHandle& outHnd,	SizeType size);
-	void	uploadToStagingBuf(	StagingHandle& outHnd,	ByteSpan data, SizeType offset = 0);
-	void*	mappedStagingBufData(StagingHandle  hnd);
+	void	requestStagingBuf(		StagingHandle& outHnd,	SizeType size);
+	void	uploadToStagingBuf(		StagingHandle& outHnd,	ByteSpan data, SizeType offset = 0);
+	void*	mappedStagingBufData(	StagingHandle  hnd);
 	/*
 	* --- Engine Thread only ---
 	*/
@@ -42,10 +42,15 @@ public:
 	//void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout dstLayout, QueueTypeFlags queueType);
 
 public:
-	void onTransferCommand_CopyBuffer	(TransferCommand_CopyBuffer*	cmd);
-	void onTransferCommand_UploadBuffer	(TransferCommand_UploadBuffer*	cmd);
-	void onTransferCommand_UploadTexture(TransferCommand_UploadTexture* cmd);
+	void onTransferCommand_CreateBuffer(	TransferCommand_CreateBuffer*	cmd);
+	void onTransferCommand_CreateTexture(	TransferCommand_CreateTexture*	cmd);
+	void onTransferCommand_DestroyBuffer(	TransferCommand_DestroyBuffer*	cmd);
+	void onTransferCommand_DestroyTexture(	TransferCommand_DestroyTexture*	cmd);
 
+	void onTransferCommand_CopyBuffer(		TransferCommand_CopyBuffer*		cmd);
+	void onTransferCommand_UploadBuffer(	TransferCommand_UploadBuffer*	cmd);
+	void onTransferCommand_UploadTexture(	TransferCommand_UploadTexture*	cmd);
+	
 public:
 	Vk_TransferFrame& vkTransferFrame(u64 frameIdx);
 
@@ -53,12 +58,12 @@ protected:
 	virtual void onCreate(const CreateDesc& cDesc)	override;
 	virtual void onDestroy()						override;
 
-	virtual void onCommit(TransferRequest& tsfReq, bool isWaitImmediate) override;
+	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate) override;
 
 	Vk_Queue* requestVkQueue(QueueTypeFlags type);
 
 protected:
-	void _commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLabel, TransferCommandBuffer& bufCmds, TransferCommandBuffer& texCmds, QueueTypeFlags queueType, bool isWaitImmediate);
+	void _commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLabel, TransferCommandBuffer& tsfCmdBuf, QueueTypeFlags queueType, bool isWaitImmediate);
 
 	void _setDebugName();
 

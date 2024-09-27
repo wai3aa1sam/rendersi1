@@ -1,8 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rdsRenderResourceState.h"
-
+#include "rdsRenderResourceType.h"
 
 #if 0
 typedef 
@@ -39,10 +38,8 @@ enum D3D12_RESOURCE_STATES
 
 #endif // 0
 
-
 namespace rds
 {
-
 
 // should change to RenderGpuBufferUsageFlags
 #define RenderGpuBufferTypeFlags_ENUM_LIST(E) \
@@ -71,15 +68,6 @@ RDS_ENUM_ALL_OPERATOR(RenderGpuBufferTypeFlags);
 //---
 RDS_ENUM_CLASS(TextureUsageFlags, u8);
 RDS_ENUM_ALL_OPERATOR(TextureUsageFlags);
-
-#define RenderResourceType_ENUM_LIST(E) \
-	E(None, = 0) \
-	E(RenderGpuBuffer,		) \
-	E(Texture,		        ) \
-	E(_kCount,) \
-//---
-RDS_ENUM_CLASS(RenderResourceType, u8);
-
 
 #if 0
 #pragma mark --- rdsRenderResourceStateFlags-Decl ---

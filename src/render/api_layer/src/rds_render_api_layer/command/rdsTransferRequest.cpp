@@ -7,28 +7,6 @@
 namespace rds
 {
 
-class TransferRequest_UploadBufferJob : public Job_Base
-{
-public:
-	TransferRequest_UploadBufferJob(RenderGpuBuffer* rdBuf, TransferCommand_UploadBuffer* cmd)
-	{
-		_rdBuf	= rdBuf;
-		//_cDesc	= rds::move(cDesc);
-		_cmd = cmd;
-	}
-
-	virtual void execute() override
-	{
-		_rdBuf->onUploadToGpu(_cmd);
-		//_tex->_internal_uploadToGpu(_cDesc, _cmd);
-	}
-
-public:
-	TransferCommand_UploadBuffer*	_cmd = nullptr;
-	SPtr<RenderGpuBuffer>			_rdBuf;
-	//Texture2D_CreateDesc			_cDesc;
-};
-
 #if 0
 #pragma mark --- rdsTransferRequest-Impl ---
 #endif // 0
@@ -47,89 +25,115 @@ TransferRequest::~TransferRequest()
 void 
 TransferRequest::reset(TransferContext* tsfCtx, TransferFrame* tsfFrame)
 {
-	/*if (_uploadTextureJobParentHnd && !isUploadTextureCompleted())
-	{
-		RDS_THROW("upload jobs must be completed before reset");
-	}*/
 	if (!tsfCtx || !tsfFrame)
 		return;
 
-	RDS_TODO("per frame, then no need to wait too frequently");
-	waitUploadTextureCompleted();
-
-	_tsfCtx		= tsfCtx;
-	_tsfFrame	= tsfFrame;
-	//auto* rdDev = _tsfCtx ?  _tsfCtx->renderDevice() : nullptr;
-
-	_tsfCmdBuf		= tsfFrame->requestCommandBuffer();
-	_uploadBufCmds	= &tsfFrame->_uploadBufCmds;
-	_uploadTexCmds	= &tsfFrame->_uploadTexCmds;
-
-	if (_tsfCtx)
-	{
-		_tsfCmdBuf->clear();
-		_uploadBufCmds->clear();
-		_uploadTexCmds->clear();
-	}
-
-	_uploadTextureJobParentHnd = JobSystem::instance()->createParentJob()->setName("upParent");
-
-	{
-		auto lockedData = _uploadTextureJobs.scopedULock();
-		lockedData->clear();
-	}
-
-	{
-		auto lockedData = _uploadBufferJobs.scopedULock();
-		lockedData->clear();
-	}
+	_tsfCtx	= tsfCtx;
+	_tsfCmdBuf.clear();
 }
 
 void 
-TransferRequest::commit(bool isWaitImmediate)
+TransferRequest::commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate)
 {
 	RDS_PROFILE_SCOPED();
-	_tsfCtx->commit(*this, isWaitImmediate);
+	_tsfCtx->commit(rdFrameParam, *this, isWaitImmediate);
 }
 
 void 
-TransferRequest::uploadTexture(Texture2D* tex, StrView filename)
+TransferRequest::createBuffer(RenderGpuBuffer* buffer)
 {
-	auto cDesc = Texture2D::makeCDesc();
-	cDesc.create(filename);
-	uploadTexture(tex, rds::move(cDesc));
+	auto& cmdBuf	= transferCommandBuffer();
+	auto* cmd		= cmdBuf.newCommand<TransferCommand_CreateBuffer>();
+	cmd->dst = buffer;
 }
 
 void 
-TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
+TransferRequest::createTexture(Texture* texture)
 {
-	throwIf(!OsTraits::isMainThread(), "transferFrame() is not thread safe");
-
-	#if 0
-	RDS_TODO("put the logic to Texture.h");
-	RDS_TODO("all check funtion should have a dedicated function");
-
-	RDS_CORE_ASSERT( !(
-		!(cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr()) 
-		&& (!cDesc._filename.is_empty() && cDesc._uploadImage.dataPtr())
-		), "Create Texture2D should use either filename or imageUpload, not both");
-	RDS_CORE_ASSERT(_uploadTexCmds, "");
-	#endif // 0
-
-
-	cDesc._internal_create(_tsfCtx->renderDevice(), true);
-
-	UploadTextureJob* job = nullptr;
-	{
-		RDS_TODO("revisit this part, is upload on every thread needed?");
-		auto lockedData = _uploadTextureJobs.scopedULock();
-
-		RDS_TODO("allocator for UploadTextureJob");
-		job = lockedData->emplace_back(makeUPtr<UploadTextureJob>(tex, rds::move(cDesc), uploadTexCmds().uploadTexture()));
-	}
-
-	auto hnd = job->dispatch(_uploadTextureJobParentHnd)->setName("up"); RDS_UNUSED(hnd);
+	auto& cmdBuf	= transferCommandBuffer();
+	auto* cmd		= cmdBuf.newCommand<TransferCommand_CreateTexture>();
+	cmd->dst = texture;
 }
+
+void 
+TransferRequest::destroyBuffer(RenderGpuBuffer* buffer)
+{
+	auto& cmdBuf	= transferCommandBuffer();
+	auto* cmd		= cmdBuf.newCommand<TransferCommand_DestroyBuffer>();
+	cmd->dst = buffer;
+	RDS_CORE_ASSERT(cmd->dst->_refCount == 0, "only call when refCount is 0");
+}
+
+void 
+TransferRequest::destroyTexture(Texture* texture)
+{
+	auto& cmdBuf	= transferCommandBuffer();
+	auto* cmd		= cmdBuf.newCommand<TransferCommand_DestroyTexture>();
+	cmd->dst = texture;
+	RDS_CORE_ASSERT(cmd->dst->_refCount == 0, "only call when refCount is 0");
+}
+
+TransferCommand_UploadTexture*
+TransferRequest::uploadTexture(Texture* tex)
+{
+	auto& cmdBuf	= transferCommandBuffer();
+	auto* cmd		= cmdBuf.uploadTexture();
+	cmd->dst = tex;
+	return cmd;
+
+}
+
+//TransferCommand_UploadTexture*
+//TransferRequest::uploadTexture(Texture* tex, StrView filename)
+//{
+//	auto cDesc = Texture2D::makeCDesc();
+//	cDesc.create(filename);
+//
+//	auto& cmdBuf	= transferCommandBuffer();
+//	auto* cmd		= cmdBuf.uploadTexture();
+//
+//	cmd->dst = tex;
+//
+//	return cmd;
+//
+//}
+//
+//TransferCommand_UploadTexture* 
+//TransferRequest::uploadTexture(TextureCube* tex, TextureCube_CreateDesc&& cDesc)
+//{
+//
+//}
+//
+//
+//TransferCommand_UploadTexture*
+//TransferRequest::uploadTexture(Texture2D* tex, Texture2D_CreateDesc&& cDesc)
+//{
+//	return nullptr;
+//	//#if 0
+//	//RDS_TODO("put the logic to Texture.h");
+//	//RDS_TODO("all check funtion should have a dedicated function");
+//
+//	//RDS_CORE_ASSERT( !(
+//	//	!(cDesc._filename.is_empty() && !cDesc._uploadImage.dataPtr()) 
+//	//	&& (!cDesc._filename.is_empty() && cDesc._uploadImage.dataPtr())
+//	//	), "Create Texture2D should use either filename or imageUpload, not both");
+//	//RDS_CORE_ASSERT(_uploadTexCmds, "");
+//	//#endif // 0
+//
+//
+//	//cDesc._internal_create(_tsfCtx->renderDevice(), true);
+//
+//	//UploadTextureJob* job = nullptr;
+//	//{
+//	//	RDS_TODO("revisit this part, is upload on every thread needed?");
+//	//	auto lockedData = _uploadTextureJobs.scopedULock();
+//
+//	//	RDS_TODO("allocator for UploadTextureJob");
+//	//	job = lockedData->emplace_back(makeUPtr<UploadTextureJob>(tex, rds::move(cDesc), uploadTexCmds().uploadTexture()));
+//	//}
+//
+//	//auto hnd = job->dispatch(_uploadTextureJobParentHnd)->setName("up"); RDS_UNUSED(hnd);
+//}
 
 void 
 TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType offset, RenderGpuMultiBuffer* rdMultiBuf)
@@ -142,7 +146,8 @@ TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType of
 	TransferCommand_UploadBuffer* cmd = nullptr;
 	if (!BitUtil::has(rdBuf->typeFlags(), RenderGpuBufferTypeFlags::Const))
 	{
-		cmd = uploadBufCmds().uploadBuffer();
+		auto& cmdBuf = transferCommandBuffer();
+		cmd = cmdBuf.uploadBuffer();
 	}
 	else
 	{
@@ -157,7 +162,6 @@ TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType of
 	rdBuf->onUploadToGpu(cmd);
 }
 
-
 void 
 TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType offset)
 {
@@ -167,16 +171,13 @@ TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType of
 void 
 TransferRequest::uploadBufferAsync(RenderGpuBuffer* rdBuf, Vector<u8>&& data)
 {
-	throwIf(!OsTraits::isMainThread(), "transferFrame() is not thread safe");
-
+	_notYetSupported(RDS_SRCLOC);
 }
 
-void 
-TransferRequest::waitUploadTextureCompleted()
+TransferCommandBuffer& TransferRequest::transferCommandBuffer()
 {
-	RDS_TODO("make uploadjob in transfer frame to reduce blocking");
-	JobSystem::instance()->waitForComplete(_uploadTextureJobParentHnd);
-	_uploadTextureJobParentHnd = nullptr;	// no clean up will make next frame wait stuck, since the jobSystem next frame will invalid this pointer
+	checkMainThreadExclusive(RDS_SRCLOC);
+	return _tsfCmdBuf;
 }
 
 #endif

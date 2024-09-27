@@ -173,7 +173,6 @@ public:
     static SizeType     bindlessTypeCount();
     static bool         isSupportAccelerationStruct();
 
-
 public:
     BindlessResources();
     ~BindlessResources();
@@ -181,7 +180,7 @@ public:
     void create(const CreateDesc& cDesc);
     void destroy();
 
-    BindlessResourceHandle allocBuffer (RenderGpuBuffer*    rsc);
+    BindlessResourceHandle allocBuffer( RenderGpuBuffer*    rsc);
     BindlessResourceHandle allocTexture(Texture*            rsc);
     BindlessResourceHandle allocImage(  Texture*            rsc);
 
@@ -196,7 +195,7 @@ public:
 public:
     SizeType samplerCount()         const;
     SizeType size()                 const;
-
+    SizeType totalResourcesCount()  const;
 
 protected:
     virtual void onCreate(const CreateDesc& cDesc);
@@ -216,7 +215,7 @@ public:
         using FreelistTable = VectorMap<u32, Freelist>;
 
     public:
-        Vector<SPtr<RSC>,   s_kLocalSize>   rscs;
+        //Vector<SPtr<RSC>,   s_kLocalSize>   resources;
         Vector<u32,         s_kLocalSize>   freedIndices;        // for mipCount == 1
         u32                                 nextRscId = 0;
         FreelistTable                       freelistTable;      // for mipCount > 1
@@ -226,9 +225,11 @@ public:
         {
             auto oHnd = BindlessResourceHandle{};
 
-            auto& dst = rscs.emplace_back();
+            #if 0
+            auto& dst = resources.emplace_back();
             dst.reset(rsc);
-            
+            #endif // 0
+
             auto& freelist = getFreelist(count, type);
             if (freelist.is_empty())
             {
@@ -241,7 +242,7 @@ public:
             }
             oHnd.setSubResourceCount(count);
 
-            throwIf(totalResourceCount() > bindlessRscs->size(), "bindless descriptor count overflow, limit: {}", bindlessRscs->size());
+            throwIf(totalResourcesCount() > bindlessRscs->size(), "bindless descriptor count overflow, limit: {}", bindlessRscs->size());
             return oHnd;
         }
 
@@ -258,36 +259,20 @@ public:
         }
 
     public:
-        u32 totalResourceCount() const { return nextRscId; }
+        u32 totalResourcesCount() const { return nextRscId; }
     };
 
 public:
-    template<class T>
-    BindlessResourceHandle alloc(T* rsc, MutexProtected<ResourceAlloc<T> >& alloc, u32 count, BindlessResourceType type)
-    {
-        auto oHnd = BindlessResourceHandle{};
-        {
-            auto data = alloc.scopedULock();
-            oHnd = data->alloc(rsc, this, count, type);
-        }
-        return oHnd;
-    }
-
-    template<class T>
-    void free(BindlessResourceHandle hnd, MutexProtected<ResourceAlloc<T> >& alloc, u32 count, BindlessResourceType type)
-    {
-        if (!hnd.isValid())
-            return;
-        { 
-            auto data = alloc.scopedULock(); 
-            data->free(hnd, count, type); 
-        }
-    }
+    template<class T> BindlessResourceHandle    alloc(MutexProtected<ResourceAlloc<T> >& alloc, T* rsc, u32 count, BindlessResourceType type);
+    template<class T> void                      free( MutexProtected<ResourceAlloc<T> >& alloc, BindlessResourceHandle hnd, u32 count, BindlessResourceType type);
 
 protected:
+    template<class T> u32 _totalResourcesCount(MutexProtected<ResourceAlloc<T> >& alloc) const;
+
+protected:
+    MutexProtected<ResourceAlloc<RenderGpuBuffer> >     _bufAlloc;
     MutexProtected<ResourceAlloc<Texture> >             _texAlloc;
     MutexProtected<ResourceAlloc<Texture> >             _imgAlloc;
-    MutexProtected<ResourceAlloc<RenderGpuBuffer> >     _bufAlloc;
 
     SamplerStateListTable _samplerStateListTable;
 
@@ -295,9 +280,7 @@ protected:
 };
 
 inline BindlessResources::SizeType BindlessResources::samplerCount()        const { return _samplerStateListTable.size(); }
-
-
-inline BindlessResources::SizeType BindlessResources::size() const { return _size; }
+inline BindlessResources::SizeType BindlessResources::size()                const { return _size; }
 
 
 

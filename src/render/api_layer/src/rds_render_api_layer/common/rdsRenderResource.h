@@ -2,6 +2,7 @@
 
 #include "rdsRenderDataType.h"
 #include "rdsRenderResourceState.h"
+#include "rdsRenderResourceType.h"
 
 namespace rds
 {
@@ -124,6 +125,7 @@ class RenderResource : public RefCount_Base
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class Renderer;
+	template<class T, class ENABLE> friend struct RdsDeleter;
 public:
 	using CreateDesc	= RenderResource_CreateDesc;
 	using StateUtil		= RenderResourceStateFlagsUtil;
@@ -145,14 +147,15 @@ public:
 	virtual void	setDebugName(StrView name);
 
 public:
-	bool			hasCreated()	const;
-	const char*		debugName()		const;
-	RenderApiType	apiType()		const;
+	bool				hasCreated()			const;
+	const char*			debugName()				const;
+	RenderApiType		apiType()				const;
+	RenderResourceType	renderResourceType()	const;
 
-	u64				engineFrameCount()	const;
-	u32				engineFrameIndex()	const;
-	u64				frameCount()		const;
-	u32				frameIndex()		const;
+	u64					engineFrameCount()		const;
+	u32					engineFrameIndex()		const;
+	u64					frameCount()			const;
+	u32					frameIndex()			const;
 
 public:
 	Renderer*			renderer();
@@ -169,13 +172,15 @@ public:
 
 	RenderResourceStateFlags renderResourceStateFlags(u32 subResource = RenderResourceState::s_kAllSubResource) const;
 
-public:
 	ProjectSetting& projectSetting();
-
 
 public:
 	void _internal_setSubResourceCount(SizeType n);
 	void _internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
+
+protected:
+	virtual void onCreateRenderResource();
+	virtual void onDestroyRenderResource();
 
 protected:
 	RDS_DEBUG_SRCLOC_DECL;
@@ -185,6 +190,7 @@ protected:
 
 	RenderDevice*		_rdDev = nullptr;
 	RenderResourceState _rdState;
+	RenderResourceType	_rdRscType = RenderResourceType::None;
 };
 
 template<class T> inline
@@ -221,5 +227,19 @@ inline RenderResourceStateFlags RenderResource::renderResourceStateFlags(u32 sub
 inline ProjectSetting& RenderResource::projectSetting() { return *ProjectSetting::instance(); }
 
 #endif
+
+template<class T> 
+struct RdsDeleter<T, EnableIf<IsBaseOf<RenderResource, T> > >
+{
+	static void rds_delete(RenderResource* p) RDS_NOEXCEPT
+	{
+		if (p)
+		{
+			p->onDestroyRenderResource();
+			rds_delete_impl(p);
+		}
+	}
+};
+
 
 }

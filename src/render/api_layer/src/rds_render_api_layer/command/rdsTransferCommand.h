@@ -15,10 +15,18 @@ namespace rds
 
 #define TransferCommandType_ENUM_LIST(E) \
 	E(None, = 0) \
+	\
 	E(CopyBuffer,) \
 	\
 	E(UploadBuffer,) \
 	E(UploadTexture,) \
+	\
+	E(CreateBuffer,) \
+	E(CreateTexture,) \
+	\
+	E(DestroyBuffer,) \
+	E(DestroyTexture,) \
+	\
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(TransferCommandType, u8);
@@ -38,6 +46,66 @@ public:
 protected:
 	TransferCommandType _type;
 };
+
+#if 1
+class TransferCommand_CreateBuffer : public TransferCommand
+{
+public:
+	using Base = TransferCommand;
+	using This = TransferCommand_CreateBuffer;
+
+public:
+	TransferCommand_CreateBuffer() : Base(Type::CreateBuffer) {}
+	virtual ~TransferCommand_CreateBuffer() {};
+
+public:
+	SPtr<RenderGpuBuffer> dst;
+};
+
+class TransferCommand_CreateTexture : public TransferCommand
+{
+public:
+	using Base = TransferCommand;
+	using This = TransferCommand_CreateTexture;
+
+public:
+	TransferCommand_CreateTexture() : Base(Type::CreateTexture) {}
+	virtual ~TransferCommand_CreateTexture() {};
+
+public:
+	SPtr<Texture> dst;
+};
+
+class TransferCommand_DestroyBuffer : public TransferCommand
+{
+public:
+	using Base = TransferCommand;
+	using This = TransferCommand_DestroyBuffer;
+
+public:
+	TransferCommand_DestroyBuffer() : Base(Type::DestroyBuffer) {}
+	virtual ~TransferCommand_DestroyBuffer() {};
+
+public:
+	RenderGpuBuffer* dst;
+};
+
+class TransferCommand_DestroyTexture : public TransferCommand
+{
+public:
+	using Base = TransferCommand;
+	using This = TransferCommand_DestroyTexture;
+
+public:
+	TransferCommand_DestroyTexture() : Base(Type::DestroyTexture) {}
+	virtual ~TransferCommand_DestroyTexture() {};
+
+public:
+	Texture* dst;
+};
+
+#endif // 0
+
 
 class TransferCommand_CopyBuffer : public TransferCommand
 {
@@ -91,14 +159,9 @@ public:
 	ByteSpan					data;
 	SizeType					offset = 0;
 	QueueTypeFlags				queueTypeflags = QueueTypeFlags::Graphics | QueueTypeFlags::Compute;
-	
-	//SPtr<RenderGpuMultiBuffer>	parent;
 
-	//Vector<u8>					data;
-
-	u32 _stagingIdx = s_kInvalid;
-
-	StagingHandle _stagingHnd;
+	u32				_stagingIdx = s_kInvalid;
+	StagingHandle	_stagingHnd;
 };
 
 class TransferCommand_UploadTexture : public TransferCommand
@@ -160,7 +223,6 @@ private:
 private:
 	LinearAllocator							_allocator;
 	Vector<TransferCommand*, s_kLocalSize>	_commands;
-
 };
 
 template<class CMD> inline

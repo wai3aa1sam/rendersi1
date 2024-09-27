@@ -143,6 +143,7 @@ CRenderableSystem::drawUi(RenderContext* renderContext, bool isDrawUi, bool isDr
 	// record present
 	{
 		auto& rdReq = renderRequest(engineContext().engineFrameParam().frameIndex());
+		//RDS_CORE_LOG_ERROR("drawUi - {}", engineContext().engineFrameParam().frameIndex());
 		//RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
 
 		rdReq.reset(rdCtx);

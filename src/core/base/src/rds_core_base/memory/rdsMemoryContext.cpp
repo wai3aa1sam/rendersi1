@@ -27,6 +27,7 @@ MemoryContext::MemoryContext()
 	: Base()
 {
 	OsTraits::setMainThread();
+	#if 1
 	_allocStacks.resize(s_kThreadCount);
 	_defaultAllocators.resize(s_kThreadCount);
 
@@ -41,6 +42,7 @@ MemoryContext::MemoryContext()
 	}
 
 	_log("TODO: ThreadAllocatorStack also need a thread id to check sanity");
+	#endif // 0
 }
 
 MemoryContext::~MemoryContext()

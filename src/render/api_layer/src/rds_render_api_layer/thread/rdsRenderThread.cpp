@@ -40,6 +40,7 @@ RenderThread::onRoutine()
 	RDS_PROFILE_SCOPED();
 
 	_isTerminated.store(false);
+	_lastFinishedFrameCount.store(0);
 
 	for (;;)
 	{
@@ -73,6 +74,8 @@ RenderThread::onRoutine()
 void 
 RenderThread::requestRender(UPtr<RenderData>&& renderData)
 {
+	//RDS_CORE_LOG_ERROR("requestRender() - renderData.frameCount: {}", renderData->frameCount);
+
 	//RDS_CORE_ASSERT(!isTerminated(), " RenderThread has already terminated");
 	_rdDataQueue.push(rds::move(renderData));
 }
@@ -88,15 +91,16 @@ RenderThread::render(RenderData& renderData)
 
 	auto& tsfCtx	= rdDev->transferContext();
 	auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(renderData.frameCount));
-	tsfReq.commit();
+	tsfReq.commit(rdFrameParam);
 
 	// RenderFrameContext
 	// beginFrame();
 	//		for ... render()
 	// endFrame();		// only submit here
-
 	for (auto& e : renderData.renderJobs)
 	{
+		//RDS_CORE_LOG_ERROR("render begin - renderData.frameCount: {}, e.renderGraphFrameIdx: {}", renderData.frameCount, e.renderGraphFrameIdx);
+
 		auto&	rdGraph		= *e.renderGraph;
 		auto*	rdCtx		= rdGraph.renderContext();
 		//auto	frameIndex	= rdFrameParam.frameIndex();
@@ -108,9 +112,13 @@ RenderThread::render(RenderData& renderData)
 		{
 			rdCtx->commit(*rdReq);
 		}
-
+		
 		rdCtx->endRender();
+
+		//RDS_CORE_LOG_ERROR("render end - renderData.frameCount: {}, e.renderGraphFrameIdx: {}", renderData.frameCount, e.renderGraphFrameIdx);
 	}
+
+	_lastFinishedFrameCount.store(renderData.frameCount);
 }
 
 void 
@@ -130,7 +138,9 @@ RenderThread::terminate()
 	_isTerminated.store(true);
 }
 
-bool RenderThread::isTerminated() { return _isTerminated; }
+bool	RenderThread::isTerminated()			const	{ return _isTerminated; }
+
+u64		RenderThread::lastFinishedFrameCount()	const	{ return _lastFinishedFrameCount.load(); }
 
 #endif
 

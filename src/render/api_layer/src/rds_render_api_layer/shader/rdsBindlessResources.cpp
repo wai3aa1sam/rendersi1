@@ -93,6 +93,9 @@ BindlessResources::create(const CreateDesc& cDesc)
 {
 	Base::create(cDesc);
 	onCreate(cDesc);
+
+	auto data = _bufAlloc.scopedULock();
+	data->totalResourcesCount();
 }
 
 void 
@@ -105,37 +108,37 @@ BindlessResources::destroy()
 BindlessResourceHandle
 BindlessResources::allocBuffer(RenderGpuBuffer* rsc)
 {
-	return alloc(rsc, _bufAlloc, 1, BindlessResourceType::Buffer);
+	return alloc(_bufAlloc, rsc, 1, BindlessResourceType::Buffer);
 }
 
 BindlessResourceHandle
 BindlessResources::allocTexture(Texture* rsc)
 {
-	return alloc(rsc, _texAlloc, 1, BindlessResourceType::Texture);
+	return alloc(_texAlloc, rsc, 1, BindlessResourceType::Texture);
 }
 
 BindlessResourceHandle 
 BindlessResources::allocImage(Texture* rsc)
 {
-	return alloc(rsc, _imgAlloc, rsc->mipCount(), BindlessResourceType::Image);
+	return alloc(_imgAlloc, rsc, rsc->mipCount(), BindlessResourceType::Image);
 }
 
 void
 BindlessResources::freeBuffer (RenderGpuBuffer* rsc)
 {
-	free(rsc->bindlessHandle(), _bufAlloc, 1, BindlessResourceType::Buffer);
+	free(_bufAlloc, rsc->bindlessHandle(), 1, BindlessResourceType::Buffer);
 }
 
 void
 BindlessResources::freeTexture(Texture* rsc)
 {
-	free(rsc->bindlessHandle(), _texAlloc, 1, BindlessResourceType::Texture);
+	free(_texAlloc, rsc->bindlessHandle(), 1, BindlessResourceType::Texture);
 }
 
 void 
 BindlessResources::freeImage(Texture* rsc)
 {
-	free(rsc->uavBindlessHandle(), _imgAlloc, rsc->mipCount(), BindlessResourceType::Image);
+	free(_imgAlloc, rsc->uavBindlessHandle(), rsc->mipCount(), BindlessResourceType::Image);
 }
 
 void 
@@ -156,14 +159,14 @@ template<class RSC>
 void ResourceAlloc_destroy(MutexProtected<BindlessResources::ResourceAlloc<RSC> >& alloc)
 {
 	using ResourceAlloc = BindlessResources::ResourceAlloc<RSC>;
-	Vector<SPtr<RSC>, ResourceAlloc::s_kLocalSize> buf;
+	//Vector<SPtr<RSC>, ResourceAlloc::s_kLocalSize> rscs;
 	{
-		auto data = alloc.scopedULock();
-		buf.reserve(data->rscs.size());
-		buf = rds::move(data->rscs);		
-		data->rscs.clear();		// move is not work...
+		//auto data = alloc.scopedULock();
+		//rscs.reserve(data->rscs.size());
+		//rscs = rds::move(data->rscs);		
+		//data->rscs.clear();		// move is not work...
 	}
-	buf.clear();
+	//buf.clear();
 }
 
 void 
@@ -171,6 +174,7 @@ BindlessResources::onDestroy()
 {
 	ResourceAlloc_destroy(_bufAlloc);
 	ResourceAlloc_destroy(_texAlloc);
+	ResourceAlloc_destroy(_imgAlloc);
 	_samplerStateListTable.clear();
 
 	// this will lock twice
@@ -199,6 +203,48 @@ BindlessResources::findSamplerIndex(const SamplerState& samplerState) const
 
 	RDS_CORE_ASSERT(idx != _samplerStateListTable.s_kInvalid, "not found");
 	return sCast<u32>(idx);
+}
+
+template<class T>
+BindlessResourceHandle 
+BindlessResources::alloc(MutexProtected<ResourceAlloc<T> >& alloc, T* rsc, u32 count, BindlessResourceType type)
+{
+	auto oHnd = BindlessResourceHandle{};
+	{
+		auto data = alloc.scopedULock();
+		oHnd = data->alloc(rsc, this, count, type);
+	}
+	return oHnd;
+}
+
+template<class T>
+void 
+BindlessResources::free(MutexProtected<ResourceAlloc<T> >& alloc, BindlessResourceHandle hnd, u32 count, BindlessResourceType type)
+{
+	if (!hnd.isValid())
+		return;
+	{ 
+		auto data = alloc.scopedULock(); 
+		data->free(hnd, count, type); 
+	}
+}
+
+template<class T>
+u32 
+BindlessResources::_totalResourcesCount(MutexProtected<ResourceAlloc<T> >& alloc) const
+{ 
+	auto data = alloc.scopedULock();
+	return data->totalResourcesCount();
+}
+
+BindlessResources::SizeType 
+BindlessResources::totalResourcesCount() const
+{
+	SizeType n = 0;
+	n += _totalResourcesCount(constCast(_bufAlloc));
+	n += _totalResourcesCount(constCast(_texAlloc));
+	n += _totalResourcesCount(constCast(_imgAlloc));
+	return n;
 }
 
 #endif

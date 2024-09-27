@@ -71,18 +71,31 @@ RenderResource::_internal_setRenderResourceState(RenderResourceStateFlags state,
 	_rdState.setState(state, subResource);
 }
 
+void 
+RenderResource::onCreateRenderResource()
+{
+
+}
+
+void 
+RenderResource::onDestroyRenderResource()
+{
+	//RDS_LOG("onDestroyRenderResource() - {}", (void*)this);
+}
+
 bool 
 RenderResource::hasCreated() const
 {
 	return _rdDev != nullptr;
 }
 
-RenderApiType			RenderResource::apiType()		const				{ return renderDevice()->apiType(); }
+RenderApiType			RenderResource::apiType()				const		{ return renderDevice()->apiType(); }
+RenderResourceType		RenderResource::renderResourceType()	const		{ return _rdRscType; }
 
-u64						RenderResource::engineFrameCount()	const			{ return renderDevice()->engineFrameCount(); }
-u32						RenderResource::engineFrameIndex()	const			{ return renderDevice()->engineFrameIndex(); }
-u64						RenderResource::frameCount()		const			{ return renderDevice()->frameCount(); }
-u32						RenderResource::frameIndex()		const			{ return renderDevice()->frameIndex(); }
+u64						RenderResource::engineFrameCount()		const		{ return renderDevice()->engineFrameCount(); }
+u32						RenderResource::engineFrameIndex()		const		{ return renderDevice()->engineFrameIndex(); }
+u64						RenderResource::frameCount()			const		{ return renderDevice()->frameCount(); }
+u32						RenderResource::frameIndex()			const		{ return renderDevice()->frameIndex(); }
 
 Renderer*				RenderResource::renderer()							{ return Renderer::instance(); }
 

@@ -8,6 +8,7 @@
 namespace rds
 {
 
+class RenderGraphFrame;
 class RenderGraph;
 class RdgDrawer;
 
@@ -84,6 +85,7 @@ public:
 
 class RdgPass : public NonCopyable
 {
+	friend class RenderGraphFrame;
 	friend class RenderGraph;
 	friend class RdgDrawer;
 	RDS_RENDER_API_LAYER_COMMON_BODY();

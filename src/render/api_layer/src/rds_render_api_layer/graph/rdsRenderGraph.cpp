@@ -12,34 +12,34 @@ namespace rds
 #endif // 0
 #if 1
 
-RenderGraph::RenderGraphFrame::RenderGraphFrame()
+RenderGraphFrame::RenderGraphFrame()
 {
 
 }
 
-RenderGraph::RenderGraphFrame::~RenderGraphFrame()
+RenderGraphFrame::~RenderGraphFrame()
 {
 	destroy();
 }
 
 
 void 
-RenderGraph::RenderGraphFrame::create(RenderGraph* rdGraph_)
+RenderGraphFrame::create(RenderGraph* rdGraph_)
 {
 	destroy();
-	rdGraph = rdGraph_;
+	renderGraph = rdGraph_;
 }
 
 void 
-RenderGraph::RenderGraphFrame::destroy()
+RenderGraphFrame::destroy()
 {
 	reset();
 	_passAlloc.destructAndClear<RdgPass>(_passAlloc.s_kDefaultAlign);
-	rdGraph = nullptr;
+	renderGraph = nullptr;
 }
 
 void 
-RenderGraph::RenderGraphFrame::reset()
+RenderGraphFrame::reset()
 {
 	resultPasses.clear();
 	resultPassDepths.clear();
@@ -63,12 +63,15 @@ RenderGraph::RenderGraphFrame::reset()
 	passes.clear();
 	resources.clear();
 
-	rscPool.reset();
+	resourcePool.reset();
 	_alloc.clear();
+
+	exportedTextures.clear();
+	exportedBuffers.clear();
 }
 
-RenderGraph::Pass* 
-RenderGraph::RenderGraphFrame::addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
+RenderGraphFrame::Pass* 
+RenderGraphFrame::addPass(RenderGraph* rdGraph, StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
 {
 	auto id = sCast<RdgId>(passes.size());
 	Pass* pass = nullptr;
@@ -155,10 +158,8 @@ RenderGraph::reset()
 { 
 	RDS_TODO("temporary solution");
 	rotateFrame();
-	renderGraphFrame(frameIndex()).reset();
-
-	_exportedTexs.clear();
-	_exportedBufs.clear();
+	auto& rdgFrame = renderGraphFrame(frameIndex());
+	rdgFrame.reset();
 }
 
 void 
@@ -281,7 +282,7 @@ RenderGraph::compile()
 	{
 		RDS_PROFILE_SECTION("create resources");
 
-		auto& rscPool = rdgFrame.rscPool;
+		auto& rscPool = rdgFrame.resourcePool;
 
 		for (auto& e : resources)
 		{
@@ -321,15 +322,17 @@ RenderGraph::compile()
 	// export resources
 	{
 		RDS_PROFILE_SECTION("export resources");
+		auto& expBufs = rdgFrame.exportedBuffers;
+		auto& expTexs = rdgFrame.exportedTextures;
 
-		for (auto& expBuf : exportedBuffers())
+		for (auto& expBuf : expBufs)
 		{
 			if (!expBuf.outRdRsc)
 				continue;
 			(*expBuf.outRdRsc).reset(sCast<RenderGpuBuffer*>(expBuf.rdgRsc->renderResource()));
 		}
 
-		for (auto& expTex : exportedTextures())
+		for (auto& expTex : expTexs)
 		{
 			if (!expTex.outRdRsc)
 				continue;
@@ -345,11 +348,13 @@ RenderGraph::execute()
 
 	RDS_PROFILE_SCOPED();
 
-	auto frameCount = renderContext()->engineFrameCount();
-	for (auto& pass : resultPasses())
+	auto	frameCount	= renderContext()->engineFrameCount();
+	auto&	rdgFrame	= renderGraphFrame(frameIndex());
+
+	for (auto& pass : rdgFrame.resultPasses)
 	{
 		const auto& name = pass->name(); RDS_UNUSED(name);
-		RDS_PROFILE_DYNAMIC_FMT("{} i[{}] - frame[{}]", name, Traits::rotateFrame(frameCount), frameCount);
+		RDS_PROFILE_DYNAMIC_FMT("{} i[{}] - engineFrame[{}]", name, frameIndex(), frameCount);
 
 		if (pass->isCulled())
 			continue;
@@ -378,7 +383,7 @@ RenderGraph::commit(u32 frameIndex)
 		_setResourcesState(sortedPasses, passDepths);
 	}
 
-	_rdCtx->commit(*this);
+	_rdCtx->commit(*this, frameIndex);
 }
 
 void 
@@ -391,7 +396,7 @@ RenderGraph::dumpGraphviz(StrView filename)
 RdgPass& 
 RenderGraph::addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
 {
-	Pass* pass = renderGraphFrame().addPass(name, typeFlag, flag);
+	Pass* pass = renderGraphFrame().addPass(this, name, typeFlag, flag);
 	return *pass;
 }
 
@@ -432,7 +437,8 @@ RenderGraph::importTexture(StrView name, TextureT* tex)
 void 
 RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access)
 {
-	auto& exportRsc = _exportedTexs.emplace_back();
+	auto& rdgFrame	= renderGraphFrame(frameIndex());
+	auto& exportRsc = rdgFrame.exportedTextures.emplace_back();
 	exportRsc.rdgRsc = hnd.resource();
 	exportRsc.rdgRsc->setExport(true);
 
@@ -467,7 +473,8 @@ RenderGraph::importBuffer(StrView name, Buffer* buf)
 void 
 RenderGraph::exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlag, Access access)
 {
-	auto& exportRsc = _exportedBufs.emplace_back();
+	auto& rdgFrame	= renderGraphFrame(frameIndex());
+	auto& exportRsc = rdgFrame.exportedBuffers.emplace_back();
 	exportRsc.rdgRsc = hnd.resource();
 	exportRsc.rdgRsc->setExport(true);
 

@@ -6,7 +6,7 @@
 namespace rds
 {
 
-
+class RenderGraphFrame;
 
 #if 0
 #pragma mark --- rdsBackbuffers-Decl ---
@@ -85,7 +85,7 @@ public:
 
 	void commit(RenderCommandBuffer&	rdCmdBuf);
 	void commit(RenderRequest&			rdReq);
-	void commit(RenderGraph&			rdGraph);
+	void commit(RenderGraph&			rdGraph, u32 rdGraphFrameIdx);
 
 public:
 	void drawUI(RenderRequest& req);
@@ -117,7 +117,7 @@ protected:
 	virtual void onSetFramebufferSize(const Vec2f& newSize) {};
 
 	virtual void onCommit(RenderCommandBuffer&	renderBuf);
-	virtual void onCommit(RenderGraph&			rdGraph);
+	virtual void onCommit(const RenderGraph& rdGraph, RenderGraphFrame&	rdGraphFrame, u32 rdGraphFrameIdx);
 
 protected:
 	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData);

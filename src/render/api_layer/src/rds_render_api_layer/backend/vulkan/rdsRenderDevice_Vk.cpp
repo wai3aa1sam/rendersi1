@@ -44,17 +44,23 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 	_vkMemoryContext.create(vkDevice(), vkPhysicalDevice(), vkInstance());
 
 	{
-		auto tsfCtxCDesc = TransferContext::makeCDesc();
-		tsfCtxCDesc._internal_create(this);
-		_transferCtxVk.create(tsfCtxCDesc);
-		_tsfCtx = &_transferCtxVk;
-	}
-
-	{
 		auto bindlessRscVkcDesc = BindlessResources_Vk::makeCDesc();
 		bindlessRscVkcDesc._internal_create(this);
 		_bindlessRscsVk.create(bindlessRscVkcDesc);
 		_bindlessRscs = &_bindlessRscsVk;
+	}
+
+	{
+		auto tsfCtxCDesc = TransferContext::makeCDesc();
+		tsfCtxCDesc._internal_create(this);
+		_tsfCtxVk.create(tsfCtxCDesc);
+		_tsfCtx = &_tsfCtxVk;
+	}
+
+	{
+		auto rdRscsCtxCDesc = RenderResourcesContext::makeCDesc(this);
+		_rdRscsCtxVk.create(rdRscsCtxCDesc);
+		_rdRscsCtx = &_rdRscsCtxVk;
 	}
 
 	_setDebugName();
@@ -65,11 +71,14 @@ RenderDevice_Vk::onDestroy()
 {
 	waitIdle();
 
-	if (_tsfCtx)
-		_tsfCtx->destroy();
-
 	_rdFrames.clear();
 	_tsfFrames.clear();
+
+	_tsfCtxVk.destroy();
+	_tsfCtx = nullptr;
+
+	_rdRscsCtxVk.destroy();
+	_rdRscsCtx = nullptr;
 
 	_bindlessRscsVk.destroy();
 	_bindlessRscs = nullptr;
@@ -90,7 +99,7 @@ void
 RenderDevice_Vk::onResetFrame(u64 frameCount)
 {
 	Base::onResetFrame(frameCount);
-	_transferCtxVk.reset(frameCount);
+	_tsfCtxVk.reset(frameCount);
 }
 
 void 

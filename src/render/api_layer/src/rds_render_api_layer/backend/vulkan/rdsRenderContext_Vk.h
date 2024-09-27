@@ -80,8 +80,8 @@ protected:
 
 	virtual void onSetFramebufferSize(const Vec2f& newSize) override;
 
-	virtual void onCommit(RenderCommandBuffer& renderBuf) override;
-	virtual void onCommit(RenderGraph&			rdGraph)  override;
+	virtual void onCommit(RenderCommandBuffer&	renderBuf) override;
+	virtual void onCommit(const RenderGraph& rdGraph, RenderGraphFrame&	rdGraphFrame, u32 rdGraphFrameIdx)  override;
 
 protected:
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);

@@ -9,7 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
-#define RDS_SINGLE_THREAD_MODE 0
+#define RDS_SINGLE_THREAD_MODE 1
 
 namespace rds
 {
@@ -67,16 +67,10 @@ DemoEditorLayer::onCreate()
 	rdGraph.create(mainWindow().title(), &rdCtx);
 
 	prepare_SingleThreadMode();
-
-	// next frame will clear those upload cmds
-	{
-		_gfxDemo->onCreateScene(&_scene);
-		rdCtx.transferRequest().commit(true);	// TODO: must perform tsf commit here as this moment
-	}
+	_gfxDemo->onCreateScene(&_scene);
 
 	app()._frameControl.isWaitFrame = false;
 }
-
 
 void 
 DemoEditorLayer::onUpdate()
@@ -89,7 +83,7 @@ DemoEditorLayer::onUpdate()
 
 	bool isFirstFrame = egFrameParam.frameCount() == 0; RDS_UNUSED(isFirstFrame);
 
-	egFrameParam.reset(&rdCtx);
+	egFrameParam.reset(&rdCtx, &_rdThreadQueue);
 	auto frameCount = egFrameParam.frameCount();
 
 	RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount); 
@@ -106,6 +100,7 @@ DemoEditorLayer::onUpdate()
 	{
 		auto& rdGraph	= rdableSys.renderGraph();
 		rdGraph.reset();
+		//RDS_LOG_ERROR("rdGraph.reset(), frameCount: {}, graph index: {}", frameCount, rdGraph.frameIndex()); 
 
 		DrawData* mainDrawData = nullptr;
 		{
@@ -130,6 +125,7 @@ DemoEditorLayer::onUpdate()
 
 		rdableSys.update(scene());
 
+		// ui
 		{
 			auto& rdUiCtx = rdCtx.renderdUiContex();
 			rdUiCtx.onBeginRender(&rdCtx);
