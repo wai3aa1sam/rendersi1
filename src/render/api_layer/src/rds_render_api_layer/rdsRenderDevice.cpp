@@ -49,6 +49,7 @@ void
 RenderDevice::create(const CreateDesc& cDesc)
 {
 	_apiType = cDesc.apiType;
+	_rdDev	 = this;
 
 	onCreate(cDesc);
 
@@ -70,6 +71,9 @@ RenderDevice::create(const CreateDesc& cDesc)
 void 
 RenderDevice::destroy()
 {
+	if (!hasCreated())
+		return;
+
 	waitIdle();
 
 	_shaderStock.destroy();
@@ -77,13 +81,21 @@ RenderDevice::destroy()
 	_rdFrames.clear();
 	_tsfFrames.clear();
 
-	_tsfCtx->destroy();
-	_tsfCtx = nullptr;
-
-	_bindlessRscs->destroy();
-	_bindlessRscs = nullptr;
+	if (_tsfCtx)
+	{
+		_tsfCtx->destroy();
+		_tsfCtx = nullptr;
+	}
+	
+	if (_bindlessRscs)
+	{
+		_bindlessRscs->destroy();
+		_bindlessRscs = nullptr;
+	}
 
 	onDestroy();
+
+	Base::destroy();
 
 	RDS_CORE_ASSERT(!_bindlessRscs,			"forgot to call destroy() _bindlessRscs");
 	RDS_CORE_ASSERT(!_tsfCtx,				"forgot to call destroy() _tsfCtx");

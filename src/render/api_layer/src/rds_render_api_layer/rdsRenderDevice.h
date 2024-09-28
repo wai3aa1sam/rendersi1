@@ -121,8 +121,6 @@ public:
 	u64				frameCount()		const;
 	u32				frameIndex()		const;
 
-	bool hasCreated() const;
-
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onDestroy();
@@ -180,7 +178,6 @@ inline			u64						RenderDevice::engineFrameCount()	const	{ return renderFramePar
 inline			u32						RenderDevice::engineFrameIndex()	const	{ return sCast<u32>((engineFrameCount()) % s_kFrameInFlightCount); }
 inline			u64						RenderDevice::frameCount()			const	{ return renderFrameParam().frameCount(); }
 inline			u32						RenderDevice::frameIndex()			const	{ return sCast<u32>((frameCount()) % s_kFrameInFlightCount); }
-inline			bool					RenderDevice::hasCreated()			const	{ return !_rdFrames.is_empty(); }
 
 #endif
 

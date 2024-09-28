@@ -44,6 +44,9 @@ TransferContext::create(const CreateDesc& cDesc)
 void 
 TransferContext::destroy()
 {
+	if (!hasCreated())
+		return;
+
 	commitRenderResources(renderFrameParam());
 
 	onDestroy();
