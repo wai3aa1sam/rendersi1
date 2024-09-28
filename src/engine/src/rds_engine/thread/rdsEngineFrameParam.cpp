@@ -41,10 +41,12 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 			volatile bool isWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
 			while (!rdCtx->isFrameCompleted(frameCount) || isWaitRdThread)
 			{
+				#if 0
 				if (isWaitRdThread)
 				{
 					RDS_CORE_LOG_ERROR("************ wait render thread - rdLastFrame: {}, engineFrame: {}", renderThreadQueue->lastFinishedFrameCount(), frameCount);
 				}
+				#endif // 0
 
 				// TODO: pick a small job instead of waiting, if so measure the time, and call sleep if the job is too small
 				OsUtil::sleep_ms(1);		// *** calling isFrameCompleted() frequently will have large overhead

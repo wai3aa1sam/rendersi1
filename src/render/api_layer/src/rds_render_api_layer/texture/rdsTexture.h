@@ -290,10 +290,9 @@ public:
 	virtual ~Texture();
 	void	destroy();
 
-	virtual bool isNull() const = 0;
-
-	void createRenderResource( const RenderFrameParam& rdFrameParam) {};
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam) {};
+public:
+	void createRenderResource( const RenderFrameParam& rdFrameParam) { /* dummy function for compatibility */ }
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam) { /* dummy function for compatibility */ }
 
 public:
 	RenderDataType			type()				const;
@@ -318,12 +317,16 @@ public:
 	bool					isArray()			const;
 	bool					isTexture()			const;
 	bool					isImage()			const;
+	bool					isBackBuffer()		const;
+
+	virtual bool isNull() const = 0;
 
 protected:
 	Texture(RenderDataType type);
 
 	virtual void setNull() = 0;	// only use  for swapchain
 
+protected:
 	bool isValid(	const Texture_Desc& desc) const;
 	bool isValid() const;
 	void checkValid(const Texture_Desc& cDesc) const;

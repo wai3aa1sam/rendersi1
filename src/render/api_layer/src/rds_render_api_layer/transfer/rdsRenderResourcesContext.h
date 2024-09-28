@@ -17,7 +17,7 @@ struct RenderResourcesContext_CreateDesc
 #if 0
 #pragma mark --- rdsUploadContext-Decl ---
 #endif // 0
-#if 1
+#if 0
 
 class RenderResourcesContext : public NonCopyable
 {

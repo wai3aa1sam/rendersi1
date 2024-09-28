@@ -147,6 +147,9 @@ public:
 	void create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_);
 	void destroy();
 
+	void createRenderResource( const RenderFrameParam& rdFrameParam);
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+
 	virtual void	setDebugName(StrView name);
 
 public:

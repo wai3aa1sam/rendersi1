@@ -34,14 +34,7 @@ void
 Texture3D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
-	if (cDesc.uploadImage.isValid())
-	{
-		uploadToGpu(cDesc);
-	}
-	else if (isValid(cDesc))
-	{
-		Vk_Texture::createVkResource(this);
-	}
+	
 }
 
 void 
@@ -57,6 +50,22 @@ Texture3D_Vk::onDestroy()
 }
 
 void 
+Texture3D_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
+{
+	if (isValid())
+	{
+		Base::createRenderResource(rdFrameParam);
+	}
+}
+
+void 
+Texture3D_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+
+	Base::destroyRenderResource(rdFrameParam);
+}
+
+void 
 Texture3D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	Base::onUploadToGpu(cDesc, cmd);
@@ -66,8 +75,6 @@ Texture3D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 	{
 		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
 	}
-
-	Vk_Texture::createVkResource(this);
 }
 
 void 

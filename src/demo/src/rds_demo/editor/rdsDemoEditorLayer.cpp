@@ -9,7 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
-#define RDS_SINGLE_THREAD_MODE 1
+#define RDS_SINGLE_THREAD_MODE 0
 
 namespace rds
 {
@@ -31,6 +31,7 @@ DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 DemoEditorLayer::~DemoEditorLayer()
 {
 	#if 1
+	_rdThreadQueue.waitFrame(_egCtx.engineFrameParam().frameCount());
 	_gfxDemo.reset(nullptr);
 	_scene.destroy();
 	_egCtx.destroy();
@@ -95,14 +96,15 @@ DemoEditorLayer::onUpdate()
 		mainWnd.camera().setViewport(clientRect);
 	}
 
+	// update
+
 	auto& rdableSys = renderableSystem();
 	{
-		auto& rdGraph	= rdableSys.renderGraph();
-		rdGraph.reset();
-		//RDS_LOG_ERROR("rdGraph.reset(), frameCount: {}, graph index: {}", frameCount, rdGraph.frameIndex()); 
-
-		DrawData* mainDrawData = nullptr;
 		{
+			auto& rdGraph	= rdableSys.renderGraph();
+			rdGraph.reset();
+			//RDS_LOG_ERROR("rdGraph.reset(), frameCount: {}, graph index: {}", frameCount, rdGraph.frameIndex()); 
+
 			for (auto& e : rdableSys.drawData())
 			{
 				auto& drawData = *e;
@@ -117,31 +119,31 @@ DemoEditorLayer::onUpdate()
 				if (drawData.drawParamIdx == 0)
 				{
 					_texHndPresent = drawData.oTexPresent;
-					mainDrawData = &drawData;
 				}
 			}
 		}
+	}
 
-		rdableSys.update(scene());
+	rdableSys.commit(scene());
 
-		// ui
+
+	// ui
+	{
+		auto& rdUiCtx = rdCtx.renderdUiContex();
+		rdUiCtx.onBeginRender(&rdCtx);
 		{
-			auto& rdUiCtx = rdCtx.renderdUiContex();
-			rdUiCtx.onBeginRender(&rdCtx);
+			auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
 			{
-				auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
-				{
-					RDS_PROFILE_SECTION("draw editor ui");
+				RDS_PROFILE_SECTION("draw editor ui");
 
-					drawEditorUi(uiDrawReq, _texHndPresent);
-					
-					_gfxDemo->onDrawGui(uiDrawReq);
-				}
+				drawEditorUi(uiDrawReq, _texHndPresent);
 
-				rdableSys.drawUi(&rdCtx, !_isFullScreen, true);
+				_gfxDemo->onDrawGui(uiDrawReq);
 			}
-			rdUiCtx.onEndRender(&rdCtx);
+
+			rdableSys.drawUi(&rdCtx, !_isFullScreen, true);
 		}
+		rdUiCtx.onEndRender(&rdCtx);
 	}
 	
 	RenderDevice* rdDev = Renderer::renderDevice();

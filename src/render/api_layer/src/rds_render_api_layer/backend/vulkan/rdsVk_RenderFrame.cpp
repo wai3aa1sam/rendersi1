@@ -79,13 +79,17 @@ Vk_RenderFrame::destroy()
 void 
 Vk_RenderFrame::reset()
 {
+	auto* rdDevVk = renderDeviceVk();
+
 	RDS_TODO("remove temporary test, frame buf should be cache and reuse, but current solution has problem when cache and reuse when using rdGraph");
 	_vkFramebufPool.destroy();
-	_vkFramebufPool.create(renderDeviceVk());
+	_vkFramebufPool.create(rdDevVk);
 
 	resetCommandPools();
 	descriptorAllocator().reset();
 	setSubmitCount(0);
+
+	inFlightFence()->reset(rdDevVk);
 }
 
 void 

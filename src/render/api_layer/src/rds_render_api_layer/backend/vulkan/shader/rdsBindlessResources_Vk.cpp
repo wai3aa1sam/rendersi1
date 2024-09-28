@@ -138,10 +138,10 @@ private:
 
 
 void 
-BindlessResources_Vk::reserve()
+BindlessResources_Vk::reserve(SizeType size)
 {
-	SizeType n = this->totalResourcesCount();
-	const size_t est = 6;
+	SizeType n = this->totalResourcesCount() + size;
+	const size_t est = 10;
 	_writeDescrSets.reserve(n * est);
 	_bufInfos.reserve(		n * est);
 	_texInfos.reserve(		n * est);

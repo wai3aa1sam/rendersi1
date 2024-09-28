@@ -43,7 +43,7 @@ public:
 	void create(EngineContext* egCtx);
 	void destroy();
 
-	void update(const Scene& scene);
+	void commit(const Scene& scene);
 	void drawUi(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen);
 	void setupRenderJob(RenderData_RenderJob* out);
 

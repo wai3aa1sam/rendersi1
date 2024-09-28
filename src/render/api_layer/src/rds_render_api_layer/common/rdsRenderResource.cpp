@@ -52,6 +52,18 @@ RenderResource::destroy()
 }
 
 void 
+RenderResource::createRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	throwError("implement this in backend, but should not call this");
+}
+
+void 
+RenderResource::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	throwError("implement this in backend, but should not call this");
+}
+
+void 
 RenderResource::setDebugName(StrView name)
 {
 	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
@@ -62,8 +74,7 @@ RenderResource::setDebugName(StrView name)
 void 
 RenderResource::_internal_requestDestroyObject()
 {
-	checkMainThreadExclusive(RDS_SRCLOC);
-	// TODO: TransferRequest should be thread-safe
+
 }
 
 void 

@@ -45,14 +45,26 @@ Texture2D_Vk::~Texture2D_Vk()
 }
 
 void 
+Texture2D_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
+{
+	if (!isBackBuffer() && isValid())
+	{
+		Base::createRenderResource(rdFrameParam);
+	}
+}
+
+void 
+Texture2D_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	Base::destroyRenderResource(rdFrameParam);
+}
+
+void 
 Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
 
-	if (!cDesc.uploadImage.isValid() && isValid(cDesc) && !BitUtil::has(cDesc.usageFlags, TextureUsageFlags::BackBuffer))
-	{
-		Vk_Texture::createVkResource(this);
-	}
+	
 }
 
 void 
@@ -67,7 +79,7 @@ Texture2D_Vk::onDestroy()
 	Base::onDestroy();
 }
 
-void 
+void
 Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	Base::onUploadToGpu(cDesc, cmd);
@@ -77,8 +89,6 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 	{
 		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
 	}
-
-	Vk_Texture::createVkResource(this);
 }
 
 void 
@@ -249,51 +259,6 @@ Vk_ImageView::create(Vk_Image_T* vkImageHnd, const Texture_Desc& desc, u32 baseM
 #endif // 1
 
 
-#if 0
-#pragma mark --- rdsVk_Texture-Impl ---
-#endif // 0
-#if 1
-
-void 
-Vk_Texture::createVkImage(Vk_Image*		o, Texture* tex, RenderDevice_Vk* rdDevVk)
-{
-	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
-
-	Vk_AllocInfo allocInfo = {};
-	allocInfo.usage = RenderMemoryUsage::GpuOnly;
-	o->create(rdDevVk, tex->desc(), QueueTypeFlags::Graphics
-		, vkAlloc, &allocInfo);
-}
-
-void 
-Vk_Texture::createVkImageView(Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, u32 baseLayerLevel, u32 layerCount, RenderDevice_Vk* rdDevVk)
-{
-	o->create(getVkImageHnd(tex), tex->desc(), baseMipLevel, mipCount, baseLayerLevel, layerCount, rdDevVk);
-}
-
-void 
-Vk_Texture::createVkImageView(Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, RenderDevice_Vk* rdDevVk)
-{
-	createVkImageView(o ,tex, baseMipLevel, mipCount, 0, tex->layerCount(), rdDevVk);
-}
-
-//void 
-//Vk_Texture::createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk)
-//{
-//	o->create(tex->samplerState(), rdDevVk);
-//}
-
-Vk_Image*		Vk_Texture::getVkImage			(Texture* tex)					{ RDS_VK_TEXTURE_EXECUTE(tex, vkImage());					return nullptr; }
-Vk_ImageView*	Vk_Texture::getSrvVkImageView	(Texture* tex)					{ RDS_VK_TEXTURE_EXECUTE(tex, srvVkImageView());			return nullptr; }
-Vk_ImageView*	Vk_Texture::getUavVkImageView	(Texture* tex, u32 mipLevel)	{ RDS_VK_TEXTURE_EXECUTE(tex, uavVkImageView(mipLevel));	return nullptr; }
-//Vk_Sampler*		Vk_Texture::getVkSampler	(Texture* tex) { RDS_VK_TEXTURE_EXECUTE(tex, vkSampler());		return nullptr; }
-
-Vk_Image_T*		Vk_Texture::getVkImageHnd		(Texture* tex)					{ return getVkImage(		tex)->hnd(); }
-Vk_ImageView_T*	Vk_Texture::getSrvVkImageViewHnd(Texture* tex)					{ return getSrvVkImageView(	tex)->hnd(); }
-Vk_ImageView_T*	Vk_Texture::getUavVkImageViewHnd(Texture* tex, u32 mipLevel)	{ return getUavVkImageView(	tex, mipLevel)->hnd(); }
-//Vk_Sampler_T*	Vk_Texture::getVkSamplerHnd		(Texture* tex) { return getVkSampler	(tex)->hnd(); }
-
-#endif // 1
 
 
 }

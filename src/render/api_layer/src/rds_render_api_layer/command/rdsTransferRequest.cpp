@@ -83,7 +83,7 @@ TransferRequest::uploadBufferAsync(RenderGpuBuffer* rdBuf, Vector<u8>&& data)
 TransferCommandBuffer& 
 TransferRequest::transferCommandBuffer()
 {
-	checkMainThreadExclusive(RDS_SRCLOC);
+	//checkMainThreadExclusive(RDS_SRCLOC);
 	return _tsfCmdBuf;
 }
 

@@ -8,11 +8,11 @@
 #include "rds_render_api_layer/thread/rdsRenderFrame.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/shader/rdsMaterial_Vk.h"
-#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rds_vk_texture.h"
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
-
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
+
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -180,8 +180,6 @@ RenderContext_Vk::onEndRender()
 
 	//rdDevVk->bindlessResourceVk().commit();
 	_gpuProfilerCtx.commit();
-
-	vkRdFrame.inFlightFence()->reset(rdDevVk);
 
 	// submit
 	{

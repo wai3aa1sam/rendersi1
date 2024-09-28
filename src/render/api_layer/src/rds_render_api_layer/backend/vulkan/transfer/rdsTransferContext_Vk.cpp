@@ -3,8 +3,7 @@
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
-#include "rds_render_api_layer/backend/vulkan/texture/rdsTexture_Vk.h"
-#include "rds_render_api_layer/backend/vulkan/texture/rdsTextureCube_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/texture/rds_vk_texture.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -184,7 +183,7 @@ TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& createQueue, 
 {
 	if (renderDevice())
 	{
-		renderDeviceVk()->bindlessResourceVk().reserve();
+		renderDeviceVk()->bindlessResourceVk().reserve(createQueue.commands().size());
 	}
 
 	_dispatchCommands(this, createQueue);
@@ -228,7 +227,8 @@ TransferContext_Vk::_setDebugName()
 
 #if 1
 
-void TransferContext_Vk::onTransferCommand_CreateBuffer(TransferCommand_CreateBuffer* cmd)
+void 
+TransferContext_Vk::onTransferCommand_CreateBuffer(TransferCommand_CreateBuffer* cmd)
 {
 	auto* rdDevVk		= renderDeviceVk();
 	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
@@ -238,25 +238,20 @@ void TransferContext_Vk::onTransferCommand_CreateBuffer(TransferCommand_CreateBu
 	bindlessRscVk.onCommit_RenderGpuBuffer(dstBuf);
 }
 
-void TransferContext_Vk::onTransferCommand_CreateTexture(TransferCommand_CreateTexture* cmd)
+void 
+TransferContext_Vk::onTransferCommand_CreateTexture(TransferCommand_CreateTexture* cmd)
 {
+	using SRC = RenderDataType;
 	auto* rdDevVk		= renderDeviceVk();
 	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
 	auto* dstTex		= cmd->dst.ptr();
 
-	#if 0
-	dstTex->createRenderResource(rdDevVk->renderFrameParam());
-	switch (dstTex->type())
-	{
-		case RenderDataType::TextureCube: {} break;
-		default: {  } break;
-	}
-	#endif // 0
-
+	RDS_VK_TEXTURE_INVOKE(dstTex, createRenderResource(rdDevVk->renderFrameParam()));
 	bindlessRscVk.onCommit_Texture(dstTex);
 }
 
-void TransferContext_Vk::onTransferCommand_DestroyBuffer(TransferCommand_DestroyBuffer* cmd)
+void
+TransferContext_Vk::onTransferCommand_DestroyBuffer(TransferCommand_DestroyBuffer* cmd)
 {
 	auto* rdDevVk		= renderDeviceVk();
 	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst);
@@ -264,11 +259,13 @@ void TransferContext_Vk::onTransferCommand_DestroyBuffer(TransferCommand_Destroy
 	RenderResource::destroyObject(dstBuf, rdDevVk->renderFrameParam());
 }
 
-void TransferContext_Vk::onTransferCommand_DestroyTexture(TransferCommand_DestroyTexture* cmd)
+void 
+TransferContext_Vk::onTransferCommand_DestroyTexture(TransferCommand_DestroyTexture* cmd)
 {
 	auto* rdDevVk		= renderDeviceVk();
 	auto* dstTex		= cmd->dst;
 
+	RDS_VK_TEXTURE_INVOKE(dstTex, destroyRenderResource(rdDevVk->renderFrameParam()));
 	RenderResource::destroyObject(dstTex, rdDevVk->renderFrameParam());
 }
 
@@ -319,8 +316,6 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
 	cmd->_stagingHnd.checkValid();
-	RDS_CORE_ASSERT(cmd,		"");
-	RDS_CORE_ASSERT(cmd->dst,	"");
 
 	auto* vkCmdBuf		= _curVkCmdBuf;
 	auto* statingBufHnd = vkTsfFrame.getVkStagingBufHnd(cmd->_stagingHnd);
@@ -329,6 +324,10 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 	auto*			dst			= Vk_Texture::getVkImageHnd(dstTex);
 	const auto&		size		= dstTex->size();
 	auto			vkFormat	= Util::toVkFormat(dstTex->format());
+
+	RDS_CORE_ASSERT(cmd,		"");
+	RDS_CORE_ASSERT(cmd->dst,	"");
+	RDS_CORE_ASSERT(dst,		"");
 
 	switch (dstTex->type())
 	{
@@ -369,7 +368,7 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 												, 0, 1, 0, TextureCube::s_kFaceCount, transferQueueFamilyIdx(), graphicsQueueFamilyIdx(), true);
 		} break;
 
-		default: { throwIf(true, "not yet support"); } break;
+		default: { throwError("not yet support"); } break;
 	}
 }
 

@@ -60,8 +60,6 @@ TextureCube::uploadToGpu(CreateDesc& cDesc)
 	auto* cmd		= tsfReq.uploadTexture(this);
 
 	checkValid(cDesc);
-	destroy();
-
 	onUploadToGpu(cDesc, cmd);
 }
 
@@ -70,6 +68,11 @@ TextureCube::onCreate(CreateDesc& cDesc)
 {
 	RDS_CORE_ASSERT(cDesc.size.x == cDesc.size.y, "cube must be same size");
 	Base::onCreate(cDesc);
+
+	if (!cDesc.uploadImages.is_empty())
+	{
+		uploadToGpu(cDesc);
+	}
 }
 
 void 
@@ -90,7 +93,7 @@ void
 TextureCube::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	RDS_CORE_ASSERT(cmd, "");
-	Base::create(cDesc);
+	
 }
 
 

@@ -31,17 +31,24 @@ TextureCube_Vk::~TextureCube_Vk()
 }
 
 void 
+TextureCube_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
+{
+	if (isValid())
+	{
+		Base::createRenderResource(rdFrameParam);
+	}
+}
+
+void 
+TextureCube_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	Base::destroyRenderResource(rdFrameParam);
+}
+
+void 
 TextureCube_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
-	if (!cDesc.uploadImages.is_empty())
-	{
-		uploadToGpu(cDesc);
-	}
-	else if (isValid(cDesc))
-	{
-		Vk_Texture::createVkResource(this);
-	}
 }
 
 void 
@@ -83,8 +90,6 @@ TextureCube_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* 
 			p += imageByteSize;
 		}
 	}
-
-	Vk_Texture::createVkResource(this);
 }
 
 void 

@@ -58,6 +58,15 @@ RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&
 	_rdThread->requestRender(rds::move(rdData));
 }
 
+void 
+RenderThreadQueue::waitFrame(u64 frameCount)
+{
+	while (!isFrameFinish(frameCount))
+	{
+		OsUtil::sleep_ms(1);
+	}
+}
+
 u64 RenderThreadQueue::lastFinishedFrameCount() const { return _rdThread->lastFinishedFrameCount(); }
 
 volatile
@@ -70,6 +79,13 @@ RenderThreadQueue::isSignaled(u64 engineFrameCount) const
 			engineFrameCount > rdThreadLastFinishedFrameCount
 			&& RenderApiLayerTraits::rotateFrame(engineFrameCount) == RenderApiLayerTraits::rotateFrame(rdThreadLastFinishedFrameCount)
 		);
+}
+
+volatile 
+bool	
+RenderThreadQueue::isFrameFinish(u64 frameCount) const
+{
+	return lastFinishedFrameCount() == frameCount;
 }
 
 

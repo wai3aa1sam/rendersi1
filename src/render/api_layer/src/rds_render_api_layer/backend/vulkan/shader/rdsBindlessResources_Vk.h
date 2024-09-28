@@ -29,7 +29,7 @@ public:
 	template<size_t N> void getDescriptorSetLayoutTo(Vector<Vk_DescriptorSetLayout_T*, N>& o);
 
 public: 
-	void reserve();
+	void reserve(SizeType size);
 
 	void onCommit_RenderGpuBuffer(	RenderGpuBuffer* renderGpuBuf/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);
 	void onCommit_Texture(			Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/);

@@ -31,24 +31,38 @@ Texture2DArray_Vk::~Texture2DArray_Vk()
 }
 
 void 
-Texture2DArray_Vk::onCreate(CreateDesc& cDesc)
+Texture2DArray_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
 {
-	Base::onCreate(cDesc);
-	/*if (cDesc.uploadImage.isValid())
+	if (isValid())
 	{
-		uploadToGpu(cDesc);
-	}
-	else */if (isValid(cDesc))
-	{
-		Vk_Texture::createVkResource(this);
+		Base::createRenderResource(rdFrameParam);
 
-		auto layerCount = cDesc.layerCount;
+		auto layerCount = this->layerCount();
 		_srvLayerVkImageViews.resize(layerCount);
 		for (u32 i = 0; i < layerCount; i++)
 		{
 			Vk_Texture::createVkImageView(&_srvLayerVkImageViews[i], this, 0, mipCount(), i, 1, renderDeviceVk());
 		}
 	}
+}
+
+void 
+Texture2DArray_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	Base::destroyRenderResource(rdFrameParam);
+
+	auto* rdDevVk = renderDeviceVk();
+	for (auto& e : _srvLayerVkImageViews)
+	{
+		e.destroy(rdDevVk);
+	}
+}
+
+void 
+Texture2DArray_Vk::onCreate(CreateDesc& cDesc)
+{
+	Base::onCreate(cDesc);
+	
 }
 
 void 
@@ -61,29 +75,12 @@ void
 Texture2DArray_Vk::onDestroy()
 {
 	Base::onDestroy();
-
-	auto* rdDevVk = renderDeviceVk();
-	for (auto& e : _srvLayerVkImageViews)
-	{
-		e.destroy(rdDevVk);
-	}
 }
 
 void 
 Texture2DArray_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	_notYetSupported(RDS_SRCLOC);
-	#if 0
-	Base::onUploadToGpu(cDesc, cmd);
-
-	const auto& srcImage = cDesc.uploadImage;
-	if (srcImage.isValid())
-	{
-		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
-	}
-
-	Vk_Texture::createVkResource(this);
-	#endif // 0
 }
 
 void 

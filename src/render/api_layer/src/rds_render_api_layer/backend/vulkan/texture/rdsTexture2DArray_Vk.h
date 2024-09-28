@@ -28,6 +28,9 @@ public:
 	virtual ~Texture2DArray_Vk();
 
 public:
+	void createRenderResource( const RenderFrameParam& rdFrameParam);
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+
 	virtual void setDebugName(StrView name) override;
 	virtual void setNull() override;
 

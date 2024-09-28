@@ -44,6 +44,11 @@ RenderThread::onRoutine()
 
 	for (;;)
 	{
+		if (isTerminated())
+		{
+			break;
+		}
+
 		UPtr<RenderData> rdData;
 		bool hasRequestRender = _rdDataQueue.try_pop(rdData);
 		if (hasRequestRender)
@@ -60,11 +65,6 @@ RenderThread::onRoutine()
 				RDS_PROFILE_SECTION("work as worker");
 				thp->execute(job);
 			}
-		}
-
-		if (isTerminated())
-		{
-			break;
 		}
 	}
 

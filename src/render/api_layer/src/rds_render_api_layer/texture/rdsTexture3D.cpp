@@ -47,7 +47,6 @@ Texture3D::~Texture3D()
 	
 }
 
-
 void 
 Texture3D::create(CreateDesc& cDesc)
 {
@@ -66,6 +65,11 @@ void
 Texture3D::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
+
+	if (cDesc.uploadImage.isValid())
+	{
+		uploadToGpu(cDesc);
+	}
 }
 
 void 
@@ -88,7 +92,6 @@ Texture3D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 	_notYetSupported(RDS_SRCLOC);
 
 	RDS_CORE_ASSERT(cmd, "");
-	Base::create(cDesc);
 }
 
 #endif

@@ -3,6 +3,7 @@
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
+#include "rdsVk_Texture.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -28,6 +29,10 @@ public:
 	virtual ~Texture_Vk();
 
 public:
+	void createRenderResource( const RenderFrameParam& rdFrameParam);
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+
+public:
 	virtual bool isNull() const;
 
 	Vk_Image*		vkImage();
@@ -44,9 +49,6 @@ protected:
 	virtual void onDestroy() override;
 
 	virtual void onUploadToGpu(	CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
-
-	virtual void onCreateRenderResource();
-	virtual void onDestroyRenderResource();
 
 	virtual void setDebugName(StrView name) override;
 	virtual void setNull() override;
@@ -75,10 +77,10 @@ public:
 	Texture2D_Vk();
 	virtual ~Texture2D_Vk();
 
-	void createRenderResource();
-	void destroyRenderResource();
-
 public:
+	void createRenderResource( const RenderFrameParam& rdFrameParam);
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+
 	virtual void setDebugName(StrView name) override;
 	virtual void setNull() override;
 
@@ -95,74 +97,11 @@ protected:
 
 #endif
 
-
-struct Vk_Texture
-{
-	template<class FN>
-	static auto textureExecute(Texture* tex, FN fn)
-	{
-		throwIf(true, "useless fn");
-
-		switch (tex->type())
-		{
-			case RenderDataType::Texture2D:			{ return fn(sCast<Texture2D_Vk*>(tex)); }		break;
-			case RenderDataType::Texture3D:			{ return fn(sCast<Texture3D_Vk*>(tex)); }		break;
-			case RenderDataType::TextureCube:		{ return fn(sCast<TextureCube_Vk*>(tex)); }		break;
-			case RenderDataType::Texture2DArray:	{ return fn(sCast<Texture2DArray_Vk*>(tex)); }	break;
-		}
-		throwIf(true, "");
-		return fn(tex);
-	}
-
-	#define RDS_VK_TEXTURE_EXECUTE(TEX, FN) \
-	switch (TEX->type()) \
-	{ \
-			case RenderDataType::Texture2D:			{ return sCast<Texture2D_Vk*>(			TEX)->FN; } break; \
-			case RenderDataType::Texture3D:			{ return sCast<Texture3D_Vk*>(			TEX)->FN; } break; \
-			case RenderDataType::TextureCube:		{ return sCast<TextureCube_Vk*>(		TEX)->FN; } break; \
-			case RenderDataType::Texture2DArray:	{ return sCast<Texture2DArray_Vk*>(		TEX)->FN; } break; \
-	} \
-	throwIf(true, ""); \
-	// ---
-
-	static Vk_Image*		getVkImage(				Texture* tex);
-	static Vk_ImageView*	getSrvVkImageView(		Texture* tex);
-	static Vk_ImageView*	getUavVkImageView(		Texture* tex, u32 mipLevel);
-	static Vk_Sampler*		getVkSampler(			Texture* tex);
-
-	static Vk_Image_T*		getVkImageHnd(			Texture* tex);
-	static Vk_ImageView_T*	getSrvVkImageViewHnd(	Texture* tex);
-	static Vk_ImageView_T*	getUavVkImageViewHnd(	Texture* tex, u32 mipLevel);
-	static Vk_Sampler_T*	getVkSamplerHnd(		Texture* tex);
-
-	template<class TEX_VK>
-	static void createVkResource(TEX_VK* tex)
-	{ 
-		auto* rdDevVk = tex->renderDeviceVk();
-		createVkImage(		getVkImage(tex), tex, rdDevVk);
-		createVkImageView(	getSrvVkImageView(tex), tex, 0, tex->mipCount(), rdDevVk);
-
-		if (tex->hasMipmapView())
-		{
-			auto nMipmapView = tex->mipmapViewCount();
-			tex->_uavVkImageViews.resize(nMipmapView);
-			for (u32 i = 0; i < nMipmapView; i++)
-			{
-				createVkImageView(getUavVkImageView(tex, i), tex, i, 1, rdDevVk);
-			}
-		}
-	}
-
-	static void createVkImage(		Vk_Image*		o, Texture* tex,RenderDevice_Vk* rdDevVk);
-	static void createVkImageView(	Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, u32 baseLayerLevel, u32 layerCount,	RenderDevice_Vk* rdDevVk);
-	static void createVkImageView(	Vk_ImageView*	o, Texture* tex, u32 baseMipLevel, u32 mipCount, RenderDevice_Vk* rdDevVk);
-	//static void createVkSampler		(Vk_Sampler*	o, Texture* tex, RenderDevice_Vk* rdDevVk);
-};
-
 #if 0
 #pragma mark --- rdsTexture_Vk-Impl ---
 #endif // 0
 #if 1
+
 template<class TEX_BASE> inline
 Texture_Vk<TEX_BASE>::Texture_Vk()
 {
@@ -173,6 +112,28 @@ template<class TEX_BASE> inline
 Texture_Vk<TEX_BASE>::~Texture_Vk()
 {
 	
+}
+
+template<class TEX_BASE> inline void 
+Texture_Vk<TEX_BASE>::createRenderResource( const RenderFrameParam& rdFrameParam)
+{
+	Vk_Texture::createVkResource(this);
+}
+
+template<class TEX_BASE> inline void 
+Texture_Vk<TEX_BASE>::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	if (!_vkImage)
+		return;
+
+	auto* rdDevVk = renderDeviceVk();
+
+	_srvVkImageView.destroy(rdDevVk);
+	for (auto& e : _uavVkImageViews)
+	{
+		e.destroy(rdDevVk);
+	}
+	_vkImage.destroy();
 }
 
 template<class TEX_BASE> inline 
@@ -193,40 +154,16 @@ template<class TEX_BASE> inline
 void 
 Texture_Vk<TEX_BASE>::onDestroy()
 {
-	if (!_vkImage)
-		return;
-
-	auto* rdDevVk = renderDeviceVk();
-
-	_srvVkImageView.destroy(rdDevVk);
-	for (auto& e : _uavVkImageViews)
-	{
-		e.destroy(rdDevVk);
-	}
-	_vkImage.destroy();
+	
 
 	Base::onDestroy();
 }
 
 template<class TEX_BASE> inline 
 void 
-Texture_Vk<TEX_BASE>::onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
+Texture_Vk<TEX_BASE>::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	Base::onUploadToGpu(cDesc, cmd);
-}
-
-template<class TEX_BASE> inline 
-void 
-Texture_Vk<TEX_BASE>::onCreateRenderResource()
-{
-
-}
-
-template<class TEX_BASE> inline 
-void 
-Texture_Vk<TEX_BASE>::onDestroyRenderResource()
-{
-
 }
 
 template<class TEX_BASE> inline 

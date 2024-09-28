@@ -47,7 +47,6 @@ Texture2DArray::~Texture2DArray()
 	
 }
 
-
 void 
 Texture2DArray::create(CreateDesc& cDesc)
 {
@@ -86,9 +85,7 @@ void
 Texture2DArray::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	_notYetSupported(RDS_SRCLOC);
-
 	RDS_CORE_ASSERT(cmd, "");
-	Base::create(cDesc);
 }
 
 #endif

@@ -207,9 +207,9 @@ bool	Texture::hasMipmapView()	const { return BitUtil::has(usageFlags(), TextureU
 u32		Texture::mipmapViewCount()	const { return hasMipmapView() ? mipCount() : 1; }
 
 bool	Texture::isArray()			const { return type() == RenderDataType::Texture1DArray || type() == RenderDataType::Texture2DArray || type() == RenderDataType::Texture3DArray || type() == RenderDataType::TextureCubeArray; }
-
 bool	Texture::isTexture()		const { return BitUtil::hasAny(usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil); }
 bool	Texture::isImage()			const { return BitUtil::hasAny(usageFlags(), TextureUsageFlags::UnorderedAccess); }
+bool	Texture::isBackBuffer()		const { return BitUtil::hasAny(usageFlags(), TextureUsageFlags::BackBuffer); }
 
 #endif
 
@@ -242,7 +242,6 @@ Texture2D::~Texture2D()
 	RDS_PROFILE_SCOPED();
 }
 
-
 void 
 Texture2D::create(CreateDesc& cDesc)
 {
@@ -260,7 +259,6 @@ Texture2D::uploadToGpu(CreateDesc& cDesc)
 	auto* cmd		= tsfReq.uploadTexture(this);
 
 	checkValid(cDesc);
-	destroy();
 	onUploadToGpu(cDesc, cmd);
 }
 
@@ -293,7 +291,7 @@ void
 Texture2D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	RDS_CORE_ASSERT(cmd, "");
-	Base::create(cDesc);
+	//Base::create(cDesc);
 }
 
 #endif

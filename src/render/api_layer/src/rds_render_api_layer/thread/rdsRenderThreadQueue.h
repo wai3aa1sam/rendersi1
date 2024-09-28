@@ -52,9 +52,12 @@ public:
 public:
 	void submit(RenderDevice* renderDevice, u64 frameCount, RenderJob& renderJob);
 
+	void waitFrame(u64 frameCount);
+
 public:
-	u64				lastFinishedFrameCount()			const;
-	volatile bool	isSignaled(u64 engineFrameCount)	const;
+	u64				lastFinishedFrameCount()				const;
+	volatile bool	isSignaled(		u64 engineFrameCount)	const;
+	volatile bool	isFrameFinish(	u64 frameCount)			const;
 
 private:
 	RenderThread* _rdThread = nullptr;

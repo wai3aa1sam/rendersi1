@@ -24,9 +24,6 @@ public:
 	RenderResource_Vk() { static_assert(s_kIsRenderResource, "RenderResource_Vk should base on RenderResource"); };
 	virtual ~RenderResource_Vk() = default;
 
-	virtual void onCreateRenderResource()	{}
-	virtual void onDestroyRenderResource()	{}
-
 public:
 	RenderDevice_Vk* renderDeviceVk();
 	RenderDevice_Vk* renderDeviceVk() const;

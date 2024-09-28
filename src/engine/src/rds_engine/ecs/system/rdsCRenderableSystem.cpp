@@ -54,7 +54,7 @@ CRenderableSystem::destroy()
 }
 
 void 
-CRenderableSystem::update(const Scene& scene)
+CRenderableSystem::commit(const Scene& scene)
 {
 	// transform system update
 	{

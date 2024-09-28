@@ -8,7 +8,7 @@ namespace rds
 #if 0
 #pragma mark --- rdsRenderResourcesContext-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 RenderResourcesContext::CreateDesc				
 RenderResourcesContext::makeCDesc(RenderDevice* rdDev)
