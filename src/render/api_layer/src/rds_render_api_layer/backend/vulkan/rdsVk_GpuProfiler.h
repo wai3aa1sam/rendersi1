@@ -15,9 +15,15 @@ using VkProfileScope			= tracy::VkCtxScope;
 // TracyVkZoneTransientS
 //#define RDS_PROFILE_GPU_ZONET_VK_IMPL(CTX, CMDBUF, NAME)				TracyVkZoneTransientS(T_GP_CTX, RDS_CONCAT(_internal_tvkz_, RDS_LINE), CMDBUF, NAME, RDS_PROFILE_CALLSTACK_DEPTH, true)
 //#define RDS_VK_PROFILE_GPU_ZONE(CTX, CMDBUF, NAME)					tracy::VkCtxScope ( CTX, RDS_LINE, RDS_FILE, ::strlen( RDS_FILE ), RDS_FUNC_NAME_SZ, strlen( RDS_FUNC_NAME_SZ ), NAME, strlen( NAME ), CMDBUF, RDS_PROFILE_CALLSTACK_DEPTH, true );
+
 #define RDS_VK_PROFILE_GPU_DYNAMIC_ZONE(PROFILER, CMDBUF, NAME)		auto RDS_VAR_NAME(_scope) = PROFILER.makeProfileScope(RDS_SRCLOC, CMDBUF, NAME)
-//#define RDS_VK_PROFILE_GPU_DYNAMIC_FMT(PROFILER, CMDBUF, FMT, ...)	RDS_FMT_STATIC_VAR(tstr, cstr, TempString, FMT, __VA_ARGS__); RDS_FMT_TO(RDS_VAR_NAME(tstr), FMT, __VA_ARGS__); RDS_VK_PROFILE_GPU_DYNAMIC_ZONE(PROFILER, CMDBUF, RDS_VAR_NAME(cstr))
-#define RDS_VK_PROFILE_GPU_DYNAMIC_FMT(PROFILER, CMDBUF, FMT, ...)	RDS_FMT_VAR(tstr, cstr, TempString, FMT, __VA_ARGS__); RDS_VK_PROFILE_GPU_DYNAMIC_ZONE(PROFILER, CMDBUF, RDS_VAR_NAME(cstr))
+//#define RDS_VK_PROFILE_GPU_DYNAMIC_FMT(PROFILER, CMDBUF, FMT, ...)	RDS_FMT_STATIC_VAR(tstr, TempString, FMT, __VA_ARGS__); RDS_FMT_TO(RDS_VAR_NAME(tstr), FMT, __VA_ARGS__); RDS_VK_PROFILE_GPU_DYNAMIC_ZONE(PROFILER, CMDBUF, RDS_VAR_NAME(cstr))
+
+#if RDS_PROFILER_ENABLE_DYNAMIC
+	#define RDS_VK_PROFILE_GPU_DYNAMIC_FMT(PROFILER, CMDBUF, FMT, ...)	RDS_FMT_VAR(tstr, TempString, FMT, __VA_ARGS__); RDS_VK_PROFILE_GPU_DYNAMIC_ZONE(PROFILER, CMDBUF, RDS_VAR_NAME(tstr).c_str)
+#else
+	#define RDS_VK_PROFILE_GPU_DYNAMIC_FMT(PROFILER, CMDBUF, FMT, ...)	RDS_FMT_VAR(tstr, TempString, FMT, __VA_ARGS__); static constexpr tracy::SourceLocationData RDS_VAR_NAME(__tracy_gpu_source_location) { FMT, TracyFunction,  TracyFile, (uint32_t)TracyLine, 0 }; auto RDS_VAR_NAME(_scope) = PROFILER.makeProfileScope(&RDS_VAR_NAME(__tracy_gpu_source_location), CMDBUF, FMT)
+#endif // RDS_PROFILER_ENABLE_DYNAMIC
 
 #else
 
@@ -72,7 +78,8 @@ public:
 	void destroy();
 
 	RDS_NODISCARD VkProfileScope makeProfileScope(const SrcLoc& srcLoc, Vk_CommandBuffer* vkCmdBuf, const char* name);
-
+	RDS_NODISCARD VkProfileScope makeProfileScope(const tracy::SourceLocationData* srcLoc, Vk_CommandBuffer* vkCmdBuf, const char* name);
+	
 	void commit();
 
 	void setName(const char* name);
