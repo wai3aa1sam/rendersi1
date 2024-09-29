@@ -274,6 +274,7 @@ Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayo
 bool 
 Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
+	RDS_TODO("_alloc->alloc should be thread safe, material also need to ensure only 1 thread is accessing");
 	_alloc->alloc(&dstSet, &layout, true);
 	if (!dstSet)
 	{

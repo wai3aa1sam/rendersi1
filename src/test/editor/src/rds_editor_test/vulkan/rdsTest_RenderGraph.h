@@ -647,7 +647,7 @@ public:
 
 	void commit()
 	{
-		_rdGraph.commit();
+		//_rdGraph.commit();
 	}
 	#if 0
 

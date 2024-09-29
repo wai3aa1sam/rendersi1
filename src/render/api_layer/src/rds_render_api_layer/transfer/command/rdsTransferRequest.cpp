@@ -1,6 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsTransferRequest.h"
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
+#include "rds_render_api_layer/transfer/command/rds_transfer_command.h"
 
 #include "rds_render_api_layer/rdsRenderer.h"
 

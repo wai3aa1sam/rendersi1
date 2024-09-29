@@ -36,7 +36,6 @@ TransferFrame::reset(TransferContext* tsfCtx)
 {
 	_tsfReq.reset(tsfCtx, this);
 	_constBufAlloc.clear();
-
 }
 
 #endif

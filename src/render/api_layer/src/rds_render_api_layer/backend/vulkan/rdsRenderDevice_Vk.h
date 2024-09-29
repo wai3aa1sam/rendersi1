@@ -103,17 +103,13 @@ private:
 	Vk_QueueFamilyProperties		_vkQueueFamilyProps;
 	QueueFamilyIndices				_queueFamilyIndices;
 
-	Vk_Instance				_vkInstance;
-	Vk_DebugUtilsMessenger	_vkDebugMessenger;
-	Vk_PhysicalDevice		_vkPhysicalDevice;
-	Vk_Device				_vkDevice;
+	Vk_Instance						_vkInstance;
+	Vk_DebugUtilsMessenger			_vkDebugMessenger;
+	Vk_PhysicalDevice				_vkPhysicalDevice;
+	Vk_Device						_vkDevice;
 
-
-	Vk_FramebufferPool	_vkFramebufPool;
-	Vk_RenderPassPool	_vkRdPassPool;
-
-	BindlessResources_Vk		_bindlessRscsVk;
-	TransferContext_Vk			_tsfCtxVk;
+	BindlessResources_Vk			_bindlessRscsVk;
+	TransferContext_Vk				_tsfCtxVk;
 };
 
 #endif

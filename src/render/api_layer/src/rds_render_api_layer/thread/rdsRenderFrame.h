@@ -2,7 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 
-#include "rds_render_api_layer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/transfer/command/rdsTransferCommand.h"
 #include "rds_render_api_layer/command/rdsRenderCommand.h"
 #include "rds_render_api_layer/command/rdsRenderQueue.h"
 

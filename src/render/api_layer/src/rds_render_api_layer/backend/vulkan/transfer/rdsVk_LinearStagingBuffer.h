@@ -1,8 +1,9 @@
 #pragma once
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
-#include "rds_render_api_layer/command/rdsTransferCommand.h"
 #include "rds_render_api_layer/backend/vulkan/rdsVk_Allocator.h"
+#include "rds_render_api_layer/transfer/rdsLinearStagingBuffer.h"
+
 
 #if RDS_RENDER_HAS_VULKAN
 

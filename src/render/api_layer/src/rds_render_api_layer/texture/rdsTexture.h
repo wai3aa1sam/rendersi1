@@ -2,6 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/shader/rdsBindlessResourceHandle.h"
+#include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"
 
 namespace rds
 {

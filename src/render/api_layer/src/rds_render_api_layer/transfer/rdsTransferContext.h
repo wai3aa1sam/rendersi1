@@ -41,11 +41,11 @@ public:
 	void commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
 
 public:
-	void createBuffer(	RenderGpuBuffer*	buffer);
-	void createTexture(	Texture*			texture);
+	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
+	void createTexture(			Texture*			texture);
 
-	void destroyBuffer(	RenderGpuBuffer*	buffer);
-	void destroyTexture(Texture*			texture);
+	void destroyRenderGpuBuffer(RenderGpuBuffer*	buffer);
+	void destroyTexture(		Texture*			texture);
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
@@ -85,10 +85,21 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 	#define _DISPACH_CMD_CASE(TYPE) case SRC::TYPE: { auto* __p = sCast<RDS_CONCAT(TransferCommand_, TYPE)*>(cmd); RDS_CONCAT(ctx->onTransferCommand_, TYPE)(__p); } break
 	switch (cmd->type())
 	{
-		_DISPACH_CMD_CASE(CreateBuffer);
+		_DISPACH_CMD_CASE(CreateRenderGpuBuffer);
 		_DISPACH_CMD_CASE(CreateTexture);
-		_DISPACH_CMD_CASE(DestroyBuffer);
+		_DISPACH_CMD_CASE(CreateShader);
+		_DISPACH_CMD_CASE(CreateMaterial);
+		_DISPACH_CMD_CASE(CreateRenderContext);
+		_DISPACH_CMD_CASE(CreateRenderDevice);
+
+		_DISPACH_CMD_CASE(DestroyRenderGpuBuffer);
 		_DISPACH_CMD_CASE(DestroyTexture);
+		_DISPACH_CMD_CASE(DestroyShader);
+		_DISPACH_CMD_CASE(DestroyMaterial);
+		_DISPACH_CMD_CASE(DestroyRenderContext);
+		_DISPACH_CMD_CASE(DestroyRenderDevice);
+
+		_DISPACH_CMD_CASE(SetSwapchainSize);
 
 		_DISPACH_CMD_CASE(CopyBuffer);
 		_DISPACH_CMD_CASE(UploadBuffer);

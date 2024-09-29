@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rdsTransferCommand.h"
+#include "rdsTransferCommandBuffer.h"
 
 namespace rds
 {
@@ -16,6 +16,8 @@ class TransferFrame;
 
 class Texture2D;
 class RenderGpuBuffer;
+
+class TransferCommand_UploadTexture;
 
 class TransferRequest : public NonCopyable
 {

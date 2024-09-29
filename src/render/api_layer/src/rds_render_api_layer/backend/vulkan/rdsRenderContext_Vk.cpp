@@ -4,7 +4,6 @@
 #include "rdsRenderDevice_Vk.h"
 
 #include "rds_render_api_layer/backend/vulkan/transfer/rdsVk_TransferFrame.h"
-#include "rds_render_api_layer/command/rdsTransferRequest.h"
 #include "rds_render_api_layer/thread/rdsRenderFrame.h"
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/shader/rdsMaterial_Vk.h"
@@ -183,9 +182,6 @@ RenderContext_Vk::onEndRender()
 
 	// submit
 	{
-		//auto* rdDevVk = renderDeviceVk();
-
-		#if RDS_TEST_DUMMY_FOR_NO_SWAP_BUF
 		if (_pendingGfxVkCmdbufHnds.is_empty())
 		{
 			rdDevVk->waitIdle();
@@ -195,8 +191,7 @@ RenderContext_Vk::onEndRender()
 			vkCmdBuf->beginRecord(vkGraphicsQueue());
 			vkCmdBuf->endRecord();
 		}
-		//else
-		#endif // 0
+
 		{
 			Vector<Vk_SmpSubmitInfo, 8> waitSmps;
 			Vector<Vk_SmpSubmitInfo, 8> signalSmps;
@@ -213,23 +208,6 @@ RenderContext_Vk::onEndRender()
 			debugLabel.name = "RenderContext_Vk::onEndRender()";
 			Vk_CommandBuffer::submit(debugLabel, vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame.inFlightFence(), waitSmps, signalSmps);
 		}
-
-		#if RDS_TEST_DUMMY_FOR_NO_SWAP_BUF && 0
-		if (_pendingGfxVkCmdbufHnds.is_empty())
-		{
-			auto* vkCmdBuf = vkRdFrame.requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "dummyEnd");
-			vkCmdBuf->beginRecord(vkGraphicsQueue());
-			vkCmdBuf->endRecord();
-
-			_pendingGfxVkCmdbufHnds.clear();
-			_pendingGfxVkCmdbufHnds.emplace_back(vkCmdBuf->hnd());
-
-			Vector<Vk_SmpSubmitInfo, 1> vkSmpWaitDummy;
-			vkSmpWaitDummy.emplace_back(Vk_SmpSubmitInfo{ vkRdFrame.renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_NONE });
-			Vk_CommandBuffer::submit(vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame.vkFenceDummy(), vkSmpWaitDummy, {});
-			//_hasSwapedBuffersInLastFrame = false;
-		}
-		#endif // 0
 	}
 
 	// present if needed

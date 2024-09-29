@@ -2,6 +2,8 @@
 #include "rdsTransferContext.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 
+#include "command/rds_transfer_command.h"
+
 namespace rds
 {
 
@@ -66,9 +68,9 @@ TransferContext::commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq,
 }
 
 void 
-TransferContext::createBuffer(RenderGpuBuffer* buffer)
+TransferContext::createRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
-	auto* cmd = newCommand<TransferCommand_CreateBuffer>(_rdRscCreateQueue);
+	auto* cmd = newCommand<TransferCommand_CreateRenderGpuBuffer>(_rdRscCreateQueue);
 	cmd->dst = buffer;
 }
 
@@ -80,9 +82,9 @@ TransferContext::createTexture(Texture* texture)
 }
 
 void 
-TransferContext::destroyBuffer(RenderGpuBuffer* buffer)
+TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
-	auto* cmd = newCommand<TransferCommand_DestroyBuffer>(_rdRscDestroyQueue);
+	auto* cmd = newCommand<TransferCommand_DestroyRenderGpuBuffer>(_rdRscDestroyQueue);
 	cmd->dst = buffer;
 	RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
 }

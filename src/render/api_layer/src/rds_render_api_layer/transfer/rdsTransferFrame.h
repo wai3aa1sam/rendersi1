@@ -1,7 +1,8 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rds_render_api_layer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/transfer/rdsLinearStagingBuffer.h"
 
 namespace rds
 {

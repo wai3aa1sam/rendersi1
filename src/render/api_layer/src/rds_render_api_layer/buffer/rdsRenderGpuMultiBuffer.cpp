@@ -2,7 +2,7 @@
 #include "rdsRenderGpuMultiBuffer.h"
 
 #include "../rdsRenderer.h"
-#include "../command/rdsTransferRequest.h"
+#include "../transfer/command/rdsTransferRequest.h"
 
 namespace rds
 {

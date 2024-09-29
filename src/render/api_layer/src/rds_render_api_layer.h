@@ -8,7 +8,7 @@
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
 
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
-#include "rds_render_api_layer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
 

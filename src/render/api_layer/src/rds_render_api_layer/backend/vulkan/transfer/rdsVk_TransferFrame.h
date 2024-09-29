@@ -4,7 +4,6 @@
 #include "rds_render_api_layer/backend/vulkan/rdsVk_Allocator.h"
 #include "rds_render_api_layer/backend/vulkan/command/rdsVk_CommandPool.h"
 
-#include "rds_render_api_layer/command/rdsTransferCommand.h"
 #include "rdsVk_LinearStagingBuffer.h"
 
 
@@ -14,6 +13,7 @@ namespace rds
 {
 
 class TransferContext;
+struct StagingHandle;
 
 #if 0
 #pragma mark --- rdsVk_TransferFrame-Decl ---

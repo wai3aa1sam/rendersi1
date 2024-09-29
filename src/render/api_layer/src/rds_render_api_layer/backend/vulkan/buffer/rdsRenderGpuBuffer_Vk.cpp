@@ -3,8 +3,6 @@
 
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
-#include "rds_render_api_layer/command/rdsTransferRequest.h"
-
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
 {

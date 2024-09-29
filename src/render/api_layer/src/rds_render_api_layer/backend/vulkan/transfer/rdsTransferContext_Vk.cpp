@@ -228,7 +228,7 @@ TransferContext_Vk::_setDebugName()
 #if 1
 
 void 
-TransferContext_Vk::onTransferCommand_CreateBuffer(TransferCommand_CreateBuffer* cmd)
+TransferContext_Vk::onTransferCommand_CreateRenderGpuBuffer(TransferCommand_CreateRenderGpuBuffer* cmd)
 {
 	auto* rdDevVk		= renderDeviceVk();
 	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
@@ -250,8 +250,32 @@ TransferContext_Vk::onTransferCommand_CreateTexture(TransferCommand_CreateTextur
 	bindlessRscVk.onCommit_Texture(dstTex);
 }
 
+void 
+TransferContext_Vk::onTransferCommand_CreateShader(TransferCommand_CreateShader* cmd)
+{
+
+}
+
+void 
+TransferContext_Vk::onTransferCommand_CreateMaterial(TransferCommand_CreateMaterial* cmd)
+{
+
+}
+
+void 
+TransferContext_Vk::onTransferCommand_CreateRenderContext(TransferCommand_CreateRenderContext* cmd)
+{
+
+}
+
+void 
+TransferContext_Vk::onTransferCommand_CreateRenderDevice(TransferCommand_CreateRenderDevice* cmd)
+{
+
+}
+
 void
-TransferContext_Vk::onTransferCommand_DestroyBuffer(TransferCommand_DestroyBuffer* cmd)
+TransferContext_Vk::onTransferCommand_DestroyRenderGpuBuffer(TransferCommand_DestroyRenderGpuBuffer* cmd)
 {
 	auto* rdDevVk		= renderDeviceVk();
 	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst);
@@ -267,6 +291,36 @@ TransferContext_Vk::onTransferCommand_DestroyTexture(TransferCommand_DestroyText
 
 	RDS_VK_TEXTURE_INVOKE(dstTex, destroyRenderResource(rdDevVk->renderFrameParam()));
 	RenderResource::destroyObject(dstTex, rdDevVk->renderFrameParam());
+}
+
+void 
+TransferContext_Vk::onTransferCommand_DestroyShader(TransferCommand_DestroyShader* cmd)
+{
+
+}
+
+void 
+TransferContext_Vk::onTransferCommand_DestroyMaterial(TransferCommand_DestroyMaterial* cmd)
+{
+
+}
+
+void 
+TransferContext_Vk::onTransferCommand_DestroyRenderContext(TransferCommand_DestroyRenderContext* cmd)
+{
+
+}
+
+void 
+TransferContext_Vk::onTransferCommand_DestroyRenderDevice(TransferCommand_DestroyRenderDevice* cmd)
+{
+
+}
+
+void 
+TransferContext_Vk::onTransferCommand_SetSwapchainSize(TransferCommand_SetSwapchainSize* cmd)
+{
+
 }
 
 void

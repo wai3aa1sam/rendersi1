@@ -3,7 +3,7 @@
 
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
-#include "rds_render_api_layer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/transfer/command/rds_transfer_command.h"
 
 namespace rds
 {
@@ -17,7 +17,7 @@ RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 }
 
 #if 0
-#pragma mark --- RenderGpuBuffer-Impl ---
+#pragma mark --- rdsRenderGpuBuffer-Impl ---
 #endif // 0
 #if 1
 
@@ -66,7 +66,7 @@ void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 		_bindlessHnd = renderDevice()->bindlessResource().allocBuffer(this);
 	}
 
-	transferContext().createBuffer(this);
+	transferContext().createRenderGpuBuffer(this);
 }
 
 void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
@@ -84,7 +84,7 @@ void
 RenderGpuBuffer::_internal_requestDestroyObject()
 {
 	Base::_internal_requestDestroyObject();
-	transferContext().destroyBuffer(this);
+	transferContext().destroyRenderGpuBuffer(this);
 }
 
 void 
