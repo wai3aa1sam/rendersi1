@@ -77,6 +77,7 @@ TransferContext::createRenderGpuBuffer(RenderGpuBuffer* buffer)
 void 
 TransferContext::createTexture(Texture* texture)
 {
+	RDS_TODO("rework command debug SRCLOC, transfer and render also need to rework!!!");
 	auto* cmd = newCommand<TransferCommand_CreateTexture>(_rdRscCreateQueue);
 	cmd->dst = texture;
 }

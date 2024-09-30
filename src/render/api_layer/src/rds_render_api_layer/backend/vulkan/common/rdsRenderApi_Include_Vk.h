@@ -34,9 +34,10 @@ RDS_DISABLE_ALL_WARNINGS();
 
 		#define VMA_DEBUG_MARGIN 16
 		#define VMA_DEBUG_DETECT_CORRUPTION 1
+		#define RDS_VMA_ENABLE_DEBUG_LOG 0
 
 		// enable debug log, but need modify src code, maybe pull request
-		#if 0
+		#if RDS_VMA_ENABLE_DEBUG_LOG
 		#define VMA_DEBUG_LOG_FORMAT(format, ...) do { \
 			printf((format), __VA_ARGS__); \
 			printf("\n"); \

@@ -69,6 +69,9 @@ struct Vk_Texture : public NonCopyable
 	template<class TEX_VK>
 	static void createVkResource(TEX_VK* tex)
 	{ 
+		if (!tex->isValid())
+			return;
+
 		auto* rdDevVk = tex->renderDeviceVk();
 		createVkImage(		getVkImage(tex), tex, rdDevVk);
 		createVkImageView(	getSrvVkImageView(tex), tex, 0, tex->mipCount(), rdDevVk);

@@ -33,10 +33,7 @@ TextureCube_Vk::~TextureCube_Vk()
 void 
 TextureCube_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
 {
-	if (isValid())
-	{
-		Base::createRenderResource(rdFrameParam);
-	}
+	Base::createRenderResource(rdFrameParam);
 }
 
 void 

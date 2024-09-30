@@ -52,7 +52,7 @@ public:
 
 protected:
 	RpfGeometryBuffer*			_rpfGeomBuf = nullptr;
-	RpfCascadedShadowMaps*	_rpfCsm		= nullptr;
+	RpfCascadedShadowMaps*		_rpfCsm		= nullptr;
 	RpfVoxelConeTracing*		_rpfVct		= nullptr;
 };
 RDS_DEMO(VoxelConeTracing);

@@ -33,10 +33,10 @@ Texture2DArray_Vk::~Texture2DArray_Vk()
 void 
 Texture2DArray_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
 {
+	Base::createRenderResource(rdFrameParam);
+
 	if (isValid())
 	{
-		Base::createRenderResource(rdFrameParam);
-
 		auto layerCount = this->layerCount();
 		_srvLayerVkImageViews.resize(layerCount);
 		for (u32 i = 0; i < layerCount; i++)

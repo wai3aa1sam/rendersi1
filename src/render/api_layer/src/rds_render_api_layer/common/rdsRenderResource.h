@@ -241,17 +241,25 @@ struct RdsDeleter<T, EnableIf<IsBaseOf<RenderResource, T> > >
 	{
 		if (p)
 		{
-			#if 1
-			if constexpr (IsBaseOf<Texture, T> || IsSame<T, RenderGpuBuffer>)
-			{
-				p->_internal_requestDestroyObject();
-			}
-			else
-			{
-				rds_delete_impl(p);
-			}
+			RDS_TODO("some type are using SPtr<RenderResource>, it will make it fail to call _internal_requestDestroyObject() \n"
+				"it is ok to block the usage of SPtr<RenderResource> later"
+			);
+
+			#if 0
+
+			// if constexpr (IsBaseOf<Texture, T> || IsSame<T, RenderGpuBuffer>) {}	// this work btw, but not work when T is RenderResource
+			p->_internal_requestDestroyObject();
+
 			#else
-			rds_delete_impl(p);
+
+			using SRC = RenderResourceType;
+			switch (p->renderResourceType())
+			{
+				case SRC::RenderGpuBuffer:	{ reinCast<RenderGpuBuffer*>(	p)->_internal_requestDestroyObject(); } break;
+				case SRC::Texture:			{ reinCast<Texture*>(			p)->_internal_requestDestroyObject(); } break;
+				default: { rds_delete_impl(p); } break;
+			}
+			
 			#endif // 0
 		}
 	}

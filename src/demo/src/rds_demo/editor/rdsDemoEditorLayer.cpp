@@ -69,7 +69,7 @@ DemoEditorLayer::onCreate()
 	prepare_SingleThreadMode();
 	_gfxDemo->onCreateScene(&_scene);
 
-	app()._frameControl.isWaitFrame = false;
+	app()._frameControl.isWaitFrame = true;
 }
 
 void 
@@ -271,7 +271,8 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 		uiDrawReq.dragInt("target fps", &targetFrameRate, 0.1f, 10);
 		frameControl.setTargetFrameRate(targetFrameRate);
 
-		uiDrawReq.makeCheckbox("full screen (F1)", &_isFullScreen);
+		uiDrawReq.makeCheckbox("full screen (F1)",	&_isFullScreen);
+		uiDrawReq.makeCheckbox("is wait frame",		&app()._frameControl.isWaitFrame);
 	}
 
 	{

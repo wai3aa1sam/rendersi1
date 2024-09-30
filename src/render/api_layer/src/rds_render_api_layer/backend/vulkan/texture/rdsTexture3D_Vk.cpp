@@ -52,10 +52,7 @@ Texture3D_Vk::onDestroy()
 void 
 Texture3D_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
 {
-	if (isValid())
-	{
-		Base::createRenderResource(rdFrameParam);
-	}
+	Base::createRenderResource(rdFrameParam);
 }
 
 void 

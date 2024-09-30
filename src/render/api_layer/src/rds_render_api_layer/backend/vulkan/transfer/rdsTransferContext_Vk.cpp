@@ -246,6 +246,11 @@ TransferContext_Vk::onTransferCommand_CreateTexture(TransferCommand_CreateTextur
 	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
 	auto* dstTex		= cmd->dst.ptr();
 
+	if (dstTex->type() == RenderDataType::Texture3D)
+	{
+		RDS_LOG("Texture 3D");
+	}
+
 	RDS_VK_TEXTURE_INVOKE(dstTex, createRenderResource(rdDevVk->renderFrameParam()));
 	bindlessRscVk.onCommit_Texture(dstTex);
 }

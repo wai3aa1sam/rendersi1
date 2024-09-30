@@ -74,7 +74,7 @@ RenderResource::setDebugName(StrView name)
 void 
 RenderResource::_internal_requestDestroyObject()
 {
-
+	
 }
 
 void 
