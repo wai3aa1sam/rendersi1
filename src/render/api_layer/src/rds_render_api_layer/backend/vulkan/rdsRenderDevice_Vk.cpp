@@ -55,8 +55,6 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 		_tsfCtxVk.create(tsfCtxCDesc);
 		_tsfCtx = &_tsfCtxVk;
 	}
-
-	_setDebugName();
 }
 
 void
@@ -353,16 +351,19 @@ RenderDevice_Vk::loadVkDevFn(Vk_ExtensionInfo& vkExtInfo)
 }
 
 void 
-RenderDevice_Vk::_setDebugName()
+RenderDevice_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 {
-	//RDS_VK_SET_DEBUG_NAME(_vkInstance);	// set debug name for instance will crash RenderDoc
+	auto& name = cmd->name;
 
+	Base::onRenderResouce_SetDebugName(cmd);
+
+	RDS_VK_SET_DEBUG_NAME(_vkInstance, name);	// set debug name for instance will crash RenderDoc
 	if (adapterInfo().isDebug)
 	{
-		RDS_VK_SET_DEBUG_NAME(_vkDebugMessenger, debugName());
+		RDS_VK_SET_DEBUG_NAME(_vkDebugMessenger, name);
 	}
-	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice, debugName());
-	RDS_VK_SET_DEBUG_NAME(_vkDevice, debugName());
+	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice, name);
+	RDS_VK_SET_DEBUG_NAME(_vkDevice, name);
 }
 
 #endif

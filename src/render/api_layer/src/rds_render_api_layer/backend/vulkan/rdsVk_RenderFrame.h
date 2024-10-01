@@ -52,6 +52,9 @@ public:
 
 	void setSubmitCount(SizeType n) { _submitCount = n; }
 
+	void setDebugName(StrView name);
+
+public:
 	Vk_CommandPool&			commandPool(QueueTypeFlags queueType);
 	Vk_DescriptorAllocator& descriptorAllocator();
 
@@ -70,9 +73,6 @@ protected:
 
 	void createSyncObjects	();
 	void destroySyncObjects	();
-
-protected:
-	void _setDebugName();
 
 protected:
 	RenderContext_Vk* _rdCtxVk = nullptr;

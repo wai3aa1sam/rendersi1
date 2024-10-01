@@ -58,6 +58,7 @@ public:
 	void onTransferCommand_DestroyRenderContext(	TransferCommand_DestroyRenderContext*	cmd);
 	void onTransferCommand_DestroyRenderDevice(		TransferCommand_DestroyRenderDevice*	cmd);
 
+	void onTransferCommand_SetDebugName(			TransferCommand_SetDebugName*		cmd);
 	void onTransferCommand_SetSwapchainSize(		TransferCommand_SetSwapchainSize*	cmd);
 
 	void onTransferCommand_CopyBuffer(				TransferCommand_CopyBuffer*		cmd);

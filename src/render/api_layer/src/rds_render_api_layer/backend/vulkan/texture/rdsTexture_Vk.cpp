@@ -45,21 +45,6 @@ Texture2D_Vk::~Texture2D_Vk()
 }
 
 void 
-Texture2D_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
-{
-	if (!isBackBuffer() && isValid())
-	{
-		Base::createRenderResource(rdFrameParam);
-	}
-}
-
-void 
-Texture2D_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
-{
-	Base::destroyRenderResource(rdFrameParam);
-}
-
-void 
 Texture2D_Vk::onCreate(CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
@@ -92,16 +77,18 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 }
 
 void 
-Texture2D_Vk::setDebugName(StrView name)
+Texture2D_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
 {
-	Base::setDebugName(name);
+	if (!isBackBuffer() && isValid())
+	{
+		Base::createRenderResource(rdFrameParam);
+	}
 }
 
-// only use  for swapchain
 void 
-Texture2D_Vk::setNull()
+Texture2D_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
 {
-	Base::setNull();
+	Base::destroyRenderResource(rdFrameParam);
 }
 
 #endif

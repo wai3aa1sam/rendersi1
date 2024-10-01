@@ -53,8 +53,6 @@ Vk_RenderFrame::create(RenderContext_Vk* rdCtxVk)
 	createSyncObjects();
 	_descriptorAlloc.create(renderDeviceVk());
 
-	_setDebugName();
-
 	_vkFramebufPool.create(renderDeviceVk());
 }
 
@@ -183,17 +181,17 @@ Vk_RenderFrame::renderDeviceVk()
 }
 
 void 
-Vk_RenderFrame::_setDebugName()
+Vk_RenderFrame::setDebugName(StrView name)
 {
 	for (size_t i = 0; i < s_kThreadCount; i++)
 	{
-		RDS_VK_SET_DEBUG_NAME_FMT(_graphicsCommandPools[i], "vk{}CommandPool-threadId: {}", QueueTypeFlags::Graphics, i);
-		RDS_VK_SET_DEBUG_NAME_FMT(_computeCommandPools[i],  "vk{}CommandPool-threadId: {}", QueueTypeFlags::Compute, i);
-		RDS_VK_SET_DEBUG_NAME_FMT(_transferCommandPools[i], "vk{}CommandPool-threadId: {}", QueueTypeFlags::Transfer, i);
+		RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_graphicsCommandPools[i],		RDS_SRCLOC, "{}-Vk_RenderFrame::{}-tid-[{}]", name, "_graphicsCommandPools",	i);
+		RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_computeCommandPools[i],		RDS_SRCLOC, "{}-Vk_RenderFrame::{}-tid-[{}]", name, "_computeCommandPools",		i);
+		RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_transferCommandPools[i],		RDS_SRCLOC, "{}-Vk_RenderFrame::{}-tid-[{}]", name, "_transferCommandPools",	i);
 	}
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_imageAvailableVkSmp);
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_renderCompletedVkSmp);
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_inFlightVkFence);
+	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_imageAvailableVkSmp,	RDS_SRCLOC, "{}-Vk_RenderFrame::{}", name, "_imageAvailableVkSmp");
+	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_renderCompletedVkSmp, RDS_SRCLOC, "{}-Vk_RenderFrame::{}", name, "_renderCompletedVkSmp");
+	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_inFlightVkFence,		RDS_SRCLOC, "{}-Vk_RenderFrame::{}", name, "_inFlightVkFence");
 }
 
 

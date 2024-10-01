@@ -25,8 +25,6 @@ public:
 	void createRenderResource( const RenderFrameParam& rdFrameParam);
 	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
 
-	virtual void setDebugName(StrView name) override;
-
 public:
 	Vk_Buffer*		vkBuf();
 	Vk_Buffer_T*	vkBufHnd();
@@ -39,6 +37,9 @@ protected:
 	virtual void onDestroy		()					override;
 
 	virtual void onUploadToGpu	(TransferCommand_UploadBuffer* cmd) override;
+
+public:
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 protected:
 	Vk_Buffer	_vkBuf;

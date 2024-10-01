@@ -28,12 +28,22 @@ RpfGeometryBuffer_Result::setupMaterial(Material* mtl)
 	mtl->setParam("gBuf_roughnessMetalness",	roughnessMetalness.texture2D());
 	mtl->setParam("gBuf_emission",				emission.texture2D());
 	mtl->setParam("gBuf_position",				debugPosition.texture2D());
+
+	auto smprPointClamp = SamplerState::makeNearestClampToEdge();
+	mtl->setParam("gBuf_normal",				smprPointClamp);
+	mtl->setParam("gBuf_baseColor",				smprPointClamp);
+	mtl->setParam("gBuf_roughnessMetalness",	smprPointClamp);
+	mtl->setParam("gBuf_emission",				smprPointClamp);
+	mtl->setParam("gBuf_position",				smprPointClamp);
 }
 
 void 
 RpfGeometryBuffer_Result::setupMaterial(Material* mtl, RdgTextureHnd depth)
 {
+	auto smprPointClamp = SamplerState::makeNearestClampToEdge();
+
 	mtl->setParam("tex_depth",					depth.texture2D());
+	mtl->setParam("tex_depth",					smprPointClamp);
 	setupMaterial(mtl);
 }
 

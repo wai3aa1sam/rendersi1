@@ -92,8 +92,8 @@ private:
 	void loadVkInstFn	(Vk_ExtensionInfo& vkExtInfo);
 	void loadVkDevFn	(Vk_ExtensionInfo& vkExtInfo);
 
-protected:
-	void _setDebugName();
+public:
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 private:
 	Vk_MemoryContext				_vkMemoryContext;

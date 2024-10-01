@@ -86,7 +86,8 @@ protected:
 protected:
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
 
-	void _setDebugName();
+public:
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 protected:
 	Vk_GpuProfiler _gpuProfilerCtx;

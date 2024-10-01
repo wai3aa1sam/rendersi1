@@ -88,11 +88,11 @@ float4 ps_main(PixelIn input) : SV_TARGET
 	//o.rgb = indirectDiffuse.a * o.rgb + indirectDiffuse.rgb + indirectSpecular.rgb;
 
 	//o.rgb = indirectDiffuse.rgb;
-	o.rgb += (1.0 - shadow) * oLightingResult.diffuse.rgb;
+	//o.rgb += (1.0 - shadow) * oLightingResult.diffuse.rgb;
 	
 	//o.rgb = indirectDiffuse.rgb;
 
-	//o.rgb = remapNeg11To01(normal);
+	//o.rgb = remapNeg11To01(surface.normal);
 	//o.rgb = baseColor.rgb;
 
 	//o.rgb = posWs.xyz;

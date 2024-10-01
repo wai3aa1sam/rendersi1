@@ -41,6 +41,8 @@ public:
 	void commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
 
 public:
+	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
+
 	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
 	void createTexture(			Texture*			texture);
 
@@ -99,6 +101,7 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 		_DISPACH_CMD_CASE(DestroyRenderContext);
 		_DISPACH_CMD_CASE(DestroyRenderDevice);
 
+		_DISPACH_CMD_CASE(SetDebugName);
 		_DISPACH_CMD_CASE(SetSwapchainSize);
 
 		_DISPACH_CMD_CASE(CopyBuffer);

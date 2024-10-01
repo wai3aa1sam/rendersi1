@@ -29,10 +29,6 @@ public:
 	virtual ~Texture_Vk();
 
 public:
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
-
-public:
 	virtual bool isNull() const;
 
 	Vk_Image*		vkImage();
@@ -50,8 +46,13 @@ protected:
 
 	virtual void onUploadToGpu(	CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 
-	virtual void setDebugName(StrView name) override;
 	virtual void setNull() override;
+
+public:
+	void createRenderResource( const RenderFrameParam& rdFrameParam);
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 protected:
 	Vk_Image					_vkImage;
@@ -77,19 +78,16 @@ public:
 	Texture2D_Vk();
 	virtual ~Texture2D_Vk();
 
-public:
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
-
-	virtual void setDebugName(StrView name) override;
-	virtual void setNull() override;
-
 protected:
 	virtual void onCreate		(CreateDesc& cDesc) override;
 	virtual void onPostCreate	(CreateDesc& cDesc) override;
 	virtual void onDestroy		() override;
 
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
+
+public:
+	void createRenderResource( const RenderFrameParam& rdFrameParam);
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
 
 protected:
 
@@ -168,9 +166,10 @@ Texture_Vk<TEX_BASE>::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTex
 
 template<class TEX_BASE> inline 
 void 
-Texture_Vk<TEX_BASE>::setDebugName(StrView name)
+Texture_Vk<TEX_BASE>::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 {
-	Base::setDebugName(name);
+	auto& name = cmd->name;
+	Base::onRenderResouce_SetDebugName(cmd);
 
 	if (_vkImage.hnd())
 	{

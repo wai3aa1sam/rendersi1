@@ -24,6 +24,8 @@ class TransferContext;
 class Texture;
 class RenderGpuBuffer;
 
+class TransferCommand_SetDebugName;
+
 #define RDS_ENABLE_RenderResouce_DEBUG_NAME 1
 
 #define RDS_RenderResouce_SET_DEBUG_NAME(RSC, NAME) (RSC)->setDebugName(NAME)
@@ -147,10 +149,7 @@ public:
 	void create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_);
 	void destroy();
 
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
-
-	virtual void	setDebugName(StrView name);
+	virtual void setDebugName(StrView name);
 
 public:
 	bool				hasCreated()			const;
@@ -184,6 +183,15 @@ public:
 	void _internal_requestDestroyObject();
 	void _internal_setSubResourceCount(SizeType n);
 	void _internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
+
+public:
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd);		// onRenderResouce_onSetDebugName
+
+	void onRenderResouce_Create(	const RenderFrameParam& rdFrameParam);
+	void onRenderResouce_Destroy(	const RenderFrameParam& rdFrameParam);
+
+	void createRenderResource( const RenderFrameParam& rdFrameParam);
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
 
 protected:
 	template<class T> static void destroyObject(T* p, const RenderFrameParam& rdFrameParam);

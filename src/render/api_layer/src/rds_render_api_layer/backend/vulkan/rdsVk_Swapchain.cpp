@@ -148,6 +148,28 @@ Vk_Swapchain::swapBuffers(Vk_Queue* presentVkQueue, Vk_Semaphore* vkWaitSmp)
 	//Util::throwIfError(ret);
 }
 
+void 
+Vk_Swapchain::setDebugName(StrView name)
+{
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSurface);
+
+	for (size_t i = 0; i < _vkSwapchainImages.size(); i++)
+	{
+		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainImages[i]);
+		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainImageViews[i]);
+	}
+
+	for (size_t i = 0; i < _vkSwapchainFramebuffers.size(); i++)
+	{
+		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainFramebuffers[i]);
+	}
+
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImage);
+	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImageView);
+
+	RDS_VK_SET_DEBUG_NAME_FMT(_vkRdPass);
+}
+
 bool findAvailableVkSurfaceFormat(VkSurfaceFormatKHR& out, Span<const VkSurfaceFormatKHR> src, VkFormat colorFormat, VkColorSpaceKHR colorSpace)
 {
 	for (const auto& availableFormat : src)
@@ -417,28 +439,6 @@ Vk_Swapchain::destroyDepthResources()
 
 	_vkDepthImageView.destroy(rdDevVk);
 	_vkDepthImage.destroy();
-}
-
-void 
-Vk_Swapchain::_setDebugName()
-{
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSurface);
-
-	for (size_t i = 0; i < _vkSwapchainImages.size(); i++)
-	{
-		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainImages[i]);
-		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainImageViews[i]);
-	}
-
-	for (size_t i = 0; i < _vkSwapchainFramebuffers.size(); i++)
-	{
-		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainFramebuffers[i]);
-	}
-
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImage);
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImageView);
-
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkRdPass);
 }
 
 RenderDevice_Vk* 

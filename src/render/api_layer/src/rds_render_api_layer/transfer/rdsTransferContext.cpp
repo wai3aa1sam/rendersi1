@@ -68,6 +68,14 @@ TransferContext::commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq,
 }
 
 void 
+TransferContext::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
+{
+	auto* cmd = newCommand<TransferCommand_SetDebugName>(_rdRscCreateQueue);
+	cmd->dst	= rdRsc;
+	cmd->name	= name;
+}
+
+void 
 TransferContext::createRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
 	auto* cmd = newCommand<TransferCommand_CreateRenderGpuBuffer>(_rdRscCreateQueue);

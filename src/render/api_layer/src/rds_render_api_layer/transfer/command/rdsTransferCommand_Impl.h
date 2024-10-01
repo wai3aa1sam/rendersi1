@@ -69,21 +69,6 @@ RDS_TRANSFER_COMMAND_CLASS_DESTROY_T(RenderDevice);
 
 #undef RDS_TRANSFER_COMMAND_CLASS_DESTROY_T
 
-class TransferCommand_SetSwapchainSize : public TransferCommand
-{
-public:
-	using Base = TransferCommand;
-	using This = TransferCommand_SetSwapchainSize;
-
-public:
-	TransferCommand_SetSwapchainSize() : Base(Type::SetSwapchainSize) {}
-	virtual ~TransferCommand_SetSwapchainSize() {};
-
-public:
-	SPtr<RenderContext>	renderContext	= nullptr;
-	Tuple2f				size			= Tuple2f::s_zero();
-};
-
 #endif // 0
 
 #if 0
@@ -154,14 +139,30 @@ class TransferCommand_SetDebugName : public TransferCommand
 {
 public:
 	using Base = TransferCommand;
-	using This = TransferCommand_SetDebugName;
+	using This = TransferCommand_SetSwapchainSize;
 
 public:
 	TransferCommand_SetDebugName() : Base(Type::SetDebugName) {}
 	virtual ~TransferCommand_SetDebugName() {};
 
 public:
-	TempString debugName;
+	SPtr<RenderResource>	dst	= nullptr;
+	TempString				name;
+};
+
+class TransferCommand_SetSwapchainSize : public TransferCommand
+{
+public:
+	using Base = TransferCommand;
+	using This = TransferCommand_SetSwapchainSize;
+
+public:
+	TransferCommand_SetSwapchainSize() : Base(Type::SetSwapchainSize) {}
+	virtual ~TransferCommand_SetSwapchainSize() {};
+
+public:
+	SPtr<RenderContext>	renderContext	= nullptr;
+	Tuple2f				size			= Tuple2f::s_zero();
 };
 
 #endif

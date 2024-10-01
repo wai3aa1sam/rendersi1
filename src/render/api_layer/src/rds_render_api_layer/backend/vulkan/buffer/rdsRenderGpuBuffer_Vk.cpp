@@ -72,13 +72,6 @@ RenderGpuBuffer_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
 	_gpuAddress = 0;
 }
 
-void 
-RenderGpuBuffer_Vk::setDebugName(StrView name)
-{
-	Base::setDebugName(name);
-	//RDS_VK_SET_DEBUG_NAME(_vkBuf, name);
-}
-
 void
 RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
 {
@@ -114,6 +107,15 @@ RenderGpuBuffer_Vk::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, cmd->data);
 	}
 }
+
+void 
+RenderGpuBuffer_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+{
+	auto& name = cmd->name;
+	Base::onRenderResouce_SetDebugName(cmd);
+	RDS_VK_SET_DEBUG_NAME(_vkBuf, name);
+}
+
 
 #endif
 

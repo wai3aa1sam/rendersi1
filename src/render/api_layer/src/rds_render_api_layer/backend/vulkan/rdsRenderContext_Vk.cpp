@@ -86,8 +86,6 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	#endif // RDS_DEVELOPMENT
 
-	_setDebugName();
-
 	_vkRdPassPool.create(renderDeviceVk());
 	//_vkFramebufPool.create(renderDeviceVk());
 
@@ -1145,17 +1143,25 @@ RenderContext_Vk::onRenderCommand_CopyTexture(RenderCommand_CopyTexture* cmd, vo
 
 #endif // 1
 
+
 void 
-RenderContext_Vk::_setDebugName()
+RenderContext_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 {
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkSwapchain);
+	auto& name = cmd->name;
+
+	Base::onRenderResouce_SetDebugName(cmd);
+	
+	_vkSwapchain.setDebugName(name);
+	for (auto& e : _vkRdFrames)
+	{
+		e.setDebugName(name);
+	}
 
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkGraphicsQueue);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkComputeQueue);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkPresentQueue);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkTransferQueue);
 }
-
 
 #endif
 }

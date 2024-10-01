@@ -90,6 +90,8 @@ public:
 	VkResult acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp);
 	VkResult swapBuffers(Vk_Queue* presentQueue, Vk_Semaphore* waitSmp);
 
+	void setDebugName(StrView name);
+
 public:
 	Vk_Image_T*				vkImageHnd();
 	Vk_ImageView_T*			vkImageViewHnd();
@@ -125,7 +127,6 @@ protected:
 
 	void createRenderPass(VkFormat colorFormat, VkFormat depthFormat);
 
-	void _setDebugName();
 
 protected:
 	RenderDevice_Vk*	renderDeviceVk();

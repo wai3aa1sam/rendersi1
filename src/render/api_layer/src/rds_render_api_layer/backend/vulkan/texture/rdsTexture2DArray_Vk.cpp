@@ -84,10 +84,12 @@ Texture2DArray_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTextur
 }
 
 void 
-Texture2DArray_Vk::setDebugName(StrView name)
+Texture2DArray_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 {
-	Base::setDebugName(name);
-	
+	auto& name = cmd->name;
+
+	Base::onRenderResouce_SetDebugName(cmd);
+
 	u32 i = 0;
 	for (auto& e : _srvLayerVkImageViews)
 	{
@@ -96,13 +98,6 @@ Texture2DArray_Vk::setDebugName(StrView name)
 		RDS_VK_SET_DEBUG_NAME_FMT(_srvLayerVkImageViews[i],	"{}-{}-layer{}-[{}:{}]",	name, "_srvLayerVkImageViews", i,	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
 		++i;
 	}
-}
-
-// only use  for swapchain
-void 
-Texture2DArray_Vk::setNull()
-{
-	Base::setNull();
 }
 
 Vk_ImageView_T*	Texture2DArray_Vk::srvLayerVkImageViewHnd(u32 layerIndex) { return _srvLayerVkImageViews[layerIndex].hnd(); }

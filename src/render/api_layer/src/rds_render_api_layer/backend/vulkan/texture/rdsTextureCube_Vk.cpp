@@ -20,7 +20,6 @@ RenderDevice_Vk::onCreateTextureCube(TextureCube_CreateDesc& cDesc)
 #endif // 0
 #if 1
 
-
 TextureCube_Vk::TextureCube_Vk()
 {
 }
@@ -28,18 +27,6 @@ TextureCube_Vk::TextureCube_Vk()
 TextureCube_Vk::~TextureCube_Vk()
 {
 	destroy();
-}
-
-void 
-TextureCube_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
-{
-	Base::createRenderResource(rdFrameParam);
-}
-
-void 
-TextureCube_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
-{
-	Base::destroyRenderResource(rdFrameParam);
 }
 
 void 
@@ -87,19 +74,6 @@ TextureCube_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* 
 			p += imageByteSize;
 		}
 	}
-}
-
-void 
-TextureCube_Vk::setDebugName(StrView name)
-{
-	Base::setDebugName(name);
-}
-
-// only use  for swapchain
-void 
-TextureCube_Vk::setNull()
-{
-	Base::setNull();
 }
 
 #endif

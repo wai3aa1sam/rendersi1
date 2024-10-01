@@ -323,6 +323,13 @@ TransferContext_Vk::onTransferCommand_DestroyRenderDevice(TransferCommand_Destro
 }
 
 void 
+TransferContext_Vk::onTransferCommand_SetDebugName(TransferCommand_SetDebugName* cmd)
+{
+	auto* dst = cmd->dst.ptr();
+	dst->onRenderResouce_SetDebugName(cmd);
+}
+
+void 
 TransferContext_Vk::onTransferCommand_SetSwapchainSize(TransferCommand_SetSwapchainSize* cmd)
 {
 

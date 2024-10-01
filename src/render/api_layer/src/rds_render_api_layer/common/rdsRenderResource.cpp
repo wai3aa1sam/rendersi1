@@ -2,6 +2,7 @@
 #include "rdsRenderResource.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/rdsRenderDevice.h"
+#include "rds_render_api_layer/transfer/rdsTransferContext.h"
 
 namespace rds
 {
@@ -52,22 +53,11 @@ RenderResource::destroy()
 }
 
 void 
-RenderResource::createRenderResource(const RenderFrameParam& rdFrameParam)
-{
-	throwError("implement this in backend, but should not call this");
-}
-
-void 
-RenderResource::destroyRenderResource(const RenderFrameParam& rdFrameParam)
-{
-	throwError("implement this in backend, but should not call this");
-}
-
-void 
 RenderResource::setDebugName(StrView name)
 {
 	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 	_debugName = name;
+	transferContext().setRenderResourceDebugName(this, name);
 	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 }
 
@@ -87,6 +77,24 @@ void
 RenderResource::_internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource)
 {
 	_rdState.setState(state, subResource);
+}
+
+void 
+RenderResource::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+{
+
+}
+
+void 
+RenderResource::createRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	throwError("implement this in backend, but should not call this");
+}
+
+void 
+RenderResource::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	throwError("implement this in backend, but should not call this");
 }
 
 bool 

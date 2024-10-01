@@ -272,7 +272,7 @@ void Cs_voxelConeTrace(ComputeIn input)
 	RDS_IMAGE_2D_GET(float4, out_indirect_specular)[imageCoords] = indirectSpecular;
 
 	//RDS_IMAGE_2D_GET(float4,  out_indirect_diffuse)[imageCoords] = float4(remapNeg11To01(normal).rgb, 1.0);
-	//RDS_IMAGE_2D_GET(float4,  out_indirect_diffuse)[imageCoords] = float4(baseColor.rgb, 1.0);
+	//RDS_IMAGE_2D_GET(float4,  out_indirect_diffuse)[imageCoords] = float4(surface.baseColor.rgb, 1.0);
 
 	//pos = RDS_TEXTURE_2D_T_SAMPLE_LOD(float3, gBuf_position, 	uv, 0);
 	//RDS_IMAGE_2D_GET(float4,  out_indirect_diffuse)[imageCoords] = float4(pos.rgb, 1.0);

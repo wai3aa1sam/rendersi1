@@ -28,13 +28,6 @@ public:
 	virtual ~Texture2DArray_Vk();
 
 public:
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
-
-	virtual void setDebugName(StrView name) override;
-	virtual void setNull() override;
-
-public:
 	Vk_ImageView_T* srvLayerVkImageViewHnd(u32 layerIndex);
 
 protected:
@@ -43,6 +36,12 @@ protected:
 	virtual void onDestroy		() override;
 
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
+
+public:
+	void createRenderResource( const RenderFrameParam& rdFrameParam);
+	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 protected:
 	Vector<Vk_ImageView, 4>	_srvLayerVkImageViews;
