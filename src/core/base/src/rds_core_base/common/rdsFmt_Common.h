@@ -5,7 +5,7 @@
 #define RDS_FORMATTER_T(TEMPLATE_ARGS, CLASS) \
 	template<TEMPLATE_ARGS> \
 	struct fmt::formatter<rds::CLASS> { \
-		auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); } \
+		auto parse(fmt::format_parse_context& ctx) const { return ctx.begin(); } \
 		auto format(const rds::CLASS& v, fmt::format_context& ctx) { \
 			rds::onFormat(ctx, v); \
 			return ctx.out(); \
