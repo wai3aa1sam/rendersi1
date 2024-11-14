@@ -17,7 +17,7 @@ target_compile_definitions(${sub_project_name}
 
 target_include_directories  (${sub_project_name} PUBLIC ${Vulkan_includeDir})
 target_link_libraries       (${sub_project_name} PUBLIC ${Vulkan_libraryDir})
-target_link_libraries       (${sub_project_name} PUBLIC GPUOpen::VulkanMemoryAllocator
+target_link_libraries       (${sub_project_name} PUBLIC Vulkan::Headers GPUOpen::VulkanMemoryAllocator
                                                             Microsoft::DirectX-Guids Microsoft::DirectX-Headers)
 
 #function(my_link_sub_module target_name sub_module_project_name sub_module_namespace sub_module_section proj_root)

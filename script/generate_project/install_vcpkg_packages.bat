@@ -19,7 +19,7 @@ git pull
 
 @rem since --x-manifest-root, --x-install-root=installed, ... are experimental, and we are using them
 @rem this SHA should sync %manifest_dir%/vcpkg.json
-git checkout 6672bab62b2c351cf0ce4c578fd2ec2490610586
+git checkout 772f784ba8d1add92420bd6b81d4cd6a91fb36ac
 
 call bootstrap-vcpkg.bat
 
