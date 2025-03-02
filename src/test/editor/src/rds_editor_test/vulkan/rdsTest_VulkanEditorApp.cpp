@@ -300,7 +300,7 @@ public:
 
 
 		// prepare
-		#if 1
+		#if 0
 		{
 			_testRenderGraph.prepare();	
 
@@ -455,7 +455,7 @@ public:
 		// drawUI() will upload vertex, therefore must before tsfReq.commit(), _rdReq must be framed, as ui buffer may be in use 
 		_testRenderGraph.present(&rdCtx, _rdReq, tsfReq, true);
 
-		tsfReq.commit();
+		//tsfReq.commit();
 
 
 		rdCtx.endRender();

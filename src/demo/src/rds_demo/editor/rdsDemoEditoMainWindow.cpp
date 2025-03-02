@@ -66,6 +66,7 @@ DemoEditorMainWindow::onUiKeyboardEvent(UiKeyboardEvent& ev)
 void 
 DemoEditorMainWindow::hotReloadShaders()
 {
+	#if 1
 	{
 		auto* ps = ProjectSetting::instance();
 		ShaderCompileRequest::generateCompileShaderScript(ps->rdsRoot(), ps->projectRoot(), RDS_BUILD_CONFIG_STR, ps);
@@ -88,6 +89,7 @@ DemoEditorMainWindow::hotReloadShaders()
 		ShaderCompileRequest::hotReload(Renderer::instance(), JobSystem::instance(), ProjectSetting::instance());
 		fmtTo(consoleBuf, "--- compile shaders end, {} errors, tooks {}s", errorShaderCount, timer.get());
 	}
+	#endif // 0
 }
 
 

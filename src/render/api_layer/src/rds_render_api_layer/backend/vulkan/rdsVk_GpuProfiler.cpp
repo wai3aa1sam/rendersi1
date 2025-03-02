@@ -54,6 +54,22 @@ Vk_GpuProfiler::onDestroy()
 	_rdCtx = nullptr;
 }
 
+void			
+Vk_GpuProfiler::commit()
+{
+	_commit(_gfxCtx,		QueueTypeFlags::Graphics);
+	//_commit(_computeCtx,	QueueTypeFlags::Compute);
+}
+
+void 
+Vk_GpuProfiler::setName(const char* name)
+{
+	_setName(_gfxCtx,		name);
+	_setName(_computeCtx,	name);
+}
+
+#if RDS_ENABLE_GPU_PROFILER
+
 VkProfileScope	
 Vk_GpuProfiler::makeProfileScope(const SrcLoc& srcLoc, Vk_CommandBuffer* vkCmdBuf, const char* name)
 {
@@ -86,20 +102,6 @@ Vk_GpuProfiler::makeProfileScope(const tracy::SourceLocationData* srcLoc, Vk_Com
 	}
 }
 
-void			
-Vk_GpuProfiler::commit()
-{
-	_commit(_gfxCtx,		QueueTypeFlags::Graphics);
-	//_commit(_computeCtx,	QueueTypeFlags::Compute);
-}
-
-void 
-Vk_GpuProfiler::setName(const char* name)
-{
-	_setName(_gfxCtx,		name);
-	_setName(_computeCtx,	name);
-}
-
 void 
 Vk_GpuProfiler::_createProfilerContext(Vk_GpuProfilerContext& ctx, const CreateDesc& cDesc, QueueTypeFlags queueType, Vk_Queue* vkQueue)
 {
@@ -107,7 +109,7 @@ Vk_GpuProfiler::_createProfilerContext(Vk_GpuProfilerContext& ctx, const CreateD
 
 	auto* vkPhyDev	= rdDevVk->vkPhysicalDevice();																				RDS_UNUSED(vkPhyDev);
 	auto* vkDev		= rdDevVk->vkDevice();																						RDS_UNUSED(vkDev);
-	
+
 	auto vkFuncExtCtd	= (rdDevVk->extInfo().getInstanceExtFunction<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>(	"vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
 	auto vkFuncExtCt	= (rdDevVk->extInfo().getInstanceExtFunction<PFN_vkGetCalibratedTimestampsEXT>(						"vkGetCalibratedTimestampsEXT"));
 
@@ -153,6 +155,47 @@ Vk_GpuProfiler::_setName(Vk_GpuProfilerContext& ctx, const char* name)
 {
 	TracyVkContextName(ctx,	name, sCast<u16>(::strlen(name) + 1));
 }
+
+#else
+
+
+VkProfileScope	
+Vk_GpuProfiler::makeProfileScope(const SrcLoc& srcLoc, Vk_CommandBuffer* vkCmdBuf, const char* name)
+{
+	return {};
+}
+
+VkProfileScope 
+Vk_GpuProfiler::makeProfileScope(const tracy::SourceLocationData* srcLoc, Vk_CommandBuffer* vkCmdBuf, const char* name)
+{
+	return {};
+}
+
+void 
+Vk_GpuProfiler::_createProfilerContext(Vk_GpuProfilerContext& ctx, const CreateDesc& cDesc, QueueTypeFlags queueType, Vk_Queue* vkQueue)
+{
+	
+}
+
+void 
+Vk_GpuProfiler::_destroyProfilerContext(Vk_GpuProfilerContext& ctx)
+{
+	
+}
+
+void 
+Vk_GpuProfiler::_commit(Vk_GpuProfilerContext& ctx, QueueTypeFlags queuType)
+{
+	
+}
+
+void 
+Vk_GpuProfiler::_setName(Vk_GpuProfilerContext& ctx, const char* name)
+{
+	
+}
+
+#endif // RDS_ENABLE_GPU_PROFILER
 
 RenderContext_Vk*	
 Vk_GpuProfiler::renderContexVk()

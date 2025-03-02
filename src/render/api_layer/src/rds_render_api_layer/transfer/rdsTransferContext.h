@@ -107,7 +107,7 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 		_DISPACH_CMD_CASE(CopyBuffer);
 		_DISPACH_CMD_CASE(UploadBuffer);
 		_DISPACH_CMD_CASE(UploadTexture);
-		default: { throwError("undefined render command"); } break;
+		default: { throwError("undefined transfer command"); } break;
 	}
 	#undef _DISPACH_CMD_CASE
 }

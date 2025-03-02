@@ -9,7 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
-#define RDS_SINGLE_THREAD_MODE 0
+#define RDS_SINGLE_THREAD_MODE 1
 
 namespace rds
 {
@@ -38,13 +38,13 @@ DemoEditorLayer::~DemoEditorLayer()
 	#endif // 1
 }
 
-void 
+void
 DemoEditorLayer::onCreate()
 {
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
 	JobSystem::instance()->setSingleThreadMode(false);
-
+	
 	_egCtx.create();
 	_scene.create(_egCtx);
 	_sceneView.create(&_scene, &renderableSystem());
@@ -68,11 +68,11 @@ DemoEditorLayer::onCreate()
 
 	prepare_SingleThreadMode();
 	_gfxDemo->onCreateScene(&_scene);
-
+	
 	app()._frameControl.isWaitFrame = true;
 }
 
-void 
+void
 DemoEditorLayer::onUpdate()
 {
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
@@ -86,7 +86,7 @@ DemoEditorLayer::onUpdate()
 	egFrameParam.reset(&rdCtx, &_rdThreadQueue);
 	auto frameCount = egFrameParam.frameCount();
 
-	RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount); 
+	RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
 
 	{
 		RDS_TODO("this part need to be multi-thread-able");
@@ -103,7 +103,7 @@ DemoEditorLayer::onUpdate()
 		{
 			auto& rdGraph	= rdableSys.renderGraph();
 			rdGraph.reset();
-			//RDS_LOG_ERROR("rdGraph.reset(), frameCount: {}, graph index: {}", frameCount, rdGraph.frameIndex()); 
+			//RDS_LOG_ERROR("rdGraph.reset(), frameCount: {}, graph index: {}", frameCount, rdGraph.frameIndex()); ;
 
 			for (auto& e : rdableSys.drawData())
 			{
@@ -150,7 +150,7 @@ DemoEditorLayer::onUpdate()
 	submitRenderJob(rdDev);
 }
 
-void 
+void
 DemoEditorLayer::onRender()
 {
 	#if RDS_SINGLE_THREAD_MODE && 0
@@ -182,7 +182,7 @@ DemoEditorLayer::onRender()
 	#endif // 0
 }
 
-void 
+void
 DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texHndPresent)
 {
 	#if 0
@@ -209,13 +209,13 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 		uiDrawReq.dockspaceId = dockspace;
 
 		#if 0
-		if (ImGui::BeginMainMenuBar()) 
+		if (ImGui::BeginMainMenuBar())
 		{
-			if (ImGui::BeginMenu("File")) 
+			if (ImGui::BeginMenu("File"))
 			{
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Edit")) 
+			if (ImGui::BeginMenu("Edit"))
 			{
 				ImGui::EndMenu();
 			}
@@ -297,13 +297,13 @@ DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	}
 }
 
-void 
+void
 DemoEditorLayer::onUiMouseEvent(UiMouseEvent& ev)	
 {
 	
 }
 
-void 
+void
 DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
 	if (ev.isPressed(UiKeyboardEventButton::F1))
@@ -312,7 +312,7 @@ DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 	}
 }
 
-void 
+void
 DemoEditorLayer::prepare_SingleThreadMode()
 {
 	// prepare
@@ -340,7 +340,7 @@ DemoEditorLayer::prepare_SingleThreadMode()
 	#endif // 0
 }
 
-void 
+void
 DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 {
 	auto& egFrameParam	= _egCtx.engineFrameParam();
