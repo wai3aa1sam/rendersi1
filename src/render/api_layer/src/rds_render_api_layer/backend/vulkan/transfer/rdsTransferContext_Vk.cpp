@@ -332,7 +332,8 @@ TransferContext_Vk::onTransferCommand_SetDebugName(TransferCommand_SetDebugName*
 void 
 TransferContext_Vk::onTransferCommand_SetSwapchainSize(TransferCommand_SetSwapchainSize* cmd)
 {
-
+	auto* rdCtx = cmd->renderContext.ptr();
+	rdCtx->onSetSwapchainSize(cmd->size);
 }
 
 void

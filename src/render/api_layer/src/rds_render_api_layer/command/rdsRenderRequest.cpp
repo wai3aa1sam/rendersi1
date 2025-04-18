@@ -46,8 +46,8 @@ RenderRequest::reset(RenderContext* rdCtx)
 	_rdCtx = rdCtx;
 	if (_rdCtx && _rdCtx->isValidFramebufferSize())
 	{
-		_rdCmdBuf.setViewport	(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()});
-		_rdCmdBuf.setScissorRect(Rect2f{ Vec2f::s_zero(), _rdCtx->framebufferSize()}); 
+		_rdCmdBuf.setViewport(		Rect2f{ Vec2f::s_zero(), _rdCtx->swapchainSize()});
+		_rdCmdBuf.setScissorRect(	Rect2f{ Vec2f::s_zero(), _rdCtx->swapchainSize()}); 
 	}
 
 	_inlineDraw.reset(rdCtx);

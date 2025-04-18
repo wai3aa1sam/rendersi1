@@ -15,7 +15,7 @@ Vk_Swapchain_CreateDesc::create(NativeUIWindow* window_, RenderContext_Vk* rende
 	this->renderContexVk	= renderContextVk_;
 	this->window			= window_;
 	this->outBackbuffers	= outBackbuffers_;
-	this->framebufferRect2f	= math::toRect2_wh(renderContextVk_->framebufferSize());
+	this->framebufferRect2f	= math::toRect2_wh(renderContextVk_->swapchainSize());
 	this->colorFormat		= colorFormat_;
 	this->colorSpace		= colorSpace_;
 	this->depthFormat		= depthFormat_;

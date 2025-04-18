@@ -95,7 +95,7 @@ RenderUiContext::onBeginRender(RenderContext* renderContext)
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	auto s = renderContext->framebufferSize();
+	auto s = renderContext->swapchainSize();
 
 	io.DisplaySize = ImVec2(s.x, s.y);
 	io.DeltaTime = 1.0f / 60.0f;
@@ -155,10 +155,10 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 	RDS_CORE_ASSERT(indexSize  == sizeof(u16));
 
 	auto* rdDev = renderDevice(); RDS_UNUSED(rdDev);
-	
+
 	/*
-		this has bug, since _vtxBuf will be destroy and the purpose of vtxBuf(MultiGpuBuffer) is to maintain the framed concept
-		, also, when the ptr is released
+	this has bug, since _vtxBuf will be destroy and the purpose of vtxBuf(MultiGpuBuffer) is to maintain the framed concept
+	, also, when the ptr is released
 	*/
 	#if 0
 
@@ -172,7 +172,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		desc.bufSize	= totalVertexDataSize;
 		desc.stride		= vertexSize;
 		_vtxBuf = rdDev->createRenderGpuMultiBuffer(desc);
-}
+	}
 
 	if (!_idxBuf || _idxBuf->bufSize() < totalIndexDataSize) 
 	{
@@ -183,7 +183,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		_idxBuf = rdDev->createRenderGpuMultiBuffer(desc);
 	}
 	#else
-	
+
 	#endif // 0
 
 	// need set set viewport too
@@ -198,9 +198,9 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 		ImVec2 clip_off		= data->DisplayPos;
 		ImVec2 clip_scale	= data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
-		
+
 		Rect2f viewport = {};
-		viewport.set(makeVec2f(clip_off), _rdCtx->framebufferSize());
+		viewport.set(makeVec2f(clip_off), _rdCtx->swapchainSize());
 		req.setViewport(viewport);
 
 		// upload data to vtx and idx buf first, since it is using multi-buffer

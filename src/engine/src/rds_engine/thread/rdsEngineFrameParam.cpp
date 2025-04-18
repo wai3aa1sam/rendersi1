@@ -51,7 +51,7 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 				#endif // 0
 
 				// TODO: pick a small job instead of waiting, if so measure the time, and call sleep if the job is too small
-				OsUtil::sleep_ms(0);		// *** calling isFrameCompleted() frequently will have large overhead
+				OsUtil::sleep_ms(1);		// *** calling isFrameCompleted() frequently will have large overhead
 
 				shdWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
 				shdWait = shdWaitRdThread; // !isRdCtxFinished;

@@ -28,10 +28,13 @@ public:
 
 	void clear();
 
-	TransferCommand_CopyBuffer*		copyBuffer()	;
-	TransferCommand_UploadBuffer*	uploadBuffer()	;
-	TransferCommand_UploadTexture*	uploadTexture()	;
+	TransferCommand_SetSwapchainSize*		setSwapchainSize();
 
+	TransferCommand_CopyBuffer*				copyBuffer();
+	TransferCommand_UploadBuffer*			uploadBuffer();
+	TransferCommand_UploadTexture*			uploadTexture();
+
+public:
 	Span<TransferCommand*> commands();
 
 public:

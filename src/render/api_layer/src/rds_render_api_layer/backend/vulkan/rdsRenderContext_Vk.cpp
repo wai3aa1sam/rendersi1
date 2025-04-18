@@ -242,7 +242,7 @@ RenderContext_Vk::onEndRender()
 }
 
 void
-RenderContext_Vk::onSetFramebufferSize(const Vec2f& newSize)
+RenderContext_Vk::onSetSwapchainSize(const Vec2f& newSize)
 {
 	invalidateSwapchain(VK_ERROR_OUT_OF_DATE_KHR, newSize);
 }

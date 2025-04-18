@@ -5,8 +5,9 @@
 #include "rdsRenderer.h"
 
 #include "command/rdsRenderRequest.h"
-
 #include "graph/rdsRenderGraph.h"
+
+#include "transfer/rdsTransferContext.h"
 
 namespace rds
 {
@@ -33,7 +34,7 @@ Backbuffers::create(RenderContext* rdCtx, SizeType imageCount)
 	_rdCtx = rdCtx;
 
 	auto texCDesc = Texture2D::makeCDesc();
-	const auto& framebufferSize = rdCtx->framebufferSize();
+	const auto& framebufferSize = rdCtx->swapchainSize();
 	texCDesc.size.set(sCast<u32>(framebufferSize.x), sCast<u32>(framebufferSize.y), sCast<u32>(1));
 	texCDesc.usageFlags = TextureUsageFlags::BackBuffer;
 
@@ -165,15 +166,15 @@ RenderContext::onUiKeyboardEvent(UiKeyboardEvent& ev)
 }
 
 void
-RenderContext::setFramebufferSize(const Vec2f& newSize)
+RenderContext::setSwapchainSize(const Vec2f& newSize)
 {
-	if (_framebufferSize == newSize)
+	if (_swapchainSize == newSize)
 		return;
 
 	RDS_PROFILE_SCOPED();
 
-	_framebufferSize = newSize;
-	onSetFramebufferSize(newSize);
+	_swapchainSize = newSize;
+	transferRequest().setSwapchainSize(this, newSize);
 }
 
 bool 
@@ -192,8 +193,8 @@ RenderContext::waitFrameFinished(u64 frameCount)
 void
 RenderContext::onCreate(const CreateDesc& cDesc)
 {
-	_framebufferSize.x = cDesc.window->clientRect().w;
-	_framebufferSize.y = cDesc.window->clientRect().h;
+	_swapchainSize.x = cDesc.window->clientRect().w;
+	_swapchainSize.y = cDesc.window->clientRect().h;
 
 	_nativeUIWindow = cDesc.window;
 	_backbuffers.create(this, s_kFrameInFlightCount);
@@ -234,8 +235,14 @@ RenderContext::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraphFra
 float 
 RenderContext::aspectRatio() const
 {
-	auto y = framebufferSize().y != 0 ? framebufferSize().y : 1;
-	return framebufferSize().x / y;
+	auto y = swapchainSize().y != 0 ? swapchainSize().y : 1;
+	return swapchainSize().x / y;
+}
+
+void 
+RenderContext::onSetSwapchainSize(const Vec2f& newSize)
+{
+	checkRenderThreadExclusive(RDS_SRCLOC);
 }
 
 #endif

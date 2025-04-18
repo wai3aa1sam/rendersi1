@@ -31,6 +31,7 @@ TransferCommandBuffer::clear()
 	_allocator.clear();
 }
 
+
 void* 
 TransferCommandBuffer::_internal_allocCommand(size_t size)
 {
@@ -39,9 +40,11 @@ TransferCommandBuffer::_internal_allocCommand(size_t size)
 	return buf;
 }
 
-TransferCommand_CopyBuffer*		TransferCommandBuffer::copyBuffer()		{ return newCommand<TransferCommand_CopyBuffer>(); }
-TransferCommand_UploadBuffer*	TransferCommandBuffer::uploadBuffer()	{ return newCommand<TransferCommand_UploadBuffer>(); }
-TransferCommand_UploadTexture*	TransferCommandBuffer::uploadTexture()	{ return newCommand<TransferCommand_UploadTexture>(); }
+
+TransferCommand_SetSwapchainSize*		TransferCommandBuffer::setSwapchainSize()		{ return newCommand<TransferCommand_SetSwapchainSize>(); }
+TransferCommand_CopyBuffer*				TransferCommandBuffer::copyBuffer()				{ return newCommand<TransferCommand_CopyBuffer>(); }
+TransferCommand_UploadBuffer*			TransferCommandBuffer::uploadBuffer()			{ return newCommand<TransferCommand_UploadBuffer>(); }
+TransferCommand_UploadTexture*			TransferCommandBuffer::uploadTexture()			{ return newCommand<TransferCommand_UploadTexture>(); }
 
 #endif
 

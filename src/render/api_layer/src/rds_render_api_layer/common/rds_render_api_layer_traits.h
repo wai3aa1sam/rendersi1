@@ -38,7 +38,7 @@ public:
 	static constexpr SizeType s_kShaderStageCount			= 6;
 
 	static constexpr SizeType s_kFirstFrameCount			= 1;
-	static constexpr SizeType s_kFrameInFlightCount			= 2;	// vk get swapchain count is 2, so cannot be 1 now
+	static constexpr SizeType s_kFrameInFlightCount			= 4;	// vk get swapchain count is 2, so cannot be 1 now
 	static constexpr SizeType s_kSwapchainImageLocalSize	= s_kFrameInFlightCount;
 	static constexpr SizeType s_kThreadCount				= OsTraits::s_kJobSystemLogicalThreadCount;
 

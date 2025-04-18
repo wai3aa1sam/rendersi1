@@ -6,10 +6,7 @@
 namespace rds
 {
 
-#if 0
-#pragma mark --- rdsTransferRequest-Decl ---
-#endif // 0
-#if 1
+class RenderContext;
 
 class TransferContext;
 class TransferFrame;
@@ -18,6 +15,11 @@ class Texture2D;
 class RenderGpuBuffer;
 
 class TransferCommand_UploadTexture;
+
+#if 0
+#pragma mark --- rdsTransferRequest-Decl ---
+#endif // 0
+#if 1
 
 class TransferRequest : public NonCopyable
 {
@@ -31,14 +33,17 @@ public:
 	void reset(TransferContext* tsfCtx, TransferFrame* tsfFrame);
 	void commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate = false);
 	
+	void setSwapchainSize(RenderContext* rdCtx, const Tuple2f& size);
+
 	TransferCommand_UploadTexture* uploadTexture(Texture* tex);
 	//TransferCommand_UploadTexture* uploadTexture(Texture*		tex, StrView filename);
 	//TransferCommand_UploadTexture* uploadTexture(Texture2D*		tex, Texture2D_CreateDesc&&		cDesc);
 	//TransferCommand_UploadTexture* uploadTexture(TextureCube*	tex, TextureCube_CreateDesc&&	cDesc);
 
-	void uploadBuffer		(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType offset = 0);
-	void uploadBufferAsync	(RenderGpuBuffer* rdBuf, Vector<u8>&& data); // template<class DATA, size_t N>, DATA -> u8
+	void uploadBuffer(		RenderGpuBuffer* rdBuf, ByteSpan data, SizeType offset = 0);
+	void uploadBufferAsync(	RenderGpuBuffer* rdBuf, Vector<u8>&& data); // template<class DATA, size_t N>, DATA -> u8
 
+public:
 	TransferCommandBuffer& transferCommandBuffer();
 
 private:

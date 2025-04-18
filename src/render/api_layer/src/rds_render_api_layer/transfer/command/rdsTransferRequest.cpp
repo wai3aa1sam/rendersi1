@@ -81,6 +81,17 @@ TransferRequest::uploadBufferAsync(RenderGpuBuffer* rdBuf, Vector<u8>&& data)
 	_notYetSupported(RDS_SRCLOC);
 }
 
+void 
+TransferRequest::setSwapchainSize(RenderContext* rdCtx, const Tuple2f& size)
+{
+	RDS_CORE_ASSERT(rdCtx);
+
+	auto& cmdBuf	= transferCommandBuffer();
+	auto* cmd		= cmdBuf.setSwapchainSize();
+	cmd->renderContext	= rdCtx;
+	cmd->size			= size;
+}
+
 TransferCommandBuffer& 
 TransferRequest::transferCommandBuffer()
 {

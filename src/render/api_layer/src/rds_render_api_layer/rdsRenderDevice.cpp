@@ -24,7 +24,7 @@ RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 	isPresent		= true;
 	
 	isDebug = RDS_DEBUG;
-	isDebug = true;
+	//isDebug = true;
 }
 
 bool 

@@ -91,7 +91,7 @@ public:
 	void drawUI(RenderRequest& req);
 	bool onUiMouseEvent(	UiMouseEvent&		ev);
 	bool onUiKeyboardEvent(	UiKeyboardEvent&	ev);
-	void setFramebufferSize(const Vec2f& newSize);
+	void setSwapchainSize(const Vec2f& newSize);
 
 	virtual bool isFrameFinished(u64 frameCount);
 	virtual void waitFrameFinished(u64 frameCount);
@@ -101,7 +101,7 @@ public:
 	bool isValidFramebufferSize() const;
 
 public:
-	const Vec2f&	framebufferSize() const;
+	const Vec2f&	swapchainSize() const;
 	float			aspectRatio() const;
 
 	NativeUIWindow*		nativeUIWindow();
@@ -115,10 +115,12 @@ protected:
 	virtual void onBeginRender()	{};
 	virtual void onEndRender()		{};
 
-	virtual void onSetFramebufferSize(const Vec2f& newSize) {};
 
 	virtual void onCommit(RenderCommandBuffer&	renderBuf);
 	virtual void onCommit(const RenderGraph& rdGraph, RenderGraphFrame&	rdGraphFrame, u32 rdGraphFrameIdx);
+
+public:
+	virtual void onSetSwapchainSize(const Vec2f& newSize);
 
 protected:
 	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData);
@@ -126,7 +128,7 @@ protected:
 protected:
 	NativeUIWindow* _nativeUIWindow = nullptr;
 
-	Vec2f	_framebufferSize {0,0};
+	Vec2f	_swapchainSize {0,0};
 	//u32		_curFrameIdx = 0;
 	u32		_curImageIdx = 0;	// cache the current image index for backend
 
@@ -138,13 +140,13 @@ private:
 
 };
 
-inline const Vec2f&		RenderContext::framebufferSize() const	{ return _framebufferSize; }
+inline const Vec2f&		RenderContext::swapchainSize() const	{ return _swapchainSize; }
 inline NativeUIWindow*	RenderContext::nativeUIWindow()			{ return _nativeUIWindow; }
 inline RenderUiContext&	RenderContext::renderdUiContex()		{ return _rdUiCtx; }
 
 inline Texture2D*		RenderContext::backBuffer()				{ return _backbuffers.backbuffer(); }
 
-inline bool				RenderContext::isValidFramebufferSize() const { return framebufferSize().x > 0.0f && framebufferSize().y > 0.0f; }
+inline bool				RenderContext::isValidFramebufferSize() const { return swapchainSize().x > 0.0f && swapchainSize().y > 0.0f; }
 
 template<class CTX> inline
 void 
