@@ -13,6 +13,7 @@ void
 RenderFrameParam::reset(u64 engineFrameCount)
 {
 	// TODO: reset in RenderThread only
+	checkRenderThreadExclusive(RDS_SRCLOC);
 	_frameCount		= engineFrameCount;
 }
 
@@ -45,7 +46,7 @@ RenderFrameParam::engineFrameCount() const
 u64 
 RenderFrameParam::frameCount() const
 {
-	//checkRenderThreadExclusive(RDS_SRCLOC);
+	checkRenderThreadExclusive(RDS_SRCLOC);
 	return _frameCount;
 }
 

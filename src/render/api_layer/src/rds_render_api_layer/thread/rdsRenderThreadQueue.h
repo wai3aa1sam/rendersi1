@@ -50,14 +50,14 @@ public:
 	void destroy();
 
 public:
-	void submit(RenderDevice* renderDevice, u64 frameCount, RenderJob& renderJob);
+	void submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&& renderJob);
 
-	void waitFrame(u64 frameCount);
+	void waitFrame(u64 frameCount);				// please reference to unreal similar fn, eg, a timeout
 
 public:
-	u64				lastFinishedFrameCount()				const;
-	volatile bool	isSignaled(		u64 engineFrameCount)	const;
-	volatile bool	isFrameFinish(	u64 frameCount)			const;
+	u64		currentFrameCount()					const;
+	//u64		lastFinishedFrameCount()			const;
+	bool	isSignaled(u64 engineFrameCount)	const;
 
 private:
 	RenderThread* _rdThread = nullptr;

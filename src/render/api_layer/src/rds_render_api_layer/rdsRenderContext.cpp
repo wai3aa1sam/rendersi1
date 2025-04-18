@@ -177,10 +177,16 @@ RenderContext::setFramebufferSize(const Vec2f& newSize)
 }
 
 bool 
-RenderContext::isFrameCompleted(u64 frameCount) 
+RenderContext::isFrameFinished(u64 frameCount) 
 { 
 	throwIf(true, "should not call this");
 	return false;
+}
+
+void 
+RenderContext::waitFrameFinished(u64 frameCount) 
+{ 
+	throwIf(true, "should not call this");
 }
 
 void

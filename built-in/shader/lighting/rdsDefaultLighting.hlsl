@@ -70,8 +70,7 @@ float3x3 computeTbn(float3 tangent, float3 normal)
 {
     tangent                 = normalize(tangent - dot(tangent, normal) * normal);
     float3      binormal    = cross(normal, tangent);
-	float3x3    tbn         = float3x3(tangent, binormal, normal);
-    tbn = transpose(tbn);
+	float3x3    tbn         = float3x3(tangent, binormal, normal);      // tbn is row major
     return tbn;
 }
 
@@ -81,7 +80,7 @@ float4 sampleNormalMap(float3x3 tbn, float4 sampleNormal)
     //normal.y = -normal.y;
 
     // tangent space -> view / world space
-    normal = mul(tbn, normal);
+    normal = mul(normal, tbn);      // tbn is row major
     return float4(normal, sampleNormal.a);
     return float4(normalize(normal), sampleNormal.a);
 }

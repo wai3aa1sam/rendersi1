@@ -9,7 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
-#define RDS_SINGLE_THREAD_MODE 1
+#define RDS_SINGLE_THREAD_MODE 0
 
 namespace rds
 {
@@ -31,7 +31,6 @@ DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 DemoEditorLayer::~DemoEditorLayer()
 {
 	#if 1
-	_rdThreadQueue.waitFrame(_egCtx.engineFrameParam().frameCount());
 	_gfxDemo.reset(nullptr);
 	_scene.destroy();
 	_egCtx.destroy();
@@ -46,21 +45,19 @@ DemoEditorLayer::onCreate()
 	JobSystem::instance()->setSingleThreadMode(false);
 	
 	_egCtx.create();
-	_scene.create(_egCtx);
-	_sceneView.create(&_scene, &renderableSystem());
-
-	_edtCtx.create();
-
-	_meshAssets = makeUPtr<MeshAssets>();
-
-	RDS_CORE_ASSERT(_gfxDemo, "");
-	_gfxDemo->onCreate();
-	
 	#if !RDS_SINGLE_THREAD_MODE
 	_rdThread.create(RenderThread::makeCDesc(JobSystem::instance()));
 	#endif // !RDS_SINGLE_THREAD_MODE
 	_rdThreadQueue.create(&_rdThread);
 
+	_scene.create(_egCtx);
+	_sceneView.create(&_scene, &renderableSystem());
+	_edtCtx.create();
+	_meshAssets = makeUPtr<MeshAssets>();
+
+	RDS_CORE_ASSERT(_gfxDemo, "");
+	_gfxDemo->onCreate();
+	
 	renderableSystem().addCamera(&mainWindow().camera());
 
 	auto& rdGraph = renderableSystem().renderGraph();
@@ -68,8 +65,15 @@ DemoEditorLayer::onCreate()
 
 	prepare_SingleThreadMode();
 	_gfxDemo->onCreateScene(&_scene);
-	
-	app()._frameControl.isWaitFrame = true;
+
+	// temp solution for submit to trigger first frame TransferContext::commit
+	{
+		drawUI(rdCtx, renderableSystem());			
+		submitRenderJob(Renderer::renderDevice());
+		_rdThreadQueue.waitFrame(_egCtx.engineFrameParam().frameCount());
+	}
+
+	app()._frameControl.isWaitFrame = !true;
 }
 
 void
@@ -81,7 +85,7 @@ DemoEditorLayer::onUpdate()
 	auto& egCtx			= _egCtx;
 	auto& egFrameParam	= egCtx.engineFrameParam();
 
-	bool isFirstFrame = egFrameParam.frameCount() == 0; RDS_UNUSED(isFirstFrame);
+	bool isFirstFrame = egFrameParam.frameCount() == RenderApiLayerTraits::s_kFirstFrameCount; RDS_UNUSED(isFirstFrame);
 
 	egFrameParam.reset(&rdCtx, &_rdThreadQueue);
 	auto frameCount = egFrameParam.frameCount();
@@ -97,7 +101,6 @@ DemoEditorLayer::onUpdate()
 	}
 
 	// update
-
 	auto& rdableSys = renderableSystem();
 	{
 		{
@@ -126,25 +129,8 @@ DemoEditorLayer::onUpdate()
 
 	rdableSys.commit(scene());
 
-
 	// ui
-	{
-		auto& rdUiCtx = rdCtx.renderdUiContex();
-		rdUiCtx.onBeginRender(&rdCtx);
-		{
-			auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
-			{
-				RDS_PROFILE_SECTION("draw editor ui");
-
-				drawEditorUi(uiDrawReq, _texHndPresent);
-
-				_gfxDemo->onDrawGui(uiDrawReq);
-			}
-
-			rdableSys.drawUi(&rdCtx, !_isFullScreen, true);
-		}
-		rdUiCtx.onEndRender(&rdCtx);
-	}
+	drawUI(rdCtx, rdableSys);
 	
 	RenderDevice* rdDev = Renderer::renderDevice();
 	submitRenderJob(rdDev);
@@ -183,7 +169,7 @@ DemoEditorLayer::onRender()
 }
 
 void
-DemoEditorLayer::drawEditorUi(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texHndPresent)
+DemoEditorLayer::drawEditorUI(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texHndPresent)
 {
 	#if 0
 	static bool isRequestFullViewport	= false;
@@ -312,6 +298,26 @@ DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 	}
 }
 
+void 
+DemoEditorLayer::drawUI(RenderContext& rdCtx, CRenderableSystem& rdableSys)
+{
+	auto& rdUiCtx = rdCtx.renderdUiContex();
+	rdUiCtx.onBeginRender(&rdCtx);
+	{
+		auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
+		{
+			RDS_PROFILE_SECTION("draw editor ui");
+
+			drawEditorUI(uiDrawReq, _texHndPresent);
+
+			_gfxDemo->onDrawGui(uiDrawReq);
+		}
+
+		rdableSys.drawUi(&rdCtx, !_isFullScreen, true);
+	}
+	rdUiCtx.onEndRender(&rdCtx);
+}
+
 void
 DemoEditorLayer::prepare_SingleThreadMode()
 {
@@ -347,8 +353,8 @@ DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 	auto& rdableSys		= renderableSystem();
 
 	RenderData_RenderJob rdJob;
-	rdableSys.setupRenderJob(&rdJob);
-	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rdJob);
+	rdableSys.setupRenderJob(rdJob);
+	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rds::move(rdJob));
 	#if RDS_SINGLE_THREAD_MODE
 	_rdThread._temp_render();
 	#endif // RDS_SINGLE_THREAD_MODE

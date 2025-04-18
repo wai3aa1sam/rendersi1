@@ -41,6 +41,8 @@ public:
 
 public:
 	bool	isTerminated()				const;
+	bool	isFrameFinished(u64 frame)	const;
+	u64		currentFrameCount()			const;
 	u64		lastFinishedFrameCount()	const;
 
 protected:
@@ -53,6 +55,7 @@ public:		// TODO: remove temp
 private:
 	AtmQueue<UPtr<RenderData> > _rdDataQueue;
 	Atm<bool>					_isTerminated = false;
+	Atm<u64>					_curFrameCount = 0;
 	Atm<u64>					_lastFinishedFrameCount = 0;
 };
 

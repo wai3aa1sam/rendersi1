@@ -31,10 +31,10 @@ public:
 	* only use in engine thread
 	*/
 private:
-	u64 _egFrameCount = 0;
+	u64 _egFrameCount = RenderApiLayerTraits::s_kFirstFrameCount;
 
 private:
-	u64 _frameCount = 0;
+	u64 _frameCount = RenderApiLayerTraits::s_kFirstFrameCount;
 };
 
 

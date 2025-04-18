@@ -37,23 +37,31 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 	#if 1
 	{
 		{
-			RDS_PROFILE_DYNAMIC_FMT("wait gpu i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
-			volatile bool isWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
-			while (!rdCtx->isFrameCompleted(frameCount) || isWaitRdThread)
+			RDS_PROFILE_DYNAMIC_FMT("wait render thread i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
+			bool shdWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
+			bool shdWait = shdWaitRdThread;
+			while (shdWait)
 			{
 				#if 0
-				if (isWaitRdThread)
+
+				if (shdWaitRdThread)
 				{
-					RDS_CORE_LOG_ERROR("************ wait render thread - rdLastFrame: {}, engineFrame: {}", renderThreadQueue->lastFinishedFrameCount(), frameCount);
+					RDS_CORE_LOG_ERROR("************ wait render thread - rdCurFrame: {}, engineFrame: {}", renderThreadQueue->currentFrameCount(), frameCount);
 				}
 				#endif // 0
 
 				// TODO: pick a small job instead of waiting, if so measure the time, and call sleep if the job is too small
-				OsUtil::sleep_ms(1);		// *** calling isFrameCompleted() frequently will have large overhead
-				isWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
+				OsUtil::sleep_ms(0);		// *** calling isFrameCompleted() frequently will have large overhead
+
+				shdWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
+				shdWait = shdWaitRdThread; // !isRdCtxFinished;
 			}
 		}
 
+		{
+			RDS_PROFILE_DYNAMIC_FMT("wait gpu i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
+			rdCtx->waitFrameFinished(frameCount);		// temp sol, should wait in rdDev
+		}
 
 		auto* rdDev = Renderer::renderDevice();
 		rdDev->resetEngineFrame(frameCount);		// next frame here will clear those in Layer::onCreate()

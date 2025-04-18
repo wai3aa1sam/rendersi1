@@ -184,9 +184,9 @@ CRenderableSystem::render()
 }
 
 void 
-CRenderableSystem::setupRenderJob(RenderData_RenderJob* out)
+CRenderableSystem::setupRenderJob(RenderData_RenderJob& out)
 {
-	auto& rdJob = *out;
+	auto& rdJob = out;
 
 	auto&	rdGraph		= renderGraph();
 	auto	frameIndex	= engineContext().engineFrameParam().frameIndex();

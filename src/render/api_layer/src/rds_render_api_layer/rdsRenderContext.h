@@ -93,7 +93,8 @@ public:
 	bool onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 	void setFramebufferSize(const Vec2f& newSize);
 
-	virtual bool isFrameCompleted(u64 frameCount);
+	virtual bool isFrameFinished(u64 frameCount);
+	virtual void waitFrameFinished(u64 frameCount);
 
 	Texture2D* backBuffer();		// this is fake, backBuffer before beginRender() is different with after beginRender()
 

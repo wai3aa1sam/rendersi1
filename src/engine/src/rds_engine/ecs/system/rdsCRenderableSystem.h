@@ -45,7 +45,7 @@ public:
 
 	void commit(const Scene& scene);
 	void drawUi(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen);
-	void setupRenderJob(RenderData_RenderJob* out);
+	void setupRenderJob(RenderData_RenderJob& out);
 
 	void render();
 

@@ -24,6 +24,7 @@ RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 	isPresent		= true;
 	
 	isDebug = RDS_DEBUG;
+	isDebug = true;
 }
 
 bool 
@@ -135,11 +136,7 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 	auto	frameCount		= engineFrameCount;
 	auto	frameIdx		= Traits::rotateFrame(frameCount);
 
-	if (bool isFirstFrame = (frameCount <= 1))
-	{
-		auto& tsfCtx	= transferContext();
-		tsfCtx.transferRequest(0).commit(rdFrameParam, true);		// wait here so that ok to commit here, first frame all committed to frame 0, but queue frame is start from 1
-	}
+	RDS_TODO("wait all render context here");
 
 	_rdFrames[frameIdx].reset();
 	_tsfFrames[frameIdx].reset(_tsfCtx);

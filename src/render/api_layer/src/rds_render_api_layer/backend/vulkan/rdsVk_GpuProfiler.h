@@ -4,7 +4,7 @@
 #include "rds_render_api_layer/backend/vulkan/common/rdsRenderApi_Include_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApiPrimitive.h"
 
-#define RDS_ENABLE_GPU_PROFILER 0
+#define RDS_ENABLE_GPU_PROFILER 1
 #if RDS_RENDER_HAS_VULKAN && RDS_ENABLE_PROFILER && RDS_ENABLE_GPU_PROFILER
 
 #include <tracy/TracyVulkan.hpp>

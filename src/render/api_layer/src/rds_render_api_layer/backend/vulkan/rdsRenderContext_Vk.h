@@ -41,7 +41,8 @@ public:
 
 	void addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd);
 	
-	virtual bool isFrameCompleted(u64 frameCount) override;
+	virtual bool isFrameFinished(u64 frameCount) override;
+	virtual void waitFrameFinished(u64 frameCount) override;
 
 public:
 	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);

@@ -60,7 +60,6 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 void
 RenderDevice_Vk::onDestroy()
 {
-
 	_vkMemoryContext.destroy();
 
 	RDS_TODO("since VkAllocCallbacks is inside _vkMemoryContext, destroyed will cause VkDevice, ... cannot destroy, or they just use nullptr for VkAllocCallbacks");;

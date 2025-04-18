@@ -83,14 +83,29 @@ RenderThread::requestRender(UPtr<RenderData>&& renderData)
 void
 RenderThread::render(RenderData& renderData)
 {
-	RDS_PROFILE_DYNAMIC_FMT("render() - frame {}", renderData.frameCount);
+	auto curFrame = renderData.frameCount;
+	_curFrameCount.store(curFrame);
+
+	RDS_PROFILE_DYNAMIC_FMT("render() - frame {}", curFrame);
 
 	auto* rdDev			= renderData.renderDevice;
 	auto& rdFrameParam	= rdDev->renderFrameParam();
-	rdFrameParam.reset(renderData.frameCount);
+
+	// maybe useful if all gpu stuff is only in RenderThread, currently cpu (main thread) has something (tsf buffer) that is related to gpu, not yet all command is impl
+	#if 0
+	for (auto& e : renderData.renderJobs)
+	{
+		auto&	rdGraph		= *e.renderGraph;
+		auto*	rdCtx		= rdGraph.renderContext();
+		rdCtx->waitFrameFinished(curFrame);
+	}
+	#endif // 0
+
+
+	rdFrameParam.reset(curFrame);
 
 	auto& tsfCtx	= rdDev->transferContext();
-	auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(renderData.frameCount));
+	auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
 	tsfReq.commit(rdFrameParam);
 
 	// RenderFrameContext
@@ -99,7 +114,7 @@ RenderThread::render(RenderData& renderData)
 	// endFrame();		// only submit here
 	for (auto& e : renderData.renderJobs)
 	{
-		//RDS_CORE_LOG_ERROR("render begin - renderData.frameCount: {}, e.renderGraphFrameIdx: {}", renderData.frameCount, e.renderGraphFrameIdx);
+		//RDS_CORE_LOG_ERROR("render begin - curFrame: {}, e.renderGraphFrameIdx: {}", curFrame, e.renderGraphFrameIdx);
 
 		auto&	rdGraph		= *e.renderGraph;
 		auto*	rdCtx		= rdGraph.renderContext();
@@ -112,13 +127,17 @@ RenderThread::render(RenderData& renderData)
 		{
 			rdCtx->commit(*rdReq);
 		}
-		
+
 		rdCtx->endRender();
 
-		//RDS_CORE_LOG_ERROR("render end - renderData.frameCount: {}, e.renderGraphFrameIdx: {}", renderData.frameCount, e.renderGraphFrameIdx);
+		//RDS_CORE_LOG_ERROR("render end - curFrame: {}, e.renderGraphFrameIdx: {}", curFrame, e.renderGraphFrameIdx);
 	}
 
-	_lastFinishedFrameCount.store(renderData.frameCount);
+	RDS_TODO(
+		"curFrame is from rdDev, so if later support multi rdDev, then there maybe a map for each _lastFinishedFrameCount"
+		"\n or there is multi RenderThread"
+	);
+	_lastFinishedFrameCount.store(curFrame);
 }
 
 void 
@@ -138,9 +157,11 @@ RenderThread::terminate()
 	_isTerminated.store(true);
 }
 
-bool	RenderThread::isTerminated()			const	{ return _isTerminated; }
+bool	RenderThread::isTerminated()				const	{ return _isTerminated; }
+bool	RenderThread::isFrameFinished(u64 frame)	const	{ auto n = lastFinishedFrameCount(); return n >= frame; }
 
-u64		RenderThread::lastFinishedFrameCount()	const	{ return _lastFinishedFrameCount.load(); }
+u64		RenderThread::currentFrameCount()			const	{ return _curFrameCount.load(); } //{ auto n = lastFinishedFrameCount(); return n <= 1 && isFrameFinished(n) ? n : n - 1; }
+u64		RenderThread::lastFinishedFrameCount()		const	{ return _lastFinishedFrameCount.load(); }
 
 #endif
 

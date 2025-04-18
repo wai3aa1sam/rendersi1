@@ -41,11 +41,15 @@ RenderThreadQueue::create(RenderThread* renderThread)
 void 
 RenderThreadQueue::destroy()
 {
+	if (_rdThread)
+	{
+		waitFrame(_rdThread->currentFrameCount());
+	}
 	_rdThread = nullptr;
 }
 
 void 
-RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob& renderJob)
+RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&& renderJob)
 {
 	auto rdData = makeUPtr<RenderData>();
 	rdData->frameCount		= frameCount;
@@ -61,33 +65,22 @@ RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&
 void 
 RenderThreadQueue::waitFrame(u64 frameCount)
 {
-	while (!isFrameFinish(frameCount))
+	while (!isSignaled(frameCount))
 	{
 		OsUtil::sleep_ms(1);
 	}
 }
 
-u64 RenderThreadQueue::lastFinishedFrameCount() const { return _rdThread->lastFinishedFrameCount(); }
+u64 RenderThreadQueue::currentFrameCount()		const { return _rdThread->currentFrameCount(); }
 
-volatile
 bool
 RenderThreadQueue::isSignaled(u64 engineFrameCount) const
 {
-	auto rdThreadLastFinishedFrameCount = lastFinishedFrameCount();
-
-	return !(
-			engineFrameCount > rdThreadLastFinishedFrameCount
-			&& RenderApiLayerTraits::rotateFrame(engineFrameCount) == RenderApiLayerTraits::rotateFrame(rdThreadLastFinishedFrameCount)
-		);
+	auto rdThreadCurrentFrameCount = currentFrameCount();
+	bool isSameFrameIndex = RenderApiLayerTraits::rotateFrame(engineFrameCount) == RenderApiLayerTraits::rotateFrame(rdThreadCurrentFrameCount);
+	bool shdWait = (isSameFrameIndex && !_rdThread->isFrameFinished(engineFrameCount));	// not work for RenderApiLayerTraits::s_kFrameInFlightCount == 1
+	return !shdWait;
 }
-
-volatile 
-bool	
-RenderThreadQueue::isFrameFinish(u64 frameCount) const
-{
-	return lastFinishedFrameCount() == frameCount;
-}
-
 
 #endif
 

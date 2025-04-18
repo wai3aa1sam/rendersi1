@@ -122,12 +122,28 @@ RenderContext_Vk::addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd)
 }
 
 bool 
-RenderContext_Vk::isFrameCompleted(u64 frameCount)
+RenderContext_Vk::isFrameFinished(u64 frameCount)
 {
+	checkRenderThreadExclusive(RDS_SRCLOC);
+	// vk fence also must be called exclusively, so a lock is needed
 	auto	frameIdx	= Traits::rotateFrame(frameCount);
 	auto&	vkRdFrame	= _vkRdFrames[frameIdx];
 	bool	isCompleted = vkRdFrame.inFlightFence()->isSignaled(renderDeviceVk()) || vkRdFrame.submitCount() == 0;
 	return isCompleted;
+}
+
+void 
+RenderContext_Vk::waitFrameFinished(u64 frameCount)
+{
+	// checkRenderThreadExclusive(RDS_SRCLOC);
+	// vk fence also must be called exclusively, so a lock is needed
+	auto*	rdDevVk		= renderDeviceVk();
+	auto	frameIdx	= Traits::rotateFrame(frameCount);
+	auto&	vkRdFrame	= _vkRdFrames[frameIdx];
+	if (vkRdFrame.submitCount() != 0)
+	{
+		vkRdFrame.inFlightFence()->wait(rdDevVk);
+	}
 }
 
 void

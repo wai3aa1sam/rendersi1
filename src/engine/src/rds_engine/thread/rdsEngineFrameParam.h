@@ -42,7 +42,7 @@ public:
 	u32 frameIndex() const;
 
 private:
-	u64 _frameCount = 0;
+	u64 _frameCount = RenderApiLayerTraits::s_kFirstFrameCount;
 };
 
 
