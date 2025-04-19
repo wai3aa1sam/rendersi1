@@ -21,6 +21,8 @@ namespace rds
 
 DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 {
+	_todoList();
+
 	_gfxDemo = rds::move(gfxDemo);
 	_gfxDemo->_demoLayer = this;
 	
@@ -93,10 +95,8 @@ DemoEditorLayer::onUpdate()
 	RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
 
 	{
-		RDS_TODO("this part need to be multi-thread-able");
-
 		auto clientRect = mainWnd.clientRect();
-		rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
+		rdCtx.setSwapchainSize(clientRect.size);		// this will invalidate the swapchain
 		mainWnd.camera().setViewport(clientRect);
 	}
 
@@ -358,6 +358,17 @@ DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 	#if RDS_SINGLE_THREAD_MODE
 	_rdThread._temp_render();
 	#endif // RDS_SINGLE_THREAD_MODE
+}
+
+void 
+DemoEditorLayer::_todoList()
+{
+	RDS_TODO(
+		"profiling, change all dynamic to static profile zone"
+		"\n  add gpu static profiling zone"
+	);
+
+
 }
 
 DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }

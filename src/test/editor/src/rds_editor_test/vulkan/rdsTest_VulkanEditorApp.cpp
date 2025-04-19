@@ -407,7 +407,7 @@ public:
 		{
 			RDS_PROFILE_SECTION("wait frame");
 			throwIf(true, "legacy");
-			while (!rdCtx.isFrameCompleted(0))
+			while (!rdCtx.isFrameFinished(0))
 			{
 				OsUtil::sleep_ms(1);
 			}
@@ -415,7 +415,7 @@ public:
 		//Renderer::renderDevice()->nextFrame();		// next frame here will clear those in Layer::onCreate()
 		#endif // 0
 
-		rdCtx.setFramebufferSize(mainWnd->clientRect().size);		// this will invalidate the swapchain
+		rdCtx.setSwapchainSize(mainWnd->clientRect().size);		// this will invalidate the swapchain
 		mainWnd->camera().setViewport(mainWnd->clientRect());
 
 		//_testMultiThreadDrawCalls.execute();

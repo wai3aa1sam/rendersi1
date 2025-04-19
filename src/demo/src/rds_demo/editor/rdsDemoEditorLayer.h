@@ -57,6 +57,9 @@ protected:
 	void submitRenderJob(RenderDevice* rdDev);
 
 private:
+	void _todoList();
+
+private:
 	EngineContext	_egCtx;
 	EditorContext	_edtCtx;
 

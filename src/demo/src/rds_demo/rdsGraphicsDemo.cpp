@@ -20,7 +20,7 @@ GraphicsDemo::prepareRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
 	auto& rdGraph	= oRdGraph;
 	auto* rdCtx		= rdGraph->renderContext();
-	RDS_CORE_ASSERT(math::equals(rdCtx->framebufferSize(), Vec2f{drawData->resolution()}), "RenderContext resoultion is different from DrawData resoultion");
+	RDS_CORE_ASSERT(math::equals(rdCtx->swapchainSize(), Vec2f{drawData->resolution()}), "RenderContext resoultion is different from DrawData resoultion");
 
 	auto& rdPassPipeline = *_rdPassPipelines[drawData->drawParamIdx];
 	rdPassPipeline.reset(oRdGraph, drawData);
@@ -32,7 +32,7 @@ GraphicsDemo::executeRender(RenderGraph* oRdGraph, DrawData* drawData)
 {
 	auto& rdGraph	= oRdGraph;
 	auto* rdCtx		= rdGraph->renderContext();
-	RDS_CORE_ASSERT(math::equals(rdCtx->framebufferSize(), Vec2f{drawData->resolution()}), "RenderContext resoultion is different from DrawData resoultion");
+	RDS_CORE_ASSERT(math::equals(rdCtx->swapchainSize(), Vec2f{drawData->resolution()}), "RenderContext resoultion is different from DrawData resoultion");
 
 	auto& rdPassPipeline = *_rdPassPipelines[drawData->drawParamIdx];
 	rdPassPipeline.reset(oRdGraph, drawData);
