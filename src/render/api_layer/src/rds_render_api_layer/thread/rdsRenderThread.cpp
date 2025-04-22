@@ -1,3 +1,4 @@
+
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderThread.h"
 #include "../rdsRenderDevice.h"
@@ -39,7 +40,8 @@ RenderThread::onRoutine()
 {
 	RDS_PROFILE_SCOPED();
 
-	_isTerminated.store(false);
+	setState(RenderThreadState::None);
+	_curFrameCount.store(0);
 	_lastFinishedFrameCount.store(0);
 
 	for (;;)
@@ -53,10 +55,12 @@ RenderThread::onRoutine()
 		bool hasRequestRender = _rdDataQueue.try_pop(rdData);
 		if (hasRequestRender)
 		{
+			setState(RenderThreadState::Processing);
 			render(*rdData);
 		}
 		else
 		{
+			setState(RenderThreadState::Stealing);
 			// as a worker thread
 			JobHandle job = nullptr;
 			auto* thp = threadPool();
@@ -101,12 +105,15 @@ RenderThread::render(RenderData& renderData)
 	}
 	#endif // 0
 
-
 	rdFrameParam.reset(curFrame);
 
-	auto& tsfCtx	= rdDev->transferContext();
-	auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
-	tsfReq.commit(rdFrameParam);
+	{
+		auto& tsfCtx	= rdDev->transferContext();
+		auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
+		tsfCtx.transferBegin();
+		tsfReq.commit(rdFrameParam);
+		tsfCtx.transferEnd();
+	}
 
 	// RenderFrameContext
 	// beginFrame();
@@ -154,10 +161,20 @@ RenderThread::_temp_render()
 void 
 RenderThread::terminate()
 {
-	_isTerminated.store(true);
+	setState(RenderThreadState::Terminated);
 }
 
-bool	RenderThread::isTerminated()				const	{ return _isTerminated; }
+void 
+RenderThread::setState(RenderThreadState state)
+{
+	_state.store(state);
+}
+
+bool	RenderThread::isState(RenderThreadState state)	const { return _state.load() == state; }
+bool	RenderThread::isTerminated()					const { return isState(RenderThreadState::Terminated); }
+bool	RenderThread::isReadyToProcess()				const { return isState(RenderThreadState::Idle) || isState(RenderThreadState::Stealing); }
+bool	RenderThread::isIdle()							const { return isState(RenderThreadState::Idle); }
+
 bool	RenderThread::isFrameFinished(u64 frame)	const	{ auto n = lastFinishedFrameCount(); return n >= frame; }
 
 u64		RenderThread::currentFrameCount()			const	{ return _curFrameCount.load(); } //{ auto n = lastFinishedFrameCount(); return n <= 1 && isFrameFinished(n) ? n : n - 1; }

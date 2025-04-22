@@ -157,8 +157,6 @@ RenderContext_Vk::onBeginRender()
 
 	VkResult	ret		= {};
 
-	//RDS_TODO("i tihnk no need to wait too early, since it will block the cpu to record RenderCommands, query the fence and reset the frame if it is signaled");
-	// 2023.12.19: but the cmd buf is still executing, must wait before reset, must wait here
 	{
 		RDS_PROFILE_SECTION("vkWaitForFences()");
 		if (vkRdFrame.submitCount() != 0)
@@ -168,12 +166,14 @@ RenderContext_Vk::onBeginRender()
 	}
 
 	//vkResetFences(vkDevice, vkFenceCount, vkFences);		// reset too early will cause deadlock, since the invalidate wii cause no work submitted (returned) and then no one will signal it
-
-	ret = _vkSwapchain.acquireNextImage(_curImageIdx, vkRdFrame.imageAvaliableSmp()); RDS_UNUSED(ret);
-	if (!Util::isSuccess(ret))
 	{
-		//invalidateSwapchain(ret, framebufferSize());
-		////return;
+		RDS_PROFILE_SECTION("acquireNextImage()");
+		ret = _vkSwapchain.acquireNextImage(_curImageIdx, vkRdFrame.imageAvaliableSmp()); RDS_UNUSED(ret);
+		if (!Util::isSuccess(ret))
+		{
+			//invalidateSwapchain(ret, framebufferSize());
+			////return;
+		}
 	}
 
 	if (frameCount() > 0)
@@ -210,13 +210,16 @@ RenderContext_Vk::onEndRender()
 			Vector<Vk_SmpSubmitInfo, 8> waitSmps;
 			Vector<Vk_SmpSubmitInfo, 8> signalSmps;
 
-			waitSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame.imageAvaliableSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
-			if (auto* tsfCompletedVkSmp = vkTransferFrame(frameIdx).requestCompletedVkSmp(QueueTypeFlags::Graphics))
+			if (auto* tsfCompletedVkSmp = vkTransferFrame(frameIdx).getCompletedVkSemaphore(QueueTypeFlags::Graphics))
 			{
-				waitSmps.emplace_back	(Vk_SmpSubmitInfo{tsfCompletedVkSmp->hnd(),	VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT});
+				waitSmps.emplace_back(Vk_SmpSubmitInfo{tsfCompletedVkSmp->hnd(), VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT});
 			}
 
-			signalSmps.emplace_back	(Vk_SmpSubmitInfo{vkRdFrame.renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+			if (_vkSwapchain.isValid())
+			{
+				waitSmps.emplace_back(	Vk_SmpSubmitInfo{vkRdFrame.imageAvaliableSmp()->hnd(),  VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+				signalSmps.emplace_back(Vk_SmpSubmitInfo{vkRdFrame.renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+			}
 
 			RenderDebugLabel debugLabel;
 			debugLabel.name = "RenderContext_Vk::onEndRender()";

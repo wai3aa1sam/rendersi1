@@ -75,9 +75,12 @@ protected:
 	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)			override;
 	virtual void onCommitRenderResources(TransferCommandBuffer& createQueue, TransferCommandBuffer& destroyQueue)	override;
 
-	Vk_Queue* requestVkQueue(QueueTypeFlags type);
+	virtual void onTransferBegin()	override;
+	virtual void onTransferEnd()	override;
 
 protected:
+	Vk_Queue* requestVkQueue(QueueTypeFlags type);
+
 	void _commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLabel, TransferCommandBuffer& tsfCmdBuf, QueueTypeFlags queueType, bool isWaitImmediate);
 
 	void _setDebugName();

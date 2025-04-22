@@ -55,16 +55,29 @@ TransferContext::destroy()
 	Base::destroy();
 }
 
+void TransferContext::transferBegin()
+{
+	commitRenderResources(renderFrameParam());		// should pass from fn
+	onTransferBegin();
+}
+
+void TransferContext::transferEnd()
+{
+	onTransferEnd();
+}
 void 
 TransferContext::commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)
 {
 	auto* rdDev	= renderDevice();
 
-	commitRenderResources(rdFrameParam);
-
 	onCommit(rdFrameParam, tsfReq, isWaitImmediate);
-
 	rdDev->bindlessResource().commit();
+}
+
+void 
+TransferContext::waitFrameFinished(RenderFrameParam& rdFrameParam)
+{
+	RDS_ASSERT(false, "shd not be called");
 }
 
 void 
@@ -123,6 +136,18 @@ void
 TransferContext::onDestroy()
 {
 	
+}
+
+void 
+TransferContext::onTransferBegin()
+{
+
+}
+
+void 
+TransferContext::onTransferEnd()
+{
+
 }
 
 void 

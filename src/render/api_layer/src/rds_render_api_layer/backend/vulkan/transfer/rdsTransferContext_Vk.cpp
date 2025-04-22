@@ -31,6 +31,7 @@ TransferContext_Vk::reset(u64 frameCount)
 {
 	auto frameIdx = Traits::rotateFrame(frameCount);
 	vkTransferFrame(frameIdx).clear();
+	RDS_TODO("this design is bug, should explicitly know thread ownership, resource upload should have its own allocator");
 }
 
 void 
@@ -61,6 +62,27 @@ TransferContext_Vk::onDestroy()
 }
 
 void 
+TransferContext_Vk::onTransferBegin()
+{
+	Base::onTransferBegin();
+
+	auto& rdFrameParam = renderFrameParam();
+	//waitFrameFinished(rdFrameParam);
+	reset(rdFrameParam.frameCount());
+
+	// should not use reset
+	// separate the reset() to reset(Type type) and to wait(Type type)
+	// _commitUploadCmdsToDstQueue its own fence could wait then reset
+}
+
+void 
+TransferContext_Vk::onTransferEnd()
+{
+	Base::onTransferEnd();
+
+}
+
+void 
 TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)
 {
 	Base::onCommit(rdFrameParam, tsfReq, isWaitImmediate);
@@ -77,8 +99,11 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 	auto  frameIdx		= frameIndex();
 	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
-	auto& inFlighVkFence	= vkTsfFrame._inFlightVkFnc;
-	auto& completedVkSmp	= vkTsfFrame._completedVkSmp;
+	auto& vkQueueData		= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
+	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);
+
+	auto& inFlightVkFnc		= vkQueueData.inFlightVkFence;
+	auto& completedVkSmp	= vkQueueData.completedVkSemaphore;
 	auto* vkCmdBuf			= vkTsfFrame.requestTransferCommandBuffer(VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY, "TransferContext_Vk::onCommit-vkCmdBuf");
 
 	_curVkCmdBuf = vkCmdBuf;
@@ -91,23 +116,20 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 
 	vkCmdBuf->endRecord();
 
-	inFlighVkFence.wait(rdDevVk);
-	inFlighVkFence.reset(rdDevVk);
-
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");
 	RenderDebugLabel debugLabel;
 	debugLabel.name = "TransferContext_Vk::onCommit()";
 	if (!isWaitImmediate)
 	{
-		vkCmdBuf->submit(debugLabel, &inFlighVkFence, 
+		vkCmdBuf->submit(debugLabel, &inFlightVkFnc, 
 			//&frame._completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, 
 			&completedVkSmp, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
 		vkTsfFrame._hasTransferedGraphicsResoures = true;
 	}
 	else
 	{
-		vkCmdBuf->submit(debugLabel, &inFlighVkFence);
-		inFlighVkFence.wait(rdDevVk);
+		vkCmdBuf->submit(debugLabel, &inFlightVkFnc);
+		inFlightVkFnc.wait(rdDevVk);
 		
 		// ensure the render part wont need to signal the "completedVkSmp"
 		vkTsfFrame._hasTransferedGraphicsResoures = false;
@@ -125,17 +147,21 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLab
 	auto  frameIdx		= frameIndex();
 	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
-	if (queueType == QueueTypeFlags::Graphics	&& !vkTsfFrame.hasTransferedGraphicsResoures())	{ return; }
-	if (queueType == QueueTypeFlags::Compute	&& !vkTsfFrame.hasTransferedComputeResoures())	{ return; }
+	if (BitUtil::has(queueType, QueueTypeFlags::Graphics)	&& !vkTsfFrame.hasTransferedGraphicsResoures())	{ return; }
+	if (BitUtil::has(queueType, QueueTypeFlags::Compute)	&& !vkTsfFrame.hasTransferedComputeResoures())	{ return; }
 
 	auto* rdDevVk		= renderDeviceVk();
 	auto* vkCmdBuf		= vkTsfFrame.requestCommandBuffer(queueType, VK_COMMAND_BUFFER_LEVEL_PRIMARY, RDS_FMT_DEBUG("_commitUploadCmdsToDstQueue-{}", queueType));
 
 	//auto& srcInFlighVkFence = frame._inFlightVkFnc;
-	auto& srcCompletedVkSmp = vkTsfFrame._completedVkSmp;
+	auto& srcVkQueueData	= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
+	auto& srcCompletedVkSmp = srcVkQueueData.completedVkSemaphore;
 
-	auto& dstInFlighVkFnc	= *vkTsfFrame.requestInFlightVkFnc(queueType);
-	auto& dstCompletedVkSmp = *vkTsfFrame.requestCompletedVkSmp(queueType);
+	auto& dstVkQueueData	= vkTsfFrame.getVkQueueData(queueType);
+	vkTsfFrame.waitAndResetQueueData(queueType);
+
+	auto& dstInFlighVkFnc	= dstVkQueueData.inFlightVkFence;
+	auto& dstCompletedVkSmp	= dstVkQueueData.completedVkSemaphore;
 
 	vkCmdBuf->beginRecord(requestVkQueue(queueType));
 	
@@ -160,8 +186,6 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLab
 	}
 
 	vkCmdBuf->endRecord();
-
-	dstInFlighVkFnc.reset(rdDevVk);
 
 	if (!isWaitImmediate)
 	{
@@ -189,10 +213,6 @@ TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& createQueue, 
 	_dispatchCommands(this, createQueue);
 	_dispatchCommands(this, destroyQueue);
 }
-
-//TransferRequest& transferReq, 
-//TransferRequest& transferReq, 
-//TransferRequest& transferReq, 
 
 void 
 TransferContext_Vk::requestStagingBuf(StagingHandle& outHnd, SizeType size)

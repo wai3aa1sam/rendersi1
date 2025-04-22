@@ -104,7 +104,9 @@ Vk_Swapchain::acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp)
 	RDS_PROFILE_SCOPED();
 
 	// since the width or height is 0, no swapchain is created
-	if (!hnd()) return VkResult::VK_ERROR_OUT_OF_DATE_KHR;
+	if (!hnd())		return VkResult::VK_ERROR_OUT_OF_DATE_KHR;
+	if (!isValid()) return VkResult::VK_SUCCESS;
+		
 
 	auto* rdDevVk	= renderDeviceVk();
 	auto* vkDev		= rdDevVk->vkDevice();
@@ -124,6 +126,8 @@ Vk_Swapchain::acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp)
 VkResult
 Vk_Swapchain::swapBuffers(Vk_Queue* presentVkQueue, Vk_Semaphore* vkWaitSmp)
 {
+	if (!isValid()) return VkResult::VK_SUCCESS;
+
 	VkPresentInfoKHR presentInfo = {};
 
 	Vk_Semaphore_T*	waitVkSmps[]   = { vkWaitSmp->hnd() };

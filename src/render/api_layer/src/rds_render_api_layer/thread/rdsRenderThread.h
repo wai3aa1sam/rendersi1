@@ -16,6 +16,16 @@ struct RenderThread_CreateDesc : public ::nmsp::TypeThread_CreateDesc
 
 };
 
+#define RenderThreadState_ENUM_LIST(E) \
+	E(None, = 0) \
+	E(Terminated, ) \
+	E(Idle, ) \
+	E(Processing, ) \
+	E(Stealing, ) \
+	E(_kCount, ) \
+//---
+RDS_ENUM_CLASS(RenderThreadState, u8);
+
 #if 0
 #pragma mark --- rdsRenderThread-Decl ---
 #endif // 0
@@ -41,6 +51,8 @@ public:
 
 public:
 	bool	isTerminated()				const;
+	bool	isReadyToProcess()			const;
+	bool	isIdle()					const;
 	bool	isFrameFinished(u64 frame)	const;
 	u64		currentFrameCount()			const;
 	u64		lastFinishedFrameCount()	const;
@@ -52,9 +64,13 @@ protected:
 public:		// TODO: remove temp
 	void _temp_render();
 
+protected:
+	void setState(RenderThreadState state);
+	bool isState(RenderThreadState state) const;
+
 private:
 	AtmQueue<UPtr<RenderData> > _rdDataQueue;
-	Atm<bool>					_isTerminated = false;
+	Atm<RenderThreadState>		_state = RenderThreadState::None;
 	Atm<u64>					_curFrameCount = 0;
 	Atm<u64>					_lastFinishedFrameCount = 0;
 };
@@ -62,3 +78,5 @@ private:
 #endif
 
 }
+
+

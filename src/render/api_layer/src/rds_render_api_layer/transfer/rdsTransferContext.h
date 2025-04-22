@@ -38,7 +38,12 @@ public:
 	void create	(const CreateDesc& cDesc);
 	void destroy();
 
+	void transferBegin();
+	void transferEnd();
+
 	void commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
+
+	virtual void waitFrameFinished(RenderFrameParam& rdFrameParam);
 
 public:
 	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
@@ -52,6 +57,9 @@ public:
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
 	virtual void onDestroy	();
+
+	virtual void onTransferBegin();
+	virtual void onTransferEnd();
 
 	template<class CTX> void _dispatchCommands(	CTX* ctx, TransferCommandBuffer& cmdBuf);
 	template<class CTX> void _dispatchCommand(	CTX* ctx, TransferCommand* cmd);

@@ -44,6 +44,7 @@ RenderThreadQueue::destroy()
 	if (_rdThread)
 	{
 		waitFrame(_rdThread->currentFrameCount());
+		_rdThread->terminate();
 	}
 	_rdThread = nullptr;
 }
@@ -79,7 +80,7 @@ RenderThreadQueue::isSignaled(u64 engineFrameCount) const
 	auto rdThreadCurrentFrameCount = currentFrameCount();
 	bool isSameFrameIndex = RenderApiLayerTraits::rotateFrame(engineFrameCount) == RenderApiLayerTraits::rotateFrame(rdThreadCurrentFrameCount);
 	bool shdWait = (isSameFrameIndex && !_rdThread->isFrameFinished(engineFrameCount));	// not work for RenderApiLayerTraits::s_kFrameInFlightCount == 1
-	return !shdWait;
+	return !shdWait || _rdThread->isReadyToProcess();
 }
 
 #endif

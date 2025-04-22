@@ -16,6 +16,31 @@ class TransferContext;
 struct StagingHandle;
 
 #if 0
+#pragma mark --- rdsVk_QueueData-Decl ---
+#endif // 0
+#if 1
+
+struct Vk_QueueData		// Vk_QueueData
+{
+public:
+	Vk_Fence			inFlightVkFence;
+	Vk_Semaphore		completedVkSemaphore;
+	Vk_CommandPool		vkCommandPool;
+
+public:
+	void create(QueueTypeFlags qeueuType, RenderDevice_Vk* rdDevVk, VkCommandPoolCreateFlags vkCmdPool = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+	void destroy();
+
+public:
+	void setDebugName(const SrcLoc& srcLoc, StrView name);
+
+public:
+	RenderDevice_Vk* renderDeviceVk();
+};
+
+#endif
+
+#if 0
 #pragma mark --- rdsVk_TransferFrame-Decl ---
 #endif // 0
 #if 1
@@ -25,7 +50,6 @@ class Vk_TransferFrame : public NonCopyable
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 
 	friend class TransferContext_Vk;
-
 public:
 	using Util = Vk_RenderApiUtil;
 
@@ -44,6 +68,9 @@ public:
 	void destroy();
 
 	void clear();
+	void waitAndResetQueueData(	QueueTypeFlags type);
+	void resetQueueData(		QueueTypeFlags type);
+	void waitQueueData(			QueueTypeFlags type);
 
 	void	requestStagingHandle	(StagingHandle& out, VkDeviceSize	size);
 	void	uploadToStagingBuf		(StagingHandle& out, ByteSpan		data, SizeType offset);
@@ -55,13 +82,17 @@ public:
 	Vk_CommandBuffer* requestTransferCommandBuffer	(VkCommandBufferLevel level, StrView debugName);
 	Vk_CommandBuffer* requestComputeCommandBuffer	(VkCommandBufferLevel level, StrView debugName);
 
-	Vk_Fence*		requestInFlightVkFnc	(QueueTypeFlags type);
-	Vk_Semaphore*	requestCompletedVkSmp	(QueueTypeFlags type);
-
+public:
 	RenderDevice_Vk* renderDeviceVk();
 
-	bool hasTransferedGraphicsResoures()	const;
-	bool hasTransferedComputeResoures()		const;
+	void setTransferedResoures(QueueTypeFlags type, bool val);
+	bool hasTransferedResoures(QueueTypeFlags type)	const;
+	bool hasTransferedGraphicsResoures()			const;
+	bool hasTransferedComputeResoures()				const;
+
+	Vk_QueueData&	getVkQueueData(			QueueTypeFlags type);
+	Vk_Fence*		getInFlightVkFence(		QueueTypeFlags type);
+	Vk_Semaphore*	getCompletedVkSemaphore(QueueTypeFlags type);
 
 protected:
 	Vk_Buffer_T* getVkStagingBufHnd(u32 idx);
@@ -71,13 +102,16 @@ protected:
 
 protected:
 	TransferContext_Vk*	_tsfCtxVk = nullptr;
-	Vk_Fence			_inFlightVkFnc;
+	/*Vk_Fence			_inFlightVkFnc;
 	Vk_Semaphore		_completedVkSmp;
 	Vk_CommandPool		_transferVkCmdPool;
 
 	Vk_Fence			_graphicsInFlightVkFnc;
 	Vk_Semaphore		_graphicsCompletedVkSmp;
-	Vk_CommandPool		_graphicsVkCmdPool;
+	Vk_CommandPool		_graphicsVkCmdPool;*/
+
+	Vk_QueueData _tsfVkQueueData;
+	Vk_QueueData _gfxVkQueueData;
 
 	bool _hasTransferedGraphicsResoures	= false;
 	bool _hasTransferedComputeResoures	= false;
@@ -88,49 +122,8 @@ protected:
 inline bool Vk_TransferFrame::hasTransferedGraphicsResoures() const { return _hasTransferedGraphicsResoures; }
 inline bool Vk_TransferFrame::hasTransferedComputeResoures() const	{ return _hasTransferedComputeResoures; }
 
-inline 
-Vk_CommandBuffer* 
-Vk_TransferFrame::requestCommandBuffer(QueueTypeFlags type, VkCommandBufferLevel level, StrView debugName)
-{
-	using SRC = QueueTypeFlags;
-	switch (type)
-	{
-		case SRC::Graphics: { return requestGraphicsCommandBuffer(level, debugName); } break;
-		//case SRC::Compute:	{ return _graphicsVkCmdPool.requestCommandBuffer(level); } break;
-		case SRC::Transfer: { return requestTransferCommandBuffer(level, debugName); } break;
-		default: { RDS_THROW(""); }
-	}
-}
-
-inline Vk_CommandBuffer* Vk_TransferFrame::requestGraphicsCommandBuffer(VkCommandBufferLevel level, StrView debugName) { return _graphicsVkCmdPool.requestCommandBuffer(level, debugName, renderDeviceVk()); }
-inline Vk_CommandBuffer* Vk_TransferFrame::requestTransferCommandBuffer(VkCommandBufferLevel level, StrView debugName) { return _transferVkCmdPool.requestCommandBuffer(level, debugName, renderDeviceVk()); }
-
-inline Vk_Fence*		
-Vk_TransferFrame::requestInFlightVkFnc(QueueTypeFlags type)
-{
-	using SRC = QueueTypeFlags;
-	switch (type)
-	{
-		case SRC::Graphics: { return _hasTransferedGraphicsResoures ? &_graphicsInFlightVkFnc : nullptr; } break;
-			//case SRC::Compute:	{ return _graphicsVkCmdPool.requestCommandBuffer(level); } break;
-		//case SRC::Transfer: { return &_inFlightVkFnc; } break;
-		default: { RDS_THROW(""); }
-	}
-}
-
-inline Vk_Semaphore*
-Vk_TransferFrame::requestCompletedVkSmp(QueueTypeFlags type)
-{
-	using SRC = QueueTypeFlags;
-	switch (type)
-	{
-		case SRC::Graphics: { return _hasTransferedGraphicsResoures ? &_graphicsCompletedVkSmp : nullptr; } break;
-			//case SRC::Compute:	{ return _graphicsVkCmdPool.requestCommandBuffer(level); } break;
-		//case SRC::Transfer: { return _completedVkSmp; } break;
-		default: { RDS_THROW(""); }
-	}
-}
-
+inline Vk_CommandBuffer* Vk_TransferFrame::requestGraphicsCommandBuffer(VkCommandBufferLevel level, StrView debugName) { return getVkQueueData(QueueTypeFlags::Graphics).vkCommandPool.requestCommandBuffer(level, debugName, renderDeviceVk()); }
+inline Vk_CommandBuffer* Vk_TransferFrame::requestTransferCommandBuffer(VkCommandBufferLevel level, StrView debugName) { return getVkQueueData(QueueTypeFlags::Transfer).vkCommandPool.requestCommandBuffer(level, debugName, renderDeviceVk()); }
 
 #endif
 

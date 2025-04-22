@@ -53,7 +53,6 @@ private:
 	CRenderableSystem& renderableSystem();
 
 protected:
-	void prepare_SingleThreadMode();
 	void submitRenderJob(RenderDevice* rdDev);
 
 private:

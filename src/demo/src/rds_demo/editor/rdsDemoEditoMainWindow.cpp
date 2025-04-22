@@ -66,7 +66,7 @@ DemoEditorMainWindow::onUiKeyboardEvent(UiKeyboardEvent& ev)
 void 
 DemoEditorMainWindow::hotReloadShaders()
 {
-	#if 1
+	#if 0
 	{
 		auto* ps = ProjectSetting::instance();
 		ShaderCompileRequest::generateCompileShaderScript(ps->rdsRoot(), ps->projectRoot(), RDS_BUILD_CONFIG_STR, ps);

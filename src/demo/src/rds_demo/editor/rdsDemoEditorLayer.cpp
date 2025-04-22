@@ -33,6 +33,7 @@ DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
 DemoEditorLayer::~DemoEditorLayer()
 {
 	#if 1
+	_rdThreadQueue.destroy();
 	_gfxDemo.reset(nullptr);
 	_scene.destroy();
 	_egCtx.destroy();
@@ -47,9 +48,9 @@ DemoEditorLayer::onCreate()
 	JobSystem::instance()->setSingleThreadMode(false);
 	
 	_egCtx.create();
-	#if !RDS_SINGLE_THREAD_MODE
+	#if !RDS_USE_RENDER_SINGLE_THREAD_MODE
 	_rdThread.create(RenderThread::makeCDesc(JobSystem::instance()));
-	#endif // !RDS_SINGLE_THREAD_MODE
+	#endif // !RDS_USE_RENDER_SINGLE_THREAD_MODE
 	_rdThreadQueue.create(&_rdThread);
 
 	_scene.create(_egCtx);
@@ -65,7 +66,6 @@ DemoEditorLayer::onCreate()
 	auto& rdGraph = renderableSystem().renderGraph();
 	rdGraph.create(mainWindow().title(), &rdCtx);
 
-	prepare_SingleThreadMode();
 	_gfxDemo->onCreateScene(&_scene);
 
 	// temp solution for submit to trigger first frame TransferContext::commit
@@ -319,34 +319,6 @@ DemoEditorLayer::drawUI(RenderContext& rdCtx, CRenderableSystem& rdableSys)
 }
 
 void
-DemoEditorLayer::prepare_SingleThreadMode()
-{
-	// prepare
-	#if RDS_SINGLE_THREAD_MODE && 0
-	{
-		auto clientRect = mainWnd.clientRect();
-		rdCtx.setFramebufferSize(clientRect.size);		// this will invalidate the swapchain
-		mainWnd.camera().setViewport(clientRect);
-
-		rdGraph.reset();
-
-		_gfxDemo->prepareRender(&rdGraph, renderableSystem().mainDrawData());
-
-		renderableSystem().update(scene());
-		renderableSystem().drawUi(&rdCtx, false, false);
-
-		rdCtx.transferRequest().commit();
-
-		rdCtx.beginRender();
-		renderableSystem().render();
-		rdCtx.endRender();
-
-		Renderer::renderDevice()->waitIdle();
-	}
-	#endif // 0
-}
-
-void
 DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 {
 	auto& egFrameParam	= _egCtx.engineFrameParam();
@@ -355,7 +327,7 @@ DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 	RenderData_RenderJob rdJob;
 	rdableSys.setupRenderJob(rdJob);
 	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rds::move(rdJob));
-	#if RDS_SINGLE_THREAD_MODE
+	#if RDS_USE_RENDER_SINGLE_THREAD_MODE
 	_rdThread._temp_render();
 	#endif // RDS_SINGLE_THREAD_MODE
 }
@@ -363,12 +335,14 @@ DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 void 
 DemoEditorLayer::_todoList()
 {
+	RDS_WARN_ONCE("only amd gpu have tracy profiler vulkan valiadation error, it is fine in nvida");
+
 	RDS_TODO(
 		"profiling, change all dynamic to static profile zone"
 		"\n  add gpu static profiling zone"
 	);
 
-
+	RDS_TODO("vk bindless writeInfo, persistent  / LinearAllocator also cannot solve, since LineaAllocator may alloc from other chunks, not continuous");
 }
 
 DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }
