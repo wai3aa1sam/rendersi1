@@ -60,7 +60,10 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 
 		{
 			RDS_PROFILE_DYNAMIC_FMT("wait gpu i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
-			rdCtx->waitFrameFinished(frameCount);		// temp sol, should wait in rdDev
+
+			// temp sol, should wait in rdDev
+			// if all gpu stuff is only in RenderThread, currently cpu (main thread) has something (tsf buffer) that is related to gpu, not yet all command is impl
+			rdCtx->waitFrameFinished(frameCount);		
 		}
 
 		auto* rdDev = Renderer::renderDevice();

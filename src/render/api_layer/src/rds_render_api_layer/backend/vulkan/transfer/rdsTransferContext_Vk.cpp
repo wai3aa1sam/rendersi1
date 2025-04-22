@@ -99,6 +99,10 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 	auto  frameIdx		= frameIndex();
 	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
+	/*
+	* cannot wait and split the wait here, since
+	*/
+
 	auto& vkQueueData		= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
 	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);
 
@@ -203,15 +207,14 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLab
 }
 
 void 
-TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& createQueue, TransferCommandBuffer& destroyQueue)
+TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate)
 {
-	if (renderDevice())
+	if (renderDevice() && isProcessCreate)
 	{
-		renderDeviceVk()->bindlessResourceVk().reserve(createQueue.commands().size());
+		renderDeviceVk()->bindlessResourceVk().reserve(rscQueue.commands().size());
 	}
 
-	_dispatchCommands(this, createQueue);
-	_dispatchCommands(this, destroyQueue);
+	_dispatchCommands(this, rscQueue);
 }
 
 void 

@@ -49,21 +49,23 @@ TransferContext::destroy()
 	if (!hasCreated())
 		return;
 
-	commitRenderResources(renderFrameParam());
+	destroyRenderResources(renderFrameParam());
 
 	onDestroy();
 	Base::destroy();
 }
 
-void TransferContext::transferBegin()
+void 
+TransferContext::transferBegin()
 {
-	commitRenderResources(renderFrameParam());		// should pass from fn
+	createRenderResources(renderFrameParam());		// should pass from fn
 	onTransferBegin();
 }
 
 void TransferContext::transferEnd()
 {
 	onTransferEnd();
+	destroyRenderResources(renderFrameParam());		// should pass from fn
 }
 void 
 TransferContext::commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)
@@ -83,7 +85,7 @@ TransferContext::waitFrameFinished(RenderFrameParam& rdFrameParam)
 void 
 TransferContext::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
 {
-	auto* cmd = newCommand<TransferCommand_SetDebugName>(_rdRscCreateQueue);
+	auto* cmd = newCommand<TransferCommand_SetDebugName>(_createRdRscQueue);
 	cmd->dst	= rdRsc;
 	cmd->name	= name;
 }
@@ -91,7 +93,7 @@ TransferContext::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
 void 
 TransferContext::createRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
-	auto* cmd = newCommand<TransferCommand_CreateRenderGpuBuffer>(_rdRscCreateQueue);
+	auto* cmd = newCommand<TransferCommand_CreateRenderGpuBuffer>(_createRdRscQueue);
 	cmd->dst = buffer;
 }
 
@@ -99,14 +101,14 @@ void
 TransferContext::createTexture(Texture* texture)
 {
 	RDS_TODO("rework command debug SRCLOC, transfer and render also need to rework!!!");
-	auto* cmd = newCommand<TransferCommand_CreateTexture>(_rdRscCreateQueue);
+	auto* cmd = newCommand<TransferCommand_CreateTexture>(_createRdRscQueue);
 	cmd->dst = texture;
 }
 
 void 
 TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
-	auto* cmd = newCommand<TransferCommand_DestroyRenderGpuBuffer>(_rdRscDestroyQueue);
+	auto* cmd = newCommand<TransferCommand_DestroyRenderGpuBuffer>(_destroyRdRscQueue);
 	cmd->dst = buffer;
 	RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
 }
@@ -114,7 +116,7 @@ TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 void 
 TransferContext::destroyTexture(Texture* texture)
 {
-	auto* cmd = newCommand<TransferCommand_DestroyTexture>(_rdRscDestroyQueue);
+	auto* cmd = newCommand<TransferCommand_DestroyTexture>(_destroyRdRscQueue);
 	cmd->dst = texture;
 	RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
 }
@@ -123,11 +125,11 @@ void
 TransferContext::onCreate(const CreateDesc& cDesc)
 {
 	{
-		auto data = _rdRscCreateQueue.scopedULock();
+		auto data = _createRdRscQueue.scopedULock();
 		data->reset(RDS_NEW(TransferCommandBuffer));
 	}
 	{
-		auto data = _rdRscDestroyQueue.scopedULock();
+		auto data = _destroyRdRscQueue.scopedULock();
 		data->reset(RDS_NEW(TransferCommandBuffer));
 	}
 }
@@ -135,7 +137,7 @@ TransferContext::onCreate(const CreateDesc& cDesc)
 void 
 TransferContext::onDestroy()
 {
-	
+
 }
 
 void 
@@ -157,32 +159,44 @@ TransferContext::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfRe
 }
 
 void 
-TransferContext::commitRenderResources(const RenderFrameParam& rdFrameParam)
+TransferContext::createRenderResources(const RenderFrameParam& rdFrameParam)
 {
-	UPtr<TransferCommandBuffer> createQueue;
-	UPtr<TransferCommandBuffer> destroyQueue;
+	UPtr<TransferCommandBuffer> rscQueue;
+	bool isSuccess = _tryPopRenderResourceQueue(rscQueue, _createRdRscQueue, rdFrameParam);
+	if (isSuccess)
 	{
-		{
-			auto data	= _rdRscCreateQueue.scopedULock();
-			createQueue = rds::move(*data);
-			data->reset(RDS_NEW(TransferCommandBuffer));
-		}
-
-		{
-			auto data		= _rdRscDestroyQueue.scopedULock();
-			destroyQueue	= rds::move(*data);
-			data->reset(RDS_NEW(TransferCommandBuffer));
-		}
+		onCommitRenderResources(*rscQueue, true);
 	}
-	onCommitRenderResources(*createQueue, *destroyQueue);
 }
 
 void 
-TransferContext::onCommitRenderResources(TransferCommandBuffer& createQueue, TransferCommandBuffer& destroyQueue)
+TransferContext::destroyRenderResources(const RenderFrameParam& rdFrameParam)
+{
+	UPtr<TransferCommandBuffer> rscQueue;
+	bool isSuccess = _tryPopRenderResourceQueue(rscQueue, _destroyRdRscQueue, rdFrameParam);
+	if (isSuccess)
+	{
+		onCommitRenderResources(*rscQueue, false);
+	}
+}
+
+void 
+TransferContext::onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate)
 {
 
 }
 
+bool
+TransferContext::_tryPopRenderResourceQueue(UPtr<TransferCommandBuffer>& out, ResourceQueue& rscQue, const RenderFrameParam& rdFrameParam)
+{
+	{
+		auto* p = RDS_NEW(TransferCommandBuffer);
+		auto data	= rscQue.scopedULock();
+		out = rds::move(*data);
+		data->reset(p);
+	}
+	return out;
+}
 
 #endif
 

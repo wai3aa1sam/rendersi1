@@ -24,8 +24,7 @@ public:
 	using Base			= RenderResource;
 	using CreateDesc	= TransferContext_CreateDesc;
 
-	using CreateQueue	= MutexProtected<UPtr<TransferCommandBuffer> >;
-	using DestroyQueue	= MutexProtected<UPtr<TransferCommandBuffer> >;
+	using ResourceQueue	= MutexProtected<UPtr<TransferCommandBuffer> >;
 
 public:
 	static CreateDesc				makeCDesc();
@@ -65,15 +64,19 @@ protected:
 	template<class CTX> void _dispatchCommand(	CTX* ctx, TransferCommand* cmd);
 	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
 
-			void commitRenderResources(const RenderFrameParam& rdFrameParam);
-	virtual void onCommitRenderResources(TransferCommandBuffer& createQueue, TransferCommandBuffer& destroyQueue);
+			void createRenderResources( const RenderFrameParam& rdFrameParam);
+			void destroyRenderResources(const RenderFrameParam& rdFrameParam);
+	virtual void onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate);
 
 protected:
 	template<class T, class QUEUE> T* newCommand(QUEUE& queue);
 
 private:
-	CreateQueue		_rdRscCreateQueue;
-	DestroyQueue	_rdRscDestroyQueue;
+	bool _tryPopRenderResourceQueue(UPtr<TransferCommandBuffer>& out, ResourceQueue& rscQue, const RenderFrameParam& rdFrameParam);
+
+private:
+	ResourceQueue	_createRdRscQueue;
+	ResourceQueue	_destroyRdRscQueue;
 };
 
 template<class CTX> inline

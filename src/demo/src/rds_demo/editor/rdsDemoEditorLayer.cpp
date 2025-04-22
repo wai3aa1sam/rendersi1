@@ -332,7 +332,48 @@ DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 	#endif // RDS_SINGLE_THREAD_MODE
 }
 
+DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }
+DemoEditorMainWindow&	DemoEditorLayer::mainWindow()	{ return app().mainWindow(); }
+
 void 
+DemoEditorLayer::_logForResumeDevelopMustWatchFirst()
+{
+	/*
+	* --- 2025_04_23
+	*/
+	{
+		/*
+		* --- 2025_04_23 - 0
+		* currently debugging the multi-thread bug, thinking many design
+		* , but first, since create/destroy RenderResource is as a command, when someone create and destroy immediately
+		* , since there is (also must, no matter index(current) / FrameAllocator Receive method) sth holding the SPtr
+		* , so it wont destroy first and safe when it also submit to gpu, make sure only destroy when gpu is done for it
+		* , flow is
+		* Engine						->								Render
+		*																create tsf RenderData (RenderResource in here) 
+		*																	- no destroy here as gpu may still processing
+		* 
+		*																tsf begin
+		*																	wait prev tsf RenderData
+		*																	could split wait+reset for vk
+		*																process tsf
+		* 
+		* 																 render begin
+		*																	- wait + reset fence
+		*																	- submit render
+		*																 render end
+		* 
+		*																tsf end
+		*	pass tsf EngineData	(Vk_Staging+CmdBuf)							- process destroy tsf RenderData (curFrame in Engine reset-ed trigger 0-refCount-destroy, )
+		*	to Render														- also process destroy tsf EngineData 
+		*																		- (for last same index frame, above waiting ensure no-one is using)
+		*																		- it will destroy in next frame
+		*	
+		*/
+	}
+}
+
+void
 DemoEditorLayer::_todoList()
 {
 	RDS_WARN_ONCE("only amd gpu have tracy profiler vulkan valiadation error, it is fine in nvida");
@@ -343,10 +384,14 @@ DemoEditorLayer::_todoList()
 	);
 
 	RDS_TODO("vk bindless writeInfo, persistent  / LinearAllocator also cannot solve, since LineaAllocator may alloc from other chunks, not continuous");
-}
 
-DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }
-DemoEditorMainWindow&	DemoEditorLayer::mainWindow()	{ return app().mainWindow(); }
+	RDS_TODO("create Material and other RenderResource as command, also the virutal should be cmd_onXXXX instead of onXXXX");
+	RDS_TODO(
+		"Material or other engine stuff maybe meaningless to be n framed (1 copy is needed), eg constBuf"
+		"\n , just a cpu buffer and upload will immediately copy to Staging on its calling Thread"
+	);
+
+}
 
 
 #endif

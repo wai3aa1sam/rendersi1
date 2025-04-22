@@ -73,7 +73,7 @@ protected:
 	virtual void onDestroy()						override;
 
 	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)			override;
-	virtual void onCommitRenderResources(TransferCommandBuffer& createQueue, TransferCommandBuffer& destroyQueue)	override;
+	virtual void onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate)						override;
 
 	virtual void onTransferBegin()	override;
 	virtual void onTransferEnd()	override;

@@ -95,15 +95,6 @@ RenderThread::render(RenderData& renderData)
 	auto* rdDev			= renderData.renderDevice;
 	auto& rdFrameParam	= rdDev->renderFrameParam();
 
-	// maybe useful if all gpu stuff is only in RenderThread, currently cpu (main thread) has something (tsf buffer) that is related to gpu, not yet all command is impl
-	#if 0
-	for (auto& e : renderData.renderJobs)
-	{
-		auto&	rdGraph		= *e.renderGraph;
-		auto*	rdCtx		= rdGraph.renderContext();
-		rdCtx->waitFrameFinished(curFrame);
-	}
-	#endif // 0
 
 	rdFrameParam.reset(curFrame);
 
@@ -112,32 +103,35 @@ RenderThread::render(RenderData& renderData)
 		auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
 		tsfCtx.transferBegin();
 		tsfReq.commit(rdFrameParam);
-		tsfCtx.transferEnd();
-	}
 
-	// RenderFrameContext
-	// beginFrame();
-	//		for ... render()
-	// endFrame();		// only submit here
-	for (auto& e : renderData.renderJobs)
-	{
-		//RDS_CORE_LOG_ERROR("render begin - curFrame: {}, e.renderGraphFrameIdx: {}", curFrame, e.renderGraphFrameIdx);
-
-		auto&	rdGraph		= *e.renderGraph;
-		auto*	rdCtx		= rdGraph.renderContext();
-		//auto	frameIndex	= rdFrameParam.frameIndex();
-
-		rdCtx->beginRender();
-
-		rdGraph.commit(e.renderGraphFrameIdx);
-		if (auto* rdReq = e.renderRequest)
 		{
-			rdCtx->commit(*rdReq);
+			// RenderFrameContext
+			// beginFrame();
+			//		for ... render()
+			// endFrame();		// only submit here
+			for (auto& e : renderData.renderJobs)
+			{
+				//RDS_CORE_LOG_ERROR("render begin - curFrame: {}, e.renderGraphFrameIdx: {}", curFrame, e.renderGraphFrameIdx);
+
+				auto&	rdGraph		= *e.renderGraph;
+				auto*	rdCtx		= rdGraph.renderContext();
+				//auto	frameIndex	= rdFrameParam.frameIndex();
+
+				rdCtx->beginRender();
+
+				rdGraph.commit(e.renderGraphFrameIdx);
+				if (auto* rdReq = e.renderRequest)
+				{
+					rdCtx->commit(*rdReq);
+				}
+
+				rdCtx->endRender();
+
+				//RDS_CORE_LOG_ERROR("render end - curFrame: {}, e.renderGraphFrameIdx: {}", curFrame, e.renderGraphFrameIdx);
+			}
 		}
 
-		rdCtx->endRender();
-
-		//RDS_CORE_LOG_ERROR("render end - curFrame: {}, e.renderGraphFrameIdx: {}", curFrame, e.renderGraphFrameIdx);
+		tsfCtx.transferEnd();
 	}
 
 	RDS_TODO(

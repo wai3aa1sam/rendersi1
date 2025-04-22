@@ -56,6 +56,7 @@ protected:
 	void submitRenderJob(RenderDevice* rdDev);
 
 private:
+	void _logForResumeDevelopMustWatchFirst();
 	void _todoList();
 
 private:
