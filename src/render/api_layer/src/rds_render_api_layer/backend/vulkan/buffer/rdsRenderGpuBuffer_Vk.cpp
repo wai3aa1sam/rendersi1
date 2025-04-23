@@ -95,16 +95,15 @@ void
 RenderGpuBuffer_Vk::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 {
 	Base::onUploadToGpu(cmd);
-
+	
+	auto& tsfFrameVk	= transferFrameVk(); // rdDev->transferFrame(rdDev->engineFrameIndex());
 	if (isConstantBuffer())
 	{
-		auto* rdDev		= renderDevice();
-		auto& tsfFrame	= rdDev->transferFrame(rdDev->engineFrameIndex());
-		tsfFrame.constBufferAllocator().uploadToBuffer(cmd->_stagingHnd, cmd->data);
+		tsfFrameVk.constBufferAllocator().uploadToBuffer(cmd->_stagingHnd, cmd->data);
 	}
 	else
 	{
-		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, cmd->data);
+		tsfFrameVk.uploadToStagingBuf(cmd->_stagingHnd, cmd->data);
 	}
 }
 

@@ -58,6 +58,9 @@ class	ShaderPermutations;
 class	Material;
 struct	Material_CreateDesc;
 
+class	TransferFrame;
+struct	TransferFrame_CreateDesc;
+
 class RenderDevice : public RenderResource
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
@@ -96,6 +99,8 @@ public:
 	SPtr<Material>				createMaterial(						Shader*							shader);
 	SPtr<Material>				createMaterial();
 
+	UPtr<TransferFrame>			createTransferFrame(				TransferFrame_CreateDesc&		cDesc);
+
 public:
 	SPtr<Texture2D>	createSolidColorTexture2D(  const Color4b& color);
 	SPtr<Texture2D>	createCheckerboardTexture2D(const Color4b& color);
@@ -104,10 +109,11 @@ public:
 	const	RenderAdapterInfo&		adapterInfo() const;
 			ShaderStock&			shaderStock();
 			TextureStock&			textureStock();
-			RenderFrame&			renderFrame(	u64	frameIdx);
-			TransferFrame&			transferFrame(	u64	frameIdx);
+//			RenderFrame&			renderFrame(	u64	frameIdx);
+			TransferFrame&			transferFrame();
+			UPtr<TransferFrame>		releaseTransferFrame();
 			TransferContext&		transferContext();
-			TransferRequest&		transferRequest(u64 frameIdx);
+			TransferRequest&		transferRequest();
 
 			BindlessResources&	bindlessResource();
 
@@ -136,6 +142,8 @@ protected:
 	virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&				cDesc)	= 0;
 	virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&			cDesc)	= 0;
 
+	virtual UPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	= 0;
+
 protected:
 	RenderApiType		_apiType = RenderApiType::Vulkan;
 
@@ -146,8 +154,9 @@ protected:
 	/*
 	* TODO: rework
 	*/
-	Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
-	Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
+	//Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
+	//Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
+	UPtr<TransferFrame>		_tsfFrame = nullptr;
 
 	BindlessResources*		_bindlessRscs	= nullptr;
 	TransferContext*		_tsfCtx			= nullptr;
@@ -161,11 +170,12 @@ inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const		{ return _a
 inline			ShaderStock&			RenderDevice::shaderStock()					{ return _shaderStock; }
 inline			TextureStock&			RenderDevice::textureStock()				{ return _textureStock; }
 
-inline			RenderFrame&			RenderDevice::renderFrame(	u64	frameIdx)	{ return _rdFrames[frameIdx]; }
-inline			TransferFrame&			RenderDevice::transferFrame(u64 frameIdx)	{ return _tsfFrames[frameIdx]; }
+//inline			RenderFrame&			RenderDevice::renderFrame(	u64	frameIdx)	{ _notYetSupported(RDS_SRCLOC); return _rdFrames[frameIdx]; }
+inline			TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);		RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); return *_tsfFrame; }
+inline			UPtr<TransferFrame>		RenderDevice::releaseTransferFrame()		{ checkRenderThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); auto p = rds::move(_tsfFrame); return p; }
 
 inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx; }
-inline			TransferRequest&		RenderDevice::transferRequest(u64 frameIdx)	{ return transferFrame(frameIdx).transferRequest(); }
+inline			TransferRequest&		RenderDevice::transferRequest()				{ checkMainThreadExclusive(RDS_SRCLOC); return transferFrame().transferRequest(); }
 
 inline			BindlessResources&		RenderDevice::bindlessResource()			{ return *_bindlessRscs; }
 

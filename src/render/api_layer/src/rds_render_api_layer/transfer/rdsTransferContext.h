@@ -24,8 +24,6 @@ public:
 	using Base			= RenderResource;
 	using CreateDesc	= TransferContext_CreateDesc;
 
-	using ResourceQueue	= MutexProtected<UPtr<TransferCommandBuffer> >;
-
 public:
 	static CreateDesc				makeCDesc();
 	static SPtr<TransferContext>	make(const CreateDesc& cDesc);
@@ -40,7 +38,7 @@ public:
 	void transferBegin();
 	void transferEnd();
 
-	void commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
+	void commit(RenderFrameParam& rdFrameParam, UPtr<TransferFrame>&& tsfFrame_, bool isWaitImmediate);
 
 	virtual void waitFrameFinished(RenderFrameParam& rdFrameParam);
 
@@ -52,6 +50,9 @@ public:
 
 	void destroyRenderGpuBuffer(RenderGpuBuffer*	buffer);
 	void destroyTexture(		Texture*			texture);
+
+public:
+	TransferFrame& transferFrame();
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
@@ -69,14 +70,16 @@ protected:
 	virtual void onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate);
 
 protected:
-	template<class T, class QUEUE> T* newCommand(QUEUE& queue);
+	template<class TCmd, class TSafeBuf> static TCmd* newCommand(TSafeBuf& safeBuf);
+
+	void releasePreviousTransferFrame();
 
 private:
-	bool _tryPopRenderResourceQueue(UPtr<TransferCommandBuffer>& out, ResourceQueue& rscQue, const RenderFrameParam& rdFrameParam);
+	TransferCommandSafeBuffer	_createRdRscQueue;
+	TransferCommandSafeBuffer	_destroyRdRscQueue;
 
-private:
-	ResourceQueue	_createRdRscQueue;
-	ResourceQueue	_destroyRdRscQueue;
+	UPtr<TransferFrame> _curTsfFrame = nullptr;
+	Vector<UPtr<TransferFrame>,	s_kFrameInFlightCount> _prevTsfFrames;
 };
 
 template<class CTX> inline
@@ -123,17 +126,11 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 	#undef _DISPACH_CMD_CASE
 }
 
-template<class CMD, class QUEUE> inline
-CMD* 
-TransferContext::newCommand(QUEUE& queue)
+template<class TCmd, class TSafeBuf> inline
+TCmd* 
+TransferContext::newCommand(TSafeBuf& safeBuf)
 {
-	void* buf = nullptr;
-	{
-		auto data = queue.scopedULock();
-		buf = data->ptr()->_internal_allocCommand(sizeof(CMD));
-	}
-	auto* cmd = TransferCommandBuffer::newCommand<CMD>(buf);
-	return cmd;
+	return TransferCommandBuffer::newCommand_Safe<TCmd>(safeBuf);
 }
 
 #endif

@@ -132,8 +132,9 @@ RenderQueue::alloc(SizeType n, SizeType align)
 {
 	RDS_TODO("make it per rdDev");
 	throwIf(true, "rework");
+	return nullptr;
 	//RDS_ASSERT(OsTraits::isMainThread(), "only use this in main thread"); 
-	return Renderer::renderDevice()->renderFrame(0).renderCommandAllocator().alloc(n, align); 
+	//return Renderer::renderDevice()->renderFrame(0).renderCommandAllocator().alloc(n, align); 
 	//return nullptr;
 }
 

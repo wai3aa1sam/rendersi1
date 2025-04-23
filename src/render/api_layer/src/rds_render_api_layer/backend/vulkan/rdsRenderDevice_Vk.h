@@ -10,6 +10,7 @@
 #include "pass/rdsVk_FramebufferPool.h"
 
 #include "transfer/rdsTransferContext_Vk.h"
+#include "transfer/rdsTransferFrame_Vk.h"
 #include "shader/rdsBindlessResources_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
@@ -63,18 +64,22 @@ public:
 	RenderDevice_Vk*		renderDeviceVk()	{ RDS_TODO("remove"); return this; }
 
 	BindlessResources_Vk&	bindlessResourceVk();
+	TransferFrame_Vk&		transferFrameVk();
+	//StagingBuffer_Vk&		stagingBufferVk();
 
 public:
 
 protected:
-	virtual SPtr<RenderContext>			onCreateContext				(const	RenderContext_CreateDesc&		cDesc)	override;
-	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer		(		RenderGpuBuffer_CreateDesc&		cDesc)	override;
-	virtual SPtr<Texture2D>				onCreateTexture2D			(		Texture2D_CreateDesc&			cDesc)	override;
+	virtual SPtr<RenderContext>			onCreateContext(			const	RenderContext_CreateDesc&		cDesc)	override;
+	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc)	override;
+	virtual SPtr<Texture2D>				onCreateTexture2D(					Texture2D_CreateDesc&			cDesc)	override;
 	virtual SPtr<Texture3D>				onCreateTexture3D(					Texture3D_CreateDesc&			cDesc)	override;
-	virtual SPtr<TextureCube>			onCreateTextureCube			(		TextureCube_CreateDesc&			cDesc)	override;
+	virtual SPtr<TextureCube>			onCreateTextureCube(				TextureCube_CreateDesc&			cDesc)	override;
 	virtual SPtr<Texture2DArray>		onCreateTexture2DArray(				Texture2DArray_CreateDesc&		cDesc)	override;
-	virtual SPtr<Shader>				onCreateShader				(const	Shader_CreateDesc&				cDesc)	override;
-	virtual SPtr<Material>				onCreateMaterial			(const	Material_CreateDesc&			cDesc)	override;
+	virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&				cDesc)	override;
+	virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&			cDesc)	override;
+
+	virtual UPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	override;
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc) override;
@@ -135,6 +140,22 @@ inline			Vk_SwapchainAvailableInfo&		RenderDevice_Vk::swapchainAvailableInfo()		
 inline			QueueFamilyIndices&				RenderDevice_Vk::queueFamilyIndices()				{ return _queueFamilyIndices; }
 
 inline			BindlessResources_Vk&			RenderDevice_Vk::bindlessResourceVk()				{ return _bindlessRscsVk; }
+
+inline 
+TransferFrame_Vk&
+RenderDevice_Vk::transferFrameVk()								
+{ 
+	auto& p = sCast<TransferFrame_Vk&>(transferFrame()); 
+	return p;
+}
+
+//StagingBuffer_Vk& 
+//RenderDevice_Vk::stagingBufferVk()								
+//{ 
+//	auto* p = sCast<StagingBuffer_Vk*>(transferFrame().stagingBuffer()); 
+//	RDS_ASSERT(!p, "invalid stagingBufferVk");
+//	return *p;
+//}
 
 #endif
 

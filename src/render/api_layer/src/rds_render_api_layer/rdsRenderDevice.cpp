@@ -57,10 +57,12 @@ RenderDevice::create(const CreateDesc& cDesc)
 	if (cDesc.isShaderCompileMode())
 		return;
 
-	for (size_t i = 0; i < s_kFrameInFlightCount; i++)
+	/*for (size_t i = 0; i < s_kFrameInFlightCount; i++)
 	{
 		_tsfCtx->transferRequest(i).reset(_tsfCtx, &_tsfFrames[i]);
-	}
+	}*/
+	auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
+	_tsfFrame = createTransferFrame(tsfFrameCDesc);
 
 	_shaderStock.create(this);
 	_textureStock.create(this);
@@ -79,8 +81,10 @@ RenderDevice::destroy()
 
 	_shaderStock.destroy();
 	_textureStock.destroy();
-	_rdFrames.clear();
-	_tsfFrames.clear();
+
+	//_rdFrames.clear();
+	//_tsfFrames.clear();
+	_tsfFrame.reset(nullptr);
 
 	if (_tsfCtx)
 	{
@@ -100,8 +104,8 @@ RenderDevice::destroy()
 
 	RDS_CORE_ASSERT(!_bindlessRscs,			"forgot to call destroy() _bindlessRscs");
 	RDS_CORE_ASSERT(!_tsfCtx,				"forgot to call destroy() _tsfCtx");
-	RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
-	RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");
+	//RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
+	//RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");
 }
 
 void 
@@ -109,6 +113,7 @@ RenderDevice::onCreate(const CreateDesc& cDesc)
 {
 	_adapterInfo.isDebug = cDesc.isDebug;
 
+	#if 0
 	_rdFrames.resize(s_kFrameInFlightCount);
 	for (auto& e : _rdFrames)
 	{
@@ -119,6 +124,7 @@ RenderDevice::onCreate(const CreateDesc& cDesc)
 	{
 		e.create();
 	}
+	#endif // 0
 }
 
 void 
@@ -134,13 +140,16 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 
 	auto&	rdFrameParam	= renderFrameParam();
 	auto	frameCount		= engineFrameCount;
-	auto	frameIdx		= Traits::rotateFrame(frameCount);
 
-	RDS_TODO("wait all render context here");
+	RDS_TODO("wait all render context here, maybe no need to wait if all gpu stuff is a command");
+	//auto	frameIdx		= Traits::rotateFrame(frameCount);
+	//_rdFrames[frameIdx].reset();
+	//_tsfFrames[frameIdx].reset(_tsfCtx);
+	//onResetFrame(frameCount);
 
-	_rdFrames[frameIdx].reset();
-	_tsfFrames[frameIdx].reset(_tsfCtx);
-	onResetFrame(frameCount);
+	//RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
+	auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
+	_tsfFrame = createTransferFrame(tsfFrameCDesc);
 	
 	rdFrameParam.setEngineFrameCount(frameCount);
 }

@@ -28,17 +28,6 @@ public:
 
 	void reset(u64 frameCount);
 
-	/*
-	* --- Engine Thread only ---
-	*/
-public:
-	void	requestStagingBuf(		StagingHandle& outHnd,	SizeType size);
-	void	uploadToStagingBuf(		StagingHandle& outHnd,	ByteSpan data, SizeType offset = 0);
-	void*	mappedStagingBufData(	StagingHandle  hnd);
-	/*
-	* --- Engine Thread only ---
-	*/
-
 public:
 	//void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags queueType);
 	//void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout dstLayout, QueueTypeFlags queueType);

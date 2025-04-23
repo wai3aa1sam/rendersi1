@@ -81,7 +81,7 @@ Vk_TransferFrame::create(TransferContext_Vk* tsfCtxVk)
 
 	// thread-safe
 	//_stagingAlloc.create(rdDevVk);
-	_linearStagingBuf.create(rdDevVk);
+	//_linearStagingBuf.create(rdDevVk);
 
 	_setDebugName();
 }
@@ -99,7 +99,7 @@ Vk_TransferFrame::destroy()
 void 
 Vk_TransferFrame::clear()
 {
-	_linearStagingBuf.reset();
+	//_linearStagingBuf.reset();
 	//_hasTransferedGraphicsResoures	= false;
 	//_hasTransferedComputeResoures	= false;
 }
@@ -132,34 +132,6 @@ Vk_TransferFrame::waitQueueData(QueueTypeFlags type)
 	// 	v->wait(rdDevVk);
 	auto& queData = getVkQueueData(type);
 	queData.inFlightVkFence.wait(rdDevVk);
-}
-
-void
-Vk_TransferFrame::requestStagingHandle(StagingHandle& out, VkDeviceSize size)
-{
-	out = _linearStagingBuf.alloc(size);
-}
-
-void 
-Vk_TransferFrame::uploadToStagingBuf(StagingHandle& out, ByteSpan data, SizeType offset)
-{
-	VkDeviceSize bytes = sCast<VkDeviceSize>(data.size());
-	requestStagingHandle(out, bytes);
-	auto* dst = _linearStagingBuf.mappedData<u8*>(out);
-	memory_copy(dst, data.data(), bytes);
-}
-
-void*	
-Vk_TransferFrame::mappedStagingBufData(StagingHandle hnd)
-{
-	auto* dst = _linearStagingBuf.mappedData<u8*>(hnd);
-	return dst;
-}
-
-Vk_Buffer_T* 
-Vk_TransferFrame::getVkStagingBufHnd(StagingHandle hnd)
-{
-	return _linearStagingBuf.vkStagingBufHnd(hnd);
 }
 
 void 

@@ -11,7 +11,7 @@
 #include "rdsRenderResource.h"
 #include "rdsRenderResource_T.h"
 
-#define RDS_USE_RENDER_SINGLE_THREAD_MODE 1
+#define RDS_USE_RENDER_SINGLE_THREAD_MODE 0
 
 namespace rds
 {

@@ -20,6 +20,8 @@ namespace rds
 	E(Shader,) \
 	E(Material,) \
 	\
+	E(TransferFrame,) \
+	\
 	E(_kCount,) \
 //---
 RDS_ENUM_CLASS(RenderResourceType, u8);

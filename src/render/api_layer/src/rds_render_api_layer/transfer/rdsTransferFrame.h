@@ -1,53 +1,76 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"
-#include "rds_render_api_layer/transfer/rdsLinearStagingBuffer.h"
+
+#include "command/rdsTransferRequest.h"
+#include "rdsLinearStagingBuffer.h"
 
 namespace rds
 {
+struct TransferFrame_CreateDesc : public RenderResource_CreateDesc // RenderResource_CreateDescT<TransferFrame_CreateDesc>
+{
+public:
+	RDS_RenderResource_CreateDesc_COMMON_BODY(TransferFrame_CreateDesc);
 
-class TransferContext;
+public:
+
+};
 
 #if 0
 #pragma mark --- rdsTransferFrame-Decl ---
 #endif // 0
 #if 1
 
-class TransferFrame : public NonCopyable
+class TransferFrame : public RenderResource_T<TransferFrame, RenderResourceType::TransferFrame>
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-	friend class TransferRequest;
+	friend class RenderDevice;
 public:
-	using TransferCommandPool = Vector<UPtr<TransferCommandBuffer>, 12>;
+	using Base			= RenderResource;
+	using CreateDesc	= TransferFrame_CreateDesc;
+
+	using SizeType		= RenderApiLayerTraits::SizeType;
 
 public:
-	TransferFrame();
-	~TransferFrame();
+	static CreateDesc				makeCDesc(RDS_DEBUG_SRCLOC_PARAM);
+	static UPtr<TransferFrame>		make(CreateDesc& cDesc);
 
-	TransferFrame(TransferFrame&&)	{ throwIf(true, ""); };
-	void operator=(TransferFrame&&)	{ throwIf(true, ""); };
-
-	void create();
+public:
+	void create(CreateDesc& cDesc);
 	void destroy();
 
-	void reset(TransferContext* tsfCtx);
-
 public:
-	LinearStagingBuffer&	constBufferAllocator();
-	TransferRequest&		transferRequest();
+	//virtual void	requestStagingHandle(	StagingHandle& out, SizeType	size)						= 0;
+	//virtual void	uploadToStagingBuf(		StagingHandle& out, ByteSpan	data, SizeType offset = 0)	= 0;
+	//virtual void*	mappedStagingBufData(	StagingHandle  hnd)											= 0;
 
 protected:
-	//TransferCommandPool _cmdPool;
-	LinearStagingBuffer		_constBufAlloc;
-	TransferRequest			_tsfReq;
+	virtual void onCreate(		CreateDesc& cDesc);
+	virtual void onPostCreate(	CreateDesc& cDesc);
+	virtual void onDestroy();
+	
+public:
+	void _internal_requestDestroyObject();
+
+public:
+	// void*	alloc(StagingHandle& oHnd, SizeType n);
+	// void*	uploadToBuffer(	StagingHandle& oHnd, ByteSpan data);
+	// void	uploadToDst(	u8* dst, StagingHandle hnd, SizeType n);
+
+	void	clear();
+
+public:
+	TransferRequest&		transferRequest();
+	LinearStagingBuffer&	constBufferAllocator();
+
+private:
+	LinearStagingBuffer _constBufAlloc;
+	TransferRequest		_tsfReq;
 };
 
-inline LinearStagingBuffer&	TransferFrame::constBufferAllocator()	{ return _constBufAlloc; }
 inline TransferRequest&		TransferFrame::transferRequest()		{ return _tsfReq; }
+inline LinearStagingBuffer&	TransferFrame::constBufferAllocator()	{ return _constBufAlloc; }
+
 
 #endif
-
-
 
 }

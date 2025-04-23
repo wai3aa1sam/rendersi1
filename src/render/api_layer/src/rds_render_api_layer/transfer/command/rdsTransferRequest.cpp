@@ -13,6 +13,17 @@ namespace rds
 #endif // 0
 #if 1
 
+bool 
+TransferRequest::tryPopTransferCommandSafeBuffer(TransferCommandBuffer& dst, TransferCommandSafeBuffer& src)
+{
+	{
+		//auto* p = RDS_NEW(TransferCommandBuffer);
+		auto data	= src.scopedULock();
+		swap(dst, *data);
+	}
+	return true;
+}
+
 TransferRequest::TransferRequest()
 {
 	
@@ -30,21 +41,24 @@ TransferRequest::reset(TransferContext* tsfCtx, TransferFrame* tsfFrame)
 		return;
 
 	_tsfCtx	= tsfCtx;
-	_tsfCmdBuf.clear();
+
+	{
+		auto lock = _tsfCmdBuf.scopedULock();
+		lock->clear();
+	}
 }
 
-void 
-TransferRequest::commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate)
-{
-	RDS_PROFILE_SCOPED();
-	_tsfCtx->commit(rdFrameParam, *this, isWaitImmediate);
-}
+//void 
+//TransferRequest::commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate)
+//{
+//	RDS_PROFILE_SCOPED();
+//	_tsfCtx->commit(rdFrameParam, *this, isWaitImmediate);
+//}
 
 TransferCommand_UploadTexture*
 TransferRequest::uploadTexture(Texture* tex)
 {
-	auto& cmdBuf	= transferCommandBuffer();
-	auto* cmd		= cmdBuf.uploadTexture();
+	auto* cmd = newCommand<TransferCommand_UploadTexture>();
 	cmd->dst = tex;
 	return cmd;
 }
@@ -65,8 +79,8 @@ TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType of
 		cmd = &temp;
 	}
 	#endif // 0
-	auto& cmdBuf = transferCommandBuffer();
-	auto* cmd = cmdBuf.uploadBuffer();
+	//auto& cmdBuf = transferCommandBuffer();
+	auto* cmd = newCommand<TransferCommand_UploadBuffer>();
 
 	cmd->dst	= rdBuf;
 	cmd->data	= data;
@@ -86,18 +100,23 @@ TransferRequest::setSwapchainSize(RenderContext* rdCtx, const Tuple2f& size)
 {
 	RDS_CORE_ASSERT(rdCtx);
 
-	auto& cmdBuf	= transferCommandBuffer();
-	auto* cmd		= cmdBuf.setSwapchainSize();
+	//auto& cmdBuf	= transferCommandBuffer();
+	auto* cmd			= newCommand<TransferCommand_SetSwapchainSize>();
 	cmd->renderContext	= rdCtx;
 	cmd->size			= size;
 }
 
-TransferCommandBuffer& 
+#if 1
+
+TransferCommandSafeBuffer& 
 TransferRequest::transferCommandBuffer()
 {
 	//checkMainThreadExclusive(RDS_SRCLOC);
 	return _tsfCmdBuf;
 }
+
+#endif // 0
+
 
 #endif
 

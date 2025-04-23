@@ -20,6 +20,18 @@ TransferCommandBuffer::~TransferCommandBuffer()
 	clear();
 }
 
+TransferCommandBuffer::TransferCommandBuffer(TransferCommandBuffer&& rhs)
+{
+	move(rds::move(rhs));
+}
+
+void 
+TransferCommandBuffer::operator=(TransferCommandBuffer&& rhs)
+{
+	if (this != &rhs)
+		move(rds::move(rhs));
+}
+
 void 
 TransferCommandBuffer::clear()
 {
@@ -38,6 +50,13 @@ TransferCommandBuffer::_internal_allocCommand(size_t size)
 	auto* buf = _allocator.allocate(size);
 	_commands.emplace_back(reinCast<TransferCommand*>(buf));
 	return buf;
+}
+
+void 
+TransferCommandBuffer::move(TransferCommandBuffer&& rhs)
+{
+	_allocator	= rds::move(rhs._allocator);
+	_commands	= rds::move(rhs._commands);
 }
 
 

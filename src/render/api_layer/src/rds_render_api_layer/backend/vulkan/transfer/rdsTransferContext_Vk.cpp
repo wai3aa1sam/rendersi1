@@ -4,6 +4,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rds_vk_texture.h"
+#include "rds_render_api_layer/backend/vulkan/transfer/rdsTransferFrame_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -87,7 +88,9 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 {
 	Base::onCommit(rdFrameParam, tsfReq, isWaitImmediate);
 
-	auto& tsfCmdBuf = tsfReq.transferCommandBuffer();
+	auto lock = tsfReq.transferCommandBuffer().scopedULock();
+	auto& tsfCmdBuf = *lock;
+
 	Span<TransferCommand*> tsfCmds = tsfCmdBuf.commands();
 
 	if (tsfCmds.is_empty())
@@ -215,29 +218,6 @@ TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& rscQueue, boo
 	}
 
 	_dispatchCommands(this, rscQueue);
-}
-
-void 
-TransferContext_Vk::requestStagingBuf(StagingHandle& outHnd, SizeType size)
-{
-	RDS_CORE_ASSERT(size > 0, "");
-	auto frameIdx = engineFrameIndex();
-	vkTransferFrame(frameIdx).requestStagingHandle(outHnd, size);
-}
-
-void 
-TransferContext_Vk::uploadToStagingBuf(StagingHandle& outHnd, ByteSpan data, SizeType offset)
-{
-	RDS_CORE_ASSERT(offset == 0, "not yet supported");
-	auto frameIdx = engineFrameIndex();
-	vkTransferFrame(frameIdx).uploadToStagingBuf(outHnd, data, offset);
-}
-
-void*	
-TransferContext_Vk::mappedStagingBufData(StagingHandle  hnd)
-{
-	auto frameIdx = engineFrameIndex();
-	return vkTransferFrame(frameIdx).mappedStagingBufData(hnd);
 }
 
 void 
@@ -369,8 +349,8 @@ TransferContext_Vk::onTransferCommand_CopyBuffer(TransferCommand_CopyBuffer* cmd
 void 
 TransferContext_Vk::onTransferCommand_UploadBuffer(TransferCommand_UploadBuffer* cmd)
 {
-	auto  frameIdx		= frameIndex();
-	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
+	//auto  frameIdx		= frameIndex();
+	//auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
 	auto* vkCmdBuf		= _curVkCmdBuf;
 	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
@@ -383,16 +363,17 @@ TransferContext_Vk::onTransferCommand_UploadBuffer(TransferCommand_UploadBuffer*
 	RDS_CORE_ASSERT(dstBuf && dstBufHnd,						"buffer is nullptr");
 	RDS_CORE_ASSERT(size > 0 && size <= cmd->dst->bufSize(),	"overflow");
 
+	auto& tsfFrameVk	= transferFrameVk();
 	if (dstBuf->isConstantBuffer())
 	{
 		auto memmap = dstBuf->vkBuf()->scopedMemMap();
-		auto& constBufAlloc = renderDevice()->transferFrame(frameIdx).constBufferAllocator();
+		auto& constBufAlloc = tsfFrameVk.constBufferAllocator();
 		constBufAlloc.uploadToDst(memmap.data<u8*>(), cmd->_stagingHnd, size);
 	}
 	else
 	{
 		//auto* statingBufHnd = vkTransferFrame().getVkStagingBufHnd(cmd->_stagingIdx);
-		auto* statingBufHnd = vkTsfFrame.getVkStagingBufHnd(cmd->_stagingHnd);
+		auto* statingBufHnd = tsfFrameVk.getVkStagingBufHnd(cmd->_stagingHnd);
 		RDS_CORE_ASSERT(statingBufHnd,		"buffer is nullptr");
 
 		vkCmdBuf->cmd_copyBuffer(dstBufHnd, statingBufHnd, size, 0, cmd->_stagingHnd.offset);
@@ -402,13 +383,15 @@ TransferContext_Vk::onTransferCommand_UploadBuffer(TransferCommand_UploadBuffer*
 void 
 TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTexture* cmd)
 {
-	auto  frameIdx		= frameIndex();
-	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
+	//auto  frameIdx		= frameIndex();
+	//auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
 	cmd->_stagingHnd.checkValid();
 
 	auto* vkCmdBuf		= _curVkCmdBuf;
-	auto* statingBufHnd = vkTsfFrame.getVkStagingBufHnd(cmd->_stagingHnd);
+
+	auto& tsfFrameVk	= transferFrameVk();
+	auto* statingBufHnd = tsfFrameVk.getVkStagingBufHnd(cmd->_stagingHnd);
 
 	Texture*		dstTex		= cmd->dst;
 	auto*			dst			= Vk_Texture::getVkImageHnd(dstTex);

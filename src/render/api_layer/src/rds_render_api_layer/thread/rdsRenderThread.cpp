@@ -100,9 +100,9 @@ RenderThread::render(RenderData& renderData)
 
 	{
 		auto& tsfCtx	= rdDev->transferContext();
-		auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
+		//auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
 		tsfCtx.transferBegin();
-		tsfReq.commit(rdFrameParam);
+		tsfCtx.commit(rdFrameParam, rds::move(rdDev->releaseTransferFrame()), false);
 
 		{
 			// RenderFrameContext

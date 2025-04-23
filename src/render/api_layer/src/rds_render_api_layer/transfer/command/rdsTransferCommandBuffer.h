@@ -6,6 +6,9 @@
 namespace rds
 {
 
+class TransferCommandBuffer;
+using TransferCommandSafeBuffer = MutexProtected<TransferCommandBuffer>;
+
 #if 0
 #pragma mark --- rdsTransferCommandBuffer-Decl ---
 #endif // 0
@@ -20,12 +23,19 @@ public:
 	static constexpr SizeType s_kLocalSize = 64;
 
 public:
+	template<class CMD>						static CMD*		newCommand(void* buf);
+	template<class TCmd, class TSafeBuf>	static TCmd*	newCommand_Safe(TSafeBuf& safeBuf);
+
+public:
 	TransferCommandBuffer();
 	~TransferCommandBuffer();
 
-	TransferCommandBuffer(TransferCommandBuffer&&)	{ throwIf(true, ""); };
-	void operator=(TransferCommandBuffer&&)			{ throwIf(true, ""); };
+	TransferCommandBuffer(	const	TransferCommandBuffer&	rhs) = delete;
+	TransferCommandBuffer(			TransferCommandBuffer&&	rhs);
+	void operator=(			const	TransferCommandBuffer&	rhs) = delete;
+	void operator=(					TransferCommandBuffer&&	rhs);
 
+public:
 	void clear();
 
 	TransferCommand_SetSwapchainSize*		setSwapchainSize();
@@ -39,10 +49,10 @@ public:
 
 public:
 	void* _internal_allocCommand(size_t size);
-	template<class CMD> static CMD* newCommand(void* buf);
 
 private:
 	template<class CMD> CMD* newCommand();
+	void move(TransferCommandBuffer&& rhs);
 
 private:
 	LinearAllocator							_allocator;
@@ -68,6 +78,19 @@ TransferCommandBuffer::newCommand()
 
 inline Span<TransferCommand*> TransferCommandBuffer::commands() { return _commands; }
 
+
+template<class TCmd, class TSafeBuf> 
+TCmd*
+TransferCommandBuffer::newCommand_Safe(TSafeBuf& safeBuf)
+{
+	void* buf = nullptr;
+	{
+		auto data = safeBuf.scopedULock();
+		buf = data->_internal_allocCommand(sizeof(TCmd));
+	}
+	auto* cmd = TransferCommandBuffer::newCommand<TCmd>(buf);
+	return cmd;
+}
 
 #endif
 

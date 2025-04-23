@@ -16,6 +16,7 @@ class RenderGpuBuffer;
 
 class TransferCommand_UploadTexture;
 
+
 #if 0
 #pragma mark --- rdsTransferRequest-Decl ---
 #endif // 0
@@ -27,11 +28,14 @@ class TransferRequest : public NonCopyable
 	friend class Texture2D;
 	friend class RenderGpuBuffer;
 public:
+	static bool tryPopTransferCommandSafeBuffer(TransferCommandBuffer& dst, TransferCommandSafeBuffer& src);
+
+public:
 	TransferRequest();
 	~TransferRequest();
 
 	void reset(TransferContext* tsfCtx, TransferFrame* tsfFrame);
-	void commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate = false);
+	//void commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate = false);
 	
 	void setSwapchainSize(RenderContext* rdCtx, const Tuple2f& size);
 
@@ -44,14 +48,27 @@ public:
 	void uploadBufferAsync(	RenderGpuBuffer* rdBuf, Vector<u8>&& data); // template<class DATA, size_t N>, DATA -> u8
 
 public:
-	TransferCommandBuffer& transferCommandBuffer();
+	TransferCommandSafeBuffer& transferCommandBuffer();
+	template<class TCmd> TCmd* newCommand();
 
 private:
-	TransferContext*		_tsfCtx			= nullptr;
-	TransferCommandBuffer	_tsfCmdBuf;
-
+	TransferContext*			_tsfCtx			= nullptr;
+	TransferCommandSafeBuffer	_tsfCmdBuf;
 	//Vector<TransferCommandBuffer, s_kThreadCount> _perThreadTsfCmdBuf;
 };
+
+
+#if 1
+
+template<class TCmd> inline
+TCmd* 
+TransferRequest::newCommand(/*TSafeBuf& safeBuf*/)
+{
+	return TransferCommandBuffer::newCommand_Safe<TCmd>(_tsfCmdBuf);
+}
+
+#endif // 0
+
 
 #endif
 

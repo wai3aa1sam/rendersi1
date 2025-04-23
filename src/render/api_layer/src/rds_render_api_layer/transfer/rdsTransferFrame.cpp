@@ -1,43 +1,112 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsTransferFrame.h"
+#include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/rdsRenderDevice.h"
 
 namespace rds
 {
+
+UPtr<TransferFrame> 
+RenderDevice::createTransferFrame(TransferFrame_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateTransferFrame(cDesc);
+	return p;
+}
 
 #if 0
 #pragma mark --- rdsTransferFrame-Impl ---
 #endif // 0
 #if 1
 
-TransferFrame::TransferFrame()
+TransferFrame::CreateDesc 
+TransferFrame::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
+{
+	return CreateDesc{RDS_DEBUG_SRCLOC_ARG};
+}
+
+UPtr<TransferFrame> 
+TransferFrame::make(CreateDesc& cDesc)
+{
+	return Renderer::renderDevice()->createTransferFrame(cDesc); 
+}
+
+void TransferFrame::create(CreateDesc& cDesc)
+{
+	Base::create(cDesc);
+	onCreate(cDesc);
+	onPostCreate(cDesc);
+}
+
+void TransferFrame::destroy()
+{
+	onDestroy();
+}
+
+void TransferFrame::onCreate(CreateDesc& cDesc)
 {
 
 }
 
-TransferFrame::~TransferFrame()
+void TransferFrame::onPostCreate(CreateDesc& cDesc)
 {
-	destroy();
+
+}
+
+void TransferFrame::onDestroy()
+{
+
 }
 
 void 
-TransferFrame::create()
+TransferFrame::clear()
 {
-	destroy();
+	
 }
 
-void 
-TransferFrame::destroy()
-{
-	reset(nullptr);
-}
+#if 0
 
 void 
-TransferFrame::reset(TransferContext* tsfCtx)
+TransferFrame::clear()
 {
-	_tsfReq.reset(tsfCtx, this);
-	_constBufAlloc.clear();
+	auto data = _alloc.scopedULock();
+	data->clear();
 }
+
+void* 
+TransferFrame::alloc(StagingHandle& oHnd, SizeType n)
+{
+	SizeType chunkId	= StagingHandle::s_kInvalid;
+	SizeType offset		= StagingHandle::s_kInvalid;
+	void*	 buf		= nullptr;
+	{
+		auto data = _alloc.scopedULock();
+		buf = data->alloc(&chunkId, &offset, n);
+	}
+
+	oHnd.create(chunkId, offset);
+	return buf;
+}
+
+void*	
+TransferFrame::uploadToBuffer(StagingHandle& oHnd, ByteSpan data)
+{
+	void* buf = alloc(oHnd, data.size());
+	memory_copy(sCast<u8*>(buf), data.data(), data.size());
+	return buf;
+}
+
+void
+TransferFrame::uploadToDst(u8* dst, StagingHandle hnd, SizeType n)
+{
+	auto data = _alloc.scopedULock();
+	memory_copy(dst, data->chunks()[hnd.chunkId]->data() + hnd.offset, n);
+}
+
+#endif // 0
+
 
 #endif
+
 
 }

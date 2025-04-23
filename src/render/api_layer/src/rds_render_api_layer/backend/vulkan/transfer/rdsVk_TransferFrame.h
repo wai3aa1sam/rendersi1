@@ -72,10 +72,7 @@ public:
 	void resetQueueData(		QueueTypeFlags type);
 	void waitQueueData(			QueueTypeFlags type);
 
-	void	requestStagingHandle	(StagingHandle& out, VkDeviceSize	size);
-	void	uploadToStagingBuf		(StagingHandle& out, ByteSpan		data, SizeType offset);
-	void*	mappedStagingBufData	(StagingHandle  hnd);
-
+public:
 	// VK_COMMAND_BUFFER_LEVEL_PRIMARY
 	Vk_CommandBuffer* requestCommandBuffer			(QueueTypeFlags type, VkCommandBufferLevel level, StrView debugName);
 	Vk_CommandBuffer* requestGraphicsCommandBuffer	(VkCommandBufferLevel level, StrView debugName);
@@ -94,29 +91,17 @@ public:
 	Vk_Fence*		getInFlightVkFence(		QueueTypeFlags type);
 	Vk_Semaphore*	getCompletedVkSemaphore(QueueTypeFlags type);
 
-protected:
-	Vk_Buffer_T* getVkStagingBufHnd(u32 idx);
-	Vk_Buffer_T* getVkStagingBufHnd(StagingHandle hnd);
-
+private:
 	void _setDebugName();
 
 protected:
 	TransferContext_Vk*	_tsfCtxVk = nullptr;
-	/*Vk_Fence			_inFlightVkFnc;
-	Vk_Semaphore		_completedVkSmp;
-	Vk_CommandPool		_transferVkCmdPool;
-
-	Vk_Fence			_graphicsInFlightVkFnc;
-	Vk_Semaphore		_graphicsCompletedVkSmp;
-	Vk_CommandPool		_graphicsVkCmdPool;*/
 
 	Vk_QueueData _tsfVkQueueData;
 	Vk_QueueData _gfxVkQueueData;
 
 	bool _hasTransferedGraphicsResoures	= false;
 	bool _hasTransferedComputeResoures	= false;
-
-	Vk_LinearStagingBuffer _linearStagingBuf;
 };
 
 inline bool Vk_TransferFrame::hasTransferedGraphicsResoures() const { return _hasTransferedGraphicsResoures; }

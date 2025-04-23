@@ -440,7 +440,7 @@ public:
 
 		auto* mainWin	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWin->renderContext();
-		auto& rdFrame	= rdDev->renderFrame(0); RDS_UNUSED(rdFrame);
+		//auto& rdFrame	= rdDev->renderFrame(0); RDS_UNUSED(rdFrame);
 
 		auto& tsfCtx	= rdDev->transferContext();
 		auto& tsfReq	= tsfCtx.transferRequest(); RDS_UNUSED(tsfReq);

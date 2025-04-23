@@ -2,6 +2,7 @@
 #include "rdsTextureCube_Vk.h"
 
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/transfer/rdsTransferFrame_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -64,8 +65,10 @@ TextureCube_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* 
 		RDS_CORE_ASSERT(imageByteSize % 64 == 0);
 		
 		auto& hnd = cmd->_stagingHnd;
-		transferContextVk().requestStagingBuf(hnd, byteSize);
-		auto* mappedData	= transferContextVk().mappedStagingBufData(hnd);
+		//auto* stagingBufVk = sCast<StagingBuffer_Vk*>(renderDevice()->transferFrame().stagingBuffer());
+		auto& tsfFrameVk = transferFrameVk();
+		tsfFrameVk.requestStagingHandle(hnd, byteSize);
+		auto* mappedData	= tsfFrameVk.mappedStagingBufData(hnd);
 		auto* p				= sCast<u8*>(mappedData);
 		for (auto& uploadImage : cDesc.uploadImages)
 		{

@@ -65,14 +65,17 @@ TransferContext::transferBegin()
 void TransferContext::transferEnd()
 {
 	onTransferEnd();
+	releasePreviousTransferFrame();
 	destroyRenderResources(renderFrameParam());		// should pass from fn
 }
 void 
-TransferContext::commit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)
+TransferContext::commit(RenderFrameParam& rdFrameParam, UPtr<TransferFrame>&& tsfFrame_, bool isWaitImmediate)
 {
-	auto* rdDev	= renderDevice();
+	_curTsfFrame = rds::move(tsfFrame_);
 
-	onCommit(rdFrameParam, tsfReq, isWaitImmediate);
+	auto* rdDev	= renderDevice();
+	auto& tsfFrame = _curTsfFrame;
+	onCommit(rdFrameParam, tsfFrame->transferRequest(), isWaitImmediate);
 	rdDev->bindlessResource().commit();
 }
 
@@ -100,7 +103,7 @@ TransferContext::createRenderGpuBuffer(RenderGpuBuffer* buffer)
 void 
 TransferContext::createTexture(Texture* texture)
 {
-	RDS_TODO("rework command debug SRCLOC, transfer and render also need to rework!!!");
+	RDS_TODO("rework command data member for debug SRCLOC, transfer and render also need to rework!!!");
 	auto* cmd = newCommand<TransferCommand_CreateTexture>(_createRdRscQueue);
 	cmd->dst = texture;
 }
@@ -118,12 +121,13 @@ TransferContext::destroyTexture(Texture* texture)
 {
 	auto* cmd = newCommand<TransferCommand_DestroyTexture>(_destroyRdRscQueue);
 	cmd->dst = texture;
-	RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
+	//RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
 }
 
 void 
 TransferContext::onCreate(const CreateDesc& cDesc)
 {
+	#if 0
 	{
 		auto data = _createRdRscQueue.scopedULock();
 		data->reset(RDS_NEW(TransferCommandBuffer));
@@ -132,6 +136,7 @@ TransferContext::onCreate(const CreateDesc& cDesc)
 		auto data = _destroyRdRscQueue.scopedULock();
 		data->reset(RDS_NEW(TransferCommandBuffer));
 	}
+	#endif // 0
 }
 
 void 
@@ -161,22 +166,22 @@ TransferContext::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfRe
 void 
 TransferContext::createRenderResources(const RenderFrameParam& rdFrameParam)
 {
-	UPtr<TransferCommandBuffer> rscQueue;
-	bool isSuccess = _tryPopRenderResourceQueue(rscQueue, _createRdRscQueue, rdFrameParam);
+	TransferCommandBuffer rscQueue;
+	bool isSuccess = TransferRequest::tryPopTransferCommandSafeBuffer(rscQueue, _createRdRscQueue);
 	if (isSuccess)
 	{
-		onCommitRenderResources(*rscQueue, true);
+		onCommitRenderResources(rscQueue, true);
 	}
 }
 
 void 
 TransferContext::destroyRenderResources(const RenderFrameParam& rdFrameParam)
 {
-	UPtr<TransferCommandBuffer> rscQueue;
-	bool isSuccess = _tryPopRenderResourceQueue(rscQueue, _destroyRdRscQueue, rdFrameParam);
+	TransferCommandBuffer rscQueue;
+	bool isSuccess = TransferRequest::tryPopTransferCommandSafeBuffer(rscQueue, _destroyRdRscQueue);
 	if (isSuccess)
 	{
-		onCommitRenderResources(*rscQueue, false);
+		onCommitRenderResources(rscQueue, false);
 	}
 }
 
@@ -186,17 +191,17 @@ TransferContext::onCommitRenderResources(TransferCommandBuffer& rscQueue, bool i
 
 }
 
-bool
-TransferContext::_tryPopRenderResourceQueue(UPtr<TransferCommandBuffer>& out, ResourceQueue& rscQue, const RenderFrameParam& rdFrameParam)
+void 
+TransferContext::releasePreviousTransferFrame()
 {
-	{
-		auto* p = RDS_NEW(TransferCommandBuffer);
-		auto data	= rscQue.scopedULock();
-		out = rds::move(*data);
-		data->reset(p);
-	}
-	return out;
+	// here is to reset the tsf frame of prev same index
+
+	auto frameIdx = frameIndex();
+	auto& tsfFrame = _prevTsfFrames[frameIdx];
+	tsfFrame = rds::move(_curTsfFrame);
 }
+
+TransferFrame& TransferContext::transferFrame() { return *_curTsfFrame; }
 
 #endif
 

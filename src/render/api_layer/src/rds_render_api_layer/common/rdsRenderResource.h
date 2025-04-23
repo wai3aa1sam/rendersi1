@@ -169,11 +169,10 @@ public:
 
 	RenderFrameParam&	renderFrameParam();
 
-	RenderFrame&		renderFrame(u64 frameIdx);
+	//RenderFrame&		renderFrame(u64 frameIdx);
 
 	TransferContext&	transferContext();
 	TransferRequest&	transferRequest();
-	TransferRequest&	transferRequest(u64 frameIdx);
 
 	RenderResourceStateFlags renderResourceStateFlags(u32 subResource = RenderResourceState::s_kAllSubResource) const;
 

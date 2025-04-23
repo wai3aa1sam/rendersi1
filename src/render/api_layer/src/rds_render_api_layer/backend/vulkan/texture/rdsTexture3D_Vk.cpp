@@ -70,7 +70,7 @@ Texture3D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 	const auto& srcImage = cDesc.uploadImage;
 	if (srcImage.isValid())
 	{
-		transferContextVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
+		transferFrameVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
 	}
 }
 

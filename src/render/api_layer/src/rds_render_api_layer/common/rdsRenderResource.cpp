@@ -114,13 +114,10 @@ u32						RenderResource::frameIndex()			const		{ return renderDevice()->frameInd
 Renderer*				RenderResource::renderer()							{ return Renderer::instance(); }
 
 RenderFrameParam&		RenderResource::renderFrameParam()					{ return renderDevice()->renderFrameParam(); }
-
-RenderFrame&			RenderResource::renderFrame(u64 frameIdx)			{ return renderDevice()->renderFrame(frameIdx); }
+//RenderFrame&			RenderResource::renderFrame(u64 frameIdx)			{ return renderDevice()->renderFrame(frameIdx); }
 
 TransferContext&		RenderResource::transferContext()					{ return renderDevice()->transferContext(); }
-
-TransferRequest&		RenderResource::transferRequest()					{ return renderDevice()->transferRequest(engineFrameIndex()); }
-TransferRequest&		RenderResource::transferRequest(u64 frameIdx)		{ return renderDevice()->transferRequest(frameIdx); }
+TransferRequest&		RenderResource::transferRequest()					{ return renderDevice()->transferRequest(); }
 
 
 #endif
