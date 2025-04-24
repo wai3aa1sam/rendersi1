@@ -40,7 +40,8 @@ inline															\
 UPtr<GraphicsDemo> 												\
 makeDemo()														\
 {																\
+	auto p = makeUPtr<T>();										\
 	DemoEditorApp::instance()->mainWindow().setWindowTitle(#T);	\
-	return makeUPtr<T>();										\
+	return p;													\
 }																\
 // ---

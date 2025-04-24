@@ -24,7 +24,6 @@ RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 	isPresent		= true;
 	
 	isDebug = RDS_DEBUG;
-	//isDebug = true;
 }
 
 bool 
@@ -61,8 +60,7 @@ RenderDevice::create(const CreateDesc& cDesc)
 	{
 		_tsfCtx->transferRequest(i).reset(_tsfCtx, &_tsfFrames[i]);
 	}*/
-	auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-	_tsfFrame = createTransferFrame(tsfFrameCDesc);
+	_tsfFrame = transferContext().allocTransferFrame();
 
 	_shaderStock.create(this);
 	_textureStock.create(this);
@@ -140,16 +138,24 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 
 	auto&	rdFrameParam	= renderFrameParam();
 	auto	frameCount		= engineFrameCount;
-
-	RDS_TODO("wait all render context here, maybe no need to wait if all gpu stuff is a command");
 	//auto	frameIdx		= Traits::rotateFrame(frameCount);
+
+	RDS_TODO("wait all render context here");
+	// RDS_TODO("maybe no need to wait if all gpu stuff is a command");
+	/*
+	* seems must wait regardless			
+	* all gpu cmd or not, since				
+	* we must wait gpu prev frame to finish	
+	*/
+
 	//_rdFrames[frameIdx].reset();
 	//_tsfFrames[frameIdx].reset(_tsfCtx);
 	//onResetFrame(frameCount);
 
 	//RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
-	auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-	_tsfFrame = createTransferFrame(tsfFrameCDesc);
+	//auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
+	//_tsfFrame = createTransferFrame(tsfFrameCDesc);
+	_tsfFrame = transferContext().allocTransferFrame();
 	
 	rdFrameParam.setEngineFrameCount(frameCount);
 }

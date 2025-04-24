@@ -31,6 +31,15 @@ TransferFrame::make(CreateDesc& cDesc)
 	return Renderer::renderDevice()->createTransferFrame(cDesc); 
 }
 
+TransferFrame::TransferFrame()
+{
+}
+
+TransferFrame::~TransferFrame()
+{
+
+}
+
 void TransferFrame::create(CreateDesc& cDesc)
 {
 	Base::create(cDesc);
@@ -41,6 +50,13 @@ void TransferFrame::create(CreateDesc& cDesc)
 void TransferFrame::destroy()
 {
 	onDestroy();
+	Base::destroy();
+}
+
+void 
+TransferFrame::reset()
+{
+	onReset();
 }
 
 void TransferFrame::onCreate(CreateDesc& cDesc)
@@ -55,14 +71,17 @@ void TransferFrame::onPostCreate(CreateDesc& cDesc)
 
 void TransferFrame::onDestroy()
 {
-
+	_constBufAlloc.clear();
+	_tsfReq.reset(nullptr);
 }
 
 void 
-TransferFrame::clear()
+TransferFrame::onReset()
 {
-	
+	_constBufAlloc.reset();
+	_tsfReq.reset(&transferContext());
 }
+
 
 #if 0
 

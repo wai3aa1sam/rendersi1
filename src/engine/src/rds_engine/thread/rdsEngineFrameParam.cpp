@@ -31,6 +31,8 @@ namespace rds
 void 
 EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue)
 {
+	checkMainThreadExclusive(RDS_SRCLOC);
+
 	_frameCount++;
 	auto frameCount = this->frameCount();
 
@@ -40,7 +42,7 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 			RDS_PROFILE_DYNAMIC_FMT("wait render thread i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
 			bool shdWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
 			bool shdWait = shdWaitRdThread;
-			while (shdWait)
+			while (shdWait)		// *** cannot rdCtx->waitFrameFinished(frameCount);, only one thread can use the fence
 			{
 				#if 0
 
@@ -63,7 +65,9 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 
 			// temp sol, should wait in rdDev
 			// if all gpu stuff is only in RenderThread, currently cpu (main thread) has something (tsf buffer) that is related to gpu, not yet all command is impl
-			rdCtx->waitFrameFinished(frameCount);		
+			// but, we must wait here, if not, engine will lead Render x frames until it finish
+			rdCtx->waitFrameFinished(frameCount);
+			RDS_TODO("could do cpu job here, btw, cannot wait on above, we must ensure Render Thread not using same frame index fence");
 		}
 
 		auto* rdDev = Renderer::renderDevice();

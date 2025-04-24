@@ -42,23 +42,28 @@ DemoEditorApp::onCreate(const CreateDesc_Base& cDesc)
 
 	Base::onCreate(thisCDesc);
 	//JobSystem::instance()->setSingleThreadMode(true);
-
-	//{ Process sh = { "compile_shaders.bat" }; }
-
+	
 	{
-		_mainWnd = makeUPtr<DemoEditorMainWindow>();
+		auto demoLayer = makeUPtr<DemoEditorLayer>();
+		//{ Process sh = { "compile_shaders.bat" }; }
+		
+		{
+			_mainWnd = makeUPtr<DemoEditorMainWindow>();
 
-		auto& mainWnd = *_mainWnd;
-		auto windowCDesc = mainWnd.makeCDesc();
-		windowCDesc.isMainWindow		= true;
-		windowCDesc.isCenterToScreen	= true;
-		mainWnd.create(windowCDesc);
-		mainWnd.setWindowTitle(cDesc.title);
+			auto& mainWnd = *_mainWnd;
+			auto windowCDesc = mainWnd.makeCDesc();
+			windowCDesc.isMainWindow		= true;
+			windowCDesc.isCenterToScreen	= true;
+			mainWnd.create(windowCDesc);
+			mainWnd.setWindowTitle(cDesc.title);
+		}
+		auto upGfxDemo = makeDemo();
+
+		//gfxDemo = upGfxDemo.ptr();
+		demoLayer->init(rds::move(upGfxDemo));
+		pushLayer(rds::move(demoLayer));
 	}
 
-	auto upGfxDemo = makeDemo();
-	gfxDemo = upGfxDemo.ptr();
-	pushLayer(makeUPtr<DemoEditorLayer>(rds::move(upGfxDemo)));
 }
 
 void 

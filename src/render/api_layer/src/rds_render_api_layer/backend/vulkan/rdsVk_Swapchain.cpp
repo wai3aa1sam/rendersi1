@@ -28,6 +28,19 @@ Vk_Swapchain_CreateDesc::create(const RenderContext_CreateDesc& rdCtxCDesc, Rend
 		, Util::toVkFormat(rdCtxCDesc.backbufferFormat), VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, Util::toVkFormat(rdCtxCDesc.depthFormat));
 }
 
+void 
+Vk_Swapchain_CreateDesc::create(NativeUIWindow* window_, RenderContext_Vk* renderContextVk_, VkFormat colorFormat_, VkColorSpaceKHR colorSpace_, VkFormat depthFormat_)
+{
+	create(window_, renderContextVk_, nullptr, colorFormat_, colorSpace_, depthFormat_);
+}
+
+void 
+Vk_Swapchain_CreateDesc::create(const RenderContext_CreateDesc& rdCtxCDesc, RenderContext_Vk* renderContextVk_)
+{
+	create(rdCtxCDesc.window, renderContextVk_, nullptr
+		, Util::toVkFormat(rdCtxCDesc.backbufferFormat), VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, Util::toVkFormat(rdCtxCDesc.depthFormat));
+}
+
 
 #if 0
 #pragma mark --- rdsVk_Swapchain-Impl ---
@@ -47,7 +60,7 @@ Vk_Swapchain::~Vk_Swapchain()
 void 
 Vk_Swapchain::create(const CreateDesc& cDesc)
 {
-	RDS_CORE_ASSERT(cDesc.outBackbuffers, "no backbuffers");
+	//RDS_CORE_ASSERT(cDesc.outBackbuffers, "no backbuffers");
 
 	const auto& framebufferRect2f = cDesc.framebufferRect2f;
 	_swapchainInfo.rect2f = framebufferRect2f;
@@ -81,7 +94,7 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	//_swapchainInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR; // vsync
 
 	createRenderPass(_swapchainInfo.surfaceFormat.format, _swapchainInfo.depthFormat);
-	createSwapchain(*cDesc.outBackbuffers, info().rect2f, &_vkRdPass);
+	createSwapchain(cDesc.outBackbuffers, info().rect2f, &_vkRdPass);
 }
 
 void 
@@ -242,7 +255,7 @@ Vk_Swapchain::createSwapchainInfo(Vk_SwapchainInfo& out, u32 imageCount, const V
 }
 
 void
-Vk_Swapchain::createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebufferRect2f, Vk_RenderPass* vkRdPass)
+Vk_Swapchain::createSwapchain(Backbuffers* outBackbuffers, const Rect2f& framebufferRect2f, Vk_RenderPass* vkRdPass)
 {
 	RDS_PROFILE_SCOPED();
 
@@ -257,7 +270,10 @@ Vk_Swapchain::createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebu
 
 	Util::createSwapchain(hndForInit(), _vkSurface.hnd(), vkDev, info(), rdDevVk->swapchainAvailableInfo(), rdDevVk);
 
-	outBackbuffers.create(_rdCtxVk, info().imageCount);
+	if (outBackbuffers)
+	{
+		outBackbuffers->create(_rdCtxVk, info().imageCount);
+	}
 
 	createDepthResources();
 
@@ -265,11 +281,14 @@ Vk_Swapchain::createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebu
 	createSwapchainImageViews(_vkSwapchainImageViews, outBackbuffers, _vkSwapchainImages, rdDevVk, info().surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	createSwapchainFramebuffers(vkRdPass);
 
-	for (size_t i = 0; i < outBackbuffers.imageCount(); i++)
+	if (outBackbuffers)
 	{
-		auto* backbuffer = outBackbuffers.backbuffer(i);
-		TempString buf = backbuffer->debugName();
-		backbuffer->setDebugName(buf);
+		for (size_t i = 0; i < outBackbuffers->imageCount(); i++)
+		{
+			auto* backbuffer = outBackbuffers->backbuffer(i);
+			TempString buf = backbuffer->debugName();
+			backbuffer->setDebugName(buf);
+		}
 	}
 }
 

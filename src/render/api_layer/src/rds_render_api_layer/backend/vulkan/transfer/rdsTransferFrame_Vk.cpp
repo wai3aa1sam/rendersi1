@@ -96,6 +96,14 @@ TransferFrame_Vk::onDestroy()
 }
 
 void 
+TransferFrame_Vk::onReset()
+{
+	Base::onReset();
+
+	_vkLinearStagingBuf.reset();
+}
+
+void 
 TransferFrame_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 {
 

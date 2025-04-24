@@ -9,7 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
-#define RDS_SINGLE_THREAD_MODE 0
+#define RDS_IS_TEST_ENGINE 1
 
 namespace rds
 {
@@ -19,25 +19,34 @@ namespace rds
 #endif // 0
 #if 1
 
-DemoEditorLayer::DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo)
+DemoEditorLayer::DemoEditorLayer()
 {
 	_todoList();
-
-	_gfxDemo = rds::move(gfxDemo);
-	_gfxDemo->_demoLayer = this;
 	
-	mainWindow().uiMouseFn		= [this](UiMouseEvent& ev)		{ onUiMouseEvent(ev);	 return _gfxDemo->onUiMouseEvent(ev); };
-	mainWindow().uiKeyboardFn	= [this](UiKeyboardEvent& ev)	{ onUiKeyboardEvent(ev); return _gfxDemo->onUiKeyboardEvent(ev); };
+	auto rdrCDesc = Renderer::makeCDesc();
+	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
+	DemoEditorApp::instance()->createRenderer(rdrCDesc);
 }
 
 DemoEditorLayer::~DemoEditorLayer()
 {
 	#if 1
+	_testEngine.reset(nullptr);
 	_rdThreadQueue.destroy();
 	_gfxDemo.reset(nullptr);
 	_scene.destroy();
 	_egCtx.destroy();
 	#endif // 1
+}
+
+void 
+DemoEditorLayer::init(UPtr<GraphicsDemo> gfxDemo)
+{
+	_gfxDemo = rds::move(gfxDemo);
+	_gfxDemo->_demoLayer = this;
+	
+	mainWindow().uiMouseFn		= [this](UiMouseEvent& ev)		{ onUiMouseEvent(ev);	 return _gfxDemo->onUiMouseEvent(ev); };
+	mainWindow().uiKeyboardFn	= [this](UiKeyboardEvent& ev)	{ onUiKeyboardEvent(ev); return _gfxDemo->onUiKeyboardEvent(ev); };
 }
 
 void
@@ -52,6 +61,8 @@ DemoEditorLayer::onCreate()
 	_rdThread.create(RenderThread::makeCDesc(JobSystem::instance()));
 	#endif // !RDS_USE_RENDER_SINGLE_THREAD_MODE
 	_rdThreadQueue.create(&_rdThread);
+
+	_testEngine = RDS_NEW(TestEngine);
 
 	_scene.create(_egCtx);
 	_sceneView.create(&_scene, &renderableSystem());
@@ -75,7 +86,7 @@ DemoEditorLayer::onCreate()
 		_rdThreadQueue.waitFrame(_egCtx.engineFrameParam().frameCount());
 	}
 
-	app()._frameControl.isWaitFrame = !true;
+	app()._frameControl.isWaitFrame = !RDS_IS_TEST_ENGINE;
 }
 
 void
@@ -118,6 +129,10 @@ DemoEditorLayer::onUpdate()
 					_gfxDemo->prepareRender(&rdGraph, &drawData);
 				else
 					_gfxDemo->executeRender(&rdGraph, &drawData);
+
+				#if RDS_IS_TEST_ENGINE
+				_testEngineCode();
+				#endif // RDS_IS_TEST_ENGINE
 
 				if (drawData.drawParamIdx == 0)
 				{
@@ -349,25 +364,28 @@ DemoEditorLayer::_logForResumeDevelopMustWatchFirst()
 		* , since there is (also must, no matter index(current) / FrameAllocator Receive method) sth holding the SPtr
 		* , so it wont destroy first and safe when it also submit to gpu, make sure only destroy when gpu is done for it
 		* , flow is
-		* Engine						->								Render
-		*																create tsf RenderData (RenderResource in here) 
-		*																	- no destroy here as gpu may still processing
-		* 
-		*																tsf begin
-		*																	wait prev tsf RenderData
-		*																	could split wait+reset for vk
-		*																process tsf
-		* 
-		* 																 render begin
-		*																	- wait + reset fence
-		*																	- submit render
-		*																 render end
-		* 
-		*																tsf end
-		*	pass tsf EngineData	(Vk_Staging+CmdBuf)							- process destroy tsf RenderData (curFrame in Engine reset-ed trigger 0-refCount-destroy, )
-		*	to Render														- also process destroy tsf EngineData 
-		*																		- (for last same index frame, above waiting ensure no-one is using)
-		*																		- it will destroy in next frame
+		* Engine													->	Render
+		*															|	create tsf RenderData (RenderResource in here) 
+		*															|		- no destroy here as gpu may still processing
+		*	resetEngineFrame()										|
+		*		- seems must wait regardless						|	tsf begin
+		*		  all gpu cmd or not, since							|		wait prev tsf RenderData
+		*		  we must wait gpu prev frame to finish				|		could split wait+reset for vk
+		*		  otherwise, we will lead Render x frame 			|	process tsf
+		*	      (until gpu is free)										before submit, we must make sure prev same frame index are done
+		*															|		RDS_TODO("must wait last same frameIndex submit here, currently waited in Engine so it is safe now");
+		*															|		submit tsf
+		* 															|
+		* 															|	 render begin
+		*															|		- wait + reset fence
+		*															|		- submit render
+		*															|	 render end
+		* 															|
+		*															|	tsf end
+		*	pass tsf EngineData	(Vk_Staging+CmdBuf)					|		- process destroy tsf RenderData (curFrame in Engine reset-ed trigger 0-refCount-destroy, )
+		*	to Render												|		- also process destroy tsf EngineData 
+		*															|			- (for last same index frame, above waiting ensure no-one is using)
+		*															|			- it will destroy in next frame
 		*	
 		*/
 	}
@@ -376,6 +394,9 @@ DemoEditorLayer::_logForResumeDevelopMustWatchFirst()
 void
 DemoEditorLayer::_todoList()
 {
+	// *** 2025.04.24
+	RDS_TODO("change render graph as TransferFrame pattern, currently always crash on Vk_FramebufferPool::request(RdgPass* pass, Vk_RenderPass_T* vkRdPassHnd)");
+
 	RDS_WARN_ONCE("only amd gpu have tracy profiler vulkan valiadation error, it is fine in nvida");
 
 	RDS_TODO(
@@ -390,9 +411,20 @@ DemoEditorLayer::_todoList()
 		"Material or other engine stuff maybe meaningless to be n framed (1 copy is needed), eg constBuf"
 		"\n , just a cpu buffer and upload will immediately copy to Staging on its calling Thread"
 	);
-
+	RDS_TODO("class member for EngineData and RenderData");
 }
 
+void 
+DemoEditorLayer::_testEngineCode()
+{
+	#if RDS_IS_TEST_ENGINE
+	if (_testEngine)
+	{
+		_testEngine->testRenderResource();
+	}
+	#endif // RDS_IS_TEST_ENGINE
+
+}
 
 #endif
 

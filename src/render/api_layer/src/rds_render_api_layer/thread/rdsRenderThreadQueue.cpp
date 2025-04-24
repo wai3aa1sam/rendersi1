@@ -55,6 +55,7 @@ RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&
 	auto rdData = makeUPtr<RenderData>();
 	rdData->frameCount		= frameCount;
 	rdData->renderDevice	= renderDevice;
+	rdData->transferFrame	= renderDevice->releaseTransferFrame();
 	{
 		auto& rdJob = rdData->renderJobs.emplace_back();
 		rdJob = rds::move(renderJob);
@@ -64,11 +65,11 @@ RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&
 }
 
 void 
-RenderThreadQueue::waitFrame(u64 frameCount)
+RenderThreadQueue::waitFrame(u64 frameCount, int sleepMs)
 {
 	while (!isSignaled(frameCount))
 	{
-		OsUtil::sleep_ms(1);
+		OsUtil::sleep_ms(sleepMs);
 	}
 }
 
@@ -78,9 +79,12 @@ bool
 RenderThreadQueue::isSignaled(u64 engineFrameCount) const
 {
 	auto rdThreadCurrentFrameCount = currentFrameCount();
-	bool isSameFrameIndex = RenderApiLayerTraits::rotateFrame(engineFrameCount) == RenderApiLayerTraits::rotateFrame(rdThreadCurrentFrameCount);
-	bool shdWait = (isSameFrameIndex && !_rdThread->isFrameFinished(engineFrameCount));	// not work for RenderApiLayerTraits::s_kFrameInFlightCount == 1
-	return !shdWait || _rdThread->isReadyToProcess();
+	bool isSameFrameIndex	= RenderApiLayerTraits::rotateFrame(engineFrameCount) == RenderApiLayerTraits::rotateFrame(rdThreadCurrentFrameCount);
+	bool isLeadingRender	= engineFrameCount > rdThreadCurrentFrameCount + RenderApiLayerTraits::s_kFrameInFlightCount;
+
+	bool shdWait = isLeadingRender || isSameFrameIndex; // && !_rdThread->isFrameFinished(engineFrameCount));	// not work for RenderApiLayerTraits::s_kFrameInFlightCount == 1
+	return !shdWait || _rdThread->isFrameFinished(engineFrameCount);
+	//  (|| _rdThread->isReadyToProcess()) is wrong, since the RenderThread could have job on queue but not pop yet
 }
 
 #endif

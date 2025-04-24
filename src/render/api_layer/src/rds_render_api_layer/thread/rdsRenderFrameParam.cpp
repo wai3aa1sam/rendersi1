@@ -33,6 +33,7 @@ RenderFrameParam::setEngineFrameCount(u64 frameCount)
 void 
 RenderFrameParam::setFrameCount(u64 frameCount)
 {
+	checkRenderThreadExclusive(RDS_SRCLOC);
 	_frameCount = frameCount;
 }
 

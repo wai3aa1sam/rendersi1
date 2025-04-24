@@ -16,6 +16,14 @@ LinearStagingBuffer::clear()
 	data->clear();
 }
 
+void 
+LinearStagingBuffer::reset()
+{
+	RDS_TODO("LinearAllocator have a reset, no need to free those chunks");
+	auto data = _alloc.scopedULock();
+	data->clear();
+}
+
 void* 
 LinearStagingBuffer::alloc(StagingHandle& oHnd, SizeType n)
 {

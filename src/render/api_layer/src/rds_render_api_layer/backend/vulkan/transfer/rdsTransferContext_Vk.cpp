@@ -88,26 +88,22 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 {
 	Base::onCommit(rdFrameParam, tsfReq, isWaitImmediate);
 
-	auto lock = tsfReq.transferCommandBuffer().scopedULock();
-	auto& tsfCmdBuf = *lock;
 
+	auto* rdDevVk		= renderDeviceVk();
+	auto  frameIdx		= frameIndex();
+	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
+
+	auto& vkQueueData		= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
+	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);	// no want to want then may use same method in TransferFrame, but seems on9, just keep simple
+
+	auto lock = tsfReq.transferCommandBuffer().scopedULock();		// maybe swap to a local, then no need to lock too long, but only this own it now
+	auto& tsfCmdBuf = *lock;
 	Span<TransferCommand*> tsfCmds = tsfCmdBuf.commands();
 
 	if (tsfCmds.is_empty())
 	{
 		return;
 	}
-
-	auto* rdDevVk		= renderDeviceVk();
-	auto  frameIdx		= frameIndex();
-	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
-
-	/*
-	* cannot wait and split the wait here, since
-	*/
-
-	auto& vkQueueData		= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
-	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);
 
 	auto& inFlightVkFnc		= vkQueueData.inFlightVkFence;
 	auto& completedVkSmp	= vkQueueData.completedVkSemaphore;
@@ -123,7 +119,10 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 
 	vkCmdBuf->endRecord();
 
+	RDS_TODO("must wait last submit here, since same frame index gpu may using the resources, currently waited in Engine so it is safe now");
+	RDS_TODO("btw need revisit vulkan barrier, will diff submit being pick and have race condition?");
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");
+
 	RenderDebugLabel debugLabel;
 	debugLabel.name = "TransferContext_Vk::onCommit()";
 	if (!isWaitImmediate)
@@ -449,6 +448,8 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 #endif // 1
 
 Vk_TransferFrame& TransferContext_Vk::vkTransferFrame(u64 frameIdx) { return _vkTransferFrames[frameIdx]; }
+TransferFrame_Vk& TransferContext_Vk::transferFrameVk()				{ return sCast<TransferFrame_Vk&>(TransferContext::transferFrame()); }
+
 
 #endif
 

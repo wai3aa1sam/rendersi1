@@ -9,6 +9,7 @@ namespace rds
 
 class RenderThread;
 class RenderDevice;
+class TransferFrame;
 
 struct RenderData_RenderJob
 {
@@ -27,9 +28,10 @@ struct RenderData
 	using RenderJobs	= Vector<RenderJob, 6>; 
 
 public:
-	u64				frameCount		= 0;
-	RenderDevice*	renderDevice	= nullptr;
-	RenderJobs		renderJobs;
+	u64					frameCount		= 0;
+	RenderDevice*		renderDevice	= nullptr;
+	UPtr<TransferFrame>	transferFrame	= nullptr;
+	RenderJobs			renderJobs;
 };
 
 #if 0
@@ -52,12 +54,12 @@ public:
 public:
 	void submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&& renderJob);
 
-	void waitFrame(u64 frameCount);				// please reference to unreal similar fn, eg, a timeout
+	void waitFrame(u64 frameCount, int sleepMs = 0);				// please reference to unreal similar fn, eg, a timeout
 
 public:
 	u64		currentFrameCount()					const;
 	//u64		lastFinishedFrameCount()			const;
-	bool	isSignaled(u64 engineFrameCount)	const;
+	bool	isSignaled(u64 engineFrameCount)	const;		// isEngineReadyToProcess
 
 private:
 	RenderThread* _rdThread = nullptr;

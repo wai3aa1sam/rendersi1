@@ -26,6 +26,7 @@ EditorApp::~EditorApp()
 {
 }
 
+
 void 
 EditorApp::onCreate(const CreateDesc_Base& cd)
 {
@@ -42,11 +43,7 @@ EditorApp::onCreate(const CreateDesc_Base& cd)
 		cDesc.workerCount = OsTraits::logicalThreadCount();
 		JobSystem::instance()->create(cDesc);
 	}
-	{
-		auto cDesc = Renderer::makeCDesc();
-		Renderer::instance()->create(cDesc);
-	}
-
+	
 	/*{
 		auto cDesc = _mainWin.makeCDesc();
 		cDesc.isMainWindow = true;
@@ -123,6 +120,12 @@ EditorApp::willQuit()
 	JobSystem::terminate();
 	Logger::terminate();
 	//ProjectSetting::terminate();
+}
+
+void 
+EditorApp::createRenderer(Renderer_CreateDesc& cDesc)
+{
+	Renderer::instance()->create(cDesc);
 }
 
 #endif

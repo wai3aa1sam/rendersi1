@@ -84,6 +84,7 @@ Vk_RenderApiUtil::debugCallback(
 	
 	if (pCallbackData->messageIdNumber == 0x822806fa) { RDS_WARN_ONCE("bypassed vulkan error: UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging"); return VK_FALSE; }
 	if (pCallbackData->messageIdNumber == 0xfc68be96) { RDS_WARN_ONCE("bypassed vulkan error: SPIR-V Extension SPV_GOOGLE_hlsl_functionality1 was declared, but one of the following requirements is required (VK_GOOGLE_hlsl_functionality1)"); return VK_FALSE; } 
+	if (pCallbackData->messageIdNumber == 0xeb0b9b05) { RDS_WARN_ONCE("bypassed vulkan error: seems Tracy in amd problem only, Vulkan validation layer: Validation Error: [ VUID-vkCmdWriteTimestamp-None-00830 ] Object 0: handle = 0x21296e3d0d0, name = RenderContext_Vk::onCommit-Graphics, type = VK_OBJECT_TYPE_COMMAND_BUFFER; Object 1: handle = 0xfef35a00000000a0, type = VK_OBJECT_TYPE_QUERY_POOL; | MessageID = 0xeb0b9b05 | vkCmdWriteTimestamp():  VkQueryPool 0xfef35a00000000a0[] and query 28258: query not reset. After query pool creation, each query must be reset before it is used. Queries must also be reset between uses. The Vulkan spec states: All queries used by the command must be unavailable (https://vulkan.lunarg.com/doc/view/1.3.283.0/windows/1.3-extensions/vkspec.html#VUID-vkCmdWriteTimestamp-None-00830)"); return VK_FALSE; }
 
 	switch (messageSeverity)
 	{

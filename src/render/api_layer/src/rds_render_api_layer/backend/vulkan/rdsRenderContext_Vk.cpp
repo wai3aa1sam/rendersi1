@@ -71,6 +71,9 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	_vkTransferQueue.create(QueueTypeFlags::Transfer,	rdDevVk);
 
 	auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
+
+	RDS_TODO("remove");
+	Backbuffers _backbuffers;
 	vkSwapchainCDesc.create(cDesc, this, &_backbuffers);
 	_vkSwapchain.create(vkSwapchainCDesc);
 
@@ -107,7 +110,7 @@ RenderContext_Vk::onDestroy()
 	_vkRdFrames.clear();
 
 	_vkSwapchain.destroy(nullptr);
-	_backbuffers.destroy();
+	//_backbuffers.destroy();
 
 	//_vkFramebufPool.destroy();
 	_vkRdPassPool.destroy();
@@ -168,7 +171,8 @@ RenderContext_Vk::onBeginRender()
 	//vkResetFences(vkDevice, vkFenceCount, vkFences);		// reset too early will cause deadlock, since the invalidate wii cause no work submitted (returned) and then no one will signal it
 	{
 		RDS_PROFILE_SECTION("acquireNextImage()");
-		ret = _vkSwapchain.acquireNextImage(_curImageIdx, vkRdFrame.imageAvaliableSmp()); RDS_UNUSED(ret);
+		u32 curImageIdx = NumLimit<u32>::max();
+		ret = _vkSwapchain.acquireNextImage(curImageIdx, vkRdFrame.imageAvaliableSmp()); RDS_UNUSED(ret);
 		if (!Util::isSuccess(ret))
 		{
 			//invalidateSwapchain(ret, framebufferSize());
@@ -690,7 +694,7 @@ RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
 	if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
 	{
 		auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
-		vkSwapchainCDesc.create(nativeUIWindow(), this, &_backbuffers, _vkSwapchain.colorFormat(), VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, _vkSwapchain.depthFormat());
+		vkSwapchainCDesc.create(nativeUIWindow(), this, _vkSwapchain.colorFormat(), VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, _vkSwapchain.depthFormat());
 		_vkSwapchain.create(vkSwapchainCDesc);
 		return;
 	}
@@ -811,6 +815,8 @@ RenderContext_Vk::_onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, Vk_Comm
 	}
 
 	auto* vtxBufHndVk = cmd->vertexBuffer ? sCast<RenderGpuBuffer_Vk*>(cmd->vertexBuffer.ptr())->vkBuf()->hnd() :  sCast<RenderGpuBuffer_Vk*>(_dummyVtxBuf.ptr())->vkBuf()->hnd();
+	//auto* vtxBufHndVk = sCast<RenderGpuBuffer_Vk*>(cmd->vertexBuffer.ptr())->vkBuf()->hnd();
+
 	//if (vtxCount > 0 && !vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf while vtxCount > 0"); return; }
 	//if (!vtxBufHndVk) { RDS_CORE_ASSERT(false, "drawcall no vertex buf"); return; }
 

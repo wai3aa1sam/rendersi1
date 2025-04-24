@@ -35,8 +35,18 @@ public:
 	static UPtr<TransferFrame>		make(CreateDesc& cDesc);
 
 public:
+	TransferFrame();
+	virtual ~TransferFrame();
+
 	void create(CreateDesc& cDesc);
 	void destroy();
+	
+public:
+	void	reset();
+
+	// void*	alloc(StagingHandle& oHnd, SizeType n);
+	// void*	uploadToBuffer(	StagingHandle& oHnd, ByteSpan data);
+	// void	uploadToDst(	u8* dst, StagingHandle hnd, SizeType n);
 
 public:
 	//virtual void	requestStagingHandle(	StagingHandle& out, SizeType	size)						= 0;
@@ -47,16 +57,10 @@ protected:
 	virtual void onCreate(		CreateDesc& cDesc);
 	virtual void onPostCreate(	CreateDesc& cDesc);
 	virtual void onDestroy();
+	virtual void onReset();
 	
 public:
 	void _internal_requestDestroyObject();
-
-public:
-	// void*	alloc(StagingHandle& oHnd, SizeType n);
-	// void*	uploadToBuffer(	StagingHandle& oHnd, ByteSpan data);
-	// void	uploadToDst(	u8* dst, StagingHandle hnd, SizeType n);
-
-	void	clear();
 
 public:
 	TransferRequest&		transferRequest();

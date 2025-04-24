@@ -16,6 +16,8 @@ class SceneView;
 
 struct MeshAssets;
 
+struct TestEngine;
+
 #if 0
 #pragma mark --- rdsDemoEditorLayer-Decl ---
 #endif // 0
@@ -24,8 +26,11 @@ struct MeshAssets;
 class DemoEditorLayer : public EditorLayer
 {
 public:
-	DemoEditorLayer(UPtr<GraphicsDemo> gfxDemo);
+	DemoEditorLayer();
 	virtual ~DemoEditorLayer();
+
+public:
+	void init(UPtr<GraphicsDemo> gfxDemo);
 
 public:
 	EngineContext&			engineContext();
@@ -58,6 +63,7 @@ protected:
 private:
 	void _logForResumeDevelopMustWatchFirst();
 	void _todoList();
+	void _testEngineCode();
 
 private:
 	EngineContext	_egCtx;
@@ -81,6 +87,8 @@ private:
 
 	RenderThread		_rdThread;
 	RenderThreadQueue	_rdThreadQueue;
+
+	UPtr<TestEngine> _testEngine;
 };
 
 inline EngineContext&		DemoEditorLayer::engineContext()	{ return _egCtx; }
@@ -96,5 +104,75 @@ inline MeshAssets&			DemoEditorLayer::meshAssets()		{ return *_meshAssets; }
 
 #endif
 
+#if 0
+#pragma mark --- rdsTestEngine-Decl ---
+#endif // 0
+#if 1
+
+struct TestEngine
+{
+	SPtr<RenderGpuBuffer>		_testBuffer;
+	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
+	SPtr<Texture2D>				_testTex2D;
+
+	void testRenderResource()
+	{
+		auto fn =
+			[]
+			(SPtr<RenderGpuBuffer>& testBuffer, SPtr<RenderGpuMultiBuffer>& testMultiBuffer, SPtr<Texture2D>& testTex2D)
+			{
+				{
+					if (Renderer::renderDevice()->engineFrameCount() % 2 == 0)
+					{
+						/*
+						SPtr<RenderGpuBuffer>		_testBuffer;
+						SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
+						SPtr<Texture2D>				_testTex2D;
+						*/
+						{
+							auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+							cDesc.bufSize = 16;
+							testBuffer = Renderer::renderDevice()->createRenderGpuBuffer(cDesc);
+
+							Vector<u8, 16> data;
+							data.resize(16);
+
+							testBuffer->setDebugName("_testBuffer");
+							//testBuffer->uploadToGpu(data);
+
+							testMultiBuffer = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);
+							testMultiBuffer->setDebugName("_testMultiBuffer");
+							//testMultiBuffer->uploadToGpu(data);
+						}
+
+						{
+							auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+							Vector<u8, 16 * 16 * sizeof(ColorRGBAb)> data;
+							data.resize(16 * 16 * sizeof(ColorRGBAb));
+							cDesc.create(data.data(), 16, 16, ColorType::RGBAb);
+							testTex2D = Renderer::renderDevice()->createTexture2D(cDesc);
+							testTex2D->setDebugName("_testTex2D");
+							//testTex2D->uploadToGpu(cDesc);
+						}
+					}
+				}
+			};
+
+		{
+			SPtr<RenderGpuBuffer>		testBuffer;
+			SPtr<RenderGpuMultiBuffer>	testMultiBuffer;
+			SPtr<Texture2D>				testTex2D;
+
+			fn(testBuffer, testMultiBuffer, testTex2D);
+		}
+			
+			
+		{
+			fn(_testBuffer, _testMultiBuffer, _testTex2D);
+		}
+	}
+};
+
+#endif
 
 }

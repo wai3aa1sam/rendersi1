@@ -14,6 +14,7 @@ public:																								\
 public:																								\
 	static constexpr SizeType s_kThreadCount				= Traits::s_kThreadCount;				\
 	static constexpr SizeType s_kFrameInFlightCount			= Traits::s_kFrameInFlightCount;		\
+	static constexpr SizeType s_kFrameSafeInFlightCount		= Traits::s_kFrameSafeInFlightCount;	\
 	static constexpr SizeType s_kSwapchainImageLocalSize	= Traits::s_kSwapchainImageLocalSize;	\
 private:																							\
 //---
@@ -39,6 +40,15 @@ public:
 
 	static constexpr SizeType s_kFirstFrameCount			= 1;
 	static constexpr SizeType s_kFrameInFlightCount			= 2;	// vk get swapchain count is 2, so cannot be 1 now
+
+	/*
+	* 
+	* mt-able no wait (always lead) needs infinite frame (until wait)
+	* , but we are waiting on engine, and it is possible demand is > s_kFrameInFlightCount
+	# , Engine sent s_kFrameInFlightCount to Render, Engine want to get then context switch, 
+	*/
+	static constexpr SizeType s_kFrameSafeInFlightCount		= s_kFrameInFlightCount * 2;
+
 	static constexpr SizeType s_kSwapchainImageLocalSize	= s_kFrameInFlightCount;
 	static constexpr SizeType s_kThreadCount				= OsTraits::s_kJobSystemLogicalThreadCount;
 

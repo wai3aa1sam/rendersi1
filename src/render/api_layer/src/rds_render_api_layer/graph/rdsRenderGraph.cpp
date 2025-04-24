@@ -165,6 +165,7 @@ RenderGraph::reset()
 void 
 RenderGraph::compile()
 {
+	checkMainThreadExclusive(RDS_SRCLOC);
 	RDS_PROFILE_SCOPED();
 
 	if (!_rdCtx->isValidFramebufferSize())

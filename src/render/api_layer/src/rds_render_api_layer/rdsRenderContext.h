@@ -96,7 +96,7 @@ public:
 	virtual bool isFrameFinished(u64 frameCount);
 	virtual void waitFrameFinished(u64 frameCount);
 
-	Texture2D* backBuffer();		// this is fake, backBuffer before beginRender() is different with after beginRender()
+	//Texture2D* backBuffer();		// this is fake, backBuffer before beginRender() is different with after beginRender()
 
 	bool isValidFramebufferSize() const;
 
@@ -125,15 +125,21 @@ public:
 protected:
 	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData);
 
-protected:
+private:
 	NativeUIWindow* _nativeUIWindow = nullptr;
 
 	Vec2f	_swapchainSize {0,0};
-	//u32		_curFrameIdx = 0;
-	u32		_curImageIdx = 0;	// cache the current image index for backend
 
 	RenderUiContext			_rdUiCtx;
+
+	#if 0
+
+	//u32		_curFrameIdx = 0;
+	u32		_curImageIdx = 0;	// cache the current image index for backend
 	Backbuffers				_backbuffers;
+	#endif // 0
+
+protected:
 	SPtr<RenderGpuBuffer>	_dummyVtxBuf;
 
 private:
@@ -144,7 +150,7 @@ inline const Vec2f&		RenderContext::swapchainSize() const	{ return _swapchainSiz
 inline NativeUIWindow*	RenderContext::nativeUIWindow()			{ return _nativeUIWindow; }
 inline RenderUiContext&	RenderContext::renderdUiContex()		{ return _rdUiCtx; }
 
-inline Texture2D*		RenderContext::backBuffer()				{ return _backbuffers.backbuffer(); }
+//inline Texture2D*		RenderContext::backBuffer()				{ return _backbuffers.backbuffer(); }
 
 inline bool				RenderContext::isValidFramebufferSize() const { return swapchainSize().x > 0.0f && swapchainSize().y > 0.0f; }
 

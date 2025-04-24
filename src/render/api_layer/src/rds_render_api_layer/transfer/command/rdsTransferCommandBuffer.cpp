@@ -28,8 +28,7 @@ TransferCommandBuffer::TransferCommandBuffer(TransferCommandBuffer&& rhs)
 void 
 TransferCommandBuffer::operator=(TransferCommandBuffer&& rhs)
 {
-	if (this != &rhs)
-		move(rds::move(rhs));
+	move(rds::move(rhs));
 }
 
 void 
@@ -55,6 +54,7 @@ TransferCommandBuffer::_internal_allocCommand(size_t size)
 void 
 TransferCommandBuffer::move(TransferCommandBuffer&& rhs)
 {
+	RDS_ASSERT(this != &rhs, "self assignment");
 	_allocator	= rds::move(rhs._allocator);
 	_commands	= rds::move(rhs._commands);
 }

@@ -171,8 +171,8 @@ inline			ShaderStock&			RenderDevice::shaderStock()					{ return _shaderStock; }
 inline			TextureStock&			RenderDevice::textureStock()				{ return _textureStock; }
 
 //inline			RenderFrame&			RenderDevice::renderFrame(	u64	frameIdx)	{ _notYetSupported(RDS_SRCLOC); return _rdFrames[frameIdx]; }
-inline			TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);		RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); return *_tsfFrame; }
-inline			UPtr<TransferFrame>		RenderDevice::releaseTransferFrame()		{ checkRenderThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); auto p = rds::move(_tsfFrame); return p; }
+inline			TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); return *_tsfFrame; }
+inline			UPtr<TransferFrame>		RenderDevice::releaseTransferFrame()		{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); auto p = rds::move(_tsfFrame); return p; }
 
 inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx; }
 inline			TransferRequest&		RenderDevice::transferRequest()				{ checkMainThreadExclusive(RDS_SRCLOC); return transferFrame().transferRequest(); }

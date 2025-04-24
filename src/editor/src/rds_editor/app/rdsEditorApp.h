@@ -40,6 +40,8 @@ public:
 	EditorApp();
 	virtual ~EditorApp();
 
+	void createRenderer(Renderer_CreateDesc& cDesc);
+
 protected:
 	virtual void onCreate	(const CreateDesc_Base& cd) override;
 	virtual void onDestroy  ();

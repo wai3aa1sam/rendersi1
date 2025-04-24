@@ -58,7 +58,7 @@ Backbuffers::destroy()
 	_rdCtx = nullptr;
 }
 
-Texture2D*	Backbuffers::backbuffer()			{ return _images[_rdCtx->_curImageIdx]; }
+//Texture2D*	Backbuffers::backbuffer()			{ return _images[_rdCtx->_curImageIdx]; }
 
 
 #endif
@@ -197,8 +197,11 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 	_swapchainSize.y = cDesc.window->clientRect().h;
 
 	_nativeUIWindow = cDesc.window;
+	
+	#if 0
 	_backbuffers.create(this, s_kFrameInFlightCount);
 
+	#endif // 0
 	{
 		auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
 		bufCDesc.bufSize	= 16;
@@ -217,7 +220,7 @@ RenderContext::onPostCreate(const CreateDesc& cDesc)
 void
 RenderContext::onDestroy()
 {
-	RDS_CORE_ASSERT(_backbuffers.isEmpty(), "must clear in backend");
+	//RDS_CORE_ASSERT(_backbuffers.isEmpty(), "must clear in backend");
 }
 
 void 

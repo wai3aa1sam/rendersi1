@@ -69,6 +69,9 @@ public:
 public:
 	void create(NativeUIWindow* window_, RenderContext_Vk* renderContextVk_, Backbuffers* outBackbuffers_, VkFormat colorFormat_, VkColorSpaceKHR colorSpace_, VkFormat depthFormat_);
 	void create(const RenderContext_CreateDesc& rdCtxCDesc, RenderContext_Vk* renderContextVk_, Backbuffers* outBackbuffers_);
+
+	void create(NativeUIWindow* window_, RenderContext_Vk* renderContextVk_, VkFormat colorFormat_, VkColorSpaceKHR colorSpace_, VkFormat depthFormat_);
+	void create(const RenderContext_CreateDesc& rdCtxCDesc, RenderContext_Vk* renderContextVk_);
 };
 
 class Vk_Swapchain : public Vk_RenderApiPrimitive<Vk_Swapchain_T, VK_OBJECT_TYPE_SWAPCHAIN_KHR>
@@ -114,15 +117,15 @@ protected:
 	void createSwapchainInfo(Vk_SwapchainInfo& out, u32 imageCount, const Vk_SwapchainAvailableInfo& info, const Rect2f& framebufferSize
 								, VkFormat colorFormat, VkColorSpaceKHR colorSpace, VkFormat depthFormat);
 
-	void createSwapchain(Backbuffers& outBackbuffers, const Rect2f& framebufferSize, Vk_RenderPass* vkRdPass);
+	void createSwapchain(Backbuffers* outBackbuffers, const Rect2f& framebufferSize, Vk_RenderPass* vkRdPass);
 	void destroySwapchain();
 
 	void createSwapchainFramebuffers(Vk_RenderPass* vkRdPass);
 	void createDepthResources();
 	void destroyDepthResources();
 
-	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out,		Backbuffers& outBackbuffers, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice);
-	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out,	Backbuffers& outBackbuffers, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk
+	template<size_t N> static u32  createSwapchainImages	(SwapChainImages_Vk_N<N>& out,		Backbuffers* outBackbuffers, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice);
+	template<size_t N> static void createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out,	Backbuffers* outBackbuffers, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk
 		, VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels);
 
 	void createRenderPass(VkFormat colorFormat, VkFormat depthFormat);
@@ -173,7 +176,7 @@ inline VkExtent2D			Vk_Swapchain::framebufferVkExtent2D()	const { return Util::t
 
 template<size_t N> inline
 u32 
-Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Backbuffers& outBackbuffers, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice)
+Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Backbuffers* outBackbuffers, Vk_Swapchain_T* vkSwapchain, Vk_Device_T* vkDevice)
 {
 	u32 imageCount = 0;
 	vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
@@ -189,7 +192,8 @@ Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Backbuffers& o
 	{
 		out[i].create(vkImages[i]);
 		
-		*sCast<Texture2D_Vk*>(outBackbuffers.backbuffer(i))->_vkImage.hndForInit() = vkImages[i];
+		if (outBackbuffers)
+			*(sCast<Texture2D_Vk*>(outBackbuffers->backbuffer(i))->_vkImage.hndForInit()) = vkImages[i];
 	}
 
 	return imageCount;
@@ -197,19 +201,22 @@ Vk_Swapchain::createSwapchainImages(SwapChainImages_Vk_N<N>& out, Backbuffers& o
 
 template<size_t N> inline 
 void 
-Vk_Swapchain::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, Backbuffers& outBackbuffers, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk, 
+Vk_Swapchain::createSwapchainImageViews(SwapChainImageViews_Vk_N<N>& out, Backbuffers* outBackbuffers, const SwapChainImages_Vk_N<N>& vkImages, RenderDevice_Vk* rdDevVk, 
 	VkFormat format, VkImageAspectFlags aspectFlags, u32 mipLevels)
 {
 	out.clear();
 	out.resize(vkImages.size());
 	for (size_t i = 0; i < vkImages.size(); ++i)
 	{
-		auto* texVk = sCast<Texture2D_Vk*>(outBackbuffers.backbuffer(i));
-		//texVk->_vkImageViews.resize(1);
-
 		out[i].create(vkImages[i].hnd(), format, aspectFlags, mipLevels, rdDevVk);
+		//texVk->_vkImageViews.resize(1);
 		// Vk_Texture::getVkImageView(outBackbuffers.backbuffer(i), 0)->hndForInit() = out[i].hnd();
-		*texVk->_srvVkImageView.hndForInit() = out[i].hnd();
+
+		if (outBackbuffers)
+		{
+			auto* texVk = sCast<Texture2D_Vk*>(outBackbuffers->backbuffer(i));
+			*(texVk->_srvVkImageView.hndForInit()) = out[i].hnd();
+		}
 	}
 }
 

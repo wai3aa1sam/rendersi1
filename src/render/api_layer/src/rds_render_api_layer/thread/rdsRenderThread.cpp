@@ -52,7 +52,7 @@ RenderThread::onRoutine()
 		}
 
 		UPtr<RenderData> rdData;
-		bool hasRequestRender = _rdDataQueue.try_pop(rdData);
+		bool hasRequestRender = _rdDataQueue.try_pop(rdData);		// seems try_pop is poping front, if no hints could try once more
 		if (hasRequestRender)
 		{
 			setState(RenderThreadState::Processing);
@@ -102,7 +102,7 @@ RenderThread::render(RenderData& renderData)
 		auto& tsfCtx	= rdDev->transferContext();
 		//auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
 		tsfCtx.transferBegin();
-		tsfCtx.commit(rdFrameParam, rds::move(rdDev->releaseTransferFrame()), false);
+		tsfCtx.commit(rdFrameParam, rds::move(renderData.transferFrame), false);
 
 		{
 			// RenderFrameContext

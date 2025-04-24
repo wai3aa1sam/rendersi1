@@ -31,15 +31,16 @@ public:
 	void createRenderResource( const RenderFrameParam& rdFrameParam);
 	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
 
+
 	#if 1
 public:
 	// virtual void	requestStagingHandle(	StagingHandle& out, SizeType	size)					override;
 	// virtual void	uploadToStagingBuf(		StagingHandle& out, ByteSpan	data, SizeType offset)	override;
 	// virtual void*	mappedStagingBufData(	StagingHandle  hnd)										override;
 
-	void	requestStagingHandle(	StagingHandle& out, SizeType	size)				;
-	void	uploadToStagingBuf(		StagingHandle& out, ByteSpan	data, SizeType offset = 0);
-	void*	mappedStagingBufData(	StagingHandle  hnd)									;
+	void	requestStagingHandle(	StagingHandle& out, SizeType	size)						;
+	void	uploadToStagingBuf(		StagingHandle& out, ByteSpan	data, SizeType offset = 0)	;
+	void*	mappedStagingBufData(	StagingHandle  hnd)											;
 	
 public:
 	Vk_Buffer_T* getVkStagingBufHnd(u32 idx);
@@ -48,31 +49,20 @@ private:
 	#endif // 0
 
 public:
-	Vk_Buffer*		vkBuf();
-	Vk_Buffer_T*	vkBufHnd();
-
 	Vk_LinearStagingBuffer& vkLinearStagingBuffer();
-
 
 protected:
 	virtual void onCreate(		CreateDesc& cDesc)	override;
 	virtual void onPostCreate(	CreateDesc& cDesc)	override;
 	virtual void onDestroy()						override;
+	virtual void onReset()							override;
 
 public:
 	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 protected:
 	Vk_LinearStagingBuffer _vkLinearStagingBuf;
-
-	Vk_Buffer	_vkBuf;
-	u64			_gpuAddress = 0;
 };
-
-//inline Vk_Buffer*	RenderGpuBuffer_Vk::vkBuf()				{ return &_vkBuf; }
-//inline Vk_Buffer_T* RenderGpuBuffer_Vk::vkBufHnd()			{ return vkBuf()->hnd(); }
-//
-//inline u64			RenderGpuBuffer_Vk::gpuAddress() const	{ return _gpuAddress; }
 
 inline Vk_LinearStagingBuffer& TransferFrame_Vk::vkLinearStagingBuffer() { return _vkLinearStagingBuf; }
 

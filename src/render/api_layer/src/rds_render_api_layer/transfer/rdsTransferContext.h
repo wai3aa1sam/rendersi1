@@ -7,6 +7,7 @@ namespace rds
 {
 
 class Texture;
+class RenderDevice;
 
 struct TransferContext_CreateDesc : public RenderResource_CreateDesc
 {
@@ -20,6 +21,7 @@ struct TransferContext_CreateDesc : public RenderResource_CreateDesc
 
 class TransferContext : public RenderResource
 {
+	friend class RenderDevice;
 public:
 	using Base			= RenderResource;
 	using CreateDesc	= TransferContext_CreateDesc;
@@ -52,7 +54,8 @@ public:
 	void destroyTexture(		Texture*			texture);
 
 public:
-	TransferFrame& transferFrame();
+	TransferFrame&		transferFrame();
+	UPtr<TransferFrame> allocTransferFrame();
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
@@ -78,8 +81,10 @@ private:
 	TransferCommandSafeBuffer	_createRdRscQueue;
 	TransferCommandSafeBuffer	_destroyRdRscQueue;
 
-	UPtr<TransferFrame> _curTsfFrame = nullptr;
-	Vector<UPtr<TransferFrame>,	s_kFrameInFlightCount> _prevTsfFrames;
+	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameSafeInFlightCount> >;
+	TransferFramePool									_tsfFramePool;
+	Vector<UPtr<TransferFrame>, s_kFrameInFlightCount>	_prevTsfFrames;
+	UPtr<TransferFrame>									_curTsfFrame = nullptr;
 };
 
 template<class CTX> inline

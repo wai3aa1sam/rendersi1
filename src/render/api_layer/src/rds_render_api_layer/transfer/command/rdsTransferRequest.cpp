@@ -31,13 +31,13 @@ TransferRequest::TransferRequest()
 
 TransferRequest::~TransferRequest()
 {
-	reset(nullptr, nullptr);
+	reset(nullptr);
 }
 
 void 
-TransferRequest::reset(TransferContext* tsfCtx, TransferFrame* tsfFrame)
+TransferRequest::reset(TransferContext* tsfCtx)
 {
-	if (!tsfCtx || !tsfFrame)
+	if (!tsfCtx)
 		return;
 
 	_tsfCtx	= tsfCtx;

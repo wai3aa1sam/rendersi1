@@ -75,6 +75,9 @@ protected:
 	void _setDebugName();
 
 protected:
+	TransferFrame_Vk& transferFrameVk();
+
+protected:
 	Vk_TransferFrames	_vkTransferFrames;
 
 	Vk_Queue _vkGraphicsQueue;

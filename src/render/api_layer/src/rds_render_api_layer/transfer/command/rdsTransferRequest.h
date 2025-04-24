@@ -34,7 +34,7 @@ public:
 	TransferRequest();
 	~TransferRequest();
 
-	void reset(TransferContext* tsfCtx, TransferFrame* tsfFrame);
+	void reset(TransferContext* tsfCtx);
 	//void commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate = false);
 	
 	void setSwapchainSize(RenderContext* rdCtx, const Tuple2f& size);

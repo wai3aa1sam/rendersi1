@@ -43,6 +43,7 @@ public:
 	void	uploadToDst(	u8* dst, StagingHandle hnd, SizeType n);
 
 	void	clear();
+	void	reset();
 
 private:
 	MutexProtected<LinearAllocator> _alloc;
