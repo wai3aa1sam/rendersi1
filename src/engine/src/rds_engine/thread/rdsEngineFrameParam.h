@@ -37,6 +37,8 @@ public:
 	void reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue);
 	void commit();
 
+	void wait(u64 frameCount, RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue, bool isWaitGpu);
+
 public:
 	u64 frameCount() const;
 	u32 frameIndex() const;

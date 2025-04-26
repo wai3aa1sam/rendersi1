@@ -81,7 +81,7 @@ private:
 	TransferCommandSafeBuffer	_createRdRscQueue;
 	TransferCommandSafeBuffer	_destroyRdRscQueue;
 
-	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameSafeInFlightCount> >;
+	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameInFlightCount> >;
 	TransferFramePool									_tsfFramePool;
 	Vector<UPtr<TransferFrame>, s_kFrameInFlightCount>	_prevTsfFrames;
 	UPtr<TransferFrame>									_curTsfFrame = nullptr;

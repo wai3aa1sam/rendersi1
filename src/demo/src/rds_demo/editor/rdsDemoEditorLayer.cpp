@@ -24,7 +24,7 @@ DemoEditorLayer::DemoEditorLayer()
 	_todoList();
 	
 	auto rdrCDesc = Renderer::makeCDesc();
-	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
+	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 0;
 	DemoEditorApp::instance()->createRenderer(rdrCDesc);
 }
 
@@ -84,6 +84,9 @@ DemoEditorLayer::onCreate()
 		drawUI(rdCtx, renderableSystem());			
 		submitRenderJob(Renderer::renderDevice());
 		_rdThreadQueue.waitFrame(_egCtx.engineFrameParam().frameCount());
+		// wait gpu here then, only s_kFrameInFlightCount buffer is ok, no need s_kFrameSafeInFlightCount (s_kFrameInFlightCount + 1)
+		bool isWaitGpu = true;
+		_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, isWaitGpu);
 	}
 
 	app()._frameControl.isWaitFrame = !RDS_IS_TEST_ENGINE;
@@ -388,6 +391,33 @@ DemoEditorLayer::_logForResumeDevelopMustWatchFirst()
 		*															|			- it will destroy in next frame
 		*	
 		*/
+	}
+
+	/*
+	* --- 2025_04_25
+	*/
+	{
+		// --- 2025_04_25 - 0
+		// temp sol, should wait in rdDev
+		// if all gpu stuff is only in RenderThread, currently cpu (main thread) has something (tsf buffer) that is related to gpu, not yet all command is impl
+		// but, we must wait here, if not, engine will lead Render x frames until it finish
+		// for simple, just wait here now, if want to lead frame 
+		// (SafeFrame = inFlight + 1 shd ok, > this also need to wait gpu, but could delay to wait in Render, instead of here)
+		// , then all things submit to Render need follow the pattern in TransferFrame
+		// , eg. (RenderGraph, etc... RenderGpuMultiBuffer?, seems all buffer rotate stuff in cpu need follow that pattern)
+		// , since gpu is consumer, inFlightFrameCount buffer is ok, if gpu also wait utill submit, then also need to use TransferFrame pattern
+
+		/*
+		* TransferFrame pattern
+		* first 2 will in prevTsfFrames, then next two frame will be created too, then must have s_kFrameInFlightCount * 2 (s_kFrameSafeInFlightCount)
+		* but only two will be used in each cycle, but may have s_kFrameSafeInFlightCount created in total
+		*/
+		#if 0
+		{
+			rdCtx->waitFrameFinished(frameCount);
+			RDS_TODO("could do cpu job here, btw, cannot wait on above, we must ensure Render Thread not using same frame index fence");
+		}
+		#endif // 0
 	}
 }
 

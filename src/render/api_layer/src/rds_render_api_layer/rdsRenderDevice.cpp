@@ -152,9 +152,9 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 	//_tsfFrames[frameIdx].reset(_tsfCtx);
 	//onResetFrame(frameCount);
 
-	//RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
 	//auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
 	//_tsfFrame = createTransferFrame(tsfFrameCDesc);
+	RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
 	_tsfFrame = transferContext().allocTransferFrame();
 	
 	rdFrameParam.setEngineFrameCount(frameCount);

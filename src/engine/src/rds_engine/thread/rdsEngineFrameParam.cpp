@@ -35,29 +35,30 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 
 	_frameCount++;
 	auto frameCount = this->frameCount();
+	wait(frameCount, rdCtx, renderThreadQueue, true);
 
+	auto* rdDev = Renderer::renderDevice();
+	rdDev->resetEngineFrame(frameCount);		// next frame here will clear those in Layer::onCreate()
+	//Renderer::renderDevice()->waitIdle();
+}
+
+void 
+EngineFrameParam::commit()
+{
+	
+}
+
+void 
+EngineFrameParam::wait(u64 frameCount,RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue, bool isWaitGpu)
+{
+	checkMainThreadExclusive(RDS_SRCLOC);
+	
 	#if 1
 	{
 		{
 			RDS_PROFILE_DYNAMIC_FMT("wait render thread i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
-			bool shdWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
-			bool shdWait = shdWaitRdThread;
-			while (shdWait)		// *** cannot rdCtx->waitFrameFinished(frameCount);, only one thread can use the fence
-			{
-				#if 0
-
-				if (shdWaitRdThread)
-				{
-					RDS_CORE_LOG_ERROR("************ wait render thread - rdCurFrame: {}, engineFrame: {}", renderThreadQueue->currentFrameCount(), frameCount);
-				}
-				#endif // 0
-
-				// TODO: pick a small job instead of waiting, if so measure the time, and call sleep if the job is too small
-				OsUtil::sleep_ms(0);		// *** calling isFrameCompleted() frequently will have large overhead
-
-				shdWaitRdThread = !renderThreadQueue->isSignaled(frameCount);
-				shdWait = shdWaitRdThread; // !isRdCtxFinished;
-			}
+			// TODO: pick a small job instead of waiting, but maybe loop is better, if so measure the time, and call sleep if the job is too small
+			renderThreadQueue->waitFrame(frameCount, 0); 
 		}
 
 		{
@@ -66,13 +67,14 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 			// temp sol, should wait in rdDev
 			// if all gpu stuff is only in RenderThread, currently cpu (main thread) has something (tsf buffer) that is related to gpu, not yet all command is impl
 			// but, we must wait here, if not, engine will lead Render x frames until it finish
+			// for simple, just wait here now, if want to lead frame 
+			// (SafeFrame = inFlight + 1 shd ok, > this also need to wait gpu, but could delay to wait in Render, instead of here)
+			// , then all things submit to Render need follow the pattern in TransferFrame
+			// , eg. (RenderGraph, etc... RenderGpuMultiBuffer?, seems all buffer rotate stuff in cpu need follow that pattern)
+			// , since gpu is consumer, inFlightFrameCount buffer is ok, if gpu also wait utill submit, then also need to use TransferFrame pattern
 			rdCtx->waitFrameFinished(frameCount);
 			RDS_TODO("could do cpu job here, btw, cannot wait on above, we must ensure Render Thread not using same frame index fence");
 		}
-
-		auto* rdDev = Renderer::renderDevice();
-		rdDev->resetEngineFrame(frameCount);		// next frame here will clear those in Layer::onCreate()
-		//Renderer::renderDevice()->waitIdle();
 	}
 
 	// testing for check vk descr alloc
@@ -97,12 +99,6 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 	#endif // 0
 
 	#endif // 0
-}
-
-void 
-EngineFrameParam::commit()
-{
-	
 }
 
 u64 

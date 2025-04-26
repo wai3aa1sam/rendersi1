@@ -23,7 +23,7 @@ void
 HelloTriangle::onCreateScene(Scene* oScene)			
 {
 	Base::onCreateScene(oScene);
-	createDefaultScene(oScene, _shaderHelloTriangle, meshAssets().suzanne, Vec3u{5, 5, 1});
+	createDefaultScene(oScene, _shaderHelloTriangle, meshAssets().suzanne, Vec3u{1, 1, 1});
 }
 
 void 

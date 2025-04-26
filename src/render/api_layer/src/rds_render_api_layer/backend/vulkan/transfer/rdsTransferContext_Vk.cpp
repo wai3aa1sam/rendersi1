@@ -88,11 +88,13 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 {
 	Base::onCommit(rdFrameParam, tsfReq, isWaitImmediate);
 
-
 	auto* rdDevVk		= renderDeviceVk();
 	auto  frameIdx		= frameIndex();
 	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
 
+	/*
+	* no wait here then must follow TransferFrame pattern
+	*/
 	auto& vkQueueData		= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
 	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);	// no want to want then may use same method in TransferFrame, but seems on9, just keep simple
 
@@ -118,7 +120,8 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 	}
 
 	vkCmdBuf->endRecord();
-
+	
+	// if wait in here, then must follow TransferFrame pattern, instead of s_kFrameInFlightCount
 	RDS_TODO("must wait last submit here, since same frame index gpu may using the resources, currently waited in Engine so it is safe now");
 	RDS_TODO("btw need revisit vulkan barrier, will diff submit being pick and have race condition?");
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");

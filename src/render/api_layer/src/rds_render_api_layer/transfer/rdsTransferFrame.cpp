@@ -9,6 +9,12 @@ namespace rds
 UPtr<TransferFrame> 
 RenderDevice::createTransferFrame(TransferFrame_CreateDesc& cDesc)
 {
+	{
+		static Atm<u32> debugCreateCount = 0;
+		debugCreateCount++;
+		RDS_CORE_ASSERT(debugCreateCount <= s_kFrameSafeInFlightCount, "TransferFrame should not > s_kFrameSafeInFlightCount");
+	}
+
 	cDesc._internal_create(this);
 	auto p = onCreateTransferFrame(cDesc);
 	return p;

@@ -45,7 +45,6 @@ public:
 	* 
 	* mt-able no wait (always lead) needs infinite frame (until wait)
 	* , but we are waiting on engine, and it is possible demand is > s_kFrameInFlightCount
-	# , Engine sent s_kFrameInFlightCount to Render, Engine want to get then context switch, 
 	*/
 	static constexpr SizeType s_kFrameSafeInFlightCount		= s_kFrameInFlightCount * 2;
 

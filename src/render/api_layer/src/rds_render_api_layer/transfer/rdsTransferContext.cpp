@@ -64,12 +64,14 @@ TransferContext::destroy()
 void 
 TransferContext::transferBegin()
 {
+	RDS_PROFILE_SCOPED();
 	createRenderResources(renderFrameParam());		// should pass from fn
 	onTransferBegin();
 }
 
 void TransferContext::transferEnd()
 {
+	RDS_PROFILE_SCOPED();
 	onTransferEnd();
 	releasePreviousTransferFrame();
 	destroyRenderResources(renderFrameParam());		// should pass from fn
@@ -77,6 +79,8 @@ void TransferContext::transferEnd()
 void 
 TransferContext::commit(RenderFrameParam& rdFrameParam, UPtr<TransferFrame>&& tsfFrame_, bool isWaitImmediate)
 {
+	RDS_PROFILE_SCOPED();
+
 	_curTsfFrame = rds::move(tsfFrame_);
 
 	auto* rdDev	= renderDevice();
@@ -133,7 +137,6 @@ TransferContext::destroyTexture(Texture* texture)
 void 
 TransferContext::onCreate(const CreateDesc& cDesc)
 {
-	_prevTsfFrames.resize(s_kFrameInFlightCount);
 	#if 0
 	{
 		auto lock = _tsfFramePool.scopedULock();
@@ -216,22 +219,32 @@ void
 TransferContext::releasePreviousTransferFrame()
 {
 	// here is to reset the tsf frame of prev same index
-
 	auto frameIdx = frameIndex();
-	auto& tsfFrame = _prevTsfFrames[frameIdx];
-	if (tsfFrame)
+	
+	bool isFristFrame = _prevTsfFrames.is_empty(); // emplace_back to detect first cycle
+	if (isFristFrame)
 	{
-		tsfFrame->reset();
+		_prevTsfFrames.resize(s_kFrameInFlightCount);		
+	}
+
+	auto& prevTsfFrame = _prevTsfFrames[frameIdx];
+	// auto& toBeRecycle = isFristFrame ? _curTsfFrame : prevTsfFrame; // useless
+	auto& toBeRecycle = prevTsfFrame;
+
+	if (toBeRecycle)
+	{
+		toBeRecycle->reset();
 		{
 			auto lock = _tsfFramePool.scopedULock();
-			lock->emplace_back(rds::move(tsfFrame));
+			lock->emplace_back(rds::move(toBeRecycle));
 		}
 	}
 	else
 	{
 		RDS_LOG_DEBUG("_prevTsfFrames[{}] == nullptr", frameIdx);
 	}
-	tsfFrame = rds::move(_curTsfFrame);
+
+	prevTsfFrame = rds::move(_curTsfFrame);
 }
 
 UPtr<TransferFrame> 
@@ -241,32 +254,13 @@ TransferContext::allocTransferFrame()
 	{
 		auto lock = _tsfFramePool.scopedULock();
 
-		// testing
-		#if 1
-		if (lock->size() > s_kFrameInFlightCount)
-		{
-			RDS_DUMP_VAR(lock->size());
-		}
-		#endif
-
 		if (lock->is_empty())		// maybe a spin lock to wait, when it is empty, better then create a new one
 		{
 			auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
 			lock->emplace_back(renderDevice()->createTransferFrame(tsfFrameCDesc));
 		}
-
-		// testing
-		#if 1
-		if (lock->size() > s_kFrameInFlightCount)
-		{
-			RDS_DUMP_VAR(lock->size());
-		}
-		if (lock->size() >= s_kFrameSafeInFlightCount)
-		{
-			RDS_WARN_ONCE("lock->size(): {}, lock->size() >= s_kFrameSafeInFlightCount", lock->size());
-			RDS_ASSERT(lock->size() == s_kFrameSafeInFlightCount, "lock->size(): {}, s_kFrameSafeInFlightCount assumption is wrong, need modify", lock->size());
-		}
-		#endif // 1
+		RDS_ASSERT(lock->size()		<= s_kFrameInFlightCount, "lock->size():	 {}, s_kFrameInFlightCount assumption is wrong, need modify", lock->size());
+		RDS_ASSERT(lock->capacity() == s_kFrameInFlightCount, "lock->capacity(): {}, s_kFrameInFlightCount assumption is wrong, need modify", lock->capacity());
 
 		auto tmp = lock->moveBack();
 		RDS_ASSERT(tmp, "_tsfFramePool has no TransferFrame");

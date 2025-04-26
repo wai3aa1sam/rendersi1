@@ -95,7 +95,6 @@ RenderThread::render(RenderData& renderData)
 	auto* rdDev			= renderData.renderDevice;
 	auto& rdFrameParam	= rdDev->renderFrameParam();
 
-
 	rdFrameParam.reset(curFrame);
 
 	{
