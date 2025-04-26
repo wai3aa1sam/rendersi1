@@ -24,16 +24,17 @@ EditorCameraController::update(Camera* camera, float dt, const UiMouseEvent& mou
 {
 	auto& cam	= *camera;
 	{
+		using Button = UiMouseEventButton;
+
 		const auto& ev = mouseEv;
 		if (ev.isDragging()) 
 		{
-			using Button = UiMouseEventButton;
 			switch (ev.pressedButtons) 
 			{
 				case Button::Left: 
 				{
-					auto d = ev.deltaPos * (0.01f * dt);
-					cam.orbit(d.x, d.y);
+					auto d = ev.deltaPos * (-0.1f * dt);
+					cam.dolly(d.x + d.y);
 				} break;
 
 				case Button::Middle: 
@@ -44,10 +45,18 @@ EditorCameraController::update(Camera* camera, float dt, const UiMouseEvent& mou
 
 				case Button::Right: 
 				{
-					auto d = ev.deltaPos * (-0.1f * dt);
-					cam.dolly(d.x + d.y);
+					auto d = ev.deltaPos * (-0.01f * dt);
+					cam.orbit(d.x, d.y);
 				} break;
+
+				// ev.scroll
 			}
+		}
+
+		if (ev.pressedButtons == Button::Right && ev.isScroll())
+		{
+			_speed += _speedStep * dt * (ev.scroll.y / math::abs(ev.scroll.y));
+			_speed = math::max(_speed, 0.0f);
 		}
 	}
 
@@ -64,7 +73,7 @@ EditorCameraController::update(Camera* camera, float dt, const UiMouseEvent& mou
 
 		auto speed = _speed;
 		if (uiInput.isKeyPressed(Button::Shift))
-			speed *= 4.0f;
+			speed *= 0.0f;
 
 		dir = dir * (speed * dt);
 		if (!math::equals0(dir))
@@ -76,6 +85,12 @@ void
 EditorCameraController::setSpeed(float speed)
 {
 	_speed = speed;
+}
+
+void 
+EditorCameraController::setSpeedStep(float speedStep)
+{
+	_speedStep = speedStep;
 }
 
 

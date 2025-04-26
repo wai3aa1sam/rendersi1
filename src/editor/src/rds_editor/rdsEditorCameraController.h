@@ -21,13 +21,15 @@ public:
 
 	void update(Camera* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput);
 
-	void setSpeed(float speed);
+	void setSpeed(		float speed);
+	void setSpeedStep(	float speedStep);
 
 public:
 	float speed() const;
 
 private:
-	float _speed = 2.5f;
+	float _speed		= 0.9f;
+	float _speedStep	= 0.2f;
 };
 
 inline float EditorCameraController::speed() const { return _speed; }
