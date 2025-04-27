@@ -315,10 +315,11 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 	class Vk_RenderGraph
 	{
 	public:
-		void commit(const RenderGraph& rdGraph, RenderGraphFrame* rdgFrame, u32 renderGraphFrameIdx, RenderContext_Vk* rdCtxVk)
+		void commit(const RenderGraph& rdGraph, RenderGraphFrame* rdgFrame, u32 renderGraphFrameIdx, RenderContext_Vk* rdCtxVk, GpuProfiler& gpuProfiler)
 		{
-			_rdCtxVk	= rdCtxVk;
-			_rdgFrame	= rdgFrame;
+			_rdCtxVk		= rdCtxVk;
+			_gpuProfiler	= &gpuProfiler;
+			_rdgFrame		= rdgFrame;
 
 			auto*	rdDevVk			= _rdCtxVk->renderDeviceVk();
 
@@ -345,7 +346,7 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 		void _commitPass(RdgPass* pass)
 		{
 			const char* passName = pass->name().c_str();	RDS_UNUSED(passName);
-			RDS_PROFILE_DYNAMIC_FMT("{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
+			//RDS_PROFILE_DYNAMIC_FMT("{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
 
 			if (pass->isCommitted())
 				return;
@@ -446,6 +447,7 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 			}
 
 			RDS_VK_PROFILE_GPU_DYNAMIC_FMT(_rdCtxVk->_gpuProfilerCtx, vkCmdBuf, "{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
+			RDS_VK_PROFILE_GPU_SECTION(_rdCtxVk->_gpuProfilerCtx, vkCmdBuf, pass->srcLocData());
 
 			#if RDS_DEBUG_RENDER_GRAPH
 			RDS_CORE_LOG("before pass:[{}] record barrier", passName);
@@ -655,7 +657,8 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 		}
 
 	private:
-		RenderContext_Vk*				_rdCtxVk = nullptr;
+		RenderContext_Vk*				_rdCtxVk		= nullptr;
+		GpuProfiler*					_gpuProfiler	= nullptr;
 		//Vector<Vk_CommandBuffer_T*, 64> _graphicsVkCmdBufsHnds;
 		Vk_CommandBuffer*				_curVkCmdBufGraphics	= nullptr;
 		Vk_CommandBuffer*				_curVkCmdBufCompute		= nullptr;
@@ -676,7 +679,7 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 	Base::onCommit(rdGraph, rdGraphFrame, rdGraphFrameIdx);
 
 	Vk_RenderGraph vkRdGraph;
-	vkRdGraph.commit(rdGraph, &rdGraphFrame, rdGraphFrameIdx, this);
+	vkRdGraph.commit(rdGraph, &rdGraphFrame, rdGraphFrameIdx, this, _gpuProfiler);
 	vkRdGraph.transitExportedResources();
 }
 

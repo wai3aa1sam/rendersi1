@@ -29,7 +29,7 @@ public:
 
 private:
 	float _speed		= 0.9f;
-	float _speedStep	= 0.2f;
+	float _speedStep	= 0.05f;
 };
 
 inline float EditorCameraController::speed() const { return _speed; }

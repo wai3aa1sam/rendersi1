@@ -103,8 +103,8 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	RdgTextureHnd rtColor	= rdGraph->createTexture("pbr_ibl_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 	RdgTextureHnd dsBuf		= rdGraph->createTexture("pbr_ibl_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
-
-	auto& passPbrIbl = rdGraph->addPass("pbr_ibl", RdgPassTypeFlags::Graphics);
+	
+	auto& passPbrIbl = rdGraph->addPass(RDS_RDG_EVENT_NAME("pbr_ibl"), RdgPassTypeFlags::Graphics);
 	passPbrIbl.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 	passPbrIbl.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);
 	passPbrIbl.setExecuteFunc(

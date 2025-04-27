@@ -88,6 +88,16 @@ RenderGraphFrame::addPass(RenderGraph* rdGraph, StrView name, RdgPassTypeFlags t
 	return pass;
 }
 
+RenderGraphFrame::Pass* 
+RenderGraphFrame::addPass(RenderGraph* rdGraph, const SrcLocData* srcLocData, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
+{
+	auto* pass = addPass(rdGraph, StrView{srcLocData->name}, typeFlag, flag);
+	#if RDS_USE_GPU_PROFILER
+	pass->_srcLocData = srcLocData;
+	#endif // RDS_USE_GPU_PROFILER
+	return pass;
+}
+
 #endif
 
 #if 0
@@ -397,7 +407,18 @@ RenderGraph::dumpGraphviz(StrView filename)
 RdgPass& 
 RenderGraph::addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
 {
-	Pass* pass = renderGraphFrame().addPass(this, name, typeFlag, flag);
+	SrcLocData srcLocData {RDS_SRCLOC, name.data()};
+	return addPass(srcLocData, typeFlag, flag);
+}
+
+RdgPass& 
+RenderGraph::addPass(const SrcLocData& srcLocData, RdgPassTypeFlags typeFlag, RdgPassFlags flag)
+{
+	auto* newSrcLocData = _rdCtx->addGpuProfileSection(srcLocData);
+
+	RDS_ASSERT(_rdCtx, "");
+	Pass* pass = renderGraphFrame().addPass(this, newSrcLocData, typeFlag, flag);
+
 	return *pass;
 }
 

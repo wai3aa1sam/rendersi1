@@ -235,6 +235,15 @@ RenderContext::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraphFra
 
 }
 
+
+const SrcLocData*
+RenderContext::addGpuProfileSection(const SrcLocData& srcLocData)
+{
+	#if RDS_USE_GPU_PROFILER
+	return _gpuProfiler.addUniqueProfileSection(srcLocData);
+	#endif
+}
+
 float 
 RenderContext::aspectRatio() const
 {

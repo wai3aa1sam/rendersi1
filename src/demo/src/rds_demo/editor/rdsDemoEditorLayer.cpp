@@ -95,6 +95,8 @@ DemoEditorLayer::onCreate()
 void
 DemoEditorLayer::onUpdate()
 {
+	RDS_PROFILE_SCOPED();
+
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();
 
@@ -104,9 +106,9 @@ DemoEditorLayer::onUpdate()
 	bool isFirstFrame = egFrameParam.frameCount() == RenderApiLayerTraits::s_kFirstFrameCount; RDS_UNUSED(isFirstFrame);
 
 	egFrameParam.reset(&rdCtx, &_rdThreadQueue);
-	auto frameCount = egFrameParam.frameCount();
 
-	RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
+	//auto frameCount = egFrameParam.frameCount();
+	//RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
 
 	{
 		auto clientRect = mainWnd.clientRect();
@@ -442,6 +444,8 @@ DemoEditorLayer::_todoList()
 		"\n , just a cpu buffer and upload will immediately copy to Staging on its calling Thread"
 	);
 	RDS_TODO("class member for EngineData and RenderData");
+
+	RDS_TODO("template<const char* TFile, const char* TFunc, size_t TLine> struct SrcLocT");
 }
 
 void 

@@ -2,6 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rdsRenderUiContext.h"
+#include "profiler/rdsGpuProfiler.h"
 
 namespace rds
 {
@@ -98,9 +99,11 @@ public:
 
 	//Texture2D* backBuffer();		// this is fake, backBuffer before beginRender() is different with after beginRender()
 
-	bool isValidFramebufferSize() const;
+public:
+	const SrcLocData* addGpuProfileSection(const SrcLocData& srcLocData);
 
 public:
+	bool			isValidFramebufferSize() const;
 	const Vec2f&	swapchainSize() const;
 	float			aspectRatio() const;
 
@@ -126,14 +129,11 @@ protected:
 	template<class CTX> void _dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData);
 
 private:
-	NativeUIWindow* _nativeUIWindow = nullptr;
-
-	Vec2f	_swapchainSize {0,0};
-
-	RenderUiContext			_rdUiCtx;
+	NativeUIWindow*		_nativeUIWindow = nullptr;
+	Vec2f				_swapchainSize {0,0};
+	RenderUiContext		_rdUiCtx;
 
 	#if 0
-
 	//u32		_curFrameIdx = 0;
 	u32		_curImageIdx = 0;	// cache the current image index for backend
 	Backbuffers				_backbuffers;
@@ -141,7 +141,7 @@ private:
 
 protected:
 	SPtr<RenderGpuBuffer>	_dummyVtxBuf;
-
+	GpuProfiler				_gpuProfiler;
 private:
 
 };

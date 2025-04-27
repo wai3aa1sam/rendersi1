@@ -5,6 +5,7 @@
 #include "rdsRenderGraphResourcePool.h"
 #include "rdsRenderGraphResource.h"
 #include "rdsRenderGraphPass.h"
+#include "../profiler/rdsGpuProfiler.h"
 
 /*
 references:
@@ -13,6 +14,18 @@ references:
 	- https://github.com/skaarj1989/FrameGraph
 	- https://github.com/acdemiralp/fg
 */
+
+#if RDS_USE_GPU_PROFILER
+
+#define RDS_RDG_EVENT_NAME(name, ...)			SrcLocData{RDS_SRCLOC, RDS_FMT(TempString, name, __VA_ARGS__).c_str()}
+#define RDS_RDG_EVENT_NAME_C(name, color, ...)	SrcLocData{RDS_SRCLOC, RDS_FMT(TempString, name, __VA_ARGS__).c_str(), color}
+
+#else
+
+#define RDS_RDG_EVENT_NAME(name, ...)			RDS_FMT(TempString, name, __VA_ARGS__)
+#define RDS_RDG_EVENT_NAME_C(name, color, ...)	RDS_FMT(TempString, name, __VA_ARGS__)
+
+#endif // 	#if RDS_USE_GPU_PROFILER
 
 namespace rds
 {
@@ -117,6 +130,7 @@ public:
 	void reset();
 
 	Pass* addPass(RenderGraph* rdGraph, StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag);
+	Pass* addPass(RenderGraph* rdGraph, const SrcLocData* srcLocData, RdgPassTypeFlags typeFlag, RdgPassFlags flag);
 
 	template<class T>
 	RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc, const RenderGraph& rdGraph)
@@ -224,6 +238,7 @@ public:
 	void dumpResourceStateGraph(StrView filename = "debug/render_graph_rsc_state");		// visualization in https://dreampuf.github.io/GraphvizOnline/
 
 	RdgPass& addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag = RdgPassFlags::None);
+	RdgPass& addPass(const SrcLocData& srcLocData, RdgPassTypeFlags typeFlag, RdgPassFlags flag = RdgPassFlags::None);
 
 	RdgTextureHnd	createTexture	(StrView name, const TextureCreateDesc&	cDesc);
 	RdgBufferHnd	createBuffer	(StrView name, const BufferCreateDesc&	cDesc);

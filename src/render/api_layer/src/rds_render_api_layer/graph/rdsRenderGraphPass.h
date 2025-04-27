@@ -4,6 +4,7 @@
 #include "rdsRenderGraphResource.h"
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
 #include "rds_render_api_layer/pass/rdsRenderTarget.h"
+#include "../profiler/rdsGpuProfiler.h"
 
 namespace rds
 {
@@ -185,6 +186,10 @@ public:
 	bool hasRenderTargetOrDepth()		const;
 	bool hasDependency()				const;
 
+	#if RDS_USE_GPU_PROFILER
+	const SrcLocData* srcLocData()		const;
+	#endif
+
 public:
 	void _internal_commit();
 
@@ -234,6 +239,10 @@ protected:
 	//RenderCommandBuffer _cmdBuf;
 	RenderRequest	_rdReq;
 	ExecuteFunc		_executeFunc;
+
+	#if RDS_USE_GPU_PROFILER
+	const SrcLocData* _srcLocData = nullptr;
+	#endif // RDS_USE_GPU_PROFILER
 };
 
 template<class HND_SPAN> inline
@@ -316,6 +325,8 @@ RdgPass::checkValid() const
 
 inline bool RdgPass::hasRenderTargetOrDepth()	const { return (!_rdTargets.is_empty() || _depthStencil); }
 inline bool RdgPass::hasDependency()			const { return dependencyCount() != 0; }
+
+inline const SrcLocData* RdgPass::srcLocData() const  { return _srcLocData; }
 
 #endif
 

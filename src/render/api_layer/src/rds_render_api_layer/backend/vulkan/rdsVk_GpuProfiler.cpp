@@ -70,6 +70,27 @@ Vk_GpuProfiler::setName(const char* name)
 
 #if RDS_ENABLE_GPU_PROFILER
 
+
+VkProfileScope 
+Vk_GpuProfiler::makeProfileScope(const SrcLocData* srcLocData, Vk_CommandBuffer* vkCmdBuf)
+{
+	if (!srcLocData)
+		return tracy::VkCtxScope(_gfxCtx,		srcLocData, vkCmdBuf->hnd(), false);
+
+	RDS_CORE_ASSERT(srcLocData, "srcLocData == nullptr");
+	RDS_CORE_ASSERT(vkCmdBuf, "nullptr");
+	auto queueTypeFlags = vkCmdBuf->queueTypeFlags();
+	throwIf(BitUtil::has(queueTypeFlags, QueueTypeFlags::Transfer), "queue must support gfx or compute");
+	//constexpr int callStackDepth = 1;
+
+	switch (queueTypeFlags)
+	{
+		case QueueTypeFlags::Graphics:	{ return tracy::VkCtxScope(_gfxCtx,		srcLocData, vkCmdBuf->hnd(), true); } break;
+		case QueueTypeFlags::Compute:	{ return tracy::VkCtxScope(_computeCtx, srcLocData, vkCmdBuf->hnd(), true); } break;
+		default: { RDS_THROW(""); } break;
+	}
+}
+
 VkProfileScope	
 Vk_GpuProfiler::makeProfileScope(const SrcLoc& srcLoc, Vk_CommandBuffer* vkCmdBuf, const char* name)
 {
@@ -81,24 +102,9 @@ Vk_GpuProfiler::makeProfileScope(const SrcLoc& srcLoc, Vk_CommandBuffer* vkCmdBu
 	switch (queueTypeFlags)
 	{
 		case QueueTypeFlags::Graphics:	{ return tracy::VkCtxScope(_gfxCtx,		srcLoc.line, srcLoc.file, ::strlen(srcLoc.file), srcLoc.func, strlen(srcLoc.func), name, strlen(name), vkCmdBuf->hnd(), true); } break;
-		case QueueTypeFlags::Compute:	{ return tracy::VkCtxScope(_computeCtx, srcLoc.line, srcLoc.file, ::strlen(srcLoc.file), srcLoc.func, strlen(srcLoc.func), name, strlen(name), vkCmdBuf->hnd(), true); } break;
-		default: { RDS_THROW(""); } break;
-	}
-}
-
-VkProfileScope 
-Vk_GpuProfiler::makeProfileScope(const tracy::SourceLocationData* srcLoc, Vk_CommandBuffer* vkCmdBuf, const char* name)
-{
-	RDS_CORE_ASSERT(vkCmdBuf, "nullptr");
-	auto queueTypeFlags = vkCmdBuf->queueTypeFlags();
-	throwIf(BitUtil::has(queueTypeFlags, QueueTypeFlags::Transfer), "queue must support gfx or compute");
-	//constexpr int callStackDepth = 1;
-
-	switch (queueTypeFlags)
-	{
-		case QueueTypeFlags::Graphics:	{ return tracy::VkCtxScope(_gfxCtx,		srcLoc, vkCmdBuf->hnd(), true); } break;
-		case QueueTypeFlags::Compute:	{ return tracy::VkCtxScope(_computeCtx, srcLoc, vkCmdBuf->hnd(), true); } break;
-		default: { RDS_THROW(""); } break;
+		// case QueueTypeFlags::Graphics:	{ return tracy::VkCtxScope(_gfxCtx,		srcLoc.line, srcLoc.file, ::strlen(srcLoc.file), srcLoc.func, strlen(srcLoc.func), name, strlen(name), vkCmdBuf->hnd(), true); } break;
+		// case QueueTypeFlags::Compute:	{ return tracy::VkCtxScope(_computeCtx, srcLoc.line, srcLoc.file, ::strlen(srcLoc.file), srcLoc.func, strlen(srcLoc.func), name, strlen(name), vkCmdBuf->hnd(), true); } break;
+		default: { RDS_THROW("invalid QueueTypeFlags"); } break;
 	}
 }
 
