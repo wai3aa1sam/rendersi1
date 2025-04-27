@@ -347,6 +347,7 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 		{
 			const char* passName = pass->name().c_str();	RDS_UNUSED(passName);
 			//RDS_PROFILE_DYNAMIC_FMT("{} i[{}]-frame[{}]", passName, Traits::rotateFrame(_rdCtxVk->frameCount()), _rdCtxVk->frameCount());
+			RDS_PROFILE_SECTION_IMPL(pass->srcLocData());
 
 			if (pass->isCommitted())
 				return;
