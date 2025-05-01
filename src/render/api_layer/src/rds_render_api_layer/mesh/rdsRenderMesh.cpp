@@ -103,7 +103,10 @@ RenderSubMesh::setAABBox(const AABBox3& aabbox)
 void 
 RenderSubMesh::setName(StrView name)
 {
+	RDS_TODO("rework, now only idx 0 has buffer, other submesh are using offset");
 	_name = name;
+	if (_vtxBuf) _vtxBuf->setDebugName(name);
+	if (_idxBuf) _idxBuf->setDebugName(name);
 }
 
 

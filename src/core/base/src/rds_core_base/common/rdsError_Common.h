@@ -3,8 +3,10 @@
 #include <nmsp_core_base.h>
 #include "rdsDataType_Common.h"
 
-#define RDS_ERROR(...) rds::Error(RDS_SRCLOC, rds::fmtAs_T<rds::TempString>(__VA_ARGS__).c_str())
-#define RDS_THROW(...) throw RDS_ERROR(__VA_ARGS__)
+#define RDS_ERROR(...)			rds::Error(RDS_SRCLOC, rds::fmtAs_T<rds::TempString>(__VA_ARGS__).c_str())
+#define RDS_THROW(...)			throw RDS_ERROR(__VA_ARGS__)
+//#define RDS_THROW_IF(cond, ...) do { throwIf(cond, "{}: {}", RDS_SRCLOC, RDS_FMT(TempString, __VA_ARGS__)); } while(false)
+#define RDS_THROW_IF(cond, ...) do { if (cond) { RDS_THROW(__VA_ARGS__) } } while(false)
 
 #if 0
 #pragma mark --- Error-Decl ---

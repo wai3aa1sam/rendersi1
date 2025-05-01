@@ -340,13 +340,28 @@ public:
 	void _internal_requestDestroyObject();
 
 protected:
-	Desc					_desc;
+	struct  EngineData;
+			EngineData& engineData();
+	const	EngineData& engineData() const;
+
+protected:
+	struct EngineData
+	{
+		Desc					_desc;
+		BindlessResourceHandle	_bindlessHnd;
+		BindlessResourceHandle	_uavBindlessHnd;
+	};
+	EngineData _engineData;
+
+	/*Desc					_desc;
 	BindlessResourceHandle	_bindlessHnd;
-	BindlessResourceHandle	_uavBindlessHnd;
+	BindlessResourceHandle	_uavBindlessHnd;*/
+
+protected:
 };
 
-inline RenderDataType				Texture::type()					const { return _desc.type; }
-inline const Texture::Desc&			Texture::desc()					const { return _desc; }
+inline RenderDataType				Texture::type()					const { return _engineData._desc.type; }
+inline const Texture::Desc&			Texture::desc()					const { return engineData()._desc; }
 
 inline TextureUsageFlags			Texture::usageFlags()			const { return desc().usageFlags; }
 inline ColorType					Texture::format()				const { return desc().format; }
@@ -359,8 +374,8 @@ inline Vec3u						Texture::size()					const { return desc().size; }
 
 inline Texture::SizeType			Texture::totalByteSize()		const { return desc().totalByteSize(); }
 
-inline BindlessResourceHandle		Texture::bindlessHandle()		const { return _bindlessHnd; }
-inline BindlessResourceHandle		Texture::uavBindlessHandle()	const { return _uavBindlessHnd; }
+inline BindlessResourceHandle		Texture::bindlessHandle()		const { return engineData()._bindlessHnd; }
+inline BindlessResourceHandle		Texture::uavBindlessHandle()	const { return engineData()._uavBindlessHnd; }
 
 #endif
 

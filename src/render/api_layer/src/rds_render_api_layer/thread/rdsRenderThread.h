@@ -18,7 +18,8 @@ struct RenderThread_CreateDesc : public ::nmsp::TypeThread_CreateDesc
 
 #define RenderThreadState_ENUM_LIST(E) \
 	E(None, = 0) \
-	E(Terminated, ) \
+	E(Terminate, ) \
+	E(TerminateEnd, ) \
 	E(Idle, ) \
 	E(Processing, ) \
 	E(Stealing, ) \
@@ -47,7 +48,10 @@ public:
 
 public:
 	void requestRender(UPtr<RenderData>&& renderData);
-	void terminate();
+	void requestTerminate();
+
+public:
+	void waitTerminated();
 
 public:
 	bool	isTerminated()				const;
@@ -58,6 +62,10 @@ public:
 	u64		lastFinishedFrameCount()	const;
 
 protected:
+	virtual void onDestroy();
+	virtual void onThreadState_Terminate();
+
+
 	virtual void* onRoutine() override;
 	void render(RenderData& renderData);
 

@@ -19,6 +19,16 @@ TransferRequest::tryPopTransferCommandSafeBuffer(TransferCommandBuffer& dst, Tra
 	{
 		//auto* p = RDS_NEW(TransferCommandBuffer);
 		auto data	= src.scopedULock();
+		#if 0
+		for (auto& e : data->commands())
+		{
+			if (e->type() == TransferCommandType::SetDebugName)
+			{
+				auto* cmd = sCast<TransferCommand_SetDebugName*>(e);
+				RDS_LOG("TransferCommand_SetDebugName: {}", cmd->name);
+			}
+		}
+		#endif // 0
 		swap(dst, *data);
 	}
 	return true;

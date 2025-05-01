@@ -617,7 +617,7 @@ RenderGraph::_setResourcesState(const Passes& sortedPasses, const PassDepths& pa
 
 			auto* rdRsc = rsc->renderResource();
 			rscAccess.srcState = rdRsc->renderResourceStateFlags();
-			rdRsc->_internal_setRenderResourceState(rscAccess.dstState);
+			rdRsc->_internal_Render_setRenderResourceState(rscAccess.dstState);
 
 			RenderResourceStateFlagsUtil::debugWatcher(rscAccess.srcState);
 			RenderResourceStateFlagsUtil::debugWatcher(rscAccess.dstState);

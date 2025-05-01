@@ -112,7 +112,8 @@ AssimpMeshLoader::load(MeshAsset* oMeshAsset, StrView filename, Shader* shader)
 	if (true)		loadFileFlags	|= aiProcess_SortByPType;			// split by primitive type
 	if (true)		loadFileFlags	|= aiProcess_GenSmoothNormals;
 	if (true)		loadFileFlags	|= aiProcess_GenUVCoords;
-	//if (true)		loadFileFlags	|= aiProcess_OptimizeGraph;			// TODO: opt for optimize load, also use Assimp::Exporter::Export to dump a bin, next time can load faster
+	if (true)		loadFileFlags	|= aiProcessPreset_TargetRealtime_MaxQuality;	// TODO: opt for optimize load, also use Assimp::Exporter::Export to dump a bin, next time can load faster
+	//if (true)		loadFileFlags	|= aiProcess_OptimizeGraph;						// seems this flag has weird problem, fix later
 	//if (true)		loadFileFlags	|= aiProcess_GenBoundingBoxes;
 	//if (true)		loadFileFlags	|= aiProcess_MakeLeftHanded;
 	//if (true)		loadFileFlags	|= aiProcess_ConvertToLeftHanded;

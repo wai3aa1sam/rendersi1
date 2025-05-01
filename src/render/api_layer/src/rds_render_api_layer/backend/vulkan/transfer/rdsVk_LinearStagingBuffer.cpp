@@ -193,6 +193,7 @@ Vk_LinearStagingBuffer::reset()
 {
 	auto data = _chunks.scopedULock();
 	data->reset();
+	_vkAlloc.resetFrame(_rdDevVk->engineFrameCount());
 }
 
 void 

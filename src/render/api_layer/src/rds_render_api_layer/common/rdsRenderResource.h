@@ -92,9 +92,10 @@ struct Empty {};
 template<class BASE>
 struct RenderResource_CreateDescT : public BASE
 {
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+
 	friend class RenderResource;
 	friend class RenderDevice;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	void _internal_create(RenderDevice* rdDev) const
 	{
@@ -180,8 +181,13 @@ public:
 
 public:
 	void _internal_requestDestroyObject();
-	void _internal_setSubResourceCount(SizeType n);
-	void _internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
+
+protected:
+	void Engine_setSubResourceCount(SizeType n);
+
+public:
+	void _internal_Render_setSubResourceCount(SizeType n);
+	void _internal_Render_setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
 
 public:
 	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd);		// onRenderResouce_onSetDebugName
@@ -235,8 +241,6 @@ RenderResource::debugName() const
 inline RenderDevice*			RenderResource::renderDevice()			{ return _rdDev; }
 inline RenderDevice*			RenderResource::renderDevice() const	{ return _rdDev; }
 
-inline RenderResourceStateFlags RenderResource::renderResourceStateFlags(u32 subResource) const { return _rdState.state(subResource); }
-
 inline ProjectSetting& RenderResource::projectSetting() { return *ProjectSetting::instance(); }
 
 #endif
@@ -276,6 +280,7 @@ template<class T>
 void 
 RenderResource::destroyObject(T* p, const RenderFrameParam& rdFrameParam)
 {
+	checkRenderThreadExclusive(RDS_SRCLOC);
 	p->destroyRenderResource(rdFrameParam);
 	rds_delete_impl(p);
 }

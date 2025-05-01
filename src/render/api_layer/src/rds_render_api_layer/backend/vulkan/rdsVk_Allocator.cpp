@@ -63,6 +63,12 @@ Vk_Allocator::destroy()
 	_allocator = nullptr;
 }
 
+void 
+Vk_Allocator::resetFrame(u64 frameCount)
+{
+	vmaSetCurrentFrameIndex(_allocator, sCast<u32>(frameCount));
+}
+
 VkResult
 Vk_Allocator::allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags)
 {

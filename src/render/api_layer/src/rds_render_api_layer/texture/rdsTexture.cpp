@@ -108,7 +108,7 @@ SamplerState::operator!=(const SamplerState& rhs) const
 
 Texture::Texture(RenderDataType type)
 {
-	_desc.type = type;
+	engineData()._desc.type = type;
 }
 
 Texture::~Texture()
@@ -134,8 +134,8 @@ void
 Texture::onCreate(TextureCreateDesc& cDesc)
 {
 	isValid(cDesc);
-	_desc = cDesc;
-	_internal_setSubResourceCount(desc().mipCount);
+	engineData()._desc = cDesc;
+	Engine_setSubResourceCount(desc().mipCount);
 
 	auto*	rdDev		= renderDevice();
 	auto&	bindlessRsc	= rdDev->bindlessResource();
@@ -143,13 +143,13 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 
 	if (BitUtil::hasAny(usageFlags, TextureUsageFlags::ShaderResource))
 	{
-		_bindlessHnd	= bindlessRsc.allocTexture(this);
+		engineData()._bindlessHnd	= bindlessRsc.allocTexture(this);
 		renderDevice()->textureStock().textures.add(this);		// TextureStock only store ShaderResource
 	}
 
 	if (BitUtil::hasAny(usageFlags, TextureUsageFlags::UnorderedAccess))
 	{
-		_uavBindlessHnd	= bindlessRsc.allocImage(this);
+		engineData()._uavBindlessHnd	= bindlessRsc.allocImage(this);
 	}
 
 	auto& tsfCtx = rdDev->transferContext();
@@ -209,6 +209,9 @@ bool	Texture::isArray()			const { return type() == RenderDataType::Texture1DArra
 bool	Texture::isTexture()		const { return BitUtil::hasAny(usageFlags(), TextureUsageFlags::ShaderResource | TextureUsageFlags::DepthStencil); }
 bool	Texture::isImage()			const { return BitUtil::hasAny(usageFlags(), TextureUsageFlags::UnorderedAccess); }
 bool	Texture::isBackBuffer()		const { return BitUtil::hasAny(usageFlags(), TextureUsageFlags::BackBuffer); }
+
+		Texture::EngineData& Texture::engineData()			{ /*checkMainThreadExclusive(RDS_SRCLOC);*/ return _engineData; }
+const	Texture::EngineData& Texture::engineData() const	{ /*checkMainThreadExclusive(RDS_SRCLOC);*/ return _engineData; }
 
 #endif
 

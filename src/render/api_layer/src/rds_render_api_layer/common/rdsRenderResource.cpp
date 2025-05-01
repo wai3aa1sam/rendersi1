@@ -68,14 +68,25 @@ RenderResource::_internal_requestDestroyObject()
 }
 
 void 
-RenderResource::_internal_setSubResourceCount(SizeType n)
+RenderResource::Engine_setSubResourceCount(SizeType n)
 {
+	/*
+	#define RDS_CHECK_CALL_ONCE_ONLY() do { static bool hasCalled = false; RDS_THROW_IF(hasCalled, "should only call once"); hasCalled = true; } while(false)
+	RDS_CHECK_CALL_ONCE_ONLY();*/
 	_rdState.setSubResourceCount(n);
 }
 
 void 
-RenderResource::_internal_setRenderResourceState(RenderResourceStateFlags state, u32 subResource)
+RenderResource::_internal_Render_setSubResourceCount(SizeType n)
 {
+	checkRenderThreadExclusive(RDS_SRCLOC);
+	_rdState.setSubResourceCount(n);
+}
+
+void 
+RenderResource::_internal_Render_setRenderResourceState(RenderResourceStateFlags state, u32 subResource)
+{
+	checkRenderThreadExclusive(RDS_SRCLOC);
 	_rdState.setState(state, subResource);
 }
 
@@ -118,6 +129,13 @@ RenderFrameParam&		RenderResource::renderFrameParam()					{ return renderDevice(
 
 TransferContext&		RenderResource::transferContext()					{ return renderDevice()->transferContext(); }
 TransferRequest&		RenderResource::transferRequest()					{ return renderDevice()->transferRequest(); }
+
+RenderResourceStateFlags 
+RenderResource::renderResourceStateFlags(u32 subResource) const 
+{ 
+	checkRenderThreadExclusive(RDS_SRCLOC); 
+	return _rdState.state(subResource); 
+}
 
 
 #endif

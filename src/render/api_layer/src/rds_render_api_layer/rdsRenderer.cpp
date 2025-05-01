@@ -59,7 +59,10 @@ Renderer::create(const CreateDesc& cDesc)
 void 
 Renderer::destroy()
 {
-	Renderer::renderDevice()->waitIdle();
+	for (auto& e : _rdDevs)
+	{
+		e->waitIdle();		// waitIdle must call by one thread only
+	}
 	_rdDevs.clear();
 }
 

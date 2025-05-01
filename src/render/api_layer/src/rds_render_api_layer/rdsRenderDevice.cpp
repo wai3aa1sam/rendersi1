@@ -132,6 +132,15 @@ RenderDevice::onDestroy()
 }
 
 void 
+RenderDevice::reset(u64 frameCount)
+{
+	checkRenderThreadExclusive(RDS_SRCLOC);
+
+	renderFrameParam().reset(frameCount);
+	onResetFrame(frameCount);
+}
+
+void
 RenderDevice::resetEngineFrame(u64 engineFrameCount)
 {
 	checkMainThreadExclusive(RDS_SRCLOC);
@@ -139,6 +148,7 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 	auto&	rdFrameParam	= renderFrameParam();
 	auto	frameCount		= engineFrameCount;
 	//auto	frameIdx		= Traits::rotateFrame(frameCount);
+	rdFrameParam.setEngineFrameCount(frameCount);
 
 	RDS_TODO("wait all render context here");
 	// RDS_TODO("maybe no need to wait if all gpu stuff is a command");
@@ -156,8 +166,6 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 	//_tsfFrame = createTransferFrame(tsfFrameCDesc);
 	RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
 	_tsfFrame = transferContext().allocTransferFrame();
-	
-	rdFrameParam.setEngineFrameCount(frameCount);
 }
 
 void 

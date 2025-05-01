@@ -36,6 +36,8 @@ public:
 	void create(Vk_Device_T* vkDev, Vk_PhysicalDevice_T* vkPhyDev, Vk_Instance_T* vkInst, const VkAllocationCallbacks* vkAllocCallbacks);
 	void destroy();
 
+	void resetFrame(u64 frameCount);
+
 	VkResult	allocBuf(Vk_Buffer_T** outBuf, Vk_AllocHnd* allocHnd, const VkBufferCreateInfo* bufferInfo, Vk_AllocInfo* allocInfo, VkMemoryPropertyFlags vkMemPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	void		freeBuf	(Vk_Buffer_T* vkBuf, Vk_AllocHnd* allocHnd);
 

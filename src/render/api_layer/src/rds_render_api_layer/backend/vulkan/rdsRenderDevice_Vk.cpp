@@ -77,6 +77,8 @@ RenderDevice_Vk::onResetFrame(u64 frameCount)
 {
 	Base::onResetFrame(frameCount);
 	//_tsfCtxVk.reset(frameCount);
+
+	memoryContext()->vkAlloc()->resetFrame(frameCount);
 }
 
 void 

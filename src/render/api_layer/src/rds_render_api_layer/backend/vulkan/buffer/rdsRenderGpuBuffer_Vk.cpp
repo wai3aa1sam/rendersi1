@@ -112,6 +112,7 @@ RenderGpuBuffer_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* c
 {
 	auto& name = cmd->name;
 	Base::onRenderResouce_SetDebugName(cmd);
+	//RDS_LOG_ERROR("onRenderResouce_SetDebugName: {}", name);
 	RDS_VK_SET_DEBUG_NAME(_vkBuf, name);
 }
 

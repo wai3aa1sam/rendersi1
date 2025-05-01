@@ -121,6 +121,8 @@ TransferContext::createTexture(Texture* texture)
 void 
 TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
+	//OsUtil::sleep_ms(1);
+
 	auto* cmd = newCommand<TransferCommand_DestroyRenderGpuBuffer>(_destroyRdRscQueue);
 	cmd->dst = buffer;
 	RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
@@ -129,6 +131,8 @@ TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 void 
 TransferContext::destroyTexture(Texture* texture)
 {
+	//OsUtil::sleep_ms(1);
+
 	auto* cmd = newCommand<TransferCommand_DestroyTexture>(_destroyRdRscQueue);
 	cmd->dst = texture;
 	//RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
@@ -233,7 +237,6 @@ TransferContext::releasePreviousTransferFrame()
 
 	if (toBeRecycle)
 	{
-		toBeRecycle->reset();
 		{
 			auto lock = _tsfFramePool.scopedULock();
 			lock->emplace_back(rds::move(toBeRecycle));
@@ -263,6 +266,7 @@ TransferContext::allocTransferFrame()
 		RDS_ASSERT(lock->capacity() == s_kFrameInFlightCount, "lock->capacity(): {}, s_kFrameInFlightCount assumption is wrong, need modify", lock->capacity());
 
 		auto tmp = lock->moveBack();
+		tmp->reset();
 		RDS_ASSERT(tmp, "_tsfFramePool has no TransferFrame");
 		swap(p, tmp);
 	}

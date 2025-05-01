@@ -80,7 +80,8 @@ Shader::create(StrView filename)
 void 
 Shader::destroy()
 {
-	checkMainThreadExclusive(RDS_SRCLOC);
+	RDS_TODO("rework, shaderStock use in main thread only, destroy are in RenderThread + Main now, may have bug");
+	//checkMainThreadExclusive(RDS_SRCLOC);
 
 	auto& shaderStock = renderDevice()->shaderStock();
 	shaderStock.removeShader(this);

@@ -54,7 +54,7 @@ void RenderGpuBuffer::destroy()
 void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 {
 	_desc = cDesc;
-	_internal_setSubResourceCount(1);
+	Engine_setSubResourceCount(1);
 	/*
 	no need to set a state as if it is read, then it should not be mutable,
 	if it is write, maybe Transfer_Dst, but we do not need to transit state as Tsf_Dst

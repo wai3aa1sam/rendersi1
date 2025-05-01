@@ -7,6 +7,52 @@
 namespace rds
 {
 
+class EngineBase
+{
+public:
+	int _engineBasePublic;
+
+protected:
+	int _engineBaseProtected;
+
+private:
+	int _engineBasePrivate;
+};
+
+
+class Engine : private EngineBase
+{
+public:
+	Engine()
+	{
+		this->_engineBaseProtected;
+	}
+	int _enginePublic;
+
+protected:
+	int _engineProtected;
+
+private:
+	int _enginePrivate;
+};
+
+class Render : private Engine
+{
+public:
+	Render()
+	{
+		this;
+	}
+
+	int _renderPublic;
+
+protected:
+	int _renderProtected;
+
+private:
+	int _renderPrivate;
+};
+
 #if 0
 #pragma mark --- rdsPbrIbl-Impl ---
 #endif // 0
@@ -15,6 +61,13 @@ namespace rds
 void 
 PbrIbl::onCreate()
 {
+	{
+		Render a;
+		Engine eng;
+		eng;
+	}
+
+
 	Base::onCreate();
 	// temporary
 	auto& rdPassPipeline = *_rdPassPipelines[0];

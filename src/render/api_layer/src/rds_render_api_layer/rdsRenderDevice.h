@@ -79,6 +79,7 @@ public:
 	void create(const CreateDesc& cDesc);
 	void destroy();
 
+	void reset(u64 frameCount);
 	void resetEngineFrame(u64 engineFrameCount);
 
 	virtual void waitIdle();

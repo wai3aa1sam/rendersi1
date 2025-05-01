@@ -43,8 +43,7 @@ RenderThreadQueue::destroy()
 {
 	if (_rdThread)
 	{
-		waitFrame(_rdThread->currentFrameCount());
-		_rdThread->terminate();
+		_rdThread->requestTerminate();
 	}
 	_rdThread = nullptr;
 }

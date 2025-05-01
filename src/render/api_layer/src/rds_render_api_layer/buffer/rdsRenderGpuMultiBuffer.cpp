@@ -67,6 +67,14 @@ RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 	*/
 	rotate();
 
+	#if 0
+	bool isFirstCreated = _renderGpuBuffers.size() == 1;
+	if (!isFirstCreated)
+	{
+		rotate();
+	}
+	#endif // 0
+
 	transferRequest().uploadBuffer(makeBufferOnDemand(data.size() - offset), data, offset);
 	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
 	//onUploadToGpu(data, offset);
@@ -96,6 +104,18 @@ void RenderGpuMultiBuffer::rotate()
 	_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
 }
 
+void 
+RenderGpuMultiBuffer::setDebugName(StrView name)
+{
+	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
+	_debugName = name;
+	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
+	if (auto* p = renderGpuBuffer())
+	{
+		p->setDebugName(name);
+	}
+}
+
 SPtr<RenderGpuBuffer>& 
 RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 {
@@ -105,8 +125,9 @@ RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 	//auto idx = (_iFrame + 1) % s_kFrameInFlightCount;
 	auto idx = _iFrame % s_kFrameInFlightCount;;
 
-	if (!_renderGpuBuffers[idx] || _renderGpuBuffers[idx]->bufSize() < bufSize)
+	if (!_renderGpuBuffers[idx] || _renderGpuBuffers[idx]->bufSize() < bufSize) // _renderGpuBuffers.size() < (idx + 1) || 
 	{
+		//_renderGpuBuffers.resize(s_kFrameInFlightCount);
 		_renderGpuBuffers[idx] = _makeNewBuffer(bufSize);
 		_renderGpuBuffers[idx]->setDebugName(fmtAs_T<TempString>("{}-{}", debugName(), idx));
 		//RDS_LOG_ERROR("created: {}-{}", debugName(), idx);

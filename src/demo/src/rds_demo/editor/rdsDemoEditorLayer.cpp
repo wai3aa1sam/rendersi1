@@ -26,18 +26,25 @@ DemoEditorLayer::DemoEditorLayer()
 	_todoList();
 	
 	auto rdrCDesc = Renderer::makeCDesc();
-	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 0;
+	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
 	DemoEditorApp::instance()->createRenderer(rdrCDesc);
 }
 
 DemoEditorLayer::~DemoEditorLayer()
 {
 	#if 1
+	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
+	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
+	_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, true);
+	
 	_testEngine.reset(nullptr);
-	_rdThreadQueue.destroy();
 	_gfxDemo.reset(nullptr);
+	meshAssets().destroy();
 	_scene.destroy();
 	_egCtx.destroy();
+
+	mainWnd.destroy();
+	_rdThreadQueue.destroy();
 	#endif // 1
 }
 

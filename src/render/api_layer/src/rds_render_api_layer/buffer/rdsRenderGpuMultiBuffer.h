@@ -37,6 +37,8 @@ public:
 
 	void rotate();
 
+	virtual void setDebugName(StrView name) override;
+
 public:
 	u32		iFrame()	const;
 	bool	isEmpty()	const;
