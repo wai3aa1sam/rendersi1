@@ -121,6 +121,8 @@ TransferContext::createTexture(Texture* texture)
 void 
 TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
+	OsUtil::sleep_ms(1);
+
 	auto* cmd = newCommand<TransferCommand_DestroyRenderGpuBuffer>(_destroyRdRscQueue);
 	cmd->dst = buffer;
 	RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
@@ -129,6 +131,8 @@ TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 void 
 TransferContext::destroyTexture(Texture* texture)
 {
+	OsUtil::sleep_ms(1);
+
 	auto* cmd = newCommand<TransferCommand_DestroyTexture>(_destroyRdRscQueue);
 	cmd->dst = texture;
 	//RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
@@ -201,6 +205,8 @@ TransferContext::createRenderResources(const RenderFrameParam& rdFrameParam)
 void 
 TransferContext::destroyRenderResources(const RenderFrameParam& rdFrameParam)
 {
+	//OsUtil::sleep_ms(1);
+
 	TransferCommandBuffer rscQueue;
 	bool isSuccess = TransferRequest::tryPopTransferCommandSafeBuffer(rscQueue, _destroyRdRscQueue);
 	if (isSuccess)

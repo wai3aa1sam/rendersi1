@@ -26,7 +26,7 @@ DemoEditorLayer::DemoEditorLayer()
 	_todoList();
 	
 	auto rdrCDesc = Renderer::makeCDesc();
-	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 0;
+	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
 	DemoEditorApp::instance()->createRenderer(rdrCDesc);
 }
 
