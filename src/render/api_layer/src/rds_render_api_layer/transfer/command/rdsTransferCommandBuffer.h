@@ -23,8 +23,8 @@ public:
 	static constexpr SizeType s_kLocalSize = 64;
 
 public:
-	template<class CMD>						static CMD*		newCommand(void* buf);
-	template<class TCmd, class TSafeBuf>	static TCmd*	newCommand_Safe(TSafeBuf& safeBuf);
+	template<class CMD>						static CMD*								newCommand(void* buf);
+	template<class TCmd, class TSafeBuf>	static TCmd*							_incorrect_newCommand_Safe(TSafeBuf& safeBuf);
 
 public:
 	TransferCommandBuffer();
@@ -38,11 +38,19 @@ public:
 public:
 	void clear();
 
-	TransferCommand_SetSwapchainSize*		setSwapchainSize();
+	TransferCommand_SetDebugName*				setDebugName();
+	TransferCommand_SetSwapchainSize*			setSwapchainSize();
 
-	TransferCommand_CopyBuffer*				copyBuffer();
-	TransferCommand_UploadBuffer*			uploadBuffer();
-	TransferCommand_UploadTexture*			uploadTexture();
+	TransferCommand_CreateRenderGpuBuffer*		createRenderGpuBuffer();
+	TransferCommand_CreateTexture*				createTexture();
+
+	TransferCommand_DestroyRenderGpuBuffer*		destroyRenderGpuBuffer();
+	TransferCommand_DestroyTexture*				destroyTexture();
+
+
+	TransferCommand_CopyBuffer*					copyBuffer();
+	TransferCommand_UploadBuffer*				uploadBuffer();
+	TransferCommand_UploadTexture*				uploadTexture();
 
 public:
 	Span<TransferCommand*> commands();
@@ -81,8 +89,10 @@ inline Span<TransferCommand*> TransferCommandBuffer::commands() { return _comman
 
 template<class TCmd, class TSafeBuf> 
 TCmd*
-TransferCommandBuffer::newCommand_Safe(TSafeBuf& safeBuf)
+TransferCommandBuffer::_incorrect_newCommand_Safe(TSafeBuf& safeBuf)
 {
+	throwError("this design is wrong, we must not think lock in alloc is safe, when the buf is exchange, other may still hold its ptr and gg");
+
 	void* buf = nullptr;
 	{
 		auto data = safeBuf.scopedULock();
@@ -93,5 +103,7 @@ TransferCommandBuffer::newCommand_Safe(TSafeBuf& safeBuf)
 }
 
 #endif
+
+
 
 }

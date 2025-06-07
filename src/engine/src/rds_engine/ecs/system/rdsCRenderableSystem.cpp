@@ -36,7 +36,6 @@ void
 CRenderableSystem::create(EngineContext* egCtx)
 {
 	Base::create(egCtx);
-	_framedRdReq.resize(s_kFrameInFlightCount);
 
 	_objTransformBuf.setDebugName(	"rds_objTransforms");
 	_drawPramBuf.setDebugName(		"rds_drawPrams");
@@ -47,7 +46,6 @@ CRenderableSystem::create(EngineContext* egCtx)
 void 
 CRenderableSystem::destroy()
 {
-	_framedRdReq.clear();
 	Base::destroy();
 
 	_drawDataAlloc.destructAndClear<DrawData>(LinearAllocator::s_kDefaultAlign);
@@ -131,68 +129,6 @@ CRenderableSystem::commit(const Scene& scene)
 		rdGraph.execute();
 		//rdGraph.dumpGraphviz();
 	}
-}
-
-
-void 
-CRenderableSystem::drawUi(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen)
-{
-	// present pass
-	auto* rdCtx = renderContext;
-
-	// record present
-	{
-		auto& rdReq = renderRequest(engineContext().engineFrameParam().frameIndex());
-		//RDS_CORE_LOG_ERROR("drawUi - {}", engineContext().engineFrameParam().frameIndex());
-		//RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
-
-		rdReq.reset(rdCtx);
-		auto* clearValue = rdReq.clearFramebuffers();
-		clearValue->setClearColor();
-		clearValue->setClearDepth();
-
-		if (isDrawUi)
-			rdCtx->drawUI(rdReq);
-		else
-		{
-			if (isDrawToScreen)
-			{
-				RDS_TODO("temporary fix");
-				RenderRequest temp;
-				rdCtx->drawUI(temp);
-
-				rdReq.drawSceneQuad(RDS_SRCLOC, _mtlScreenQuad);
-			}
-			//rdReq.swapBuffers();
-		}
-	}
-}
-
-void
-CRenderableSystem::render()
-{
-	RDS_PROFILE_SCOPED();
-
-	auto&	rdGraph		= renderGraph();
-	auto*	rdCtx		= rdGraph.renderContext();
-	auto	frameIndex	= sCast<u32>(rdCtx->renderFrameParam().frameIndex());
-
-	rdGraph.commit(rdGraph.frameIndex());
-
-	auto& rdReq = renderRequest(frameIndex);
-	rdCtx->commit(rdReq);
-}
-
-void 
-CRenderableSystem::setupRenderJob(RenderData_RenderJob& out)
-{
-	auto& rdJob = out;
-
-	auto&	rdGraph		= renderGraph();
-	auto	frameIndex	= engineContext().engineFrameParam().frameIndex();
-	auto&	rdReq		= renderRequest(frameIndex);
-
-	rdJob.create(&rdGraph, &rdReq);
 }
 
 void 

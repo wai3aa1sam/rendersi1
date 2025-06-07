@@ -8,7 +8,7 @@ namespace rds
 #if 0
 #pragma mark --- rdsRenderFrame-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 RenderFrame::RenderFrame()
 {
@@ -73,7 +73,7 @@ RenderFrame::requestCommandBuffer()
 #if 0
 #pragma mark --- rdsRenderFrameContext-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 //RenderFrameContext* RenderFrameContext::s_instance = nullptr;
 

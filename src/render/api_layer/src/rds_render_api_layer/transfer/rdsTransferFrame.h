@@ -53,6 +53,15 @@ public:
 	//virtual void	uploadToStagingBuf(		StagingHandle& out, ByteSpan	data, SizeType offset = 0)	= 0;
 	//virtual void*	mappedStagingBufData(	StagingHandle  hnd)											= 0;
 
+public:
+	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
+
+	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
+	void createTexture(			Texture*			texture);
+
+	void destroyRenderGpuBuffer(RenderGpuBuffer*	buffer);
+	void destroyTexture(		Texture*			texture);
+
 protected:
 	virtual void onCreate(		CreateDesc& cDesc);
 	virtual void onPostCreate(	CreateDesc& cDesc);
@@ -63,16 +72,24 @@ public:
 	void _internal_requestDestroyObject();
 
 public:
-	TransferRequest&		transferRequest();
-	LinearStagingBuffer&	constBufferAllocator();
+	TransferRequest&			transferRequest();
+	LinearStagingBuffer&		constBufferAllocator();
+	TransferCommandSafeBuffer&	renderResourceCreateQueue();
+	TransferCommandSafeBuffer&	renderResourceDestroyQueue();
 
 private:
 	LinearStagingBuffer _constBufAlloc;
 	TransferRequest		_tsfReq;
+
+	TransferCommandSafeBuffer	_rdRscCreateQueue;
+	TransferCommandSafeBuffer	_rdRscDestroyQueue;
 };
 
 inline TransferRequest&		TransferFrame::transferRequest()		{ return _tsfReq; }
 inline LinearStagingBuffer&	TransferFrame::constBufferAllocator()	{ return _constBufAlloc; }
+
+inline TransferCommandSafeBuffer& TransferFrame::renderResourceCreateQueue()	{ return _rdRscCreateQueue; }
+inline TransferCommandSafeBuffer& TransferFrame::renderResourceDestroyQueue()	{ return _rdRscDestroyQueue; }
 
 
 #endif

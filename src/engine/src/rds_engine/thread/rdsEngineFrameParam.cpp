@@ -29,17 +29,16 @@ namespace rds
 //}
 
 void 
-EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue)
+EngineFrameParam::reset(RenderContext* rdCtx)
 {
 	checkMainThreadExclusive(RDS_SRCLOC);
 
 	_frameCount++;
 	auto frameCount = this->frameCount();
-	wait(frameCount, rdCtx, renderThreadQueue, true);
+	wait(frameCount, rdCtx, true);
 
-	auto* rdDev = Renderer::renderDevice();
-	rdDev->resetEngineFrame(frameCount);		// next frame here will clear those in Layer::onCreate()
-	//Renderer::renderDevice()->waitIdle();
+	auto* rdDev = rdCtx->renderDevice();
+	rdDev->createRenderJob(frameCount);		// next frame here will clear those in Layer::onCreate()
 }
 
 void 
@@ -49,7 +48,7 @@ EngineFrameParam::commit()
 }
 
 void 
-EngineFrameParam::wait(u64 frameCount,RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue, bool isWaitGpu)
+EngineFrameParam::wait(u64 frameCount, RenderContext* rdCtx, bool isWaitGpu)
 {
 	RDS_PROFILE_SCOPED();
 
@@ -57,12 +56,11 @@ EngineFrameParam::wait(u64 frameCount,RenderContext* rdCtx, RenderThreadQueue* r
 	
 	#if 1
 	{
-		{
-			RDS_PROFILE_DYNAMIC_FMT("wait render thread i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
-			// TODO: pick a small job instead of waiting, but maybe loop is better, if so measure the time, and call sleep if the job is too small
-			renderThreadQueue->waitFrame(frameCount, 0); 
-		}
+		RDS_CORE_ASSERT(rdCtx);
+		// TODO: pick a small job instead of waiting, but maybe loop is better, if so measure the time, and call sleep if the job is too small
+		rdCtx->renderDevice()->waitCpuIdle(0);
 
+		if (isWaitGpu)
 		{
 			RDS_PROFILE_DYNAMIC_FMT("wait gpu i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
 

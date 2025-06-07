@@ -9,7 +9,7 @@
 #include "rds_render_api_layer/shader/rdsShader.h"
 
 #include "rdsRenderer.h"
-
+#include "rdsRenderContext.h"
 
 namespace rds
 {
@@ -60,13 +60,19 @@ RenderDevice::create(const CreateDesc& cDesc)
 	{
 		_tsfCtx->transferRequest(i).reset(_tsfCtx, &_tsfFrames[i]);
 	}*/
-	_tsfFrame = transferContext().allocTransferFrame();
+	//_tsfFrame = transferContext().allocTransferFrame();
 
 	_shaderStock.create(this);
 	_textureStock.create(this);
 
 	RDS_CORE_ASSERT(_bindlessRscs,	"");
 	RDS_CORE_ASSERT(_tsfCtx,		"");
+
+	if (cDesc.isMultithread)
+	{
+		auto rdThreadCDesc = RenderThread::makeCDesc(JobSystem::instance());
+		_rdThread.create(rdThreadCDesc);
+	}
 }
 
 void 
@@ -82,7 +88,7 @@ RenderDevice::destroy()
 
 	//_rdFrames.clear();
 	//_tsfFrames.clear();
-	_tsfFrame.reset(nullptr);
+	//_tsfFrame.reset(nullptr);
 
 	if (_tsfCtx)
 	{
@@ -109,7 +115,8 @@ RenderDevice::destroy()
 void 
 RenderDevice::onCreate(const CreateDesc& cDesc)
 {
-	_adapterInfo.isDebug = cDesc.isDebug;
+	_adapterInfo.isDebug		= cDesc.isDebug;
+	_adapterInfo.isMultiThread	= cDesc.isMultithread;
 
 	#if 0
 	_rdFrames.resize(s_kFrameInFlightCount);
@@ -140,38 +147,72 @@ RenderDevice::reset(u64 frameCount)
 	onResetFrame(frameCount);
 }
 
-void
-RenderDevice::resetEngineFrame(u64 engineFrameCount)
+void 
+RenderDevice::createRenderJob(u64 frameCount, bool isRetry)
 {
-	checkMainThreadExclusive(RDS_SRCLOC);
+	{
+		_rdJob = _rdThread.newRenderJob(this, frameCount);
 
-	auto&	rdFrameParam	= renderFrameParam();
-	auto	frameCount		= engineFrameCount;
-	//auto	frameIdx		= Traits::rotateFrame(frameCount);
-	rdFrameParam.setEngineFrameCount(frameCount);
+		// retry if cannot get
+		if (!_rdJob && isRetry)
+		{
+			waitCpuIdle(0);
+			_rdJob = _rdThread.newRenderJob(this, frameCount);
+		}
+	}
 
-	RDS_TODO("wait all render context here");
-	// RDS_TODO("maybe no need to wait if all gpu stuff is a command");
-	/*
-	* seems must wait regardless			
-	* all gpu cmd or not, since				
-	* we must wait gpu prev frame to finish	
-	*/
+	{
+		auto&	rdFrameParam	= renderFrameParam();
+		//auto	frameIdx		= Traits::rotateFrame(frameCount);
+		rdFrameParam.setEngineFrameCount(frameCount);
 
-	//_rdFrames[frameIdx].reset();
-	//_tsfFrames[frameIdx].reset(_tsfCtx);
-	//onResetFrame(frameCount);
+		// RDS_TODO("maybe no need to wait if all gpu stuff is a command");
+		/*
+		* seems must wait regardless			
+		* all gpu cmd or not, since				
+		* we must wait gpu prev frame to finish	
+		*/
 
-	//auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-	//_tsfFrame = createTransferFrame(tsfFrameCDesc);
-	RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
-	_tsfFrame = transferContext().allocTransferFrame();
+		//_rdFrames[frameIdx].reset();
+		//_tsfFrames[frameIdx].reset(_tsfCtx);
+		//onResetFrame(frameCount);
+
+		//auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
+		//_tsfFrame = createTransferFrame(tsfFrameCDesc);
+		//RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
+		//_tsfFrame = transferContext().allocTransferFrame();
+	}
 }
+
+void
+RenderDevice::submitRenderJob()
+{
+	_rdThread.requestRender(rds::move(_rdJob));
+}
+
+void
+RenderDevice::waitCpuIdle(int sleepMs) const
+{
+	//RDS_PROFILE_DYNAMIC_FMT("wait render thread i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
+	if (adapterInfo().isMultiThread)
+	{
+		OsUtil::sleep_ms(sleepMs);
+	}
+}
+
+//void 
+//RenderDevice::waitGpuIdle(RenderContext* rdCtx, u64 frameCount, int sleepMs) const
+//{
+//	if (rdCtx)
+//	{
+//		rdCtx->waitFrameFinished(frameCount);
+//	}
+//}
 
 void 
 RenderDevice::waitIdle()
 {
-
+	waitCpuIdle(0);
 }
 
 SPtr<Texture2D>	
@@ -191,6 +232,7 @@ void
 RenderDevice::onResetFrame(u64 frameCount)
 {
 }
+
 
 #endif
 

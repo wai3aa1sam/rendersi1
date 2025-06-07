@@ -11,8 +11,6 @@
 
 #define RDS_IS_TEST_ENGINE 1
 
-
-
 namespace rds
 {
 
@@ -28,6 +26,7 @@ DemoEditorLayer::DemoEditorLayer()
 	auto rdrCDesc = Renderer::makeCDesc();
 	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
 	DemoEditorApp::instance()->createRenderer(rdrCDesc);
+	JobSystem::instance()->setSingleThreadMode(false);
 }
 
 DemoEditorLayer::~DemoEditorLayer()
@@ -35,7 +34,7 @@ DemoEditorLayer::~DemoEditorLayer()
 	#if 1
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
-	_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, true);
+	_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, true);
 	
 	_testEngine.reset(nullptr);
 	_gfxDemo.reset(nullptr);
@@ -44,7 +43,7 @@ DemoEditorLayer::~DemoEditorLayer()
 	_egCtx.destroy();
 
 	mainWnd.destroy();
-	_rdThreadQueue.destroy();
+	//_rdThreadQueue.destroy();
 	#endif // 1
 }
 
@@ -58,25 +57,36 @@ DemoEditorLayer::init(UPtr<GraphicsDemo> gfxDemo)
 	mainWindow().uiKeyboardFn	= [this](UiKeyboardEvent& ev)	{ onUiKeyboardEvent(ev); return _gfxDemo->onUiKeyboardEvent(ev); };
 }
 
+class RenderUploadManager
+{
+	static constexpr int s_kFrameInFlightCount = 2;
+public:
+	void reset(UPtr<TransferFrame> tsfFrame);		// kind of submit and transfer ownership to this class
+	
+	UPtr<TransferFrame> newTransferFrame();
+	void freeTransferFrame(UPtr<TransferFrame> tsfFrame);
+
+private:
+	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameInFlightCount> >;
+	TransferFramePool									_tsfFramePool;		// pool for new allocate TransferFrame
+	Vector<UPtr<TransferFrame>, s_kFrameInFlightCount>	_prevTsfFrames;		// store 
+	UPtr<TransferFrame>									_curTsfFrame = nullptr;
+};
+
 void
 DemoEditorLayer::onCreate()
 {
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
-	JobSystem::instance()->setSingleThreadMode(false);
 	
 	_egCtx.create();
-	#if !RDS_USE_RENDER_SINGLE_THREAD_MODE
-	_rdThread.create(RenderThread::makeCDesc(JobSystem::instance()));
-	#endif // !RDS_USE_RENDER_SINGLE_THREAD_MODE
-	_rdThreadQueue.create(&_rdThread);
-
 	_testEngine = RDS_NEW(TestEngine);
 
 	_scene.create(_egCtx);
 	_sceneView.create(&_scene, &renderableSystem());
 	_edtCtx.create();
 	_meshAssets = makeUPtr<MeshAssets>();
+	RenderUtil::createMaterial(&_mtlScreenQuad, "asset/shader/pass_feature/utility/image/rdsScreenQuad.shader");
 
 	RDS_CORE_ASSERT(_gfxDemo, "");
 	_gfxDemo->onCreate();
@@ -90,12 +100,19 @@ DemoEditorLayer::onCreate()
 
 	// temp solution for submit to trigger first frame TransferContext::commit
 	{
-		drawUI(rdCtx, renderableSystem());			
-		submitRenderJob(Renderer::renderDevice());
-		_rdThreadQueue.waitFrame(_egCtx.engineFrameParam().frameCount());
-		// wait gpu here then, only s_kFrameInFlightCount buffer is ok, no need s_kFrameSafeInFlightCount (s_kFrameInFlightCount + 1)
-		bool isWaitGpu = true;
-		_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, isWaitGpu);
+		auto* rdDev = Renderer::renderDevice();
+		
+		// RenderJob contains all rendering related data that is needed in this frame
+
+		// this store rdJob in renderDevice as a member, could access by all Resource eg. RenderGpuBuffer, Texture
+		rdDev->createRenderJob(RenderApiLayerTraits::s_kFirstFrameCount);
+		
+		// only pass RenderJob when sth need it
+		UPtr<RenderJob> rdJob = rdDev->newRenderJob(RenderApiLayerTraits::s_kFirstFrameCount);
+
+		drawUI(&rdCtx);
+		rdDev->submitRenderJob();
+		rdDev->waitIdle();
 	}
 
 	app()._frameControl.isWaitFrame = !RDS_IS_TEST_ENGINE;
@@ -113,11 +130,7 @@ DemoEditorLayer::onUpdate()
 	auto& egFrameParam	= egCtx.engineFrameParam();
 
 	bool isFirstFrame = egFrameParam.frameCount() == RenderApiLayerTraits::s_kFirstFrameCount; RDS_UNUSED(isFirstFrame);
-
-	egFrameParam.reset(&rdCtx, &_rdThreadQueue);
-
-	//auto frameCount = egFrameParam.frameCount();
-	//RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
+	egFrameParam.reset(&rdCtx);
 
 	{
 		auto clientRect = mainWnd.clientRect();
@@ -139,6 +152,10 @@ DemoEditorLayer::onUpdate()
 				drawData.sceneView	= &_sceneView;
 				drawData.meshAssets	= _meshAssets.ptr();
 
+				/*
+				* TODO: remove first frame, and now prepareRender and executeRender is confuse
+				* also, first frame design is problematic, shd be design as on demand
+				*/
 				if (isFirstFrame)
 					_gfxDemo->prepareRender(&rdGraph, &drawData);
 				else
@@ -148,6 +165,7 @@ DemoEditorLayer::onUpdate()
 				_testEngineCode();
 				#endif // RDS_IS_TEST_ENGINE
 
+				RDS_TODO("TODO: the name of DrawData is bad, and this design need to re-do");
 				if (drawData.drawParamIdx == 0)
 				{
 					_texHndPresent = drawData.oTexPresent;
@@ -157,12 +175,12 @@ DemoEditorLayer::onUpdate()
 	}
 
 	rdableSys.commit(scene());
-
 	// ui
-	drawUI(rdCtx, rdableSys);
+	drawUI(&rdCtx);
 	
-	RenderDevice* rdDev = Renderer::renderDevice();
-	submitRenderJob(rdDev);
+	RDS_TODO("we must confirm that this frame is finished eg. async upload texture...?");
+	RenderDevice* rdDev = rdCtx.renderDevice();
+	rdDev->submitRenderJob();
 }
 
 void
@@ -328,10 +346,11 @@ DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 }
 
 void 
-DemoEditorLayer::drawUI(RenderContext& rdCtx, CRenderableSystem& rdableSys)
+DemoEditorLayer::drawUI(RenderContext* rdCtx)
 {
-	auto& rdUiCtx = rdCtx.renderdUiContex();
-	rdUiCtx.onBeginRender(&rdCtx);
+	auto& rdJob = rdCtx->renderDevice()->renderJob();
+	auto& rdUiCtx = rdCtx->renderdUiContex();
+	rdUiCtx.onBeginRender(rdCtx);
 	{
 		auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
 		{
@@ -342,23 +361,40 @@ DemoEditorLayer::drawUI(RenderContext& rdCtx, CRenderableSystem& rdableSys)
 			_gfxDemo->onDrawGui(uiDrawReq);
 		}
 
-		rdableSys.drawUi(&rdCtx, !_isFullScreen, true);
+		bool isDrawUi		= !_isFullScreen;
+		bool isDrawToScreen = true;
+		{
+			// present pass
+
+			// record present
+			{
+				auto& rdReq = rdJob.renderRequest;
+				//RDS_CORE_LOG_ERROR("drawUi - {}", engineContext().engineFrameParam().frameIndex());
+				//RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
+
+				rdReq.reset(rdCtx);
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor();
+				clearValue->setClearDepth();
+
+				if (isDrawUi)
+					rdCtx->drawUI(rdReq);
+				else
+				{
+					if (isDrawToScreen)
+					{
+						RDS_TODO("temporary fix");
+						RenderRequest temp;
+						rdCtx->drawUI(temp);
+
+						rdReq.drawSceneQuad(RDS_SRCLOC, _mtlScreenQuad);
+					}
+					//rdReq.swapBuffers();
+				}
+			}
+		}
 	}
-	rdUiCtx.onEndRender(&rdCtx);
-}
-
-void
-DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
-{
-	auto& egFrameParam	= _egCtx.engineFrameParam();
-	auto& rdableSys		= renderableSystem();
-
-	RenderData_RenderJob rdJob;
-	rdableSys.setupRenderJob(rdJob);
-	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rds::move(rdJob));
-	#if RDS_USE_RENDER_SINGLE_THREAD_MODE
-	_rdThread._temp_render();
-	#endif // RDS_SINGLE_THREAD_MODE
+	rdUiCtx.onEndRender(rdCtx);
 }
 
 DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }

@@ -145,7 +145,7 @@ inline
 TransferFrame_Vk&
 RenderDevice_Vk::transferFrameVk()								
 { 
-	auto& p = sCast<TransferFrame_Vk&>(transferFrame()); 
+	auto& p = sCast<TransferFrame_Vk&>(*renderJob().transferFrame);
 	return p;
 }
 

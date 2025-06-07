@@ -59,11 +59,18 @@ TransferCommandBuffer::move(TransferCommandBuffer&& rhs)
 	_commands	= rds::move(rhs._commands);
 }
 
+TransferCommand_SetDebugName*				TransferCommandBuffer::setDebugName()			{ return newCommand<TransferCommand_SetDebugName>(); }
+TransferCommand_SetSwapchainSize*			TransferCommandBuffer::setSwapchainSize()		{ return newCommand<TransferCommand_SetSwapchainSize>(); }
 
-TransferCommand_SetSwapchainSize*		TransferCommandBuffer::setSwapchainSize()		{ return newCommand<TransferCommand_SetSwapchainSize>(); }
-TransferCommand_CopyBuffer*				TransferCommandBuffer::copyBuffer()				{ return newCommand<TransferCommand_CopyBuffer>(); }
-TransferCommand_UploadBuffer*			TransferCommandBuffer::uploadBuffer()			{ return newCommand<TransferCommand_UploadBuffer>(); }
-TransferCommand_UploadTexture*			TransferCommandBuffer::uploadTexture()			{ return newCommand<TransferCommand_UploadTexture>(); }
+TransferCommand_CreateRenderGpuBuffer*		TransferCommandBuffer::createRenderGpuBuffer()	{ RDS_TODO("pass a SRCLOC for all command"); return newCommand<TransferCommand_CreateRenderGpuBuffer>(); }
+TransferCommand_CreateTexture*				TransferCommandBuffer::createTexture()			{ return newCommand<TransferCommand_CreateTexture>(); }
+
+TransferCommand_DestroyRenderGpuBuffer*		TransferCommandBuffer::destroyRenderGpuBuffer()	{ return newCommand<TransferCommand_DestroyRenderGpuBuffer>(); }
+TransferCommand_DestroyTexture*				TransferCommandBuffer::destroyTexture()			{ return newCommand<TransferCommand_DestroyTexture>(); }
+
+TransferCommand_CopyBuffer*					TransferCommandBuffer::copyBuffer()				{ return newCommand<TransferCommand_CopyBuffer>(); }
+TransferCommand_UploadBuffer*				TransferCommandBuffer::uploadBuffer()			{ return newCommand<TransferCommand_UploadBuffer>(); }
+TransferCommand_UploadTexture*				TransferCommandBuffer::uploadTexture()			{ return newCommand<TransferCommand_UploadTexture>(); }
 
 #endif
 

@@ -37,6 +37,14 @@ public:
 	void reset(TransferContext* tsfCtx);
 	//void commit(RenderFrameParam& rdFrameParam, bool isWaitImmediate = false);
 	
+public:
+	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
+	void createTexture(			Texture*			texture);
+
+	void destroyRenderGpuBuffer(RenderGpuBuffer*	buffer);
+	void destroyTexture(		Texture*			texture);
+
+	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
 	void setSwapchainSize(RenderContext* rdCtx, const Tuple2f& size);
 
 	TransferCommand_UploadTexture* uploadTexture(Texture* tex);
@@ -56,19 +64,6 @@ private:
 	TransferCommandSafeBuffer	_tsfCmdBuf;
 	//Vector<TransferCommandBuffer, s_kThreadCount> _perThreadTsfCmdBuf;
 };
-
-
-#if 1
-
-template<class TCmd> inline
-TCmd* 
-TransferRequest::newCommand(/*TSafeBuf& safeBuf*/)
-{
-	return TransferCommandBuffer::newCommand_Safe<TCmd>(_tsfCmdBuf);
-}
-
-#endif // 0
-
 
 #endif
 

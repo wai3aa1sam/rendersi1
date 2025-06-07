@@ -11,6 +11,8 @@
 #include "texture/rdsTextureStock.h"
 #include "shader/rdsShaderStock.h"
 
+#include "thread/rdsRenderThread.h"
+
 namespace rds
 {
 
@@ -29,11 +31,14 @@ public:
 	RenderApiType apiType;
 
 	bool isDebug			: 1;
+	bool isMultithread		: 1;
 	bool isPresent			: 1;
 
 public:
 	bool isShaderCompileMode() const;
 };
+
+class	RenderJob;
 
 class	RenderContext;
 struct	RenderContext_CreateDesc;
@@ -80,7 +85,11 @@ public:
 	void destroy();
 
 	void reset(u64 frameCount);
-	void resetEngineFrame(u64 engineFrameCount);
+
+	void createRenderJob(u64 frameCount, bool isRetry = true);
+	void submitRenderJob();
+	void waitCpuIdle(int sleepMs) const;
+	//void waitGpuIdle(RenderContext* rdCtx, u64 frameCount, int sleepMs) const;
 
 	virtual void waitIdle();
 
@@ -110,11 +119,15 @@ public:
 	const	RenderAdapterInfo&		adapterInfo() const;
 			ShaderStock&			shaderStock();
 			TextureStock&			textureStock();
-//			RenderFrame&			renderFrame(	u64	frameIdx);
+
+			RenderJob&				renderJob();
 			TransferFrame&			transferFrame();
-			UPtr<TransferFrame>		releaseTransferFrame();
+
+//			RenderFrame&			renderFrame(	u64	frameIdx);
+			//TransferFrame&			transferFrame();
+			//UPtr<TransferFrame>		releaseTransferFrame();
 			TransferContext&		transferContext();
-			TransferRequest&		transferRequest();
+			//TransferRequest&		transferRequest();
 
 			BindlessResources&	bindlessResource();
 
@@ -152,12 +165,16 @@ protected:
 	VertexLayoutManager _vertexLayoutManager;
 
 	RenderFrameParam	_rdFrameParam;
+	RenderThread		_rdThread;
+	UPtr<RenderJob>		_rdJob = nullptr;
+
 	/*
 	* TODO: rework
 	*/
 	//Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
 	//Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
-	UPtr<TransferFrame>		_tsfFrame = nullptr;
+	//UPtr<TransferFrame>		_tsfFrame = nullptr;
+
 
 	BindlessResources*		_bindlessRscs	= nullptr;
 	TransferContext*		_tsfCtx			= nullptr;
@@ -171,12 +188,14 @@ inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const		{ return _a
 inline			ShaderStock&			RenderDevice::shaderStock()					{ return _shaderStock; }
 inline			TextureStock&			RenderDevice::textureStock()				{ return _textureStock; }
 
+inline			RenderJob&				RenderDevice::renderJob()					{ RDS_CORE_ASSERT(_rdJob, "forgot to call createRenderJob()"); return *_rdJob; }
+inline			TransferFrame&			RenderDevice::transferFrame()				{ return *_rdJob->transferFrame; }
+
 //inline			RenderFrame&			RenderDevice::renderFrame(	u64	frameIdx)	{ _notYetSupported(RDS_SRCLOC); return _rdFrames[frameIdx]; }
-inline			TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); return *_tsfFrame; }
-inline			UPtr<TransferFrame>		RenderDevice::releaseTransferFrame()		{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); auto p = rds::move(_tsfFrame); return p; }
+//inline			TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); return *_tsfFrame; }
+//inline			UPtr<TransferFrame>		RenderDevice::releaseTransferFrame()		{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); auto p = rds::move(_tsfFrame); return p; }
 
 inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx; }
-inline			TransferRequest&		RenderDevice::transferRequest()				{ checkMainThreadExclusive(RDS_SRCLOC); return transferFrame().transferRequest(); }
 
 inline			BindlessResources&		RenderDevice::bindlessResource()			{ return *_bindlessRscs; }
 

@@ -12,7 +12,7 @@ namespace rds
 #if 0
 #pragma mark --- rdsRenderFrame-Decl ---
 #endif // 0
-#if 1
+#if 0
 
 class RenderFrame : public NonCopyable
 {
@@ -53,7 +53,7 @@ inline RenderQueue&			RenderFrame::renderQueue()				{ return _renderQueue; }
 #if 0
 #pragma mark --- rdsRenderFrameContext-Decl ---
 #endif // 0
-#if 1
+#if 0
 
 
 class RenderFrameContext : public NonCopyable

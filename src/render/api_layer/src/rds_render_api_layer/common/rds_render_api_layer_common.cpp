@@ -1,5 +1,6 @@
 #include "rds_render_api_layer-pch.h"
 #include "rds_render_api_layer_common.h"
+#include "rds_render_api_layer/rdsRenderer.h"
 
 namespace rds
 {
@@ -12,9 +13,7 @@ namespace rds
 void 
 checkRenderThreadExclusive(RDS_DEBUG_SRCLOC_PARAM)
 {
-	#if !RDS_USE_RENDER_SINGLE_THREAD_MODE
-	throwIf(!RenderApiLayerTraits::isRenderThread() , "only could execute in render thread, {}", RDS_DEBUG_SRCLOC_ARG);
-	#endif // RDS_USE_RENDER_SINGLE_THREAD_MODE
+	throwIf(!RenderApiLayerTraits::isRenderThread() && Renderer::renderDevice()->adapterInfo().isMultiThread, "only could execute in render thread, {}", RDS_DEBUG_SRCLOC_ARG);
 }
 
 #endif

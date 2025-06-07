@@ -24,11 +24,11 @@ private:																							\
 #endif // 0
 #if 1
 
-
 struct RenderApiLayerDefaultTraits_T : public CoreTraits
 {
 public:
-	using Base = CoreTraits;
+	using Base			= CoreTraits;
+	using FrameCount	= u64;
 
 public:
 	static constexpr const char* s_appName		= "Rendersi1";

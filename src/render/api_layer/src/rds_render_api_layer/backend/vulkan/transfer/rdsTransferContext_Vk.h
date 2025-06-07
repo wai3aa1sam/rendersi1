@@ -64,8 +64,8 @@ protected:
 	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)			override;
 	virtual void onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate)						override;
 
-	virtual void onTransferBegin()	override;
-	virtual void onTransferEnd()	override;
+	virtual void onTransferBegin(TransferFrame& tsfFrame_)	override;
+	virtual void onTransferEnd(TransferFrame& tsfFrame_)	override;
 
 protected:
 	Vk_Queue* requestVkQueue(QueueTypeFlags type);

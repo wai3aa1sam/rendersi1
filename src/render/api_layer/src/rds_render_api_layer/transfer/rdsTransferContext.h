@@ -37,25 +37,25 @@ public:
 	void create	(const CreateDesc& cDesc);
 	void destroy();
 
+	void reset(TransferFrame* tsfFrame_);
 	void transferBegin();
 	void transferEnd();
 
-	void commit(RenderFrameParam& rdFrameParam, UPtr<TransferFrame>&& tsfFrame_, bool isWaitImmediate);
+	void commit(bool isWaitImmediate);
+	//void commit(RenderFrameParam& rdFrameParam, UPtr<TransferFrame> tsfFrame_, bool isWaitImmediate);
 
 	virtual void waitFrameFinished(RenderFrameParam& rdFrameParam);
 
 public:
-	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
-
-	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
-	void createTexture(			Texture*			texture);
-
-	void destroyRenderGpuBuffer(RenderGpuBuffer*	buffer);
-	void destroyTexture(		Texture*			texture);
-
+	TransferFrame& transferFrame();
+#if 0
 public:
 	TransferFrame&		transferFrame();
 	UPtr<TransferFrame> allocTransferFrame();
+
+protected:
+	void releasePreviousTransferFrame();
+#endif // 0
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
@@ -68,23 +68,19 @@ protected:
 	template<class CTX> void _dispatchCommand(	CTX* ctx, TransferCommand* cmd);
 	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
 
-			void createRenderResources( const RenderFrameParam& rdFrameParam);
-			void destroyRenderResources(const RenderFrameParam& rdFrameParam);
+			void createRenderResources( const RenderFrameParam& rdFrameParam, TransferCommandSafeBuffer& createQueue);
+			void destroyRenderResources(const RenderFrameParam& rdFrameParam, TransferCommandSafeBuffer& destroyQueue);
 	virtual void onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate);
 
-protected:
-	template<class TCmd, class TSafeBuf> static TCmd* newCommand(TSafeBuf& safeBuf);
-
-	void releasePreviousTransferFrame();
-
 private:
-	TransferCommandSafeBuffer	_createRdRscQueue;
-	TransferCommandSafeBuffer	_destroyRdRscQueue;
 
+	#if 0
 	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameInFlightCount> >;
 	TransferFramePool									_tsfFramePool;
 	Vector<UPtr<TransferFrame>, s_kFrameInFlightCount>	_prevTsfFrames;
 	UPtr<TransferFrame>									_curTsfFrame = nullptr;
+	#endif // 0
+	TransferFrame* _curTsfFrame = nullptr;
 };
 
 template<class CTX> inline
@@ -129,13 +125,6 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 		default: { throwError("undefined transfer command"); } break;
 	}
 	#undef _DISPACH_CMD_CASE
-}
-
-template<class TCmd, class TSafeBuf> inline
-TCmd* 
-TransferContext::newCommand(TSafeBuf& safeBuf)
-{
-	return TransferCommandBuffer::newCommand_Safe<TCmd>(safeBuf);
 }
 
 #endif

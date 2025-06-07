@@ -2,6 +2,7 @@
 #include "rdsTransferFrame.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/rdsRenderDevice.h"
+#include "command/rdsTransferCommand_Impl.h"
 
 namespace rds
 {
@@ -86,7 +87,22 @@ TransferFrame::onReset()
 {
 	_constBufAlloc.reset();
 	_tsfReq.reset(&transferContext());
+
+	{
+		auto lock = _rdRscCreateQueue.scopedULock();
+		lock->clear();
+	}
+
+	{
+		auto lock = _rdRscDestroyQueue.scopedULock();
+		lock->clear();
+	}
 }
+
+#if 1
+
+
+#endif // 1
 
 
 #if 0

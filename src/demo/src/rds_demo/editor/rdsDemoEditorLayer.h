@@ -51,14 +51,11 @@ protected:
 	virtual void onUiMouseEvent(    UiMouseEvent& ev)		override;
 	virtual void onUiKeyboardEvent( UiKeyboardEvent& ev)	override;
 
-	void drawUI(RenderContext& rdCtx, CRenderableSystem& rdableSys);
+	void drawUI(RenderContext* rdCtx);
 	void drawEditorUI(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texHndPresent);		// should be copied from ImGui
 
 private:
 	CRenderableSystem& renderableSystem();
-
-protected:
-	void submitRenderJob(RenderDevice* rdDev);
 
 private:
 	void _logForResumeDevelopMustWatchFirst();
@@ -83,10 +80,8 @@ private:
 
 	UPtr<MeshAssets> _meshAssets;
 
-	bool _isFullScreen = false;
-
-	RenderThread		_rdThread;
-	RenderThreadQueue	_rdThreadQueue;
+	bool			_isFullScreen = false;
+	SPtr<Material>	_mtlScreenQuad;
 
 	UPtr<TestEngine> _testEngine;
 };

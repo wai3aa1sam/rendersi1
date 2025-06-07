@@ -4,6 +4,7 @@
 #include "../rdsRenderDevice.h"
 #include "../rdsRenderContext.h"
 #include "../transfer/rdsTransferContext.h"
+#include "../graph/rdsRenderGraph.h"
 
 namespace rds
 {
@@ -44,10 +45,9 @@ RenderThread::onDestroy()
 void 
 RenderThread::onThreadState_Terminate()
 {
-	UPtr<RenderData> rdData;
-	while (_rdDataQueue.try_pop(rdData))
+	while (UPtr<RenderJob> rdJob = _rdThreadQueue.consumeRenderJob())
 	{
-		render(*rdData);
+		render(rds::move(rdJob));
 	}
 	Renderer::instance()->destroy();
 
@@ -79,12 +79,11 @@ RenderThread::onRoutine()
 	{
 		if (_state == State::Terminate) { onThreadState_Terminate(); break; }
 
-		UPtr<RenderData> rdData;
-		bool hasRequestRender = _rdDataQueue.try_pop(rdData);		// seems try_pop is poping front, if no hints could try once more
-		if (hasRequestRender)
+		UPtr<RenderJob> rdJob = _rdThreadQueue.consumeRenderJob();
+		if (rdJob)
 		{
 			setState(RenderThreadState::Processing);
-			render(*rdData);
+			render(rds::move(rdJob));
 		}
 		else
 		{
@@ -103,13 +102,19 @@ RenderThread::onRoutine()
 	return nullptr;
 }
 
-void 
-RenderThread::requestRender(UPtr<RenderData>&& renderData)
+UPtr<RenderJob> 
+RenderThread::newRenderJob(RenderDevice* renderDevice, u64 frameCount)
+{
+	return _rdThreadQueue.newRenderJob(renderDevice, frameCount);
+}
+
+void
+RenderThread::requestRender(UPtr<RenderJob> renderJob)
 {
 	//RDS_CORE_LOG_ERROR("requestRender() - renderData.frameCount: {}", renderData->frameCount);
 
 	//RDS_CORE_ASSERT(!isTerminated(), " RenderThread has already terminated");
-	_rdDataQueue.push(rds::move(renderData));
+	_rdThreadQueue.submit(rds::move(renderJob));
 }
 
 void 
@@ -119,6 +124,12 @@ RenderThread::requestTerminate()
 }
 
 void 
+RenderThread::waitSignaled()
+{
+	//_rdThreadQueue.
+}
+
+void
 RenderThread::waitTerminated()
 {
 	while (!isFrameFinished(currentFrameCount()) || _state != RenderThreadState::TerminateEnd)
@@ -127,6 +138,7 @@ RenderThread::waitTerminated()
 	}
 }
 
+#if 0
 void
 RenderThread::render(RenderData& renderData)
 {
@@ -149,7 +161,7 @@ RenderThread::render(RenderData& renderData)
 		tsfCtx.commit(rdFrameParam, rds::move(renderData.transferFrame), false);
 
 		{
-			// RenderFrameContext
+			// RenderJobContext
 			// beginFrame();
 			//		for ... render()
 			// endFrame();		// only submit here
@@ -183,16 +195,67 @@ RenderThread::render(RenderData& renderData)
 		"\n or there is multi RenderThread"
 	);
 	_lastFinishedFrameCount.store(curFrame);
+
+}
+#endif // 0
+
+void 
+RenderThread::render(UPtr<RenderJob> renderJob)
+{
+	RDS_CORE_ASSERT(renderJob);
+
+	auto curFrame = renderJob->frameCount;
+	RDS_CORE_ASSERT(curFrame == _curFrameCount + 1, "RenderThread order incorrect");
+	_curFrameCount.store(curFrame);
+
+	RDS_PROFILE_DYNAMIC_FMT("render() - frame {}", curFrame);
+
+	auto* rdDev			= renderJob->renderDevice;
+	auto& rdFrameParam	= rdDev->renderFrameParam();
+
+	rdDev->reset(curFrame);
+	// vmaSetCurrentFrameIndex();	// 
+
+	{
+		auto& tsfCtx	= rdDev->transferContext();
+		//auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
+		tsfCtx.reset(renderJob->transferFrame);
+		tsfCtx.transferBegin();
+		tsfCtx.commit(false);
+
+		// TODO: multi Vector<RenderGraph>?
+		{
+			auto&	rdGraph		= *renderJob->renderGraph;
+			auto*	rdCtx		= rdGraph.renderContext();
+			//auto	frameIndex	= rdFrameParam.frameIndex();
+
+			rdCtx->beginRender();
+
+			rdGraph.commit(renderJob->renderGraphFrameIdx);
+			rdCtx->commit(renderJob->renderRequest);
+
+			rdCtx->endRender();
+		}
+
+		tsfCtx.transferEnd();
+	}
+
+	RDS_TODO(
+		"curFrame is from rdDev, so if later support multi rdDev, then there maybe a map for each _lastFinishedFrameCount"
+		"\n or there is multi RenderThread"
+	);
+	_lastFinishedFrameCount.store(curFrame);
+
+	_rdThreadQueue.freeRenderJob(rds::move(renderJob));
 }
 
 void 
 RenderThread::_temp_render()
 {
-	UPtr<RenderData> rdData;
-	bool hasRequestRender = _rdDataQueue.try_pop(rdData);
-	if (hasRequestRender)
+	UPtr<RenderJob> rdJob = _rdThreadQueue.consumeRenderJob();
+	if (rdJob)
 	{
-		render(*rdData);
+		render(rds::move(rdJob));
 	}
 }
 
@@ -207,6 +270,7 @@ bool	RenderThread::isTerminated()					const { return isState(RenderThreadState::
 bool	RenderThread::isReadyToProcess()				const { return isState(RenderThreadState::Idle) || isState(RenderThreadState::Stealing); }
 bool	RenderThread::isIdle()							const { return isState(RenderThreadState::Idle); }
 
+bool	RenderThread::isSignaled()						const { return _rdThreadQueue.isSignaled(); }
 bool	RenderThread::isFrameFinished(u64 frame)	const	{ auto n = lastFinishedFrameCount(); return n >= frame; }
 
 u64		RenderThread::currentFrameCount()			const	{ return _curFrameCount.load(); } //{ auto n = lastFinishedFrameCount(); return n <= 1 && isFrameFinished(n) ? n : n - 1; }

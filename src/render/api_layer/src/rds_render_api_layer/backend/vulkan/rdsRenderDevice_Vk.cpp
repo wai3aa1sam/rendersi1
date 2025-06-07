@@ -84,6 +84,7 @@ RenderDevice_Vk::onResetFrame(u64 frameCount)
 void 
 RenderDevice_Vk::waitIdle()
 {
+	Base::waitIdle();
 	vkDeviceWaitIdle(vkDevice());
 }
 

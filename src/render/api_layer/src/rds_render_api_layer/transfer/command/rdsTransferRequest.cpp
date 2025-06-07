@@ -13,26 +13,26 @@ namespace rds
 #endif // 0
 #if 1
 
-bool 
-TransferRequest::tryPopTransferCommandSafeBuffer(TransferCommandBuffer& dst, TransferCommandSafeBuffer& src)
-{
-	{
-		//auto* p = RDS_NEW(TransferCommandBuffer);
-		auto data	= src.scopedULock();
-		#if 0
-		for (auto& e : data->commands())
-		{
-			if (e->type() == TransferCommandType::SetDebugName)
-			{
-				auto* cmd = sCast<TransferCommand_SetDebugName*>(e);
-				RDS_LOG("TransferCommand_SetDebugName: {}", cmd->name);
-			}
-		}
-		#endif // 0
-		swap(dst, *data);
-	}
-	return true;
-}
+//bool 
+//TransferRequest::tryPopTransferCommandSafeBuffer(TransferCommandBuffer& dst, TransferCommandSafeBuffer& src)
+//{
+//	{
+//		//auto* p = RDS_NEW(TransferCommandBuffer);
+//		auto data	= src.scopedULock();
+//		#if 0
+//		for (auto& e : data->commands())
+//		{
+//			if (e->type() == TransferCommandType::SetDebugName)
+//			{
+//				auto* cmd = sCast<TransferCommand_SetDebugName*>(e);
+//				RDS_LOG("TransferCommand_SetDebugName: {}", cmd->name);
+//			}
+//		}
+//		#endif // 0
+//		swap(dst, *data);
+//	}
+//	return true;
+//}
 
 TransferRequest::TransferRequest()
 {
@@ -65,10 +65,52 @@ TransferRequest::reset(TransferContext* tsfCtx)
 //	_tsfCtx->commit(rdFrameParam, *this, isWaitImmediate);
 //}
 
+
+void 
+TransferRequest::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
+{
+	auto lock = _rdRscCreateQueue.scopedULock();
+	auto* cmd	= lock->setDebugName();
+	cmd->dst	= rdRsc;
+	cmd->name	= name;
+}
+
+void 
+TransferRequest::createRenderGpuBuffer(RenderGpuBuffer* buffer)
+{
+	auto lock = _rdRscCreateQueue.scopedULock();
+	auto* cmd	= lock->createRenderGpuBuffer();
+	cmd->dst	= buffer;
+}
+
+void 
+TransferRequest::createTexture(Texture* texture)
+{
+	auto lock = _rdRscCreateQueue.scopedULock();
+	auto* cmd	= lock->createTexture();
+	cmd->dst	= texture;
+}
+
+void 
+TransferRequest::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
+{
+	auto lock = _rdRscDestroyQueue.scopedULock();
+	auto* cmd	= lock->destroyRenderGpuBuffer();
+	cmd->dst	= buffer;
+}
+
+void 
+TransferRequest::destroyTexture(Texture* texture)
+{
+	auto lock = _rdRscDestroyQueue.scopedULock();
+	auto* cmd	= lock->destroyTexture();
+	cmd->dst	= texture;
+}
+
 TransferCommand_UploadTexture*
 TransferRequest::uploadTexture(Texture* tex)
 {
-	auto* cmd = newCommand<TransferCommand_UploadTexture>();
+	auto* cmd = TransferCommandBuffer::newCommand_Safe<TransferCommand_UploadTexture>();
 	cmd->dst = tex;
 	return cmd;
 }

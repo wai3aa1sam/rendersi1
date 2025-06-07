@@ -47,16 +47,21 @@ public:
 	~RenderThread();
 
 public:
-	void requestRender(UPtr<RenderData>&& renderData);
+	UPtr<RenderJob> newRenderJob(RenderDevice* renderDevice, u64 frameCount);
+	void requestRender(UPtr<RenderJob> renderJob);
+
+	//void requestRender(UPtr<RenderData> renderData);
 	void requestTerminate();
 
 public:
+	void waitSignaled();
 	void waitTerminated();
 
 public:
 	bool	isTerminated()				const;
 	bool	isReadyToProcess()			const;
 	bool	isIdle()					const;
+	bool	isSignaled()				const;
 	bool	isFrameFinished(u64 frame)	const;
 	u64		currentFrameCount()			const;
 	u64		lastFinishedFrameCount()	const;
@@ -67,7 +72,8 @@ protected:
 
 
 	virtual void* onRoutine() override;
-	void render(RenderData& renderData);
+	//void render(RenderData& renderData);
+	void render(UPtr<RenderJob> renderJob);
 
 public:		// TODO: remove temp
 	void _temp_render();
@@ -77,10 +83,11 @@ protected:
 	bool isState(RenderThreadState state) const;
 
 private:
-	AtmQueue<UPtr<RenderData> > _rdDataQueue;
 	Atm<RenderThreadState>		_state = RenderThreadState::None;
 	Atm<u64>					_curFrameCount = 0;
 	Atm<u64>					_lastFinishedFrameCount = 0;
+
+	RenderThreadQueue			_rdThreadQueue;
 };
 
 #endif
