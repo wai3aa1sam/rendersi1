@@ -131,13 +131,6 @@ TransferContext::_dispatchCommand(CTX* ctx, TransferCommand* cmd)
 	#undef _DISPACH_CMD_CASE
 }
 
-template<class TCmd, class TSafeBuf> inline
-TCmd* 
-TransferContext::newCommand(TSafeBuf& safeBuf)
-{
-	return TransferCommandBuffer::newCommand_Safe<TCmd>(safeBuf);
-}
-
 #endif
 
 }

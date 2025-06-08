@@ -98,7 +98,9 @@ TransferContext::waitFrameFinished(RenderFrameParam& rdFrameParam)
 void 
 TransferContext::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
 {
-	auto* cmd = newCommand<TransferCommand_SetDebugName>(_createRdRscQueue);
+	auto lock = _createRdRscQueue.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_SetDebugName>();
+	
 	cmd->dst	= rdRsc;
 	cmd->name	= name;
 }
@@ -106,7 +108,9 @@ TransferContext::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
 void 
 TransferContext::createRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
-	auto* cmd = newCommand<TransferCommand_CreateRenderGpuBuffer>(_createRdRscQueue);
+	auto lock = _createRdRscQueue.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_CreateRenderGpuBuffer>();
+
 	cmd->dst = buffer;
 }
 
@@ -114,16 +118,21 @@ void
 TransferContext::createTexture(Texture* texture)
 {
 	RDS_TODO("rework command data member for debug SRCLOC, transfer and render also need to rework!!!");
-	auto* cmd = newCommand<TransferCommand_CreateTexture>(_createRdRscQueue);
+
+	auto lock = _createRdRscQueue.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_CreateTexture>();
+
 	cmd->dst = texture;
 }
 
 void 
 TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
+	auto lock = _destroyRdRscQueue.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_DestroyRenderGpuBuffer>();
+
 	//OsUtil::sleep_ms(1);
 
-	auto* cmd = newCommand<TransferCommand_DestroyRenderGpuBuffer>(_destroyRdRscQueue);
 	cmd->dst = buffer;
 	RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
 }
@@ -131,9 +140,11 @@ TransferContext::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 void 
 TransferContext::destroyTexture(Texture* texture)
 {
+	auto lock = _destroyRdRscQueue.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_DestroyTexture>();
+
 	//OsUtil::sleep_ms(1);
 
-	auto* cmd = newCommand<TransferCommand_DestroyTexture>(_destroyRdRscQueue);
 	cmd->dst = texture;
 	//RDS_CORE_ASSERT(cmd->dst->isRefCount0(), "only call when refCount is 0");
 }

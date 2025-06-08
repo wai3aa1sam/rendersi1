@@ -68,7 +68,10 @@ TransferRequest::reset(TransferContext* tsfCtx)
 TransferCommand_UploadTexture*
 TransferRequest::uploadTexture(Texture* tex)
 {
-	auto* cmd = newCommand<TransferCommand_UploadTexture>();
+	RDS_TODO("this design is fault, but this part do not multi-thread now, so it seems ok");
+	auto lock = _tsfCmdBuf.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_UploadTexture>();
+
 	cmd->dst = tex;
 	return cmd;
 }
@@ -90,8 +93,9 @@ TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType of
 	}
 	#endif // 0
 	//auto& cmdBuf = transferCommandBuffer();
-	auto* cmd = newCommand<TransferCommand_UploadBuffer>();
-
+	auto lock = _tsfCmdBuf.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_UploadBuffer>();
+	RDS_TODO("this design is fault, but this part do not multi-thread now, so it seems ok");
 	cmd->dst	= rdBuf;
 	cmd->data	= data;
 	cmd->offset = offset;
@@ -111,7 +115,9 @@ TransferRequest::setSwapchainSize(RenderContext* rdCtx, const Tuple2f& size)
 	RDS_CORE_ASSERT(rdCtx);
 
 	//auto& cmdBuf	= transferCommandBuffer();
-	auto* cmd			= newCommand<TransferCommand_SetSwapchainSize>();
+	auto lock = _tsfCmdBuf.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_SetSwapchainSize>();
+
 	cmd->renderContext	= rdCtx;
 	cmd->size			= size;
 }

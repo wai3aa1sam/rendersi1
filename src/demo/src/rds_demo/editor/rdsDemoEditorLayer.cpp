@@ -9,7 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
-#define RDS_IS_TEST_ENGINE 1
+#define RDS_IS_TEST_ENGINE 0
 
 
 

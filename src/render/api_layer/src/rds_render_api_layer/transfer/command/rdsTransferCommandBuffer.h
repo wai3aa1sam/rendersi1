@@ -23,8 +23,8 @@ public:
 	static constexpr SizeType s_kLocalSize = 64;
 
 public:
-	template<class CMD>						static CMD*		newCommand(void* buf);
-	template<class TCmd, class TSafeBuf>	static TCmd*	newCommand_Safe(TSafeBuf& safeBuf);
+	template<class CMD>	static	CMD* newCommand(void* buf);
+	template<class CMD>			CMD* newCommand();
 
 public:
 	TransferCommandBuffer();
@@ -51,7 +51,6 @@ public:
 	void* _internal_allocCommand(size_t size);
 
 private:
-	template<class CMD> CMD* newCommand();
 	void move(TransferCommandBuffer&& rhs);
 
 private:
@@ -77,20 +76,6 @@ TransferCommandBuffer::newCommand()
 }
 
 inline Span<TransferCommand*> TransferCommandBuffer::commands() { return _commands; }
-
-
-template<class TCmd, class TSafeBuf> 
-TCmd*
-TransferCommandBuffer::newCommand_Safe(TSafeBuf& safeBuf)
-{
-	void* buf = nullptr;
-	{
-		auto data = safeBuf.scopedULock();
-		buf = data->_internal_allocCommand(sizeof(TCmd));
-	}
-	auto* cmd = TransferCommandBuffer::newCommand<TCmd>(buf);
-	return cmd;
-}
 
 #endif
 

@@ -58,18 +58,6 @@ private:
 };
 
 
-#if 1
-
-template<class TCmd> inline
-TCmd* 
-TransferRequest::newCommand(/*TSafeBuf& safeBuf*/)
-{
-	return TransferCommandBuffer::newCommand_Safe<TCmd>(_tsfCmdBuf);
-}
-
-#endif // 0
-
-
 #endif
 
 }
