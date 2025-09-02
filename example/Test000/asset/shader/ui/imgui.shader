@@ -54,7 +54,12 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	float2 uv = i.uv;
 	//uv.y = -uv.y;
 	//float4 o = i.col * RDS_TEXTURE_2D_SAMPLE(fontTex, uv);	// for ImGui::GetTexDataAsRGBA32
+
+	#if RDS_SHADER_USE_BINDLESS
 	float4 o = i.col * (rds_texture2DTable[NonUniformResourceIndex(rds_perObjectParam.id)].Sample(RDS_SAMPLER_GET(texture0), uv));	// for ImGui::GetTexDataAsRGBA32
+	#else
+	float4 o = i.col * (RDS_TEXTURE_2D_SAMPLE(texture0, uv));
+	#endif
 
 	//o = i.col * texture0.Sample(_rds_texture0_sampler, i.uv).r;		// for ImGui::GetTexDataAsAlpha8
 

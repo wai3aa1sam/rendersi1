@@ -326,7 +326,8 @@ PixelOut ps_main(PixelIn input)
 	if (SpaceTransform_isInvalidDepth(depth))
 		return o;
 
-	float2 sampleNormal 		= RDS_TEXTURE_2D_T_SAMPLE_LOD(float2, gBuf_normal, 				uv, 0);
+	// gBuf_normal is float4 in GeometryBuffer.hlsl, must revisit
+	float2 sampleNormal 		= RDS_TEXTURE_2D_T_SAMPLE_LOD(float4, gBuf_normal, 				uv, 0).xy;
 	float4 baseColor			= RDS_TEXTURE_2D_T_SAMPLE_LOD(float4, gBuf_baseColor, 			uv, 0);
 	float4 roughnessMetalness 	= RDS_TEXTURE_2D_T_SAMPLE_LOD(float4, gBuf_roughnessMetalness,	uv, 0);
 	float3 pos 					= SpaceTransform_computePositionWs(uv, depth, drawParam).xyz;

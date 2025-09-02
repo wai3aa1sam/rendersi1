@@ -24,7 +24,12 @@ ShaderCompiler::compile(const CompileDescView& descView)
 {
 	_compileDescView = &descView;
 	_allStageUnionInfo.stageFlag = ShaderStageFlag::All;
-	return onCompile(descView);
+
+	bool isSuccess = onCompile(descView);
+	if (isSuccess)
+		_compileCounter++;
+
+	return isSuccess;
 }
 
 void 
@@ -39,6 +44,12 @@ ShaderCompiler::writeStageInfo(StrView filename, ShaderStageInfo& stageInfo)
 	TempString buf;
 	ShaderCompileRequest::getShaderStageInfoFilepathTo(buf, filename);
 	_writeShaderStageInfo(buf, stageInfo);
+}
+
+void 
+ShaderCompiler::resetCompileCounter()
+{
+	_compileCounter = 0;
 }
 
 bool 

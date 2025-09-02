@@ -241,7 +241,7 @@ Material::_setImageParam(StrView name, TEX* v, u32 mipLevel)
 	#else
 	for (auto& pass : _passes)
 	{
-		pass->setImageParam(name, v);
+		pass->setImageParam(name, v, mipLevel);
 	}
 	#endif // 0
 }

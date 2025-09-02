@@ -24,7 +24,9 @@ RenderDevice::createTextureCube(TextureCube_CreateDesc& cDesc)
 TextureCube::CreateDesc	
 TextureCube::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 {
-	return CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
+	auto o = CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
+	o.type = RenderDataType::Texture3D;
+	return o;
 }
 
 SPtr<TextureCube> 

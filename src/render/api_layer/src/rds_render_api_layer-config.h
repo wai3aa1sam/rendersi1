@@ -6,3 +6,5 @@
 	#define RDS_RENDER_HAS_OPENGL	1
 	#define RDS_RENDER_HAS_VULKAN	1
 #endif
+
+#define RDS_SHADER_USE_BINDLESS	0

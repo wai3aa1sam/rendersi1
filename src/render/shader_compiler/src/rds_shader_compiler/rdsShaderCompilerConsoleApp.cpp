@@ -69,17 +69,19 @@ ShaderCompilerConsoleApp::create()
 		includes.emplaceBackDir() = Path::dirname(cmpDesc.inputFilename);
 	}
 	{
-		auto& bindlessRsc = Renderer::renderDevice()->bindlessResource();
 		auto& marcos = cmpDesc.marcos;
 
 		_isPermutationCompile = !marcos.is_empty();
 
+		marcos.emplace_back("RDS_SHADER_USE_BINDLESS",		StrUtil::toTempStr(RDS_SHADER_USE_BINDLESS));
 		marcos.emplace_back("RDS_K_SAMPLER_COUNT",			StrUtil::toTempStr(BindlessResources::supportSamplerCount()));
-		marcos.emplace_back("RDS_CONSTANT_BUFFER_SPACE",	fmtAs_T<TempString>("space{}",	BindlessResources::bindlessTypeCount()));
+
+		auto constBufSpace = RDS_SHADER_USE_BINDLESS ? BindlessResources::bindlessTypeCount() : 0;
+		marcos.emplace_back("RDS_CONSTANT_BUFFER_SPACE",	fmtAs_T<TempString>("space{}",	constBufSpace));
 
 		auto minBinding_vkSpec = 16;
-		cmpDesc.globalBinding	= minBinding_vkSpec - 2;
-		cmpDesc.globalSet		= sCast<int>(bindlessRsc.bindlessTypeCount());
+		cmpDesc.globalBinding	= RDS_SHADER_USE_BINDLESS ? (minBinding_vkSpec - 2) : minBinding_vkSpec * 2;
+		cmpDesc.globalSet		= sCast<int>(constBufSpace);
 	}
 }
 
@@ -196,6 +198,8 @@ ShaderCompilerConsoleApp::compileForVulkan(const ShaderInfo& info, StrView srcFi
 		//opt_invret_y.isInvertY = true;
 
 		compilerDx12.compile(ShaderStageFlag::Compute,					srcFileRoot, binPassDir, pass.csFunc,	opt, cmpDesc);
+		compilerDx12.resetCompileCounter();
+
 		compilerDx12.compile(ShaderStageFlag::Vertex,					srcFileRoot, binPassDir, pass.vsFunc,	hasGeometryShader ? opt : opt_invret_y, cmpDesc);
 		compilerDx12.compile(ShaderStageFlag::TessellationControl,		srcFileRoot, binPassDir, pass.tescFunc, opt, cmpDesc);
 		compilerDx12.compile(ShaderStageFlag::TessellationEvaluation,	srcFileRoot, binPassDir, pass.teseFunc, opt, cmpDesc);

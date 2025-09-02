@@ -90,9 +90,9 @@ public:
 	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer(			RenderGpuBuffer_CreateDesc&		cDesc);
 	SPtr<Texture>				createTexture(						Texture_CreateDesc&				cDesc);
 	SPtr<Texture2D>				createTexture2D(					Texture2D_CreateDesc&			cDesc);
-	SPtr<Texture3D>				createTexture3D(					Texture3D_CreateDesc& cDesc);
+	SPtr<Texture3D>				createTexture3D(					Texture3D_CreateDesc&			cDesc);
 	SPtr<TextureCube>			createTextureCube(					TextureCube_CreateDesc&			cDesc);
-	SPtr<Texture2DArray>		createTexture2DArray(				Texture2DArray_CreateDesc&			cDesc);
+	SPtr<Texture2DArray>		createTexture2DArray(				Texture2DArray_CreateDesc&		cDesc);
 	SPtr<Shader>				createShader(				const	Shader_CreateDesc&				cDesc);
 	SPtr<Shader>				createShader(						StrView							filename);
 	SPtr<Shader>				createShader(						StrView							filename, const ShaderPermutations& permuts);

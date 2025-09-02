@@ -68,6 +68,8 @@ public:
 	void writeAllStageUnionInfo(StrView filename);
 	void writeStageInfo(		StrView filename, ShaderStageInfo& stageInfo);
 
+	void resetCompileCounter();
+
 protected:
 	bool _appendUniqueSetBinding(u32 set, u32 binding, StrView name, bool isIgnoreSameBinding = false);
 	void _appendStageUnionInfo_pushConstants(ShaderStageInfo& outInfo, const ShaderStageInfo::PushConstant&		v);
@@ -97,6 +99,8 @@ protected:
 	VectorMap<u32, VectorMap<u32, TempString> > _setBindingTable;
 	VectorSet<TempString>						_pushConstantTable;
 	ShaderStageInfo								_allStageUnionInfo;
+
+	u32 _compileCounter = 0;
 };
 
 inline const ShaderCompiler::Option&			ShaderCompiler::opt()				const { return compileDescView().compileDesc->compileOption; }

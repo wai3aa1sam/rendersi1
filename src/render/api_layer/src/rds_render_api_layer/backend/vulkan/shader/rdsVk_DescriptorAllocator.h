@@ -44,6 +44,10 @@ public:
 	using PoolSizes		= DescriptorPoolSizes;
 	using Util			= Vk_RenderApiUtil;
 
+	// for test only
+public:
+	Set<Vk_DescriptorSet*> _updatedDescrSet;
+
 public:
 	static CreateDesc makeCDesc();
 
@@ -106,13 +110,17 @@ public:
 	using TexParam		= MaterialPass_Stage::TexParam;
 	using SamplerParam	= MaterialPass_Stage::SamplerParam;
 	using BufferParam	= MaterialPass_Stage::BufferParam;
+	using ImageParam	= MaterialPass_Stage::ImageParam;
 
 public:
 	static Vk_DescriptorBuilder make(Vk_DescriptorAllocator* alloc);
 
 public:
 	bool build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass);
-	bool buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass);
+
+private:
+	bool buildNonBindless(	Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass);
+	bool buildBindless(		Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass);
 
 protected:
 	void create(ShaderResources& shaderRscs, ShaderPass_Vk* pass);
@@ -123,6 +131,7 @@ protected:
 	void bindTexture		(Vk_DescriptorSet& dstSet, TexParam&		texParam,		VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
 	void bindSampler		(Vk_DescriptorSet& dstSet, SamplerParam&	samplerParam,	VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
 	void bindBuffer			(Vk_DescriptorSet& dstSet, BufferParam&		bufParam,		VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
+	void bindImage			(Vk_DescriptorSet& dstSet, ImageParam&		imgParam,		VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
 
 	void bindCombinedTexture(Vk_DescriptorSet& dstSet, TexParam&		texParam,		VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
 
@@ -130,6 +139,8 @@ protected:
 
 	void bindSamplers( Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam, Span<Vk_Sampler> samplerHnds,				VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
 	void _bindSampler( Vk_DescriptorSet& dstSet, const SamplerParam&	samplerParam, Vk_Sampler_T*	   samplerHnd, u32 dstIdx,	VkShaderStageFlags stageFlag, ShaderPass_Vk* pass);
+
+	void bindSamplerParamsAsArray(Vk_DescriptorSet& dstSet, ShaderResources::SamplerParamsView params, ShaderPass_Vk* pass, VkShaderStageFlags stageFlag = VkShaderStageFlagBits::VK_SHADER_STAGE_ALL);
 
 protected:
 	Vk_DescriptorBuilder();
@@ -141,13 +152,46 @@ private:
 
 	Vector<VkWriteDescriptorSet,	16>	_writeDescs;
 	Vector<VkDescriptorBufferInfo,	16>	_bufInfos;
-	Vector<VkDescriptorImageInfo,	16>	_imageInfos;
+	Vector<VkDescriptorImageInfo,	16>	_imgInfos;
 };
 
 inline RenderDevice_Vk* Vk_DescriptorBuilder::renderDeviceVk() { return _alloc->renderDeviceVk(); }
 
 
 #endif
+
+class Vk_DescriptorSetUpdater
+{
+public:
+
+private:
+	Vector<VkWriteDescriptorSet>	_writeDescrSets;
+	Vector<VkDescriptorBufferInfo>	_bufInfos;
+	Vector<VkDescriptorImageInfo>	_texInfos;
+	Vector<VkDescriptorImageInfo>	_imgInfos;
+
+	// only use for non-bindless
+	Set<Vk_DescriptorSet> _updatedDescrSet;
+};
+
+struct VkDescriptorUtil
+{
+public:
+	static void initVkWriteDescriptorSet(VkWriteDescriptorSet& oSet, Vk_DescriptorSet& dstSet
+		, VkDescriptorType descrType, u32 bindPt, u32 dstIdx, u32 descriptorCount
+		, const VkDescriptorBufferInfo*    bufferInfo
+		, const VkDescriptorImageInfo*     imageInfo
+		, const VkBufferView*              texelBufferView);
+	static void initVkWriteDescriptorSet_Buffer(VkWriteDescriptorSet& oSet, Vk_DescriptorSet& dstSet
+		, VkDescriptorType descrType, u32 bindPt, u32 dstIdx, u32 descriptorCount
+		, const VkDescriptorBufferInfo*    bufferInfo);
+	static void initVkWriteDescriptorSet_Image(VkWriteDescriptorSet& oSet, Vk_DescriptorSet& dstSet
+		, VkDescriptorType descrType, u32 bindPt, u32 dstIdx, u32 descriptorCount
+		, const VkDescriptorImageInfo*    imageInfo);
+
+public:
+	static void initVkDescriptorImageInfo(VkDescriptorImageInfo& out, VkImageLayout imageLayout, Vk_ImageView_T* imageView, Vk_Sampler* sampler = nullptr);
+};
 
 }
 

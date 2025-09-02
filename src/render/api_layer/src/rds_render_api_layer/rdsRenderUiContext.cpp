@@ -42,6 +42,8 @@ RenderUiContext::create(RenderContext* renderContext)
 	_shader   = rdDev->createShader("asset/shader/ui/imgui.shader");
 	_material = rdDev->createMaterial();
 	_material->setShader(_shader);
+	_showImageFramedMtlPool.resize(RenderApiLayerTraits::s_kFrameInFlightCount);
+
 	_createFontTexture();
 
 	auto totalVertexDataSize	= 10000;
@@ -118,32 +120,30 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 
 	auto* data = ImGui::GetDrawData();
 	if (!data) return;
-
-	if (data->DisplaySize.x <= 0 || data->DisplaySize.y <= 0)
-		return;
-
-	if (data->TotalVtxCount <= 0 || data->TotalIdxCount <= 0)
-		return;
+	if (data->DisplaySize.x <= 0 || data->DisplaySize.y <= 0) return;
+	if (data->TotalVtxCount <= 0 || data->TotalIdxCount <= 0) return;
 
 	int fb_width	= sCast<int>((data->DisplaySize.x * data->FramebufferScale.x));
 	int fb_height	= sCast<int>((data->DisplaySize.y * data->FramebufferScale.y));
-	if (fb_width <= 0 || fb_height <= 0)
-		return;
+	if (fb_width <= 0 || fb_height <= 0) return;
+
+	auto& showImageMtlPool = _showImageFramedMtlPool[renderDevice()->engineFrameIndex()];
+	showImageMtlPool.reset();
+
+	float L = data->DisplayPos.x;
+	float R = data->DisplayPos.x + data->DisplaySize.x;
+	float T = data->DisplayPos.y;
+	float B = data->DisplayPos.y + data->DisplaySize.y;
+
+	Mat4f mat(
+		{ 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
+		{ 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
+		{ 0.0f,         0.0f,           0.5f,       0.0f },
+		{ (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f }
+	);
+	//mat[1][1] *= -1;
 
 	{
-		float L = data->DisplayPos.x;
-		float R = data->DisplayPos.x + data->DisplaySize.x;
-		float T = data->DisplayPos.y;
-		float B = data->DisplayPos.y + data->DisplaySize.y;
-
-		Mat4f mat(
-			{ 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
-			{ 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
-			{ 0.0f,         0.0f,           0.5f,       0.0f },
-			{ (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f }
-		);
-		//mat[1][1] *= -1;
-
 		_material->setParam("rds_matrix_proj",	mat);
 		_material->setParam("texture0",			_fontTex);
 	}
@@ -277,14 +277,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 					cmd->vertexBuffer->setDebugName("imgui vtx buf");
 					cmd->indexBuffer ->setDebugName("imgui idx buf");
 
-					// temporary solution
-					PerObjectParam perObjParam;
-					perObjParam.id = _fontTex->bindlessHandle().getResourceIndex();
-					if (auto texId = srcBuf.GetTexID())
-					{
-						perObjParam.id = reinCast<Texture*>(texId)->bindlessHandle().getResourceIndex();
-					}
-					cmd->setExtraData(perObjParam);
+					initCmd_ShowImage(showImageMtlPool, cmd, srcBuf, mat);
 				}
 			}
 
@@ -451,5 +444,69 @@ RenderUiContext::_setDarkTheme()
 
 RenderDevice* RenderUiContext::renderDevice() { return _rdCtx->renderDevice(); }
 
+void 
+RenderUiContext::initCmd_ShowImage(MaterialPool& pool, RenderCommand_DrawCall* cmd, ImDrawCmd& srcBuf, Mat4f& mat)
+{
+	#if RDS_SHADER_USE_BINDLESS
+
+	// temporary solution
+	PerObjectParam perObjParam;
+	perObjParam.id = _fontTex->bindlessHandle().getResourceIndex();
+	if (auto texId = srcBuf.GetTexID())
+	{
+		perObjParam.id = reinCast<Texture*>(texId)->bindlessHandle().getResourceIndex();
+	}
+	cmd->setExtraData(perObjParam);
+
+	#else
+	if (auto texId = srcBuf.GetTexID())
+	{
+		SPtr<Material> mtl = pool.newObject(_shader);
+
+		mtl->setParam("rds_matrix_proj",	mat);
+		mtl->setParam("texture0",			reinCast<Texture*>(texId));
+
+		cmd->setMaterial(mtl);
+	}
+
+	#endif // 0
+}
+
+
+SPtr<Material> 
+RenderUiContext::MaterialPool::newObject(Shader* shader)
+{
+	RDS_CORE_ASSERT(shader);
+	auto* rdDev = shader->renderDevice();
+
+	if (!_freedObjs.is_empty())
+	{
+		auto obj = _objs.emplace_back(_freedObjs.moveBack());
+		return obj;
+	}
+	else
+	{
+		auto& newObj = _objs.emplace_back();
+		newObj = rdDev->createMaterial(shader);
+		return newObj;
+	}
+}
+
+void 
+RenderUiContext::MaterialPool::deleteObject(SPtr<Material> obj)
+{
+	RDS_TODO("check object ptr is valid, eg. within the pool");
+	_freedObjs.emplace_back(obj);
+}
+
+void 
+RenderUiContext::MaterialPool::reset()
+{
+	for (auto& e : _objs)
+	{
+		_freedObjs.emplace_back(e);
+	}
+	_objs.clear();
+}
 
 }

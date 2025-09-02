@@ -181,17 +181,14 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 		auto& shaderRsc		= _framedShaderRscs.shaderResource(iFrame);
 		auto& vkDescrSet	= _vkFramedDescrSets[iFrame];
 
-		if (!vkDescrSet)
-		{
-			auto	frameIdx		= vkCtx->frameIndex();
-			auto&	descriptorAlloc	= vkCtx->vkRenderFrame(frameIdx).descriptorAllocator();
-			auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
-			builder.buildBindless(vkDescrSet, shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
-		}
+		auto	frameIdx		= vkCtx->frameIndex();
+		auto&	descriptorAlloc	= vkCtx->vkRenderFrame(frameIdx).descriptorAllocator();
+		auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
+		builder.build(vkDescrSet, shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
 
 		auto* vkDescrSetHnd			= vkDescrSet.hnd();
 		auto* vkPipelineLayoutHnd	= vkPipelineLayout().hnd();
-		auto  setIdx				= sCast<u32>(rdDevVk->bindlessResourceVk().bindlessTypeCount());
+		auto  setIdx				= sCast<u32>(RDS_SHADER_USE_BINDLESS ? rdDevVk->bindlessResourceVk().bindlessTypeCount() : 0);
 		vkCmdBuf->cmd_bindDescriptorSet(vkBindPt, setIdx, vkDescrSetHnd, vkPipelineLayoutHnd);
 	}
 }

@@ -408,6 +408,8 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 	vkPhyDevVkFeats12.bufferDeviceAddress									= VK_TRUE;
 	vkPhyDevVkFeats12.timelineSemaphore										= VK_TRUE;
 
+	#if RDS_SHADER_USE_BINDLESS
+
 	vkPhyDevVkFeats12.descriptorBindingUniformBufferUpdateAfterBind			= VK_TRUE;
 	vkPhyDevVkFeats12.descriptorBindingSampledImageUpdateAfterBind			= VK_TRUE;
 	vkPhyDevVkFeats12.descriptorBindingStorageImageUpdateAfterBind			= VK_TRUE;
@@ -421,6 +423,8 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 	vkPhyDevVkFeats12.shaderSampledImageArrayNonUniformIndexing				= VK_TRUE;
 	vkPhyDevVkFeats12.shaderStorageBufferArrayNonUniformIndexing			= VK_TRUE;
 	vkPhyDevVkFeats12.shaderStorageImageArrayNonUniformIndexing				= VK_TRUE;
+
+	#endif // RDS_SHADER_USE_BINDLESS
 
 	vkPhyDevVkFeats12.pNext	= &vkPhyDevVkFeats13;
 
@@ -443,6 +447,7 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 	vkGetPhysicalDeviceFeatures2(vkPhyDevHnd, &vkPhyDevFeats);
 	vkPhyDevFeats.pNext = &vkPhyDevVkFeats12;
 
+	#if RDS_SHADER_USE_BINDLESS
 	RDS_CORE_ASSERT(vkDescrIdxFeats.shaderSampledImageArrayNonUniformIndexing);
 	RDS_CORE_ASSERT(vkDescrIdxFeats.descriptorBindingSampledImageUpdateAfterBind);
 	RDS_CORE_ASSERT(vkDescrIdxFeats.shaderUniformBufferArrayNonUniformIndexing);
@@ -450,6 +455,7 @@ Vk_PhysicalDeviceFeatures::create(RenderAdapterInfo* outInfo, Vk_PhysicalDevice_
 	RDS_CORE_ASSERT(vkDescrIdxFeats.shaderStorageBufferArrayNonUniformIndexing);
 	RDS_CORE_ASSERT(vkDescrIdxFeats.descriptorBindingStorageBufferUpdateAfterBind);
 	RDS_CORE_ASSERT(vkDescrIdxFeats.runtimeDescriptorArray);
+	#endif // RDS_SHADER_USE_BINDLESS
 }
 
 void 

@@ -274,14 +274,14 @@ ShaderCompiler_Vk::_reflect_textures(ShaderStageInfo& outInfo, SpirvCompiler& co
 		dst.bindSet		= sCast<u16>(set);
 		dst.bindPoint	= sCast<u16>(binding);
 		dst.bindCount	= type.array.empty() ? 1 : sCast<u16>(type.array[0]);
-
+		
 		switch (type.image.dim)
 		{
 			using SRC = spv::Dim;
-			case SRC::Dim1D:	{ dst.dataType = RenderDataType::Texture1D;		} break;
-			case SRC::Dim2D:	{ dst.dataType = RenderDataType::Texture2D;		} break;
-			case SRC::Dim3D:	{ dst.dataType = RenderDataType::Texture3D;		} break;
-			case SRC::DimCube:	{ dst.dataType = RenderDataType::TextureCube;	} break;
+			case SRC::Dim1D:	{ dst.dataType = !type.image.arrayed ? RenderDataType::Texture1D	: RenderDataType::Texture1DArray;	} break;
+			case SRC::Dim2D:	{ dst.dataType = !type.image.arrayed ? RenderDataType::Texture2D	: RenderDataType::Texture2DArray;	} break;
+			case SRC::Dim3D:	{ dst.dataType = !type.image.arrayed ? RenderDataType::Texture3D	: RenderDataType::Texture3DArray;	} break;
+			case SRC::DimCube:	{ dst.dataType = !type.image.arrayed ? RenderDataType::TextureCube	: RenderDataType::TextureCubeArray;	} break;
 
 			default: { RDS_THROW("invalid texture dimension"); } break;
 		}
@@ -407,8 +407,19 @@ ShaderCompiler_Vk::_reflect_storageImages	(ShaderStageInfo& outInfo, SpirvCompil
 		dst.bindPoint	= sCast<u16>(binding);
 		dst.bindCount	= type.array.empty() ? 1 : sCast<u16>(type.array[0]);
 
-		log("StorageImage name: {}, set: {}, binding: {}", name, set, binding);
+		switch (type.image.dim)
+		{
+			using SRC = spv::Dim;
+			case SRC::Dim1D:	{ dst.dataType = !type.image.arrayed ? RenderDataType::Texture1D	: RenderDataType::Texture1DArray;	} break;
+			case SRC::Dim2D:	{ dst.dataType = !type.image.arrayed ? RenderDataType::Texture2D	: RenderDataType::Texture2DArray;	} break;
+			case SRC::Dim3D:	{ dst.dataType = !type.image.arrayed ? RenderDataType::Texture3D	: RenderDataType::Texture3DArray;	} break;
+			case SRC::DimCube:	{ dst.dataType = !type.image.arrayed ? RenderDataType::TextureCube	: RenderDataType::TextureCubeArray;	} break;
+
+			default: { RDS_THROW("invalid texture dimension"); } break;
+		}
 		_appendStageUnionInfo_storageImages(_allStageUnionInfo, dst);
+
+		log("StorageImage name: {}, set: {}, binding: {}", name, set, binding);
 	}
 
 	log("");

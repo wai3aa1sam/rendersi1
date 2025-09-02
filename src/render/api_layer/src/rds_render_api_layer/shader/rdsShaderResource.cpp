@@ -462,6 +462,16 @@ void
 ShaderResources::TexParam::create(const Info* info, ShaderPass* pass)
 {
 	Base::create(info);
+
+	auto& texStock = pass->shader()->renderDevice()->textureStock();
+	switch (info->dataType) 
+	{
+		case DataType::Texture2D:		{ _tex =  texStock.error; }			break;
+		case DataType::Texture2DArray:	{ _tex =  texStock.errorArray; }	break;
+		case DataType::Texture3D:		{ _tex =  texStock.error3D; }		break;
+		case DataType::TextureCube:		{ _tex =  texStock.errorCube; }		break;
+		default: { RDS_THROW("unsupported texture type"); } break;
+	}
 }
 
 Texture* 
@@ -543,6 +553,7 @@ void
 ShaderResources::ImageParam::create(const Info* info, ShaderPass* pass)
 {
 	Base::create(info);
+	_image = pass->shader()->renderDevice()->textureStock().error;
 }
 
 bool 

@@ -15,11 +15,14 @@ references:
 
 #define RDS_RENDER_ENABLE_UI 1
 
+
 namespace rds
 {
 
 class RenderContext;
 class RenderDevice;
+
+class RenderCommand_DrawCall;
 
 #if 0
 #pragma mark --- rdsRenderUiContext-Decl ---
@@ -84,6 +87,26 @@ protected:
 	Vector<u8>	_indexData;
 
 	ImGuiContext*	_ctx = nullptr;
+
+private:
+	class MaterialPool
+	{
+	public:
+		SPtr<Material>	newObject(Shader* shader);		// general objectPool should return *
+		void			deleteObject(SPtr<Material> obj);
+
+		void reset();
+
+	private:
+		Vector<SPtr<Material>, 16> _freedObjs;
+		Vector<SPtr<Material>, 16> _objs;
+	};
+
+private:
+	void initCmd_ShowImage(MaterialPool& pool, RenderCommand_DrawCall* cmd, ImDrawCmd& srcBuf, Mat4f& mat);
+
+private:
+	FramedT<MaterialPool> _showImageFramedMtlPool;
 };
 
 inline Vec2f makeVec2f(const ImVec2& v) { return Vec2f(v.x, v.y); }

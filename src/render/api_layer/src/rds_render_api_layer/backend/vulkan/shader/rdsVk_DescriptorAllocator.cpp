@@ -83,6 +83,8 @@ Vk_DescriptorAllocator::destroy()
 void 
 Vk_DescriptorAllocator::reset()
 {
+	_updatedDescrSet.clear();
+
 	RDS_TODO("seesm should have a smutex to lock, but since we are using 4 frame design, all material should be held until next same frame idx, but it will wait beforehand");
 	RDS_TODO("alothugh currently bindDescriptorSet is in RenderThread, maybe bind all first in UpdateThread when create? then no need smutex, otherwise, we need a smutex");
 	RDS_TODO("I think bind all first in UpdateThread is better, it is non-sense to create material in other threads");
@@ -223,58 +225,74 @@ Vk_DescriptorBuilder::Vk_DescriptorBuilder()
 bool
 Vk_DescriptorBuilder::build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
-	_notYetSupported(RDS_SRCLOC);	/// all vk info need resize first, not enought will trigger resize and gg
-	_alloc->alloc(&dstSet, &layout, true);
+	RDS_TODO("refactor buildBindless() and buildNonBindless(), many duplicated code");
+	RDS_TODO("also, bindXXX code should refactor, a fn for writing VkWriteDescriptorSet and other XXInfo should help");
+	RDS_TODO("bindSampleParamsAsArray() should move to a separate set, as it do not need to update");
+
+	#if RDS_SHADER_USE_BINDLESS
+	return buildBindless(dstSet, layout, shaderRscs, pass);
+	#else
+	return buildNonBindless(dstSet, layout, shaderRscs, pass);
+	#endif // RDS_SHADER_USE_BINDLESS
+}
+
+bool 
+Vk_DescriptorBuilder::buildNonBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
+{
+	RDS_TODO("_alloc->alloc should be thread safe, material also need to ensure only 1 thread is accessing");
 	if (!dstSet)
 	{
-		return false;
+		_alloc->alloc(&dstSet, &layout, true);
+		if (!dstSet)
+		{
+			RDS_THROW("vk descriptor allocate failed");
+			//return false;
+		}
 	}
+
+	// *** should only re-bind if it is dirty
+	
+	// only update once
+	auto it = _alloc->_updatedDescrSet.find(&dstSet);
+	if (it != _alloc->_updatedDescrSet.end())
+	{
+		return true;
+	}
+	_alloc->_updatedDescrSet.insert(&dstSet);
+	
 	create(shaderRscs, pass);
 
-	RDS_TODO("since the TransferContext is committed before RenderContext, using staging will not cause it failed to upload (cleared)");
-	shaderRscs.uploadToGpu(pass);
+	auto shaderStageFlag = VkShaderStageFlagBits::VK_SHADER_STAGE_ALL;
 
-	#define RDS_TEMP_BIND_TEX_WITH_SAMPLER 1
-	#define RDS_TEMP_COMBINED_TEXTURE 1
+	bindSamplerParamsAsArray(dstSet, shaderRscs.samplerParams(), pass, shaderStageFlag);
 
-	auto shaderStageFlag = Util::toVkShaderStageBit(shaderRscs.info().stageFlag);
-
-	for (auto& e : shaderRscs.constBufs())		bindConstantBuffer	(dstSet, e, shaderStageFlag, pass);
-
-	#if !RDS_TEMP_COMBINED_TEXTURE
-	#if !RDS_TEMP_BIND_TEX_WITH_SAMPLER
-
-	for (auto& e : shaderRscs.texParams())		bindTexture	(dstSet, e, shaderStageFlag);
-	for (auto& e : shaderRscs.samplerParams())	bindSampler	(dstSet, e, shaderStageFlag);
-
-	#else
-
-	for (auto& e : shaderRscs.texParams())		bindTextureWithSampler	(dstSet, e, shaderRscs, shaderStageFlag);
-
-	#endif // 0
-
-	#else
-
-	for (auto& e : shaderRscs.texParams())		bindCombinedTexture	(dstSet, e, shaderStageFlag, pass);
-
-	#endif // 0
-
-
-	//for (auto& e : shaderRscs.bufferParams())		bindBuffer	(dstSet, e, shaderStageFlag);
-
+	for (auto& e : shaderRscs.constBufs())		bindConstantBuffer(	dstSet, e, shaderStageFlag, pass);
+	for (auto& e : shaderRscs.texParams())		bindCombinedTexture(dstSet, e, shaderStageFlag, pass);
+	//for (auto& e : shaderRscs.texParams())		bindTexture(		dstSet, e, shaderStageFlag, pass);
+	//for (auto& e : shaderRscs.samplerParams())	bindSampler(		dstSet, e, shaderStageFlag, pass);
+	for (auto& e : shaderRscs.bufferParams())	bindBuffer(			dstSet, e, shaderStageFlag, pass);
+	for (auto& e : shaderRscs.imageParams())	bindImage(			dstSet, e, shaderStageFlag, pass);
 
 	if (!_writeDescs.is_empty())
 		vkUpdateDescriptorSets(_alloc->vkDevHnd(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
+	else
+	{
+		RDS_LOG("not updated");
+	}
 
 	clear();
 
 	return true;
 }
 
-bool 
+bool
 Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
 	RDS_TODO("_alloc->alloc should be thread safe, material also need to ensure only 1 thread is accessing");
+	
+	bool isAlreadyBuilt = dstSet.hnd();
+	if (isAlreadyBuilt) return true;
+
 	_alloc->alloc(&dstSet, &layout, true);
 	if (!dstSet)
 	{
@@ -286,16 +304,7 @@ Vk_DescriptorBuilder::buildBindless(Vk_DescriptorSet& dstSet, const Vk_Descripto
 	auto shaderStageFlag = VkShaderStageFlagBits::VK_SHADER_STAGE_ALL;
 
 	for (auto& e : shaderRscs.constBufs()) bindConstantBuffer(dstSet, e, shaderStageFlag, pass);
-
-	#if !RDS_VK_USE_IMMUTABLE_SAMPLER
-	for (auto& e : shaderRscs.samplerParams())
-	{
-		if (StrUtil::isSame(e.name().c_str(), "rds_samplers"))
-		{
-			bindSamplers(dstSet, e, pass->renderDeviceVk()->bindlessResourceVk().vkSamplers(), shaderStageFlag, pass);
-		}
-	}
-	#endif // RDS_VK_USE_IMMUTABLE_SAMPLER
+	bindSamplerParamsAsArray(dstSet, shaderRscs.samplerParams(), pass, shaderStageFlag);
 
 	if (!_writeDescs.is_empty())
 		vkUpdateDescriptorSets(_alloc->vkDevHnd(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
@@ -310,11 +319,12 @@ Vk_DescriptorBuilder::create(ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
 	auto samplerCount = pass->renderDeviceVk()->bindlessResourceVk().vkSamplers().size();
 
+	u32  mipGuess		= 10;
 	auto bufInfoCount	= shaderRscs.constBufs().size() + shaderRscs.bufferParams().size();
-	auto imageInfoCount = shaderRscs.texParams().size() + shaderRscs.imageParams().size() + shaderRscs.samplerParams().size() + samplerCount;
+	auto imageInfoCount = shaderRscs.texParams().size() + shaderRscs.imageParams().size() * mipGuess + shaderRscs.samplerParams().size() + samplerCount;
 
 	_bufInfos.reserve(bufInfoCount);
-	_imageInfos.reserve(imageInfoCount);
+	_imgInfos.reserve(imageInfoCount);
 	_writeDescs.reserve(bufInfoCount + imageInfoCount);
 }
 
@@ -323,7 +333,7 @@ Vk_DescriptorBuilder::clear()
 {
 	_writeDescs.clear();
 	_bufInfos.clear();
-	_imageInfos.clear();
+	_imgInfos.clear();
 }
 
 void 
@@ -355,10 +365,10 @@ Vk_DescriptorBuilder::bindTexture(Vk_DescriptorSet& dstSet, TexParam& texParam, 
 {
 	const auto& info = texParam.info();
 
-	auto& imageInfo	= _imageInfos.emplace_back();
+	auto& imageInfo	= _imgInfos.emplace_back();
 	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo.imageView		= Vk_Texture::getSrvVkImageViewHnd(texParam.getUpdatedTexture(renderDeviceVk()));
-	//imageInfo.sampler		= _testVkTextureSampler.hnd();
+	imageInfo.sampler		= VK_NULL_HANDLE;
 
 	auto& out = _writeDescs.emplace_back();
 	out = {};
@@ -392,6 +402,8 @@ Vk_DescriptorBuilder::bindSampler(Vk_DescriptorSet& dstSet, SamplerParam& sample
 void 
 Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, BufferParam& bufParam, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass)
 {
+	RDS_CORE_ASSERT(bufParam.buffer());
+
 	const auto& info = bufParam.info();
 
 	auto& bufInfo	= _bufInfos.emplace_back();
@@ -414,14 +426,36 @@ Vk_DescriptorBuilder::bindBuffer(Vk_DescriptorSet& dstSet, BufferParam& bufParam
 }
 
 void 
+Vk_DescriptorBuilder::bindImage(Vk_DescriptorSet& dstSet, ImageParam& imgParam, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass)
+{
+	auto* rdRsc		= imgParam.image();
+	//auto* rscVk		= sCast<Texture_Vk*>(texture);
+	auto  type		= rdRsc->type(); RDS_UNUSED(type);
+
+	RDS_CORE_ASSERT(rdRsc->isImage(), "invalid Texture usage, usage has no TextureUsageFlags::UnorderedAccess");
+
+	for (u32 i = 0; i < rdRsc->mipmapViewCount(); i++)
+	{
+		auto* uavVkImgHnd	= Vk_Texture::getUavVkImageViewHnd(rdRsc, i);
+		RDS_CORE_ASSERT(uavVkImgHnd, "getUavVkImageViewHnd[{}] == nullptr, refCount: {}", i, rdRsc->_refCount.load());
+
+		auto& oVkDescrInfo = _imgInfos.emplace_back();
+		VkDescriptorUtil::initVkDescriptorImageInfo(oVkDescrInfo, VK_IMAGE_LAYOUT_GENERAL, uavVkImgHnd);
+
+		auto& oVkWriteDescrSet = _writeDescs.emplace_back();
+		VkDescriptorUtil::initVkWriteDescriptorSet_Image(oVkWriteDescrSet, dstSet, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+			, imgParam.bindPoint(), 0, 1, &oVkDescrInfo);
+	}
+}
+
+void 
 Vk_DescriptorBuilder::bindCombinedTexture(Vk_DescriptorSet& dstSet, TexParam& texParam, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass)
 {
-	if (!texParam._tex)
-		return;
+	RDS_CORE_ASSERT(texParam.texture());
 
 	const auto& info = texParam.info();
 
-	auto& imageInfo	= _imageInfos.emplace_back();
+	auto& imageInfo	= _imgInfos.emplace_back();
 	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo.imageView		= Vk_Texture::getSrvVkImageViewHnd(texParam.getUpdatedTexture(renderDeviceVk()));
 	//imageInfo.sampler		= Vk_Texture::getVkSamplerHnd(texParam.getUpdatedTexture(renderDeviceVk()));
@@ -444,9 +478,6 @@ Vk_DescriptorBuilder::bindCombinedTexture(Vk_DescriptorSet& dstSet, TexParam& te
 void 
 Vk_DescriptorBuilder::bindTextureWithSampler(Vk_DescriptorSet& dstSet, TexParam& texParam, const ShaderResources& shaderRscs, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass)
 {
-	if (texParam.info().isBindlessResource())
-		return;
-
 	bindTexture(dstSet, texParam, stageFlag, pass);
 
 	TempString samplerName;
@@ -464,7 +495,7 @@ Vk_DescriptorBuilder::_bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&
 {
 	const auto& info = samplerParam.info();
 
-	auto& imageInfo	= _imageInfos.emplace_back();
+	auto& imageInfo	= _imgInfos.emplace_back();
 	imageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo.sampler		= samplerHnd;
 
@@ -483,6 +514,21 @@ Vk_DescriptorBuilder::_bindSampler(Vk_DescriptorSet& dstSet, const SamplerParam&
 }
 
 void 
+Vk_DescriptorBuilder::bindSamplerParamsAsArray(Vk_DescriptorSet& dstSet, ShaderResources::SamplerParamsView params, ShaderPass_Vk* pass, VkShaderStageFlags stageFlag)
+{
+	RDS_CORE_ASSERT(pass);
+	#if !RDS_VK_USE_IMMUTABLE_SAMPLER
+	for (auto& e : params)
+	{
+		if (StrUtil::isSame(e.name().c_str(), "rds_samplers"))
+		{
+			bindSamplers(dstSet, e, pass->renderDeviceVk()->bindlessResourceVk().vkSamplers(), stageFlag, pass);
+		}
+	}
+	#endif // RDS_VK_USE_IMMUTABLE_SAMPLER
+}
+
+void 
 Vk_DescriptorBuilder::bindSamplers(Vk_DescriptorSet& dstSet, const SamplerParam& samplerParam, Span<Vk_Sampler> samplers, VkShaderStageFlags stageFlag, ShaderPass_Vk* pass)
 {
 	for (u32 i = 0; i < samplers.size(); i++)
@@ -493,6 +539,43 @@ Vk_DescriptorBuilder::bindSamplers(Vk_DescriptorSet& dstSet, const SamplerParam&
 }
 
 #endif
+
+void 
+VkDescriptorUtil::initVkWriteDescriptorSet(VkWriteDescriptorSet& oSet, Vk_DescriptorSet& dstSet, VkDescriptorType descrType, u32 bindPt, u32 dstIdx, u32 descriptorCount, const VkDescriptorBufferInfo* bufferInfo, const VkDescriptorImageInfo* imageInfo, const VkBufferView* texelBufferView)
+{
+	auto& out = oSet;
+	out = {};
+
+	out.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	out.descriptorType		= descrType;
+	out.dstSet				= dstSet.hnd();
+	out.dstBinding			= bindPt;
+	out.dstArrayElement		= dstIdx;
+	out.descriptorCount		= descriptorCount;		// always 1
+	out.pBufferInfo			= bufferInfo;
+	out.pImageInfo			= imageInfo;
+	out.pTexelBufferView	= texelBufferView;
+}
+
+void 
+VkDescriptorUtil::initVkWriteDescriptorSet_Buffer(VkWriteDescriptorSet& oSet, Vk_DescriptorSet& dstSet, VkDescriptorType descrType, u32 bindPt, u32 dstIdx, u32 descriptorCount, const VkDescriptorBufferInfo* bufferInfo)
+{
+	initVkWriteDescriptorSet(oSet, dstSet, descrType, bindPt, dstIdx, descriptorCount, bufferInfo, nullptr, nullptr);
+}
+
+void 
+VkDescriptorUtil::initVkWriteDescriptorSet_Image(VkWriteDescriptorSet& oSet, Vk_DescriptorSet& dstSet, VkDescriptorType descrType, u32 bindPt, u32 dstIdx, u32 descriptorCount, const VkDescriptorImageInfo* imageInfo)
+{
+	initVkWriteDescriptorSet(oSet, dstSet, descrType, bindPt, dstIdx, descriptorCount, nullptr, imageInfo, nullptr);
+}
+
+void 
+VkDescriptorUtil::initVkDescriptorImageInfo(VkDescriptorImageInfo& out, VkImageLayout imageLayout, Vk_ImageView_T* imageView, Vk_Sampler* sampler)
+{
+	out.imageLayout	= imageLayout;
+	out.imageView	= imageView;
+	out.sampler		= sampler ? sampler->hnd() : VK_NULL_HANDLE;
+}
 
 }
 

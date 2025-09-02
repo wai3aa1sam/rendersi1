@@ -1,7 +1,8 @@
 #ifndef __rdsShaderInterop_Marco_HLSL__
 #define __rdsShaderInterop_Marco_HLSL__
 
-#define RDS_SHADER_USE_BINDLESS 1
+// define when compile
+// #define RDS_SHADER_USE_BINDLESS 0 
 
 // Vulkan
 #if 0

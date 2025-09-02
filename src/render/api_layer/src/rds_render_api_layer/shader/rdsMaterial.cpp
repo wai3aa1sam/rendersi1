@@ -202,7 +202,7 @@ Material::_setSamplerParam(StrView name, const SamplerState& v)
 
 	for (auto& pass : _passes)
 	{
-		pass->setSamplerParam(samplerName, samplerIndex);
+		pass->setSamplerParam(samplerName, samplerIndex, v);
 	}
 }
 

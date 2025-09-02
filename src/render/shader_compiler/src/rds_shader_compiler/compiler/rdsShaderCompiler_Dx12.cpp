@@ -153,16 +153,25 @@ ShaderCompiler_Dx12::onCompile(const CompileDescView& descView)
 		{
 			//compileArgs.emplace_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);
 			compileArgs.emplace_back(L"-spirv");
-			if (opt.isInvertY &&
-				(stage == ShaderStageFlag::Vertex 
-				|| stage == ShaderStageFlag::TessellationControl || stage == ShaderStageFlag::TessellationEvaluation || stage == ShaderStageFlag::Geometry)	// add this will double reverse
-				)
+			bool isValidStageForInvertY = stage == ShaderStageFlag::Vertex || stage == ShaderStageFlag::TessellationControl || stage == ShaderStageFlag::TessellationEvaluation || stage == ShaderStageFlag::Geometry;
+			bool shdInvertY = opt.isInvertY && isValidStageForInvertY;
+			if (shdInvertY)
 			{
 				compileArgs.emplace_back(L"-fvk-invert-y");
 			}
+
 			compileArgs.emplace_back(L"-fspv-target-env=vulkan1.2");	// 1.3 cannot read by spirv-cross
 			compileArgs.emplace_back(L"-fspv-reflect");
 			compileArgs.emplace_back(L"-fvk-auto-shift-bindings");
+
+			#if !RDS_SHADER_USE_BINDLESS
+
+			// seems this can flatten all resource and combine as 1 set only
+			compileArgs.emplace_back(L"-all-resources-bound");
+
+			// this is for 1 stage to 1 set
+			//compileArgs.emplace_back(L"-auto-binding-space"); compileArgs.emplace_back(StrUtil::toTempStrW(_compileCounter));
+			#endif // 0
 
 			if (!opt.isNoOffset)
 			{

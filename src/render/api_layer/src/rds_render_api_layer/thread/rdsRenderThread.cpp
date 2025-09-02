@@ -31,6 +31,13 @@ RenderThread::RenderThread()
 
 RenderThread::~RenderThread()
 {
+	// temp fix, only wait if created
+	if (bool hasCreated = localId() == Traits::s_kRenderThreadId)
+	{
+		destroy();
+		return;
+	}
+
 	waitTerminated();
 	destroy();
 }

@@ -37,6 +37,17 @@ BindlessResources_Vk::onCreate(const CreateDesc& cDesc)
 
 	auto* rdDevVk = renderDeviceVk();
 
+	// create vkSamplers
+	{
+		for (const auto& s : _samplerStateListTable)
+		{
+			auto& vkSampler = _vkSamplers.emplace_back();
+			vkSampler.create(*s, rdDevVk);
+		}
+	}
+
+	#if RDS_SHADER_USE_BINDLESS
+
 	auto descrAllocCDesc = _descrAlloc.makeCDesc();
 	descrAllocCDesc.descrCount = cDesc.size;
 	descrAllocCDesc.poolSizes.emplace_back(Vk_DescriptorTypePair{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,				1.0f });
@@ -63,6 +74,8 @@ BindlessResources_Vk::onCreate(const CreateDesc& cDesc)
 		passInfo.allStageUnionInfo.createDefaultPushConstant();
 		vkPipelineLayoutCDesc.create(_vkPipelineLayoutCommon, passInfo, nullptr, rdDevVk);
 	}
+
+	#endif
 }
 
 void 
@@ -153,6 +166,7 @@ BindlessResources_Vk::reserve(SizeType size)
 void 
 BindlessResources_Vk::onCommit_RenderGpuBuffer(RenderGpuBuffer* renderGpuBuf/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
 {
+	#if RDS_SHADER_USE_BINDLESS
 	auto& dstSet	= descrSetBuf();
 	auto* rdRsc		= renderGpuBuf;
 	auto* rdRscVk	= sCast<RenderGpuBuffer_Vk*>(rdRsc);
@@ -184,11 +198,13 @@ BindlessResources_Vk::onCommit_RenderGpuBuffer(RenderGpuBuffer* renderGpuBuf/*, 
 		out.pImageInfo			= nullptr;
 		out.pTexelBufferView	= nullptr;
 	}
+	#endif // RDS_SHADER_USE_BINDLESS
 }
 
 void 
 BindlessResources_Vk::onCommit_Texture(Texture* texture/*, VkWriteDescriptorSet* oVkWriteDescrSet, VkDescriptorBufferInfo* oVkDescrBufInfo*/)
 {
+	#if RDS_SHADER_USE_BINDLESS
 	if (texture->isTexture())
 	{
 		_onCommit_Texture(texture);
@@ -197,6 +213,7 @@ BindlessResources_Vk::onCommit_Texture(Texture* texture/*, VkWriteDescriptorSet*
 	{
 		_onCommit_Image(texture);
 	}
+	#endif
 }
 
 void 
@@ -280,12 +297,15 @@ BindlessResources_Vk::_onCommit_Image(Texture* texture/*, VkWriteDescriptorSet* 
 void 
 BindlessResources_Vk::onCommit()
 {
-	auto* rdDevVk			= renderDeviceVk();
 	auto& writeDescrSets	= _writeDescrSets;
+
+	#if RDS_SHADER_USE_BINDLESS
+	auto* rdDevVk			= renderDeviceVk();
 	if (!writeDescrSets.is_empty())
 	{
 		vkUpdateDescriptorSets(rdDevVk->vkDevice(), sCast<u32>(writeDescrSets.size()), writeDescrSets.data(), 0, nullptr);
 	}
+	#endif
 
 	writeDescrSets.clear();
 	_bufInfos.clear();
@@ -296,6 +316,7 @@ BindlessResources_Vk::onCommit()
 void 
 BindlessResources_Vk::bind(Vk_CommandBuffer_T* vkCmdBufHnd, VkPipelineBindPoint bindPt)
 {
+	#if RDS_SHADER_USE_BINDLESS
 	Vector<Vk_DescriptorSet_T*, 8> descrSets;
 	for (auto& set : _descrSets)
 	{
@@ -307,10 +328,10 @@ BindlessResources_Vk::bind(Vk_CommandBuffer_T* vkCmdBufHnd, VkPipelineBindPoint 
 
 	//VkPipelineLayout_T* vkPipelineLayoutHnd = nullptr;
 	vkCmdBindDescriptorSets(vkCmdBufHnd, bindPt,
-							vkPipelineLayoutHnd
-							, firstSet, sCast<u32>(descrSets.size()), descrSets.data()
-							, 0, nullptr);
-
+		vkPipelineLayoutHnd
+		, firstSet, sCast<u32>(descrSets.size()), descrSets.data()
+		, 0, nullptr);
+	#endif // RDS_SHADER_USE_BINDLESS
 }
 
 void 
@@ -334,11 +355,9 @@ BindlessResources_Vk::_createDescritporSet(Vk_DescriptorSet& dstSet, Vk_Descript
 	if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
 	{
 		vkSamplerHnds.reserve(_samplerStateListTable.size());
-		for (const auto& s : _samplerStateListTable)
+		for (const auto& s : _vkSamplers)
 		{
-			auto& vkSampler = _vkSamplers.emplace_back();
-			vkSampler.create(*s, rdDevVk);
-			vkSamplerHnds.emplace_back(vkSampler.hnd());
+			vkSamplerHnds.emplace_back(s.hnd());
 		}
 
 		e.binding				= sCast<u32>(vkSamplerHnds.size());

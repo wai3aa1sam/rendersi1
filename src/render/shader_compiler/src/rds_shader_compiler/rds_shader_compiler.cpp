@@ -1,6 +1,7 @@
 #include "rds_shader_compiler-pch.h"
 #include "rdsShaderCompilerConsoleApp.h"
 
+#define RDS_TEST_SHADER_COMPILER 0
 
 namespace rds
 {
@@ -11,11 +12,12 @@ ShaderGnuMake_VarName gnuMakeVarName;
 
 int main(int argc, char* argv[])
 {
+	#if RDS_TEST_SHADER_COMPILER
 	#if 0
 	char* argvs[] =
 	{
 		"rds_shader_compiler.exe",
-		"-cwd=../../../../../examples/Test101",
+		"-cwd=../../../../../example/Test000",
 		"-x=hlsl",
 		//"-file = \"Assets\\\\Shaders\\\\test.shader\"",
 		//"-file=\"../Test101/Assets/Shaders/test.shader\"", // legacy
@@ -51,6 +53,9 @@ int main(int argc, char* argv[])
 		//"-file=asset/shader/debug/displayNormals.shader",
 		//"-file=asset/shader/test/test_compute_bindless.shader",
 		"-file=asset/shader/lighting/rdsDefaultLighting.shader",
+		//"-file=asset/shader/ui/imgui.shader",
+		//"-file=asset/shader/pass_feature/utility/image/rdsScreenQuad.shader",
+		//"-file=asset/shader/test/test_non_bindless.shader",
 
 		//"-out=dx11/pass0/.bin",
 		//"-profile=vs_5_0",
@@ -63,7 +68,7 @@ int main(int argc, char* argv[])
 
 	}; RDS_UNUSED(argvs);
 	#endif // 0
-
+	#endif // RDS_TEST_SHADER_COMPILER
 
 	using namespace rds;
 	
@@ -72,10 +77,10 @@ int main(int argc, char* argv[])
 	MemoryContext::init();
 	{
 		rds::ShaderCompilerConsoleApp app;
-		#if 1
-		app.parseCmdLine(CmdLineArgsView{argc, argv});
-		#else
+		#if RDS_TEST_SHADER_COMPILER
 		app.parseCmdLine(CmdLineArgsView{ argvs });
+		#else
+		app.parseCmdLine(CmdLineArgsView{argc, argv});
 		#endif // 0
 		exitCode = app.run();
 	}

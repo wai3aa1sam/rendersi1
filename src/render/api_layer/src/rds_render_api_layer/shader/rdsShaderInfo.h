@@ -437,15 +437,17 @@ public:
 		using Base = ShaderResourceParam;
 
 	public:
-		static constexpr ShaderResourceType paramType() { return ShaderResourceType::StorageImage; }
+		DataType	dataType	= DataType::None;
 
 	public:
+		static constexpr ShaderResourceType paramType() { return ShaderResourceType::StorageImage; }
 
 	public:
 		template<class JSON_SE>
 		void onJsonIo(JSON_SE& se)
 		{
 			Base::onJsonIo(se);
+			RDS_NAMED_FIXED_IO(se, dataType);
 		}
 	};
 
