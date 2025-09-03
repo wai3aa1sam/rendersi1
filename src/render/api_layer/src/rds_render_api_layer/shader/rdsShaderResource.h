@@ -266,6 +266,7 @@ public:
 
 	void clear();
 	void copy(const ShaderResources& rsc);
+	void resetTexBufImgDirty();
 	
 						void*	findParam( StrView name);
 						void*	findParam( StrView name) const;
@@ -304,6 +305,9 @@ public:
 	ImageParam&					imageParams(SizeType i);
 	ImageParamsView				imageParams();
 	CImageParamsView			imageParams() const;
+
+public:
+	bool isTexBufImgDirty() const;
 
 public:
 
@@ -587,6 +591,8 @@ protected:
 	Vector<SamplerParam,	s_kLocalTextureSize>	_samplerParams;
 	Vector<BufferParam,		s_kLocalBufferSize>		_bufferParams;
 	Vector<ImageParam,		s_kLocalImageSize>		_imageParams;
+
+	bool _isTexBufImgDirty : 1;
 };
 
 template<class T> inline
@@ -625,7 +631,8 @@ ShaderResources::setTexParam(StrView name, TEX* v)
 		auto& rsc = *it/*->shaderResource()*/;
 		isDirty = rsc.setTexure(v);
 	}
-	return false;
+	_isTexBufImgDirty |= isDirty;
+	return isDirty;
 }
 
 inline ShaderResources::ConstBuffer&		ShaderResources::constBufs(SizeType i)		{ return _constBufs[i]; }
@@ -647,6 +654,8 @@ inline ShaderResources::CBufferParamsView	ShaderResources::bufferParams() const	
 inline ShaderResources::ImageParam&			ShaderResources::imageParams(SizeType i)	{ return _imageParams[i]; }
 inline ShaderResources::ImageParamsView		ShaderResources::imageParams()				{ return _imageParams; }
 inline ShaderResources::CImageParamsView	ShaderResources::imageParams() const		{ return spanCast<const ImageParamT>(_imageParams.span()); }
+
+inline bool									ShaderResources::isTexBufImgDirty() const	{ return _isTexBufImgDirty; }
 
 inline
 void 

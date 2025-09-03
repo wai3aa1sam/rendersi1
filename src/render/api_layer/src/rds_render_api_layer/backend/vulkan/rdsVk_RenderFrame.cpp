@@ -67,6 +67,8 @@ Vk_RenderFrame::destroy()
 	destroyCommandPool(_transferCommandPools);
 
 	_descriptorAlloc.destroy();
+	_nonBindlessUpdatedDescrSets.clear();
+
 	destroySyncObjects();
 
 	_vkFramebufPool.destroy();
@@ -84,7 +86,10 @@ Vk_RenderFrame::reset()
 	_vkFramebufPool.create(rdDevVk);
 
 	resetCommandPools();
+	
 	descriptorAllocator().reset();
+	_nonBindlessUpdatedDescrSets.clear();
+
 	setSubmitCount(0);
 
 	inFlightFence()->reset(rdDevVk);

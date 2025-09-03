@@ -56,7 +56,9 @@ public:
 
 public:
 	Vk_CommandPool&			commandPool(QueueTypeFlags queueType);
+
 	Vk_DescriptorAllocator& descriptorAllocator();
+	Set<Vk_DescriptorSet*>& nonBindlessUpdatedDescriptorSets();
 
 	Vk_Semaphore*	imageAvaliableSmp();
 	Vk_Semaphore*	renderCompletedSmp();
@@ -86,7 +88,9 @@ protected:
 	Vk_Semaphore	_renderCompletedVkSmp;
 	Vk_Fence		_inFlightVkFence;
 
-	Vk_DescriptorAllocator _descriptorAlloc;
+	Vk_DescriptorAllocator	_descriptorAlloc;
+	Set<Vk_DescriptorSet*>	_nonBindlessUpdatedDescrSets;
+
 	//Vector<Vk_DescriptorPool, s_kThreadCount> // use VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, only reset the pool
 
 	SizeType _submitCount = 0;
@@ -124,7 +128,8 @@ Vk_RenderFrame::commandPool(QueueTypeFlags queueType)
 	return _graphicsCommandPools[tlid];
 }
 
-inline Vk_DescriptorAllocator& Vk_RenderFrame::descriptorAllocator() { return _descriptorAlloc; }
+inline Vk_DescriptorAllocator& Vk_RenderFrame::descriptorAllocator()				{ return _descriptorAlloc; }
+inline Set<Vk_DescriptorSet*>& Vk_RenderFrame::nonBindlessUpdatedDescriptorSets()	{ return _nonBindlessUpdatedDescrSets; }
 
 inline Vk_Semaphore*			Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
 inline Vk_Semaphore*			Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }

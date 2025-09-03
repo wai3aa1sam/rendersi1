@@ -22,6 +22,7 @@ ShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass, u32 fram
 	destroy();
 
 	_info = &info_;
+	_isTexBufImgDirty = false;
 
 	/*const auto& constBufInfos = info().constBufs;
 	_constBufs.reserve(constBufInfos.size());
@@ -177,6 +178,8 @@ ShaderResources::clear()
 	_samplerParams.clear();
 	_bufferParams.clear();
 	_imageParams.clear();
+
+	_isTexBufImgDirty = false;
 }
 
 void 
@@ -224,6 +227,12 @@ ShaderResources::copy(const ShaderResources& rsc)
 		}
 	}
 	#endif // 0
+}
+
+void 
+ShaderResources::resetTexBufImgDirty()
+{
+	_isTexBufImgDirty = false;
 }
 
 void*	
@@ -354,6 +363,7 @@ ShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
 		auto& rsc	= *it;
 		isDirty		= rsc.setBufferParam(v);
 	}
+	_isTexBufImgDirty |= isDirty;
 	return isDirty;
 }
 
@@ -367,6 +377,7 @@ ShaderResources::setImageParam(StrView name, Texture* v)
 		auto& rsc	= *it;
 		isDirty		= rsc.setImageParam(v);
 	}
+	_isTexBufImgDirty |= isDirty;
 	return isDirty;
 }
 
@@ -631,6 +642,7 @@ FramedShaderResources::rotateFrame()
 	auto& dst = _shaderRscs[dstFrame];
 
 	dst.copy(src);
+	dst.resetTexBufImgDirty();
 
 	_lastEngineFrameCount = frameCount;
 }

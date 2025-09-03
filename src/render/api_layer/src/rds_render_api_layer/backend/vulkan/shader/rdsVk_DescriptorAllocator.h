@@ -44,10 +44,6 @@ public:
 	using PoolSizes		= DescriptorPoolSizes;
 	using Util			= Vk_RenderApiUtil;
 
-	// for test only
-public:
-	Set<Vk_DescriptorSet*> _updatedDescrSet;
-
 public:
 	static CreateDesc makeCDesc();
 
@@ -95,7 +91,6 @@ inline RenderDevice_Vk* Vk_DescriptorAllocator::renderDeviceVk() { return _rdDev
 
 #endif
 
-
 #if 0
 #pragma mark --- rdsVk_DescriptorBuilder-Decl ---
 #endif // 0
@@ -113,7 +108,10 @@ public:
 	using ImageParam	= MaterialPass_Stage::ImageParam;
 
 public:
-	static Vk_DescriptorBuilder make(Vk_DescriptorAllocator* alloc);
+	static Vk_DescriptorBuilder make(Vk_DescriptorAllocator* alloc, Set<Vk_DescriptorSet*>& nonBindlessUpdatedDescrSets);
+
+protected:
+	Vk_DescriptorBuilder(Set<Vk_DescriptorSet*>& nonBindlessUpdatedDescrSets);
 
 public:
 	bool build(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass);
@@ -142,12 +140,11 @@ protected:
 
 	void bindSamplerParamsAsArray(Vk_DescriptorSet& dstSet, ShaderResources::SamplerParamsView params, ShaderPass_Vk* pass, VkShaderStageFlags stageFlag = VkShaderStageFlagBits::VK_SHADER_STAGE_ALL);
 
-protected:
-	Vk_DescriptorBuilder();
-
+public:
 	RenderDevice_Vk* renderDeviceVk();
 
 private:
+	Set<Vk_DescriptorSet*>& _nonBindlessUpdatedDescrSets;
 	Vk_DescriptorAllocator* _alloc = nullptr;
 
 	Vector<VkWriteDescriptorSet,	16>	_writeDescs;

@@ -182,8 +182,8 @@ MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* 
 		auto& vkDescrSet	= _vkFramedDescrSets[iFrame];
 
 		auto	frameIdx		= vkCtx->frameIndex();
-		auto&	descriptorAlloc	= vkCtx->vkRenderFrame(frameIdx).descriptorAllocator();
-		auto	builder			= Vk_DescriptorBuilder::make(&descriptorAlloc);
+		auto&	vkRdFrame		= vkCtx->vkRenderFrame(frameIdx);
+		auto	builder			= Vk_DescriptorBuilder::make(&vkRdFrame.descriptorAllocator(), vkRdFrame.nonBindlessUpdatedDescriptorSets());
 		builder.build(vkDescrSet, shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
 
 		auto* vkDescrSetHnd			= vkDescrSet.hnd();

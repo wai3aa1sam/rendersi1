@@ -31,8 +31,10 @@ RenderThread::RenderThread()
 
 RenderThread::~RenderThread()
 {
+	RDS_TODO("currently have bug when quit program, the timing in setStaete , it is a bad design, later change to "
+				"cosumer-producer pattern should fix that, State design is bad");
 	// temp fix, only wait if created
-	if (bool hasCreated = localId() == Traits::s_kRenderThreadId)
+	if (bool hasNotCreated = localId() != Traits::s_kRenderThreadId)
 	{
 		destroy();
 		return;

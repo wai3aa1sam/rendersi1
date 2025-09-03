@@ -83,8 +83,6 @@ Vk_DescriptorAllocator::destroy()
 void 
 Vk_DescriptorAllocator::reset()
 {
-	_updatedDescrSet.clear();
-
 	RDS_TODO("seesm should have a smutex to lock, but since we are using 4 frame design, all material should be held until next same frame idx, but it will wait beforehand");
 	RDS_TODO("alothugh currently bindDescriptorSet is in RenderThread, maybe bind all first in UpdateThread when create? then no need smutex, otherwise, we need a smutex");
 	RDS_TODO("I think bind all first in UpdateThread is better, it is non-sense to create material in other threads");
@@ -210,14 +208,15 @@ Vk_Device_T* Vk_DescriptorAllocator::vkDevHnd() { return _rdDevVk->vkDevice(); }
 #if 1
 
 Vk_DescriptorBuilder 
-Vk_DescriptorBuilder::make(Vk_DescriptorAllocator* alloc)
+Vk_DescriptorBuilder::make(Vk_DescriptorAllocator* alloc, Set<Vk_DescriptorSet*>& nonBindlessUpdatedDescrSets)
 {
-	Vk_DescriptorBuilder out;
+	Vk_DescriptorBuilder out {nonBindlessUpdatedDescrSets};
 	out._alloc = alloc;
 	return out;
 }
 
-Vk_DescriptorBuilder::Vk_DescriptorBuilder()
+Vk_DescriptorBuilder::Vk_DescriptorBuilder(Set<Vk_DescriptorSet*>& nonBindlessUpdatedDescrSets)
+	: _nonBindlessUpdatedDescrSets(nonBindlessUpdatedDescrSets)
 {
 
 }
@@ -240,7 +239,8 @@ bool
 Vk_DescriptorBuilder::buildNonBindless(Vk_DescriptorSet& dstSet, const Vk_DescriptorSetLayout& layout, ShaderResources& shaderRscs, ShaderPass_Vk* pass)
 {
 	RDS_TODO("_alloc->alloc should be thread safe, material also need to ensure only 1 thread is accessing");
-	if (!dstSet)
+	bool isSetCreated = !!dstSet;
+	if (!isSetCreated)
 	{
 		_alloc->alloc(&dstSet, &layout, true);
 		if (!dstSet)
@@ -250,15 +250,16 @@ Vk_DescriptorBuilder::buildNonBindless(Vk_DescriptorSet& dstSet, const Vk_Descri
 		}
 	}
 
-	// *** should only re-bind if it is dirty
+	bool shdRebuilt = shaderRscs.isTexBufImgDirty() || !isSetCreated;
+	if (!shdRebuilt) return true;
 	
 	// only update once
-	auto it = _alloc->_updatedDescrSet.find(&dstSet);
-	if (it != _alloc->_updatedDescrSet.end())
+	auto it = _nonBindlessUpdatedDescrSets.find(&dstSet);
+	if (it != _nonBindlessUpdatedDescrSets.end())
 	{
 		return true;
 	}
-	_alloc->_updatedDescrSet.insert(&dstSet);
+	_nonBindlessUpdatedDescrSets.insert(&dstSet);
 	
 	create(shaderRscs, pass);
 
@@ -267,18 +268,14 @@ Vk_DescriptorBuilder::buildNonBindless(Vk_DescriptorSet& dstSet, const Vk_Descri
 	bindSamplerParamsAsArray(dstSet, shaderRscs.samplerParams(), pass, shaderStageFlag);
 
 	for (auto& e : shaderRscs.constBufs())		bindConstantBuffer(	dstSet, e, shaderStageFlag, pass);
-	for (auto& e : shaderRscs.texParams())		bindCombinedTexture(dstSet, e, shaderStageFlag, pass);
-	//for (auto& e : shaderRscs.texParams())		bindTexture(		dstSet, e, shaderStageFlag, pass);
+	//for (auto& e : shaderRscs.texParams())		bindCombinedTexture(dstSet, e, shaderStageFlag, pass);
+	for (auto& e : shaderRscs.texParams())		bindTexture(		dstSet, e, shaderStageFlag, pass);
 	//for (auto& e : shaderRscs.samplerParams())	bindSampler(		dstSet, e, shaderStageFlag, pass);
 	for (auto& e : shaderRscs.bufferParams())	bindBuffer(			dstSet, e, shaderStageFlag, pass);
 	for (auto& e : shaderRscs.imageParams())	bindImage(			dstSet, e, shaderStageFlag, pass);
 
 	if (!_writeDescs.is_empty())
 		vkUpdateDescriptorSets(_alloc->vkDevHnd(), sCast<u32>(_writeDescs.size()), _writeDescs.data(), 0, nullptr);
-	else
-	{
-		RDS_LOG("not updated");
-	}
 
 	clear();
 
