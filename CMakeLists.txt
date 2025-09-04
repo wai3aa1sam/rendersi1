@@ -76,6 +76,7 @@ add_subdirectory(src/demo/hello_triangle)
 add_subdirectory(src/demo/forward_plus)
 add_subdirectory(src/demo/voxel_cone_tracing)
 add_subdirectory(src/demo/pbr_ibl)
+add_subdirectory(src/demo/fluid_simulation)
 
 message("--- rendersi1_test ---")
 #--- test
@@ -87,4 +88,4 @@ add_subdirectory(src/test/editor)
 
 message("--- end for add_subdirectory ---")
 
-set_property (DIRECTORY PROPERTY VS_STARTUP_PROJECT ${project_namespace}_forward_plus)
+set_property (DIRECTORY PROPERTY VS_STARTUP_PROJECT ${project_namespace}_fluid_simulation)
