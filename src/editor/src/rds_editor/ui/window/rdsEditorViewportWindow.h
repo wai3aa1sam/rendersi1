@@ -22,7 +22,6 @@ public:
 public:
 	void draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, bool isFullScreen, math::Camera3f* camera, float dt, const UiMouseEvent& mouseEv, const UiInput& uiInput);
 
-
 private:
 	EditorCameraController _camCtrl;
 };

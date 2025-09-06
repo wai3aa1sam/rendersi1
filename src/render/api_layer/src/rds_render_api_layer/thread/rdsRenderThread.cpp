@@ -208,6 +208,12 @@ RenderThread::_temp_render()
 void 
 RenderThread::setState(RenderThreadState state)
 {
+	RDS_TODO("quick fix for close app crash, later change to consumer/producer pattern should fix this");
+	if (_state.load() == RenderThreadState::Terminate)
+	{
+		if (state != RenderThreadState::TerminateEnd)
+			return;
+	}
 	_state.store(state);
 }
 

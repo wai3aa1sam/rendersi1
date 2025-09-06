@@ -49,7 +49,7 @@ EngineFrameParam::commit()
 }
 
 void 
-EngineFrameParam::wait(u64 frameCount,RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue, bool isWaitGpu)
+EngineFrameParam::wait(u64 frameCount, RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue, bool isWaitGpu)
 {
 	RDS_PROFILE_SCOPED();
 

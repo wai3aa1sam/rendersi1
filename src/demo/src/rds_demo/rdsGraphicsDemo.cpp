@@ -1,6 +1,8 @@
 #include "rds_demo-pch.h"
 #include "rdsGraphicsDemo.h"
 #include "editor/rdsDemoEditorLayer.h"
+#include "editor/rdsDemoEditorApp.h"
+#include "editor/rdsDemoEditoMainWindow.h"
 
 namespace rds
 {
@@ -83,6 +85,8 @@ GraphicsDemo::onCreate()
 	RenderUtil::createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/rdsDisplayNormals.shader");
 
 	RenderUtil::createMaterial(&_mtlPostProcessing, "asset/shader/pass_feature/post_processing/rdsPostProcessing.shader");
+
+	createMaterial(&_shaderDrawCircle, &mtlDrawCircle, "asset/shader/demo/fluid_simulation/rdsDrawCircle.shader");
 }
 
 void 
@@ -108,19 +112,23 @@ GraphicsDemo::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 void 
 GraphicsDemo::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 {
-	
+	if (auto* layer = demoLayer())
+	{
+		mousePosViewport	= layer->editorViewportWindow().viewportMousePos();
+		mouseRayWorldSpace	= layer->editorViewportWindow().calcMouseRayWorldSpace(app().mainWindow().camera());
+	}
 }
 
 void 
 GraphicsDemo::onUiMouseEvent(UiMouseEvent& ev)
 {
-
+	uiMouseState	= ev;
 }
 
 void 
 GraphicsDemo::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
-
+	uiKeyboardState = ev;
 }
 
 void 
@@ -534,9 +542,10 @@ GraphicsDemo::addEntity(Material* mtl)
 }
 
 
-DemoEditorApp&	GraphicsDemo::app()				{ return _demoLayer->app(); }
-EngineContext&	GraphicsDemo::engineContext()	{ return _demoLayer->engineContext(); }
-MeshAssets&		GraphicsDemo::meshAssets()		{ return _demoLayer->meshAssets(); }
+DemoEditorApp&		GraphicsDemo::app()				{ return _demoLayer->app(); }
+EngineContext&		GraphicsDemo::engineContext()	{ return _demoLayer->engineContext(); }
+DemoEditorLayer*	GraphicsDemo::demoLayer()		{ return _demoLayer; }
+MeshAssets&			GraphicsDemo::meshAssets()		{ return _demoLayer->meshAssets(); }
 
 #endif
 

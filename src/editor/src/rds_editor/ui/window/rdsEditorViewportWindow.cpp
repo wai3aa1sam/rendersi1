@@ -20,14 +20,20 @@ EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, bool
 	auto& uiDrawReq = *edtDrawReq;
 	auto wnd = window(edtDrawReq, label());
 
+	RDS_TODO("drawBegin / onDraw is needed, also save all window in an array");
+	
 	if (tex)
 		uiDrawReq.showImage(tex);
+
+	if (ImGui::IsItemHovered())
+		_clientRect = calcClientRect();
 
 	if (wnd.isFocused() || isFullScreen)
 	{
 		_camCtrl.update(camera, dt, mouseEv, uiInput);
 	}
 }
+
 
 
 #endif

@@ -65,8 +65,9 @@ public:
 	Entity* addEntity(Material* mtl);
 
 public:
-	DemoEditorApp& app();
-	EngineContext& engineContext();
+	DemoEditorApp&		app();
+	EngineContext&		engineContext();
+	DemoEditorLayer*	demoLayer();
 
 	Scene&		scene();
 
@@ -94,11 +95,21 @@ protected:
 	SPtr<Shader>	_shaderDisplayNormals;
 	SPtr<Material>	_mtlDisplayNormals;
 
+	SPtr<Shader>	_shaderDrawCircle;
+
 	SPtr<Material>	_mtlPostProcessing;
 
 	Vector<UPtr<RenderPassPipeline>, 2>	_rdPassPipelines;
 
 	CTransform*		_directionalLightTransf	= nullptr;
+
+public:
+	SPtr<Material>	mtlDrawCircle;
+	Vec2f			mousePosViewport;
+	Ray3f			mouseRayWorldSpace;
+
+	UiMouseEvent	uiMouseState;
+	UiKeyboardEvent	uiKeyboardState;
 };
 
 inline Scene&		GraphicsDemo::scene()			{ return *_scene; }

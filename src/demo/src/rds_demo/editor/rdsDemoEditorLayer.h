@@ -36,6 +36,7 @@ public:
 	EngineContext&			engineContext();
 	DemoEditorApp&			app();
 	DemoEditorMainWindow&	mainWindow();
+	EditorViewportWindow&	editorViewportWindow();
 
 	EditorContext&			editorContext();
 

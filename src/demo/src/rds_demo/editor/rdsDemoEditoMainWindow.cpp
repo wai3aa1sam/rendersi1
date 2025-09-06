@@ -35,7 +35,7 @@ DemoEditorMainWindow::onActive(bool isActive)
 {
 	if (isActive)
 	{
-		hotReloadShaders();
+		//RDS_CALL_ONCE(hotReloadShaders(););
 		//throwIf(true, "");
 	}
 }
@@ -61,6 +61,11 @@ DemoEditorMainWindow::onUiKeyboardEvent(UiKeyboardEvent& ev)
 	if (uiKeyboardFn)
 	{
 		uiKeyboardFn(ev);
+	}
+
+	if (ev.modifier == UiEventModifier::Shift && ev.isPressed(UiKeyboardEventButton::R))
+	{
+		hotReloadShaders();
 	}
 }
 void 

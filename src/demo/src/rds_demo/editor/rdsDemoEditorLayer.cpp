@@ -37,6 +37,12 @@ DemoEditorLayer::~DemoEditorLayer()
 	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
 	_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, true);
 	
+	RDS_TODO("temp fix, move to consumer pattern should fix it");
+	while (!_rdThreadQueue.isFinished(_egCtx.engineFrameParam().frameCount()))
+	{
+		OsUtil::sleep_ms(0);
+	}
+	
 	_testEngine.reset(nullptr);
 	_gfxDemo.reset(nullptr);
 	meshAssets().destroy();
@@ -361,8 +367,9 @@ DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 	#endif // RDS_SINGLE_THREAD_MODE
 }
 
-DemoEditorApp&			DemoEditorLayer::app()			{ return *DemoEditorApp::instance(); }
-DemoEditorMainWindow&	DemoEditorLayer::mainWindow()	{ return app().mainWindow(); }
+DemoEditorApp&			DemoEditorLayer::app()					{ return *DemoEditorApp::instance(); }
+DemoEditorMainWindow&	DemoEditorLayer::mainWindow()			{ return app().mainWindow(); }
+EditorViewportWindow&	DemoEditorLayer::editorViewportWindow() { return _edtViewportWnd; }
 
 void 
 DemoEditorLayer::_logForResumeDevelopMustWatchFirst()

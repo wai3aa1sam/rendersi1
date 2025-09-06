@@ -60,6 +60,7 @@ public:
 	u64		currentFrameCount()					const;
 	//u64		lastFinishedFrameCount()			const;
 	bool	isSignaled(u64 engineFrameCount)	const;		// isEngineReadyToProcess
+	bool	isFinished(u64 engineFrameCount)	const;		// isEngineReadyToProcess
 
 private:
 	RenderThread* _rdThread = nullptr;

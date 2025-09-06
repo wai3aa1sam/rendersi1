@@ -30,10 +30,16 @@ public:
 	void displayFullScreen(EditorUiDrawRequest* edtDrawReq, const char* label);
 
 public:
+	Ray3f calcMouseRayWorldSpace(const math::Camera3f& cam);
+
+public:
 	bool isFocused()	const;
 	bool isFullScreen() const;
 
-	const Rect2f& clientRect() const;
+	Rect2f	calcClientRect()	const;
+	Rect2f	clientRect()		const;
+	Vec2f	viewportSize()		const;
+	Vec2f	viewportMousePos()	const;
 
 protected:
 	RDS_NODISCARD EditorUiWindow window(EditorUiDrawRequest* edtDrawReq, const char* label);
@@ -47,7 +53,6 @@ protected:
 inline bool EditorWindow::isFocused()		const { return _isFocused; }
 inline bool EditorWindow::isFullScreen()	const { return _isFullScreen; }
 
-inline const Rect2f& EditorWindow::clientRect() const { return _clientRect; }
 
 #endif
 

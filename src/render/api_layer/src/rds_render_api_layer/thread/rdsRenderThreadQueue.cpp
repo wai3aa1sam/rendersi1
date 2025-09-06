@@ -86,6 +86,12 @@ RenderThreadQueue::isSignaled(u64 engineFrameCount) const
 	//  (|| _rdThread->isReadyToProcess()) is wrong, since the RenderThread could have job on queue but not pop yet
 }
 
+bool 
+RenderThreadQueue::isFinished(u64 engineFrameCount) const
+{
+	return _rdThread->isFrameFinished(engineFrameCount);
+}
+
 #endif
 
 }

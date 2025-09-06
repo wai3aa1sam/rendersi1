@@ -44,6 +44,9 @@ public:
 	using LineVtxType = Vertex_PosColor<1>;
 	using LineIdxType = u16;
 
+	using QuadVtxT = Vertex_PosColorUvNormal<1>;
+	using QuadIdxT = u16;
+
 public:
 	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
 	template<class T>	static void drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl, const T& extraData);
@@ -54,6 +57,7 @@ public:
 
 public:
 	SPtr<Material> lineMaterial;
+	SPtr<Material> circleMaterial;
 
 public:
 	RenderRequest();
@@ -110,6 +114,7 @@ public:
 	void present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY);
 	
 public:
+	void drawLine(const Vec3f& pt0, const Vec3f& pt1, const Color4f& color = Color4f(1.0f, 0.0f,  1.0f, 1.0f));
 	void drawLine(LineVtxType pt0, LineVtxType pt1);
 	void drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices);
 
@@ -127,6 +132,9 @@ public:
 	void drawBox(const Vec3f pts[AABBox3f::s_kVertexCount], const Color4b& color = Color4b(0,  255,    0,  255));
 
 	void drawSceneQuad(RDS_RD_CMD_DEBUG_PARAM, Material* mtl);
+
+	void drawCircle(const Vec2f& pos, float radius, const Color4f& color = Color4f(0.0f, 0.0f, 1.0f, 1.0f));
+	void drawQuad(const QuadVtxT& topLeft, const QuadVtxT& topRight, const QuadVtxT& botLeft, const QuadVtxT& botRight);
 
 public:
 	Span<RenderCommand*>			commands();
@@ -183,6 +191,7 @@ private:
 	};
 
 	InlineDraw	_inlineDraw;
+	InlineDraw	_inlineDrawCircle;
 };
 
 #if 1
