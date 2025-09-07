@@ -43,7 +43,7 @@
 
 #define RDS_S_ASSERT(COND, ...) static_assert(COND, RDS_FUNC_NAME_SZ ## "() " "--- " #COND ## " --- " ## __VA_ARGS__)
 
-#define RDS_CALL_ONCE(...) do { static bool RDS_VAR_NAME(_isFirst) = false; if (!RDS_VAR_NAME(_isFirst)) { __VA_ARGS__; RDS_VAR_NAME(_isFirst) = true; } } while(false)
+#define RDS_CALL_ONCE(...) do { static bool RDS_VAR_NAME(_isFirst) = false; if (!RDS_VAR_NAME(_isFirst)) { RDS_VAR_NAME(_isFirst) = true; __VA_ARGS__; } } while(false)
 
 #if RDS_DEBUG || RDS_ENABLE_ASSERT
 	#define RDS_CORE_ASSERT(X, ...)	do{ if(!(X)) { ::rds::_log("{} - [{}]", ::rds::SrcLoc(RDS_FILE, RDS_LINE, RDS_FUNC_NAME_SZ), ::rds::fmtAs_T<std::string>(__VA_ARGS__)); RDS_DEBUG_BREAK(); assert(X);  } } while(false)

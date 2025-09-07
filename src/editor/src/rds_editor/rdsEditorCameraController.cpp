@@ -34,7 +34,10 @@ EditorCameraController::update(Camera* camera, float dt, const UiMouseEvent& mou
 				case Button::Left: 
 				{
 					auto d = ev.deltaPos * (-0.1f * dt);
-					cam.dolly(d.x + d.y);
+					if (!cam.isOrthgraphicMode())
+						cam.dolly(d.x + d.y);
+					//else
+					//	cam.setOrthographic(cam.orthoScale() + ev.deltaPos.x > 0.0 ? d.magnitude() : -d.magnitude());
 				} break;
 
 				case Button::Middle: 
@@ -46,7 +49,8 @@ EditorCameraController::update(Camera* camera, float dt, const UiMouseEvent& mou
 				case Button::Right: 
 				{
 					auto d = ev.deltaPos * (-0.01f * dt);
-					cam.orbit(d.x, d.y);
+					if (!cam.isOrthgraphicMode())
+						cam.orbit(d.x, d.y);
 				} break;
 
 				// ev.scroll

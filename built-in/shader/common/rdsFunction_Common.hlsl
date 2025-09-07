@@ -53,6 +53,6 @@ bool isInBoundary01(float2 a) { return all(a == saturate(a)); }
 bool isInBoundary01(float3 a) { return all(a == saturate(a)); }
 bool isInBoundary01(float4 a) { return all(a == saturate(a)); }
 
-template<class T> T sqaure(T v) { return v * v; }
+template<class T> T square(T v) { return v * v; }
 
 #endif

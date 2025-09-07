@@ -5,7 +5,6 @@
 namespace rds
 {
 
-
 struct FluidSim2DConfig
 {
 public:
@@ -13,7 +12,7 @@ public:
 	float		particleSize		= 0.1f;
 	Color4f		particleColor		= Color4f{0.2f, 1.0f, 0.2f, 1.0f};
 
-	float		smoothingRadius		= 1.2f;
+	float		smoothingRadius		= 2.f;
 	float		collisionDamping	= 0.95f;
 	float		targetDensity		= 2.7f;
 	float		pressureMultiplier	= 500.0f;
@@ -24,6 +23,8 @@ public:
 
 	Rect2f		boundingRegion		= { Vec2f{0.0, 0.0},	Vec2f{5.0,	2.5} * 2.0f };
 	Rect2f		spawnRegion			= { Vec2f{0.0, 0.0},	Vec2f{boundingRegion.size} / 4.0f };
+
+	bool useSpatialOptimization = 1;
 
 public:
 	FluidSim2DConfig()
@@ -50,7 +51,7 @@ class ParticleSpawner2D
 public:
 	Vec2f initVelocity		= Vec2f{0.0, 0.0};
 	float jitterFct			= 1.0;
-	float spawnDensity		= 128.0;
+	float spawnDensity		= 128; // 128.0;
 
 	Rect2f spawnRegion;
 
@@ -102,6 +103,14 @@ class FluidSim2D_Cpu : public FluidSimDemo_Base
 {
 public:
 	using Base = FluidSimDemo_Base;
+	
+	struct SimState
+	{
+		bool isStop			= true;
+		bool isStepForward	= false;
+		bool isStepBackward	= false;
+	};
+	SimState _simState;
 
 public:
 	virtual void onCreate(GraphicsDemo* parentDemo)						override;
@@ -117,7 +126,12 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
 
 public:
-	using DimT	= Vec2f;
+	using DimT		= Vec2f;
+	using DimT_i	= Vec2i;
+	using DimT_u	= Vec2u;
+	using IdxT		= u32;
+	using HashT		= IdxT;
+
 	using SizeT = DemoTraits::SizeType;
 
 	void	update(float dt);
@@ -128,14 +142,43 @@ public:
 	float	smoothingKernelDerivative(float radius, float dist);
 	float	calcSharedPressure(float densityA, float densityB);
 
-	float	calcDensity(	const DimT& samplingPt);
+	float	calcDensity(		SizeT tarParticleIdx);
 	DimT	calcGradient(		SizeT tarParticleIdx);
 	DimT	calcPressureForce(	SizeT tarParticleIdx);
+
+	float	_calcDensity_Spatial(		SizeT tarParticleIdx);
+	DimT	_calcGradient_Spatial(		SizeT tarParticleIdx);
+	DimT	_calcPressureForce_Spatial(	SizeT tarParticleIdx);
+
+	float	_calcDensity_Raw(		SizeT tarParticleIdx);
+	DimT	_calcGradient_Raw(		SizeT tarParticleIdx);
+	DimT	_calcPressureForce_Raw(	SizeT tarParticleIdx);
+
+public:
+	void logDebugSpatial();
+
+public:
+	struct NeighbourInfo
+	{
+		IdxT	index;
+		float	distance;
+		DimT	direction;
+	};
+	void	foreachPointWithinRadius(SizeT tarParticleIdx, float radius, bool isSkipSelf, const Function<void(const NeighbourInfo&)>& callback);
+
+	void	updateSpatialLut(const Vector<DimT>& pts, float radius);
+	DimT_i	positionToCellCoord(const DimT& pt, float radius);
+	IdxT	calcCellKeyByCellCoord(const DimT_i& cellCoord);
+	HashT	hashCellCoord(const DimT_i& cellCoord);
 
 private:
 	Vector<DimT>	_positions;
 	Vector<DimT>	_velocities;
 	Vector<float>	_densities;
+
+	Vector<DimT_u>	_spatialLut;
+	Vector<IdxT>	_cellKeyStartIndices;
+	Vector<DimT_i>	_debugCellCoords;
 
 protected:
 	SPtr<Shader>	_shaderFluidSimulation;

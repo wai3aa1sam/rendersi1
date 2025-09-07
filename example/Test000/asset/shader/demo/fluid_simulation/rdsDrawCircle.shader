@@ -48,7 +48,7 @@ struct PixelIn
 	float4 color 		: COLOR;
     float2 uv           : TEXCOORD0;
 	float  radius		: TEXCOORD1;
-	float2 quadPosOs	: TEXCOORD2;
+	float2 posOs		: TEXCOORD2;
 
 };
 
@@ -63,7 +63,7 @@ PixelIn vs_main(VertexIn i)
 	o.color		  = i.color;
     o.uv          = i.uv;
 	o.radius	  = i.centerAndRadius.z;
-	o.quadPosOs	  = (i.positionOS.xy - i.centerAndRadius.xy) / o.radius;
+	o.posOs	  	  = i.positionOS.xy;
     return o;
 }
 
@@ -74,23 +74,26 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	float2  center			= float2(0.5, 0.5);
 	float2  uv				= i.uv;
 	float2  resolution 		= rds_DrawParam_get().resolution;
-	uv.x 				   *= resolution.x / resolution.y;
+	//uv.x 				   *= resolution.x / resolution.y;
     float2 	relativePos 	= (uv) - center;		// uv.x * aspect_ratio 
-    //float 	dist 			= 1.0 - length(uv); //length(relativePos);
-	// only use uv also ok, no need quadPosOs
-	float dist 				= 0.5 - length(i.quadPosOs); //dot() //dist <= center.x;
+	float 	dist 			= length(relativePos);
+	float   radius			= 0.5;
+	//dist = -dist;
 
 	float fade = 0.005;
 	float thickness = 1.0;
 
-    float circle = smoothstep(0.0, fade, dist);
-    circle *= smoothstep(thickness + fade, thickness, dist);
+	//float circle = smoothstep(radius + fade, radius - fade, dist);
+	float circle = dist <= radius;
+
+    //float circle = smoothstep(0.0, fade, dist);
+    //circle *= smoothstep(thickness + fade, thickness, dist);
 
 	if (circle == 0.0)
 		discard;
 
 	o.rgb = i.color.rgb;
-	o.a   = circle;
+	o.a   = circle * i.color.a;
 	return o;
 
 	float4 white = {1.0, 1.0, 1.0, 1.0};

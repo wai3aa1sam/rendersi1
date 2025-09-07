@@ -60,6 +60,8 @@ using ::nmsp::memory_set;
 using ::nmsp::find;
 using ::nmsp::find_if;
 using ::nmsp::reverse;
+using ::nmsp::remove;
+using ::nmsp::sort;
 
 #endif
 

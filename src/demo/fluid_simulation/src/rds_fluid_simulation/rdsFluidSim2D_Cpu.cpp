@@ -18,8 +18,11 @@ FluidSim2D_Cpu::onCreate(GraphicsDemo* parentDemo)
 	//_particleSpawner.spawnRegion = _simConfig.boundingRegion;
 
 	_particleSpawner.spawnTo(_positions, _velocities, _densities);
+	_spatialLut.resize(_positions.size());
+	_cellKeyStartIndices.resize(_positions.size());
 
 	auto& camera = parentDemo->app().mainWindow().camera();
+	camera.setOrthographic(4.0f);
 	camera.setPos(Vec3f{0.385f, 11.446f, 22.212f});
 	camera.setAim(Vec3f{0.385f, 5.10f, 0.0f});
 
@@ -86,10 +89,38 @@ FluidSim2D_Cpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 						ray = _mouseRayWorld;
 					}
 					rdReq.drawLine(ray.origin, ray.origin + ray.dir * 9999.0f, Color4f(1.0f, 0.0f, 0.0f, 1.0f));
-					//rdReq.drawCircle(ray.origin.toVec2(), 3.0f, Color4f(1.0f, 0.0f, 0.0f, 1.0f));
+					rdReq.drawCircle(ray.origin.toVec2(), _simConfig.smoothingRadius, Color4f(1.0f, 0.0f, 0.0f, 0.2f));
 				}
 				
 				rdReq.drawAABBox(Vec3f{ _simConfig.boundingRegion.pos, 0.0f }, Vec3f{_simConfig.boundingRegion.size, 0.001f} / 2.0f);
+			}
+
+			{
+				auto gridCellCount = Vec2f{_simConfig.boundingRegion.size} / _simConfig.smoothingRadius;
+				gridCellCount.x = math::ceil(gridCellCount.x);
+				gridCellCount.y = math::ceil(gridCellCount.y);
+
+				const auto& region = _simConfig.boundingRegion;
+				auto cellSize = Vec2f{_simConfig.boundingRegion.size} / gridCellCount;
+
+				auto minExtent = Vec2f{ region.pos } - Vec2f{ region.size } / 2.0f -cellSize / 2.0f;
+				for (int y = -2; y < gridCellCount.y + 2; y++)
+				{
+					float posY = minExtent.y + cellSize.y * y;
+
+					auto yLinePt0 = Vec3f{ minExtent.x, posY, 0.0f };
+					auto yLinePt1 = yLinePt0 + Vec3f::s_right() * region.w * 2.0f;
+					rdReq.drawLine(yLinePt0, yLinePt1);
+
+					for (int x = -2; x < gridCellCount.x + 2; x++)
+					{
+						float posX = minExtent.x + cellSize.x * x;
+
+						auto xLinePt0 = Vec3f{ posX, minExtent.y, 0.0f };
+						auto xLinePt1 = xLinePt0 + Vec3f::s_up() * region.h * 2.0f;
+						rdReq.drawLine(xLinePt0, xLinePt1);
+					}
+				}
 			}
 		}
 	);
@@ -101,6 +132,8 @@ void
 FluidSim2D_Cpu::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 {
 	_simConfig.drawGui(uiDrawReq);
+
+	uiDrawReq.showText("debugMouseCellCoord: {}", positionToCellCoord(_simConfig.debugMousePosWorld.toVec2(), _simConfig.smoothingRadius));
 }
 
 void 
@@ -113,31 +146,100 @@ void
 FluidSim2D_Cpu::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
 	Base::onUiKeyboardEvent(ev);
+
+	if (ev.isUp(UiKeyboardEventButton::Space))
+	{
+		_simState.isStop = !_simState.isStop;
+	}
+
+	if (_simState.isStop)
+	{
+		if (ev.isUp(UiKeyboardEventButton::E))
+		{
+			_simState.isStepForward = !_simState.isStepForward;
+		}
+
+		if (ev.isUp(UiKeyboardEventButton::Q))
+		{
+			_simState.isStepBackward = !_simState.isStepBackward;
+		}
+	}
 }
 
 void 
 FluidSim2D_Cpu::update(float dt)
 {
-	simulate(dt);
+	RDS_CALL_ONCE(
+		updateSpatialLut(_positions, _simConfig.smoothingRadius); 
+		logDebugSpatial(); 
+		return; 
+	);
 
-	#if 0
+	if (!_simState.isStop)
 	{
-		float density = 0.0f;
-		auto tarPos = _mouseRayWorld.origin.toVec2();
-		for (size_t i = 0; i < _positions.size(); i++)
-		{
-			auto pos = _positions[i];
-			auto dist = tarPos.distance(pos);
-			auto influence = smoothingKernel(_simConfig.smoothingRadius, dist);
-			density += _simConfig.particleMass * influence;
-		}
-		_simConfig.debugDensity = density;
+		simulate(dt);
+		logDebugSpatial();
 	}
-	#endif // 0
+	else
+	{
+		auto newDt = dt;
+		if (_simState.isStepBackward) newDt = -newDt;
+
+		bool shdSim = _simState.isStepForward || _simState.isStepBackward;
+		if (shdSim) simulate(newDt);
+
+		_simState.isStepForward		= false;
+		_simState.isStepBackward	= false;
+
+		if (shdSim)
+		{
+			logDebugSpatial();
+		}
+	}
 
 	_simConfig.debugMousePosViewport = _mousePosViewport;
 	_simConfig.debugMousePosWorld	 = _mouseRayWorld.origin;
 	_simConfig.debugMouseDirWorld	 = _mouseRayWorld.dir;
+}
+
+void 
+FluidSim2D_Cpu::logDebugSpatial()
+{
+	if (true)
+	{
+		return;
+	}
+
+	RDS_LOG("----- logDebugSpatial:");
+
+	RDS_LOG("_positions:");
+	for (size_t i = 0; i < _positions.size(); i++)
+	{
+		RDS_LOG("pos[{}]: {}", i, _positions[i]);
+	}
+
+	RDS_LOG("_spatialLut:");
+	for (size_t i = 0; i < _spatialLut.size(); i++)
+	{
+		RDS_LOG("particle_i: {}, cellKey: {}", _spatialLut[i].x, _spatialLut[i].y);
+	}
+
+	RDS_LOG("_cellKeyStartIndices:");
+	for (size_t i = 0; i < _cellKeyStartIndices.size(); i++)
+	{
+		RDS_LOG("_cellKeyStartIndices[{}]: {}", i, _cellKeyStartIndices[i]);
+	}
+
+	RDS_LOG("_debugCellCoords:");
+	for (size_t i = 0; i < _positions.size(); i++)
+	{
+		auto coord = positionToCellCoord(_positions[i], _simConfig.smoothingRadius);
+		RDS_LOG("_pos[{}]: {}, cellKey: {}, _cellCoords: {}, vel: {}, _densities: {}"
+			, i, _positions[i], calcCellKeyByCellCoord(coord), coord
+			, _velocities[i], _densities[i]);
+	}
+	
+	RDS_LOG("----- logDebugSpatial --- end");
 }
 
 void
@@ -150,18 +252,26 @@ FluidSim2D_Cpu::simulate(float dt)
 
 	dt *= _simConfig.timeMultiplier;
 
+	if (_simConfig.useSpatialOptimization)
+		updateSpatialLut(_positions, _simConfig.smoothingRadius);
+
 	for (size_t i = 0; i < _positions.size(); i++)
 	{
 		_velocities[i] += _simConfig.gravityDir * _simConfig.gravity * dt;
-		_densities[i]	= calcDensity(_positions[i]);
+		_densities[i]	= calcDensity(i);
 	}
 
 	for (size_t i = 0; i < _positions.size(); i++)
 	{
 		DimT pressureForce	= calcPressureForce(i);
 		DimT pressureAccel	= pressureForce / _densities[i];
-		//_velocities[i] += pressureAccel * dt;
-		_velocities[i] = pressureAccel * dt;		// no inertia for debug
+		_velocities[i] += pressureAccel * dt;
+
+		if (_velocities[i].magnitude() > 1000)
+		{
+			RDS_LOG("error vel");
+		}
+		//_velocities[i] = pressureAccel * dt;		// no inertia for debug
 	}
 
 	for (size_t i = 0; i < _positions.size(); i++)
@@ -205,7 +315,7 @@ FluidSim2D_Cpu::smoothingKernel(float radius, float dist)
 
 	#else
 	
-	// same but more sparky, like a triangle, solve the particle stick together
+	// same but more spiky, like a triangle, solve the particle stick together
 	// close particle will experience high value
 	if (dist >= radius) return 0;
 	float volume = math::PI<float>() * math::pow(radius, 4.0f) / 6.0f;	
@@ -241,8 +351,193 @@ FluidSim2D_Cpu::calcSharedPressure(float densityA, float densityB)
 	return (pressureA + pressureB) / 2.0f;
 }
 
+float FluidSim2D_Cpu::calcDensity(SizeT tarParticleIdx)
+{
+	return _simConfig.useSpatialOptimization ? _calcDensity_Spatial(tarParticleIdx) : _calcDensity_Raw(tarParticleIdx);
+		
+}
+
+FluidSim2D_Cpu::DimT 
+FluidSim2D_Cpu::calcGradient(SizeT tarParticleIdx)
+{
+	return _simConfig.useSpatialOptimization ? _calcGradient_Spatial(tarParticleIdx) : _calcGradient_Raw(tarParticleIdx);
+}
+
+FluidSim2D_Cpu::DimT 
+FluidSim2D_Cpu::calcPressureForce(SizeT tarParticleIdx)
+{
+	return _simConfig.useSpatialOptimization ? _calcPressureForce_Spatial(tarParticleIdx) : _calcPressureForce_Raw(tarParticleIdx);
+}
+
 float 
-FluidSim2D_Cpu::calcDensity(const DimT& samplingPt)
+FluidSim2D_Cpu::_calcDensity_Spatial(SizeT tarParticleIdx)
+{
+	float v = 0.0f;
+
+	#if 1
+
+	auto fn =
+		[&](const NeighbourInfo& info)
+		{
+			auto kernel = smoothingKernel(_simConfig.smoothingRadius, info.distance);
+			v += _simConfig.particleMass * kernel;
+		};
+	foreachPointWithinRadius(tarParticleIdx, _simConfig.smoothingRadius, false, fn);
+
+	#else
+
+	auto radius = _simConfig.smoothingRadius;
+	auto pt		= samplingPt;
+
+	auto radiusSq		= radius * radius;
+	auto tarCellCoord	= positionToCellCoord(pt, radius);
+	auto tarCellKey		= calcCellKeyByCellCoord(tarCellCoord);
+
+	Vector<DimT_i, 9> cellOffsets = {
+		DimT_i(-1, +1),
+		DimT_i(+0, +1),
+		DimT_i(+1, +1),
+		DimT_i(-1, +0),
+		DimT_i(+0, +0),
+		DimT_i(+1, +0),
+		DimT_i(-1, -1),
+		DimT_i(+0, -1),
+		DimT_i(+1, -1),
+	};
+
+	for (size_t cellOffsetIdx = 0; cellOffsetIdx < cellOffsets.size(); cellOffsetIdx++)
+	{
+		IdxT curCellKey			= calcCellKeyByCellCoord(tarCellCoord + cellOffsets[cellOffsetIdx]);
+		IdxT curCellStartIdx	= _cellKeyStartIndices[curCellKey];
+
+		for (IdxT i = curCellStartIdx; i < _spatialLut.size(); i++)
+		{
+			auto cellKey = _spatialLut[i].y;
+			if (tarCellKey != cellKey) break;
+
+			auto neighbourIdx = _spatialLut[i].x;
+			auto dirDiff = (_positions[neighbourIdx] - pt);
+			float distSq = _positions[neighbourIdx].sqrDistance(pt);
+			if (bool isOutSide = distSq > radiusSq) continue;
+
+			// compute
+			NeighbourInfo info;
+			info.index		= neighbourIdx;
+			info.distance	= math::sqrt(distSq);
+			info.direction	= !math::equals0(info.distance) ? dirDiff / info.distance : Random::instance()->direction<DimT>();
+			
+			auto kernel = smoothingKernel(_simConfig.smoothingRadius, info.distance);
+			v += _simConfig.particleMass * kernel;
+		}
+	}
+
+	#endif // 0
+
+	if (math::equals0(v))
+	{
+		RDS_LOG_ERROR("Error");
+	}
+
+	return v;
+}
+
+FluidSim2D_Cpu::DimT 
+FluidSim2D_Cpu::_calcGradient_Spatial(SizeT tarParticleIdx)
+{
+	DimT v = DimT::s_zero();
+
+	auto tarPos = _positions[tarParticleIdx];
+	auto fn =
+		[&](const NeighbourInfo& info)
+		{
+			auto dKernel	= smoothingKernelDerivative(_simConfig.smoothingRadius, info.distance);
+			auto density    = _densities[info.index];
+			v += -info.direction * (dKernel * _simConfig.particleMass / density);
+		};
+	foreachPointWithinRadius(tarParticleIdx, _simConfig.smoothingRadius, true, fn);
+
+	return v;
+}
+
+FluidSim2D_Cpu::DimT 
+FluidSim2D_Cpu::_calcPressureForce_Spatial(SizeT tarParticleIdx)
+{
+	DimT v = DimT::s_zero();
+
+	#if 1
+
+	auto tarPos = _positions[tarParticleIdx];
+	auto fn =
+		[&](const NeighbourInfo& info)
+		{
+			auto dKernel	= smoothingKernelDerivative(_simConfig.smoothingRadius, info.distance);
+			auto density    = _densities[info.index];
+
+			// simple sol for applying newton 3rd law
+			auto sharedPressure = calcSharedPressure(density, _densities[tarParticleIdx]);	
+			v += sharedPressure * info.direction * (dKernel * _simConfig.particleMass / density);
+		};
+	foreachPointWithinRadius(tarParticleIdx, _simConfig.smoothingRadius, true, fn);
+
+	#else
+
+	auto radius = _simConfig.smoothingRadius;
+	auto pt		=  _positions[tarParticleIdx];
+
+	auto radiusSq		= radius * radius;
+	auto tarCellCoord	= positionToCellCoord(pt, radius);
+	auto tarCellKey		= calcCellKeyByCellCoord(tarCellCoord);
+
+	Vector<DimT_i, 9> cellOffsets = {
+		DimT_i(-1, +1),
+		DimT_i(+0, +1),
+		DimT_i(+1, +1),
+		DimT_i(-1, +0),
+		DimT_i(+0, +0),
+		DimT_i(+1, +0),
+		DimT_i(-1, -1),
+		DimT_i(+0, -1),
+		DimT_i(+1, -1),
+	};
+
+	for (size_t cellOffsetIdx = 0; cellOffsetIdx < cellOffsets.size(); cellOffsetIdx++)
+	{
+		IdxT curCellKey			= calcCellKeyByCellCoord(tarCellCoord + cellOffsets[cellOffsetIdx]);
+		IdxT curCellStartIdx	= _cellKeyStartIndices[curCellKey];
+
+		for (IdxT i = curCellStartIdx; i < _spatialLut.size(); i++)
+		{
+			auto cellKey = _spatialLut[i].y;
+			if (tarCellKey != cellKey) break;
+
+			auto neighbourIdx = _spatialLut[i].x;
+			auto dirDiff = (_positions[neighbourIdx] - pt);
+			float distSq = _positions[neighbourIdx].sqrDistance(pt);
+			if (bool isOutSide = distSq > radiusSq) continue;
+
+			// compute
+			NeighbourInfo info;
+			info.index		= neighbourIdx;
+			info.distance	= math::sqrt(distSq);
+			info.direction	= !math::equals0(info.distance) ? dirDiff / info.distance : Random::instance()->direction<DimT>();
+
+			auto dKernel	= smoothingKernelDerivative(_simConfig.smoothingRadius, info.distance);
+			auto density    = _densities[info.index];
+
+			// simple sol for applying newton 3rd law
+			auto sharedPressure = calcSharedPressure(density, _densities[tarParticleIdx]);	
+			v += sharedPressure * info.direction * (dKernel * _simConfig.particleMass / density);
+		}
+	}
+
+	#endif // 0
+
+
+	return v;
+}
+
+float
+FluidSim2D_Cpu::_calcDensity_Raw(SizeT tarParticleIdx)
 {
 	// interpolation eq
 	// p = density
@@ -250,21 +545,21 @@ FluidSim2D_Cpu::calcDensity(const DimT& samplingPt)
 
 	float v = 0.0f;
 
+	auto tarPos = _positions[tarParticleIdx];
 	for (size_t i = 0; i < _positions.size(); i++)
 	{
 		auto pos = _positions[i];
-		auto dist = samplingPt.distance(pos);
+		auto dist = tarPos.distance(pos);
 		auto kernel = smoothingKernel(_simConfig.smoothingRadius, dist);
 		v += _simConfig.particleMass * kernel;
 	}
 
 	return v;
 }
-FluidSim2D_Cpu::DimT 
-FluidSim2D_Cpu::calcGradient(SizeT tarParticleIdx)
-{
-	//RandomT::instance()->direction<DimT>();
 
+FluidSim2D_Cpu::DimT 
+FluidSim2D_Cpu::_calcGradient_Raw(SizeT tarParticleIdx)
+{
 	DimT v = DimT::s_zero();
 
 	auto tarPos = _positions[tarParticleIdx];
@@ -283,7 +578,7 @@ FluidSim2D_Cpu::calcGradient(SizeT tarParticleIdx)
 }
 
 FluidSim2D_Cpu::DimT 
-FluidSim2D_Cpu::calcPressureForce(SizeT tarParticleIdx)
+FluidSim2D_Cpu::_calcPressureForce_Raw(SizeT tarParticleIdx)
 {
 	DimT v = DimT::s_zero();
 
@@ -305,6 +600,123 @@ FluidSim2D_Cpu::calcPressureForce(SizeT tarParticleIdx)
 	}
 
 	return v;
+}
+
+void 
+FluidSim2D_Cpu::foreachPointWithinRadius(SizeT tarParticleIdx, float radius, bool isSkipSelf, const Function<void(const NeighbourInfo&)>& callback)
+{
+	const auto& tarPos			= _positions[tarParticleIdx];
+	auto		radiusSq		= radius * radius;
+	auto		tarCellCoord	= positionToCellCoord(tarPos, radius);
+	auto		tarCellKey		= calcCellKeyByCellCoord(tarCellCoord);
+
+	Vector<DimT_i, 9> cellOffsets = {
+		DimT_i(-1, +1),
+		DimT_i(+0, +1),
+		DimT_i(+1, +1),
+		DimT_i(-1, +0),
+		DimT_i(+0, +0),
+		DimT_i(+1, +0),
+		DimT_i(-1, -1),
+		DimT_i(+0, -1),
+		DimT_i(+1, -1),
+	};
+
+	for (size_t cellOffsetIdx = 0; cellOffsetIdx < cellOffsets.size(); cellOffsetIdx++)
+	{
+		IdxT curCellKey			= calcCellKeyByCellCoord(tarCellCoord + cellOffsets[cellOffsetIdx]);
+		IdxT curCellStartIdx	= _cellKeyStartIndices[curCellKey];
+
+		for (IdxT i = curCellStartIdx; i < _spatialLut.size(); i++)
+		{
+			auto neighbourIdx	= _spatialLut[i].x;
+			auto cellKey		= _spatialLut[i].y;
+			if (tarCellKey != cellKey) break;
+
+			// cal density shd not skip self, otherwise, when there is only one particle in the cell, the final density will become 0
+			if (bool isSelf = tarParticleIdx == neighbourIdx && isSkipSelf) continue;
+
+			auto dirDiff = (_positions[neighbourIdx] - tarPos);
+			float distSq = _positions[neighbourIdx].sqrDistance(tarPos);
+			if (bool isOutSide = distSq > radiusSq) continue;
+
+			// compute
+			NeighbourInfo info;
+			info.index		= neighbourIdx;
+			info.distance	= math::sqrt(distSq);
+			info.direction	= !math::equals0(info.distance) ? dirDiff / info.distance : Random::instance()->direction<DimT>();
+			callback(info);
+		}
+	}
+}
+
+void
+FluidSim2D_Cpu::updateSpatialLut(const Vector<DimT>& pts, float radius)
+{
+	// gpu friendly approach for optimization
+	// Particle Simulation using CUDA - Simon Green
+	// https://web.archive.org/web/20140725014123/https://docs.nvidia.com/cuda/samples/5_Simulations/particles/doc/particles.pdf
+
+	/*
+	step:
+	1. get cell key by hash cellCoord and % total cell count
+	2. sort the lut by cellKey in ascending order
+	3. then _cellKeyStartIndices store the first occurrence (as a index) of the cell key in lut 
+	*/
+
+	auto n = pts.size();
+
+	_spatialLut.clear();
+	_cellKeyStartIndices.clear();
+
+	_spatialLut.resize(n);
+	_cellKeyStartIndices.resize(n);
+
+	for (u32 i = 0; i < n; i++)
+	{
+		auto pos = pts[i];
+		auto cellCoord	= positionToCellCoord(pos, radius);
+		auto cellKey	= calcCellKeyByCellCoord(cellCoord);
+		_spatialLut[i]			= DimT_u{i, cellKey};
+		_cellKeyStartIndices[i] = NumLimit<DimT_u::ElementType>::max();
+	}
+
+	rds::sort(_spatialLut.begin(), _spatialLut.end(), [](const auto& lhs, const auto& rhs) { return lhs.y < rhs.y; } );
+
+	auto lastCellKey = NumLimit<DimT_u::ElementType>::max();
+	for (u32 i = 0; i < n; i++)
+	{
+		auto cellKey = _spatialLut[i].y;
+		if (lastCellKey != cellKey)
+		{
+			_cellKeyStartIndices[cellKey] = i;
+		}
+		lastCellKey = cellKey;
+	}
+}
+
+FluidSim2D_Cpu::DimT_i 
+FluidSim2D_Cpu::positionToCellCoord(const DimT& pt, float radius)
+{
+	DimT	tmp = pt / radius;
+	DimT_i	o	= {math::floorTo_Int(tmp.x), math::floorTo_Int(tmp.y)};
+	return o;
+}
+
+FluidSim2D_Cpu::IdxT 
+FluidSim2D_Cpu::calcCellKeyByCellCoord(const DimT_i& cellCoord)
+{
+	auto o = hashCellCoord(cellCoord);
+	return o % _spatialLut.size();
+}
+
+FluidSim2D_Cpu::HashT 
+FluidSim2D_Cpu::hashCellCoord(const DimT_i& cellCoord)
+{
+	// avoid hash collisions for nearby cells
+	auto a = (IdxT)cellCoord.x * 15823;
+	auto b = (IdxT)cellCoord.y * 9737333;
+	return a + b;
 }
 
 #endif
@@ -386,13 +798,14 @@ void
 FluidSim2DConfig::drawGui(EditorUiDrawRequest& uiDrawReq)
 {
 	auto wnd = uiDrawReq.makeWindow("config");
-	uiDrawReq.dragFloat("particleSize",			&particleSize,			0.01f);
-	uiDrawReq.dragFloat("particleMass",			&particleMass,			0.01f);
-	uiDrawReq.dragFloat("smoothingRadius",		&smoothingRadius,		0.1f);
-	uiDrawReq.dragFloat("collisionDamping",		&collisionDamping,		0.1f);
-	uiDrawReq.dragFloat("targetDensity",		&targetDensity,			0.1f);
-	uiDrawReq.dragFloat("pressureMultiplier",	&pressureMultiplier,	1.0f);
-	uiDrawReq.dragFloat("timeMultiplier",		&timeMultiplier,		0.01f);
+	uiDrawReq.makeCheckbox("useSpatialOptimization",	&useSpatialOptimization);
+	uiDrawReq.dragFloat("particleSize",					&particleSize,			0.01f);
+	uiDrawReq.dragFloat("particleMass",					&particleMass,			0.01f);
+	uiDrawReq.dragFloat("smoothingRadius",				&smoothingRadius,		0.1f);
+	uiDrawReq.dragFloat("collisionDamping",				&collisionDamping,		0.1f);
+	uiDrawReq.dragFloat("targetDensity",				&targetDensity,			0.1f);
+	uiDrawReq.dragFloat("pressureMultiplier",			&pressureMultiplier,	1.0f);
+	uiDrawReq.dragFloat("timeMultiplier",				&timeMultiplier,		0.01f);
 
 	auto makeColorPicker4 = [](const char* label, Color4f* oColor)
 		{

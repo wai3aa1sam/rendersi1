@@ -297,24 +297,29 @@ DemoEditorLayer::drawEditorUI(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	}
 
 	{
-		auto pos		= camera.pos();
-		auto aim		= camera.aim();
-		auto fov		= camera.fov();
-		auto nearClip	= camera.nearClip();
-		auto farClip	= camera.farClip();
+		auto pos				= camera.pos();
+		auto aim				= camera.aim();
+		auto fov				= camera.fov();
+		auto nearClip			= camera.nearClip();
+		auto farClip			= camera.farClip();
+		auto orthoScale			= camera.orthoScale();
+		bool isOrthographic		= camera.isOrthgraphicMode();
 
 		auto wnd = uiDrawReq.makeWindow("Camera");
-		uiDrawReq.drawVec3f("position",	&pos);
-		uiDrawReq.drawVec3f("aim",		&aim);
-		uiDrawReq.dragFloat("fov",		&fov);
-		uiDrawReq.dragFloat("nearClip",	&nearClip, 0.01f);
-		uiDrawReq.dragFloat("farClip",	&farClip);
+		uiDrawReq.makeCheckbox("isOrthographic",	&isOrthographic);
+		uiDrawReq.drawVec3f("position",		&pos);
+		uiDrawReq.drawVec3f("aim",			&aim);
+		uiDrawReq.dragFloat("fov",			&fov);
+		uiDrawReq.dragFloat("nearClip",		&nearClip, 0.01f);
+		uiDrawReq.dragFloat("farClip",		&farClip);
+		uiDrawReq.dragFloat("orthoScale",	&orthoScale);
 
 		camera.setPos(pos);
 		camera.setAim(aim);
 		camera.setFov(fov);
 		camera.setNearClip(nearClip);
 		camera.setFarClip(farClip);
+		isOrthographic ? camera.setOrthographic(orthoScale) : camera.setPerspective();
 	}
 }
 

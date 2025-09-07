@@ -427,7 +427,7 @@ void
 RenderRequest::drawCircle(const Vec2f& pos, float radius, const Color4f& color)
 {
 	auto c = color.toColorRGBAb();
-	float size = 0.5f * radius;
+	float size = radius;
 
 	Vector<QuadVtxT, 4> vtxs;
 	vtxs.resize(4);

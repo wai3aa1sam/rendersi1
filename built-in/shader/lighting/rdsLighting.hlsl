@@ -49,7 +49,7 @@ float Lighting_computeAttenuation(Light light, float lightSqDist)
 {
 	float lightRange = light.range;
 	float denom = 1 / (lightSqDist + 1);
-	float falloff = sqaure(saturate(1.0 - sqaure(lightSqDist * sqaure(rcp(lightRange)))));
+	float falloff = square(saturate(1.0 - square(lightSqDist * square(rcp(lightRange)))));
 	falloff *= denom;
 	return falloff;
 
