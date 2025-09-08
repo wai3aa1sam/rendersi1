@@ -24,6 +24,7 @@ FluidSim2D_Cpu::onCreate(GraphicsDemo* parentDemo)
 	_cellKeyStartIndices.resize(_positions.size());
 
 	_simConfig.debugParticleCount = (u32)_positions.size();
+	_ptcDisplay.create2D(_simConfig.makeColorGradient());
 
 	auto& camera = parentDemo->app().mainWindow().camera();
 	camera.setOrthographic(4.0f);
@@ -76,7 +77,7 @@ FluidSim2D_Cpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 			drawData->setupMaterial(_parentDemo->mtlDrawCircle);
 			rdReq.circleMaterial = _parentDemo->mtlDrawCircle;
 
-			#if 1
+			#if 0
 			for (auto& e : _positions)
 			{
 				rdReq.drawCircle(e, _simConfig.particleSize, _simConfig.particleColor);
@@ -141,6 +142,8 @@ FluidSim2D_Cpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 				debugForeachPointWithinRadius(_mouseRayWorld.origin.toVec2(), _simConfig.smoothingRadius, false, fn);
 				_simConfig.debugWithinRadiusCount = count;
 			}
+
+			_ptcDisplay.draw(rdReq, drawData, _positions, _velocities, _simConfig.particleSize);
 		}
 	);
 
@@ -194,25 +197,23 @@ FluidSim2D_Cpu::particleDisplay()
 	return _ptcDisplay;
 }
 
+#if 1
+
 void 
 FluidSim2D_Cpu::update(float dt)
 {
 	if (_simConfig.isInvalidateColorMap)
 	{
-		ColorGradient colGrad;
-		colGrad.addColorKey(ColorGradientKey{_simConfig.colorGradientKey0, 0.05f});
-		colGrad.addColorKey(ColorGradientKey{_simConfig.colorGradientKey1, 0.5f});
-		colGrad.addColorKey(ColorGradientKey{_simConfig.colorGradientKey2, 0.6f});
-		colGrad.addColorKey(ColorGradientKey{_simConfig.colorGradientKey3, 1.0f});
+		ColorGradient colGrad = _simConfig.makeColorGradient();
 		_ptcDisplay.invalidateColorGradient(colGrad);
 		_simConfig.isInvalidateColorMap = false;
 	}
 
 	RDS_CALL_ONCE(
 		updateSpatialLut(_positions, _simConfig.smoothingRadius); 
-		logDebugSpatial(); 
-		return; 
-	);
+	logDebugSpatial(); 
+	return; 
+		);
 
 	if (!_simState.isStop)
 	{
@@ -277,7 +278,7 @@ FluidSim2D_Cpu::logDebugSpatial()
 			, i, _positions[i], calcCellKeyByCellCoord(coord), coord
 			, _velocities[i], _densities[i]);
 	}
-	
+
 	RDS_LOG("----- logDebugSpatial --- end");
 }
 
@@ -305,7 +306,7 @@ FluidSim2D_Cpu::simulate(float dt)
 		DimT pressureForce	= calcPressureForce(i);
 		DimT pressureAccel	= pressureForce / _densities[i];
 		_velocities[i] += pressureAccel * dt;
-		_velocities[i] = pressureAccel * dt;		// no inertia for debug
+		//_velocities[i] = pressureAccel * dt;		// no inertia for debug
 
 		#if 0
 		// sp_debug
@@ -356,7 +357,7 @@ FluidSim2D_Cpu::smoothingKernel(float radius, float dist)
 	return (v * v * v) / volume;
 
 	#else
-	
+
 	// same but more spiky, like a triangle, solve the particle stick together
 	// close particle will experience high value
 	if (dist >= radius) return 0;
@@ -396,7 +397,7 @@ FluidSim2D_Cpu::calcSharedPressure(float densityA, float densityB)
 float FluidSim2D_Cpu::calcDensity(SizeT tarParticleIdx)
 {
 	return _simConfig.useSpatialOptimization ? _calcDensity_Spatial(tarParticleIdx) : _calcDensity_Raw(tarParticleIdx);
-		
+
 }
 
 FluidSim2D_Cpu::DimT 
@@ -625,7 +626,7 @@ FluidSim2D_Cpu::debugForeachPointWithinRadius(const DimT& samplingPt, float radi
 
 			// cal density shd not skip self, otherwise, when there is only one particle in the cell, the final density will become 0
 			/*if (bool isSelf = tarParticleIdx == neighbourIdx && isSkipSelf) 
-				continue;*/
+			continue;*/
 
 			auto dirDiff = (positions[neighbourIdx] - tarPos);
 			float distSq = positions[neighbourIdx].sqrDistance(tarPos);
@@ -708,6 +709,7 @@ FluidSim2D_Cpu::hashCellCoord(const DimT_i& cellCoord)
 	auto b = (IdxT)cellCoord.y * 9737333;
 	return a + b;
 }
+#endif // 1
 
 #endif
 
@@ -821,6 +823,8 @@ FluidSim2DConfig::drawGui(EditorUiDrawRequest& uiDrawReq)
 	makeColorPicker4("particleColor",		&particleColor);
 	makeColorPicker4("colorGradientKey0",	&colorGradientKey0);
 	makeColorPicker4("colorGradientKey1",	&colorGradientKey1);
+	makeColorPicker4("colorGradientKey2",	&colorGradientKey2);
+	makeColorPicker4("colorGradientKey3",	&colorGradientKey3);
 
 	uiDrawReq.makeCheckbox("isInvalidateColorMap", &isInvalidateColorMap);
 	uiDrawReq.showText("colorGradientTexture:");
@@ -865,8 +869,48 @@ ParticleDisplay::s_createColorGradientTexture(SPtr<Texture2D>& oTex, const Color
 }
 
 void 
-ParticleDisplay::create(const ColorGradient& colorGrad)
+ParticleDisplay::create2D(const ColorGradient& colorGrad)
 {
+	RenderMesh& rdMesh = _rdMesh;
+
+	{
+		using VtxT = Vertex_PosUv<1>;
+		using IdxT = u16;
+		EditMesh mesh;
+
+		auto& pos = mesh.pos;
+		pos.resize(4);
+		pos[0] = Vec3f{Vec2f{ -1.0f, +1.0f }, 0.0f};
+		pos[1] = Vec3f{Vec2f{ +1.0f, +1.0f }, 0.0f};
+		pos[2] = Vec3f{Vec2f{ -1.0f, -1.0f }, 0.0f};
+		pos[3] = Vec3f{Vec2f{ +1.0f, -1.0f }, 0.0f};
+
+		auto& uv = mesh.uvs[0];
+		uv.resize(4);
+		uv[0] = Vec2f{0.0, 0.0};
+		uv[1] = Vec2f{1.0, 0.0};
+		uv[2] = Vec2f{0.0, 1.0};
+		uv[3] = Vec2f{1.0, 1.0};
+
+		auto& idxs = mesh.indices;
+		idxs.reserve(6);
+		idxs.emplace_back(0); idxs.emplace_back(2); idxs.emplace_back(1);
+		idxs.emplace_back(3); idxs.emplace_back(1); idxs.emplace_back(2);
+
+		rdMesh.create(mesh);
+	}
+
+	auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+	cDesc.bufSize	= 16;
+	cDesc.stride	= sizeof(Vec2f);
+	cDesc.typeFlags = RenderGpuBufferTypeFlags::Vertex | RenderGpuBufferTypeFlags::Compute;
+	_posBufGpu = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);	_posBufGpu->setDebugName("_posBufGpu");
+
+	cDesc.typeFlags = RenderGpuBufferTypeFlags::Index | RenderGpuBufferTypeFlags::Compute;
+	_velBufGpu = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);	_velBufGpu->setDebugName("_velBufGpu");
+
+	GraphicsDemo::createMaterial(&_shaderPtcDisplay, &_mtlPtcDisplay, "asset/shader/demo/fluid_simulation/rdsParticleDisplay2D.shader");
+
 	invalidateColorGradient(colorGrad);
 }
 

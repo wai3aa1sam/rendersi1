@@ -161,6 +161,17 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMes
 }
 
 void 
+RenderRequest::drawMesh_Instanced(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, SizeType instanceCount)
+{
+	for (auto& e : rdMesh.subMeshes())
+	{
+		auto* p = addDrawCall();
+		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, e, mtl);
+		p->instanceCount = instanceCount;
+	}
+}
+
+void 
 RenderRequest::drawRenderables(const DrawingSettings& settings)
 {
 	throwIf(true, " store rdCtx, TODO: rework");

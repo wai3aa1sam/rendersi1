@@ -94,6 +94,8 @@ public:
 						void drawMesh(		RDS_RD_CMD_DEBUG_PARAM, const RenderMesh&    rdMesh,		Material* mtl, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix);
 						void drawSubMesh(	RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh,		Material* mtl, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix);
 
+						void drawMesh_Instanced(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh&    rdMesh,	Material* mtl, SizeType instanceCount);
+
 	RenderCmdIter<RenderCommand_DrawCall> addDrawCalls(SizeType n);
 	void drawRenderables(const DrawingSettings& settings);
 

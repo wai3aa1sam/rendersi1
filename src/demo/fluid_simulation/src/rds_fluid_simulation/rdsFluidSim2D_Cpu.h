@@ -146,6 +146,16 @@ public:
 		_fluSim = sim;
 	}
 
+	ColorGradient makeColorGradient()
+	{
+		ColorGradient colGrad;
+		colGrad.addColorKey(ColorGradientKey{colorGradientKey0, 0.05f});
+		colGrad.addColorKey(ColorGradientKey{colorGradientKey1, 0.5f});
+		colGrad.addColorKey(ColorGradientKey{colorGradientKey2, 0.6f});
+		colGrad.addColorKey(ColorGradientKey{colorGradientKey3, 1.0f});
+		return colGrad;
+	}
+
 public:
 	float calcPressureByDensity(float dens);
 
@@ -192,9 +202,52 @@ public:
 	void s_createColorGradientTexture(SPtr<Texture2D>& oTex, const ColorGradient& colorGradient);
 
 public:
-	void create(const ColorGradient& colorGrad);
-
+	void create2D(const ColorGradient& colorGrad);
 	void invalidateColorGradient(const ColorGradient& colorGrad);
+
+	void draw(RenderRequest& rdReq, DrawData* drawData, const Span<Vec2f>& positions, const Span<Vec2f>& velocities, float radius)
+	{
+		RDS_CORE_ASSERT(_posBufGpu && _velBufGpu);
+
+		_posBufGpu->uploadToGpu(makeByteSpan(positions));
+		_velBufGpu->uploadToGpu(makeByteSpan(velocities));
+
+		_mtlPtcDisplay->setParam("u_colorMap",		_texColorGradient);
+		_mtlPtcDisplay->setParam("u_colorMap",		SamplerState::makeLinearClampToEdge());
+
+		_mtlPtcDisplay->setParam("u_positions",		_posBufGpu->renderGpuBuffer());
+		_mtlPtcDisplay->setParam("u_velocities",	_velBufGpu->renderGpuBuffer());
+		_mtlPtcDisplay->setParam("u_scale",			radius);
+		_mtlPtcDisplay->setParam("u_velocityMax",	6.5f);
+		_mtlPtcDisplay->setParam("u_objToWorld",	Mat4f::s_identity());
+		_mtlPtcDisplay->setParam("u_worldToObj",	Mat4f::s_identity());
+
+		drawData->setupMaterial(_mtlPtcDisplay);
+		rdReq.drawMesh_Instanced(RDS_SRCLOC, _rdMesh, _mtlPtcDisplay, positions.size());
+	}
+
+	void draw(RenderGraph* rdGraph, DrawData* drawData, const Span<Vec2f>& positions, const Span<Vec2f>& velocities)
+	{
+
+		
+
+		//auto& passFluidSim2D_Cpu = rdGraph->addPass("fluid_simulation", RdgPassTypeFlags::Graphics);
+		//passFluidSim2D_Cpu.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+		//passFluidSim2D_Cpu.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
+		//passFluidSim2D_Cpu.setExecuteFunc(
+		//	[=](RenderRequest& rdReq)
+		//	{
+		//		rdReq.reset(rdGraph->renderContext(), drawData);
+
+		//		auto* clearValue = rdReq.clearFramebuffers();
+		//		clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
+		//		clearValue->setClearDepth(1.0f);
+
+		//		drawData->setupMaterial(_mtlPtcDisplay);
+		//		rdReq.drawMesh_Instanced(RDS_SRCLOC, _rdMesh, _mtlPtcDisplay, positions.size());
+		//	}
+		//);
+	}
 
 public:
 	Texture2D*	colorGradientTexture();
@@ -203,6 +256,10 @@ private:
 	SPtr<Shader>	_shaderPtcDisplay;
 	SPtr<Material>	_mtlPtcDisplay;
 	SPtr<Texture2D>	_texColorGradient;
+
+	RenderMesh					_rdMesh;
+	SPtr<RenderGpuMultiBuffer>	_posBufGpu;
+	SPtr<RenderGpuMultiBuffer>	_velBufGpu;
 
 	ColorGradient	_colorGradient;
 };

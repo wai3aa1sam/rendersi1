@@ -152,6 +152,7 @@ public:
 	SizeType indexCount			= 0;
 	SizeType vertexOffset		= 0;
 	SizeType indexOffset		= 0;
+	SizeType instanceCount		= 1;
 
 	SPtr<RenderGpuBuffer>	vertexBuffer;
 	SPtr<RenderGpuBuffer>	indexBuffer;

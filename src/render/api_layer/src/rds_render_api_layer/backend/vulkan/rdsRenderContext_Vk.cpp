@@ -808,8 +808,9 @@ RenderContext_Vk::_onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, Vk_Comm
 
 	auto* vkCmdBufHnd = cmdBuf->hnd();
 
-	auto vtxCount = sCast<u32>(cmd->vertexCount);
-	auto idxCount = sCast<u32>(cmd->indexCount);
+	auto vtxCount	= sCast<u32>(cmd->vertexCount);
+	auto idxCount	= sCast<u32>(cmd->indexCount);
+	auto instCount	= sCast<u32>(cmd->instanceCount);
 
 	RenderGpuBuffer_Vk* idxBufVk = nullptr;
 	if (idxCount > 0)
@@ -908,17 +909,19 @@ RenderContext_Vk::_onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, Vk_Comm
 	}
 	#endif // RDS_DEBUG_DRAW_CALL
 
+	RDS_CORE_ASSERT(instCount > 0, "instanceCount shd not be 0");
+
 	if (idxCount > 0)
 	{
 		u32				idxOffset = sCast<u32>(cmd->indexOffset);
 		VkIndexType		vkIdxType = Util::toVkIndexType(cmd->indexType);
 		vkCmdBindIndexBuffer(vkCmdBufHnd, idxBufVk->vkBuf()->hnd(), idxOffset, vkIdxType);
 
-		vkCmdDrawIndexed(vkCmdBufHnd, idxCount, 1, 0, 0, 0);
+		vkCmdDrawIndexed(vkCmdBufHnd, idxCount, instCount, 0, 0, 0);
 	}
 	else
 	{
-		vkCmdDraw(vkCmdBufHnd, vtxCount, 1, 0, 0);
+		vkCmdDraw(vkCmdBufHnd, vtxCount, instCount, 0, 0);
 	}
 }
 
