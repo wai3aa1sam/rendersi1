@@ -5,12 +5,117 @@
 namespace rds
 {
 
+class FluidSim2D_Cpu;
+
+#if 0
+#pragma mark --- rdsGradient-Decl ---
+#endif // 0
+#if 1
+
+struct ColorGradientKey 
+{
+public:
+	using ColorT = Color4f;
+
+public:
+	ColorT color;
+	float time;
+
+public:
+	ColorGradientKey(const ColorT& col, float t) : color(col), time(t) {}
+
+	bool operator<(const ColorGradientKey& rhs) const { return time < rhs.time; }
+	bool operator>(const ColorGradientKey& rhs) const { return operator<(rhs); }
+};
+inline void swap(ColorGradientKey& a, ColorGradientKey& b) noexcept { rds::swap<ColorGradientKey>(a, b); }
+
+class ColorGradient
+{
+public:
+	using ColorT = Color4f;
+
+	/*
+	* prompt:
+	* how to create gradient color in c++. don't use library, just like unity Gradient, guess its implementation. after set ColorGradientKey, i call gradient.Evaluate(t) to get the color
+	*/
+
+public:
+	static ColorT s_lerp(const ColorT& a, const ColorT& b, float t) {
+		return ColorT(
+			a.r + t * (b.r - a.r),
+			a.g + t * (b.g - a.g),
+			a.b + t * (b.b - a.b),
+			a.a + t * (b.a - a.a)
+		);
+	}
+
+public:
+	ColorT evaluate(float t) const
+	{
+		// If t is before first key
+		if (t <= _colorKeys.front().time) 
+		{
+			return _colorKeys.front().color;
+		}
+
+		// If t is after last key
+		if (t >= _colorKeys.back().time) 
+		{
+			return _colorKeys.back().color;
+		}
+
+		// Find the two keys to interpolate between
+		for (size_t i = 0; i < _colorKeys.size() - 1; ++i) 
+		{
+			const ColorGradientKey& key1 = _colorKeys[i];
+			const ColorGradientKey& key2 = _colorKeys[i + 1];
+
+			if (t >= key1.time && t <= key2.time) 
+			{
+				// Normalize t between the two keys
+				float normalizedT = (t - key1.time) / (key2.time - key1.time);
+				return s_lerp(key1.color, key2.color, normalizedT);
+			}
+		}
+
+		// Fallback (should not reach here if sorted properly)
+		return _colorKeys.back().color;
+	}
+
+	void addColorKey(const ColorGradientKey& key)
+	{
+		_colorKeys.emplace_back(key);
+		rds::sort(_colorKeys.begin(), _colorKeys.end());
+	}
+
+	void clear()
+	{
+		_colorKeys.clear();
+		//_isSorted = false;
+	}
+
+public:
+
+
+private:
+	using ColorKeys = Vector<ColorGradientKey, 4>;
+	ColorKeys	_colorKeys;
+	//bool		_isSorted = false; // Flag to check if sorted
+};
+
+#endif
+
 struct FluidSim2DConfig
 {
 public:
 	float		particleMass		= 1.0f;
 	float		particleSize		= 0.1f / 2.0f;
 	Color4f		particleColor		= Color4f{0.2f, 1.0f, 1.0f, 1.0f};
+
+	Color4f		colorGradientKey0	= Color4f{0.0f, 0.0f, 1.0f, 1.0f};
+	Color4f		colorGradientKey1	= Color4f{0.0f, 1.0f, 0.0f, 1.0f};
+	Color4f		colorGradientKey2	= Color4f{1.0f, 1.0f, 0.0f, 1.0f};
+	Color4f		colorGradientKey3	= Color4f{1.0f, 0.0f, 0.0f, 1.0f};
 
 	float		smoothingRadius		= 2.f;
 	float		collisionDamping	= 0.95f;
@@ -25,6 +130,8 @@ public:
 	Rect2f		spawnRegion			= { Vec2f{0.0, 0.0},	Vec2f{boundingRegion.size} / 4.0f };
 
 	bool useSpatialOptimization = 1;
+	bool isInvalidateColorMap	= 1;
+
 	bool useDebugLog			= 0;
 	bool useDebugSpatial		= 0;
 
@@ -32,6 +139,11 @@ public:
 	FluidSim2DConfig()
 	{
 
+	}
+
+	void create(FluidSim2D_Cpu* sim)
+	{
+		_fluSim = sim;
 	}
 
 public:
@@ -49,6 +161,9 @@ public:
 
 public:
 	void drawGui(EditorUiDrawRequest& uiDrawReq);
+
+private:
+	FluidSim2D_Cpu* _fluSim = nullptr;
 };
 
 class ParticleSpawner2D
@@ -69,6 +184,27 @@ public:
 	};
 	u32		spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& outPredictedPositions, Vector<Vec2f>& outVelocities, Vector<float>& outDensities);
 	Vec2i	calcSpawnCountPerAxis() const;
+};
+
+class ParticleDisplay
+{
+public:
+	void s_createColorGradientTexture(SPtr<Texture2D>& oTex, const ColorGradient& colorGradient);
+
+public:
+	void create(const ColorGradient& colorGrad);
+
+	void invalidateColorGradient(const ColorGradient& colorGrad);
+
+public:
+	Texture2D*	colorGradientTexture();
+
+private:
+	SPtr<Shader>	_shaderPtcDisplay;
+	SPtr<Material>	_mtlPtcDisplay;
+	SPtr<Texture2D>	_texColorGradient;
+
+	ColorGradient	_colorGradient;
 };
 
 #if 0
@@ -131,6 +267,9 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
 
 public:
+	ParticleDisplay& particleDisplay();
+
+public:
 	using DimT		= Vec2f;
 	using DimT_i	= Vec2i;
 	using DimT_u	= Vec2u;
@@ -191,10 +330,13 @@ private:
 protected:
 	SPtr<Shader>	_shaderFluidSimulation;
 	SPtr<Material>	_mtlFluidSimulation;
+	SPtr<Texture2D>	_texColorGradient;
 
 	ParticleSpawner2D	_particleSpawner;
 	FluidSim2DConfig	_simConfig;
+	ParticleDisplay		_ptcDisplay;
 };
 #endif
+
 
 }

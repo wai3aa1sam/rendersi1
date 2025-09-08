@@ -9,11 +9,13 @@ namespace rds
 #pragma mark --- rdsFluidSim2D_Cpu-Impl ---
 #endif // 0
 #if 1
+
 void 
 FluidSim2D_Cpu::onCreate(GraphicsDemo* parentDemo)
 {
 	Base::onCreate(parentDemo);
 
+	_simConfig.create(this);
 	_particleSpawner.spawnRegion = _simConfig.spawnRegion;
 	//_particleSpawner.spawnRegion = _simConfig.boundingRegion;
 
@@ -143,6 +145,10 @@ FluidSim2D_Cpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	);
 
 	drawData->oTexPresent = rtColor;
+	
+	//RdgTextureHnd rtTex;
+	//_parentDemo->addPass_DebugTexture(_ptcDisplay.colorGradientTexture(), &rtTex);
+	//drawData->oTexPresent = rtTex;
 }
 
 void 
@@ -150,7 +156,6 @@ FluidSim2D_Cpu::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 {
 	_simConfig.drawGui(uiDrawReq);
 
-	uiDrawReq.showText("debugMouseCellCoord: {}", positionToCellCoord(_simConfig.debugMousePosWorld.toVec2(), _simConfig.smoothingRadius));
 }
 
 void 
@@ -183,9 +188,26 @@ FluidSim2D_Cpu::onUiKeyboardEvent(UiKeyboardEvent& ev)
 	}
 }
 
+ParticleDisplay& 
+FluidSim2D_Cpu::particleDisplay()
+{
+	return _ptcDisplay;
+}
+
 void 
 FluidSim2D_Cpu::update(float dt)
 {
+	if (_simConfig.isInvalidateColorMap)
+	{
+		ColorGradient colGrad;
+		colGrad.addColorKey(ColorGradientKey{_simConfig.colorGradientKey0, 0.05f});
+		colGrad.addColorKey(ColorGradientKey{_simConfig.colorGradientKey1, 0.5f});
+		colGrad.addColorKey(ColorGradientKey{_simConfig.colorGradientKey2, 0.6f});
+		colGrad.addColorKey(ColorGradientKey{_simConfig.colorGradientKey3, 1.0f});
+		_ptcDisplay.invalidateColorGradient(colGrad);
+		_simConfig.isInvalidateColorMap = false;
+	}
+
 	RDS_CALL_ONCE(
 		updateSpatialLut(_positions, _simConfig.smoothingRadius); 
 		logDebugSpatial(); 
@@ -768,6 +790,9 @@ FluidSim2DConfig::calcPressureByDensity(float dens)
 void
 FluidSim2DConfig::drawGui(EditorUiDrawRequest& uiDrawReq)
 {
+	if (!_fluSim)
+		return;
+
 	auto wnd = uiDrawReq.makeWindow("config");
 	uiDrawReq.makeCheckbox("useSpatialOptimization",	&useSpatialOptimization);
 	uiDrawReq.dragFloat("particleSize",					&particleSize,			0.01f);
@@ -793,7 +818,14 @@ FluidSim2DConfig::drawGui(EditorUiDrawRequest& uiDrawReq)
 			oColor->b = v[2];
 			oColor->a = v[3];
 		};
-	makeColorPicker4("particleColor", &particleColor);
+	makeColorPicker4("particleColor",		&particleColor);
+	makeColorPicker4("colorGradientKey0",	&colorGradientKey0);
+	makeColorPicker4("colorGradientKey1",	&colorGradientKey1);
+
+	uiDrawReq.makeCheckbox("isInvalidateColorMap", &isInvalidateColorMap);
+	uiDrawReq.showText("colorGradientTexture:");
+	uiDrawReq.showImage(_fluSim->particleDisplay().colorGradientTexture());
+	RDS_TODO("sample this texture should use clamp sampler");
 
 	uiDrawReq.showText("debugDensity: {}",				debugDensity);
 	uiDrawReq.showText("debugMousePosViewport: {}",		debugMousePosViewport);
@@ -802,6 +834,54 @@ FluidSim2DConfig::drawGui(EditorUiDrawRequest& uiDrawReq)
 
 	uiDrawReq.showText("debugParticleCount: {}",		debugParticleCount);
 	uiDrawReq.showText("debugWithinRadiusCount: {}",	debugWithinRadiusCount);
+	uiDrawReq.showText("debugMouseCellCoord: {}",		_fluSim->positionToCellCoord(debugMousePosWorld.toVec2(), smoothingRadius));
 }
+
+void 
+ParticleDisplay::s_createColorGradientTexture(SPtr<Texture2D>& oTex, const ColorGradient& colorGradient)
+{
+	int w = 64;
+	int h = 4;
+	auto texDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+	texDesc.usageFlags	= TextureUsageFlags::ShaderResource;
+	texDesc.format		= ColorType::RGBAb;
+	texDesc.mipCount	= 1;
+	texDesc.size.set(w, h, 1);
+
+	auto& image = texDesc.uploadImage;
+	image.create(Color4b::s_kColorType, w, h);
+
+	for (int y = 0; y < h; y++) 
+	{
+		auto span = image.row<Color4b>(y);
+		for (int x = 0; x < w; x++) 
+		{
+			float t = x / (w - 1.0f);
+			span[x] = colorGradient.evaluate(t).toColorRGBAb();
+		}
+	}
+
+	oTex = Renderer::renderDevice()->createTexture2D(texDesc);
+}
+
+void 
+ParticleDisplay::create(const ColorGradient& colorGrad)
+{
+	invalidateColorGradient(colorGrad);
+}
+
+void 
+ParticleDisplay::invalidateColorGradient(const ColorGradient& colorGrad)
+{
+	_colorGradient = colorGrad;
+	s_createColorGradientTexture(_texColorGradient, _colorGradient);
+}
+
+Texture2D* 
+ParticleDisplay::colorGradientTexture()
+{
+	return _texColorGradient;
+}
+
 
 }
