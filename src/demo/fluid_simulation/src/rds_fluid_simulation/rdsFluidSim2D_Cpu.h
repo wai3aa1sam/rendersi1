@@ -9,8 +9,8 @@ struct FluidSim2DConfig
 {
 public:
 	float		particleMass		= 1.0f;
-	float		particleSize		= 0.1f;
-	Color4f		particleColor		= Color4f{0.2f, 1.0f, 0.2f, 1.0f};
+	float		particleSize		= 0.1f / 2.0f;
+	Color4f		particleColor		= Color4f{0.2f, 1.0f, 1.0f, 1.0f};
 
 	float		smoothingRadius		= 2.f;
 	float		collisionDamping	= 0.95f;
@@ -25,6 +25,8 @@ public:
 	Rect2f		spawnRegion			= { Vec2f{0.0, 0.0},	Vec2f{boundingRegion.size} / 4.0f };
 
 	bool useSpatialOptimization = 1;
+	bool useDebugLog			= 0;
+	bool useDebugSpatial		= 0;
 
 public:
 	FluidSim2DConfig()
@@ -36,11 +38,14 @@ public:
 	float calcPressureByDensity(float dens);
 
 public:
-	float		debugDensity			= 1.0f;
+	float		debugDensity			= 128.0f;
 	Vec2f		debugMousePosViewport	= Vec2f::s_zero();
 
 	Vec3f		debugMousePosWorld		= Vec3f::s_zero();
 	Vec3f		debugMouseDirWorld		= Vec3f::s_zero();
+
+	u32			debugParticleCount		= 0;
+	u32			debugWithinRadiusCount	= 0;
 
 public:
 	void drawGui(EditorUiDrawRequest& uiDrawReq);
@@ -62,7 +67,7 @@ public:
 		Vector<Vec2f>& outVelocities;
 		Vector<float>& outDensities;
 	};
-	u32		spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& outVelocities, Vector<float>& outDensities);
+	u32		spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& outPredictedPositions, Vector<Vec2f>& outVelocities, Vector<float>& outDensities);
 	Vec2i	calcSpawnCountPerAxis() const;
 };
 
@@ -165,6 +170,7 @@ public:
 		DimT	direction;
 	};
 	void	foreachPointWithinRadius(SizeT tarParticleIdx, float radius, bool isSkipSelf, const Function<void(const NeighbourInfo&)>& callback);
+	void	debugForeachPointWithinRadius(const DimT& samplingPt, float radius, bool isSkipSelf, const Function<void(const NeighbourInfo&)>& callback);
 
 	void	updateSpatialLut(const Vector<DimT>& pts, float radius);
 	DimT_i	positionToCellCoord(const DimT& pt, float radius);
@@ -173,6 +179,8 @@ public:
 
 private:
 	Vector<DimT>	_positions;
+	Vector<DimT>	_predictedPositions;
+
 	Vector<DimT>	_velocities;
 	Vector<float>	_densities;
 
