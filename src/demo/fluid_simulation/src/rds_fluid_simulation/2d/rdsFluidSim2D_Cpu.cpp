@@ -19,11 +19,10 @@ FluidSim2D_Cpu::onCreate(GraphicsDemo* parentDemo)
 	_particleSpawner.spawnRegion = _simConfig.spawnRegion;
 	//_particleSpawner.spawnRegion = _simConfig.boundingRegion;
 
-	_particleSpawner.spawnTo(_positions, _predictedPositions, _velocities, _densities, _densityData);
+	_simConfig.debugParticleCount = _particleSpawner.spawnTo(_positions, _predictedPositions, _velocities, _densities, _densityData);
 	_spatialLut.resize(_positions.size());
 	_cellKeyStartIndices.resize(_positions.size());
 
-	_simConfig.debugParticleCount = (u32)_positions.size();
 	_ptcDisplay.create2D(_simConfig.makeColorGradient());
 
 	auto& camera = parentDemo->app().mainWindow().camera();
@@ -77,99 +76,22 @@ FluidSim2D_Cpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 			drawData->setupMaterial(_parentDemo->mtlDrawCircle);
 			rdReq.circleMaterial = _parentDemo->mtlDrawCircle;
 
-			#if 0
-			for (auto& e : _positions)
-			{
-				rdReq.drawCircle(e, _simConfig.particleSize, _simConfig.particleColor);
-			}
-			#endif // 0
-
-			RDS_TODO("later put on debug, also, test orthographic mode");
-			{
-				#if 0
-				if (_parentDemo)
-				{
-					static Ray3f ray;
-					if (_parentDemo->uiMouseState.isDown(UiMouseEventButton::Left))
-					{
-						ray = _mouseRayWorld;
-					}
-					rdReq.drawLine(ray.origin, ray.origin + ray.dir * 9999.0f, Color4f(1.0f, 0.0f, 0.0f, 1.0f));
-					rdReq.drawCircle(ray.origin.toVec2(), _simConfig.smoothingRadius, Color4f(0.2f, 0.0f, 0.0f, 0.005f));
-				}
-				#endif // 0
-
-				if (_simState.isPullInteraction)
-				{
-					rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, Color4f(0.2f, 0.8f, 0.2f, 0.005f));
-				}
-				if (_simState.isPushInteraction)
-				{
-					rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, Color4f(0.2f, 0.2f, 0.8f, 0.005f));
-				}
-				
-				rdReq.drawAABBox(Vec3f{ _simConfig.boundingRegion.pos, 0.0f }, Vec3f{_simConfig.boundingRegion.size, 0.001f} / 2.0f);
-			}
-
-			{
-				Color4f color = Color4f(0.2f, 0.6f, 0.2f, 1.0f);
-
-				auto gridCellCount = Vec2f{_simConfig.boundingRegion.size} / _simConfig.smoothingRadius;
-				gridCellCount.x = math::ceil(gridCellCount.x);
-				gridCellCount.y = math::ceil(gridCellCount.y);
-
-				const auto& region = _simConfig.boundingRegion;
-				auto cellSize = Vec2f{_simConfig.boundingRegion.size} / gridCellCount;
-
-				auto minExtent = Vec2f{ region.pos } - Vec2f{ region.size } / 2.0f -cellSize / 2.0f;
-				for (int y = -2; y < gridCellCount.y + 2; y++)
-				{
-					float posY = minExtent.y + cellSize.y * y;
-
-					auto yLinePt0 = Vec3f{ minExtent.x, posY, 0.0f };
-					auto yLinePt1 = yLinePt0 + Vec3f::s_right() * region.w * 2.0f;
-					rdReq.drawLine(yLinePt0, yLinePt1, color);
-
-					for (int x = -2; x < gridCellCount.x + 2; x++)
-					{
-						float posX = minExtent.x + cellSize.x * x;
-
-						auto xLinePt0 = Vec3f{ posX, minExtent.y, 0.0f };
-						auto xLinePt1 = xLinePt0 + Vec3f::s_up() * region.h * 2.0f;
-						rdReq.drawLine(xLinePt0, xLinePt1, color);
-					}
-				}
-			}
-
-			if (_simConfig.useDebugSpatial)
-			{
-				auto count = 0;
-				auto fn =
-					[&](const NeighbourInfo& info)
-					{
-						count++;
-						rdReq.drawCircle(_positions[info.index], _simConfig.particleSize, Color4f(1.0f, 1.0f, 1.0f, 1.0f));
-					};
-				debugForeachPointWithinRadius(_mouseRayWorld.origin.toVec2(), _simConfig.smoothingRadius, false, fn);
-				_simConfig.debugWithinRadiusCount = count;
-			}
+			debug_drawBoundary(rdReq);
+			debug_drawSpatialGrid(rdReq);
+			debug_drawSpatial(rdReq);
+			debug_drawMouseInteraction(rdReq);
 
 			_ptcDisplay.draw(rdReq, drawData, _positions, _velocities, _simConfig.particleSize);
 		}
 	);
 
 	drawData->oTexPresent = rtColor;
-	
-	//RdgTextureHnd rtTex;
-	//_parentDemo->addPass_DebugTexture(_ptcDisplay.colorGradientTexture(), &rtTex);
-	//drawData->oTexPresent = rtTex;
 }
 
 void 
 FluidSim2D_Cpu::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 {
-	_simConfig.drawGui(uiDrawReq);
-
+	Base::onDrawGui(uiDrawReq);
 }
 
 void 
@@ -177,8 +99,6 @@ FluidSim2D_Cpu::onUiMouseEvent(UiMouseEvent& ev)
 {
 	Base::onUiMouseEvent(ev);
 
-	_simState.isPullInteraction = isFocusOnEditorViewport() && ev.isDown(UiMouseEventButton::Left);
-	_simState.isPushInteraction = isFocusOnEditorViewport() && ev.isDown(UiMouseEventButton::Right);
 }
 
 void 
@@ -186,34 +106,9 @@ FluidSim2D_Cpu::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
 	Base::onUiKeyboardEvent(ev);
 
-	if (ev.isUp(UiKeyboardEventButton::Space))
-	{
-		_simState.isStop = !_simState.isStop;
-	}
-
-	if (_simState.isStop)
-	{
-		if (ev.isUp(UiKeyboardEventButton::E))
-		{
-			_simState.isStepForward = !_simState.isStepForward;
-		}
-
-		if (ev.isUp(UiKeyboardEventButton::Q))
-		{
-			_simState.isStepBackward = !_simState.isStepBackward;
-		}
-	}
 }
 
-ParticleDisplay& 
-FluidSim2D_Cpu::particleDisplay()
-{
-	return _ptcDisplay;
-}
-
-#if 1
-
-void 
+void
 FluidSim2D_Cpu::update(float dt)
 {
 	if (_simConfig.isInvalidateColorMap)
@@ -225,14 +120,14 @@ FluidSim2D_Cpu::update(float dt)
 
 	RDS_CALL_ONCE(
 		updateSpatialLut(_positions, _simConfig.smoothingRadius); 
-		logDebugSpatial(); 
+		debug_logSpatial(); 
 		return; 
 	);
 
 	if (!_simState.isStop)
 	{
 		simulate(dt);
-		logDebugSpatial();
+		debug_logSpatial();
 	}
 	else
 	{
@@ -247,7 +142,7 @@ FluidSim2D_Cpu::update(float dt)
 
 		if (shdSim)
 		{
-			logDebugSpatial();
+			debug_logSpatial();
 		}
 	}
 
@@ -256,45 +151,7 @@ FluidSim2D_Cpu::update(float dt)
 	_simConfig.debugMouseDirWorld	 = _mouseRayWorld.dir;
 }
 
-void 
-FluidSim2D_Cpu::logDebugSpatial()
-{
-	if (!_simConfig.useDebugLog)
-	{
-		return;
-	}
-
-	RDS_LOG("----- logDebugSpatial:");
-
-	RDS_LOG("_positions:");
-	for (size_t i = 0; i < _positions.size(); i++)
-	{
-		RDS_LOG("pos[{}]: {}", i, _positions[i]);
-	}
-
-	RDS_LOG("_spatialLut:");
-	for (size_t i = 0; i < _spatialLut.size(); i++)
-	{
-		RDS_LOG("particle_i: {}, cellKey: {}", _spatialLut[i].x, _spatialLut[i].y);
-	}
-
-	RDS_LOG("_cellKeyStartIndices:");
-	for (size_t i = 0; i < _cellKeyStartIndices.size(); i++)
-	{
-		RDS_LOG("_cellKeyStartIndices[{}]: {}", i, _cellKeyStartIndices[i]);
-	}
-
-	RDS_LOG("_debugCellCoords:");
-	for (size_t i = 0; i < _positions.size(); i++)
-	{
-		auto coord = positionToCellCoord(_positions[i], _simConfig.smoothingRadius);
-		RDS_LOG("_pos[{}]: {}, cellKey: {}, _cellCoords: {}, vel: {}, _densities: {}"
-			, i, _positions[i], calcCellKeyByCellCoord(coord), coord
-			, _velocities[i], _densities[i]);
-	}
-
-	RDS_LOG("----- logDebugSpatial --- end");
-}
+#if 1
 
 void
 FluidSim2D_Cpu::simulate(float dt)
@@ -879,244 +736,70 @@ FluidSim2D_Cpu::hashCellCoord(const DimT_i& cellCoord)
 }
 #endif // 1
 
-#endif
+#if 1
 
-u32 
-ParticleSpawner2D::spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& outPredictedPositions
-	, Vector<Vec2f>& outVelocities
-	, Vector<float>& outDensities, Vector<Vec2f>& outDensityData)
+
+void 
+FluidSim2D_Cpu::debug_logSpatial()
 {
-	auto nParticlesPerAxis	= calcSpawnCountPerAxis();
-	auto nParticles			= nParticlesPerAxis.x * nParticlesPerAxis.y;
-
-	//auto& outPositions	= args.outPositions;
-	//auto& outVelocities	= args.outVelocities;
-	//auto& outDensities	= args.outDensities;
-
-	outPositions.clear();
-	outPredictedPositions.clear();
-	outVelocities.clear();
-	outDensities.clear();
-	outDensityData.clear();
-
-	outPositions.reserve(nParticles);
-
-	outPredictedPositions.resize(nParticles);
-	outVelocities.resize(nParticles);
-	outDensities.resize(nParticles);
-	outDensityData.resize(nParticles);
-
-	auto spawnRegionCenter	= Vec2f{spawnRegion.pos} + Vec2f{spawnRegion.size} / 2.0f;
-	auto spawnRegionSize	= Vec2f{spawnRegion.size};
-	for (size_t y = 0; y < nParticlesPerAxis.y; y++)
+	if (!_simConfig.useDebugLog)
 	{
-		for (size_t x = 0; x < nParticlesPerAxis.x; x++)
-		{
-			float tx = x / (nParticlesPerAxis.x - 1.0f);
-			float ty = y / (nParticlesPerAxis.y - 1.0f);
-
-			float px = (tx - 0.5f) * spawnRegionSize.x + spawnRegionCenter.x;
-			float py = (ty - 0.5f) * spawnRegionSize.y + spawnRegionCenter.y;
-
-			outPositions.emplace_back(px, py);
-		}
-	}
-
-	for (size_t i = 0; i < outPositions.size(); i++)
-	{
-		auto rng = Random::instance();
-		float angle		= (float)rng->range(0.0f, 1.0f) * 3.14f * 2;
-		Vec2f dir		= Vec2f{math::cos(angle), math::sin(angle)};
-		Vec2f jitter	= dir * jitterFct * (rng->range(0.0f, 1.0f) - 0.5f);
-
-		outPositions[i]		= outPositions[i] + jitter;
-		outVelocities[i]	= initVelocity;
-	}
-
-	return nParticles;
-}
-
-Vec2i 
-ParticleSpawner2D::calcSpawnCountPerAxis() const
-{
-	auto size = Vec2f{spawnRegion.size};
-
-	float area = size.x * size.y;
-	int targetTotal = math::ceilToInt(area * spawnDensity);
-
-	float lenSum = size.x + size.y;
-	Vec2f t = size / lenSum;
-	float m = math::sqrt(targetTotal / (t.x * t.y));
-	int nx = math::ceilToInt(t.x * m);
-	int ny = math::ceilToInt(t.y * m);
-
-	return { nx, ny };
-}
-
-float 
-FluidSim2DConfig::calcPressureByDensity(float dens)
-{
-	float densityDiff = dens - targetDensity;
-	float pressure = densityDiff * pressureMultiplier;
-	return pressure;
-}
-
-float 
-FluidSim2DConfig::calcNearPressureByDensity(float nearDens)
-{
-	float nearPressure	= nearDens * nearPressureMultiplier;
-	return nearPressure;
-}
-
-Vec2f 
-FluidSim2DConfig::calcPressureByDensityData(const Vec2f& densData)
-{
-	float pressure		= calcPressureByDensity(densData.x);
-	float nearPressure	= calcNearPressureByDensity(densData.y);
-	return Vec2f{pressure, nearPressure};
-}
-
-void
-FluidSim2DConfig::drawGui(EditorUiDrawRequest& uiDrawReq)
-{
-	if (!_fluSim)
 		return;
-
-	auto wnd = uiDrawReq.makeWindow("config");
-	uiDrawReq.makeCheckbox("useSpatialOptimization",	&useSpatialOptimization);
-	uiDrawReq.dragFloat("particleSize",					&particleSize,			0.01f);
-	uiDrawReq.dragFloat("particleMass",					&particleMass,			0.01f);
-	uiDrawReq.dragFloat("timeMultiplier",				&timeMultiplier,		0.01f);
-	uiDrawReq.dragFloat("smoothingRadius",				&smoothingRadius,		0.1f, 0.1f);
-	uiDrawReq.dragFloat("collisionDamping",				&collisionDamping,		0.1f);
-	uiDrawReq.dragFloat("targetDensity",				&targetDensity,			0.1f);
-	uiDrawReq.dragFloat("pressureMultiplier",			&pressureMultiplier,	1.0f);
-	uiDrawReq.dragFloat("viscosityStrength",			&viscosityStrength,		0.01f);
-
-	uiDrawReq.dragFloat("interactionRadius",			&interactionRadius,		0.01f, 0.01f);
-	uiDrawReq.dragFloat("interactionStrength",			&interactionStrength,	1.0f);
-
-	auto makeColorPicker4 = [](const char* label, Color4f* oColor)
-		{
-			float v[4];
-			v[0] = oColor->r;
-			v[1] = oColor->g;
-			v[2] = oColor->b;
-			v[3] = oColor->a;
-
-			ImGui::ColorEdit4(label, v);
-
-			oColor->r = v[0];
-			oColor->g = v[1];
-			oColor->b = v[2];
-			oColor->a = v[3];
-		};
-	makeColorPicker4("particleColor",		&particleColor);
-	makeColorPicker4("colorGradientKey0",	&colorGradientKey0);
-	makeColorPicker4("colorGradientKey1",	&colorGradientKey1);
-	makeColorPicker4("colorGradientKey2",	&colorGradientKey2);
-	makeColorPicker4("colorGradientKey3",	&colorGradientKey3);
-
-	uiDrawReq.makeCheckbox("isInvalidateColorMap", &isInvalidateColorMap);
-	uiDrawReq.showText("colorGradientTexture:");
-	uiDrawReq.showImage(_fluSim->particleDisplay().colorGradientTexture());
-	RDS_TODO("sample this texture should use clamp sampler");
-
-	uiDrawReq.showText("debugDensity: {}",				debugDensity);
-	uiDrawReq.showText("debugMousePosViewport: {}",		debugMousePosViewport);
-	uiDrawReq.showText("debugMousePosWorld: {}",		debugMousePosWorld);
-	uiDrawReq.showText("debugMouseDirWorld: {}",		debugMouseDirWorld);
-
-	uiDrawReq.showText("debugParticleCount: {}",		debugParticleCount);
-	uiDrawReq.showText("debugWithinRadiusCount: {}",	debugWithinRadiusCount);
-	uiDrawReq.showText("debugMouseCellCoord: {}",		_fluSim->positionToCellCoord(debugMousePosWorld.toVec2(), smoothingRadius));
-}
-
-void 
-ParticleDisplay::s_createColorGradientTexture(SPtr<Texture2D>& oTex, const ColorGradient& colorGradient)
-{
-	int w = 64;
-	int h = 4;
-	auto texDesc = Texture2D::makeCDesc(RDS_SRCLOC);
-	texDesc.usageFlags	= TextureUsageFlags::ShaderResource;
-	texDesc.format		= ColorType::RGBAb;
-	texDesc.mipCount	= 1;
-	texDesc.size.set(w, h, 1);
-
-	auto& image = texDesc.uploadImage;
-	image.create(Color4b::s_kColorType, w, h);
-
-	for (int y = 0; y < h; y++) 
-	{
-		auto span = image.row<Color4b>(y);
-		for (int x = 0; x < w; x++) 
-		{
-			float t = x / (w - 1.0f);
-			span[x] = colorGradient.evaluate(t).toColorRGBAb();
-		}
 	}
 
-	oTex = Renderer::renderDevice()->createTexture2D(texDesc);
-}
+	RDS_LOG("----- debug_logSpatial:");
 
-void 
-ParticleDisplay::create2D(const ColorGradient& colorGrad)
-{
-	RenderMesh& rdMesh = _rdMesh;
-
+	RDS_LOG("_positions:");
+	for (size_t i = 0; i < _positions.size(); i++)
 	{
-		using VtxT = Vertex_PosUv<1>;
-		using IdxT = u16;
-		EditMesh mesh;
-
-		auto& pos = mesh.pos;
-		pos.resize(4);
-		pos[0] = Vec3f{Vec2f{ -1.0f, +1.0f }, 0.0f};
-		pos[1] = Vec3f{Vec2f{ +1.0f, +1.0f }, 0.0f};
-		pos[2] = Vec3f{Vec2f{ -1.0f, -1.0f }, 0.0f};
-		pos[3] = Vec3f{Vec2f{ +1.0f, -1.0f }, 0.0f};
-
-		auto& uv = mesh.uvs[0];
-		uv.resize(4);
-		uv[0] = Vec2f{0.0, 0.0};
-		uv[1] = Vec2f{1.0, 0.0};
-		uv[2] = Vec2f{0.0, 1.0};
-		uv[3] = Vec2f{1.0, 1.0};
-
-		auto& idxs = mesh.indices;
-		idxs.reserve(6);
-		idxs.emplace_back(0); idxs.emplace_back(2); idxs.emplace_back(1);
-		idxs.emplace_back(3); idxs.emplace_back(1); idxs.emplace_back(2);
-
-		rdMesh.create(mesh);
+		RDS_LOG("pos[{}]: {}", i, _positions[i]);
 	}
 
-	auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
-	cDesc.bufSize	= 16;
-	cDesc.stride	= sizeof(Vec2f);
-	cDesc.typeFlags = RenderGpuBufferTypeFlags::Vertex | RenderGpuBufferTypeFlags::Compute;
-	_posBufGpu = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);	_posBufGpu->setDebugName("_posBufGpu");
+	RDS_LOG("_spatialLut:");
+	for (size_t i = 0; i < _spatialLut.size(); i++)
+	{
+		RDS_LOG("particle_i: {}, cellKey: {}", _spatialLut[i].x, _spatialLut[i].y);
+	}
 
-	cDesc.typeFlags = RenderGpuBufferTypeFlags::Index | RenderGpuBufferTypeFlags::Compute;
-	_velBufGpu = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);	_velBufGpu->setDebugName("_velBufGpu");
+	RDS_LOG("_cellKeyStartIndices:");
+	for (size_t i = 0; i < _cellKeyStartIndices.size(); i++)
+	{
+		RDS_LOG("_cellKeyStartIndices[{}]: {}", i, _cellKeyStartIndices[i]);
+	}
 
-	GraphicsDemo::createMaterial(&_shaderPtcDisplay, &_mtlPtcDisplay, "asset/shader/demo/fluid_simulation/rdsParticleDisplay2D.shader");
+	RDS_LOG("_debugCellCoords:");
+	for (size_t i = 0; i < _positions.size(); i++)
+	{
+		auto coord = positionToCellCoord(_positions[i], _simConfig.smoothingRadius);
+		RDS_LOG("_pos[{}]: {}, cellKey: {}, _cellCoords: {}, vel: {}, _densities: {}"
+			, i, _positions[i], calcCellKeyByCellCoord(coord), coord
+			, _velocities[i], _densities[i]);
+	}
 
-	invalidateColorGradient(colorGrad);
+	RDS_LOG("----- debug_logSpatial --- end");
 }
 
 void 
-ParticleDisplay::invalidateColorGradient(const ColorGradient& colorGrad)
+FluidSim2D_Cpu::debug_drawSpatial(RenderRequest& rdReq)
 {
-	_colorGradient = colorGrad;
-	s_createColorGradientTexture(_texColorGradient, _colorGradient);
+	if (_simConfig.useDebugSpatial)
+	{
+		auto count = 0;
+		auto fn =
+			[&](const NeighbourInfo& info)
+			{
+				count++;
+				rdReq.drawCircle(_positions[info.index], _simConfig.particleSize, Color4f(1.0f, 1.0f, 1.0f, 1.0f));
+			};
+		debugForeachPointWithinRadius(_mouseRayWorld.origin.toVec2(), _simConfig.smoothingRadius, false, fn);
+		_simConfig.debugWithinRadiusCount = count;
+	}
 }
 
-Texture2D* 
-ParticleDisplay::colorGradientTexture()
-{
-	return _texColorGradient;
-}
 
+#endif // 1
+
+
+#endif
 
 }

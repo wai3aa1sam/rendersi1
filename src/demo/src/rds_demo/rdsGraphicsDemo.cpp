@@ -86,7 +86,7 @@ GraphicsDemo::onCreate()
 
 	RenderUtil::createMaterial(&_mtlPostProcessing, "asset/shader/pass_feature/post_processing/rdsPostProcessing.shader");
 
-	createMaterial(&_shaderDrawCircle, &mtlDrawCircle, "asset/shader/demo/fluid_simulation/rdsDrawCircle.shader");
+	createMaterial(&_shaderDrawCircle, &mtlDrawCircle, "asset/shader/demo/fluid_simulation/2d/rdsDrawCircle.shader");
 }
 
 void 

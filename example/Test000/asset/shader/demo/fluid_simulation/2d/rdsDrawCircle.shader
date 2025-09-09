@@ -69,33 +69,16 @@ PixelIn vs_main(VertexIn i)
 
 float4 ps_main(PixelIn i) : SV_TARGET
 {
-	float4 o = {0.0, 0.0, 0.0, 1.0};
-
-	float2  center			= float2(0.5, 0.5);
-	float2  uv				= i.uv;
-	float2  resolution 		= rds_DrawParam_get().resolution;
-	//uv.x 				   *= resolution.x / resolution.y;
-    float2 	relativePos 	= (uv) - center;		// uv.x * aspect_ratio 
-	float 	dist 			= length(relativePos);
-	float   radius			= 0.5;
-	//dist = -dist;
-
-	float fade = 0.005;
-	float thickness = 1.0;
-
-	//float circle = smoothstep(radius + fade, radius - fade, dist);
-	float circle = dist <= radius;
-
-    //float circle = smoothstep(0.0, fade, dist);
-    //circle *= smoothstep(thickness + fade, thickness, dist);
-
-	if (circle == 0.0)
+	float2 centreOffset = (i.uv.xy - 0.5);
+	float  sqrDist 		= dot(centreOffset, centreOffset);
+	
+	if (sqrDist > square(0.5))
 		discard;
 
-	o.rgb = i.color.rgb;
-	o.a   = circle * i.color.a;
-	return o;
+	float dist			= sqrt(sqrDist);
+	float delta 		= fwidth(dist);
+	float alpha 		= 1 - smoothstep(1 - delta, 1 + delta, sqrDist);
 
-	float4 white = {1.0, 1.0, 1.0, 1.0};
-    return o;
+	float3 color = i.color.rgb;
+	return float4(color, alpha);
 }

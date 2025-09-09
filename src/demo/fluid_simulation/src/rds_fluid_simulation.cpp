@@ -16,8 +16,8 @@ void
 FluidSimulation::onCreate()
 {
 	Base::onCreate();
-	createMaterial(&_shaderFluidSimulation, &_mtlFluidSimulation, "asset/shader/demo/fluid_simulation/fluid_simulation.shader"
-					, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
+	//createMaterial(&_shaderFluidSimulation, &_mtlFluidSimulation, "asset/shader/demo/fluid_simulation/fluid_simulation.shader"
+	//				, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
 
 	_fluidSim2D_Cpu = makeUPtr<FluidSim2D_Cpu>();
 	_fluidSim2D_Cpu->onCreate(this);

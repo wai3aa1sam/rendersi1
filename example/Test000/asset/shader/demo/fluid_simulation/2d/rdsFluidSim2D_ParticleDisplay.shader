@@ -79,7 +79,7 @@ PixelIn vs_main(VertexIn i)
 float4 ps_main(PixelIn i) : SV_TARGET
 {
 	float2 centreOffset = (i.uv.xy - 0.5);
-	float sqrDist 		= dot(centreOffset, centreOffset);
+	float  sqrDist 		= dot(centreOffset, centreOffset);
 	
 	if (sqrDist > square(0.5))
 		discard;
