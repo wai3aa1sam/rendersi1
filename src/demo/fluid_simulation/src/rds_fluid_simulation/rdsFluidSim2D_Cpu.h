@@ -112,22 +112,27 @@ public:
 	float		particleSize		= 0.1f / 2.0f;
 	Color4f		particleColor		= Color4f{0.2f, 1.0f, 1.0f, 1.0f};
 
-	Color4f		colorGradientKey0	= Color4f{0.0f, 0.0f, 1.0f, 1.0f};
+	Color4f		colorGradientKey0	= Color4f{0.075f, 0.584f, 0.827f, 1.0f};
 	Color4f		colorGradientKey1	= Color4f{0.0f, 1.0f, 0.0f, 1.0f};
 	Color4f		colorGradientKey2	= Color4f{1.0f, 1.0f, 0.0f, 1.0f};
 	Color4f		colorGradientKey3	= Color4f{1.0f, 0.0f, 0.0f, 1.0f};
 
-	float		smoothingRadius		= 2.f;
-	float		collisionDamping	= 0.95f;
-	float		targetDensity		= 2.7f;
-	float		pressureMultiplier	= 500.0f;
+	float		smoothingRadius			= 0.35f;
+	float		collisionDamping		= 0.95f;
+	float		targetDensity			= 55.0f;
+	float		pressureMultiplier		= 500.0f;
+	float		nearPressureMultiplier	= 5.0f;
+	float		viscosityStrength		= 0.03f;
+
+	float		interactionRadius	= 2.0f;
+	float		interactionStrength = 90.0f;
 
 	float		timeMultiplier		= 1.0f;
-	float		gravity				= 9.81f;
+	float		gravity				= 12.0f;
 	Vec2f		gravityDir			= Vec2f::s_down();
 
 	Rect2f		boundingRegion		= { Vec2f{0.0, 0.0},	Vec2f{5.0,	2.5} * 2.0f };
-	Rect2f		spawnRegion			= { Vec2f{0.0, 0.0},	Vec2f{boundingRegion.size} / 4.0f };
+	Rect2f		spawnRegion			= { Vec2f{0.0, 0.0},	Vec2f{boundingRegion.size} / 3.0f };
 
 	bool useSpatialOptimization = 1;
 	bool isInvalidateColorMap	= 1;
@@ -157,7 +162,9 @@ public:
 	}
 
 public:
-	float calcPressureByDensity(float dens);
+	float calcPressureByDensity(	float dens);
+	float calcNearPressureByDensity(float nearDens);
+	Vec2f calcPressureByDensityData(const Vec2f& densData);
 
 public:
 	float		debugDensity			= 128.0f;
@@ -180,8 +187,8 @@ class ParticleSpawner2D
 {
 public:
 	Vec2f initVelocity		= Vec2f{0.0, 0.0};
-	float jitterFct			= 1.0;
-	float spawnDensity		= 128; // 128.0;
+	float jitterFct			= 0.03f;
+	float spawnDensity		= 160.0f; // 128.0;
 
 	Rect2f spawnRegion;
 
@@ -192,7 +199,7 @@ public:
 		Vector<Vec2f>& outVelocities;
 		Vector<float>& outDensities;
 	};
-	u32		spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& outPredictedPositions, Vector<Vec2f>& outVelocities, Vector<float>& outDensities);
+	u32		spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& outPredictedPositions, Vector<Vec2f>& outVelocities, Vector<float>& outDensities, Vector<Vec2f>& outDensityData);
 	Vec2i	calcSpawnCountPerAxis() const;
 };
 
@@ -224,29 +231,6 @@ public:
 
 		drawData->setupMaterial(_mtlPtcDisplay);
 		rdReq.drawMesh_Instanced(RDS_SRCLOC, _rdMesh, _mtlPtcDisplay, positions.size());
-	}
-
-	void draw(RenderGraph* rdGraph, DrawData* drawData, const Span<Vec2f>& positions, const Span<Vec2f>& velocities)
-	{
-
-		
-
-		//auto& passFluidSim2D_Cpu = rdGraph->addPass("fluid_simulation", RdgPassTypeFlags::Graphics);
-		//passFluidSim2D_Cpu.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-		//passFluidSim2D_Cpu.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
-		//passFluidSim2D_Cpu.setExecuteFunc(
-		//	[=](RenderRequest& rdReq)
-		//	{
-		//		rdReq.reset(rdGraph->renderContext(), drawData);
-
-		//		auto* clearValue = rdReq.clearFramebuffers();
-		//		clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
-		//		clearValue->setClearDepth(1.0f);
-
-		//		drawData->setupMaterial(_mtlPtcDisplay);
-		//		rdReq.drawMesh_Instanced(RDS_SRCLOC, _rdMesh, _mtlPtcDisplay, positions.size());
-		//	}
-		//);
 	}
 
 public:
@@ -292,6 +276,13 @@ public:
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) {};
 
 protected:
+			DemoEditorLayer* demoLayer()		{ return _parentDemo ? _parentDemo->demoLayer() : nullptr; }
+	const	DemoEditorLayer* demoLayer() const	{ return _parentDemo ? _parentDemo->demoLayer() : nullptr; }
+
+protected:
+	bool isFocusOnEditorViewport()	const	{ return demoLayer() ? demoLayer()->isFocusOnEditorViewport() : false; }
+
+protected:
 	GraphicsDemo*	_parentDemo = nullptr;
 	Vec2f			_mousePosViewport;
 	Ray3f			_mouseRayWorld;
@@ -304,9 +295,12 @@ public:
 	
 	struct SimState
 	{
-		bool isStop			= true;
+		bool isStop			= true;		// : 1
 		bool isStepForward	= false;
 		bool isStepBackward	= false;
+
+		bool	isPullInteraction = false;
+		bool	isPushInteraction = false;
 	};
 	SimState _simState;
 
@@ -339,13 +333,23 @@ public:
 	void	simulate(float dt);
 	void	resolveCollisions(DimT& outPos, DimT& outVel);
 
-	float	smoothingKernel(float radius, float dist);
-	float	smoothingKernelDerivative(float radius, float dist);
-	float	calcSharedPressure(float densityA, float densityB);
+	float	smoothingKernel(			float radius, float dist);
+	float	smoothingKernelDerivative(	float radius, float dist);
+	float	smoothingKernelPoly6(		float radius, float dist);
+	float	spikyKernelPow3(			float radius, float dist);
+	float	spikyKernelPow3Derivative(	float radius, float dist);
 
-	float	calcDensity(		SizeT tarParticleIdx);
-	DimT	calcGradient(		SizeT tarParticleIdx);
-	DimT	calcPressureForce(	SizeT tarParticleIdx);
+	float	calcSharedPressure(float densityA, float densityB);
+	DimT	calcSharedPressureByDensityData(DimT densityDataA, DimT densityDataB);
+
+	DimT	calcExternalForce(	DimT inputPos, float radius, float strength, SizeT tarParticleIdx);
+
+	float	calcDensity(					SizeT tarParticleIdx);
+	DimT	calcDensityData(				SizeT tarParticleIdx);
+	DimT	calcGradient(					SizeT tarParticleIdx);
+	DimT	calcPressureForce(				SizeT tarParticleIdx);
+	DimT	calcPressureForceByDensityData(	SizeT tarParticleIdx);		// add near density make the droplet together instead of split out
+	DimT	calcViscosityForce(				SizeT tarParticleIdx);
 
 	float	_calcDensity_Spatial(		SizeT tarParticleIdx);
 	DimT	_calcGradient_Spatial(		SizeT tarParticleIdx);
@@ -378,7 +382,9 @@ private:
 	Vector<DimT>	_predictedPositions;
 
 	Vector<DimT>	_velocities;
+	
 	Vector<float>	_densities;
+	Vector<DimT>	_densityData;	// density, nearDesnsity
 
 	Vector<DimT_u>	_spatialLut;
 	Vector<IdxT>	_cellKeyStartIndices;

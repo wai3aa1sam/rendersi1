@@ -59,8 +59,6 @@ PixelIn vs_main(VertexIn i)
 {
 	uint instanceId = i.instanceId;
 
-	float4 color = RDS_TEXTURE_2D_SAMPLE_LOD(u_colorMap, i.uv, 0);
-
 	float speed = length(RDS_BUFFER_LOAD_I(float2, u_velocities, instanceId));
 	float speedT = saturate(speed / u_velocityMax);
 	float colT = speedT;
@@ -68,6 +66,7 @@ PixelIn vs_main(VertexIn i)
 	float3 centreWorld 		= float3(RDS_BUFFER_LOAD_I(float2, u_positions, instanceId), 0);
 	float3 posWs 			= centreWorld + mul(u_objToWorld, float4(i.positionOS.xyz * u_scale, 1.0)).xyz;
 	float4 posOs 			= mul(u_worldToObj, float4(posWs.xyz, 1));
+	float4 color			 = RDS_TEXTURE_2D_SAMPLE_LOD(u_colorMap, float2(colT, 0.5), 0);
 
     PixelIn o;
 	o.positionHCS = mul(RDS_MATRIX_VP, posOs);

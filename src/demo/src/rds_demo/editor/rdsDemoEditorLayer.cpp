@@ -274,7 +274,7 @@ DemoEditorLayer::drawEditorUI(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 	auto&		camera		= app().mainWindow().camera();
 	Texture2D*	texPresent	= _texHndPresent ? _texHndPresent.texture2D() : nullptr;
 	_edtViewportWnd.draw(&uiDrawReq, texPresent, _isFullScreen, &camera, 1.0f, mainWindow().uiMouseEv, mainWindow().uiInput());
-
+	
 	//if (!_edtViewportWnd.isFullScreen())
 	{
 		

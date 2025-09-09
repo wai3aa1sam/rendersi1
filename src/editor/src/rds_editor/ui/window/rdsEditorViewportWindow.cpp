@@ -19,6 +19,7 @@ EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, bool
 {
 	auto& uiDrawReq = *edtDrawReq;
 	auto wnd = window(edtDrawReq, label());
+	_isFocused = wnd.isFocused();		RDS_TODO("should set states for all window currently only a fast fix on this window");
 
 	RDS_TODO("drawBegin / onDraw is needed, also save all window in an array");
 	
@@ -28,7 +29,7 @@ EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, bool
 	if (ImGui::IsItemHovered())
 		_clientRect = calcClientRect();
 
-	if (wnd.isFocused() || isFullScreen)
+	if (_isFocused || isFullScreen)
 	{
 		_camCtrl.update(camera, dt, mouseEv, uiInput);
 	}

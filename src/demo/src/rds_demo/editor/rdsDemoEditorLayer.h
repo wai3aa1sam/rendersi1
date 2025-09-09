@@ -44,6 +44,8 @@ public:
 
 	MeshAssets&				meshAssets();
 
+	bool					isFocusOnEditorViewport() const;
+
 protected:
 	virtual void onCreate() override;
 	virtual void onUpdate() override;
@@ -100,7 +102,8 @@ inline EditorContext&		DemoEditorLayer::editorContext()	{ return _edtCtx; }
 
 inline Scene&				DemoEditorLayer::scene()			{ return _scene; }
 
-inline MeshAssets&			DemoEditorLayer::meshAssets()		{ return *_meshAssets; }
+inline MeshAssets&			DemoEditorLayer::meshAssets()						{ return *_meshAssets; }
+inline bool					DemoEditorLayer::isFocusOnEditorViewport() const	{ RDS_TODO("temp"); return _edtViewportWnd.isFocused(); }
 
 
 #endif
