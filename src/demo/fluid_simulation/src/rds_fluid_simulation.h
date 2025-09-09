@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_fluid_simulation/common/rds_fluid_simulation_common.h"
-#include "rds_fluid_simulation/2d/rdsFluidSim2D_Cpu.h"
+#include "rds_fluid_simulation/2d/rdsFluidSim2D.h"
 
 namespace rds
 {
@@ -31,7 +31,7 @@ protected:
 	SPtr<Material>	_mtlFluidSimulation;
 	SPtr<Texture2D>	_texUvChecker;
 
-	UPtr<FluidSim2D_Cpu>	_fluidSim2D_Cpu;
+	UPtr<FluidSim2D_Gpu>	_fluidSim2D;
 	FluidSimDemo_Base*		_curDemo = nullptr;
 };
 RDS_DEMO(FluidSimulation);

@@ -20,7 +20,11 @@ public:
 
 	Rect2f spawnRegion;
 
+	u32 particleCount = 0;
+
 public:
+	void create(Rect2f spawnRegion_);
+
 	struct SpawnArgs
 	{
 		Vector<Vec2f>& outPositions;
@@ -28,7 +32,13 @@ public:
 		Vector<float>& outDensities;
 	};
 	u32		spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& outPredictedPositions, Vector<Vec2f>& outVelocities, Vector<float>& outDensities, Vector<Vec2f>& outDensityData);
+	u32		spawnTo(RdgBufferHnd bufPos);
+
+public:
 	Vec2i	calcSpawnCountPerAxis() const;
+
+private:
+	u32 _spawnTo_Positions(Vector<Vec2f>& outPositions);
 };
 
 

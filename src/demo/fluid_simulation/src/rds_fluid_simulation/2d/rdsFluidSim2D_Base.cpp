@@ -10,11 +10,22 @@ namespace rds
 #endif // 0
 #if 1
 
-
 void 
 FluidSim2D_Base::onCreate(GraphicsDemo* parentDemo) 
 { 
-	Base::onCreate(parentDemo); 
+	Base::onCreate(parentDemo);
+
+	_simConfig.create(this);
+	_ptcDisplay.create2D(_simConfig.makeColorGradient());
+	_particleSpawner.create(_simConfig.spawnRegion);
+
+	auto& camera = parentDemo->app().mainWindow().camera();
+	camera.setOrthographic(4.0f);
+	camera.setPos(Vec3f{0.385f, 11.446f, 22.212f});
+	camera.setAim(Vec3f{0.385f, 5.10f, 0.0f});
+
+	camera.setPos(Vec3f{0.0f, 0.0f, 8.0f});
+	camera.setAim(Vec3f{0.0f, 0.0f, 0.0f});
 }
 
 void 

@@ -15,23 +15,12 @@ FluidSim2D_Cpu::onCreate(GraphicsDemo* parentDemo)
 {
 	Base::onCreate(parentDemo);
 
-	_simConfig.create(this);
 	_particleSpawner.spawnRegion = _simConfig.spawnRegion;
 	//_particleSpawner.spawnRegion = _simConfig.boundingRegion;
 
 	_simConfig.debugParticleCount = _particleSpawner.spawnTo(_positions, _predictedPositions, _velocities, _densities, _densityData);
 	_spatialLut.resize(_positions.size());
 	_cellKeyStartIndices.resize(_positions.size());
-
-	_ptcDisplay.create2D(_simConfig.makeColorGradient());
-
-	auto& camera = parentDemo->app().mainWindow().camera();
-	camera.setOrthographic(4.0f);
-	camera.setPos(Vec3f{0.385f, 11.446f, 22.212f});
-	camera.setAim(Vec3f{0.385f, 5.10f, 0.0f});
-
-	camera.setPos(Vec3f{0.0f, 0.0f, 8.0f});
-	camera.setAim(Vec3f{0.0f, 0.0f, 0.0f});
 }
 
 void 
@@ -57,10 +46,10 @@ FluidSim2D_Cpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 	auto	screenSize	= drawData->resolution2u();
 
-	RdgTextureHnd rtColor	= rdGraph->createTexture("fluid_simulation_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
-	RdgTextureHnd dsBuf		= rdGraph->createTexture("fluid_simulation_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd rtColor	= rdGraph->createTexture("fs2d_color",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAb, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd dsBuf		= rdGraph->createTexture("fs2d_depth",	Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil | TextureUsageFlags::ShaderResource});
 
-	auto& passFluidSim2D_Cpu = rdGraph->addPass("fluid_simulation", RdgPassTypeFlags::Graphics);
+	auto& passFluidSim2D_Cpu = rdGraph->addPass("fluid_sim_2d", RdgPassTypeFlags::Graphics);
 	passFluidSim2D_Cpu.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 	passFluidSim2D_Cpu.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
 	passFluidSim2D_Cpu.setExecuteFunc(

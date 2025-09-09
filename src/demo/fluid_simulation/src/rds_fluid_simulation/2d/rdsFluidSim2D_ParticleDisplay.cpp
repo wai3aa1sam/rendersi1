@@ -89,6 +89,34 @@ FluidSim2D_ParticleDisplay::invalidateColorGradient(const ColorGradient& colorGr
 	s_createColorGradientTexture(_texColorGradient, _colorGradient);
 }
 
+void 
+FluidSim2D_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, const Span<Vec2f>& positions, const Span<Vec2f>& velocities, float radius)
+{
+	RDS_CORE_ASSERT(_posBufGpu && _velBufGpu);
+
+	_posBufGpu->uploadToGpu(makeByteSpan(positions));
+	_velBufGpu->uploadToGpu(makeByteSpan(velocities));
+
+	draw(rdReq, drawData, _posBufGpu->renderGpuBuffer(), _velBufGpu->renderGpuBuffer(), radius, sCast<u32>(positions.size()));
+}
+
+void 
+FluidSim2D_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
+{
+	_mtlPtcDisplay->setParam("u_colorMap",		_texColorGradient);
+	_mtlPtcDisplay->setParam("u_colorMap",		SamplerState::makeLinearClampToEdge());
+
+	_mtlPtcDisplay->setParam("u_positions",		bufPos);
+	_mtlPtcDisplay->setParam("u_velocities",	bufVel);
+	_mtlPtcDisplay->setParam("u_scale",			radius);
+	_mtlPtcDisplay->setParam("u_velocityMax",	6.5f);
+	_mtlPtcDisplay->setParam("u_objToWorld",	Mat4f::s_identity());
+	_mtlPtcDisplay->setParam("u_worldToObj",	Mat4f::s_identity());
+
+	drawData->setupMaterial(_mtlPtcDisplay);
+	rdReq.drawMesh_Instanced(RDS_SRCLOC, _rdMesh, _mtlPtcDisplay, particleCount);
+}
+
 Texture2D* 
 FluidSim2D_ParticleDisplay::colorGradientTexture()
 {
