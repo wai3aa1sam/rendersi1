@@ -134,10 +134,6 @@ FluidSim2D_Cpu::update(float dt)
 			debug_logSpatial();
 		}
 	}
-
-	_simConfig.debugMousePosViewport = _mousePosViewport;
-	_simConfig.debugMousePosWorld	 = _mouseRayWorld.origin;
-	_simConfig.debugMouseDirWorld	 = _mouseRayWorld.dir;
 }
 
 #if 1
@@ -148,13 +144,9 @@ FluidSim2D_Cpu::simulate(float dt)
 	dt *= _simConfig.timeMultiplier;
 
 	{
-		float interactionStrength = 0.0f;
-		if (_simState.isPullInteraction) interactionStrength += _simConfig.interactionStrength;
-		if (_simState.isPushInteraction) interactionStrength -= _simConfig.interactionStrength;
-
 		for (size_t i = 0; i < _positions.size(); i++)
 		{
-			auto accel = calcExternalForce(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, interactionStrength, i);
+			auto accel = calcExternalForce(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, _simState.interactionInputStrength, i);
 			_velocities[i] += accel * dt;
 		}
 	}

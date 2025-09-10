@@ -32,6 +32,17 @@ void
 FluidSim2D_Base::onUpdate(float dt)
 {
 	Base::onUpdate(dt);
+
+	_simState.interactionInputStrength = 0.0f;
+	if (_simState.isPullInteraction) _simState.interactionInputStrength += _simConfig.interactionStrength;
+	if (_simState.isPushInteraction) _simState.interactionInputStrength -= _simConfig.interactionStrength;
+
+	{
+		_simConfig.debugParticleCount		= _particleSpawner.particleCount;
+		_simConfig.debugMousePosViewport	= _mousePosViewport;
+		_simConfig.debugMousePosWorld		= _mouseRayWorld.origin;
+		_simConfig.debugMouseDirWorld		= _mouseRayWorld.dir;
+	}
 }
 
 void 

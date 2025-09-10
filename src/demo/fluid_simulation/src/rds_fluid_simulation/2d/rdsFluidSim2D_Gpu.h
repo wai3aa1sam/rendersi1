@@ -59,12 +59,23 @@ public:
 	{
 	public:
 		using Gpu_DimT	= Tuple2f;
-		using Gpu_IdxT		= u32;
+		using Gpu_IdxT	= u32;
+		using Gpu_Idx3T	= Tuple3u;
+
+	public:
+		// TODO: get pass id by compute string
+		static constexpr int s_kPassIdx_Cs_calcExternalForce	= 0;
+		static constexpr int s_kPassIdx_Cs_updateSpatialLut		= 1;
+		static constexpr int s_kPassIdx_Cs_calcDensityData		= 2;
+		static constexpr int s_kPassIdx_Cs_calcViscosity		= 3;
+		static constexpr int s_kPassIdx_Cs_calcPressureForce	= 4;
+		static constexpr int s_kPassIdx_Cs_updatePosition		= 5;
 
 	public:
 		RenderGraph*	rdGraph		= nullptr;
 		DrawData*		drawData	= nullptr;
 		Vec2u			screenSize	= Vec2u::s_zero();
+		float			dt			= 0.0f;
 
 		IdxT			particleCount = 0;
 
@@ -74,23 +85,18 @@ public:
 		RdgBufferHnd	bufPredictedPos;
 
 		// spatialLut
-		RdgBufferHnd	bufSpatialKeys;
+		RdgBufferHnd	bufSpatialLut;
 		RdgBufferHnd	bufSpatialOffsets;
-		RdgBufferHnd	bufSortedIdxs;
-
-		// sortTarget
-		RdgBufferHnd	bufSortedPos;
-		RdgBufferHnd	bufSortedVel;
-		RdgBufferHnd	bufSortedPredictedPos;
 
 	public:
-		void create(FluidSim2D_Gpu* fs2d_, RenderGraph* rdGraph_, DrawData* drawData_)
+		void create(FluidSim2D_Gpu* fs2d_, float dt_, RenderGraph* rdGraph_, DrawData* drawData_)
 		{
 			RDS_CORE_ASSERT(fs2d_);
 
 			_fs2d		= fs2d_;
 			rdGraph		= rdGraph_;
 			drawData	= drawData_;
+			dt			= dt_;
 
 			auto* cachedSimArgs = &_fs2d->_cachedSimArgs;
 
@@ -98,9 +104,10 @@ public:
 			particleCount	= _fs2d->_particleSpawner.particleCount;
 
 			auto n = particleCount;
-			auto gpuDimCDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT) * n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute };
-			auto gpuDimCDesc_WithVs		= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT) * n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex | RenderGpuBufferTypeFlags::TransferDst};
-			auto gpuIdxCDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_IdxT) * n, sizeof(Gpu_IdxT), RenderGpuBufferTypeFlags::Compute};
+			auto gpuDim_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT)	* n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute };
+			auto gpuDim_CDesc_WithVs	= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT)	* n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex | RenderGpuBufferTypeFlags::TransferDst};
+			auto gpuIdx_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_IdxT)	* n, sizeof(Gpu_IdxT), RenderGpuBufferTypeFlags::Compute};
+			auto gpuIdx3_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_Idx3T) * n, sizeof(Gpu_Idx3T), RenderGpuBufferTypeFlags::Compute};
 
 			if (cachedSimArgs->hasInit())
 			{
@@ -111,21 +118,29 @@ public:
 			}
 			else
 			{
-				bufPos				= rdGraph->createBuffer("fs2d_bufPos",					gpuDimCDesc_WithVs);
-				bufVel				= rdGraph->createBuffer("fs2d_bufVel",					gpuDimCDesc_WithVs);
-				bufDensityData		= rdGraph->createBuffer("fs2d_bufDensityData",			gpuDimCDesc);
-				bufPredictedPos		= rdGraph->createBuffer("fs2d_bufPredictedPos",			gpuDimCDesc);
+				bufPos				= rdGraph->createBuffer("fs2d_bufPos",					gpuDim_CDesc_WithVs);
+				bufVel				= rdGraph->createBuffer("fs2d_bufVel",					gpuDim_CDesc_WithVs);
+				bufDensityData		= rdGraph->createBuffer("fs2d_bufDensityData",			gpuDim_CDesc);
+				bufPredictedPos		= rdGraph->createBuffer("fs2d_bufPredictedPos",			gpuDim_CDesc);
 			}
 
+			// simple method
+			#if 1
 			// spatialLut
-			bufSpatialKeys			= rdGraph->createBuffer("fs2d_bufSpatialKeys",			gpuIdxCDesc);
-			bufSpatialOffsets		= rdGraph->createBuffer("fs2d_bufSpatialOffsets",		gpuIdxCDesc);
-			bufSortedIdxs			= rdGraph->createBuffer("fs2d_bufSortedIdxs",			gpuIdxCDesc);
+			bufSpatialLut			= rdGraph->createBuffer("fs2d_bufSpatialLut",			gpuIdx3_CDesc);
+			bufSpatialOffsets		= rdGraph->createBuffer("fs2d_bufSpatialOffsets",		gpuIdx_CDesc);
+
+			#else
+			// spatialLut
+			bufSpatialKeys			= rdGraph->createBuffer("fs2d_bufSpatialKeys",			gpuIdx_CDesc);
+			bufSpatialOffsets		= rdGraph->createBuffer("fs2d_bufSpatialOffsets",		gpuIdx_CDesc);
+			bufSortedIdxs			= rdGraph->createBuffer("fs2d_bufSortedIdxs",			gpuIdx_CDesc);
 
 			// sortTarget
-			bufSortedPos			= rdGraph->createBuffer("fs2d_bufSortedPos",			gpuDimCDesc);
-			bufSortedPredictedPos	= rdGraph->createBuffer("fs2d_bufSortedPredictedPos",	gpuDimCDesc);
-			bufSortedVel			= rdGraph->createBuffer("fs2d_bufSortedVel",			gpuDimCDesc);
+			bufSortedPos			= rdGraph->createBuffer("fs2d_bufSortedPos",			gpuDim_CDesc);
+			bufSortedPredictedPos	= rdGraph->createBuffer("fs2d_bufSortedPredictedPos",	gpuDim_CDesc);
+			bufSortedVel			= rdGraph->createBuffer("fs2d_bufSortedVel",			gpuDim_CDesc);
+			#endif // 0
 
 			auto exportBufType	= RenderGpuBufferTypeFlags::Compute;
 			auto expBufAccess	= RenderAccess::Write;
@@ -151,7 +166,18 @@ public:
 		//CachedSimArgs*	_cachedSimArgs	= nullptr;
 	};
 
+	void addPass_simulateFluid2D(SimArgs& simArgs);
+
 	void addPass_calcExternalForce(SimArgs& simArgs);
+	
+	void addPass_updateSpatialLut(SimArgs& simArgs);
+	void _addPass_sortSpatialLut(SimArgs& simArgs);
+	void debug_addPass_renderSpatialLut(SimArgs& simArgs);
+
+	void addPass_calcDensityData(SimArgs& simArgs);
+	void addPass_calcViscosity(SimArgs& simArgs);
+	void addPass_calcPressureForce(SimArgs& simArgs);
+	void addPass_updatePosition(SimArgs& simArgs);
 
 private:
 	SPtr<Shader>	_shaderFs2d;

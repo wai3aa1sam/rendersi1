@@ -41,6 +41,7 @@ public:
 
 	Rect2f		boundingRegion		= { Vec2f{0.0, 0.0},	Vec2f{5.0,	2.5} * 2.0f };
 	Rect2f		spawnRegion			= { Vec2f{0.0, 0.0},	Vec2f{boundingRegion.size} / 3.0f };
+	Rect2f		obstacle			= { Vec2f{0.0, 0.0},	Vec2f{5.0,	2.5} * 2.0f };
 
 	bool useSpatialOptimization = 1;
 	bool isInvalidateColorMap	= 1;
@@ -93,6 +94,8 @@ struct FluidSim2D_SimState
 
 	bool	isPullInteraction = false;
 	bool	isPushInteraction = false;
+
+	float interactionInputStrength = 0.0f;
 };
 
 #endif
