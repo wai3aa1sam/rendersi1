@@ -29,10 +29,8 @@ FluidSim2D_Base::onCreate(GraphicsDemo* parentDemo)
 }
 
 void 
-FluidSim2D_Base::onUpdate(float dt)
+FluidSim2D_Base::onUpdate(float dt, RenderPassPipeline* renderPassPipeline)
 {
-	Base::onUpdate(dt);
-
 	_simState.interactionInputStrength = 0.0f;
 	if (_simState.isPullInteraction) _simState.interactionInputStrength += _simConfig.interactionStrength;
 	if (_simState.isPushInteraction) _simState.interactionInputStrength -= _simConfig.interactionStrength;
@@ -43,6 +41,8 @@ FluidSim2D_Base::onUpdate(float dt)
 		_simConfig.debugMousePosWorld		= _mouseRayWorld.origin;
 		_simConfig.debugMouseDirWorld		= _mouseRayWorld.dir;
 	}
+
+	Base::onUpdate(dt, renderPassPipeline);
 }
 
 void 
@@ -77,24 +77,6 @@ rds::FluidSim2D_Base::onUiMouseEvent(UiMouseEvent& ev)
 void FluidSim2D_Base::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
 	Base::onUiKeyboardEvent(ev);
-
-	if (ev.isUp(UiKeyboardEventButton::Space))
-	{
-		_simState.isStop = !_simState.isStop;
-	}
-
-	if (_simState.isStop)
-	{
-		if (ev.isUp(UiKeyboardEventButton::E))
-		{
-			_simState.isStepForward = !_simState.isStepForward;
-		}
-
-		if (ev.isUp(UiKeyboardEventButton::Q))
-		{
-			_simState.isStepBackward = !_simState.isStepBackward;
-		}
-	}
 }
 
 void FluidSim2D_Base::debug_drawBoundary(RenderRequest& rdReq)
@@ -157,6 +139,15 @@ FluidSim2D_Base::debug_drawMouseInteraction(RenderRequest& rdReq)
 	if (_simState.isPushInteraction)
 	{
 		rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, Color4f(0.2f, 0.2f, 0.8f, 0.005f));
+	}
+}
+
+void 
+FluidSim2D_Base::debug_drawSmoothRadius(RenderRequest& rdReq)
+{
+	if (_simConfig.useDebugSmoothRadius)
+	{
+		rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.smoothingRadius, Color4f(0.8f, 0.2f, 0.2f, 0.005f));
 	}
 }
 

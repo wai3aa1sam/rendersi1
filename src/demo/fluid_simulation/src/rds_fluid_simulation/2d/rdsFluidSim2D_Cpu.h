@@ -19,7 +19,7 @@ public:
 public:
 	virtual void onCreate(GraphicsDemo* parentDemo)						override;
 
-	virtual void onUpdate(float dt)										override;
+	virtual void onUpdate(float dt, RenderPassPipeline* renderPassPipeline)	override;
 
 	virtual void onPrepareRender(RenderPassPipeline* renderPassPipeline) override;
 	virtual void onExecuteRender(RenderPassPipeline* renderPassPipeline) override;
@@ -38,9 +38,9 @@ public:
 
 	using SizeT = DemoTraits::SizeType;
 
-	void	update(float dt);
-	void	simulate(float dt);
-	void	resolveCollisions(DimT& outPos, DimT& outVel);
+	void		 update(float dt);
+	virtual void simulate(float dt, RenderPassPipeline* renderPassPipeline) override;
+	void		 resolveCollisions(DimT& outPos, DimT& outVel);
 
 	float	smoothingKernel(			float radius, float dist);
 	float	smoothingKernelDerivative(	float radius, float dist);
@@ -82,10 +82,10 @@ public:
 	void	foreachPointWithinRadius(SizeT tarParticleIdx, float radius, bool isSkipSelf, const Function<void(const NeighbourInfo&)>& callback);
 	void	debugForeachPointWithinRadius(const DimT& samplingPt, float radius, bool isSkipSelf, const Function<void(const NeighbourInfo&)>& callback);
 
-	void	updateSpatialLut(const Vector<DimT>& pts, float radius);
-	DimT_i	positionToCellCoord(const DimT& pt, float radius);
-	IdxT	calcCellKeyByCellCoord(const DimT_i& cellCoord);
-	HashT	hashCellCoord(const DimT_i& cellCoord);
+			void	updateSpatialLut(const Vector<DimT>& pts, float radius);
+	static	DimT_i	positionToCellCoord(const DimT& pt, float radius);
+			IdxT	calcCellKeyByCellCoord(const DimT_i& cellCoord);
+			HashT	hashCellCoord(const DimT_i& cellCoord);
 
 private:
 	Vector<DimT>	_positions;

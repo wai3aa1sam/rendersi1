@@ -1,6 +1,7 @@
 #include "rds_fluid_simulation-pch.h"
 #include "rdsFluidSim2D_Config.h"
 #include "rdsFluidSim2D_Base.h"
+#include "rdsFluidSim2D_Cpu.h"
 
 namespace rds
 {
@@ -40,6 +41,9 @@ FluidSim2D_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 
 	auto wnd = uiDrawReq.makeWindow("config");
 	uiDrawReq.makeCheckbox("useSpatialOptimization",	&useSpatialOptimization);
+	uiDrawReq.makeCheckbox("useDebugSpatial",			&useDebugSpatial);
+	uiDrawReq.makeCheckbox("useDebugLog",				&useDebugLog);
+
 	uiDrawReq.dragFloat("particleSize",					&particleSize,			0.01f);
 	uiDrawReq.dragFloat("particleMass",					&particleMass,			0.01f);
 	uiDrawReq.dragFloat("timeMultiplier",				&timeMultiplier,		0.01f);
@@ -85,7 +89,7 @@ FluidSim2D_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 
 	uiDrawReq.showText("debugParticleCount: {}",		debugParticleCount);
 	uiDrawReq.showText("debugWithinRadiusCount: {}",	debugWithinRadiusCount);
-	//uiDrawReq.showText("debugMouseCellCoord: {}",		_fluSim->positionToCellCoord(debugMousePosWorld.toVec2(), smoothingRadius));
+	uiDrawReq.showText("debugMouseCellCoord: {}",		FluidSim2D_Cpu::positionToCellCoord(debugMousePosWorld.toVec2(), smoothingRadius));
 }
 
 float 

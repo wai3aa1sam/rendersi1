@@ -319,7 +319,7 @@ DemoEditorLayer::drawEditorUI(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 		camera.setFov(fov);
 		camera.setNearClip(nearClip);
 		camera.setFarClip(farClip);
-		isOrthographic ? camera.setOrthographic(orthoScale) : camera.setPerspective();
+		isOrthographic ? camera.setOrthographic(orthoScale == camera.invalidOrthographicScale() ? 4 : orthoScale) : camera.setPerspective();
 	}
 }
 

@@ -244,10 +244,12 @@ public:
 	RdgBufferHnd	createBuffer	(StrView name, const BufferCreateDesc&	cDesc);
 
 	RdgTextureHnd	importTexture(StrView name, TextureT* tex);
+	RdgTextureHnd	importTexture(TextureT* tex);
 	void			exportTexture(SPtr<Texture>*		out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
 	void			exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
 
 	RdgBufferHnd	importBuffer(StrView name, Buffer* buf);
+	RdgBufferHnd	importBuffer(Buffer* buf);
 	void			exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlags, Access access = Access::Read);
 
 	RdgTextureHnd	findTexture(StrView name);

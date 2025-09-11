@@ -51,16 +51,21 @@ EditorCameraController::update(Camera* camera, float dt, const UiMouseEvent& mou
 					auto d = ev.deltaPos * (-0.01f * dt);
 					if (!cam.isOrthgraphicMode())
 						cam.orbit(d.x, d.y);
+
 				} break;
 
 				// ev.scroll
 			}
 		}
 
-		if (ev.pressedButtons == Button::Right && ev.isScroll())
+		if (ev.isDown(Button::Right) && ev.isScroll())
 		{
-			_speed += _speedStep * dt * (ev.scroll.y / math::abs(ev.scroll.y));
+			float scroll = (ev.scroll.y / math::abs(ev.scroll.y));
+			_speed += _speedStep * dt * scroll;
 			_speed = math::max(_speed, 0.0f);
+
+			if (cam.isOrthgraphicMode())
+				cam.setOrthographic(cam.orthoScale() + -scroll * dt);
 		}
 	}
 

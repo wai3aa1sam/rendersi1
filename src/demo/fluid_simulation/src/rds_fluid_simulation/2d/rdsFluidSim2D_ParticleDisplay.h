@@ -24,6 +24,12 @@ public:
 	void draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount);
 
 public:
+	void debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount);
+
+private:
+	void _draw(Material* mtl, Texture2D* colorMap, float depth, RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount);
+
+public:
 	Texture2D*	colorGradientTexture();
 
 private:
@@ -31,10 +37,16 @@ private:
 private:
 	SPtr<Shader>	_shaderPtcDisplay;
 	SPtr<Material>	_mtlPtcDisplay;
+
+	struct Debug
+	{
+		SPtr<Material>	mtlPtcDisplay;
+	} _debug;
+
 	SPtr<Texture2D>	_texColorGradient;
 	ColorGradient	_colorGradient;
 
-	RenderMesh					_rdMesh;
+	RenderMesh		_rdMesh;
 
 	// actually do not need these, we can create on RenderGraph
 	SPtr<RenderGpuMultiBuffer>	_posBufGpu;

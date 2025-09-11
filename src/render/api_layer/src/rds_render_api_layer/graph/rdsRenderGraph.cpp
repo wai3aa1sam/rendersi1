@@ -456,6 +456,12 @@ RenderGraph::importTexture(StrView name, TextureT* tex)
 	return hnd;
 }
 
+RdgTextureHnd 
+RenderGraph::importTexture(TextureT* tex)
+{
+	return importTexture(tex->debugName(), tex);
+}
+
 void 
 RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access)
 {
@@ -490,6 +496,12 @@ RenderGraph::importBuffer(StrView name, Buffer* buf)
 	//rdgBuf->_stateTrack.setCurrentUsageAccess(lastUsage, lastAccess);
 
 	return hnd;
+}
+
+RdgBufferHnd 
+RenderGraph::importBuffer(Buffer* buf)
+{
+	return importBuffer(buf->debugName(), buf);
 }
 
 void 

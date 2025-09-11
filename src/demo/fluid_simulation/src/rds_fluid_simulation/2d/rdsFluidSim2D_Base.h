@@ -21,14 +21,13 @@ public:
 	using Base = FluidSimDemo_Base;
 
 	using Config			= FluidSim2D_Config;
-	using SimState			= FluidSim2D_SimState;
 	using ParticleSpawner	= FluidSim2D_ParticleSpawner;
 	using ParticleDisplay	= FluidSim2D_ParticleDisplay;
 
 public:
 	virtual void onCreate(GraphicsDemo* parentDemo) override;
 
-	virtual void onUpdate(float dt) override;
+	virtual void onUpdate(float dt, RenderPassPipeline* renderPassPipeline) override;
 
 	virtual void onPrepareRender(RenderPassPipeline* renderPassPipeline) override;
 	virtual void onExecuteRender(RenderPassPipeline* renderPassPipeline) override;
@@ -42,6 +41,7 @@ public:
 	void debug_drawBoundary(RenderRequest& rdReq);
 	void debug_drawSpatialGrid(RenderRequest& rdReq);
 	void debug_drawMouseInteraction(RenderRequest& rdReq);
+	void debug_drawSmoothRadius(RenderRequest& rdReq);
 
 public:
 	ParticleDisplay& particleDisplay() { return _ptcDisplay; }
@@ -50,7 +50,6 @@ protected:
 	ParticleSpawner		_particleSpawner;
 	ParticleDisplay		_ptcDisplay;
 	Config				_simConfig;
-	SimState			_simState;
 
 	SPtr<Texture2D>		_texColorGradient;
 };

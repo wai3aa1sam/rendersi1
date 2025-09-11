@@ -44,7 +44,7 @@ FluidSimulation::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	_curDemo = _fluidSim2D.ptr();
 
-	if (_curDemo) _curDemo->onUpdate(1.0f / 120.0f);
+	if (_curDemo) _curDemo->onUpdate(1.0f / 120.0f, renderPassPipeline);
 	if (_curDemo) _curDemo->onExecuteRender(renderPassPipeline);
 }
 

@@ -2,10 +2,12 @@
 #define __rdsFluidSim2D_SpatialLut_HLSL__
 
 #include "built-in/shader/rds_shader.hlsl"
+#include "rdsFluidSim2D_Common.hlsl"
 
 // same as cpu impl
 
-static const int2 SpatialLut_cellOffsets2D[9] =
+static const int  SpatialLut_cellOffsetCount = 9;
+static const int2 SpatialLut_cellOffsets2D[SpatialLut_cellOffsetCount] =
 {
 	int2(-1, +1),
 	int2(+0, +1),

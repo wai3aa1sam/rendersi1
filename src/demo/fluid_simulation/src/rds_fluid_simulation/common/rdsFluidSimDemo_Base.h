@@ -7,6 +7,26 @@ namespace rds
 {
 
 #if 0
+#pragma mark --- rdsFluidSim2D_SimState-Decl ---
+#endif // 0
+#if 1
+
+struct FluidSim_SimState
+{
+	bool isStop			= true;		// : 1
+	bool isStepForward	= false;
+	bool isStepBackward	= false;
+	bool hasSimulated	= false;
+
+	bool	isPullInteraction = false;
+	bool	isPushInteraction = false;
+
+	float interactionInputStrength = 0.0f;
+};
+
+#endif
+
+#if 0
 #pragma mark --- rdsFluidSim2D_Gpu-Decl ---
 #endif // 0
 #if 1
@@ -14,24 +34,23 @@ namespace rds
 class FluidSimDemo_Base : public NonCopyable
 {
 public:
-	virtual void onCreate(GraphicsDemo* parentDemo)							{ _parentDemo = parentDemo; };
+	using SimState = FluidSim_SimState;
 
-	virtual void onUpdate(float dt)
-	{
-		if (_parentDemo)
-		{
-			_mousePosViewport	= _parentDemo->mousePosViewport;
-			_mouseRayWorld		= _parentDemo->mouseRayWorldSpace;
-		}
-	};
+public:
+	virtual void onCreate(GraphicsDemo* parentDemo);
 
-	virtual void onPrepareRender(RenderPassPipeline* renderPassPipeline)	{};
-	virtual void onExecuteRender(RenderPassPipeline* renderPassPipeline)	{};
+	virtual void onUpdate(float dt, RenderPassPipeline* renderPassPipeline);
 
-	virtual void onDrawGui(EditorUiDrawRequest& uiDrawReq) {};
+	virtual void onPrepareRender(RenderPassPipeline* renderPassPipeline);
+	virtual void onExecuteRender(RenderPassPipeline* renderPassPipeline);
 
-	virtual void onUiMouseEvent(	UiMouseEvent&		ev) {};
-	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) {};
+	virtual void onDrawGui(EditorUiDrawRequest& uiDrawReq);
+
+	virtual void onUiMouseEvent(	UiMouseEvent&		ev);
+	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev);
+
+public:
+	virtual void simulate(float dt, RenderPassPipeline* renderPassPipeline);
 
 protected:
 			DemoEditorLayer* demoLayer()		{ return _parentDemo ? _parentDemo->demoLayer() : nullptr; }
@@ -44,8 +63,47 @@ protected:
 	GraphicsDemo*	_parentDemo = nullptr;
 	Vec2f			_mousePosViewport;
 	Ray3f			_mouseRayWorld;
+
+protected:
+	SimState _simState;
 };
 
+#endif
+
+#if 0
+#pragma mark --- rdsMaterialPool-Decl ---
+#endif // 0
+#if 1
+class MaterialPool
+{
+public:
+	MaterialPool()
+	{
+		_data.resize(RenderApiLayerTraits::s_kFrameInFlightCount);
+		RDS_TODO("this class also in RenderUiContext, please separate it as a file");
+	}
+
+	void			reset();
+	SPtr<Material>	newObject(Shader* shader);		// general objectPool should return *
+	//void			deleteObject(SPtr<Material> obj);
+
+private:
+	struct Data
+	{
+	public:
+		void			reset();
+		SPtr<Material>	newObject(Shader* shader);		// general objectPool should return *
+		//void			deleteObject(SPtr<Material> obj);
+
+	public:
+		Vector<SPtr<Material>, 16> _freedObjs;
+		Vector<SPtr<Material>, 16> _objs;
+	};
+	FramedT<Data> _data;
+
+protected:
+	Data& data() { return _data[Renderer::renderDevice()->engineFrameIndex()]; }
+};
 #endif
 
 }

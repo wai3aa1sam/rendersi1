@@ -9,6 +9,8 @@ const float SpikyPow2ScalingFactor;
 const float SpikyPow3DerivativeScalingFactor;
 const float SpikyPow2DerivativeScalingFactor;
 
+static const uint SpatialLut_invalidIdx = UINT_MAX;
+
 float smoothingKernelPoly6(float dist, float radius)
 {
 	if (dist < radius)

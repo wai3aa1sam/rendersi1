@@ -25,7 +25,7 @@ public:
 	Color4f		colorGradientKey2	= Color4f{1.0f, 1.0f, 0.0f, 1.0f};
 	Color4f		colorGradientKey3	= Color4f{1.0f, 0.0f, 0.0f, 1.0f};
 
-	float		smoothingRadius			= 0.35f;
+	float		smoothingRadius			= 3.0f; //0.35f;
 	float		collisionDamping		= 0.95f;
 	float		targetDensity			= 55.0f;
 	float		pressureMultiplier		= 500.0f;
@@ -47,7 +47,8 @@ public:
 	bool isInvalidateColorMap	= 1;
 
 	bool useDebugLog			= 0;
-	bool useDebugSpatial		= 0;
+	bool useDebugSpatial		= 1;
+	bool useDebugSmoothRadius	= 1;
 
 public:
 	FluidSim2D_Config();
@@ -81,24 +82,6 @@ private:
 
 #endif
 
-#if 0
-#pragma mark --- rdsFluidSim2D_SimState-Decl ---
-#endif // 0
-#if 1
-
-struct FluidSim2D_SimState
-{
-	bool isStop			= true;		// : 1
-	bool isStepForward	= false;
-	bool isStepBackward	= false;
-
-	bool	isPullInteraction = false;
-	bool	isPushInteraction = false;
-
-	float interactionInputStrength = 0.0f;
-};
-
-#endif
 
 
 }

@@ -24,9 +24,9 @@ FluidSim2D_Cpu::onCreate(GraphicsDemo* parentDemo)
 }
 
 void 
-FluidSim2D_Cpu::onUpdate(float dt)
+FluidSim2D_Cpu::onUpdate(float dt, RenderPassPipeline* renderPassPipeline)
 {
-	Base::onUpdate(dt);
+	Base::onUpdate(dt, renderPassPipeline);
 
 	update(dt);
 }
@@ -112,34 +112,12 @@ FluidSim2D_Cpu::update(float dt)
 		debug_logSpatial(); 
 		return; 
 	);
-
-	if (!_simState.isStop)
-	{
-		simulate(dt);
-		debug_logSpatial();
-	}
-	else
-	{
-		auto newDt = dt;
-		if (_simState.isStepBackward) newDt = -newDt;
-
-		bool shdSim = _simState.isStepForward || _simState.isStepBackward;
-		if (shdSim) simulate(newDt);
-
-		_simState.isStepForward		= false;
-		_simState.isStepBackward	= false;
-
-		if (shdSim)
-		{
-			debug_logSpatial();
-		}
-	}
 }
 
 #if 1
 
 void
-FluidSim2D_Cpu::simulate(float dt)
+FluidSim2D_Cpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 {
 	dt *= _simConfig.timeMultiplier;
 
@@ -206,6 +184,8 @@ FluidSim2D_Cpu::simulate(float dt)
 	}
 
 	#undef RDS_USE_DENSITY_DATA
+
+	debug_logSpatial();
 }
 
 void 
