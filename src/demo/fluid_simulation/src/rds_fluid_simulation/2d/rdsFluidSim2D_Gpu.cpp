@@ -178,64 +178,89 @@ FluidSim2D_Gpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 	addPass_simulateFluid2D(simArgs);
 }
 
-void 
+RdgPass& 
 FluidSim2D_Gpu::addPass_simulateFluid2D(SimArgs& simArgs)
 {
 	Material*	mtl		= _mtlFs2d;
 	{
-		mtl->setParam("u_dt",						simArgs.dt);
-		mtl->setParam("u_gravity",					_simConfig.gravity);
-		mtl->setParam("u_gravityDir",				_simConfig.gravityDir.normalize());
-		mtl->setParam("u_collisionDamping",			_simConfig.collisionDamping);
-		mtl->setParam("u_smoothingRadius",			_simConfig.smoothingRadius);
+		const auto& simState  = _simState;
+		const auto& simConfig = _simConfig;
 
-		mtl->setParam("u_interactionInputStrength",	_simState.interactionInputStrength);
-		mtl->setParam("u_interactionInputRadius",	_simConfig.interactionRadius);
+		mtl->setParam("u_dt",						simArgs.dt);
+		mtl->setParam("u_gravity",					simConfig.gravity);
+		mtl->setParam("u_gravityDir",				simConfig.gravityDir.normalize());
+		mtl->setParam("u_collisionDamping",			simConfig.collisionDamping);
+		mtl->setParam("u_smoothingRadius",			simConfig.smoothingRadius);
+
+		mtl->setParam("u_targetDensity",			simConfig.targetDensity);
+		mtl->setParam("u_pressureMultiplier",		simConfig.pressureMultiplier);
+		mtl->setParam("u_nearPressureMultiplier",	simConfig.nearPressureMultiplier);
+		mtl->setParam("u_viscosityStrength",		simConfig.viscosityStrength);
+
+		mtl->setParam("u_interactionInputStrength",	simState.interactionInputStrength);
+		mtl->setParam("u_interactionInputRadius",	simConfig.interactionRadius);
 		mtl->setParam("u_interactionInputPoint",	_mouseRayWorld.origin.toVec2());
 
-		mtl->setParam("u_boundarySize",				_simConfig.boundingRegion.size);
-		mtl->setParam("u_obstacleCenter",			Vec2f{_simConfig.obstacle.pos} + Vec2f{_simConfig.obstacle.size} / 2.0f);
-		mtl->setParam("u_obstacleSize",				_simConfig.obstacle.size);
+		mtl->setParam("u_boundarySize",				simConfig.boundingRegion.size);
+		mtl->setParam("u_obstacleCenter",			Vec2f{simConfig.obstacle.pos} + Vec2f{simConfig.obstacle.size} / 2.0f);
+		mtl->setParam("u_obstacleSize",				simConfig.obstacle.size);
 
-		mtl->setParam("u_particleMass",				_simConfig.particleMass);
+		mtl->setParam("u_particleMass",				simConfig.particleMass);
 		mtl->setParam("u_particleCount",			simArgs.particleCount);
+
+		float smoothingRadius = simConfig.smoothingRadius;
+		mtl->setParam("u_poly6ScalingFactor",				4.0f  / (math::PI<float>() * math::pow(smoothingRadius, 8.0f)));
+		mtl->setParam("u_spikyPow3ScalingFactor",			10.0f / (math::PI<float>() * math::pow(smoothingRadius, 5.0f)));
+		mtl->setParam("u_spikyPow2ScalingFactor",			6.0f  / (math::PI<float>() * math::pow(smoothingRadius, 4.0f)));
+		mtl->setParam("u_spikyPow3DerivativeScalingFactor",	30.0f / (math::PI<float>() * math::pow(smoothingRadius, 5.0f)));
+		mtl->setParam("u_spikyPow2DerivativeScalingFactor",	12.0f / (math::PI<float>() * math::pow(smoothingRadius, 4.0f)));
 	}
 
-	addPass_calcExternalForce(simArgs);
-	addPass_updateSpatialLut(simArgs);
-	addPass_calcDensityData(simArgs);
-	addPass_calcViscosity(simArgs);
-	addPass_calcPressureForce(simArgs);
-	addPass_updatePosition(simArgs);
+	auto& pass_calcExternalForce	= addPass_calcExternalForce(simArgs);
+	auto& pass_updateSpatialLut		= addPass_updateSpatialLut(simArgs);
+	auto& pass_calcDensityData		= addPass_calcDensityData(simArgs);
+	auto& pass_calcPressureForce	= addPass_calcPressureForce(simArgs);
+	auto& pass_calcViscosity		= addPass_calcViscosity(simArgs);
+	auto& pass_updatePosition		= addPass_updatePosition(simArgs);
+
+	// force dependency
+	pass_updateSpatialLut.runAfter(		&pass_calcExternalForce);
+	pass_calcDensityData.runAfter(		&pass_updateSpatialLut);
+	pass_calcPressureForce.runAfter(	&pass_calcDensityData);
+	pass_calcViscosity.runAfter(		&pass_calcPressureForce);
+	pass_updatePosition.runAfter(		&pass_calcViscosity);
+
+	return pass_updatePosition;
 }
 
-void
+RdgPass&
 FluidSim2D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 {
 	auto*		rdGraph = simArgs.rdGraph;
 	Material*	mtl		= _mtlFs2d;
 
-	{
-		auto& pass = rdGraph->addPass("fs2d_calcExternalForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-		pass.writeBuffer(simArgs.bufVel);
-		pass.writeBuffer(simArgs.bufPredictedPos);
-		pass.readBuffer(simArgs.bufPos);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				RDS_TODO("render graph / RenderGpuBuffer should have a func for upload data directly");
-				constCast(simArgs).createOncePositionBuffer();
+	auto& pass = rdGraph->addPass("fs2d_calcExternalForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	pass.writeBuffer(simArgs.bufVel);
+	pass.writeBuffer(simArgs.bufPredictedPos);
+	pass.readBuffer(simArgs.bufPos);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			RDS_TODO("render graph / RenderGpuBuffer should have a func for upload data directly");
+			simArgs.createOncePositionBuffer();
 
-				mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
-				mtl->setParam("u_predictedPositions",	simArgs.bufPredictedPos.renderResource());
-				mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcExternalForce, Vec3u{simArgs.particleCount, 1, 1});
-			}
-		);
-	}
+			mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
+			mtl->setParam("u_predictedPositions",	simArgs.bufPredictedPos.renderResource());
+			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcExternalForce, Vec3u{simArgs.particleCount, 1, 1});
+		}
+	);
+
+	//simArgs.pass_calcExternalForce = &pass;
+	return pass;
 }
 
-void 
+RdgPass& 
 FluidSim2D_Gpu::addPass_updateSpatialLut(SimArgs& simArgs)
 {
 	auto*		rdGraph = simArgs.rdGraph;
@@ -262,6 +287,8 @@ FluidSim2D_Gpu::addPass_updateSpatialLut(SimArgs& simArgs)
 	// sort lut by key
 	_addPass_sortSpatialLut(simArgs);
 
+	RdgPass* pass_updateSpatialLutKeyToStartIndex = nullptr;
+
 	// update key to start index
 	{
 		Material*	mtl		= _mtlFs2d;
@@ -277,10 +304,13 @@ FluidSim2D_Gpu::addPass_updateSpatialLut(SimArgs& simArgs)
 				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_updateSpatialLutKeyToStartIndex, Vec3u{simArgs.particleCount, 1, 1});
 			}
 		);
+		pass_updateSpatialLutKeyToStartIndex = &pass;
 	}
+
+	return *pass_updateSpatialLutKeyToStartIndex;
 }
 
-void 
+RdgPass& 
 FluidSim2D_Gpu::_addPass_sortSpatialLut(SimArgs& simArgs)
 {
 	_mtlSortPool.reset();
@@ -300,7 +330,7 @@ FluidSim2D_Gpu::_addPass_sortSpatialLut(SimArgs& simArgs)
 		// Number of steps = [log2(n) * (log2(n) + 1)] / 2
 		// where n = nearest power of 2 that is greater or equal to the number of inputs
 
-		#if 1
+		#if 0
 		RdgPass* pass_prev = nullptr;
 		u32 numStages = sCast<u32>(math::log2(math::nextPow2(size)));
 		for (u32 stageIndex = 0; stageIndex < numStages; stageIndex++)
@@ -338,6 +368,7 @@ FluidSim2D_Gpu::_addPass_sortSpatialLut(SimArgs& simArgs)
 				pass_prev = &pass;
 			}
 		}
+		return pass_prev;
 		#else
 		Material* mtl = _mtlSortPool.newObject(_shaderSort);
 		auto& pass = rdGraph->addPass(RDS_RDG_EVENT_NAME("{}_bubble_sort", name)
@@ -351,90 +382,120 @@ FluidSim2D_Gpu::_addPass_sortSpatialLut(SimArgs& simArgs)
 				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 1, Vec3u{1, 1, 1});
 			}
 		);
+		return pass;
 		#endif // 0
-
 	}
 }
 
-void FluidSim2D_Gpu::Debug_addPass_debugSpatialLut(SimArgs& simArgs)
+RdgPass& 
+FluidSim2D_Gpu::Debug_addPass_debugSpatialLut(SimArgs& simArgs)
 {
-	auto samplingPt			= this->_mouseRayWorld.origin.toVec2();
-	auto smoothingRadius	= _simConfig.smoothingRadius;
+	auto	samplingPt		= this->_mouseRayWorld.origin.toVec2();
+	auto	smoothingRadius	= _simConfig.smoothingRadius;
 
-	auto*		rdGraph = simArgs.rdGraph;
-	{
-		Material*	mtl		= _mtlSpatialLutDebug;
-		auto& pass = rdGraph->addPass("fs2d_debugSpatialLut", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-		pass.readBuffer(simArgs.bufPredictedPos);
-		pass.readBuffer(simArgs.bufSpatialLut);
-		pass.readBuffer(simArgs.bufSpatialLutKeyToStartIndex);
-		pass.writeBuffer(simArgs.spatialLut_debug_buf_positions);
-		//pass.writeBuffer(simArgs.spatialLut_debug_buf_velocities);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				mtl->setParam("u_samplingPt",		samplingPt);
-				mtl->setParam("u_particleCount",	simArgs.particleCount);
-				mtl->setParam("u_smoothingRadius",	smoothingRadius);
+	auto*	rdGraph	= simArgs.rdGraph;
 
-				mtl->setParam("u_spatialLutDebugPositions",		simArgs.spatialLut_debug_buf_positions.renderResource());
-				//mtl->setParam("u_spatialLutDebugVelocities",	simArgs.spatialLut_debug_buf_velocities.renderResource());
-				
-				mtl->setParam("u_predictedPositions",			simArgs.bufPredictedPos.renderResource());
-				mtl->setParam("u_spatialLut",					simArgs.bufSpatialLut.renderResource());
-				mtl->setParam("u_spatialLutKeyToStartIndex",	simArgs.bufSpatialLutKeyToStartIndex.renderResource());
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{1, 1, 1});
-			}
-		);
-	}
-}
-
-void 
-FluidSim2D_Gpu::addPass_calcDensityData(SimArgs& simArgs)
-{
-	auto*		rdGraph = simArgs.rdGraph;
-
-	auto& pass = rdGraph->addPass("fs2d_calcDensityData", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-	RDS_TODO("******************remove later, jsut for test");
-	pass.readBuffer(simArgs.bufDensityData);
-	pass.readBuffer(simArgs.bufPredictedPos);
+	Material*	mtl		= _mtlSpatialLutDebug;
+	auto& pass = rdGraph->addPass("fs2d_debugSpatialLut", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	pass.writeBuffer(simArgs.spatialLut_debug_buf_positions);
+	simArgs.readSpatialBuffer(pass);
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			
+			mtl->setParam("u_samplingPt",		samplingPt);
+			mtl->setParam("u_particleCount",	simArgs.particleCount);
+			mtl->setParam("u_smoothingRadius",	smoothingRadius);
+
+			mtl->setParam("u_spatialLutDebugPositions",		simArgs.spatialLut_debug_buf_positions.renderResource());
+			simArgs.setSpatialParam(mtl);
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{1, 1, 1});
 		}
 	);
+
+	return pass;
 }
 
-void 
-FluidSim2D_Gpu::addPass_calcViscosity(SimArgs& simArgs)
+RdgPass& 
+FluidSim2D_Gpu::addPass_calcDensityData(SimArgs& simArgs)
 {
+	auto*		rdGraph = simArgs.rdGraph;
+	Material*	mtl		= _mtlFs2d;
+
+	auto& pass = rdGraph->addPass("fs2d_calcDensityData", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	pass.writeBuffer(simArgs.bufDensityData);
+	simArgs.readSpatialBuffer(pass);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			mtl->setParam("u_densityData",					simArgs.bufDensityData.renderResource());
+			simArgs.setSpatialParam(mtl);
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcDensityData, Vec3u{simArgs.particleCount, 1, 1});
+		}
+	);
+	return pass;
 }
 
-void 
+RdgPass& 
 FluidSim2D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
 {
+	auto*		rdGraph = simArgs.rdGraph;
+	Material*	mtl		= _mtlFs2d;
+
+	auto& pass = rdGraph->addPass("fs2d_calcPressureForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	pass.writeBuffer(simArgs.bufVel);
+	simArgs.readSpatialBuffer(pass);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			mtl->setParam("u_velocities", simArgs.bufVel.renderResource());
+			simArgs.setSpatialParam(mtl);
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcPressureForce, Vec3u{simArgs.particleCount, 1, 1});
+		}
+	);
+
+	return pass;
 }
 
-void 
+RdgPass& 
+FluidSim2D_Gpu::addPass_calcViscosity(SimArgs& simArgs)
+{
+	auto*		rdGraph = simArgs.rdGraph;
+	Material*	mtl		= _mtlFs2d;
+
+	auto& pass = rdGraph->addPass("fs2d_calcViscosity", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	pass.writeBuffer(simArgs.bufVel);
+	simArgs.readSpatialBuffer(pass);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			mtl->setParam("u_velocities", simArgs.bufVel.renderResource());
+			simArgs.setSpatialParam(mtl);
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcViscosity, Vec3u{simArgs.particleCount, 1, 1});
+		}
+	);
+
+	return pass;
+}
+
+RdgPass& 
 FluidSim2D_Gpu::addPass_updatePosition(SimArgs& simArgs)
 {
 	auto*		rdGraph = simArgs.rdGraph;
 	Material*	mtl		= _mtlFs2d;
 
-	{
-		auto& pass = rdGraph->addPass("fs2d_updatePosition", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-		pass.writeBuffer(simArgs.bufPos);
-		pass.writeBuffer(simArgs.bufVel);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
-				mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_updatePosition, Vec3u{simArgs.particleCount, 1, 1});
-			}
-		);
-	}
+	auto& pass = rdGraph->addPass("fs2d_updatePosition", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	pass.writeBuffer(simArgs.bufPos);
+	pass.writeBuffer(simArgs.bufVel);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
+			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_updatePosition, Vec3u{simArgs.particleCount, 1, 1});
+		}
+	);
+
+	return pass;
 }
 
 #endif

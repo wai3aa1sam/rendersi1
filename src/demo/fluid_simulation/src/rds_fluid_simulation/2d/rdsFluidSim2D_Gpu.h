@@ -89,8 +89,8 @@ public:
 		static constexpr int s_kPassIdx_Cs_updateSpatialLut					= 1;
 		static constexpr int s_kPassIdx_Cs_updateSpatialLutKeyToStartIndex	= 2;
 		static constexpr int s_kPassIdx_Cs_calcDensityData					= 3;
-		static constexpr int s_kPassIdx_Cs_calcViscosity					= 4;
-		static constexpr int s_kPassIdx_Cs_calcPressureForce				= 5;
+		static constexpr int s_kPassIdx_Cs_calcPressureForce				= 4;
+		static constexpr int s_kPassIdx_Cs_calcViscosity					= 5;
 		static constexpr int s_kPassIdx_Cs_updatePosition					= 6;
 
 	public:
@@ -113,6 +113,13 @@ public:
 		// debug
 		RdgBufferHnd	spatialLut_debug_buf_positions;
 		//RdgBufferHnd	spatialLut_debug_buf_velocities;
+
+		//RdgPass* pass_calcExternalForce		= nullptr;
+		//RdgPass* pass_updateSpatialLut		= nullptr;
+		//RdgPass* pass_calcDensityData		= nullptr;
+		//RdgPass* pass_calcPressureForce		= nullptr;
+		//RdgPass* pass_calcViscosity			= nullptr;
+		//RdgPass* pass_updatePosition		= nullptr;
 
 	public:
 		void create(FluidSim2D_Gpu* fs2d_, float dt_, RenderGraph* rdGraph_, DrawData* drawData_)
@@ -186,7 +193,7 @@ public:
 			
 		}
 
-		void createOncePositionBuffer()
+		void createOncePositionBuffer() const
 		{
 			if (hasInit())
 				return;
@@ -214,6 +221,21 @@ public:
 		}
 
 	public:
+		void readSpatialBuffer(RdgPass& pass)
+		{
+			pass.readBuffer(bufPredictedPos);
+			pass.readBuffer(bufSpatialLut);
+			pass.readBuffer(bufSpatialLutKeyToStartIndex);
+		}
+
+		void setSpatialParam(Material* mtl) const
+		{
+			mtl->setParam("u_predictedPositions",			bufPredictedPos.renderResource());
+			mtl->setParam("u_spatialLut",					bufSpatialLut.renderResource());
+			mtl->setParam("u_spatialLutKeyToStartIndex",	bufSpatialLutKeyToStartIndex.renderResource());
+		}
+
+	public:
 		bool hasInit() const { return _fs2d->_cachedSimArgs.hasInit(); }
 
 	private:
@@ -235,18 +257,18 @@ public:
 		//CachedSimArgs*	_cachedSimArgs	= nullptr;
 	};
 
-	void addPass_simulateFluid2D(SimArgs& simArgs);
+	RdgPass& addPass_simulateFluid2D(SimArgs& simArgs);
 
-	void addPass_calcExternalForce(SimArgs& simArgs);
+	RdgPass& addPass_calcExternalForce(SimArgs& simArgs);
 	
-	void addPass_updateSpatialLut(SimArgs& simArgs);
-	void _addPass_sortSpatialLut(SimArgs& simArgs);
-	void Debug_addPass_debugSpatialLut(SimArgs& simArgs);
+	RdgPass& addPass_updateSpatialLut(SimArgs& simArgs);
+	RdgPass& _addPass_sortSpatialLut(SimArgs& simArgs);
+	RdgPass& Debug_addPass_debugSpatialLut(SimArgs& simArgs);
 
-	void addPass_calcDensityData(SimArgs& simArgs);
-	void addPass_calcViscosity(SimArgs& simArgs);
-	void addPass_calcPressureForce(SimArgs& simArgs);
-	void addPass_updatePosition(SimArgs& simArgs);
+	RdgPass& addPass_calcDensityData(SimArgs& simArgs);
+	RdgPass& addPass_calcPressureForce(SimArgs& simArgs);
+	RdgPass& addPass_calcViscosity(SimArgs& simArgs);
+	RdgPass& addPass_updatePosition(SimArgs& simArgs);
 
 private:
 	SPtr<Shader>	_shaderFs2d;

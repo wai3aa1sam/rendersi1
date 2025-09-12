@@ -16,7 +16,7 @@ class FluidSim2D_ParticleSpawner
 public:
 	Vec2f initVelocity		= Vec2f{0.0, 0.0};
 	float jitterFct			= 0.03f;
-	float spawnDensity		= 2; // 128.0;
+	float spawnDensity		= 128.0f; // 2.0f // 128.0;
 
 	Rect2f spawnRegion;
 
