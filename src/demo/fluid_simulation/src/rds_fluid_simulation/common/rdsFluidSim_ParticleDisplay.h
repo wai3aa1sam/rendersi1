@@ -7,21 +7,24 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsFluidSim2D_ParticleDisplay-Decl ---
+#pragma mark --- rdsFluidSim_ParticleDisplay-Decl ---
 #endif // 0
 #if 1
 
-class FluidSim2D_ParticleDisplay : public NonCopyable
+class FluidSim_ParticleDisplay : public NonCopyable
 {
 public:
 	void s_createColorGradientTexture(SPtr<Texture2D>& oTex, const ColorGradient& colorGradient);
 
 public:
 	void create2D(const ColorGradient& colorGrad);
-	void invalidateColorGradient(const ColorGradient& colorGrad);
+	void create3D(RenderMesh& rdMesh, const ColorGradient& colorGrad);
 
+public:
 	void draw(RenderRequest& rdReq, DrawData* drawData, const Span<Vec2f>& positions, const Span<Vec2f>& velocities, float radius);
 	void draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount);
+
+	void invalidateColorGradient(const ColorGradient& colorGrad);
 
 public:
 	void debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount);

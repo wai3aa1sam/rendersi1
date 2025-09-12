@@ -1,16 +1,16 @@
 #include "rds_fluid_simulation-pch.h"
-#include "rdsFluidSim2D_ParticleDisplay.h"
+#include "rdsFluidSim_ParticleDisplay.h"
 
 namespace rds
 {
 
 #if 0
-#pragma mark --- rdsFluidSim2D_ParticleDisplay-Impl ---
+#pragma mark --- rdsFluidSim_ParticleDisplay-Impl ---
 #endif // 0
 #if 1
 
 void 
-FluidSim2D_ParticleDisplay::s_createColorGradientTexture(SPtr<Texture2D>& oTex, const ColorGradient& colorGradient)
+FluidSim_ParticleDisplay::s_createColorGradientTexture(SPtr<Texture2D>& oTex, const ColorGradient& colorGradient)
 {
 	int w = 64;
 	int h = 4;
@@ -37,7 +37,7 @@ FluidSim2D_ParticleDisplay::s_createColorGradientTexture(SPtr<Texture2D>& oTex, 
 }
 
 void 
-FluidSim2D_ParticleDisplay::create2D(const ColorGradient& colorGrad)
+FluidSim_ParticleDisplay::create2D(const ColorGradient& colorGrad)
 {
 	RenderMesh& rdMesh = _rdMesh;
 
@@ -84,14 +84,25 @@ FluidSim2D_ParticleDisplay::create2D(const ColorGradient& colorGrad)
 }
 
 void 
-FluidSim2D_ParticleDisplay::invalidateColorGradient(const ColorGradient& colorGrad)
+FluidSim_ParticleDisplay::create3D(RenderMesh& rdMesh, const ColorGradient& colorGrad)
+{
+	_rdMesh = rdMesh;
+
+	RenderUtil::createMaterial(&_shaderPtcDisplay, &_mtlPtcDisplay,			"asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D_ParticleDisplay.shader");
+	RenderUtil::createMaterial(&_shaderPtcDisplay, &_debug.mtlPtcDisplay,	"asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D_ParticleDisplay.shader");
+
+	invalidateColorGradient(colorGrad);
+}
+
+void 
+FluidSim_ParticleDisplay::invalidateColorGradient(const ColorGradient& colorGrad)
 {
 	_colorGradient = colorGrad;
 	s_createColorGradientTexture(_texColorGradient, _colorGradient);
 }
 
 void 
-FluidSim2D_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, const Span<Vec2f>& positions, const Span<Vec2f>& velocities, float radius)
+FluidSim_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, const Span<Vec2f>& positions, const Span<Vec2f>& velocities, float radius)
 {
 	RDS_CORE_ASSERT(_posBufGpu && _velBufGpu);
 
@@ -102,19 +113,19 @@ FluidSim2D_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, const
 }
 
 void 
-FluidSim2D_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
+FluidSim_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
 {
 	_draw(_mtlPtcDisplay, _texColorGradient, 0.9f, rdReq, drawData, bufPos, bufVel, radius, particleCount);
 }
 
 void 
-FluidSim2D_ParticleDisplay::debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
+FluidSim_ParticleDisplay::debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
 {
 	_draw(_debug.mtlPtcDisplay, Renderer::renderDevice()->textureStock().white, 1.0f, rdReq, drawData, bufPos, bufVel, radius, particleCount);
 }
 
 void 
-FluidSim2D_ParticleDisplay::_draw(Material* mtl, Texture2D* colorMap, float depth, RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
+FluidSim_ParticleDisplay::_draw(Material* mtl, Texture2D* colorMap, float depth, RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
 {
 	mtl->setParam("u_colorMap",		colorMap);
 	mtl->setParam("u_colorMap",		SamplerState::makeLinearClampToEdge());
@@ -133,7 +144,7 @@ FluidSim2D_ParticleDisplay::_draw(Material* mtl, Texture2D* colorMap, float dept
 }
 
 Texture2D* 
-FluidSim2D_ParticleDisplay::colorGradientTexture()
+FluidSim_ParticleDisplay::colorGradientTexture()
 {
 	return _texColorGradient;
 }

@@ -1,41 +1,41 @@
 #include "rds_fluid_simulation-pch.h"
-#include "rdsFluidSim2D_Gpu.h"
+#include "rdsFluidSim3D_Gpu.h"
 
 namespace rds
 {
 
 #if 0
-#pragma mark --- rdsFluidSim2D_Gpu-Impl ---
+#pragma mark --- rdsFluidSim3D_Gpu-Impl ---
 #endif // 0
 #if 1
 
 void 
-FluidSim2D_Gpu::onCreate(GraphicsDemo* parentDemo)
+FluidSim3D_Gpu::onCreate(GraphicsDemo* parentDemo)
 {
 	Base::onCreate(parentDemo);
 
-	RenderUtil::createMaterial(&_shaderFs2d, &_mtlFs2d,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D.shader");
-	_spatialLut.create2D("fs2d");
+	RenderUtil::createMaterial(&_shaderFs3d, &_mtlFs3d,	"asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D.shader");
+	_spatialLut.create3D("fs3d");
 
 	_cachedSimArgs.create(_particleSpawner, _particleSpawner.particleCount);
 }
 
 void 
-FluidSim2D_Gpu::onUpdate(float dt, RenderPassPipeline* renderPassPipeline)
+FluidSim3D_Gpu::onUpdate(float dt, RenderPassPipeline* renderPassPipeline)
 {
 	Base::onUpdate(dt, renderPassPipeline);
 
 }
 
 void 
-FluidSim2D_Gpu::onPrepareRender(RenderPassPipeline* renderPassPipeline)
+FluidSim3D_Gpu::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 {
 	Base::onPrepareRender(renderPassPipeline);
 
 }
 
 void 
-FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
+FluidSim3D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
 	Base::onExecuteRender(renderPassPipeline);
 
@@ -47,10 +47,10 @@ FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 	auto	screenSize	= drawData->resolution2u();
 
-	RdgTextureHnd rtColor	= rdGraph->createTexture("fs2d_rtColor",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
-	RdgTextureHnd dsBuf		= rdGraph->createTexture("fs2d_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil});
+	RdgTextureHnd rtColor	= rdGraph->createTexture("fs3d_rtColor",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
+	RdgTextureHnd dsBuf		= rdGraph->createTexture("fs3d_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil});
 
-	addPass_renderFluidSim2D(_cachedSimArgs, _simConfig, useCurSimRes, rtColor, dsBuf, rdGraph, drawData);
+	addPass_renderFluidSim3D(_cachedSimArgs, _simConfig, useCurSimRes, rtColor, dsBuf, rdGraph, drawData);
 	drawData->oTexPresent = rtColor;
 
 	if (_simConfig.useDebugSpatial)
@@ -64,34 +64,34 @@ FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 }
 
 void 
-FluidSim2D_Gpu::onDrawGui(EditorUiDrawRequest& uiDrawReq)
+FluidSim3D_Gpu::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 {
 	Base::onDrawGui(uiDrawReq);
 
 }
 
 void 
-FluidSim2D_Gpu::onUiMouseEvent(UiMouseEvent& ev)
+FluidSim3D_Gpu::onUiMouseEvent(UiMouseEvent& ev)
 {
 	Base::onUiMouseEvent(ev);
 
 }
 
 void 
-FluidSim2D_Gpu::onUiKeyboardEvent(UiKeyboardEvent& ev)
+FluidSim3D_Gpu::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
 	Base::onUiKeyboardEvent(ev);
 
 }
 
 void 
-FluidSim2D_Gpu::update(float dt)
+FluidSim3D_Gpu::update(float dt)
 {
 
 }
 
 void 
-FluidSim2D_Gpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
+FluidSim3D_Gpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 {
 	//float	dt			= 1 / 120.0f;
 	auto*	rdGraph		= renderPassPipeline->renderGraph();
@@ -99,20 +99,20 @@ FluidSim2D_Gpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 
 	SimArgs simArgs;
 	simArgs.create(this, dt, rdGraph, drawData);
-	addPass_simulateFluid2D(simArgs);
+	addPass_simulateFluid3D(simArgs);
 }
 
 RdgPass& 
-FluidSim2D_Gpu::addPass_simulateFluid2D(SimArgs& simArgs)
+FluidSim3D_Gpu::addPass_simulateFluid3D(SimArgs& simArgs)
 {
-	Material*	mtl		= _mtlFs2d;
+	Material*	mtl		= _mtlFs3d;
 	{
 		const auto& simState  = _simState;
 		const auto& simConfig = _simConfig;
 
 		mtl->setParam("u_dt",						simArgs.dt);
 		mtl->setParam("u_gravity",					simConfig.gravity);
-		mtl->setParam("u_gravityDir",				simConfig.gravityDir.toVec2().normalize());
+		mtl->setParam("u_gravityDir",				simConfig.gravityDir.normalize());
 		mtl->setParam("u_collisionDamping",			simConfig.collisionDamping);
 		mtl->setParam("u_smoothingRadius",			simConfig.smoothingRadius);
 
@@ -158,11 +158,11 @@ FluidSim2D_Gpu::addPass_simulateFluid2D(SimArgs& simArgs)
 }
 
 RdgPass& 
-FluidSim2D_Gpu::addPass_renderFluidSim2D(CachedSimArgs& cachedSimArgs, const Config& simConfig, bool useCurSimRes, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, RenderGraph* rdGraph, DrawData* drawData)
+FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Config& simConfig, bool useCurSimRes, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, RenderGraph* rdGraph, DrawData* drawData)
 {
 	auto n = _particleSpawner.particleCount;
 
-	auto& pass = rdGraph->addPass("fluid_sim_2d", RdgPassTypeFlags::Graphics);
+	auto& pass = rdGraph->addPass("fluid_sim_3d", RdgPassTypeFlags::Graphics);
 	pass.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 	pass.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
 
@@ -209,12 +209,12 @@ FluidSim2D_Gpu::addPass_renderFluidSim2D(CachedSimArgs& cachedSimArgs, const Con
 }
 
 RdgPass&
-FluidSim2D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
+FluidSim3D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 {
 	auto*		rdGraph = simArgs.rdGraph;
-	Material*	mtl		= _mtlFs2d;
+	Material*	mtl		= _mtlFs3d;
 
-	auto& pass = rdGraph->addPass("fs2d_calcExternalForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	auto& pass = rdGraph->addPass("fs3d_calcExternalForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 	pass.writeBuffer(simArgs.bufVel);
 	pass.writeBuffer(simArgs.bufPredictedPos);
 	pass.readBuffer(simArgs.bufPos);
@@ -233,19 +233,19 @@ FluidSim2D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 }
 
 RdgPass& 
-FluidSim2D_Gpu::addPass_updateSpatialLut(SimArgs& simArgs)
+FluidSim3D_Gpu::addPass_updateSpatialLut(SimArgs& simArgs)
 {
 	auto* rdGraph = simArgs.rdGraph;
 	return _spatialLut.updateSpatialLut(_gpuSort, simArgs.bufPredictedPos, _simConfig.smoothingRadius, simArgs.particleCount, rdGraph);
 }
 
 RdgPass& 
-FluidSim2D_Gpu::addPass_calcDensityData(SimArgs& simArgs)
+FluidSim3D_Gpu::addPass_calcDensityData(SimArgs& simArgs)
 {
 	auto*		rdGraph = simArgs.rdGraph;
-	Material*	mtl		= _mtlFs2d;
+	Material*	mtl		= _mtlFs3d;
 
-	auto& pass = rdGraph->addPass("fs2d_calcDensityData", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	auto& pass = rdGraph->addPass("fs3d_calcDensityData", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 	pass.writeBuffer(simArgs.bufDensityData);
 	simArgs.readSpatialBuffer(pass);
 	pass.setExecuteFunc(
@@ -260,12 +260,12 @@ FluidSim2D_Gpu::addPass_calcDensityData(SimArgs& simArgs)
 }
 
 RdgPass& 
-FluidSim2D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
+FluidSim3D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
 {
 	auto*		rdGraph = simArgs.rdGraph;
-	Material*	mtl		= _mtlFs2d;
+	Material*	mtl		= _mtlFs3d;
 
-	auto& pass = rdGraph->addPass("fs2d_calcPressureForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	auto& pass = rdGraph->addPass("fs3d_calcPressureForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 	pass.writeBuffer(simArgs.bufVel);
 	simArgs.readSpatialBuffer(pass);
 	pass.setExecuteFunc(
@@ -281,12 +281,12 @@ FluidSim2D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
 }
 
 RdgPass& 
-FluidSim2D_Gpu::addPass_calcViscosity(SimArgs& simArgs)
+FluidSim3D_Gpu::addPass_calcViscosity(SimArgs& simArgs)
 {
 	auto*		rdGraph = simArgs.rdGraph;
-	Material*	mtl		= _mtlFs2d;
+	Material*	mtl		= _mtlFs3d;
 
-	auto& pass = rdGraph->addPass("fs2d_calcViscosity", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	auto& pass = rdGraph->addPass("fs3d_calcViscosity", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 	pass.writeBuffer(simArgs.bufVel);
 	simArgs.readSpatialBuffer(pass);
 	pass.setExecuteFunc(
@@ -302,12 +302,12 @@ FluidSim2D_Gpu::addPass_calcViscosity(SimArgs& simArgs)
 }
 
 RdgPass& 
-FluidSim2D_Gpu::addPass_updatePosition(SimArgs& simArgs)
+FluidSim3D_Gpu::addPass_updatePosition(SimArgs& simArgs)
 {
 	auto*		rdGraph = simArgs.rdGraph;
-	Material*	mtl		= _mtlFs2d;
+	Material*	mtl		= _mtlFs3d;
 
-	auto& pass = rdGraph->addPass("fs2d_updatePosition", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	auto& pass = rdGraph->addPass("fs3d_updatePosition", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 	pass.writeBuffer(simArgs.bufPos);
 	pass.writeBuffer(simArgs.bufVel);
 	pass.setExecuteFunc(

@@ -2,6 +2,7 @@
 
 #include "rds_fluid_simulation/common/rds_fluid_simulation_common.h"
 #include "rds_fluid_simulation/2d/rdsFluidSim2D.h"
+#include "rds_fluid_simulation/3d/rdsFluidSim3D.h"
 
 namespace rds
 {
@@ -31,8 +32,10 @@ protected:
 	SPtr<Material>	_mtlFluidSimulation;
 	SPtr<Texture2D>	_texUvChecker;
 
-	UPtr<FluidSim2D_Gpu>	_fluidSim2D;
-	FluidSimDemo_Base*		_curDemo = nullptr;
+	//UPtr<FluidSim2D_Gpu>		_fluidSim2D;
+	//UPtr<FluidSim3D_Gpu>		_fluidSim3D;
+	UPtr<FluidSimDemo_Base>		_curDemo = nullptr;
+	float _fixedDt = 0.0;
 };
 RDS_DEMO(FluidSimulation);
 #endif

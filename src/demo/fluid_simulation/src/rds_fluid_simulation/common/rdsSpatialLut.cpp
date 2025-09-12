@@ -2,7 +2,7 @@
 #include "rdsSpatialLut.h"
 
 #include "rdsGpuSort.h"
-#include "rds_fluid_simulation/2d/rdsFluidSim2D_ParticleDisplay.h"
+#include "rds_fluid_simulation/common/rdsFluidSim_ParticleDisplay.h"
 
 namespace rds
 {
@@ -17,8 +17,8 @@ SpatialLut::create2D(StrView name)
 {
 	_is3D = false;
 	_name = name;
-	RenderUtil::createMaterial(&_shaderSpatialLut,		&_mtlSpatialLut,		"asset/shader/demo/fluid_simulation/common/rdsSpatialLut2D.shader");
-	RenderUtil::createMaterial(&_debug.shaderSpatialLut, &_debug.mtlSpatialLut,	"asset/shader/demo/fluid_simulation/common/rdsSpatialLut2D_Debug.shader");
+	RenderUtil::createMaterial(&_shaderSpatialLut,		&_mtlSpatialLut,		"asset/shader/demo/fluid_simulation/2d/rdsSpatialLut2D.shader");
+	RenderUtil::createMaterial(&_debug.shaderSpatialLut, &_debug.mtlSpatialLut,	"asset/shader/demo/fluid_simulation/2d/rdsSpatialLut2D_Debug.shader");
 }
 
 void 
@@ -26,8 +26,8 @@ SpatialLut::create3D(StrView name)
 {
 	_is3D = true;
 	_name = name;
-	RenderUtil::createMaterial(&_shaderSpatialLut,		&_mtlSpatialLut,		"asset/shader/demo/fluid_simulation/common/rdsSpatialLut3D.shader");
-	RenderUtil::createMaterial(&_debug.shaderSpatialLut, &_debug.mtlSpatialLut,	"asset/shader/demo/fluid_simulation/common/rdsSpatialLut3D_Debug.shader");
+	RenderUtil::createMaterial(&_shaderSpatialLut,		&_mtlSpatialLut,		"asset/shader/demo/fluid_simulation/3d/rdsSpatialLut3D.shader");
+	RenderUtil::createMaterial(&_debug.shaderSpatialLut, &_debug.mtlSpatialLut,	"asset/shader/demo/fluid_simulation/3d/rdsSpatialLut3D_Debug.shader");
 }
 
 RdgPass& 
@@ -170,7 +170,7 @@ SpatialLut::Debug_addPass_debugSpatialLut(RdgBufferHnd buf_positions, Vec3f samp
 
 
 RdgPass& 
-SpatialLut::Debug_renderSpatialLut(FluidSim2D_ParticleDisplay& ptcDisplay, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, float particleSize, u32 elementCount, RenderGraph* rdGraph, DrawData* drawData)
+SpatialLut::Debug_renderSpatialLut(FluidSim_ParticleDisplay& ptcDisplay, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, float particleSize, u32 elementCount, RenderGraph* rdGraph, DrawData* drawData)
 {
 	auto n			= elementCount;
 	auto buf_pos	= _debug.buf_resultPositions;

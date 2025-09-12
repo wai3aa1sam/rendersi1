@@ -1,29 +1,28 @@
 #include "rds_fluid_simulation-pch.h"
-#include "rdsFluidSim2D_Config.h"
-#include "rdsFluidSim2D_Base.h"
-#include "rdsFluidSim2D_Cpu.h"
+#include "rdsFluidSim_Config.h"
+#include "../2d/rdsFluidSim2D_Cpu.h"
 
 namespace rds
 {
 
 #if 0
-#pragma mark --- rdsFluidSim2D_Config-Impl ---
+#pragma mark --- rdsFluidSim_Config-Impl ---
 #endif // 0
 #if 1
 
-FluidSim2D_Config::FluidSim2D_Config()
+FluidSim_Config::FluidSim_Config()
 {
 
 }
 
 void 
-FluidSim2D_Config::create(FluidSim2D_Base* sim)
+FluidSim_Config::create(FluidSimDemo_Base* sim)
 {
 	_fluSim = sim;
 }
 
 ColorGradient 
-FluidSim2D_Config::makeColorGradient()
+FluidSim_Config::makeColorGradient()
 {
 	ColorGradient colGrad;
 	colGrad.addColorKey(ColorGradientKey{colorGradientKey0, 0.05f});
@@ -34,7 +33,7 @@ FluidSim2D_Config::makeColorGradient()
 }
 
 void
-FluidSim2D_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
+FluidSim_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 {
 	if (!_fluSim)
 		return;
@@ -93,7 +92,7 @@ FluidSim2D_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 }
 
 float 
-FluidSim2D_Config::calcPressureByDensity(float dens)
+FluidSim_Config::calcPressureByDensity(float dens)
 {
 	float densityDiff = dens - targetDensity;
 	float pressure = densityDiff * pressureMultiplier;
@@ -101,14 +100,14 @@ FluidSim2D_Config::calcPressureByDensity(float dens)
 }
 
 float 
-FluidSim2D_Config::calcNearPressureByDensity(float nearDens)
+FluidSim_Config::calcNearPressureByDensity(float nearDens)
 {
 	float nearPressure	= nearDens * nearPressureMultiplier;
 	return nearPressure;
 }
 
 Vec2f 
-FluidSim2D_Config::calcPressureByDensityData(const Vec2f& densData)
+FluidSim_Config::calcPressureByDensityData(const Vec2f& densData)
 {
 	float pressure		= calcPressureByDensity(densData.x);
 	float nearPressure	= calcNearPressureByDensity(densData.y);

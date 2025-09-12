@@ -19,8 +19,10 @@ FluidSimulation::onCreate()
 	//createMaterial(&_shaderFluidSimulation, &_mtlFluidSimulation, "asset/shader/demo/fluid_simulation/fluid_simulation.shader"
 	//				, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
 
-	_fluidSim2D = makeUPtr<FluidSim2D_Gpu>();
-	_fluidSim2D->onCreate(this);
+	bool is3D = 0;
+	is3D ? _curDemo = makeUPtr<FluidSim3D_Gpu>() : _curDemo = makeUPtr<FluidSim2D_Gpu>();
+	_curDemo->onCreate(this);
+	_fixedDt = 1.0f / 120.0f;
 }
 
 void 
@@ -34,7 +36,7 @@ void
 FluidSimulation::onPrepareRender(RenderPassPipeline* renderPassPipeline)
 {
 	Base::onPrepareRender(renderPassPipeline);
-	_fluidSim2D->onPrepareRender(renderPassPipeline);
+	if (_curDemo) _curDemo->onPrepareRender(renderPassPipeline);
 }
 
 void 
@@ -42,9 +44,7 @@ FluidSimulation::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
 	Base::onExecuteRender(renderPassPipeline);
 
-	_curDemo = _fluidSim2D.ptr();
-
-	if (_curDemo) _curDemo->onUpdate(1.0f / 120.0f, renderPassPipeline);
+	if (_curDemo) _curDemo->onUpdate(_fixedDt, renderPassPipeline);
 	if (_curDemo) _curDemo->onExecuteRender(renderPassPipeline);
 }
 

@@ -131,7 +131,7 @@ FluidSim2D_Cpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 	
 	for (size_t i = 0; i < _positions.size(); i++)
 	{
-		_velocities[i]			+= _simConfig.gravityDir * _simConfig.gravity * dt;
+		_velocities[i]			+= _simConfig.gravityDir.toVec2() * _simConfig.gravity * dt;
 		_predictedPositions[i]	 = _positions[i] + _velocities[i] * dt;	// reduce chaos when start
 	}
 

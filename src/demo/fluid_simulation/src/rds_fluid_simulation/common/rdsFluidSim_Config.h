@@ -6,14 +6,34 @@
 namespace rds
 {
 
-class FluidSim2D_Base;
+class FluidSimDemo_Base;
 
 #if 0
-#pragma mark --- rdsFluidSim2D_Config-Decl ---
+#pragma mark --- rdsFluidSim_SimState-Decl ---
 #endif // 0
 #if 1
 
-struct FluidSim2D_Config
+struct FluidSim_SimState
+{
+	bool isStop			= true;		// : 1
+	bool isStepForward	= false;
+	bool isStepBackward	= false;
+	bool hasSimulated	= false;
+
+	bool isPullInteraction = false;
+	bool isPushInteraction = false;
+
+	float interactionInputStrength = 0.0f;
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsFluidSim_Config-Decl ---
+#endif // 0
+#if 1
+
+struct FluidSim_Config
 {
 public:
 	float		particleMass		= 1.0f;
@@ -37,11 +57,15 @@ public:
 
 	float		timeMultiplier		= 1.0f;
 	float		gravity				= 12.0f;
-	Vec2f		gravityDir			= Vec2f::s_down();
+	Vec3f		gravityDir			= Vec3f::s_down();
 
 	Rect2f		boundingRegion		= { Vec2f{0.0, 0.0},	Vec2f{5.0,	2.5} * 2.0f };
 	Rect2f		spawnRegion			= { Vec2f{0.0, 0.0},	Vec2f{boundingRegion.size} / 3.0f };
 	Rect2f		obstacle			= { Vec2f{0.0, 0.0},	Vec2f{5.0,	2.5} * 2.0f };
+	
+	AABBox3f		boundingRegion3D		= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5} * 2.0f };
+	AABBox3f		spawnRegion3D			= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5} / 2.0f };
+	AABBox3f		obstacle3D				= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5} * 2.0f };
 
 	bool useSpatialOptimization = 1;
 	bool isInvalidateColorMap	= 1;
@@ -51,10 +75,10 @@ public:
 	bool useDebugSmoothRadius	= 1;
 
 public:
-	FluidSim2D_Config();
+	FluidSim_Config();
 
 public:
-	void create(FluidSim2D_Base* sim);
+	void create(FluidSimDemo_Base* sim);
 
 	ColorGradient makeColorGradient();
 
@@ -77,7 +101,7 @@ public:
 	void drawGui(EditorUiDrawRequest& uiDrawReq);
 
 private:
-	FluidSim2D_Base* _fluSim = nullptr;
+	FluidSimDemo_Base* _fluSim = nullptr;
 };
 
 #endif

@@ -8,11 +8,11 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsFluidSim2D_Base-Decl ---
+#pragma mark --- rdsFluidSim3D_Base-Decl ---
 #endif // 0
 #if 1
 
-class FluidSim2D_Base : public FluidSimDemo_Base
+class FluidSim3D_Base : public FluidSimDemo_Base
 {
 public:
 	using Base = FluidSimDemo_Base;
@@ -35,7 +35,6 @@ public:
 	void debug_drawSpatialGrid(RenderRequest& rdReq);
 	void debug_drawMouseInteraction(RenderRequest& rdReq);
 	void debug_drawSmoothRadius(RenderRequest& rdReq);
-
 };
 
 

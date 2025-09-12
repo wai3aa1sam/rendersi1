@@ -3,28 +3,13 @@
 #include "rds_fluid_simulation-pch.h"
 #include "rds_fluid_simulation/common/rds_fluid_simulation_common.h"
 
+#include "rds_fluid_simulation/common/rdsFluidSim_ParticleDisplay.h"
+#include "rds_fluid_simulation/common/rdsFluidSim_ParticleSpawner.h"
+#include "rds_fluid_simulation/common/rdsFluidSim_Config.h"
+
 namespace rds
 {
 
-#if 0
-#pragma mark --- rdsFluidSim2D_SimState-Decl ---
-#endif // 0
-#if 1
-
-struct FluidSim_SimState
-{
-	bool isStop			= true;		// : 1
-	bool isStepForward	= false;
-	bool isStepBackward	= false;
-	bool hasSimulated	= false;
-
-	bool	isPullInteraction = false;
-	bool	isPushInteraction = false;
-
-	float interactionInputStrength = 0.0f;
-};
-
-#endif
 
 #if 0
 #pragma mark --- rdsFluidSim2D_Gpu-Decl ---
@@ -34,7 +19,10 @@ struct FluidSim_SimState
 class FluidSimDemo_Base : public NonCopyable
 {
 public:
-	using SimState = FluidSim_SimState;
+	using SimState			= FluidSim_SimState;
+	using ParticleDisplay	= FluidSim_ParticleDisplay;
+	using ParticleSpawner   = FluidSim_ParticleSpawner;
+	using Config			= FluidSim_Config;
 
 public:
 	virtual void onCreate(GraphicsDemo* parentDemo);
@@ -59,10 +47,20 @@ protected:
 protected:
 	bool isFocusOnEditorViewport()	const	{ return demoLayer() ? demoLayer()->isFocusOnEditorViewport() : false; }
 
+public:
+	ParticleDisplay& particleDisplay() { return _ptcDisplay; }
+
 protected:
 	GraphicsDemo*	_parentDemo = nullptr;
 	Vec2f			_mousePosViewport;
 	Ray3f			_mouseRayWorld;
+
+protected:
+	SPtr<Texture2D>		_texColorGradient;
+
+	ParticleDisplay		_ptcDisplay;
+	ParticleSpawner		_particleSpawner;
+	Config				_simConfig;
 
 protected:
 	SimState _simState;

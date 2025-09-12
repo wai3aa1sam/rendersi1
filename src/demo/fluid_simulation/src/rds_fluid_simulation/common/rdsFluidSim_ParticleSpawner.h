@@ -7,11 +7,11 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsFluidSim2D_ParticleSpawner-Decl ---
+#pragma mark --- rdsFluidSim_ParticleSpawner-Decl ---
 #endif // 0
 #if 1
 
-class FluidSim2D_ParticleSpawner
+class FluidSim_ParticleSpawner
 {
 public:
 	Vec2f initVelocity		= Vec2f{0.0, 0.0};
@@ -19,11 +19,13 @@ public:
 	float spawnDensity		= 128.0f; // 2.0f // 128.0;
 
 	Rect2f spawnRegion;
+	AABBox3f spawnRegion3D;
 
 	u32 particleCount = 0;
 
 public:
-	void create(Rect2f spawnRegion_);
+	void create(const Rect2f& spawnRegion_);
+	void create(const AABBox3f& spawnRegion_);
 
 	struct SpawnArgs
 	{
@@ -35,11 +37,15 @@ public:
 	u32		spawnTo(RenderGpuBuffer* o_positions, RenderGpuBuffer* o_velocities, RenderGpuBuffer* o_predictedPositions);
 	u32		spawnTo(RdgBufferHnd bufPos);
 
+	u32		spawnTo3D(RenderGpuBuffer* o_positions, RenderGpuBuffer* o_velocities, RenderGpuBuffer* o_predictedPositions);
+
 public:
-	Vec2i	calcSpawnCountPerAxis() const;
+	Vec2i	calcSpawnCountPerAxis2D() const;
+	Vec3i	calcSpawnCountPerAxis3D() const;
 
 private:
 	u32 _spawnTo_Positions(Vector<Vec2f>& outPositions);
+	u32 _spawnTo_Positions(Vector<Vec3f>& outPositions);
 };
 
 

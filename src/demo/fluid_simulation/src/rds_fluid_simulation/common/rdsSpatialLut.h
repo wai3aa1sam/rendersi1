@@ -7,7 +7,7 @@ namespace rds
 {
 
 class GpuSort;
-class FluidSim2D_ParticleDisplay;
+class FluidSim_ParticleDisplay;
 
 #if 0
 #pragma mark --- rdsSpatialLut-Decl ---
@@ -42,7 +42,7 @@ public:
 	#if 1
 	RdgPass& Debug_updateSpatialLut(bool hasSimulated, Vec3f samplingPt, GpuSort& gpuSort, RdgBufferHnd buf_positions, float radius, u32 elementCount, RenderGraph* rdGraph);
 	RdgPass& Debug_addPass_debugSpatialLut(RdgBufferHnd buf_positions, Vec3f samplingPt, float radius, u32 elementCount, RenderGraph* rdGraph);
-	RdgPass& Debug_renderSpatialLut(FluidSim2D_ParticleDisplay& ptcDisplay, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, float particleSize, u32 elementCount, RenderGraph* rdGraph, DrawData* drawData);
+	RdgPass& Debug_renderSpatialLut(FluidSim_ParticleDisplay& ptcDisplay, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, float particleSize, u32 elementCount, RenderGraph* rdGraph, DrawData* drawData);
 	#endif // 0
 
 private:
