@@ -16,7 +16,7 @@ FluidSim2D_Gpu::onCreate(GraphicsDemo* parentDemo)
 
 	RenderUtil::createMaterial(&_shaderFs2d, &_mtlFs2d,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D.shader");
 	RenderUtil::createShader(&_shaderSort, "asset/shader/demo/fluid_simulation/common/rdsBitonicMergeSort.shader");
-	//RenderUtil::createMaterial(&_shaderSort, &_mtlSort,	"asset/shader/demo/fluid_simulation/common/rdsBitonicMergeSort.shader");
+	RenderUtil::createMaterial(&_shaderSort, &_mtlSort,	"asset/shader/demo/fluid_simulation/common/rdsBitonicMergeSort.shader");
 
 	RenderUtil::createMaterial(&_shaderSpatialLutDebug, &_mtlSpatialLutDebug,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_SpatialLutDebug.shader");
 }
@@ -67,8 +67,8 @@ FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 			//bool isValid = cachedSimArgs_.bufPos.type() != RdgResourceType::None;
 			if (useCurSimRes)
 			{
-				passFluidSim2D.readBuffer(cachedSimArgs_.bufPos);
-				passFluidSim2D.readBuffer(cachedSimArgs_.bufVel);
+				passFluidSim2D.readBuffer(cachedSimArgs_.bufPos, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
+				passFluidSim2D.readBuffer(cachedSimArgs_.bufVel, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
 			}
 
 			passFluidSim2D.setExecuteFunc(
@@ -85,7 +85,6 @@ FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 					debug_drawBoundary(rdReq);
 					debug_drawSpatialGrid(rdReq);
-					//debug_drawSpatial(rdReq);
 					debug_drawSmoothRadius(rdReq);
 					debug_drawMouseInteraction(rdReq);
 
@@ -121,7 +120,7 @@ FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 		auto& passFluidSim2D = rdGraph->addPass("fs2d_SpatialLut_renderDebugPositions", RdgPassTypeFlags::Graphics);
 		passFluidSim2D.setRenderTarget(rtColor,	RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
 		passFluidSim2D.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);	// currently use the pre-pass will cause z-flight
-		passFluidSim2D.readBuffer(_cachedSimArgs.debug_buf_positions);
+		passFluidSim2D.readBuffer(_cachedSimArgs.debug_buf_positions, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
 		passFluidSim2D.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
@@ -293,7 +292,7 @@ FluidSim2D_Gpu::_addPass_sortSpatialLut(SimArgs& simArgs)
 	// Sorts given buffer of integer values using bitonic merge sort
 	// Note: buffer size is not restricted to powers of 2 in this implementation
 	{
-		auto n				= sCast<u32>(simArgs.particleCount);
+		auto size			= sCast<u32>(simArgs.particleCount);
 		auto bufList		= simArgs.bufSpatialLut;
 		const char* name	= "fluid_sim";
 
@@ -301,15 +300,20 @@ FluidSim2D_Gpu::_addPass_sortSpatialLut(SimArgs& simArgs)
 		// Number of steps = [log2(n) * (log2(n) + 1)] / 2
 		// where n = nearest power of 2 that is greater or equal to the number of inputs
 
+		#if 1
 		RdgPass* pass_prev = nullptr;
-		u32 numStages = sCast<u32>(math::log2(math::nextPow2(n)));
+		u32 numStages = sCast<u32>(math::log2(math::nextPow2(size)));
 		for (u32 stageIndex = 0; stageIndex < numStages; stageIndex++)
 		{
 			for (u32 stepIndex = 0; stepIndex < stageIndex + 1; stepIndex++)
 			{
+				//SPtr<Material> _mtl = Renderer::renderDevice()->createMaterial(_shaderSort);
+				//Material* mtl = _mtl;
+				//Material* mtl = _mtlSort;
+
 				Material* mtl = _mtlSortPool.newObject(_shaderSort);
 
-				auto& pass = rdGraph->addPass(RDS_RDG_EVENT_NAME("bitonicMergeSort_{}_stg{}_stp{}", name, stageIndex, stepIndex)
+				auto& pass = rdGraph->addPass(RDS_RDG_EVENT_NAME("{}_bitonicMergeSort_stg{}_stp{}", name, stageIndex, stepIndex)
 					, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 				pass.writeBuffer(bufList);
 				pass.setExecuteFunc(
@@ -322,16 +326,33 @@ FluidSim2D_Gpu::_addPass_sortSpatialLut(SimArgs& simArgs)
 						mtl->setParam("u_groupWidth",	groupWidth);
 						mtl->setParam("u_groupHeight",	groupHeight);
 						mtl->setParam("u_stepIndex",	stepIndex);
-						mtl->setParam("u_size",			n);
+						mtl->setParam("u_size",			size);
 						mtl->setParam("u_list",			bufList.renderResource());
 
-						rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{sCast<u32>(math::nextPow2(n) / 2), 1, 1});
+						//RDS_DUMP_VAR(stageIndex, stepIndex, groupWidth, groupHeight);
+
+						rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u{sCast<u32>(math::nextPow2(size) / 2), 1, 1});
 					}
 				);
 				pass.runAfter(pass_prev);
 				pass_prev = &pass;
 			}
 		}
+		#else
+		Material* mtl = _mtlSortPool.newObject(_shaderSort);
+		auto& pass = rdGraph->addPass(RDS_RDG_EVENT_NAME("{}_bubble_sort", name)
+			, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+		pass.writeBuffer(bufList);
+		pass.setExecuteFunc(
+			[=](RenderRequest& rdReq)
+			{
+				mtl->setParam("u_size",			size);
+				mtl->setParam("u_list",			bufList.renderResource());
+				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 1, Vec3u{1, 1, 1});
+			}
+		);
+		#endif // 0
+
 	}
 }
 

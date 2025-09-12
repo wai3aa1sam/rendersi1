@@ -5,6 +5,8 @@ Shader {
 	}
 	
 	Pass { CsFunc		Cs_sort }
+	Pass { CsFunc		Cs_bubbleSort }
+	
 
 	Permutation
 	{
@@ -31,7 +33,7 @@ struct ComputeIn
 };
 
 #define T uint3
-RDS_RW_BUFFER(T, u_list);
+RDS_RW_BUFFER(uint3, u_list);
 
 uint u_size;
 uint u_groupWidth;
@@ -50,15 +52,40 @@ void Cs_sort(ComputeIn input)
 	// Exit if out of bounds (for non-power of 2 input sizes)
 	if (indexRight >= u_size) return;
 
-	T valueLeft 	= RDS_RW_BUFFER_LOAD_I(T, u_list, 	indexLeft);		
-	T valueRight 	= RDS_RW_BUFFER_LOAD_I(T, u_list, 	indexRight);
+	uint3 valueLeft 	= RDS_RW_BUFFER_LOAD_I(uint3, u_list, 	indexLeft);		
+	uint3 valueRight 	= RDS_RW_BUFFER_LOAD_I(uint3, u_list, 	indexRight);
 
 	bool isDescending = valueLeft.z > valueRight.z;
 	// Swap entries if value is descending
 	if (isDescending)
 	{
-		T temp = valueLeft;
-		RDS_RW_BUFFER_STORE_I(T, u_list, indexLeft, 	valueRight);
-		RDS_RW_BUFFER_STORE_I(T, u_list, indexRight, 	temp);
+		uint3 temp = valueLeft;
+		RDS_RW_BUFFER_STORE_I(uint3, u_list, indexLeft, 	valueRight);
+		RDS_RW_BUFFER_STORE_I(uint3, u_list, indexRight, 	temp);
 	}
+}
+
+// workaround first, later debug the bitonic_merge_sort
+[numThreads(1, 1, 1)]
+void Cs_bubbleSort(ComputeIn input)
+{
+	uint n = u_size;
+	for (int i = 0; i < n - 1; i++) 
+	{
+		bool flag = false;
+        for (int j = 0; j < n - i - 1; j++) 
+		{
+			T valueLeft 	= RDS_RW_BUFFER_LOAD_I(T, u_list, 	j);		
+			T valueRight 	= RDS_RW_BUFFER_LOAD_I(T, u_list, 	j + 1);
+            if (valueLeft.z > valueRight.z)
+			{
+				T temp = valueLeft;
+				RDS_RW_BUFFER_STORE_I(T, u_list, j, 		valueRight);
+				RDS_RW_BUFFER_STORE_I(T, u_list, j + 1, 	temp);
+				flag = true;
+			}
+        }
+		if (!flag)
+			break;
+    }
 }

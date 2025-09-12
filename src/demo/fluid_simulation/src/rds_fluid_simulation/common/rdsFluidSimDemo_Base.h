@@ -81,6 +81,7 @@ public:
 	{
 		_data.resize(RenderApiLayerTraits::s_kFrameInFlightCount);
 		RDS_TODO("this class also in RenderUiContext, please separate it as a file");
+		RDS_TODO("this will trigger un - freed block in vma in mt mode, please check later");
 	}
 
 	void			reset();

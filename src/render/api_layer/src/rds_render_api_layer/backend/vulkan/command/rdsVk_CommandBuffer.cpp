@@ -482,8 +482,8 @@ Vk_CommandBuffer::cmd_addMemoryBarrier(Vk_StageAccess vkStageAccess)
 	memoryBarrier.srcAccessMask = vkStageAccess.srcAccess;
 	memoryBarrier.dstAccessMask = vkStageAccess.dstAccess;
 
-	//vkCmdPipelineBarrier(hnd(), vkStageAccess.srcStage, vkStageAccess.dstStage, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
-	//vkCmdPipelineBarrier(hnd(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, vkStageAccess.dstStage, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+	vkCmdPipelineBarrier(hnd(), vkStageAccess.srcStage, vkStageAccess.dstStage, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+	//vkCmdPipelineBarrier(hnd(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
 
 	#endif // 0
 }

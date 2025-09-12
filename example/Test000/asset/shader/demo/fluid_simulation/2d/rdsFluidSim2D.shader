@@ -122,7 +122,7 @@ void Cs_updateSpatialLut(ComputeIn input)
 	if (!isInBoundary) return;
 
 	// init
-	RDS_RW_BUFFER_STORE_I(uint, u_spatialLutKeyToStartIndex, tarPtcIdx, SpatialLut_invalidIdx);
+	RDS_RW_BUFFER_STORE_I(uint, u_spatialLutKeyToStartIndex, tarPtcIdx, u_particleCount);
 
 	float2 pos = RDS_RW_BUFFER_LOAD_I(float2, u_predictedPositions, tarPtcIdx);
 	// Update index buffer
@@ -147,7 +147,7 @@ void Cs_updateSpatialLutKeyToStartIndex(ComputeIn input)
 	uint3 prevSpatialLutEntry 	= RDS_RW_BUFFER_LOAD_I(uint3, u_spatialLut, i - 1);
 
 	uint key 		= spatialLutEntry.z;
-	uint keyPrev 	= i == 0 ? SpatialLut_invalidIdx : prevSpatialLutEntry.z;
+	uint keyPrev 	= i == 0 ? u_particleCount : prevSpatialLutEntry.z;
 	if (key != keyPrev)
 	{
 		RDS_RW_BUFFER_STORE_I(uint, u_spatialLutKeyToStartIndex, key, i);

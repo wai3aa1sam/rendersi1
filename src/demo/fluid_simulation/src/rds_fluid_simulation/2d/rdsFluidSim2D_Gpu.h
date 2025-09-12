@@ -23,6 +23,12 @@ public:
 	using HashT		= IdxT;
 
 public:
+	~FluidSim2D_Gpu()
+	{
+
+	}
+
+public:
 	virtual void onCreate(GraphicsDemo* parentDemo)							override;
 	virtual void onUpdate(float dt, RenderPassPipeline* renderPassPipeline) override;
 
@@ -251,6 +257,7 @@ private:
 
 	SPtr<Shader>	_shaderSort;
 	MaterialPool	_mtlSortPool;
+	SPtr<Material>	_mtlSort;
 
 	SimArgs			_testSimArgs;
 	CachedSimArgs	_cachedSimArgs;
