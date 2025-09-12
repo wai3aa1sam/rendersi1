@@ -15,9 +15,6 @@ FluidSim2D_Gpu::onCreate(GraphicsDemo* parentDemo)
 	Base::onCreate(parentDemo);
 
 	RenderUtil::createMaterial(&_shaderFs2d, &_mtlFs2d,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D.shader");
-	RenderUtil::createShader(&_shaderSort, "asset/shader/demo/fluid_simulation/common/rdsBitonicMergeSort.shader");
-	RenderUtil::createMaterial(&_shaderSort, &_mtlSort,	"asset/shader/demo/fluid_simulation/common/rdsBitonicMergeSort.shader");
-
 	RenderUtil::createMaterial(&_shaderSpatialLutDebug, &_mtlSpatialLutDebug,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_SpatialLutDebug.shader");
 }
 
@@ -285,7 +282,7 @@ FluidSim2D_Gpu::addPass_updateSpatialLut(SimArgs& simArgs)
 	}
 
 	// sort lut by key
-	_addPass_sortSpatialLut(simArgs);
+	_gpuSort.sort("fs2d", simArgs.bufSpatialLut, simArgs.particleCount, simArgs.rdGraph);
 
 	RdgPass* pass_updateSpatialLutKeyToStartIndex = nullptr;
 
@@ -308,83 +305,6 @@ FluidSim2D_Gpu::addPass_updateSpatialLut(SimArgs& simArgs)
 	}
 
 	return *pass_updateSpatialLutKeyToStartIndex;
-}
-
-RdgPass& 
-FluidSim2D_Gpu::_addPass_sortSpatialLut(SimArgs& simArgs)
-{
-	_mtlSortPool.reset();
-
-	auto*		rdGraph = simArgs.rdGraph;
-
-	// references:
-	// - https://github.com/SebLague/Fluid-Sim/blob/Episode-01/Assets/Scripts/Compute%20Helpers/GPU%20Sort/GPUSort.cs
-	// Sorts given buffer of integer values using bitonic merge sort
-	// Note: buffer size is not restricted to powers of 2 in this implementation
-	{
-		auto size			= sCast<u32>(simArgs.particleCount);
-		auto bufList		= simArgs.bufSpatialLut;
-		const char* name	= "fluid_sim";
-
-		// Launch each step of the sorting algorithm (once the previous step is complete)
-		// Number of steps = [log2(n) * (log2(n) + 1)] / 2
-		// where n = nearest power of 2 that is greater or equal to the number of inputs
-
-		#if 0
-		RdgPass* pass_prev = nullptr;
-		u32 numStages = sCast<u32>(math::log2(math::nextPow2(size)));
-		for (u32 stageIndex = 0; stageIndex < numStages; stageIndex++)
-		{
-			for (u32 stepIndex = 0; stepIndex < stageIndex + 1; stepIndex++)
-			{
-				//SPtr<Material> _mtl = Renderer::renderDevice()->createMaterial(_shaderSort);
-				//Material* mtl = _mtl;
-				//Material* mtl = _mtlSort;
-
-				Material* mtl = _mtlSortPool.newObject(_shaderSort);
-
-				auto& pass = rdGraph->addPass(RDS_RDG_EVENT_NAME("{}_bitonicMergeSort_stg{}_stp{}", name, stageIndex, stepIndex)
-					, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-				pass.writeBuffer(bufList);
-				pass.setExecuteFunc(
-					[=](RenderRequest& rdReq)
-					{
-						// Calculate some pattern stuff
-						u32 groupWidth  = 1 << (stageIndex - stepIndex);
-						u32 groupHeight = 2 * groupWidth - 1;
-
-						mtl->setParam("u_groupWidth",	groupWidth);
-						mtl->setParam("u_groupHeight",	groupHeight);
-						mtl->setParam("u_stepIndex",	stepIndex);
-						mtl->setParam("u_size",			size);
-						mtl->setParam("u_list",			bufList.renderResource());
-
-						//RDS_DUMP_VAR(stageIndex, stepIndex, groupWidth, groupHeight);
-
-						rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u{sCast<u32>(math::nextPow2(size) / 2), 1, 1});
-					}
-				);
-				pass.runAfter(pass_prev);
-				pass_prev = &pass;
-			}
-		}
-		return pass_prev;
-		#else
-		Material* mtl = _mtlSortPool.newObject(_shaderSort);
-		auto& pass = rdGraph->addPass(RDS_RDG_EVENT_NAME("{}_bubble_sort", name)
-			, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-		pass.writeBuffer(bufList);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				mtl->setParam("u_size",			size);
-				mtl->setParam("u_list",			bufList.renderResource());
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 1, Vec3u{1, 1, 1});
-			}
-		);
-		return pass;
-		#endif // 0
-	}
 }
 
 RdgPass& 

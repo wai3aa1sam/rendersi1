@@ -2,6 +2,7 @@
 
 #include "rds_fluid_simulation/common/rds_fluid_simulation_common.h"
 #include "rdsFluidSim2D_Base.h"
+#include "rds_fluid_simulation/common/rdsGpuSort.h"
 
 namespace rds
 {
@@ -21,12 +22,6 @@ public:
 	using DimT_u	= Vec2u;
 	using IdxT		= u32;
 	using HashT		= IdxT;
-
-public:
-	~FluidSim2D_Gpu()
-	{
-
-	}
 
 public:
 	virtual void onCreate(GraphicsDemo* parentDemo)							override;
@@ -262,7 +257,6 @@ public:
 	RdgPass& addPass_calcExternalForce(SimArgs& simArgs);
 	
 	RdgPass& addPass_updateSpatialLut(SimArgs& simArgs);
-	RdgPass& _addPass_sortSpatialLut(SimArgs& simArgs);
 	RdgPass& Debug_addPass_debugSpatialLut(SimArgs& simArgs);
 
 	RdgPass& addPass_calcDensityData(SimArgs& simArgs);
@@ -277,14 +271,13 @@ private:
 	SPtr<Shader>	_shaderSpatialLutDebug;
 	SPtr<Material>	_mtlSpatialLutDebug;
 
-	SPtr<Shader>	_shaderSort;
-	MaterialPool	_mtlSortPool;
-	SPtr<Material>	_mtlSort;
+	GpuSort			_gpuSort;
 
 	SimArgs			_testSimArgs;
 	CachedSimArgs	_cachedSimArgs;
 };
 
 #endif
+
 
 }
