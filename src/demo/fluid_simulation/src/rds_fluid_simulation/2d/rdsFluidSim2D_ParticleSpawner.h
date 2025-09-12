@@ -32,6 +32,7 @@ public:
 		Vector<float>& outDensities;
 	};
 	u32		spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& outPredictedPositions, Vector<Vec2f>& outVelocities, Vector<float>& outDensities, Vector<Vec2f>& outDensityData);
+	u32		spawnTo(RenderGpuBuffer* o_positions, RenderGpuBuffer* o_velocities, RenderGpuBuffer* o_predictedPositions);
 	u32		spawnTo(RdgBufferHnd bufPos);
 
 public:

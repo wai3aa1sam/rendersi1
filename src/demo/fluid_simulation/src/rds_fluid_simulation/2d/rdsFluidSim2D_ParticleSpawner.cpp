@@ -48,13 +48,27 @@ FluidSim2D_ParticleSpawner::spawnTo(Vector<Vec2f>& outPositions, Vector<Vec2f>& 
 }
 
 u32 
-FluidSim2D_ParticleSpawner::spawnTo(RdgBufferHnd bufPos)
+FluidSim2D_ParticleSpawner::spawnTo(RenderGpuBuffer* o_positions, RenderGpuBuffer* o_velocities, RenderGpuBuffer* o_predictedPositions)
 {
-	RDS_CORE_ASSERT(bufPos);
+	RDS_CORE_ASSERT(o_positions);
 	Vector<Vec2f> v;
 	_spawnTo_Positions(v);
-	bufPos.renderResource()->uploadToGpu(makeByteSpan(v.span()));
+	o_positions->uploadToGpu(makeByteSpan(v.span()));
+	if (o_predictedPositions)
+	{
+		o_predictedPositions->uploadToGpu(makeByteSpan(v.span()));
+	}
+	if (o_velocities)
+	{
+		o_velocities->uploadToGpu(makeByteSpan(v.span()));
+	}
 	return sCast<u32>(v.size());
+}
+
+u32 
+FluidSim2D_ParticleSpawner::spawnTo(RdgBufferHnd bufPos)
+{
+	return spawnTo(bufPos.renderResource(), nullptr, nullptr);
 }
 
 Vec2i 

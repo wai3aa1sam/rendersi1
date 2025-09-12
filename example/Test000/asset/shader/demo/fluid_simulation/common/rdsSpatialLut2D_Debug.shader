@@ -15,7 +15,7 @@ Shader {
 #endif
 
 #include "built-in/shader/rds_shader.hlsl"
-#include "rdsFluidSim2D_SpatialLut.hlsl"
+#include "rdsSpatialLut2D.hlsl"
 
 #define RDS_NUM_THREADS 32
 
@@ -27,12 +27,11 @@ struct ComputeIn
     uint  groupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-
 RDS_RW_BUFFER(uint3, 	u_spatialLut);				// x: particle_index, y: hash, z: key
 RDS_RW_BUFFER(uint,  	u_spatialLutKeyToStartIndex);
-RDS_RW_BUFFER(float2,  	u_predictedPositions);
+RDS_RW_BUFFER(float2,  	u_positions);
 
-RDS_RW_BUFFER(float2,  	u_spatialLutDebugPositions);
+RDS_RW_BUFFER(float2,  	u_spatialLutDebugResultPositions);
 //RDS_RW_BUFFER(float2,  	u_spatialLutDebugVelocities);
 
 uint 	u_particleCount;
@@ -70,7 +69,7 @@ void Cs_debugSpatialLut(ComputeIn input)
 			if (spatialLut[1] != hash) 		continue; // not same hash
 			//if (neighbourIdx == tarPtcIdx) 	continue; // skip self, except calcDesnsity
 
-			float2 neighbourPos 	  = RDS_RW_BUFFER_LOAD_I(float2, u_predictedPositions, neighbourIdx);
+			float2 neighbourPos 	  = RDS_RW_BUFFER_LOAD_I(float2, u_positions, neighbourIdx);
 			float2 offsetToNeighbour  = neighbourPos - tarPos;
 			float  sqrDistToNeighbour = dot(offsetToNeighbour, offsetToNeighbour);
 
@@ -81,14 +80,14 @@ void Cs_debugSpatialLut(ComputeIn input)
 			float2 dirToNeighbour 	= dist > 0 ? offsetToNeighbour / dist : float2(0, 1);
 			
 			// calc sth
-			RDS_RW_BUFFER_STORE_I(float2, u_spatialLutDebugPositions,  neighbourCount, neighbourPos);
+			RDS_RW_BUFFER_STORE_I(float2, u_spatialLutDebugResultPositions,  neighbourCount, neighbourPos);
 			neighbourCount++;
 		}
 	}
 
 	while(neighbourCount < u_particleCount)
 	{
-		RDS_RW_BUFFER_STORE_I(float2, u_spatialLutDebugPositions,  neighbourCount, float2(9999, 9999));
+		RDS_RW_BUFFER_STORE_I(float2, u_spatialLutDebugResultPositions,  neighbourCount, float2(9999, 9999));
 		neighbourCount++;
 	}
 }

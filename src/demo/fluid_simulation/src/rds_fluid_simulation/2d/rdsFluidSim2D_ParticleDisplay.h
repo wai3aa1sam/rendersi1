@@ -11,7 +11,7 @@ namespace rds
 #endif // 0
 #if 1
 
-class FluidSim2D_ParticleDisplay
+class FluidSim2D_ParticleDisplay : public NonCopyable
 {
 public:
 	void s_createColorGradientTexture(SPtr<Texture2D>& oTex, const ColorGradient& colorGradient);

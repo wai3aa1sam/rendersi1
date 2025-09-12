@@ -15,7 +15,9 @@ FluidSim2D_Gpu::onCreate(GraphicsDemo* parentDemo)
 	Base::onCreate(parentDemo);
 
 	RenderUtil::createMaterial(&_shaderFs2d, &_mtlFs2d,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D.shader");
-	RenderUtil::createMaterial(&_shaderSpatialLutDebug, &_mtlSpatialLutDebug,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_SpatialLutDebug.shader");
+	_spatialLut.create2D("fs2d");
+
+	_cachedSimArgs.create(_particleSpawner, _particleSpawner.particleCount);
 }
 
 void 
@@ -37,6 +39,10 @@ FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
 	Base::onExecuteRender(renderPassPipeline);
 
+	// must not use isValidRenderResource now (see the code in there), just delay 1 frame for now
+	bool hasSimulated = _simState.hasSimulated;
+	bool useCurSimRes = hasSimulated || !_cachedSimArgs.positions;
+
 	auto*	rdGraph		= renderPassPipeline->renderGraph();
 	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 	auto	screenSize	= drawData->resolution2u();
@@ -44,96 +50,17 @@ FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	RdgTextureHnd rtColor	= rdGraph->createTexture("fs2d_rtColor",	Texture2D_CreateDesc{ screenSize, ColorType::RGBAh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource});
 	RdgTextureHnd dsBuf		= rdGraph->createTexture("fs2d_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil});
 
-	float dt = 1.0f / 120.0f;
-	if (!_cachedSimArgs.hasInit())
-		simulate(dt, renderPassPipeline);
+	addPass_renderFluidSim2D(_cachedSimArgs, _simConfig, useCurSimRes, rtColor, dsBuf, rdGraph, drawData);
+	drawData->oTexPresent = rtColor;
 
-	bool hasSimulated = _simState.hasSimulated;
-
-	RdgPass* rdgPass = nullptr;
-	auto fnRender = 
-		[&](CachedSimArgs& cachedSimArgs_, const Config& config)
-		{
-			auto& passFluidSim2D = rdGraph->addPass("fluid_sim_2d", RdgPassTypeFlags::Graphics);
-			passFluidSim2D.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
-			passFluidSim2D.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
-
-			bool  useCurSimRes = hasSimulated || !cachedSimArgs_.positions;
-
-			auto n = _particleSpawner.particleCount;
-			//bool isValid = cachedSimArgs_.bufPos.type() != RdgResourceType::None;
-			if (useCurSimRes)
-			{
-				passFluidSim2D.readBuffer(cachedSimArgs_.bufPos, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
-				passFluidSim2D.readBuffer(cachedSimArgs_.bufVel, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
-			}
-
-			passFluidSim2D.setExecuteFunc(
-				[=](RenderRequest& rdReq)
-				{
-					rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
-
-					auto* clearValue = rdReq.clearFramebuffers();
-					clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
-					clearValue->setClearDepth(1.0f);
-
-					drawData->setupMaterial(_parentDemo->mtlDrawCircle);
-					rdReq.circleMaterial = _parentDemo->mtlDrawCircle;
-
-					debug_drawBoundary(rdReq);
-					debug_drawSpatialGrid(rdReq);
-					debug_drawSmoothRadius(rdReq);
-					debug_drawMouseInteraction(rdReq);
-
-					if (true)
-					{
-						auto& v = constCast(cachedSimArgs_);
-						auto* pos		= useCurSimRes ? v.bufPos.renderResource()					: v.positions.ptr();
-						auto* vel		= useCurSimRes ? v.bufVel.renderResource()					: v.velocities.ptr();
-						_ptcDisplay.draw(rdReq, drawData, pos, vel, config.particleSize, n);
-					}
-				}
-			);
-
-			drawData->oTexPresent = rtColor;
-			rdgPass = &passFluidSim2D;
-	};
-
-	#if 1
-	SimArgs simArgs;
-	simArgs.Debug_create(hasSimulated, _cachedSimArgs, this, dt, rdGraph, drawData);
-	Debug_addPass_debugSpatialLut(simArgs);
-	fnRender(_cachedSimArgs, _simConfig);
-
-	#if 1
+	if (_simConfig.useDebugSpatial)
 	{
-		auto& config = _simConfig;
-
-		if (!config.useDebugSpatial)
-			return;
-
+		auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
 		auto n = _particleSpawner.particleCount;
-
-		auto& passFluidSim2D = rdGraph->addPass("fs2d_SpatialLut_renderDebugPositions", RdgPassTypeFlags::Graphics);
-		passFluidSim2D.setRenderTarget(rtColor,	RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
-		passFluidSim2D.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);	// currently use the pre-pass will cause z-flight
-		passFluidSim2D.readBuffer(_cachedSimArgs.debug_buf_positions, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
-		passFluidSim2D.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
-				//auto& v = constCast(_cachedSimArgs);
-				auto* buf = _cachedSimArgs.debug_buf_positions.renderResource();
-				 _ptcDisplay.debug_draw(rdReq, drawData, buf, buf, config.particleSize, n);
-			}
-		);
-
-		//passFluidSim2D.runAfter(rdgPass);
+		_spatialLut.Debug_updateSpatialLut(useCurSimRes, _mouseRayWorld.origin, _gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
+		//_spatialLut.addPass_debugSpatialLut(buf, _mouseRayWorld.origin, _simConfig.smoothingRadius, n, rdGraph);
+		_spatialLut.Debug_renderSpatialLut(_ptcDisplay, rtColor, dsBuf, _simConfig.particleSize, n, rdGraph, drawData);
 	}
-
-	#endif // 0
-
-	#endif // 1
 }
 
 void 
@@ -230,6 +157,57 @@ FluidSim2D_Gpu::addPass_simulateFluid2D(SimArgs& simArgs)
 	return pass_updatePosition;
 }
 
+RdgPass& 
+FluidSim2D_Gpu::addPass_renderFluidSim2D(CachedSimArgs& cachedSimArgs, const Config& simConfig, bool useCurSimRes, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, RenderGraph* rdGraph, DrawData* drawData)
+{
+	auto n = _particleSpawner.particleCount;
+
+	auto& pass = rdGraph->addPass("fluid_sim_2d", RdgPassTypeFlags::Graphics);
+	pass.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
+	pass.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
+
+	#if 1
+	if (useCurSimRes)
+	{
+		pass.readBuffer(cachedSimArgs.bufPos, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
+		pass.readBuffer(cachedSimArgs.bufVel, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
+	}
+	#endif // 0
+
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
+
+			auto* clearValue = rdReq.clearFramebuffers();
+			clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
+			clearValue->setClearDepth(1.0f);
+
+			drawData->setupMaterial(_parentDemo->mtlDrawCircle);
+			rdReq.circleMaterial = _parentDemo->mtlDrawCircle;
+
+			debug_drawBoundary(rdReq);
+			debug_drawSpatialGrid(rdReq);
+			debug_drawSmoothRadius(rdReq);
+			debug_drawMouseInteraction(rdReq);
+
+			if (1)
+			{
+				auto& v = constCast(cachedSimArgs);
+				// must not use isValidRenderResource now (see the code in there)
+				//auto* pos		= v.bufPos.isValidRenderResource() ? v.bufPos.renderResource() : v.positions.ptr();
+				//auto* vel		= v.bufVel.isValidRenderResource() ? v.bufVel.renderResource() : v.velocities.ptr();
+
+				auto* pos		= useCurSimRes ? v.bufPos.renderResource() : v.positions.ptr();
+				auto* vel		= useCurSimRes ? v.bufVel.renderResource() : v.velocities.ptr();
+				_ptcDisplay.draw(rdReq, drawData, pos, vel, _simConfig.particleSize, n);
+			}
+		}
+	);
+
+	return pass;
+}
+
 RdgPass&
 FluidSim2D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 {
@@ -243,9 +221,6 @@ FluidSim2D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			RDS_TODO("render graph / RenderGpuBuffer should have a func for upload data directly");
-			simArgs.createOncePositionBuffer();
-
 			mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
 			mtl->setParam("u_predictedPositions",	simArgs.bufPredictedPos.renderResource());
 			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
@@ -260,79 +235,8 @@ FluidSim2D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 RdgPass& 
 FluidSim2D_Gpu::addPass_updateSpatialLut(SimArgs& simArgs)
 {
-	auto*		rdGraph = simArgs.rdGraph;
-
-	// fs2d_updateSpatialLut
-	{
-		Material*	mtl		= _mtlFs2d;
-
-		auto& pass = rdGraph->addPass("fs2d_updateSpatialLut", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-		pass.readBuffer(simArgs.bufPredictedPos);
-		pass.writeBuffer(simArgs.bufSpatialLut);
-		pass.writeBuffer(simArgs.bufSpatialLutKeyToStartIndex);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				mtl->setParam("u_predictedPositions",			simArgs.bufPredictedPos.renderResource());
-				mtl->setParam("u_spatialLut",					simArgs.bufSpatialLut.renderResource());
-				mtl->setParam("u_spatialLutKeyToStartIndex",	simArgs.bufSpatialLutKeyToStartIndex.renderResource());
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_updateSpatialLut, Vec3u{simArgs.particleCount, 1, 1});
-			}
-		);
-	}
-
-	// sort lut by key
-	_gpuSort.sort("fs2d", simArgs.bufSpatialLut, simArgs.particleCount, simArgs.rdGraph);
-
-	RdgPass* pass_updateSpatialLutKeyToStartIndex = nullptr;
-
-	// update key to start index
-	{
-		Material*	mtl		= _mtlFs2d;
-
-		auto& pass = rdGraph->addPass("fs2d_updateSpatialLutKeyToStartIndex", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-		pass.readBuffer(simArgs.bufSpatialLut);
-		pass.writeBuffer(simArgs.bufSpatialLutKeyToStartIndex);
-		pass.setExecuteFunc(
-			[=](RenderRequest& rdReq)
-			{
-				mtl->setParam("u_spatialLut",					simArgs.bufSpatialLut.renderResource());
-				mtl->setParam("u_spatialLutKeyToStartIndex",	simArgs.bufSpatialLutKeyToStartIndex.renderResource());
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_updateSpatialLutKeyToStartIndex, Vec3u{simArgs.particleCount, 1, 1});
-			}
-		);
-		pass_updateSpatialLutKeyToStartIndex = &pass;
-	}
-
-	return *pass_updateSpatialLutKeyToStartIndex;
-}
-
-RdgPass& 
-FluidSim2D_Gpu::Debug_addPass_debugSpatialLut(SimArgs& simArgs)
-{
-	auto	samplingPt		= this->_mouseRayWorld.origin.toVec2();
-	auto	smoothingRadius	= _simConfig.smoothingRadius;
-
-	auto*	rdGraph	= simArgs.rdGraph;
-
-	Material*	mtl		= _mtlSpatialLutDebug;
-	auto& pass = rdGraph->addPass("fs2d_debugSpatialLut", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-	pass.writeBuffer(simArgs.spatialLut_debug_buf_positions);
-	simArgs.readSpatialBuffer(pass);
-	pass.setExecuteFunc(
-		[=](RenderRequest& rdReq)
-		{
-			mtl->setParam("u_samplingPt",		samplingPt);
-			mtl->setParam("u_particleCount",	simArgs.particleCount);
-			mtl->setParam("u_smoothingRadius",	smoothingRadius);
-
-			mtl->setParam("u_spatialLutDebugPositions",		simArgs.spatialLut_debug_buf_positions.renderResource());
-			simArgs.setSpatialParam(mtl);
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{1, 1, 1});
-		}
-	);
-
-	return pass;
+	auto* rdGraph = simArgs.rdGraph;
+	return _spatialLut.updateSpatialLut(_gpuSort, simArgs.bufPredictedPos, _simConfig.smoothingRadius, simArgs.particleCount, rdGraph);
 }
 
 RdgPass& 

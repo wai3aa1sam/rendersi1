@@ -5,8 +5,6 @@ Shader {
 	}
 	
 	Pass { CsFunc		Cs_calcExternalForce }
-	Pass { CsFunc		Cs_updateSpatialLut }
-	Pass { CsFunc		Cs_updateSpatialLutKeyToStartIndex }
 	Pass { CsFunc		Cs_calcDensityData }
 	Pass { CsFunc		Cs_calcPressureForce }
 	Pass { CsFunc		Cs_calcViscosity }
@@ -21,7 +19,8 @@ Shader {
 #endif
 
 #include "built-in/shader/rds_shader.hlsl"
-#include "rdsFluidSim2D_SpatialLut.hlsl"
+#include "rdsFluidSim2D_Common.hlsl"
+#include "../common/rdsSpatialLut2D.hlsl"
 
 #define RDS_NUM_THREADS 32
 
@@ -38,12 +37,8 @@ RDS_RW_BUFFER(float2, u_velocities);
 RDS_RW_BUFFER(float2, u_densityData);
 RDS_RW_BUFFER(float2, u_predictedPositions);
 
-RDS_RW_BUFFER(uint3, u_spatialLut);				// x: particle_index, y: hash, z: key
+RDS_RW_BUFFER(uint3, u_spatialLut);					// x: particle_index, y: hash, z: key
 RDS_RW_BUFFER(uint,  u_spatialLutKeyToStartIndex);
-
-//RDS_BUFFER(uint, u_spatialKeys);
-//RDS_BUFFER(uint, u_spatialOffsets);
-//RDS_BUFFER(uint, u_spatialSortedIdxs);
 
 //RDS_BUFFER(float2, u_sortedPositions);
 //RDS_BUFFER(float2, u_sortedVelocities);
@@ -117,46 +112,6 @@ void Cs_calcExternalForce(ComputeIn input)
 	const float predictionFactor = 1 / 120.0;
 	float2 predPos = position + vel * predictionFactor;
 	RDS_RW_BUFFER_STORE_I(float2, u_predictedPositions, tarPtcIdx, predPos);
-}
-
-[numThreads(RDS_NUM_THREADS, 1, 1)]
-void Cs_updateSpatialLut(ComputeIn input)
-{
-	uint tarPtcIdx 		= input.dispatchThreadId.x;
-	bool isInBoundary 	=  tarPtcIdx < u_particleCount;
-	if (!isInBoundary) return;
-
-	// init
-	RDS_RW_BUFFER_STORE_I(uint, u_spatialLutKeyToStartIndex, tarPtcIdx, u_particleCount);
-
-	float2 pos = RDS_RW_BUFFER_LOAD_I(float2, u_predictedPositions, tarPtcIdx);
-	// Update index buffer
-	uint index 	= tarPtcIdx;
-	int2 cell 	= SpatialLut_toCell2D(pos, u_smoothingRadius);
-	uint hash 	= SpatialLut_hashCell2D(cell);
-	uint key 	= SpatialLut_toKeyFromHash(hash, u_particleCount);
-	
-	uint3 spatialLut = uint3(index, hash, key);
-	RDS_RW_BUFFER_STORE_I(uint3, u_spatialLut, tarPtcIdx, spatialLut);
-}
-
-[numThreads(RDS_NUM_THREADS, 1, 1)]
-void Cs_updateSpatialLutKeyToStartIndex(ComputeIn input)
-{
-	uint i 				= input.dispatchThreadId.x;
-	bool isInBoundary 	=  i < u_particleCount;
-	if (!isInBoundary) return;
-
-	uint3 spatialLutEntry 		= RDS_RW_BUFFER_LOAD_I(uint3, u_spatialLut, i);
-	// this must not be access when i == 0
-	uint3 prevSpatialLutEntry 	= RDS_RW_BUFFER_LOAD_I(uint3, u_spatialLut, i - 1);
-
-	uint key 		= spatialLutEntry.z;
-	uint keyPrev 	= i == 0 ? u_particleCount : prevSpatialLutEntry.z;
-	if (key != keyPrev)
-	{
-		RDS_RW_BUFFER_STORE_I(uint, u_spatialLutKeyToStartIndex, key, i);
-	}
 }
 
 [numThreads(RDS_NUM_THREADS, 1, 1)]

@@ -442,6 +442,10 @@ public:
 	explicit operator bool() const { return resource(); }
 
 public:
+	bool isValid()					const { return isValidRenderResource(); }
+	bool isValidRdgResource()		const { RDS_TODO("do not use isValidRenderResource now, since current design is not thread safe, we must modify to fit this api"); return resource() && resource()->type() != RdgResourceType::None; }
+	bool isValidRenderResource()	const { return isValidRdgResource() && renderResource(); }
+
 	const Desc& desc() const			{ return resource()->desc(); }
 
 	RenderResourceT* renderResource()		{ return sCast<RenderResourceT*>(resource()->renderResource()); }
