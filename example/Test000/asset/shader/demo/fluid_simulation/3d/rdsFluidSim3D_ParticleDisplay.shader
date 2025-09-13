@@ -55,8 +55,8 @@ RDS_BUFFER(float3, u_velocities);
 
 float 	u_scale;
 float 	u_velocityMax;
+float4 	u_colour;
 float   u_depth;	// useless, only use in 2d
-//float4 	u_colour;
 
 float4x4 u_objToWorld;
 float4x4 u_worldToObj;
@@ -75,6 +75,8 @@ PixelIn vs_main(VertexIn i)
 
 	float4 color			= RDS_TEXTURE_2D_SAMPLE_LOD(u_colorMap, float2(colT, 0.5), 0);
 
+	//color = u_colour;
+
     PixelIn o;
 	o.positionHCS = mul(RDS_MATRIX_VP, posOs);
     o.uv          = i.uv;
@@ -89,7 +91,14 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	// for debug purpose, end of the position, later should use indirect draw to fix it
 	if (all(i.posOs.xyz == s_kInvalid_position))	
 		discard;
-	
+
 	float4 o_color = float4(i.color.rgb , 1);
+
+	float3 normal = normalize(i.normal);
+	float shading = saturate(dot(rds_DrawParam_get().camera_pos, normal));
+	shading = (shading + 0.6) / 1.4;
+
+	o_color.rgb *= shading;
+	
 	return o_color;
 }

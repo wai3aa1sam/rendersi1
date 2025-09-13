@@ -41,6 +41,7 @@ public:
 	u32		targetSimulationRate()	const;
 
 	double fps() const;
+	double deltaTime() const;
 
 protected:
 	HiResTimer	_timer;

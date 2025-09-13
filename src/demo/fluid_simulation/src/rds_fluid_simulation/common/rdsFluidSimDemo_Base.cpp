@@ -13,6 +13,7 @@ void
 FluidSimDemo_Base::onCreate(GraphicsDemo* parentDemo)
 {
 	_parentDemo = parentDemo;
+	RenderUtil::createMaterial(&_shaderSimple, &_mtlSimple, "asset/shader/demo/hello_triangle/hello_triangle.shader", [&](Material* mtl) {mtl->setParam("texture0", _parentDemo->texUvChecker()); });
 }
 
 void 
@@ -24,6 +25,8 @@ FluidSimDemo_Base::onUpdate(float dt, RenderPassPipeline* renderPassPipeline)
 		_mouseRayWorld		= _parentDemo->mouseRayWorldSpace;
 	}
 	
+	dt = dt * _simConfig.timeMultiplier / _simConfig.simulationCountPerFrame;
+
 	if (!_simState.isStop)
 	{
 		simulate(dt, renderPassPipeline);
@@ -95,6 +98,13 @@ FluidSimDemo_Base::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 {
 }
 
+CTransform* 
+FluidSimDemo_Base::anchorTransf() const
+{
+	if (!_parentDemo) return nullptr;
+	auto* transf = _parentDemo->scene().findEntity(2)->getComponent<CTransform>();		// wordaround
+	return transf;
+}
 
 #endif
 

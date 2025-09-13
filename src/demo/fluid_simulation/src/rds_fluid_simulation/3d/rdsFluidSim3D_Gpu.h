@@ -74,12 +74,12 @@ public:
 			densityData		= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc);
 			predictedPos	= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc);
 
-			positions->setDebugName(	"fs2d_bufPos");
-			velocities->setDebugName(	"fs2d_bufVel");
-			densityData->setDebugName(	"fs2d_bufDensityData");
-			predictedPos->setDebugName(	"fs2d_bufPredictedPos");
+			positions->setDebugName(	"fs3d_bufPos");
+			velocities->setDebugName(	"fs3d_bufVel");
+			densityData->setDebugName(	"fs3d_bufDensityData");
+			predictedPos->setDebugName(	"fs3d_bufPredictedPos");
 
-			spawner.spawnTo(positions, velocities, predictedPos);
+			spawner.spawnTo3D(positions, velocities, predictedPos);
 		}
 	};
 

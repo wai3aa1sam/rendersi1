@@ -4,18 +4,12 @@
 namespace rds
 {
 
-template<class T> Vec2<T> Rect2T_center(const Rect2<T>& v) { return Vec2<T>{ v.pos } + Vec2<T>{ v.size } / sCast<T>(2.0); }
-template<class T> Vec3<T> AABBox3T_center(const AABBox3<T>& v) { return (Vec3<T>{ v.max } + Vec3<T>{ v.min }) / sCast<T>(2.0); }
-template<class T> Vec3<T> AABBox3T_size(const AABBox3<T>& v) { return (Vec3<T>{ v.max } - Vec3<T>{ v.min }) / sCast<T>(2.0); }
-template<class T> Vec3<T> AABBox3T_halfSize(const AABBox3<T>& v) { return AABBox3T_size(v) / sCast<T>(2.0); }
-
-
 #if 0
 #pragma mark --- rdsFluidSim_ParticleSpawner-Impl ---
 #endif // 0
 #if 1
 
-void FluidSim_ParticleSpawner::create(const Rect2f& spawnRegion_)
+void FluidSim_ParticleSpawner::create2D(const Rect2f& spawnRegion_)
 {
 	spawnRegion = spawnRegion_;
 
@@ -25,12 +19,12 @@ void FluidSim_ParticleSpawner::create(const Rect2f& spawnRegion_)
 }
 
 void 
-FluidSim_ParticleSpawner::create(const AABBox3f& spawnRegion_)
+FluidSim_ParticleSpawner::create3D(const AABBox3f& spawnRegion_)
 {
 	spawnRegion3D = spawnRegion_;
 
 	auto nParticlesPerAxis	= calcSpawnCountPerAxis3D();
-	auto nParticles			= nParticlesPerAxis.x * nParticlesPerAxis.y;
+	auto nParticles			= nParticlesPerAxis.x * nParticlesPerAxis.y * nParticlesPerAxis.z;
 	particleCount			= nParticles;
 }
 
@@ -190,7 +184,7 @@ FluidSim_ParticleSpawner::_spawnTo_Positions(Vector<Vec3f>& outPositions)
 	outPositions.reserve(nParticles);
 
 	auto spawnRegionCenter	= AABBox3T_center(spawnRegion3D);
-	auto spawnRegionSize	= AABBox3T_size(spawnRegion3D);
+	auto spawnRegionSize	= AABBox3T_halfSize(spawnRegion3D);
 
 	for (size_t x = 0; x < nParticlesPerAxis.x; x++)
 	{

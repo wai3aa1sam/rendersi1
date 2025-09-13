@@ -126,7 +126,7 @@ FluidSim2D_Gpu::addPass_simulateFluid2D(SimArgs& simArgs)
 		mtl->setParam("u_interactionInputPoint",	_mouseRayWorld.origin.toVec2());
 
 		mtl->setParam("u_boundarySize",				simConfig.boundingRegion.size);
-		mtl->setParam("u_obstacleCenter",			Vec2f{simConfig.obstacle.pos} + Vec2f{simConfig.obstacle.size} / 2.0f);
+		mtl->setParam("u_obstacleCenter",			Rect2T_center(simConfig.obstacle));
 		mtl->setParam("u_obstacleSize",				simConfig.obstacle.size);
 
 		mtl->setParam("u_particleMass",				simConfig.particleMass);
@@ -267,6 +267,7 @@ FluidSim2D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
 
 	auto& pass = rdGraph->addPass("fs2d_calcPressureForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 	pass.writeBuffer(simArgs.bufVel);
+	pass.readBuffer(simArgs.bufDensityData);
 	simArgs.readSpatialBuffer(pass);
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)

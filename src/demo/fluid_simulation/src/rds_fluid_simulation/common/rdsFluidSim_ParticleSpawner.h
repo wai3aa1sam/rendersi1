@@ -24,8 +24,8 @@ public:
 	u32 particleCount = 0;
 
 public:
-	void create(const Rect2f& spawnRegion_);
-	void create(const AABBox3f& spawnRegion_);
+	void create2D(const Rect2f& spawnRegion_);
+	void create3D(const AABBox3f& spawnRegion_);
 
 	struct SpawnArgs
 	{

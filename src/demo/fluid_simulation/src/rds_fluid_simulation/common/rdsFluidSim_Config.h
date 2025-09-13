@@ -36,6 +36,8 @@ struct FluidSim_SimState
 struct FluidSim_Config
 {
 public:
+	int			simulationCountPerFrame		= 2;
+
 	float		particleMass		= 1.0f;
 	float		particleSize		= 0.1f / 2.0f;
 	Color4f		particleColor		= Color4f{0.2f, 1.0f, 1.0f, 1.0f};
@@ -63,9 +65,9 @@ public:
 	Rect2f		spawnRegion			= { Vec2f{0.0, 0.0},	Vec2f{boundingRegion.size} / 3.0f };
 	Rect2f		obstacle			= { Vec2f{0.0, 0.0},	Vec2f{5.0,	2.5} * 2.0f };
 	
-	AABBox3f		boundingRegion3D		= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5} * 2.0f };
-	AABBox3f		spawnRegion3D			= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5} / 2.0f };
-	AABBox3f		obstacle3D				= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5} * 2.0f };
+	AABBox3f		boundingRegion3D		= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5f} * 1.0f };
+	AABBox3f		spawnRegion3D			= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5f} / 4.0f };
+	AABBox3f		obstacle3D				= {  Vec3f{0.0, 0.0, 0.0},	Vec3f{5.0,	2.5, 2.5} * 4.0f };
 
 	bool useSpatialOptimization = 1;
 	bool isInvalidateColorMap	= 1;

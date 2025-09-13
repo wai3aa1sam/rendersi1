@@ -27,6 +27,9 @@ public:
 	virtual void onUiMouseEvent(	UiMouseEvent&		ev) override;
 	virtual void onUiKeyboardEvent(	UiKeyboardEvent&	ev) override;
 
+public:
+	void drawScene(RenderRequest& rdReq, DrawData* drawData) const;
+
 protected:
 	SPtr<Shader>	_shaderFluidSimulation;
 	SPtr<Material>	_mtlFluidSimulation;

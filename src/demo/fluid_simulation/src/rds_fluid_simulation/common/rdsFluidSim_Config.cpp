@@ -43,14 +43,20 @@ FluidSim_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 	uiDrawReq.makeCheckbox("useDebugSpatial",			&useDebugSpatial);
 	uiDrawReq.makeCheckbox("useDebugLog",				&useDebugLog);
 
-	uiDrawReq.dragFloat("particleSize",					&particleSize,			0.01f);
-	uiDrawReq.dragFloat("particleMass",					&particleMass,			0.01f);
-	uiDrawReq.dragFloat("timeMultiplier",				&timeMultiplier,		0.01f);
-	uiDrawReq.dragFloat("smoothingRadius",				&smoothingRadius,		0.1f, 0.1f);
-	uiDrawReq.dragFloat("collisionDamping",				&collisionDamping,		0.1f);
-	uiDrawReq.dragFloat("targetDensity",				&targetDensity,			0.1f);
-	uiDrawReq.dragFloat("pressureMultiplier",			&pressureMultiplier,	1.0f);
-	uiDrawReq.dragFloat("viscosityStrength",			&viscosityStrength,		0.01f);
+	
+	uiDrawReq.dragInt("simulationCountPerFrame",		&simulationCountPerFrame,		1, 1, 6);
+	uiDrawReq.dragFloat("timeMultiplier",				&timeMultiplier,				0.01f);
+
+	uiDrawReq.dragFloat("gravity",						&gravity,						0.01f);
+	uiDrawReq.drawVec3f("gravityDir",					&gravityDir);
+
+	uiDrawReq.dragFloat("particleSize",					&particleSize,					0.01f);
+	uiDrawReq.dragFloat("particleMass",					&particleMass,					0.01f);
+	uiDrawReq.dragFloat("smoothingRadius",				&smoothingRadius,				0.1f, 0.1f);
+	uiDrawReq.dragFloat("collisionDamping",				&collisionDamping,				0.1f);
+	uiDrawReq.dragFloat("targetDensity",				&targetDensity,					0.1f);
+	uiDrawReq.dragFloat("pressureMultiplier",			&pressureMultiplier,			1.0f);
+	uiDrawReq.dragFloat("viscosityStrength",			&viscosityStrength,				0.01f);
 
 	uiDrawReq.dragFloat("interactionRadius",			&interactionRadius,		0.01f, 0.01f);
 	uiDrawReq.dragFloat("interactionStrength",			&interactionStrength,	1.0f);
@@ -89,6 +95,11 @@ FluidSim_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 	uiDrawReq.showText("debugParticleCount: {}",		debugParticleCount);
 	uiDrawReq.showText("debugWithinRadiusCount: {}",	debugWithinRadiusCount);
 	uiDrawReq.showText("debugMouseCellCoord: {}",		FluidSim2D_Cpu::positionToCellCoord(debugMousePosWorld.toVec2(), smoothingRadius));
+
+	if (_fluSim && _fluSim->anchorTransf())
+	{
+		_fluSim->anchorTransf()->setLocalScale(Vec3f::s_one() * smoothingRadius);
+	}
 }
 
 float 

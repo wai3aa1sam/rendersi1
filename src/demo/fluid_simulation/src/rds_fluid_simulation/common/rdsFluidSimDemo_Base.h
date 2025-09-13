@@ -48,12 +48,15 @@ protected:
 	bool isFocusOnEditorViewport()	const	{ return demoLayer() ? demoLayer()->isFocusOnEditorViewport() : false; }
 
 public:
-	ParticleDisplay& particleDisplay() { return _ptcDisplay; }
+	ParticleDisplay&	particleDisplay() { return _ptcDisplay; }
+	CTransform*			anchorTransf() const;
 
 protected:
 	GraphicsDemo*	_parentDemo = nullptr;
 	Vec2f			_mousePosViewport;
 	Ray3f			_mouseRayWorld;
+	SPtr<Shader>	_shaderSimple;
+	SPtr<Material>	_mtlSimple;
 
 protected:
 	SPtr<Texture2D>		_texColorGradient;

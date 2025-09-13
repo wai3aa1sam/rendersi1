@@ -16,10 +16,10 @@ Shader {
 //		DepthWrite	false
 
 //		DepthWrite	false		// pre_depth
-		Wireframe false
+		Wireframe true
 
-		//BlendRGB 	Add One OneMinusSrcAlpha
-		//BlendAlpha	Add One OneMinusSrcAlpha
+		BlendRGB 	Add One OneMinusSrcAlpha
+		BlendAlpha	Add One OneMinusSrcAlpha
 		
 		VsFunc		vs_main
 		PsFunc		ps_main
@@ -83,6 +83,7 @@ float4 ps_main(PixelIn i) : SV_TARGET
 	{
 		o = color;
 	}
+	o = color;
 
 	float4 white = {1.0, 1.0, 1.0, 1.0};
     return o;

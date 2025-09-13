@@ -139,22 +139,36 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 						const auto& name	= !e.displayName.is_empty() ? e.displayName : e.name;
 						auto pushId			= edtDrawReq.makePushID(id);
 
-
+						#define SET_PARAM(T) \
+						{ \
+							auto* drawer	= edtCtx.findPropertyDrawer(e.type);												  \
+							auto* value		= shaderRsc.findParam(e.name);														  \
+							if (!value)																							  \
+								continue;																						  \
+							bool hasValueChanged = drawer->draw(propDrawReq, name.c_str(), value); RDS_UNUSED(hasValueChanged);	  \
+							if (hasValueChanged)																				  \
+								mtl->setParam(e.name, *sCast<T*>(value));															  \
+						} break \
+						// ---
+						RDS_TODO("revist this part: property reflection?");
 						switch (e.type)
 						{
-							case SRC::Bool:
-							case SRC::Int:
-							case SRC::Float:
-							case SRC::Vec2f:
-							case SRC::Vec3f:
-							case SRC::Vec4f:
+							case SRC::Bool:		SET_PARAM(u32);
+							case SRC::Int:		SET_PARAM(int);
+							case SRC::Float:	SET_PARAM(float);
+							case SRC::Vec2f:	SET_PARAM(Tuple2f);
+							case SRC::Vec3f:	SET_PARAM(Tuple3f);
+							case SRC::Vec4f:	SET_PARAM(Tuple4f);
+							//case SRC::Color4f:	SET_PARAM(Color4f);
 							case SRC::Color4f:
 							{
-								auto* drawer	= edtCtx.findPropertyDrawer(e.type);
-								auto* value		= shaderRsc.findParam(e.name);
+								auto* drawer = edtCtx.findPropertyDrawer(e.type);
+								auto* value = shaderRsc.findParam(e.name);
 								if (!value)
 									continue;
 								bool hasValueChanged = drawer->draw(propDrawReq, name.c_str(), value); RDS_UNUSED(hasValueChanged);
+								if (hasValueChanged)
+									mtl->setParam(e.name, *sCast<Color4f*>(value));
 							} break;
 							case SRC::Texture2D:
 							{

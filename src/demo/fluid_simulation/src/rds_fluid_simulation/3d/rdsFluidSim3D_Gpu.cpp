@@ -53,14 +53,17 @@ FluidSim3D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	addPass_renderFluidSim3D(_cachedSimArgs, _simConfig, useCurSimRes, rtColor, dsBuf, rdGraph, drawData);
 	drawData->oTexPresent = rtColor;
 
+	#if 1
 	if (_simConfig.useDebugSpatial)
 	{
 		auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
+		//auto buf = useCurSimRes ? _cachedSimArgs.bufPos : rdGraph->importBuffer(_cachedSimArgs.positions);
+
 		auto n = _particleSpawner.particleCount;
-		_spatialLut.Debug_updateSpatialLut(useCurSimRes, _mouseRayWorld.origin, _gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
-		//_spatialLut.addPass_debugSpatialLut(buf, _mouseRayWorld.origin, _simConfig.smoothingRadius, n, rdGraph);
+		_spatialLut.Debug_updateSpatialLut(useCurSimRes, anchorTransf()->localPosition(), _gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
 		_spatialLut.Debug_renderSpatialLut(_ptcDisplay, rtColor, dsBuf, _simConfig.particleSize, n, rdGraph, drawData);
 	}
+	#endif // 0
 }
 
 void 
@@ -97,9 +100,12 @@ FluidSim3D_Gpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 	auto*	rdGraph		= renderPassPipeline->renderGraph();
 	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
 
-	SimArgs simArgs;
-	simArgs.create(this, dt, rdGraph, drawData);
-	addPass_simulateFluid3D(simArgs);
+	//for (size_t i = 0; i < _simConfig.simulationCountPerFrame; i++)
+	{
+		SimArgs simArgs;
+		simArgs.create(this, dt, rdGraph, drawData);
+		addPass_simulateFluid3D(simArgs);
+	}
 }
 
 RdgPass& 
@@ -123,36 +129,48 @@ FluidSim3D_Gpu::addPass_simulateFluid3D(SimArgs& simArgs)
 
 		mtl->setParam("u_interactionInputStrength",	simState.interactionInputStrength);
 		mtl->setParam("u_interactionInputRadius",	simConfig.interactionRadius);
-		mtl->setParam("u_interactionInputPoint",	_mouseRayWorld.origin.toVec2());
+		mtl->setParam("u_interactionInputPoint",	anchorTransf()->localPosition());
 
-		mtl->setParam("u_boundarySize",				simConfig.boundingRegion.size);
-		mtl->setParam("u_obstacleCenter",			Vec2f{simConfig.obstacle.pos} + Vec2f{simConfig.obstacle.size} / 2.0f);
-		mtl->setParam("u_obstacleSize",				simConfig.obstacle.size);
+		mtl->setParam("u_boundarySize",				AABBox3T_size(simConfig.boundingRegion3D));
+		mtl->setParam("u_obstacleCenter",			AABBox3T_center(simConfig.obstacle3D));
+		mtl->setParam("u_obstacleSize",				AABBox3T_size(simConfig.obstacle3D));
 
 		mtl->setParam("u_particleMass",				simConfig.particleMass);
 		mtl->setParam("u_particleCount",			simArgs.particleCount);
 
-		float smoothingRadius = simConfig.smoothingRadius;
-		mtl->setParam("u_poly6ScalingFactor",				4.0f  / (math::PI<float>() * math::pow(smoothingRadius, 8.0f)));
-		mtl->setParam("u_spikyPow3ScalingFactor",			10.0f / (math::PI<float>() * math::pow(smoothingRadius, 5.0f)));
-		mtl->setParam("u_spikyPow2ScalingFactor",			6.0f  / (math::PI<float>() * math::pow(smoothingRadius, 4.0f)));
-		mtl->setParam("u_spikyPow3DerivativeScalingFactor",	30.0f / (math::PI<float>() * math::pow(smoothingRadius, 5.0f)));
-		mtl->setParam("u_spikyPow2DerivativeScalingFactor",	12.0f / (math::PI<float>() * math::pow(smoothingRadius, 4.0f)));
+		//float smoothingRadius = simConfig.smoothingRadius;
+		//mtl->setParam("u_poly6ScalingFactor",				4.0f  / (math::PI<float>() * math::pow(smoothingRadius, 8.0f)));
+		//mtl->setParam("u_spikyPow3ScalingFactor",			10.0f / (math::PI<float>() * math::pow(smoothingRadius, 5.0f)));
+		//mtl->setParam("u_spikyPow2ScalingFactor",			6.0f  / (math::PI<float>() * math::pow(smoothingRadius, 4.0f)));
+		//mtl->setParam("u_spikyPow3DerivativeScalingFactor",	30.0f / (math::PI<float>() * math::pow(smoothingRadius, 5.0f)));
+		//mtl->setParam("u_spikyPow2DerivativeScalingFactor",	12.0f / (math::PI<float>() * math::pow(smoothingRadius, 4.0f)));
 	}
 
-	auto& pass_calcExternalForce	= addPass_calcExternalForce(simArgs);
-	auto& pass_updateSpatialLut		= addPass_updateSpatialLut(simArgs);
-	auto& pass_calcDensityData		= addPass_calcDensityData(simArgs);
-	auto& pass_calcPressureForce	= addPass_calcPressureForce(simArgs);
-	auto& pass_calcViscosity		= addPass_calcViscosity(simArgs);
-	auto& pass_updatePosition		= addPass_updatePosition(simArgs);
-
-	// force dependency
-	pass_updateSpatialLut.runAfter(		&pass_calcExternalForce);
-	pass_calcDensityData.runAfter(		&pass_updateSpatialLut);
-	pass_calcPressureForce.runAfter(	&pass_calcDensityData);
-	pass_calcViscosity.runAfter(		&pass_calcPressureForce);
-	pass_updatePosition.runAfter(		&pass_calcViscosity);
+	auto& pass_calcExternalForce	= addPass_calcExternalForce(simArgs);		RDS_UNUSED(pass_calcExternalForce	);
+	auto& pass_updateSpatialLut		= addPass_updateSpatialLut(simArgs);		RDS_UNUSED(pass_updateSpatialLut	);
+	auto& pass_calcDensityData		= addPass_calcDensityData(simArgs);			RDS_UNUSED(pass_calcDensityData		);
+	auto& pass_calcPressureForce	= addPass_calcPressureForce(simArgs);		RDS_UNUSED(pass_calcPressureForce	);
+	auto& pass_calcViscosity		= addPass_calcViscosity(simArgs);			RDS_UNUSED(pass_calcViscosity		);
+	auto& pass_updatePosition		= addPass_updatePosition(simArgs);			RDS_UNUSED(pass_updatePosition		);
+	
+	// debug
+	#if 0
+	auto& pass = simArgs.rdGraph->addPass("fs3d_debug", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	pass.readBuffer(simArgs.bufPos);
+	pass.readBuffer(simArgs.bufVel);
+	pass.readBuffer(simArgs.bufDensityData);
+	simArgs.readSpatialBuffer(pass);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
+			mtl->setParam("u_predictedPositions",	simArgs.bufPredictedPos.renderResource());
+			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
+			mtl->setParam("u_densityData",			simArgs.bufDensityData.renderResource());
+			simArgs.setSpatialParam(mtl);
+		}
+	);
+	#endif // 1
 
 	return pass_updatePosition;
 }
@@ -187,9 +205,9 @@ FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Con
 			rdReq.circleMaterial = _parentDemo->mtlDrawCircle;
 
 			debug_drawBoundary(rdReq);
-			debug_drawSpatialGrid(rdReq);
-			debug_drawSmoothRadius(rdReq);
-			debug_drawMouseInteraction(rdReq);
+			//debug_drawSpatialGrid(rdReq);
+			//debug_drawSmoothRadius(rdReq);
+			//debug_drawMouseInteraction(rdReq);
 
 			if (1)
 			{
@@ -202,6 +220,8 @@ FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Con
 				auto* vel		= useCurSimRes ? v.bufVel.renderResource() : v.velocities.ptr();
 				_ptcDisplay.draw(rdReq, drawData, pos, vel, _simConfig.particleSize, n);
 			}
+
+			drawData->drawScene(rdReq);
 		}
 	);
 
@@ -267,6 +287,7 @@ FluidSim3D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
 
 	auto& pass = rdGraph->addPass("fs3d_calcPressureForce", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 	pass.writeBuffer(simArgs.bufVel);
+	pass.readBuffer(simArgs.bufDensityData);
 	simArgs.readSpatialBuffer(pass);
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)

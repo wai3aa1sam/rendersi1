@@ -127,7 +127,6 @@ void Cs_calcDensityData(ComputeIn input)
 	float3 	tarPos 		= RDS_RW_BUFFER_LOAD_I(float3, u_predictedPositions, tarPtcIdx);
 	int3 	originCell 	= SpatialLut_toCell3D(tarPos, u_smoothingRadius);
 	float 	sqrRadius 	= u_smoothingRadius * u_smoothingRadius;
-
 	// Neighbour search
 	for (int i = 0; i < SpatialLut_cellOffsetCount; i ++)
 	{
@@ -156,7 +155,6 @@ void Cs_calcDensityData(ComputeIn input)
 			float3 dirToNeighbour 	= dist > 0 ? offsetToNeighbour / dist : float3(0, 1, 0);
 			
 			// calc sth
-			// Calculate density and near density
 			density 	+= densityKernel(dist, u_smoothingRadius);
 			nearDensity += nearDensityKernel(dist, u_smoothingRadius);
 		}
@@ -193,7 +191,6 @@ void Cs_calcPressureForce(ComputeIn input)
 	float3 	tarPos 		= RDS_RW_BUFFER_LOAD_I(float3, u_predictedPositions, tarPtcIdx);
 	int3 	originCell 	= SpatialLut_toCell3D(tarPos, u_smoothingRadius);
 	float 	sqrRadius 	= u_smoothingRadius * u_smoothingRadius;
-
 	// Neighbour search
 	for (int i = 0; i < SpatialLut_cellOffsetCount; i ++)
 	{
@@ -255,7 +252,6 @@ void Cs_calcViscosity(ComputeIn input)
 	float3 	tarPos 		= RDS_RW_BUFFER_LOAD_I(float3, u_predictedPositions, tarPtcIdx);
 	int3 	originCell 	= SpatialLut_toCell3D(tarPos, u_smoothingRadius);
 	float 	sqrRadius 	= u_smoothingRadius * u_smoothingRadius;
-
 	// Neighbour search
 	for (int i = 0; i < SpatialLut_cellOffsetCount; i ++)
 	{

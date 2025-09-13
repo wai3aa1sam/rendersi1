@@ -16,20 +16,20 @@ void
 FluidSimulation::onCreate()
 {
 	Base::onCreate();
-	//createMaterial(&_shaderFluidSimulation, &_mtlFluidSimulation, "asset/shader/demo/fluid_simulation/fluid_simulation.shader"
-	//				, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
+	RenderUtil::createMaterial(&_shaderFluidSimulation, &_mtlFluidSimulation, "asset/shader/demo/hello_triangle/hello_triangle.shader"
+		, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
 
-	bool is3D = 0;
+	bool is3D = 1;
 	is3D ? _curDemo = makeUPtr<FluidSim3D_Gpu>() : _curDemo = makeUPtr<FluidSim2D_Gpu>();
 	_curDemo->onCreate(this);
-	_fixedDt = 1.0f / 120.0f;
+	_fixedDt = 1.0f / 60.0f;
 }
 
 void 
 FluidSimulation::onCreateScene(Scene* oScene)			
 {
 	Base::onCreateScene(oScene);
-	createDefaultScene(oScene, _shaderFluidSimulation, meshAssets().suzanne, Vec3u{1, 1, 1});
+	createDefaultScene(oScene, _shaderFluidSimulation, meshAssets().sphere, Vec3u{1, 1, 1});
 }
 
 void 
@@ -44,7 +44,10 @@ FluidSimulation::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 {
 	Base::onExecuteRender(renderPassPipeline);
 
-	if (_curDemo) _curDemo->onUpdate(_fixedDt, renderPassPipeline);
+	float maxTimestepFPS = 120.0f;
+	float dt = 1.0f / maxTimestepFPS;
+
+	if (_curDemo) _curDemo->onUpdate(dt, renderPassPipeline);
 	if (_curDemo) _curDemo->onExecuteRender(renderPassPipeline);
 }
 
@@ -68,6 +71,13 @@ FluidSimulation::onUiKeyboardEvent(UiKeyboardEvent& ev)
 	Base::onUiKeyboardEvent(ev);
 	if (_curDemo) _curDemo->onUiKeyboardEvent(ev);
 }
+
+void 
+FluidSimulation::drawScene(RenderRequest& rdReq, DrawData* drawData) const
+{
+	drawData->drawScene(rdReq);
+}
+
 #endif
 
 }

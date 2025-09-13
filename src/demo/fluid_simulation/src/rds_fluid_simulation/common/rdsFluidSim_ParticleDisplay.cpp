@@ -115,13 +115,14 @@ FluidSim_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, const S
 void 
 FluidSim_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
 {
-	_draw(_mtlPtcDisplay, _texColorGradient, 0.9f, rdReq, drawData, bufPos, bufVel, radius, particleCount);
+	auto tex = 1 ? _texColorGradient : Renderer::renderDevice()->textureStock().black;
+	_draw(_mtlPtcDisplay, tex, 0.9f, rdReq, drawData, bufPos, bufVel, radius, particleCount);
 }
 
 void 
 FluidSim_ParticleDisplay::debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
 {
-	_draw(_debug.mtlPtcDisplay, Renderer::renderDevice()->textureStock().white, 1.0f, rdReq, drawData, bufPos, bufVel, radius, particleCount);
+	_draw(_debug.mtlPtcDisplay, Renderer::renderDevice()->textureStock().white, 1.0f, rdReq, drawData, bufPos, bufVel, radius + 0.001f, particleCount);
 }
 
 void 

@@ -56,7 +56,7 @@ float 	u_velocityMax;
 
 float4x4 u_objToWorld;
 float4x4 u_worldToObj;
-
+float4 	u_colour;
 float 	u_depth;
 
 PixelIn vs_main(VertexIn i)

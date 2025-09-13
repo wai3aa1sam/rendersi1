@@ -90,6 +90,7 @@ u32		FrameControl::targetFrameRate()			const { return sCast<u32>(1.0 / _frameTar
 u32		FrameControl::targetSimulationRate()	const { return sCast<u32>(1.0 / _simTargetTime); }
 
 double	FrameControl::fps()						const { return 1.0 / (_frameTime); }
+double	FrameControl::deltaTime()				const { return _frameTime; }
 
 #endif
 

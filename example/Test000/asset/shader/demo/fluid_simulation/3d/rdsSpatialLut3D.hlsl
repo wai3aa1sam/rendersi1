@@ -9,31 +9,39 @@ static const int  SpatialLut_cellOffsetCount = 27;
 static const int3 SpatialLut_cellOffsets3D[SpatialLut_cellOffsetCount] =
 {
 	int3(-1, -1, -1),
-	int3(-1, -1, +0),
-	int3(-1, -1, +1),
-	int3(-1, +0, -1),
-	int3(-1, +0, +0),
-	int3(-1, +0, +1),
-	int3(-1, +1, -1),
-	int3(-1, +1, +0),
-	int3(-1, +1, +1),
 	int3(+0, -1, -1),
-	int3(+0, -1, +0),
-	int3(+0, -1, +1),
-	int3(+0, +0, -1),
-	int3(+0, +0, +0),
-	int3(+0, +0, +1),
-	int3(+0, +1, -1),
-	int3(+0, +1, +0),
-	int3(+0, +1, +1),
 	int3(+1, -1, -1),
-	int3(+1, -1, +0),
-	int3(+1, -1, +1),
+
+	int3(-1, +0, -1),
+	int3(+0, +0, -1),
 	int3(+1, +0, -1),
-	int3(+1, +0, +0),
-	int3(+1, +0, +1),
+
+	int3(-1, +1, -1),
+	int3(+0, +1, -1),
 	int3(+1, +1, -1),
+
+	int3(-1, -1, +0),
+	int3(+0, -1, +0),
+	int3(+1, -1, +0),
+
+	int3(-1, +0, +0),
+	int3(+0, +0, +0),
+	int3(+1, +0, +0),
+
+	int3(-1, +1, +0),
+	int3(+0, +1, +0),
 	int3(+1, +1, +0),
+
+	int3(-1, -1, +1),
+	int3(+0, -1, +1),
+	int3(+1, -1, +1),
+
+	int3(-1, +0, +1),
+	int3(+0, +0, +1),
+	int3(+1, +0, +1),
+
+	int3(-1, +1, +1),
+	int3(+0, +1, +1),
 	int3(+1, +1, +1)
 };
 
@@ -59,6 +67,5 @@ uint SpatialLut_toKeyFromHash(uint hash, uint tableSize)
 {
 	return hash % tableSize;
 }
-
 
 #endif

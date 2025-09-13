@@ -17,7 +17,7 @@ FluidSim2D_Base::onCreate(GraphicsDemo* parentDemo)
 
 	_simConfig.create(this);
 	_ptcDisplay.create2D(_simConfig.makeColorGradient());
-	_particleSpawner.create(_simConfig.spawnRegion);
+	_particleSpawner.create2D(_simConfig.spawnRegion);
 
 	auto& camera = parentDemo->app().mainWindow().camera();
 	camera.setOrthographic(4.0f);
