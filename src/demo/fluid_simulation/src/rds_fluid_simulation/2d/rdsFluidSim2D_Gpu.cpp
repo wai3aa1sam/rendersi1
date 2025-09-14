@@ -59,7 +59,7 @@ FluidSim2D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 		auto n = _particleSpawner.particleCount;
 		_spatialLut.Debug_updateSpatialLut(useCurSimRes, _mouseRayWorld.origin, _gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
 		//_spatialLut.addPass_debugSpatialLut(buf, _mouseRayWorld.origin, _simConfig.smoothingRadius, n, rdGraph);
-		_spatialLut.Debug_renderSpatialLut(_ptcDisplay, rtColor, dsBuf, _simConfig.particleSize, n, rdGraph, drawData);
+		_spatialLut.Debug_renderSpatialLut(_ptcDisplay, rtColor, dsBuf, Vec3f::s_zero(), _simConfig.particleSize, n, rdGraph, drawData);
 	}
 }
 
@@ -200,7 +200,7 @@ FluidSim2D_Gpu::addPass_renderFluidSim2D(CachedSimArgs& cachedSimArgs, const Con
 
 				auto* pos		= useCurSimRes ? v.bufPos.renderResource() : v.positions.ptr();
 				auto* vel		= useCurSimRes ? v.bufVel.renderResource() : v.velocities.ptr();
-				_ptcDisplay.draw(rdReq, drawData, pos, vel, _simConfig.particleSize, n);
+				_ptcDisplay.draw(rdReq, drawData, pos, vel, Vec3f::s_zero(), _simConfig.particleSize, n);
 			}
 		}
 	);

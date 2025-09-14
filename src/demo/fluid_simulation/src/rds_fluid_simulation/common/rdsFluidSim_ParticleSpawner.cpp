@@ -119,7 +119,7 @@ FluidSim_ParticleSpawner::calcSpawnCountPerAxis2D() const
 Vec3i 
 FluidSim_ParticleSpawner::calcSpawnCountPerAxis3D() const
 {
-	auto size = Vec3f{(spawnRegion3D.max - spawnRegion3D.min)};
+	auto size =  Vec3f{(spawnRegion3D.max - spawnRegion3D.min)};
 
 	float area = size.x * size.y * size.z;
 	int targetTotal = math::ceilToInt(area * spawnDensity);
@@ -131,9 +131,9 @@ FluidSim_ParticleSpawner::calcSpawnCountPerAxis3D() const
 	int ny = math::ceilToInt(t.y * m);
 	int nz = math::ceilToInt(t.z * m);
 
-	return { nx, ny, nz };
+	Vec3i o = { nx, ny, nz };
+	return o;
 }
-
 
 u32 
 FluidSim_ParticleSpawner::_spawnTo_Positions(Vector<Vec2f>& outPositions)

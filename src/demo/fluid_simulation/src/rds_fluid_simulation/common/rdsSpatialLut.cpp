@@ -170,7 +170,7 @@ SpatialLut::Debug_addPass_debugSpatialLut(RdgBufferHnd buf_positions, Vec3f samp
 
 
 RdgPass& 
-SpatialLut::Debug_renderSpatialLut(FluidSim_ParticleDisplay& ptcDisplay, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, float particleSize, u32 elementCount, RenderGraph* rdGraph, DrawData* drawData)
+SpatialLut::Debug_renderSpatialLut(FluidSim_ParticleDisplay& ptcDisplay, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, Vec3f pos, float particleSize, u32 elementCount, RenderGraph* rdGraph, DrawData* drawData)
 {
 	auto n			= elementCount;
 	auto buf_pos	= _debug.buf_resultPositions;
@@ -184,7 +184,7 @@ SpatialLut::Debug_renderSpatialLut(FluidSim_ParticleDisplay& ptcDisplay, RdgText
 		{
 			rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
 			auto* gpuBuf = buf_pos.renderResource();
-			ptcDisplay.debug_draw(rdReq, drawData, gpuBuf, gpuBuf, particleSize, n);
+			ptcDisplay.debug_draw(rdReq, drawData, gpuBuf, gpuBuf, pos, particleSize, n);
 		}
 	);
 	return pass;

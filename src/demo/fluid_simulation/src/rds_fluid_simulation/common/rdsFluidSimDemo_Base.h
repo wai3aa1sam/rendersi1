@@ -26,6 +26,7 @@ public:
 
 public:
 	virtual void onCreate(GraphicsDemo* parentDemo);
+	virtual void onCreateScene(Scene* oScene);
 
 	virtual void onUpdate(float dt, RenderPassPipeline* renderPassPipeline);
 
@@ -49,14 +50,19 @@ protected:
 
 public:
 	ParticleDisplay&	particleDisplay() { return _ptcDisplay; }
-	CTransform*			anchorTransf() const;
+
+	CTransform*			getDebugSpatialTransform();
+	CTransform*			getInteractionTransform();
+	CTransform*			getBoundingBoxTransform();
 
 protected:
 	GraphicsDemo*	_parentDemo = nullptr;
 	Vec2f			_mousePosViewport;
 	Ray3f			_mouseRayWorld;
-	SPtr<Shader>	_shaderSimple;
-	SPtr<Material>	_mtlSimple;
+
+	Entity* _ent_boundingBox		= nullptr;
+	Entity* _ent_interaction		= nullptr;
+	Entity* _ent_debugSpatialLut	= nullptr;
 
 protected:
 	SPtr<Texture2D>		_texColorGradient;

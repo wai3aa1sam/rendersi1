@@ -57,11 +57,10 @@ FluidSim3D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	if (_simConfig.useDebugSpatial)
 	{
 		auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
-		//auto buf = useCurSimRes ? _cachedSimArgs.bufPos : rdGraph->importBuffer(_cachedSimArgs.positions);
-
 		auto n = _particleSpawner.particleCount;
-		_spatialLut.Debug_updateSpatialLut(useCurSimRes, anchorTransf()->localPosition(), _gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
-		_spatialLut.Debug_renderSpatialLut(_ptcDisplay, rtColor, dsBuf, _simConfig.particleSize, n, rdGraph, drawData);
+
+		_spatialLut.Debug_updateSpatialLut(useCurSimRes, getDebugSpatialTransform()->localPosition(), _gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
+		_spatialLut.Debug_renderSpatialLut(_ptcDisplay, rtColor, dsBuf, getBoundingBoxTransform()->localPosition(), _simConfig.particleSize, n, rdGraph, drawData);
 	}
 	#endif // 0
 }
@@ -99,12 +98,16 @@ FluidSim3D_Gpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 	//float	dt			= 1 / 120.0f;
 	auto*	rdGraph		= renderPassPipeline->renderGraph();
 	auto*	drawData	= renderPassPipeline->drawDataT<DrawData>();
-
+	
+	RDS_TODO("each sim step should have its own material, otherwise it will be override, but safe in this case, all param is same");
+	SimArgs simArgs;
+	simArgs.create(this, dt, rdGraph, drawData);
+	RdgPass* prevPass = nullptr;
 	//for (size_t i = 0; i < _simConfig.simulationCountPerFrame; i++)
 	{
-		SimArgs simArgs;
-		simArgs.create(this, dt, rdGraph, drawData);
-		addPass_simulateFluid3D(simArgs);
+		auto& pass = addPass_simulateFluid3D(simArgs);
+		pass.runAfter(prevPass);
+		prevPass = &pass;
 	}
 }
 
@@ -129,14 +132,18 @@ FluidSim3D_Gpu::addPass_simulateFluid3D(SimArgs& simArgs)
 
 		mtl->setParam("u_interactionInputStrength",	simState.interactionInputStrength);
 		mtl->setParam("u_interactionInputRadius",	simConfig.interactionRadius);
-		mtl->setParam("u_interactionInputPoint",	anchorTransf()->localPosition());
+		mtl->setParam("u_interactionInputPoint",	getInteractionTransform()->localPosition());
 
-		mtl->setParam("u_boundarySize",				AABBox3T_size(simConfig.boundingRegion3D));
-		mtl->setParam("u_obstacleCenter",			AABBox3T_center(simConfig.obstacle3D));
-		mtl->setParam("u_obstacleSize",				AABBox3T_size(simConfig.obstacle3D));
+		mtl->setParam("u_boundarySize",				getBoundingBoxTransform()->localScale());
+		//mtl->setParam("u_obstacleCenter",			AABBox3T_center(simConfig.obstacle3D));
+		//mtl->setParam("u_obstacleSize",				AABBox3T_size(simConfig.obstacle3D));
 
 		mtl->setParam("u_particleMass",				simConfig.particleMass);
 		mtl->setParam("u_particleCount",			simArgs.particleCount);
+
+		auto mat_world = getBoundingBoxTransform()->worldMatrix();
+		mtl->setParam("u_objToWorld",				mat_world);
+		mtl->setParam("u_worldToObj",				mat_world.inverse());
 
 		//float smoothingRadius = simConfig.smoothingRadius;
 		//mtl->setParam("u_poly6ScalingFactor",				4.0f  / (math::PI<float>() * math::pow(smoothingRadius, 8.0f)));
@@ -201,14 +208,6 @@ FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Con
 			clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
 			clearValue->setClearDepth(1.0f);
 
-			drawData->setupMaterial(_parentDemo->mtlDrawCircle);
-			rdReq.circleMaterial = _parentDemo->mtlDrawCircle;
-
-			debug_drawBoundary(rdReq);
-			//debug_drawSpatialGrid(rdReq);
-			//debug_drawSmoothRadius(rdReq);
-			//debug_drawMouseInteraction(rdReq);
-
 			if (1)
 			{
 				auto& v = constCast(cachedSimArgs);
@@ -218,7 +217,7 @@ FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Con
 
 				auto* pos		= useCurSimRes ? v.bufPos.renderResource() : v.positions.ptr();
 				auto* vel		= useCurSimRes ? v.bufVel.renderResource() : v.velocities.ptr();
-				_ptcDisplay.draw(rdReq, drawData, pos, vel, _simConfig.particleSize, n);
+				_ptcDisplay.draw(rdReq, drawData, pos, vel, getBoundingBoxTransform()->localPosition(), _simConfig.particleSize, n);
 			}
 
 			drawData->drawScene(rdReq);

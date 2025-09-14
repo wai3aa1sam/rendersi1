@@ -13,7 +13,23 @@ void
 FluidSimDemo_Base::onCreate(GraphicsDemo* parentDemo)
 {
 	_parentDemo = parentDemo;
-	RenderUtil::createMaterial(&_shaderSimple, &_mtlSimple, "asset/shader/demo/hello_triangle/hello_triangle.shader", [&](Material* mtl) {mtl->setParam("texture0", _parentDemo->texUvChecker()); });
+}
+
+void 
+FluidSimDemo_Base::onCreateScene(Scene* oScene)
+{
+	auto fn_createObject = [&](StrView name, Shader* shader, MeshAsset* mesh)
+		{
+			auto* ent = oScene->addEntity(name);
+			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
+			rdableMesh->material	= Renderer::renderDevice()->createMaterial(shader);
+			rdableMesh->meshAsset	= mesh;
+			return ent;
+		};
+	
+	_ent_boundingBox		= fn_createObject("bounding_box",		_parentDemo->_shaderWire,	_parentDemo->meshAssets().box);
+	_ent_interaction		= fn_createObject("interaction",		_parentDemo->_shaderWire,	_parentDemo->meshAssets().sphere);
+	_ent_debugSpatialLut	= fn_createObject("debugSpatialLut",	_parentDemo->_shaderWire,	_parentDemo->meshAssets().sphere);
 }
 
 void 
@@ -99,11 +115,21 @@ FluidSimDemo_Base::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 }
 
 CTransform* 
-FluidSimDemo_Base::anchorTransf() const
+FluidSimDemo_Base::getDebugSpatialTransform()
 {
-	if (!_parentDemo) return nullptr;
-	auto* transf = _parentDemo->scene().findEntity(2)->getComponent<CTransform>();		// wordaround
-	return transf;
+	return _ent_debugSpatialLut->getComponent<CTransform>();
+}
+
+CTransform* 
+FluidSimDemo_Base::getInteractionTransform()
+{
+	return _ent_interaction->getComponent<CTransform>();
+}
+
+CTransform* 
+FluidSimDemo_Base::getBoundingBoxTransform()
+{
+	return _ent_boundingBox->getComponent<CTransform>();
 }
 
 #endif

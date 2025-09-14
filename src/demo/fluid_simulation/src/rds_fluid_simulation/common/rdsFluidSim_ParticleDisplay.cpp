@@ -109,24 +109,24 @@ FluidSim_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, const S
 	_posBufGpu->uploadToGpu(makeByteSpan(positions));
 	_velBufGpu->uploadToGpu(makeByteSpan(velocities));
 
-	draw(rdReq, drawData, _posBufGpu->renderGpuBuffer(), _velBufGpu->renderGpuBuffer(), radius, sCast<u32>(positions.size()));
+	draw(rdReq, drawData, _posBufGpu->renderGpuBuffer(), _velBufGpu->renderGpuBuffer(), Vec3f::s_zero(), radius, sCast<u32>(positions.size()));
 }
 
 void 
-FluidSim_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
+FluidSim_ParticleDisplay::draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, Vec3f pos, float radius, u32 particleCount)
 {
 	auto tex = 1 ? _texColorGradient : Renderer::renderDevice()->textureStock().black;
-	_draw(_mtlPtcDisplay, tex, 0.9f, rdReq, drawData, bufPos, bufVel, radius, particleCount);
+	_draw(_mtlPtcDisplay, tex, 0.9f, rdReq, drawData, bufPos, bufVel, pos, radius, particleCount);
 }
 
 void 
-FluidSim_ParticleDisplay::debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
+FluidSim_ParticleDisplay::debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, Vec3f pos, float radius, u32 particleCount)
 {
-	_draw(_debug.mtlPtcDisplay, Renderer::renderDevice()->textureStock().white, 1.0f, rdReq, drawData, bufPos, bufVel, radius + 0.001f, particleCount);
+	_draw(_debug.mtlPtcDisplay, Renderer::renderDevice()->textureStock().white, 1.0f, rdReq, drawData, bufPos, bufVel, pos, radius + 0.001f, particleCount);
 }
 
 void 
-FluidSim_ParticleDisplay::_draw(Material* mtl, Texture2D* colorMap, float depth, RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount)
+FluidSim_ParticleDisplay::_draw(Material* mtl, Texture2D* colorMap, float depth, RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, Vec3f pos, float radius, u32 particleCount)
 {
 	mtl->setParam("u_colorMap",		colorMap);
 	mtl->setParam("u_colorMap",		SamplerState::makeLinearClampToEdge());
@@ -137,8 +137,7 @@ FluidSim_ParticleDisplay::_draw(Material* mtl, Texture2D* colorMap, float depth,
 	mtl->setParam("u_velocities",	bufVel);
 	mtl->setParam("u_scale",		radius);
 	mtl->setParam("u_velocityMax",	6.5f);
-	mtl->setParam("u_objToWorld",	Mat4f::s_identity());
-	mtl->setParam("u_worldToObj",	Mat4f::s_identity());
+	mtl->setParam("u_objToWorld",	Mat4f::s_translate(pos));
 
 	drawData->setupMaterial(mtl);
 	rdReq.drawMesh_Instanced(RDS_SRCLOC, _rdMesh, mtl, particleCount);

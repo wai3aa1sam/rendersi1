@@ -31,14 +31,7 @@ public:
 	void drawScene(RenderRequest& rdReq, DrawData* drawData) const;
 
 protected:
-	SPtr<Shader>	_shaderFluidSimulation;
-	SPtr<Material>	_mtlFluidSimulation;
-	SPtr<Texture2D>	_texUvChecker;
-
-	//UPtr<FluidSim2D_Gpu>		_fluidSim2D;
-	//UPtr<FluidSim3D_Gpu>		_fluidSim3D;
 	UPtr<FluidSimDemo_Base>		_curDemo = nullptr;
-	float _fixedDt = 0.0;
 };
 RDS_DEMO(FluidSimulation);
 #endif

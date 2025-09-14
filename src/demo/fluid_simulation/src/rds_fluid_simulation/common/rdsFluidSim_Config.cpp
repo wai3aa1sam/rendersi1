@@ -84,7 +84,7 @@ FluidSim_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 
 	uiDrawReq.makeCheckbox("isInvalidateColorMap", &isInvalidateColorMap);
 	uiDrawReq.showText("colorGradientTexture:");
-	uiDrawReq.showImage(_fluSim->particleDisplay().colorGradientTexture());
+	//uiDrawReq.showImage(_fluSim->particleDisplay().colorGradientTexture());
 	RDS_TODO("sample this texture should use clamp sampler");
 
 	uiDrawReq.showText("debugDensity: {}",				debugDensity);
@@ -96,9 +96,9 @@ FluidSim_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 	uiDrawReq.showText("debugWithinRadiusCount: {}",	debugWithinRadiusCount);
 	uiDrawReq.showText("debugMouseCellCoord: {}",		FluidSim2D_Cpu::positionToCellCoord(debugMousePosWorld.toVec2(), smoothingRadius));
 
-	if (_fluSim && _fluSim->anchorTransf())
+	if (_fluSim && _fluSim->getDebugSpatialTransform())
 	{
-		_fluSim->anchorTransf()->setLocalScale(Vec3f::s_one() * smoothingRadius);
+		_fluSim->getDebugSpatialTransform()->setLocalScale(Vec3f::s_one() * smoothingRadius);
 	}
 }
 

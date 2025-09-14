@@ -22,15 +22,15 @@ public:
 
 public:
 	void draw(RenderRequest& rdReq, DrawData* drawData, const Span<Vec2f>& positions, const Span<Vec2f>& velocities, float radius);
-	void draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount);
+	void draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, Vec3f pos, float radius, u32 particleCount);
 
 	void invalidateColorGradient(const ColorGradient& colorGrad);
 
 public:
-	void debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount);
+	void debug_draw(RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, Vec3f pos, float radius, u32 particleCount);
 
 private:
-	void _draw(Material* mtl, Texture2D* colorMap, float depth, RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, float radius, u32 particleCount);
+	void _draw(Material* mtl, Texture2D* colorMap, float depth, RenderRequest& rdReq, DrawData* drawData, RenderGpuBuffer* bufPos, RenderGpuBuffer* bufVel, Vec3f pos, float radius, u32 particleCount);
 
 public:
 	Texture2D*	colorGradientTexture();

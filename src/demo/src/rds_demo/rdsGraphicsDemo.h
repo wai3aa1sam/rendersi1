@@ -87,6 +87,10 @@ private:
 	SPtr<Texture2D>		_texDefaultHdrEnv;
 	SPtr<TextureCube>	_texDefaultSkybox;
 
+public:
+	SPtr<Shader>	_shaderDrawCircle;
+	SPtr<Shader>	_shaderDrawLine;
+	SPtr<Shader>	_shaderWire;
 
 protected:
 	SPtr<Shader>	_shaderSkybox;
@@ -95,7 +99,6 @@ protected:
 	SPtr<Shader>	_shaderDisplayNormals;
 	SPtr<Material>	_mtlDisplayNormals;
 
-	SPtr<Shader>	_shaderDrawCircle;
 
 	SPtr<Material>	_mtlPostProcessing;
 

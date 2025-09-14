@@ -16,20 +16,17 @@ void
 FluidSimulation::onCreate()
 {
 	Base::onCreate();
-	RenderUtil::createMaterial(&_shaderFluidSimulation, &_mtlFluidSimulation, "asset/shader/demo/hello_triangle/hello_triangle.shader"
-		, [&](Material* mtl) {mtl->setParam("texture0", texUvChecker()); });
 
 	bool is3D = 1;
 	is3D ? _curDemo = makeUPtr<FluidSim3D_Gpu>() : _curDemo = makeUPtr<FluidSim2D_Gpu>();
 	_curDemo->onCreate(this);
-	_fixedDt = 1.0f / 60.0f;
 }
 
 void 
 FluidSimulation::onCreateScene(Scene* oScene)			
 {
 	Base::onCreateScene(oScene);
-	createDefaultScene(oScene, _shaderFluidSimulation, meshAssets().sphere, Vec3u{1, 1, 1});
+	if (_curDemo) _curDemo->onCreateScene(oScene);
 }
 
 void 

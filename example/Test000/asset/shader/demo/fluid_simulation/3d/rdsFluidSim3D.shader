@@ -60,11 +60,14 @@ float 	u_interactionInputRadius;
 float3 	u_interactionInputPoint;
 
 float3 u_boundarySize;
-float3 u_obstacleCenter;
-float3 u_obstacleSize;
+//float3 u_obstacleCenter;
+//float3 u_obstacleSize;
 
 float 	u_particleMass;
 uint 	u_particleCount;
+
+float4x4 u_objToWorld;
+float4x4 u_worldToObj;
 
 [numThreads(RDS_NUM_THREADS, 1, 1)]
 void Cs_calcExternalForce(ComputeIn input)
@@ -294,21 +297,24 @@ void handleCollisions(uint ptcIdx)
 	float3 pos = RDS_RW_BUFFER_LOAD_I(float3, u_positions, 	ptcIdx);
 	float3 vel = RDS_RW_BUFFER_LOAD_I(float3, u_velocities, ptcIdx);
 
+	pos = mul(u_worldToObj, float4(pos, 1.0)).xyz;
+	vel = mul(u_worldToObj, float4(vel, 0.0)).xyz;
+
 	// Keep particle inside bounds
-	const float3 halfSize 	= u_boundarySize * 0.5;
+	const float3 halfSize 	= 1.0; //0.5; // local space // u_boundarySize * 0.5;
 	float3 edgeDist 		= halfSize - abs(pos);
 
-	if (edgeDist.x <= 0)
+	if (edgeDist.x <= 0.0)
 	{
 		pos.x = halfSize.x * sign(pos.x);
 		vel.x *= -1 * u_collisionDamping;
 	}
-	if (edgeDist.y <= 0)
+	if (edgeDist.y <= 0.0)
 	{
 		pos.y = halfSize.y * sign(pos.y);
 		vel.y *= -1 * u_collisionDamping;
 	}
-	if (edgeDist.z <= 0)
+	if (edgeDist.z <= 0.0)
 	{
 		pos.z = halfSize.z * sign(pos.z);
 		vel.z *= -1 * u_collisionDamping;
@@ -340,6 +346,9 @@ void handleCollisions(uint ptcIdx)
 		}
 	}
 	#endif
+
+	pos = mul(u_objToWorld, float4(pos, 1.0)).xyz;
+	vel = mul(u_objToWorld, float4(vel, 0.0)).xyz;
 
 	RDS_RW_BUFFER_STORE_I(float3, u_positions,  ptcIdx, pos);
 	RDS_RW_BUFFER_STORE_I(float3, u_velocities, ptcIdx, vel);

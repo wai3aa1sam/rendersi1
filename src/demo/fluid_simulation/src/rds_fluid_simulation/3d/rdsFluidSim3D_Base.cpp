@@ -92,13 +92,14 @@ void FluidSim3D_Base::onUiKeyboardEvent(UiKeyboardEvent& ev)
 
 void FluidSim3D_Base::debug_drawBoundary(RenderRequest& rdReq)
 {
+	// now use scene object as boundary
+	#if 0
 	AABBox3f newBox;
 	newBox.min = _simConfig.boundingRegion3D.min - AABBox3T_halfSize(_simConfig.boundingRegion3D);
 	newBox.max = _simConfig.boundingRegion3D.max - AABBox3T_halfSize(_simConfig.boundingRegion3D);
-
 	//anchorTransf()->setLocalPosition(newBox.min);
-
 	rdReq.drawAABBox(newBox, Color4f(0.0f, 1.0f, 0.0f, 1.0f));
+	#endif // 0
 }
 
 void FluidSim3D_Base::debug_drawSpatialGrid(RenderRequest& rdReq)
@@ -145,11 +146,11 @@ FluidSim3D_Base::debug_drawMouseInteraction(RenderRequest& rdReq)
 {
 	if (_simState.isPullInteraction)
 	{
-		rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, Color4f(0.2f, 0.8f, 0.2f, 0.005f));
+		//rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, Color4f(0.2f, 0.8f, 0.2f, 0.005f));
 	}
 	if (_simState.isPushInteraction)
 	{
-		rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, Color4f(0.2f, 0.2f, 0.8f, 0.005f));
+		//rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.interactionRadius, Color4f(0.2f, 0.2f, 0.8f, 0.005f));
 	}
 }
 
@@ -158,7 +159,7 @@ FluidSim3D_Base::debug_drawSmoothRadius(RenderRequest& rdReq)
 {
 	if (_simConfig.useDebugSmoothRadius)
 	{
-		rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.smoothingRadius, Color4f(0.8f, 0.2f, 0.2f, 0.005f));
+		//rdReq.drawCircle(_mouseRayWorld.origin.toVec2(), _simConfig.smoothingRadius, Color4f(0.8f, 0.2f, 0.2f, 0.005f));
 	}
 }
 
