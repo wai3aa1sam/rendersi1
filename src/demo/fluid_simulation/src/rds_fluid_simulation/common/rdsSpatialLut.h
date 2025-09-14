@@ -32,7 +32,9 @@ public:
 
 public:
 	RdgPass& updateSpatialLut(GpuSort& gpuSort, RdgBufferHnd buf_positions, float radius, u32 elementCount, RenderGraph* rdGraph);
-	void getBufferTo(RdgBufferHnd& o_buf_spatialLut, RdgBufferHnd& o_buf_spatialLutKeyToStartIndex);
+	void getBuffersTo(RdgBufferHnd& o_buf_spatialLut, RdgBufferHnd& o_buf_spatialLutKeyToStartIndex);
+	void readBuffers(RdgPass& pass);
+	void setBuffersToMaterial(Material* mtl, StrView positionName);
 
 public:
 	bool is2D() const;
@@ -41,7 +43,7 @@ public:
 public:
 	#if 1
 	RdgPass& Debug_updateSpatialLut(bool hasSimulated, Vec3f samplingPt, GpuSort& gpuSort, RdgBufferHnd buf_positions, float radius, u32 elementCount, RenderGraph* rdGraph);
-	RdgPass& Debug_addPass_debugSpatialLut(RdgBufferHnd buf_positions, Vec3f samplingPt, float radius, u32 elementCount, RenderGraph* rdGraph);
+	RdgPass& Debug_addPass_debugSpatialLut(Vec3f samplingPt, float radius, u32 elementCount, RenderGraph* rdGraph);
 	RdgPass& Debug_renderSpatialLut(FluidSim_ParticleDisplay& ptcDisplay, RdgTextureHnd rtColor, RdgTextureHnd dsBuf, Vec3f pos, float particleSize, u32 elementCount, RenderGraph* rdGraph, DrawData* drawData);
 	#endif // 0
 
@@ -57,8 +59,9 @@ private:
 	SPtr<Shader>	_shaderSpatialLut;
 	SPtr<Material>	_mtlSpatialLut;
 
-	RdgBufferHnd buf_spatialLut;
-	RdgBufferHnd buf_spatialLutKeyToStartIndex;
+	RdgBufferHnd _buf_positions;
+	RdgBufferHnd _buf_spatialLut;
+	RdgBufferHnd _buf_spatialLutKeyToStartIndex;
 	//GpuSort _gpuSort;
 
 	bool _is3D = false;

@@ -133,21 +133,11 @@ public:
 	public:
 		void readSpatialBuffer(RdgPass& pass)
 		{
-			RdgBufferHnd buf_spatialLut, buf_patialLutKeyToStartIndex;
-			_fs2d->_spatialLut.getBufferTo(buf_spatialLut, buf_patialLutKeyToStartIndex);
-
-			pass.readBuffer(bufPredictedPos);
-			pass.readBuffer(buf_spatialLut);
-			pass.readBuffer(buf_patialLutKeyToStartIndex);
+			_fs2d->_spatialLut.readBuffers(pass);
 		}
 		void setSpatialParam(Material* mtl) const
 		{
-			RdgBufferHnd buf_spatialLut, buf_patialLutKeyToStartIndex;
-			_fs2d->_spatialLut.getBufferTo(buf_spatialLut, buf_patialLutKeyToStartIndex);
-
-			mtl->setParam("u_predictedPositions",			bufPredictedPos.renderResource());
-			mtl->setParam("u_spatialLut",					buf_spatialLut.renderResource());
-			mtl->setParam("u_spatialLutKeyToStartIndex",	buf_patialLutKeyToStartIndex.renderResource());
+			_fs2d->_spatialLut.setBuffersToMaterial(mtl, "u_predictedPositions");
 		}
 
 	private:

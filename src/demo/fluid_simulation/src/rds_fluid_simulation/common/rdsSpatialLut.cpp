@@ -36,7 +36,7 @@ SpatialLut::updateSpatialLut(GpuSort& gpuSort, RdgBufferHnd buf_positions, float
 	createBuffer(elementCount, rdGraph);
 
 	RdgPass& pass_initSpatialLut					= addPass_initSpatialLut(buf_positions, radius, elementCount, rdGraph);
-	RdgPass& pass_gpuSort							= gpuSort.sort(_name, buf_spatialLut, elementCount, rdGraph);
+	RdgPass& pass_gpuSort							= gpuSort.sort(_name, _buf_spatialLut, elementCount, rdGraph);
 	RdgPass& pass_updateSpatialLutKeyToStartIndex	= addPass_updateSpatialLutKeyToStartIndex(radius, elementCount, rdGraph);
 
 	pass_gpuSort.runAfter(&pass_initSpatialLut);
@@ -46,10 +46,26 @@ SpatialLut::updateSpatialLut(GpuSort& gpuSort, RdgBufferHnd buf_positions, float
 }
 
 void 
-SpatialLut::getBufferTo(RdgBufferHnd& o_buf_spatialLut, RdgBufferHnd& o_buf_spatialLutKeyToStartIndex)
+SpatialLut::getBuffersTo(RdgBufferHnd& o_buf_spatialLut, RdgBufferHnd& o_buf_spatialLutKeyToStartIndex)
 {
-	o_buf_spatialLut				= buf_spatialLut;
-	o_buf_spatialLutKeyToStartIndex = buf_spatialLutKeyToStartIndex;
+	o_buf_spatialLut				= _buf_spatialLut;
+	o_buf_spatialLutKeyToStartIndex = _buf_spatialLutKeyToStartIndex;
+}
+
+void 
+SpatialLut::readBuffers(RdgPass& pass)
+{
+	pass.readBuffer(_buf_positions);
+	pass.readBuffer(_buf_spatialLut);
+	pass.readBuffer(_buf_spatialLutKeyToStartIndex);
+}
+
+void 
+SpatialLut::setBuffersToMaterial(Material* mtl, StrView positionName)
+{
+	mtl->setParam(positionName,						_buf_positions.renderResource());
+	mtl->setParam("u_spatialLut",					_buf_spatialLut.renderResource());
+	mtl->setParam("u_spatialLutKeyToStartIndex",	_buf_spatialLutKeyToStartIndex.renderResource());
 }
 
 void 
@@ -59,8 +75,8 @@ SpatialLut::createBuffer(u32 elementCount, RenderGraph* rdGraph)
 	auto gpuIdx_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_IdxT)	* n, sizeof(Gpu_IdxT),  RenderGpuBufferTypeFlags::Compute};
 	auto gpuIdx3_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_Idx3T) * n, sizeof(Gpu_Idx3T), RenderGpuBufferTypeFlags::Compute};
 
-	buf_spatialLut					= rdGraph->createBuffer(fmtAs_T<TempString>("{}_bufSpatialLut",					_name),	gpuIdx3_CDesc);
-	buf_spatialLutKeyToStartIndex	= rdGraph->createBuffer(fmtAs_T<TempString>("{}_bufSpatialLutKeyToStartIndex",	_name),	gpuIdx_CDesc);
+	_buf_spatialLut					= rdGraph->createBuffer(fmtAs_T<TempString>("{}_bufSpatialLut",					_name),	gpuIdx3_CDesc);
+	_buf_spatialLutKeyToStartIndex	= rdGraph->createBuffer(fmtAs_T<TempString>("{}_bufSpatialLutKeyToStartIndex",	_name),	gpuIdx_CDesc);
 
 	// spatialLut
 	//bufSpatialKeys		= rdGraph->createBuffer("fs2d_bufSpatialKeys",			gpuIdx_CDesc);
@@ -72,20 +88,19 @@ RdgPass&
 SpatialLut::addPass_initSpatialLut(RdgBufferHnd buf_positions, float radius, u32 elementCount, RenderGraph* rdGraph)
 {
 	Material* mtl	= _mtlSpatialLut;
+	_buf_positions = buf_positions;
 
 	auto& pass = rdGraph->addPass(RDS_RDG_EVENT_NAME("{}_initSpatialLut", _name), RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-	pass.readBuffer(buf_positions);
-	pass.writeBuffer(buf_spatialLut);
-	pass.writeBuffer(buf_spatialLutKeyToStartIndex);
+	pass.readBuffer(_buf_positions);
+	pass.writeBuffer(_buf_spatialLut);
+	pass.writeBuffer(_buf_spatialLutKeyToStartIndex);
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
 			mtl->setParam("u_radius",						radius);
 			mtl->setParam("u_elementCount",					elementCount);
 
-			mtl->setParam("u_positions",					buf_positions.renderResource());
-			mtl->setParam("u_spatialLut",					buf_spatialLut.renderResource());
-			mtl->setParam("u_spatialLutKeyToStartIndex",	buf_spatialLutKeyToStartIndex.renderResource());
+			setBuffersToMaterial(mtl, "u_positions");
 			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, s_kPassIdx_Cs_initSpatialLut, Vec3u{elementCount, 1, 1});
 		}
 	);
@@ -98,16 +113,14 @@ SpatialLut::addPass_updateSpatialLutKeyToStartIndex(float radius, u32 elementCou
 	Material*	mtl		= _mtlSpatialLut;
 
 	auto& pass = rdGraph->addPass("fs2d_updateSpatialLutKeyToStartIndex", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
-	pass.readBuffer(buf_spatialLut);
-	pass.writeBuffer(buf_spatialLutKeyToStartIndex);
+	pass.readBuffer(_buf_spatialLut);
+	pass.writeBuffer(_buf_spatialLutKeyToStartIndex);
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
 			mtl->setParam("u_radius",						radius);
 			mtl->setParam("u_elementCount",					elementCount);
-
-			mtl->setParam("u_spatialLut",					buf_spatialLut.renderResource());
-			mtl->setParam("u_spatialLutKeyToStartIndex",	buf_spatialLutKeyToStartIndex.renderResource());
+			setBuffersToMaterial(mtl, "u_positions");
 			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, s_kPassIdx_Cs_updateSpatialLutKeyToStartIndex, Vec3u{elementCount, 1, 1});
 		}
 	);
@@ -134,19 +147,17 @@ SpatialLut::Debug_updateSpatialLut(bool hasSimulated, Vec3f samplingPt, GpuSort&
 	_debug.buf_resultPositions = rdGraph->createBuffer(fmtAs_T<TempString>("{}_debug_buf_resultPositions", _name),	gpuDim_CDesc);
 	#endif // 1
 
-	RdgPass& pass_debugSpatialLut = Debug_addPass_debugSpatialLut(buf_positions, samplingPt, radius, elementCount, rdGraph);
+	RdgPass& pass_debugSpatialLut = Debug_addPass_debugSpatialLut(samplingPt, radius, elementCount, rdGraph);
 	return pass_debugSpatialLut;
 }
 
 RdgPass& 
-SpatialLut::Debug_addPass_debugSpatialLut(RdgBufferHnd buf_positions, Vec3f samplingPt, float radius, u32 elementCount, RenderGraph* rdGraph)
+SpatialLut::Debug_addPass_debugSpatialLut(Vec3f samplingPt, float radius, u32 elementCount, RenderGraph* rdGraph)
 {
 	Material* mtl	= _debug.mtlSpatialLut;
 	auto& pass = rdGraph->addPass("fs2d_debugSpatialLut", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
 	pass.writeBuffer(_debug.buf_resultPositions);
-	pass.readBuffer(buf_positions);
-	pass.readBuffer(buf_spatialLut);
-	pass.readBuffer(buf_spatialLutKeyToStartIndex);
+	readBuffers(pass);
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
@@ -157,9 +168,7 @@ SpatialLut::Debug_addPass_debugSpatialLut(RdgBufferHnd buf_positions, Vec3f samp
 			mtl->setParam("u_particleCount",	elementCount);
 			mtl->setParam("u_smoothingRadius",	radius);
 
-			mtl->setParam("u_positions",						buf_positions.renderResource());
-			mtl->setParam("u_spatialLut",						buf_spatialLut.renderResource());
-			mtl->setParam("u_spatialLutKeyToStartIndex",		buf_spatialLutKeyToStartIndex.renderResource());
+			setBuffersToMaterial(mtl, "u_positions");
 			mtl->setParam("u_spatialLutDebugResultPositions",	_debug.buf_resultPositions.renderResource());
 
 			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{1, 1, 1});

@@ -245,7 +245,7 @@ public:
 
 	RdgTextureHnd	importTexture(StrView name, TextureT* tex);
 	RdgTextureHnd	importTexture(TextureT* tex);
-	void			exportTexture(SPtr<Texture>*		out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
+	void			exportTexture(SPtr<Texture>*		out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, ShaderStageFlag stage = ShaderStageFlag::None, Access access = Access::Read);
 	void			exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
 
 	RdgBufferHnd	importBuffer(StrView name, Buffer* buf);

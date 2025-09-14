@@ -7,6 +7,8 @@
 namespace rds
 {
 
+class VoxelFluid;
+
 #if 0
 #pragma mark --- rdsFluidSim3D_Gpu-Decl ---
 #endif // 0
@@ -57,6 +59,7 @@ public:
 		RdgBufferHnd bufPos;
 		RdgBufferHnd bufVel;
 		RdgBufferHnd buf_predictedPos;
+		RdgBufferHnd buf_densityData;
 
 	public:
 		void create(ParticleSpawner& spawner, u32 n)
@@ -133,21 +136,11 @@ public:
 	public:
 		void readSpatialBuffer(RdgPass& pass)
 		{
-			RdgBufferHnd buf_spatialLut, buf_patialLutKeyToStartIndex;
-			_fs2d->_spatialLut.getBufferTo(buf_spatialLut, buf_patialLutKeyToStartIndex);
-
-			pass.readBuffer(bufPredictedPos);
-			pass.readBuffer(buf_spatialLut);
-			pass.readBuffer(buf_patialLutKeyToStartIndex);
+			_fs2d->_spatialLut.readBuffers(pass);
 		}
 		void setSpatialParam(Material* mtl) const
 		{
-			RdgBufferHnd buf_spatialLut, buf_patialLutKeyToStartIndex;
-			_fs2d->_spatialLut.getBufferTo(buf_spatialLut, buf_patialLutKeyToStartIndex);
-
-			mtl->setParam("u_predictedPositions",			bufPredictedPos.renderResource());
-			mtl->setParam("u_spatialLut",					buf_spatialLut.renderResource());
-			mtl->setParam("u_spatialLutKeyToStartIndex",	buf_patialLutKeyToStartIndex.renderResource());
+			_fs2d->_spatialLut.setBuffersToMaterial(mtl, "u_predictedPositions");
 		}
 
 	private:
@@ -188,9 +181,105 @@ private:
 	SpatialLut		_spatialLut;
 
 	CachedSimArgs	_cachedSimArgs;
+
+	UPtr<VoxelFluid> _voxelFluid;
 };
 
 #endif
+
+class VoxelFluid : public NonCopyable
+{
+public:
+	SPtr<Texture> voxelMap;
+	int		voxelMapResolution	= 32;
+	float	voxelScale			= 1.0f / voxelMapResolution;
+
+public:
+	void create()
+	{
+		RenderUtil::createMaterial(&_shader_particleToVoxelMap, &_mtl_particleToVoxelMap,	"asset/shader/demo/fluid_simulation/voxel/rdsVoxel_ParticleToTex3D.shader");
+		RenderUtil::createMaterial(&_shader_renderVoxelMap,		&_mtl_renderVoxelMap,		"asset/shader/demo/fluid_simulation/voxel/rdsVoxel_RenderVoxelMap.shader");
+	}
+
+public:
+	struct PassArgs
+	{
+		RenderGraph* rdGraph	= nullptr;
+		DrawData*	drawData	= nullptr;
+		SpatialLut* spatialLut	= nullptr;
+
+		CTransform* boundingBoxTransform = nullptr;
+
+		Vec3u voxelMapSize;
+
+		int		voxelMapResolution = 32;
+		u32		particleCount	= 0;
+		float	smoothingRadius	= 0.0;
+
+		RdgTextureHnd rtColor;
+		RdgTextureHnd dsBuf;
+
+		RdgTextureHnd tex_voxelMap;
+
+		RdgBufferHnd buf_positions;
+		RdgBufferHnd buf_densityData;
+		
+		bool useCurRes = false;
+
+	public:
+		void create(VoxelFluid& vxFluid, FluidSim3D_Gpu::CachedSimArgs& cachedSimArgs, SpatialLut* spatialLut_, bool useCurRes_
+			, RdgTextureHnd rtColor_, RdgTextureHnd dsBuf_
+			, CTransform* boundingBoxTransform_
+			, int voxelMapResolution_
+			, u32 particleCount_, float smoothingRadius_
+			, RenderGraph* rdGraph_, DrawData* drawData_)
+		{
+			rdGraph		= rdGraph_;
+			drawData	= drawData_;
+			spatialLut	= spatialLut_;
+
+			voxelMapResolution		= voxelMapResolution_;
+			particleCount			= particleCount_;
+			smoothingRadius			= smoothingRadius_;
+			boundingBoxTransform	= boundingBoxTransform_;
+
+			auto boundingBoxScale = boundingBoxTransform->localScale();
+			float maxAxis = math::max({boundingBoxScale.x, boundingBoxScale.y, boundingBoxScale.z});
+			int w = math::roundToInt(boundingBoxScale.x / maxAxis * voxelMapResolution);
+			int h = math::roundToInt(boundingBoxScale.y / maxAxis * voxelMapResolution);
+			int d = math::roundToInt(boundingBoxScale.z / maxAxis * voxelMapResolution);
+			voxelMapSize = Vec3u::s_cast(Vec3i{w, h, d});
+			
+			auto cDesc		= Texture3D::makeCDesc(RDS_SRCLOC);
+			cDesc			= Texture3D_CreateDesc{ voxelMapSize, ColorType::Rh, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource };
+			bool hasInited = vxFluid.voxelMap;
+			if (!hasInited)
+			{
+				vxFluid.voxelMap = Renderer::renderDevice()->createTexture3D(cDesc);
+			}
+
+			rtColor			= rtColor_;
+			dsBuf			= dsBuf_;
+			buf_positions	= useCurRes ? cachedSimArgs.bufPos			: rdGraph->importBuffer(cachedSimArgs.positions);
+			buf_densityData	= useCurRes ? cachedSimArgs.buf_densityData : rdGraph->importBuffer(cachedSimArgs.densityData);
+			tex_voxelMap	= useCurRes ? rdGraph->createTexture("u_voxelMap", cDesc) : rdGraph->importTexture(vxFluid.voxelMap);
+			rdGraph->exportTexture(&vxFluid.voxelMap, tex_voxelMap, TextureUsageFlags::ShaderResource, ShaderStageFlag::Vertex);
+		}
+	};
+
+public:
+	//RdgPass& addPass_voxelFluid(FluidSim3D_Gpu::SimArgs& simArgs);
+
+	RdgPass* addPass_particleToTex3D(PassArgs& passArgs);
+	RdgPass& addPass_renderVoxelMap(PassArgs& passArgs);
+
+private:
+	SPtr<Shader>	_shader_particleToVoxelMap;
+	SPtr<Material>	_mtl_particleToVoxelMap;
+
+	SPtr<Shader>	_shader_renderVoxelMap;
+	SPtr<Material>	_mtl_renderVoxelMap;
+};
 
 
 }

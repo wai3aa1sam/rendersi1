@@ -4,7 +4,7 @@ Shader {
 		
 	}
 	
-	Pass { CsFunc		Cs_debugSpatialLut }
+	Pass { CsFunc		Cs_particleToTex3D }
 
 	Permutation
 	{
@@ -15,10 +15,9 @@ Shader {
 #endif
 
 #include "built-in/shader/rds_shader.hlsl"
-#include "rdsFluidSim3D_Common.hlsl"
-#include "rdsSpatialLut3D.hlsl"
+#include "../3d/rdsSpatialLut3D.hlsl"
 
-#define RDS_NUM_THREADS 32
+#define RDS_NUM_THREADS 8
 
 struct ComputeIn 
 {
@@ -28,48 +27,47 @@ struct ComputeIn
     uint  groupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+RDS_IMAGE_3D(half, 		u_tex3D);
+
+RDS_RW_BUFFER(float3,  	u_positions);
 RDS_RW_BUFFER(uint3, 	u_spatialLut);				// x: particle_index, y: hash, z: key
 RDS_RW_BUFFER(uint,  	u_spatialLutKeyToStartIndex);
-RDS_RW_BUFFER(float3,  	u_positions);
-
-RDS_RW_BUFFER(float3,  	u_spatialLutDebugResultPositions);
 
 uint 	u_particleCount;
-float  	u_smoothingRadius;
-float3  u_samplingPt;
+float 	u_smoothingRadius;
+float3  u_boundingSize;
+uint3 	u_voxelMapSize;
 
-[numThreads(1, 1, 1)]
-void Cs_debugSpatialLut(ComputeIn input)
+uint calcParticleCountAtPoint(float3 samplingPt, float radius, uint elemntCount)
 {
-	uint tarPtcIdx 		= input.dispatchThreadId.x;
-	bool isInBoundary 	= tarPtcIdx < u_particleCount;
-	if (!isInBoundary) return;
-
-	uint neighbourCount = 0;
+	uint neighbour_particleCount = 0;
 
 	// ---
-	float3 	tarPos 		= u_samplingPt; // RDS_RW_BUFFER_LOAD_I(float2, u_predictedPositions, tarPtcIdx);
-	int3 	originCell 	= SpatialLut_toCell3D(tarPos, u_smoothingRadius);
-	float 	sqrRadius 	= u_smoothingRadius * u_smoothingRadius;
+	float3 	tarPos 		= samplingPt; // RDS_RW_BUFFER_LOAD_I(float3, u_predictedPositions, tarPtcIdx);
+	int3 	originCell 	= SpatialLut_toCell3D(tarPos, radius);
+	float 	sqrRadius 	= radius * radius;
 
 	// Neighbour search
 	for (int i = 0; i < SpatialLut_cellOffsetCount; i ++)
 	{
 		uint hash 		= SpatialLut_hashCell3D(originCell + SpatialLut_cellOffsets3D[i]);
-		uint key 		= SpatialLut_toKeyFromHash(hash, u_particleCount);
+		uint key 		= SpatialLut_toKeyFromHash(hash, elemntCount);
 		uint curIndex 	= RDS_RW_BUFFER_LOAD_I(uint, u_spatialLutKeyToStartIndex, key);
 
-		while (curIndex < u_particleCount)
+		while (curIndex < elemntCount)
 		{
 			uint3 spatialLut = RDS_RW_BUFFER_LOAD_I(uint3, u_spatialLut, curIndex);
 			curIndex++;
-			
-			uint neighbourIdx = spatialLut[0];
+
 			if (spatialLut[2] != key) 		break;	  // not same key chunk
+
+			uint neighbourIdx 	= spatialLut[0];
+			float3 neighbourPos = RDS_RW_BUFFER_LOAD_I(float3, u_positions, neighbourIdx);
+
 			if (spatialLut[1] != hash) 		continue; // not same hash
 			//if (neighbourIdx == tarPtcIdx) 	continue; // skip self, except calcDesnsity
+			if (all(neighbourPos == samplingPt)) 	continue; // skip self, except calcDesnsity
 
-			float3 neighbourPos 	  = RDS_RW_BUFFER_LOAD_I(float3, u_positions, neighbourIdx);
 			float3 offsetToNeighbour  = neighbourPos - tarPos;
 			float  sqrDistToNeighbour = dot(offsetToNeighbour, offsetToNeighbour);
 
@@ -80,15 +78,28 @@ void Cs_debugSpatialLut(ComputeIn input)
 			float3 dirToNeighbour 	= dist > 0 ? offsetToNeighbour / dist : float3(0, 1, 0);
 			
 			// calc sth
-			RDS_RW_BUFFER_STORE_I(float3, u_spatialLutDebugResultPositions,  neighbourCount, neighbourPos);
-			neighbourCount++;
+			neighbour_particleCount++;
 		}
 	}
 
-	while(neighbourCount < u_particleCount)
-	{
-		RDS_RW_BUFFER_STORE_I(float3, u_spatialLutDebugResultPositions,  neighbourCount, s_kInvalid_position);
-		neighbourCount++;
-	}
+	return neighbour_particleCount;
+}
+
+[numthreads(RDS_NUM_THREADS, RDS_NUM_THREADS, RDS_NUM_THREADS)]
+void Cs_particleToTex3D(ComputeIn input)
+{
+	uint3 id 			= input.dispatchThreadId;
+	bool isInBoundary 	= !(id.x >= u_voxelMapSize.x || id.y >= u_voxelMapSize.y || id.z >= u_voxelMapSize.z);
+	if (!isInBoundary) return;
+
+	float3 posTex 	= id / (u_voxelMapSize - 1.0);		// remap to [0, 1]
+	//float3 posWs 	= (posTex - 0.5) * u_boundingSize;
+	float3 posWs 	= (remap01ToNeg11(posTex)) * u_boundingSize;
+
+	uint particleCount = calcParticleCountAtPoint(posWs, u_smoothingRadius, u_particleCount);
+	
+	// TODO: RDS_IMAGE_3D_STORE()
+	RWTexture3D<half> tex = RDS_IMAGE_3D_GET(half,  u_tex3D);
+	tex[id] = particleCount / (half)u_particleCount;
 }
 

@@ -18,6 +18,9 @@ FluidSim3D_Gpu::onCreate(GraphicsDemo* parentDemo)
 	_spatialLut.create3D("fs3d");
 
 	_cachedSimArgs.create(_particleSpawner, _particleSpawner.particleCount);
+
+	_voxelFluid = makeUPtr<VoxelFluid>();
+	_voxelFluid->create();
 }
 
 void 
@@ -51,13 +54,31 @@ FluidSim3D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	RdgTextureHnd dsBuf		= rdGraph->createTexture("fs3d_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil});
 
 	addPass_renderFluidSim3D(_cachedSimArgs, _simConfig, useCurSimRes, rtColor, dsBuf, rdGraph, drawData);
+	
+
+	{
+		auto n = _particleSpawner.particleCount;
+		auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
+
+		VoxelFluid::PassArgs passArgs;
+		passArgs.create(*_voxelFluid, _cachedSimArgs, &_spatialLut, useCurSimRes, rtColor, dsBuf
+			, getBoundingBoxTransform(), _voxelFluid->voxelMapResolution, _particleSpawner.particleCount, _simConfig.smoothingRadius, rdGraph, drawData);
+
+		if (!useCurSimRes)
+		{
+			_spatialLut.updateSpatialLut(_gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
+		}
+		auto* pass_particleToVoxelMap	= _voxelFluid->addPass_particleToTex3D(	passArgs); RDS_UNUSED(pass_particleToVoxelMap);
+		auto& pass_renderVoxelMap		= _voxelFluid->addPass_renderVoxelMap(	passArgs); RDS_UNUSED(pass_renderVoxelMap);
+	}
+
 	drawData->oTexPresent = rtColor;
 
 	#if 1
 	if (_simConfig.useDebugSpatial)
 	{
-		auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
 		auto n = _particleSpawner.particleCount;
+		auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
 
 		_spatialLut.Debug_updateSpatialLut(useCurSimRes, getDebugSpatialTransform()->localPosition(), _gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
 		_spatialLut.Debug_renderSpatialLut(_ptcDisplay, rtColor, dsBuf, getBoundingBoxTransform()->localPosition(), _simConfig.particleSize, n, rdGraph, drawData);
@@ -70,6 +91,9 @@ FluidSim3D_Gpu::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 {
 	Base::onDrawGui(uiDrawReq);
 
+	uiDrawReq.dragInt(	"voxelMapResolution",	&_voxelFluid->voxelMapResolution, 1, 1, 128);
+	uiDrawReq.dragFloat("voxelScale",			&_voxelFluid->voxelScale, 0.005f, 0.0001f);
+	
 }
 
 void 
@@ -109,6 +133,7 @@ FluidSim3D_Gpu::simulate(float dt, RenderPassPipeline* renderPassPipeline)
 		pass.runAfter(prevPass);
 		prevPass = &pass;
 	}
+
 }
 
 RdgPass& 
@@ -344,4 +369,74 @@ FluidSim3D_Gpu::addPass_updatePosition(SimArgs& simArgs)
 
 #endif
 
+RdgPass* 
+VoxelFluid::addPass_particleToTex3D(PassArgs& passArgs)
+{
+	// if not simulated, all buf hnd is invalid
+
+	auto*		rdGraph = passArgs.rdGraph;
+	Material*	mtl		= _mtl_particleToVoxelMap;
+
+	auto& pass = rdGraph->addPass("voxel_particleToTex3D", RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+	pass.writeTexture(passArgs.tex_voxelMap);
+	//pass.readBuffer(passArgs.buf_positions);
+	pass.readBuffer(passArgs.buf_densityData);
+	passArgs.spatialLut->readBuffers(pass);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			mtl->setImage("u_tex3D",				passArgs.tex_voxelMap.renderResource(), 0);
+			mtl->setParam("u_densityData",			passArgs.buf_densityData.renderResource());
+			passArgs.spatialLut->setBuffersToMaterial(mtl, "u_positions");
+
+			mtl->setParam("u_particleCount",		passArgs.particleCount);
+			mtl->setParam("u_smoothingRadius",		passArgs.smoothingRadius);
+			mtl->setParam("u_boundingSize",			passArgs.boundingBoxTransform->localScale());
+			mtl->setParam("u_voxelMapSize",			passArgs.voxelMapSize);
+
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u::s_one() * passArgs.voxelMapSize);
+			//rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u{simArgs.particleCount, 1, 1});
+		}
+	);
+
+	return &pass;
+}
+
+RdgPass& 
+VoxelFluid::addPass_renderVoxelMap(PassArgs& passArgs)
+{
+	auto*		rdGraph		= passArgs.rdGraph;
+	auto*		drawData	= passArgs.drawData;
+	Material*	mtl			= _mtl_renderVoxelMap;
+
+	auto& pass = rdGraph->addPass("voxel_renderVoxelParticle", RdgPassTypeFlags::Graphics);
+	pass.readTexture(passArgs.tex_voxelMap, TextureUsageFlags::ShaderResource, ShaderStageFlag::Pixel);
+
+	pass.setRenderTarget(passArgs.rtColor,	RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
+	pass.setDepthStencil(passArgs.dsBuf,		RdgAccess::Write, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+	pass.setExecuteFunc(
+		[=](RenderRequest& rdReq)
+		{
+			rdReq.reset(rdGraph->renderContext(), drawData);
+			drawData->setupMaterial(mtl);
+
+			auto voxelMapSize = passArgs.voxelMapSize;
+			mtl->setParam("u_voxelMap",				passArgs.tex_voxelMap.renderResource());
+			mtl->setParam("u_voxelMapSize",			voxelMapSize);
+			mtl->setParam("u_voxelScale",			voxelScale);
+			mtl->setParam("u_boundingPos",			passArgs.boundingBoxTransform->localPosition());
+
+			auto drawCall = rdReq.addDrawCall(sizeof(PerObjectParam));
+			drawCall->setDebugSrcLoc(RDS_SRCLOC);
+			drawCall->renderPrimitiveType = RenderPrimitiveType::Point;
+			drawCall->vertexCount = voxelMapSize.x * voxelMapSize.y * voxelMapSize.z;
+			drawCall->setMaterial(mtl);
+
+			/*PerObjectParam objParam;
+			objParam.id = sCast<decltype(PerObjectParam::id)>(s_entVctVoxelVisualizationId);
+			drawCall->setExtraData(objParam);*/
+		}
+	);
+	return pass;
+}
 }

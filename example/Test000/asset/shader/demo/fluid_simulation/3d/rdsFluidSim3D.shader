@@ -302,7 +302,7 @@ void handleCollisions(uint ptcIdx)
 
 	// Keep particle inside bounds
 	const float3 halfSize 	= 1.0; //0.5; // local space // u_boundarySize * 0.5;
-	float3 edgeDist 		= halfSize - abs(pos);
+	float3 edgeDist 		= halfSize - abs(pos);		// local pos is [-1, 1]
 
 	if (edgeDist.x <= 0.0)
 	{

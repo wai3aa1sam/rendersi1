@@ -463,7 +463,7 @@ RenderGraph::importTexture(TextureT* tex)
 }
 
 void 
-RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access)
+RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, ShaderStageFlag stage, Access access)
 {
 	auto& rdgFrame	= renderGraphFrame(frameIndex());
 	auto& exportRsc = rdgFrame.exportedTextures.emplace_back();
@@ -471,13 +471,14 @@ RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFl
 	exportRsc.rdgRsc->setExport(true);
 
 	exportRsc.outRdRsc		= out;
-	exportRsc.pendingState	= StateUtil::make(usageFlag, access);
+	exportRsc.pendingState	= StateUtil::make(usageFlag, access, stage);
 }
 
 void
 RenderGraph::exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access)
 {
-	exportTexture(nullptr, hnd, usageFlag, access);
+	RDS_TODO("fix ShaderStageFlag::None, guess its usage");
+	exportTexture(nullptr, hnd, usageFlag, ShaderStageFlag::None, access);
 }
 
 RdgBufferHnd 

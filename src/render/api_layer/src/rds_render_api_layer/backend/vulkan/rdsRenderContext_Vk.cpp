@@ -611,6 +611,10 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 				VkImageLayout	srcLayout	= Util::toVkImageLayout(srcState);
 				VkImageLayout	dstLayout	= Util::toVkImageLayout(expTex.pendingState);
 
+				bool isReadAndSameLayout = srcLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && srcLayout == dstLayout;
+				if (isReadAndSameLayout)
+					continue;
+
 				vkCmdBuf->cmd_addImageMemBarrier(vkImgHnd, srcLayout, dstLayout
 					, RenderResourceStateFlagsUtil::getShaderStageFlag(srcState), RenderResourceStateFlagsUtil::getShaderStageFlag(expTex.pendingState)
 					, rdgTex->desc());
