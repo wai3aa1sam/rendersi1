@@ -29,7 +29,21 @@ FluidSimDemo_Base::onCreateScene(Scene* oScene)
 	
 	_ent_boundingBox		= fn_createObject("bounding_box",		_parentDemo->_shaderWire,	_parentDemo->meshAssets().box);
 	_ent_interaction		= fn_createObject("interaction",		_parentDemo->_shaderWire,	_parentDemo->meshAssets().sphere);
+	_ent_forceField			= fn_createObject("forceField",			_parentDemo->_shaderWire,	_parentDemo->meshAssets().box);
 	_ent_debugSpatialLut	= fn_createObject("debugSpatialLut",	_parentDemo->_shaderWire,	_parentDemo->meshAssets().sphere);
+
+	auto light_ents = _parentDemo->createLights(oScene, Vec3u{ 2, 1, 1 }, Vec3f::s_zero(), Vec3f::s_one(), Quat4f::s_eulerDeg(Vec3f{66.099f, 26.20f, 0.0f}));
+
+	// set default value for lights in d
+	{
+		light_ents[0]->getComponent<CTransform>()->setLocalPosition(Vec3f{ 19.6f, 0.0f, -3.8f });
+		light_ents[0]->getComponent<CLight>()->setIntensity(2.1f);
+
+		light_ents[1]->getComponent<CTransform>()->setLocalPosition(Vec3f{0.0f, 0.6f, -1.0f});
+		light_ents[1]->getComponent<CLight>()->setColor(Color4f{ 0.0f, 0.1f, 1.0f, 1.0f });
+		light_ents[1]->getComponent<CLight>()->setRange(19.7f);
+		light_ents[1]->getComponent<CLight>()->setIntensity(6.1f);
+	}
 }
 
 void 
@@ -124,6 +138,12 @@ CTransform*
 FluidSimDemo_Base::getInteractionTransform()
 {
 	return _ent_interaction->getComponent<CTransform>();
+}
+
+CTransform* 
+FluidSimDemo_Base::getForceFieldTransform()
+{
+	return _ent_forceField->getComponent<CTransform>();
 }
 
 CTransform* 

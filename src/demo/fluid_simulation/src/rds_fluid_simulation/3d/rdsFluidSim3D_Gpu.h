@@ -183,6 +183,12 @@ private:
 	CachedSimArgs	_cachedSimArgs;
 
 	UPtr<VoxelFluid> _voxelFluid;
+
+private:
+	struct Debug
+	{
+		bool useVoxel = true;
+	} _debug;
 };
 
 #endif
@@ -208,6 +214,8 @@ public:
 		DrawData*	drawData	= nullptr;
 		SpatialLut* spatialLut	= nullptr;
 
+		Texture2D*	colorMap = nullptr;
+
 		CTransform* boundingBoxTransform = nullptr;
 
 		Vec3u voxelMapSize;
@@ -215,6 +223,7 @@ public:
 		int		voxelMapResolution = 32;
 		u32		particleCount	= 0;
 		float	smoothingRadius	= 0.0;
+		float	densityMax		= 10.0;
 
 		RdgTextureHnd rtColor;
 		RdgTextureHnd dsBuf;
@@ -232,6 +241,7 @@ public:
 			, CTransform* boundingBoxTransform_
 			, int voxelMapResolution_
 			, u32 particleCount_, float smoothingRadius_
+			, Texture2D* colorMap_, float densityMax_
 			, RenderGraph* rdGraph_, DrawData* drawData_)
 		{
 			rdGraph		= rdGraph_;
@@ -242,6 +252,9 @@ public:
 			particleCount			= particleCount_;
 			smoothingRadius			= smoothingRadius_;
 			boundingBoxTransform	= boundingBoxTransform_;
+
+			colorMap	= colorMap_;
+			densityMax	= densityMax_;
 
 			auto boundingBoxScale = boundingBoxTransform->localScale();
 			float maxAxis = math::max({boundingBoxScale.x, boundingBoxScale.y, boundingBoxScale.z});

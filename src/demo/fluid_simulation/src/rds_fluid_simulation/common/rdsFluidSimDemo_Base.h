@@ -53,6 +53,7 @@ public:
 
 	CTransform*			getDebugSpatialTransform();
 	CTransform*			getInteractionTransform();
+	CTransform*			getForceFieldTransform();
 	CTransform*			getBoundingBoxTransform();
 
 protected:
@@ -62,6 +63,7 @@ protected:
 
 	Entity* _ent_boundingBox		= nullptr;
 	Entity* _ent_interaction		= nullptr;
+	Entity* _ent_forceField			= nullptr;
 	Entity* _ent_debugSpatialLut	= nullptr;
 
 protected:

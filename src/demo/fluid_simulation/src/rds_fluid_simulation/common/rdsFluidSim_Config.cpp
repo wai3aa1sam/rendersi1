@@ -57,9 +57,13 @@ FluidSim_Config::drawGui(EditorUiDrawRequest& uiDrawReq)
 	uiDrawReq.dragFloat("targetDensity",				&targetDensity,					0.1f);
 	uiDrawReq.dragFloat("pressureMultiplier",			&pressureMultiplier,			1.0f);
 	uiDrawReq.dragFloat("viscosityStrength",			&viscosityStrength,				0.01f);
+	uiDrawReq.dragFloat("maxValue",						&maxValue,						0.1f);
 
 	uiDrawReq.dragFloat("interactionRadius",			&interactionRadius,		0.01f, 0.01f);
 	uiDrawReq.dragFloat("interactionStrength",			&interactionStrength,	1.0f);
+	
+	uiDrawReq.drawVec3f("forceFieldDir",				&forceFieldDir);
+	uiDrawReq.dragFloat("forceFieldStrength",			&forceFieldStrength,	1.0f);
 
 	auto makeColorPicker4 = [](const char* label, Color4f* oColor)
 		{

@@ -16,8 +16,8 @@ FluidSim2D_Base::onCreate(GraphicsDemo* parentDemo)
 	Base::onCreate(parentDemo);
 	
 	// for debug
-	#if 1
-	_particleSpawner.spawnDensity = 2.0f;
+	#if 0
+	_particleSpawner.spawnDensity = 128.0;//2.0f;
 	_simConfig.smoothingRadius = 2.0f;
 	_simConfig.timeMultiplier = 0.01f;
 	#endif // 1

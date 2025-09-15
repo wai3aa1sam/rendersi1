@@ -54,15 +54,18 @@ FluidSim3D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	RdgTextureHnd dsBuf		= rdGraph->createTexture("fs3d_dsBuf",		Texture2D_CreateDesc{ screenSize, ColorType::Depth, TextureUsageFlags::DepthStencil});
 
 	addPass_renderFluidSim3D(_cachedSimArgs, _simConfig, useCurSimRes, rtColor, dsBuf, rdGraph, drawData);
-	
 
+	if (_debug.useVoxel)
 	{
 		auto n = _particleSpawner.particleCount;
 		auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
 
 		VoxelFluid::PassArgs passArgs;
 		passArgs.create(*_voxelFluid, _cachedSimArgs, &_spatialLut, useCurSimRes, rtColor, dsBuf
-			, getBoundingBoxTransform(), _voxelFluid->voxelMapResolution, _particleSpawner.particleCount, _simConfig.smoothingRadius, rdGraph, drawData);
+			, getBoundingBoxTransform(), _voxelFluid->voxelMapResolution
+			, _particleSpawner.particleCount, _simConfig.smoothingRadius
+			, _ptcDisplay.colorGradientTexture(), (float)_simConfig.maxValue
+			, rdGraph, drawData);
 
 		if (!useCurSimRes)
 		{
@@ -74,6 +77,7 @@ FluidSim3D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 
 	drawData->oTexPresent = rtColor;
 
+	// debug spatia lut
 	#if 1
 	if (_simConfig.useDebugSpatial)
 	{
@@ -92,9 +96,12 @@ FluidSim3D_Gpu::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 {
 	Base::onDrawGui(uiDrawReq);
 
-	uiDrawReq.dragInt(	"voxelMapResolution",	&_voxelFluid->voxelMapResolution, 1, 1, 128);
-	uiDrawReq.dragFloat("voxelScale",			&_voxelFluid->voxelScale, 0.005f, 0.0001f);
-	
+	//uiDrawReq.dragInt(	"voxelMapResolution",	&_voxelFluid->voxelMapResolution, 1, 1, 128);
+	//uiDrawReq.dragFloat("voxelScale",			&_voxelFluid->voxelScale, 0.005f, 0.0001f);
+
+	uiDrawReq.showText("voxel fluid simulation demo");
+	uiDrawReq.showText("camera control (like unreal): keyboard: WASD, mouse pan / orbit");
+	uiDrawReq.makeCheckbox("useVoxel", &_debug.useVoxel);
 }
 
 void 
@@ -159,6 +166,11 @@ FluidSim3D_Gpu::addPass_simulateFluid3D(SimArgs& simArgs)
 		mtl->setParam("u_interactionInputStrength",	simState.interactionInputStrength);
 		mtl->setParam("u_interactionInputRadius",	simConfig.interactionRadius);
 		mtl->setParam("u_interactionInputPoint",	getInteractionTransform()->localPosition());
+
+		mtl->setParam("u_forceFieldPos",			getForceFieldTransform()->localPosition());
+		mtl->setParam("u_forceFieldScale",			getForceFieldTransform()->localScale());
+		mtl->setParam("u_forceFieldDir",			simConfig.forceFieldDir.normalize());
+		mtl->setParam("u_forceFieldStrength",		simConfig.forceFieldStrength);
 
 		mtl->setParam("u_boundarySize",				getBoundingBoxTransform()->localScale());
 		//mtl->setParam("u_obstacleCenter",			AABBox3T_center(simConfig.obstacle3D));
@@ -234,7 +246,7 @@ FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Con
 			clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
 			clearValue->setClearDepth(1.0f);
 
-			if (1)
+			if (!_debug.useVoxel)
 			{
 				auto& v = constCast(cachedSimArgs);
 				// must not use isValidRenderResource now (see the code in there)
@@ -426,6 +438,9 @@ VoxelFluid::addPass_renderVoxelMap(PassArgs& passArgs)
 			mtl->setParam("u_voxelMapSize",			voxelMapSize);
 			mtl->setParam("u_voxelScale",			voxelScale);
 			mtl->setParam("u_boundingPos",			passArgs.boundingBoxTransform->localPosition());
+
+			mtl->setParam("u_colorMap",				passArgs.colorMap);
+			mtl->setParam("u_densityMax",			passArgs.densityMax);
 
 			auto drawCall = rdReq.addDrawCall(sizeof(PerObjectParam));
 			drawCall->setDebugSrcLoc(RDS_SRCLOC);

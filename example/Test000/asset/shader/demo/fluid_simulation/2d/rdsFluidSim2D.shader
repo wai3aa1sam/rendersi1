@@ -40,10 +40,6 @@ RDS_RW_BUFFER(float2, u_predictedPositions);
 RDS_RW_BUFFER(uint3, u_spatialLut);					// x: particle_index, y: hash, z: key
 RDS_RW_BUFFER(uint,  u_spatialLutKeyToStartIndex);
 
-//RDS_BUFFER(float2, u_sortedPositions);
-//RDS_BUFFER(float2, u_sortedVelocities);
-//RDS_BUFFER(float2, u_sortedPredictedPositions);
-
 float	u_dt;
 float 	u_gravity;
 float2 	u_gravityDir;

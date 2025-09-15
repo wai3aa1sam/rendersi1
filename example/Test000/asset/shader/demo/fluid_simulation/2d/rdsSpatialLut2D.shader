@@ -35,14 +35,6 @@ RDS_RW_BUFFER(DimT, 	u_positions);
 RDS_RW_BUFFER(uint3, 	u_spatialLut);				// x: particle_index, y: hash, z: key
 RDS_RW_BUFFER(uint,  	u_spatialLutKeyToStartIndex);
 
-//RDS_BUFFER(uint, u_spatialKeys);
-//RDS_BUFFER(uint, u_spatialOffsets);
-//RDS_BUFFER(uint, u_spatialSortedIdxs);
-
-//RDS_BUFFER(DimT, u_sortedPositions);
-//RDS_BUFFER(DimT, u_sortedVelocities);
-//RDS_BUFFER(DimT, u_sortedPredictedPositions);
-
 float 	u_radius;
 uint 	u_elementCount;
 

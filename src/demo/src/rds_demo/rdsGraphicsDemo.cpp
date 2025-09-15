@@ -165,9 +165,12 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 	}
 }
 
-CTransform*
+Vector<Entity*>
 GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec3f step, Quat4f direction, float range, float intensity, const AABBox3f& rndBounding)
 {
+	Vector<Entity*> o_ents;
+	o_ents.reserve(objectCount.x * objectCount.y * objectCount.z);
+
 	CTransform* directionalLightTransf = nullptr;
 	#if 1
 	auto& scene = *oScene;
@@ -180,6 +183,7 @@ GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec
 			for (size_t c = 0; c < col_; c++)
 			{
 				auto* ent = scene.addEntity();
+				o_ents.emplace_back(ent);
 
 				auto* transform	= ent->getComponent<CTransform>();
 
@@ -247,7 +251,7 @@ GraphicsDemo::createLights(Scene* oScene, Vec3u objectCount, Vec3f startPos, Vec
 	}
 	#endif // 1
 
-	return directionalLightTransf;
+	return o_ents;
 }
 
 void 

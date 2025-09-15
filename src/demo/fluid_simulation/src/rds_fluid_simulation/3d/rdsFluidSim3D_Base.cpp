@@ -26,17 +26,38 @@ FluidSim3D_Base::onCreate(GraphicsDemo* parentDemo)
 	camera.setPos(Vec3f{0.0f, 0.0f, 8.0f});
 	camera.setAim(Vec3f{0.0f, 0.0f, 0.0f});
 
+	camera.setPos(Vec3f{-2.395f, 1.546f, -3.282f});
+	camera.setAim(Vec3f{0.271f, -0.497f, 0.287f});
+	camera.setNearClip(0.01f);
+
 	_particleSpawner.spawnDensity		= 32.0f;
 	
+	_simConfig.useDebugSpatial			= false;
 	_simConfig.smoothingRadius			= 0.2f;
 	_simConfig.targetDensity			= 630.0f;
 	_simConfig.pressureMultiplier		= 288.0f;
 	_simConfig.nearPressureMultiplier	= 2.25f;
 	_simConfig.viscosityStrength		= 0.001f;
 
+	_simConfig.gravity					= 50.0f;
+	_simConfig.forceFieldDir			= Vec3f(29, -7, 33);
+	_simConfig.forceFieldStrength		= 580.0f;
+
 	_simConfig.create(this);
 	_ptcDisplay.create3D(_parentDemo->meshAssets().sphere->renderMesh, _simConfig.makeColorGradient());
 	_particleSpawner.create3D(_simConfig.spawnRegion3D);
+}
+
+void 
+FluidSim3D_Base::onCreateScene(Scene* oScene)
+{
+	Base::onCreateScene(oScene);
+
+	getForceFieldTransform()->setLocalPosition(-0.9f, -1.1f, 0.7f);
+	getForceFieldTransform()->setLocalScale(Vec3f{1.8f, 1.4f, 0.3f});
+
+	getInteractionTransform()->setLocalPosition(20.0f, 0.0f, 0.0f);
+	getDebugSpatialTransform()->setLocalPosition(20.0f, 0.0f, 0.0f);
 }
 
 void 

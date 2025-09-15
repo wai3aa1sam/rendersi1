@@ -40,10 +40,6 @@ RDS_RW_BUFFER(float3, u_predictedPositions);
 RDS_RW_BUFFER(uint3, u_spatialLut);					// x: particle_index, y: hash, z: key
 RDS_RW_BUFFER(uint,  u_spatialLutKeyToStartIndex);
 
-//RDS_BUFFER(float2, u_sortedPositions);
-//RDS_BUFFER(float2, u_sortedVelocities);
-//RDS_BUFFER(float2, u_sortedPredictedPositions);
-
 float	u_dt;
 float 	u_gravity;
 float3 	u_gravityDir;
@@ -59,6 +55,11 @@ float 	u_interactionInputStrength;
 float 	u_interactionInputRadius;
 float3 	u_interactionInputPoint;
 
+float3 	u_forceFieldPos;
+float3 	u_forceFieldScale;
+float3 	u_forceFieldDir;
+float 	u_forceFieldStrength;
+
 float3 u_boundarySize;
 //float3 u_obstacleCenter;
 //float3 u_obstacleSize;
@@ -68,6 +69,7 @@ uint 	u_particleCount;
 
 float4x4 u_objToWorld;
 float4x4 u_worldToObj;
+
 
 [numThreads(RDS_NUM_THREADS, 1, 1)]
 void Cs_calcExternalForce(ComputeIn input)
@@ -82,31 +84,10 @@ void Cs_calcExternalForce(ComputeIn input)
 	// External forces (gravity and input interaction)
 	float3 externalForces = 0;
 	{
-		// Gravity
 		float3 gravityAccel = u_gravityDir * u_gravity;
-		
-		// Input interactions modify gravity
-		if (u_interactionInputStrength != 0) 
-		{
-			float3 	inputPointOffset 	= u_interactionInputPoint - position;
-			float 	sqrDist 			= dot(inputPointOffset, inputPointOffset);
-			if (sqrDist < u_interactionInputRadius * u_interactionInputRadius)
-			{
-				float 	dist			 = sqrt(sqrDist);
-				float 	edge			= (dist / u_interactionInputRadius);
-				float 	center			= 1 - edge;
-				float3 	dirToCenter		= inputPointOffset / dist;
-
-				float 	gravityWeight 	= 1 - (center * saturate(u_interactionInputStrength / 10));
-				float3 	accel 			= gravityAccel * gravityWeight + dirToCenter * center * u_interactionInputStrength;
-				accel -= velocity * center;
-				externalForces += accel * u_particleMass;
-			}
-		}
-		else
-		{
-			externalForces += gravityAccel * u_particleMass;
-		}
+		externalForces += calcSphereInteractionForce(position, velocity, u_interactionInputPoint, u_interactionInputStrength, u_interactionInputRadius, gravityAccel, u_particleMass);
+		externalForces += calcRectangleForceField(position, velocity, u_forceFieldPos, u_forceFieldScale, u_forceFieldDir, u_forceFieldStrength, gravityAccel, u_particleMass);
+		externalForces += gravityAccel * u_particleMass;
 	}
 
 	float3 vel = velocity + externalForces / u_particleMass * u_dt;

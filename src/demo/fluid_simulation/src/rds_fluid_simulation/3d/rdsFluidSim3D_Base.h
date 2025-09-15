@@ -19,6 +19,7 @@ public:
 
 public:
 	virtual void onCreate(GraphicsDemo* parentDemo) override;
+	virtual void onCreateScene(Scene* oScene) override;
 
 	virtual void onUpdate(float dt, RenderPassPipeline* renderPassPipeline) override;
 

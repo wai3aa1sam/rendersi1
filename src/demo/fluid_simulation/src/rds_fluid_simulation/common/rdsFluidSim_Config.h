@@ -53,9 +53,13 @@ public:
 	float		pressureMultiplier		= 500.0f;
 	float		nearPressureMultiplier	= 5.0f;
 	float		viscosityStrength		= 0.03f;
+	float		maxValue				= 1.0f;
 
-	float		interactionRadius	= 2.0f;
-	float		interactionStrength = 90.0f;
+	float		interactionRadius		= 2.0f;
+	float		interactionStrength		= 90.0f;
+	
+	Vec3f		forceFieldDir			= Vec3f::s_right();
+	float		forceFieldStrength		= 90.0f;
 
 	float		timeMultiplier		= 1.0f;
 	float		gravity				= 12.0f;
