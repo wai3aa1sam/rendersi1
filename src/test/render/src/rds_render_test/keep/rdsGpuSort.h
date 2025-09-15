@@ -1,3 +1,4 @@
+#if 0
 #pragma once
 
 #include "rds_fluid_simulation/common/rds_fluid_simulation_common.h"
@@ -39,14 +40,16 @@ public:
 	RdgPass& sort(StrView name, RdgBufferHnd buf_list, u32 listSize, RenderGraph* rdGraph);
 
 private:
-	RdgPass& addPass_quickSort(StrView name, RdgBufferHnd buf_list, u32 listSize, RenderGraph* rdGraph);
+	RdgPass& addPass_bitonicMergeSort(StrView name, RdgBufferHnd buf_list, u32 listSize, RenderGraph* rdGraph);
 	RdgPass& addPass_bubbleSort(StrView name, RdgBufferHnd buf_list, u32 listSize, RenderGraph* rdGraph);
 
 private:
 	SPtr<Shader>	_shaderSort;
 	MaterialPool	_mtlSortPool;
+	//SPtr<Material>	_mtlSort;
 };
 #endif
 
 
 }
+#endif // 0
