@@ -57,7 +57,8 @@ void Cs_sort(ComputeIn input)
 
 	bool isDescending = valueLeft.z > valueRight.z;
 	// Swap entries if value is descending
-	if (isDescending)
+	bool ascending = ((i & (1u << u_stepIndex)) == 0);
+	if (((valueLeft.z > valueRight.z) == ascending) ^ !ascending)
 	{
 		uint3 temp = valueLeft;
 		RDS_RW_BUFFER_STORE_I(uint3, u_list, indexLeft, 	valueRight);

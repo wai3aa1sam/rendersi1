@@ -17,7 +17,7 @@ FluidSimulation::onCreate()
 {
 	Base::onCreate();
 
-	bool is3D = 1;
+	bool is3D = 0;
 	is3D ? _curDemo = makeUPtr<FluidSim3D_Gpu>() : _curDemo = makeUPtr<FluidSim2D_Gpu>();
 	_curDemo->onCreate(this);
 }

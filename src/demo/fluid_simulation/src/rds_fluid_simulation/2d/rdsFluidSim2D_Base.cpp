@@ -14,6 +14,13 @@ void
 FluidSim2D_Base::onCreate(GraphicsDemo* parentDemo) 
 { 
 	Base::onCreate(parentDemo);
+	
+	// for debug
+	#if 1
+	_particleSpawner.spawnDensity = 2.0f;
+	_simConfig.smoothingRadius = 2.0f;
+	_simConfig.timeMultiplier = 0.01f;
+	#endif // 1
 
 	_simConfig.create(this);
 	_ptcDisplay.create2D(_simConfig.makeColorGradient());

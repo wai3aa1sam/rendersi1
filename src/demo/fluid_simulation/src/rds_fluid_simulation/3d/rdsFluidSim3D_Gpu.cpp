@@ -78,7 +78,8 @@ FluidSim3D_Gpu::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	if (_simConfig.useDebugSpatial)
 	{
 		auto n = _particleSpawner.particleCount;
-		auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
+		//auto buf = useCurSimRes ? _cachedSimArgs.buf_predictedPos : rdGraph->importBuffer(_cachedSimArgs.predictedPos);
+		auto buf = useCurSimRes ? _cachedSimArgs.bufPos : rdGraph->importBuffer(_cachedSimArgs.positions);
 
 		_spatialLut.Debug_updateSpatialLut(useCurSimRes, getDebugSpatialTransform()->localPosition(), _gpuSort, buf, _simConfig.smoothingRadius, n, rdGraph);
 		_spatialLut.Debug_renderSpatialLut(_ptcDisplay, rtColor, dsBuf, getBoundingBoxTransform()->localPosition(), _simConfig.particleSize, n, rdGraph, drawData);
