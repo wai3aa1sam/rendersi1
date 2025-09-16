@@ -10,8 +10,7 @@
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
 #define RDS_IS_TEST_ENGINE 0
-
-
+#define RDS_USE_FULL_SCREEEN 0
 
 namespace rds
 {
@@ -292,7 +291,9 @@ DemoEditorLayer::drawEditorUI(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texH
 		uiDrawReq.dragInt("target fps", &targetFrameRate, 0.1f, 10);
 		frameControl.setTargetFrameRate(targetFrameRate);
 
+		#if RDS_USE_FULL_SCREEEN
 		uiDrawReq.makeCheckbox("full screen (F1)",	&_isFullScreen);
+		#endif // RDS_USE_FULL_SCREEEN
 		uiDrawReq.makeCheckbox("is wait frame",		&app()._frameControl.isWaitFrame);
 	}
 
@@ -332,10 +333,12 @@ DemoEditorLayer::onUiMouseEvent(UiMouseEvent& ev)
 void
 DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 {
+	#if RDS_USE_FULL_SCREEEN
 	if (ev.isPressed(UiKeyboardEventButton::F1))
 	{
 		_isFullScreen = !_isFullScreen;
 	}
+	#endif // RDS_USE_FULL_SCREEEN
 }
 
 void 

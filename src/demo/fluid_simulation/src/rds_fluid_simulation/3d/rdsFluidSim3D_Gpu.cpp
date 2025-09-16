@@ -101,6 +101,9 @@ FluidSim3D_Gpu::onDrawGui(EditorUiDrawRequest& uiDrawReq)
 
 	uiDrawReq.showText("voxel fluid simulation demo");
 	uiDrawReq.showText("camera control (like unreal): keyboard: WASD, mouse pan / orbit");
+	uiDrawReq.showText("press Space: start / stop simulation");
+	uiDrawReq.showText("press Q: step backward");
+	uiDrawReq.showText("press E: step forward");
 	uiDrawReq.makeCheckbox("useVoxel", &_debug.useVoxel);
 }
 
