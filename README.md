@@ -1,5 +1,11 @@
 
 # rendersi1
+
+**Fluid Simulation**
+
+- main files: rds_fluid_simulation.h, rdsFluidSim3D_Gpu.h, relative to src\demo\fluid_simulation\src\rds_fluid_simulation
+- path for .exe: build\rendersi1-x64-windows\src\demo\fluid_simulation\Release\rds_fluid_simulation.exe
+
 rendersi1 is a personal renderer for demo purpose, easy to use and maintain.\
 [nmsplib](https://github.com/wai3aa1sam/nmsplib) - personal C++ library
 
