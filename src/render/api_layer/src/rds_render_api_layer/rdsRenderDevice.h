@@ -30,9 +30,10 @@ public:
 public:
 	RenderApiType apiType;
 
-	bool isDebug			: 1;
-	bool isMultithread		: 1;
-	bool isPresent			: 1;
+	bool isDebug				: 1;
+	bool isMultithread			: 1;
+	bool isPresent				: 1;
+	bool isCompileShaderMode	: 1;
 
 public:
 	bool isShaderCompileMode() const;

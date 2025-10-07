@@ -31,13 +31,14 @@ void ProjectSetting::setProjectRoot(StrView path)
 void 
 ProjectSetting::toRoot(String& dst, const StrView root, const StrView path)
 {
+	dst.reserve(dst.size() + root.size() + 1 + path.size());
 	dst += root;
 	dst += "/";
 	dst += path;
 }
 
 StrView ProjectSetting::importedPath()				const { return RDS_IMPORTED_PATH; }
-StrView ProjectSetting::importedShaderPath()		const { return RDS_IMPORTED_PATH "/shader"; }
+StrView ProjectSetting::importedShaderPath()		const { return RDS_IMPORTED_PATH "/shader" "/" RDS_BUILD_CONFIG_STR; }
 StrView ProjectSetting::buildInPath()				const { return "built-in"; }
 StrView ProjectSetting::buildInShaderPath()			const { return "built-in/shader"; }
 StrView ProjectSetting::shaderPermutationPath()		const { return "permutation"; }

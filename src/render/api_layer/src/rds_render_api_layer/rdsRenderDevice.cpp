@@ -12,6 +12,7 @@
 
 namespace rds
 {
+
 #if 0
 #pragma mark --- rdsRenderDevice-Impl ---
 #endif // 0
@@ -19,8 +20,9 @@ namespace rds
 
 RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 {
-	apiType			= RenderApiType::Vulkan;
-	isPresent		= true;
+	apiType				= RenderApiType::Vulkan;
+	isPresent			= true;
+	isCompileShaderMode = false;
 	
 	isDebug = RDS_DEBUG;
 }
@@ -28,9 +30,15 @@ RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 bool 
 RenderDevice_CreateDesc::isShaderCompileMode() const
 {
-	return sCast<const Renderer_CreateDesc&>(*this).isUsingForCompileShader;
+	return isCompileShaderMode;
 }
 
+#endif
+
+#if 0
+#pragma mark --- rdsRenderDevice-Impl ---
+#endif // 0
+#if 1
 
 RenderDevice::CreateDesc RenderDevice::makeCDesc() { return CreateDesc{}; }
 
