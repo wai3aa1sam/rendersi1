@@ -11,6 +11,7 @@
 
 #define RDS_IS_TEST_ENGINE 0
 #define RDS_USE_FULL_SCREEEN 0
+#define RDS_USE_RENDER_SINGLE_THREAD_MODE 0
 
 namespace rds
 {
@@ -27,6 +28,7 @@ DemoEditorLayer::DemoEditorLayer()
 	auto rdrCDesc = Renderer::makeCDesc();
 	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
 	DemoEditorApp::instance()->createRenderer(rdrCDesc);
+	JobSystem::instance()->setSingleThreadMode(RDS_USE_RENDER_SINGLE_THREAD_MODE);
 }
 
 DemoEditorLayer::~DemoEditorLayer()

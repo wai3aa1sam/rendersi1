@@ -5,6 +5,9 @@
 #include "../rdsRenderContext.h"
 #include "../transfer/rdsTransferContext.h"
 
+#include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/graph/rdsRenderGraph.h"
+
 namespace rds
 {
 

@@ -2,14 +2,14 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 
-#include "rds_render_api_layer/graph/rdsRenderGraph.h"
-
 namespace rds
 {
 
 class RenderThread;
 class RenderDevice;
 class TransferFrame;
+
+class RenderGraph;
 
 struct RenderData_RenderJob
 {

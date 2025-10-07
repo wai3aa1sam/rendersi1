@@ -1,6 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderThreadQueue.h"
 #include "rdsRenderThread.h"
+#include "rds_render_api_layer/graph/rdsRenderGraph.h"
 
 namespace rds
 {

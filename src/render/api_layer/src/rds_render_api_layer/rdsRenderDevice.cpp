@@ -10,7 +10,6 @@
 
 #include "rdsRenderer.h"
 
-
 namespace rds
 {
 #if 0
@@ -67,6 +66,12 @@ RenderDevice::create(const CreateDesc& cDesc)
 
 	RDS_CORE_ASSERT(_bindlessRscs,	"");
 	RDS_CORE_ASSERT(_tsfCtx,		"");
+
+	if (cDesc.isMultithread)
+	{
+		auto rdThreadCDesc = RenderThread::makeCDesc(JobSystem::instance());
+		//_rdThread.create(rdThreadCDesc);
+	}
 }
 
 void 
@@ -109,7 +114,8 @@ RenderDevice::destroy()
 void 
 RenderDevice::onCreate(const CreateDesc& cDesc)
 {
-	_adapterInfo.isDebug = cDesc.isDebug;
+	_adapterInfo.isDebug		= cDesc.isDebug;
+	_adapterInfo.isMultiThread	= cDesc.isMultithread;
 
 	#if 0
 	_rdFrames.resize(s_kFrameInFlightCount);

@@ -11,8 +11,6 @@
 #include "rdsRenderResource.h"
 #include "rdsRenderResource_T.h"
 
-#define RDS_USE_RENDER_SINGLE_THREAD_MODE 0
-
 namespace rds
 {
 #if 0
@@ -25,12 +23,15 @@ struct RenderAdapterInfo
 	String	adapterName;
 	i64		memorySize = 0;
 
-	bool	isDebug	: 1;
+	bool	isDebug			: 1;
+	bool	isMultiThread	: 1;
 
+public:
 	RenderAdapterInfo()
 	{
 	}
 
+public:
 	struct Feature
 	{
 		void clear()
@@ -58,6 +59,7 @@ struct RenderAdapterInfo
 		float maxSamplerAnisotropy;
 	};
 
+public:
 	Feature feature;
 	Limit	limit;
 };

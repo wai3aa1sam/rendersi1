@@ -11,6 +11,8 @@
 #include "texture/rdsTextureStock.h"
 #include "shader/rdsShaderStock.h"
 
+#include "thread/rdsRenderThread.h"
+
 namespace rds
 {
 
@@ -29,6 +31,7 @@ public:
 	RenderApiType apiType;
 
 	bool isDebug			: 1;
+	bool isMultithread		: 1;
 	bool isPresent			: 1;
 
 public:
