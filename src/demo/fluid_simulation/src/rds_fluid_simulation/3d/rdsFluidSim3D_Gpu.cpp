@@ -429,7 +429,7 @@ VoxelFluid::addPass_renderVoxelMap(PassArgs& passArgs)
 	pass.readTexture(passArgs.tex_voxelMap, TextureUsageFlags::ShaderResource, ShaderStageFlag::Pixel);
 
 	pass.setRenderTarget(passArgs.rtColor,	RenderTargetLoadOp::Load, RenderTargetStoreOp::Store);
-	pass.setDepthStencil(passArgs.dsBuf,		RdgAccess::Write, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
+	pass.setDepthStencil(passArgs.dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Load, RenderTargetLoadOp::Load);
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{

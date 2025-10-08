@@ -35,7 +35,7 @@ DemoEditorMainWindow::onActive(bool isActive)
 {
 	if (isActive)
 	{
-		RDS_CALL_ONCE(hotReloadShaders(););
+		//RDS_CALL_ONCE(hotReloadShaders(););
 		//throwIf(true, "");
 	}
 }
