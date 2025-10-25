@@ -2,19 +2,10 @@
 #include "rdsRenderThreadQueue.h"
 #include "rdsRenderThread.h"
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
+#include "rds_render_api_layer/transfer/rdsTransferContext.h"
 
 namespace rds
 {
-
-void 
-RenderData_RenderJob::create(RenderGraph* renderGraph_, RenderRequest* renderReq)
-{
-	renderGraph			= renderGraph_;
-	renderRequest		= renderReq;
-	renderGraphFrameIdx = renderGraph->frameIndex();
-
-	//throwIf(true, "need to modify RenderGraph, compile to rotateFrame() [if retain mode then rotateFrame in execute()]; and iFrame() -> frameIndex()");
-}
 
 #if 0
 #pragma mark --- rdsRenderThreadQueue-Impl ---
@@ -37,6 +28,15 @@ RenderThreadQueue::create(RenderThread* renderThread)
 	destroy();
 
 	_rdThread = renderThread;
+
+
+	{
+		//auto lock = _rdFramePool.scopedULock();
+		for (size_t i = 0; i < RenderApiLayerTraits::s_kFrameInFlightCount; i++)
+		{
+			_rdJobProducerQueue.push(makeUPtr<RenderJob>());
+		}
+	}
 }
 
 void 
@@ -44,11 +44,34 @@ RenderThreadQueue::destroy()
 {
 	if (_rdThread)
 	{
-		_rdThread->requestTerminate();
+		_rdThread->terminate();
 	}
 	_rdThread = nullptr;
 }
 
+UPtr<RenderJob> 
+RenderThreadQueue::newRenderJob(u64 frameCount)
+{
+	UPtr<RenderJob> o;
+	if (_rdJobProducerQueue.try_pop(o))
+	{
+		o->frameCount = frameCount;
+	}
+	return o;
+}
+
+void RenderThreadQueue::submit(UPtr<RenderJob> renderJob)
+{
+	RDS_CORE_ASSERT(false);
+}
+
+void
+RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&& renderJob)
+{
+	RDS_CORE_ASSERT(false);
+}
+
+#if 0
 void 
 RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&& renderJob)
 {
@@ -63,6 +86,7 @@ RenderThreadQueue::submit(RenderDevice* renderDevice, u64 frameCount, RenderJob&
 
 	_rdThread->requestRender(rds::move(rdData));
 }
+#endif // 0
 
 void 
 RenderThreadQueue::waitFrame(u64 frameCount, int sleepMs)
@@ -93,6 +117,42 @@ RenderThreadQueue::isFinished(u64 engineFrameCount) const
 	return _rdThread->isFrameFinished(engineFrameCount);
 }
 
+UPtr<RenderJob> RenderThreadQueue::consumeRenderJob()
+{
+	return UPtr<RenderJob>();
+}
+
+void RenderThreadQueue::freeRenderJob(UPtr<RenderJob> renderJob)
+{
+}
+
 #endif
+
+void 
+RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_)
+{
+	renderDevice	= renderDevice_;
+	frameCount		= frameCount_;
+	_transferFrame	= nullptr;
+
+	#if 0
+	#if 0
+	auto& tsfCtx = renderDevice_->transferContext();
+	//transferFrame = !tsfCtx.transferFramePtr() ? tsfCtx.newTransferFrame() : tsfCtx.transferFramePtr();
+	#else
+	if (!transferFrame)
+	{
+		auto cDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
+		transferFrame = renderDevice_->createTransferFrame(cDesc);
+	}
+	renderDevice_->transferContext().reset(transferFrame);
+	#endif // 0
+
+	transferFrame->reset();
+	#endif // 0
+	
+	renderRequest().reset(rdCtx);
+	//renderGraph().reset();
+}
 
 }

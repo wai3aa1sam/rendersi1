@@ -54,7 +54,7 @@ protected:
 	virtual void onUiMouseEvent(    UiMouseEvent& ev)		override;
 	virtual void onUiKeyboardEvent( UiKeyboardEvent& ev)	override;
 
-	void drawUI(RenderContext& rdCtx, CRenderableSystem& rdableSys);
+	void drawUI(RenderContext* rdCtx, RenderJob* rdJob);
 	void drawEditorUI(EditorUiDrawRequest& uiDrawReq, RdgTextureHnd texHndPresent);		// should be copied from ImGui
 
 private:
@@ -86,7 +86,8 @@ private:
 
 	UPtr<MeshAssets> _meshAssets;
 
-	bool _isFullScreen = false;
+	bool			_isFullScreen = false;
+	SPtr<Material>	_mtl_screenQuad;
 
 	RenderThread		_rdThread;
 	RenderThreadQueue	_rdThreadQueue;

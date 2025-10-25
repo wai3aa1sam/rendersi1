@@ -7,10 +7,10 @@
 namespace rds
 {
 
-UPtr<TransferFrame> 
+SPtr<TransferFrame> 
 RenderDevice_Vk::onCreateTransferFrame(TransferFrame_CreateDesc& cDesc)
 {
-	auto p = UPtr<TransferFrame>(makeUPtr<TransferFrame_Vk>());
+	auto p = SPtr<TransferFrame>(makeSPtr<TransferFrame_Vk>());
 	p->create(cDesc);
 	return p;
 }

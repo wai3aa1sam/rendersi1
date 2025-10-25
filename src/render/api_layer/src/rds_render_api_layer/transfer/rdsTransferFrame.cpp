@@ -2,18 +2,21 @@
 #include "rdsTransferFrame.h"
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/rdsRenderDevice.h"
+#include "rds_render_api_layer/transfer/command/rdsTransferCommand_Impl.h"
 
 namespace rds
 {
 
-UPtr<TransferFrame> 
+SPtr<TransferFrame> 
 RenderDevice::createTransferFrame(TransferFrame_CreateDesc& cDesc)
 {
+	#if 0
 	{
 		static Atm<u32> debugCreateCount = 0;
 		debugCreateCount++;
 		RDS_CORE_ASSERT(debugCreateCount <= s_kFrameSafeInFlightCount, "TransferFrame should not > s_kFrameSafeInFlightCount");
 	}
+	#endif // 0
 
 	cDesc._internal_create(this);
 	auto p = onCreateTransferFrame(cDesc);
@@ -31,7 +34,7 @@ TransferFrame::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
 	return CreateDesc{RDS_DEBUG_SRCLOC_ARG};
 }
 
-UPtr<TransferFrame> 
+SPtr<TransferFrame> 
 TransferFrame::make(CreateDesc& cDesc)
 {
 	return Renderer::renderDevice()->createTransferFrame(cDesc); 
@@ -86,7 +89,66 @@ TransferFrame::onReset()
 {
 	_constBufAlloc.reset();
 	_tsfReq.reset(&transferContext());
+	auto fn_rdRscBuf = [](auto& buf) { auto data = buf.scopedULock(); data->clear(); };
+	fn_rdRscBuf(_createRdRscBuf);
+	fn_rdRscBuf(_destroyRdRscBuf);
 }
+
+#if 1
+
+void 
+TransferFrame::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
+{
+	auto lock = _createRdRscBuf.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_SetDebugName>();
+
+	cmd->dst	= rdRsc;
+	cmd->name	= name;
+}
+
+void 
+TransferFrame::createRenderGpuBuffer(RenderGpuBuffer* buffer)
+{
+	auto lock = _createRdRscBuf.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_CreateRenderGpuBuffer>();
+
+	cmd->dst = buffer;
+}
+
+void 
+TransferFrame::createTexture(Texture* texture)
+{
+	RDS_TODO("rework command data member for debug SRCLOC, transfer and render also need to rework!!!");
+
+	auto lock = _createRdRscBuf.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_CreateTexture>();
+
+	cmd->dst = texture;
+}
+
+void 
+TransferFrame::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
+{
+	auto lock = _destroyRdRscBuf.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_DestroyRenderGpuBuffer>();
+
+	//OsUtil::sleep_ms(1);
+	cmd->dst = buffer;
+}
+
+void 
+TransferFrame::destroyTexture(Texture* texture)
+{
+	auto lock = _destroyRdRscBuf.scopedULock();
+	auto* cmd = lock->newCommand<TransferCommand_DestroyTexture>();
+
+	//OsUtil::sleep_ms(1);
+	cmd->dst = texture;
+}
+
+
+#endif // 1
+
 
 
 #if 0

@@ -152,8 +152,7 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 		engineData()._uavBindlessHnd	= bindlessRsc.allocImage(this);
 	}
 
-	auto& tsfCtx = rdDev->transferContext();
-	tsfCtx.createTexture(this);
+	transferContext().transferFrame().createTexture(this);
 }
 
 void 
@@ -177,10 +176,7 @@ void
 Texture::_internal_requestDestroyObject()
 {
 	Base::_internal_requestDestroyObject();
-
-	auto* rdDev	 = renderDevice();
-	auto& tsfCtx = rdDev->transferContext();
-	tsfCtx.destroyTexture(this);
+	transferContext().transferFrame().destroyTexture(this);
 }
 
 bool 

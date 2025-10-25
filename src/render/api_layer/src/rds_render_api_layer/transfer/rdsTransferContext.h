@@ -8,6 +8,7 @@ namespace rds
 
 class Texture;
 class RenderDevice;
+class RenderJob;
 
 struct TransferContext_CreateDesc : public RenderResource_CreateDesc
 {
@@ -22,6 +23,7 @@ struct TransferContext_CreateDesc : public RenderResource_CreateDesc
 class TransferContext : public RenderResource
 {
 	friend class RenderDevice;
+	friend class RenderThread;
 public:
 	using Base			= RenderResource;
 	using CreateDesc	= TransferContext_CreateDesc;
@@ -37,54 +39,34 @@ public:
 	void create	(const CreateDesc& cDesc);
 	void destroy();
 
-	void transferBegin();
-	void transferEnd();
+public:
+	void submit(RenderJob* rdJob);
 
-	void commit(RenderFrameParam& rdFrameParam, UPtr<TransferFrame>&& tsfFrame_, bool isWaitImmediate);
-
+protected:
 	virtual void waitFrameFinished(RenderFrameParam& rdFrameParam);
 
 public:
-	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
-
-	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
-	void createTexture(			Texture*			texture);
-
-	void destroyRenderGpuBuffer(RenderGpuBuffer*	buffer);
-	void destroyTexture(		Texture*			texture);
+	#if 0
+	SPtr<TransferFrame> newTransferFrame();
+	void				_internal_freeTransferFrame(SPtr<TransferFrame>&& tsfFrame);
+	#endif // 0
 
 public:
 	TransferFrame&		transferFrame();
-	UPtr<TransferFrame> allocTransferFrame();
+	TransferFrame*		transferFramePtr();
 
 protected:
 	virtual void onCreate	(const CreateDesc& cDesc);
 	virtual void onDestroy	();
 
-	virtual void onTransferBegin();
-	virtual void onTransferEnd();
-
 	template<class CTX> void _dispatchCommands(	CTX* ctx, TransferCommandBuffer& cmdBuf);
 	template<class CTX> void _dispatchCommand(	CTX* ctx, TransferCommand* cmd);
-	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate);
-
-			void createRenderResources( const RenderFrameParam& rdFrameParam);
-			void destroyRenderResources(const RenderFrameParam& rdFrameParam);
-	virtual void onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate);
-
-protected:
-	template<class TCmd, class TSafeBuf> static TCmd* newCommand(TSafeBuf& safeBuf);
-
-	void releasePreviousTransferFrame();
 
 private:
-	TransferCommandSafeBuffer	_createRdRscQueue;
-	TransferCommandSafeBuffer	_destroyRdRscQueue;
-
-	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameInFlightCount> >;
-	TransferFramePool									_tsfFramePool;
-	Vector<UPtr<TransferFrame>, s_kFrameInFlightCount>	_prevTsfFrames;
-	UPtr<TransferFrame>									_curTsfFrame = nullptr;
+	//AtmQueue<SPtr<TransferFrame> >	_freeTsfFrames;		// Producer, currently do not use this design, should think about when multiple RenderContext
+	using TransferFrames = Vector<SPtr<TransferFrame>, s_kMaxFrameAheadCountHardLimit>;
+	TransferFrames		_tsfFrames;
+	Atm<u32>			_tsfFrameIdx = 0;
 };
 
 template<class CTX> inline

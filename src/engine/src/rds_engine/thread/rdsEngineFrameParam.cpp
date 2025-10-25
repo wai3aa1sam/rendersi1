@@ -35,7 +35,7 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 
 	_frameCount++;
 	auto frameCount = this->frameCount();
-	wait(frameCount, rdCtx, renderThreadQueue, true);
+	//wait(frameCount, rdCtx, renderThreadQueue, true);
 
 	auto* rdDev = Renderer::renderDevice();
 	rdDev->resetEngineFrame(frameCount);		// next frame here will clear those in Layer::onCreate()

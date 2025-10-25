@@ -184,15 +184,11 @@ CRenderableSystem::render()
 }
 
 void 
-CRenderableSystem::setupRenderJob(RenderData_RenderJob& out)
+CRenderableSystem::setupRenderJob(RenderJob& o)
 {
-	auto& rdJob = out;
-
-	auto&	rdGraph		= renderGraph();
-	auto	frameIndex	= engineContext().engineFrameParam().frameIndex();
-	auto&	rdReq		= renderRequest(frameIndex);
-
-	rdJob.create(&rdGraph, &rdReq);
+	RDS_TODO("remove");
+	o._renderGraph			= &renderGraph();
+	o._renderGraphFrameIdx	= renderGraph().frameIndex();
 }
 
 void 

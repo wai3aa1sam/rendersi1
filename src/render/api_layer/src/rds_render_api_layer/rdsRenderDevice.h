@@ -83,10 +83,18 @@ public:
 	void create(const CreateDesc& cDesc);
 	void destroy();
 
+public:
+	class RenderInputFrameParam;
+	UPtr<RenderJob> newRenderJob(RenderContext* rdCtx, u64 frameCount);
+	void submitRenderJob(UPtr<RenderJob> rdJob);
+
 	void reset(u64 frameCount);
 	void resetEngineFrame(u64 engineFrameCount);
 
 	virtual void waitIdle();
+	//void waitIdle();
+	void waitCpuIdle();
+	void waitGpuIdle();
 
 public:
 	SPtr<RenderContext>			createContext(				const	RenderContext_CreateDesc&		cDesc);
@@ -104,7 +112,8 @@ public:
 	SPtr<Material>				createMaterial(						Shader*							shader);
 	SPtr<Material>				createMaterial();
 
-	UPtr<TransferFrame>			createTransferFrame(				TransferFrame_CreateDesc&		cDesc);
+	// frame only exist 1 for 1 frame, Request could have many
+	SPtr<TransferFrame>			createTransferFrame(				TransferFrame_CreateDesc&		cDesc);
 
 public:
 	SPtr<Texture2D>	createSolidColorTexture2D(  const Color4b& color);
@@ -116,7 +125,6 @@ public:
 			TextureStock&			textureStock();
 //			RenderFrame&			renderFrame(	u64	frameIdx);
 			TransferFrame&			transferFrame();
-			UPtr<TransferFrame>		releaseTransferFrame();
 			TransferContext&		transferContext();
 			TransferRequest&		transferRequest();
 
@@ -147,22 +155,32 @@ protected:
 	virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&				cDesc)	= 0;
 	virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&			cDesc)	= 0;
 
-	virtual UPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	= 0;
+
+public:
+	void _internal_freeRenderJob(UPtr<RenderJob> rdJob);
 
 protected:
 	RenderApiType		_apiType = RenderApiType::Vulkan;
 
+	// TODO: RenderThread version layer for all resource, and specific type of that resource
+	// eg. Render_RenderResource, Render_RenderDevice
+	// Render_RenderDevice* _rd_rdDev = nullptr;
+
+	RenderThread				_rdThread;			// Consumer inside, _pendingRdJobs; 
+	// no need processingRdJobs, this is for check the gpu side is completed or not
+	AtmQueue<UPtr<RenderJob> >	_freeRdJobs;		// Producer
+
+	RenderFrameParam			_rdFrameParam;
+
 	RenderAdapterInfo	_adapterInfo;
 	VertexLayoutManager _vertexLayoutManager;
 
-	RenderFrameParam	_rdFrameParam;
 	/*
 	* TODO: rework
 	*/
 	//Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
 	//Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
-	UPtr<TransferFrame>		_tsfFrame = nullptr;
-
 	BindlessResources*		_bindlessRscs	= nullptr;
 	TransferContext*		_tsfCtx			= nullptr;
 
@@ -176,11 +194,9 @@ inline			ShaderStock&			RenderDevice::shaderStock()					{ return _shaderStock; }
 inline			TextureStock&			RenderDevice::textureStock()				{ return _textureStock; }
 
 //inline			RenderFrame&			RenderDevice::renderFrame(	u64	frameIdx)	{ _notYetSupported(RDS_SRCLOC); return _rdFrames[frameIdx]; }
-inline			TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); return *_tsfFrame; }
-inline			UPtr<TransferFrame>		RenderDevice::releaseTransferFrame()		{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); auto p = rds::move(_tsfFrame); return p; }
+//inline			UPtr<TransferFrame>		RenderDevice::releaseTransferFrame()		{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); auto p = rds::move(_tsfFrame); return p; }
 
 inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx; }
-inline			TransferRequest&		RenderDevice::transferRequest()				{ checkMainThreadExclusive(RDS_SRCLOC); return transferFrame().transferRequest(); }
 
 inline			BindlessResources&		RenderDevice::bindlessResource()			{ return *_bindlessRscs; }
 
@@ -198,3 +214,16 @@ inline			u32						RenderDevice::frameIndex()			const	{ return sCast<u32>((frameC
 
 
 }
+
+#define RDS_RENDER_DEVICE_INTERFACE_ON_CREATE(T) \
+virtual SPtr<RenderContext>			onCreateContext(			const	RenderContext_CreateDesc&		cDesc)	override; \
+virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc)	override; \
+virtual SPtr<Texture2D>				onCreateTexture2D(					Texture2D_CreateDesc&			cDesc)	override; \
+virtual SPtr<Texture3D>				onCreateTexture3D(					Texture3D_CreateDesc&			cDesc)	override; \
+virtual SPtr<TextureCube>			onCreateTextureCube(				TextureCube_CreateDesc&			cDesc)	override; \
+virtual SPtr<Texture2DArray>		onCreateTexture2DArray(				Texture2DArray_CreateDesc&		cDesc)	override; \
+virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&				cDesc)	override; \
+virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&			cDesc)	override; \
+																														  \
+virtual SPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	override; \
+// ---

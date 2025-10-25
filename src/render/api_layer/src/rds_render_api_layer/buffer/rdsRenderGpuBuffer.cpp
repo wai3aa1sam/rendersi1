@@ -66,7 +66,7 @@ void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 		_bindlessHnd = renderDevice()->bindlessResource().allocBuffer(this);
 	}
 
-	transferContext().createRenderGpuBuffer(this);
+	transferContext().transferFrame().createRenderGpuBuffer(this);
 }
 
 void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
@@ -84,7 +84,7 @@ void
 RenderGpuBuffer::_internal_requestDestroyObject()
 {
 	Base::_internal_requestDestroyObject();
-	transferContext().destroyRenderGpuBuffer(this);
+	transferContext().transferFrame().destroyRenderGpuBuffer(this);
 }
 
 void 

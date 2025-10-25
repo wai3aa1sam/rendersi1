@@ -22,6 +22,7 @@ RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 {
 	apiType				= RenderApiType::Vulkan;
 	isPresent			= true;
+	isMultithread		= true;
 	isCompileShaderMode = false;
 	
 	isDebug = RDS_DEBUG;
@@ -63,23 +64,23 @@ RenderDevice::create(const CreateDesc& cDesc)
 	if (cDesc.isShaderCompileMode())
 		return;
 
-	/*for (size_t i = 0; i < s_kFrameInFlightCount; i++)
-	{
-		_tsfCtx->transferRequest(i).reset(_tsfCtx, &_tsfFrames[i]);
-	}*/
-	_tsfFrame = transferContext().allocTransferFrame();
-
-	_shaderStock.create(this);
-	_textureStock.create(this);
-
 	RDS_CORE_ASSERT(_bindlessRscs,	"");
 	RDS_CORE_ASSERT(_tsfCtx,		"");
+	
+	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
+	{
+		auto o = makeUPtr<RenderJob>();
+		_freeRdJobs.push(rds::move(o));
+	}
 
 	if (cDesc.isMultithread)
 	{
 		auto rdThreadCDesc = RenderThread::makeCDesc(JobSystem::instance());
-		//_rdThread.create(rdThreadCDesc);
+		_rdThread.create(rdThreadCDesc);
 	}
+
+	_shaderStock.create(this);
+	_textureStock.create(this);
 }
 
 void 
@@ -90,12 +91,14 @@ RenderDevice::destroy()
 
 	waitIdle();
 
+	_rdThread.terminate();
+
 	_shaderStock.destroy();
 	_textureStock.destroy();
 
 	//_rdFrames.clear();
 	//_tsfFrames.clear();
-	_tsfFrame.reset(nullptr);
+	//_tsfFrame.reset(nullptr);
 
 	if (_tsfCtx)
 	{
@@ -117,6 +120,42 @@ RenderDevice::destroy()
 	RDS_CORE_ASSERT(!_tsfCtx,				"forgot to call destroy() _tsfCtx");
 	//RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
 	//RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");
+}
+
+UPtr<RenderJob> 
+RenderDevice::newRenderJob(RenderContext* rdCtx, u64 frameCount)
+{
+	UPtr<RenderJob> o;
+	for (;;)
+	{
+		_freeRdJobs.try_pop(o);
+		if (o)
+			break;
+		OsUtil::sleep_ms(1); RDS_TODO("pass a param here");
+	}
+	o->reset(this, rdCtx, frameCount);
+	return o;
+}
+
+void 
+RenderDevice::_internal_freeRenderJob(UPtr<RenderJob> rdJob)
+{
+	//transferContext()._internal_freeTransferFrame(rds::move(rdJob->transferFrame));
+	_freeRdJobs.push(rds::move(rdJob));
+}
+
+void 
+RenderDevice::submitRenderJob(UPtr<RenderJob> rdJob)
+{
+	_tsfCtx->submit(rdJob);
+	if (adapterInfo().isMultiThread)
+	{
+		_rdThread.requestRender(rds::move(rdJob));
+	}
+	else
+	{
+		_rdThread.render(rds::move(rdJob));
+	}
 }
 
 void 
@@ -178,14 +217,23 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 
 	//auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
 	//_tsfFrame = createTransferFrame(tsfFrameCDesc);
-	RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
-	_tsfFrame = transferContext().allocTransferFrame();
+	
+	//RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
+	//_tsfFrame = transferContext().allocTransferFrame();
 }
 
 void 
 RenderDevice::waitIdle()
 {
+	RDS_ASSERT(true, "impl wait current frame");
+}
 
+void RenderDevice::waitCpuIdle()
+{
+}
+
+void RenderDevice::waitGpuIdle()
+{
 }
 
 SPtr<Texture2D>	
@@ -208,5 +256,7 @@ RenderDevice::onResetFrame(u64 frameCount)
 
 #endif
 
+TransferRequest&		RenderDevice::transferRequest()				{ checkMainThreadExclusive(RDS_SRCLOC); return transferFrame().transferRequest(); }
+TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);	return transferContext().transferFrame(); }
 
 }

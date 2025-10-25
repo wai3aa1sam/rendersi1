@@ -32,7 +32,7 @@ public:
 
 public:
 	static CreateDesc				makeCDesc(RDS_DEBUG_SRCLOC_PARAM);
-	static UPtr<TransferFrame>		make(CreateDesc& cDesc);
+	static SPtr<TransferFrame>		make(CreateDesc& cDesc);
 
 public:
 	TransferFrame();
@@ -53,6 +53,15 @@ public:
 	//virtual void	uploadToStagingBuf(		StagingHandle& out, ByteSpan	data, SizeType offset = 0)	= 0;
 	//virtual void*	mappedStagingBufData(	StagingHandle  hnd)											= 0;
 
+public:
+	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
+
+	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
+	void createTexture(			Texture*			texture);
+
+	void destroyRenderGpuBuffer(RenderGpuBuffer*	buffer);
+	void destroyTexture(		Texture*			texture);
+
 protected:
 	virtual void onCreate(		CreateDesc& cDesc);
 	virtual void onPostCreate(	CreateDesc& cDesc);
@@ -63,17 +72,23 @@ public:
 	void _internal_requestDestroyObject();
 
 public:
-	TransferRequest&		transferRequest();
-	LinearStagingBuffer&	constBufferAllocator();
+	TransferRequest&			transferRequest();
+	LinearStagingBuffer&		constBufferAllocator();
+	TransferCommandSafeBuffer&	createRenderResourceBuffer();
+	TransferCommandSafeBuffer&	destroyRenderResourceBuffer();
 
 private:
 	LinearStagingBuffer _constBufAlloc;
 	TransferRequest		_tsfReq;
+
+	TransferCommandSafeBuffer	_createRdRscBuf;
+	TransferCommandSafeBuffer	_destroyRdRscBuf;
 };
 
-inline TransferRequest&		TransferFrame::transferRequest()		{ return _tsfReq; }
-inline LinearStagingBuffer&	TransferFrame::constBufferAllocator()	{ return _constBufAlloc; }
-
+inline TransferRequest&				TransferFrame::transferRequest()				{ return _tsfReq; }
+inline LinearStagingBuffer&			TransferFrame::constBufferAllocator()			{ return _constBufAlloc; }
+inline TransferCommandSafeBuffer&	TransferFrame::createRenderResourceBuffer()		{ return _createRdRscBuf; }
+inline TransferCommandSafeBuffer&	TransferFrame::destroyRenderResourceBuffer()	{ return _destroyRdRscBuf; }
 
 #endif
 

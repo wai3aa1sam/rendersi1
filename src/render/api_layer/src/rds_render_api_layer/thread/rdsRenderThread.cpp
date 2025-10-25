@@ -8,6 +8,9 @@
 #include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
 
+#include "rds_render_api_layer/backend/base/rdsProxy_RenderDevice.h"
+#include "rds_render_api_layer/backend/base/rdsProxy_TransferContext.h"
+
 namespace rds
 {
 
@@ -56,10 +59,10 @@ RenderThread::onDestroy()
 void 
 RenderThread::onThreadState_Terminate()
 {
-	UPtr<RenderData> rdData;
-	while (_rdDataQueue.try_pop(rdData))
+	UPtr<RenderJob> rdJob;
+	while (_rdJobConsumerQueue.try_pop(rdJob))
 	{
-		render(*rdData);
+		render(rds::move(rdJob));
 	}
 	Renderer::instance()->destroy();
 
@@ -91,12 +94,12 @@ RenderThread::onRoutine()
 	{
 		if (_state == State::Terminate) { onThreadState_Terminate(); break; }
 
-		UPtr<RenderData> rdData;
-		bool hasRequestRender = _rdDataQueue.try_pop(rdData);		// seems try_pop is poping front, if no hints could try once more
+		UPtr<RenderJob> rdJob;
+		bool hasRequestRender = _rdJobConsumerQueue.try_pop(rdJob);		// seems try_pop is poping front, if no hints could try once more
 		if (hasRequestRender)
 		{
 			setState(RenderThreadState::Processing);
-			render(*rdData);
+			render(rds::move(rdJob));
 		}
 		else
 		{
@@ -116,78 +119,73 @@ RenderThread::onRoutine()
 }
 
 void 
-RenderThread::requestRender(UPtr<RenderData>&& renderData)
+RenderThread::requestRender(UPtr<RenderJob> rdJob)
 {
 	//RDS_CORE_LOG_ERROR("requestRender() - renderData.frameCount: {}", renderData->frameCount);
-
 	//RDS_CORE_ASSERT(!isTerminated(), " RenderThread has already terminated");
-	_rdDataQueue.push(rds::move(renderData));
+	_rdJobConsumerQueue.push(rds::move(rdJob));
 }
 
 void 
-RenderThread::requestTerminate()
+RenderThread::terminate()
 {
 	setState(RenderThreadState::Terminate);
+	// quit the thread
+	// wait quit
+	// process the remaining
 }
 
 void 
 RenderThread::waitTerminated()
 {
-	while (!isFrameFinished(currentFrameCount()) || _state != RenderThreadState::TerminateEnd)
+	UPtr<RenderJob> rdJob;
+	bool hasRequestRender = _rdJobConsumerQueue.try_pop(rdJob);		// seems try_pop is poping front, if no hints could try once more
+	if (hasRequestRender)
+	{
+		render(rds::move(rdJob));
+	}
+
+	/*while (!isFrameFinished(currentFrameCount()) || _state != RenderThreadState::TerminateEnd)
 	{
 		OsUtil::sleep_ms(1);
-	}
+	}*/
 }
 
 void
-RenderThread::render(RenderData& renderData)
+RenderThread::render(UPtr<RenderJob> renderJob)
 {
-	auto curFrame = renderData.frameCount;
-	RDS_CORE_ASSERT(renderData.frameCount == _curFrameCount + 1, "RenderThread order incorrect");
+	auto curFrame = renderJob->frameCount;
+	//RDS_CORE_ASSERT(renderJob->frameCount == _curFrameCount + 1, "RenderThread order incorrect");
 	_curFrameCount.store(curFrame);
 
 	RDS_PROFILE_DYNAMIC_FMT("render() - frame {}", curFrame);
 
-	auto* rdDev			= renderData.renderDevice;
-	auto& rdFrameParam	= rdDev->renderFrameParam();
+	auto* rdDev			= renderJob->renderDevice;
+	//auto& tsfCtx	= rdDev->transferContext();
 
-	rdDev->reset(curFrame);
-	// vmaSetCurrentFrameIndex();	// 
+	auto* pxy_rdDev		= sCast<Proxy_RenderDevice*>(renderJob->renderDevice);
+	auto* pxy_tsfCtx	= sCast<Proxy_TransferContext*>(&rdDev->transferContext());
+
+	pxy_rdDev->reset(renderJob, pxy_tsfCtx);
 
 	{
-		auto& tsfCtx	= rdDev->transferContext();
-		//auto& tsfReq	= tsfCtx.transferRequest(Traits::rotateFrame(curFrame));
-		tsfCtx.transferBegin();
-		tsfCtx.commit(rdFrameParam, rds::move(renderData.transferFrame), false);
+		pxy_tsfCtx->transferBegin();
+		pxy_tsfCtx->commit(renderJob, false);
 
 		{
-			// RenderFrameContext
-			// beginFrame();
-			//		for ... render()
-			// endFrame();		// only submit here
-			for (auto& e : renderData.renderJobs)
-			{
-				//RDS_CORE_LOG_ERROR("render begin - curFrame: {}, e.renderGraphFrameIdx: {}", curFrame, e.renderGraphFrameIdx);
+			auto&	rdGraph		= renderJob->renderGraph();
+			auto*	rdCtx		= rdGraph.renderContext();
+			//auto	frameIndex	= rdFrameParam.frameIndex();
 
-				auto&	rdGraph		= *e.renderGraph;
-				auto*	rdCtx		= rdGraph.renderContext();
-				//auto	frameIndex	= rdFrameParam.frameIndex();
+			rdCtx->beginRender();
 
-				rdCtx->beginRender();
+			rdGraph.commit(renderJob->_renderGraphFrameIdx);
+			rdCtx->commit(renderJob->renderRequest());
 
-				rdGraph.commit(e.renderGraphFrameIdx);
-				if (auto* rdReq = e.renderRequest)
-				{
-					rdCtx->commit(*rdReq);
-				}
-
-				rdCtx->endRender();
-
-				//RDS_CORE_LOG_ERROR("render end - curFrame: {}, e.renderGraphFrameIdx: {}", curFrame, e.renderGraphFrameIdx);
-			}
+			rdCtx->endRender();
 		}
 
-		tsfCtx.transferEnd();
+		pxy_tsfCtx->transferEnd();
 	}
 
 	RDS_TODO(
@@ -195,16 +193,18 @@ RenderThread::render(RenderData& renderData)
 		"\n or there is multi RenderThread"
 	);
 	_lastFinishedFrameCount.store(curFrame);
+
+	rdDev->_internal_freeRenderJob(rds::move(renderJob));
 }
 
 void 
 RenderThread::_temp_render()
 {
-	UPtr<RenderData> rdData;
-	bool hasRequestRender = _rdDataQueue.try_pop(rdData);
+	UPtr<RenderJob> o;
+	bool hasRequestRender = _rdJobConsumerQueue.try_pop(o);
 	if (hasRequestRender)
 	{
-		render(*rdData);
+		render(rds::move(o));
 	}
 }
 

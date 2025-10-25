@@ -2,7 +2,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
-#include "rds_render_api_layer/transfer/rdsTransferContext.h"
+#include "rds_render_api_layer/backend/base/rdsProxy_TransferContext.h"
 #include "rdsVk_TransferFrame.h"
 
 #include "rds_render_api_layer/transfer/command/rds_transfer_command.h"
@@ -17,7 +17,7 @@ namespace rds
 #endif // 0
 #if 1
 
-class TransferContext_Vk : public RenderResource_Vk<TransferContext>
+class TransferContext_Vk : public RenderResource_Vk<Proxy_TransferContext>
 {
 public:
 	using Vk_TransferFrames = Vector<Vk_TransferFrame, s_kFrameInFlightCount>;
@@ -61,8 +61,8 @@ protected:
 	virtual void onCreate(const CreateDesc& cDesc)	override;
 	virtual void onDestroy()						override;
 
-	virtual void onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)			override;
-	virtual void onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate)						override;
+	virtual void onCommit(RenderJob* rdJob, bool isWaitImmediate)								override;
+	virtual void onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate)	override;
 
 	virtual void onTransferBegin()	override;
 	virtual void onTransferEnd()	override;

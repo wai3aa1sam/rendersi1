@@ -11,7 +11,7 @@
 
 #define RDS_IS_TEST_ENGINE 0
 #define RDS_USE_FULL_SCREEEN 0
-#define RDS_USE_RENDER_SINGLE_THREAD_MODE 1
+#define RDS_USE_RENDER_SINGLE_THREAD_MODE 0
 
 namespace rds
 {
@@ -27,6 +27,7 @@ DemoEditorLayer::DemoEditorLayer()
 	
 	auto rdrCDesc = Renderer::makeCDesc();
 	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
+	rdrCDesc.isMultithread = !RDS_USE_RENDER_SINGLE_THREAD_MODE;
 	DemoEditorApp::instance()->createRenderer(rdrCDesc);
 	JobSystem::instance()->setSingleThreadMode(RDS_USE_RENDER_SINGLE_THREAD_MODE);
 }
@@ -36,13 +37,8 @@ DemoEditorLayer::~DemoEditorLayer()
 	#if 1
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
-	_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, true);
-	
-	RDS_TODO("temp fix, move to consumer pattern should fix it");
-	while (!_rdThreadQueue.isFinished(_egCtx.engineFrameParam().frameCount()))
-	{
-		OsUtil::sleep_ms(0);
-	}
+	//_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, true);
+	Renderer::renderDevice()->destroy();
 	
 	_testEngine.reset(nullptr);
 	_gfxDemo.reset(nullptr);
@@ -51,7 +47,7 @@ DemoEditorLayer::~DemoEditorLayer()
 	_egCtx.destroy();
 
 	mainWnd.destroy();
-	_rdThreadQueue.destroy();
+	//_rdThreadQueue.destroy();
 	#endif // 1
 }
 
@@ -73,10 +69,6 @@ DemoEditorLayer::onCreate()
 	JobSystem::instance()->setSingleThreadMode(false);
 	
 	_egCtx.create();
-	#if !RDS_USE_RENDER_SINGLE_THREAD_MODE
-	_rdThread.create(RenderThread::makeCDesc(JobSystem::instance()));
-	#endif // !RDS_USE_RENDER_SINGLE_THREAD_MODE
-	_rdThreadQueue.create(&_rdThread);
 
 	_testEngine = RDS_NEW(TestEngine);
 
@@ -84,6 +76,7 @@ DemoEditorLayer::onCreate()
 	_sceneView.create(&_scene, &renderableSystem());
 	_edtCtx.create();
 	_meshAssets = makeUPtr<MeshAssets>();
+	RenderUtil::createMaterial(&_mtl_screenQuad, "asset/shader/pass_feature/utility/image/rdsScreenQuad.shader");
 
 	RDS_CORE_ASSERT(_gfxDemo, "");
 	_gfxDemo->onCreate();
@@ -96,15 +89,27 @@ DemoEditorLayer::onCreate()
 	_gfxDemo->onCreateScene(&_scene);
 
 	// temp solution for submit to trigger first frame TransferContext::commit
+	#if 0
 	{
-		drawUI(rdCtx, renderableSystem());			
-		submitRenderJob(Renderer::renderDevice());
-		_rdThreadQueue.waitFrame(_egCtx.engineFrameParam().frameCount());
-		// wait gpu here then, only s_kFrameInFlightCount buffer is ok, no need s_kFrameSafeInFlightCount (s_kFrameInFlightCount + 1)
-		bool isWaitGpu = true;
-		_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, isWaitGpu);
-	}
+		auto* rdDev = Renderer::renderDevice();
 
+		// RenderJob contains all rendering related data that is needed in this frame
+
+		// this store rdJob in renderDevice as a member, could access by all Resource eg. RenderGpuBuffer, Texture
+		// TODO: pass EngineFrameParam.frameCount()
+		auto rdJob = rdDev->newRenderJob(&rdCtx, RenderApiLayerTraits::s_kFirstFrameCount);
+
+		// TODO: RenderGraph in rdJob
+		renderableSystem().setupRenderJob(*rdJob);
+
+		drawUI(&rdCtx, rdJob);
+		rdDev->submitRenderJob(rds::move(rdJob));
+		rdDev->waitIdle();
+	}
+	#endif // 0
+
+
+	// TODO: onWaitFrame Callback, and set_isWaitFrame();
 	app()._frameControl.isWaitFrame = !RDS_IS_TEST_ENGINE;
 }
 
@@ -118,10 +123,20 @@ DemoEditorLayer::onUpdate()
 
 	auto& egCtx			= _egCtx;
 	auto& egFrameParam	= egCtx.engineFrameParam();
+	
+	RDS_TODO("prepareRender is 369, please fix it");
 
+	egFrameParam.reset(&rdCtx, &_rdThreadQueue);		// member is 0 when init
 	bool isFirstFrame = egFrameParam.frameCount() == RenderApiLayerTraits::s_kFirstFrameCount; RDS_UNUSED(isFirstFrame);
 
-	egFrameParam.reset(&rdCtx, &_rdThreadQueue);
+	// TODO: remove, i think save frameCount in RenderDevice is on9
+	// Shader / Material use same strategy as MultiXXXX, save a index in it
+	//rdDev->reset(frameCount);
+
+	auto* rdDev = Renderer::renderDevice();
+	auto rdJob = rdDev->newRenderJob(&rdCtx, egFrameParam.frameCount());
+	// TODO: retry and wait if no rdJob available
+	// TODO: start other thread render stuff eg. extra window?
 
 	//auto frameCount = egFrameParam.frameCount();
 	//RDS_PROFILE_DYNAMIC_FMT("onUpdate() i[{}]-frame[{}]", RenderTraits::rotateFrame(frameCount), frameCount);
@@ -166,10 +181,13 @@ DemoEditorLayer::onUpdate()
 	rdableSys.commit(scene());
 
 	// ui
-	drawUI(rdCtx, rdableSys);
-	
-	RenderDevice* rdDev = Renderer::renderDevice();
-	submitRenderJob(rdDev);
+	drawUI(&rdCtx, rdJob);
+
+	// TODO: remove
+	rdableSys.setupRenderJob(*rdJob);
+
+	RDS_TODO("we must confirm that this frame is finished eg. async upload texture...?");
+	rdDev->submitRenderJob(rds::move(rdJob));
 }
 
 void
@@ -344,10 +362,10 @@ DemoEditorLayer::onUiKeyboardEvent(UiKeyboardEvent& ev)
 }
 
 void 
-DemoEditorLayer::drawUI(RenderContext& rdCtx, CRenderableSystem& rdableSys)
+DemoEditorLayer::drawUI(RenderContext* rdCtx, RenderJob* rdJob)
 {
-	auto& rdUiCtx = rdCtx.renderdUiContex();
-	rdUiCtx.onBeginRender(&rdCtx);
+	auto& rdUiCtx = rdCtx->renderdUiContex();
+	rdUiCtx.onBeginRender(rdCtx);
 	{
 		auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
 		{
@@ -358,9 +376,40 @@ DemoEditorLayer::drawUI(RenderContext& rdCtx, CRenderableSystem& rdableSys)
 			_gfxDemo->onDrawGui(uiDrawReq);
 		}
 
-		rdableSys.drawUi(&rdCtx, !_isFullScreen, true);
+		bool isDrawUi		= !_isFullScreen;
+		bool isDrawToScreen = true;
+		{
+			// present pass
+
+			// record present
+			{
+				auto& rdReq = rdJob->renderRequest();
+				//RDS_CORE_LOG_ERROR("drawUi - {}", engineContext().engineFrameParam().frameIndex());
+				//RDS_CORE_ASSERT(rdCtx == rdCtx_, "");
+
+				//rdReq.reset(rdCtx);	// reset when newRenderJob()
+				auto* clearValue = rdReq.clearFramebuffers();
+				clearValue->setClearColor();
+				clearValue->setClearDepth();
+
+				if (isDrawUi)
+					rdCtx->drawUI(rdReq);
+				else
+				{
+					if (isDrawToScreen)
+					{
+						RDS_TODO("temporary fix");
+						RenderRequest temp;
+						rdCtx->drawUI(temp);
+
+						rdReq.drawSceneQuad(RDS_SRCLOC, _mtl_screenQuad);
+					}
+					//rdReq.swapBuffers();
+				}
+			}
+		}
 	}
-	rdUiCtx.onEndRender(&rdCtx);
+	rdUiCtx.onEndRender(rdCtx);
 }
 
 void
@@ -369,7 +418,7 @@ DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
 	auto& egFrameParam	= _egCtx.engineFrameParam();
 	auto& rdableSys		= renderableSystem();
 
-	RenderData_RenderJob rdJob;
+	RenderJob rdJob;
 	rdableSys.setupRenderJob(rdJob);
 	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rds::move(rdJob));
 	#if RDS_USE_RENDER_SINGLE_THREAD_MODE

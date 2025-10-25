@@ -84,9 +84,9 @@ TransferContext_Vk::onTransferEnd()
 }
 
 void 
-TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& tsfReq, bool isWaitImmediate)
+TransferContext_Vk::onCommit(RenderJob* rdJob, bool isWaitImmediate)
 {
-	Base::onCommit(rdFrameParam, tsfReq, isWaitImmediate);
+	Base::onCommit(rdJob, isWaitImmediate);
 
 	auto* rdDevVk		= renderDeviceVk();
 	auto  frameIdx		= frameIndex();
@@ -98,8 +98,8 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 	auto& vkQueueData		= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
 	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);	// no want to want then may use same method in TransferFrame, but seems on9, just keep simple
 
-	auto lock = tsfReq.transferCommandBuffer().scopedULock();		// maybe swap to a local, then no need to lock too long, but only this own it now
-	auto& tsfCmdBuf = *lock;
+	auto data = transferFrame().transferRequest().transferCommandBuffer().scopedULock();		// maybe swap to a local, then no need to lock too long, but only this own it now
+	auto& tsfCmdBuf = *data;
 	Span<TransferCommand*> tsfCmds = tsfCmdBuf.commands();
 
 	if (tsfCmds.is_empty())
@@ -121,10 +121,13 @@ TransferContext_Vk::onCommit(RenderFrameParam& rdFrameParam, TransferRequest& ts
 
 	vkCmdBuf->endRecord();
 	
-	// if wait in here, then must follow TransferFrame pattern, instead of s_kFrameInFlightCount
+	// if wait in here, then must follow TransferFrame pattern (aka ahead_pattern), instead of s_kFrameInFlightCount
 	RDS_TODO("must wait last submit here, since same frame index gpu may using the resources, currently waited in Engine so it is safe now");
 	RDS_TODO("btw need revisit vulkan barrier, will diff submit being pick and have race condition?");
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");
+
+	RDS_TODO("2025_10_16, just separate two if wait here, Vk_MultiCommandPool(with ahead_pattern) + Vk_TransferFrame(only contains fence)");
+
 
 	RenderDebugLabel debugLabel;
 	debugLabel.name = "TransferContext_Vk::onCommit()";
@@ -446,7 +449,7 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 #endif // 1
 
 Vk_TransferFrame& TransferContext_Vk::vkTransferFrame(u64 frameIdx) { return _vkTransferFrames[frameIdx]; }
-TransferFrame_Vk& TransferContext_Vk::transferFrameVk()				{ return sCast<TransferFrame_Vk&>(TransferContext::transferFrame()); }
+TransferFrame_Vk& TransferContext_Vk::transferFrameVk()				{ return sCast<TransferFrame_Vk&>(Base::transferFrame()); }
 
 
 #endif

@@ -47,16 +47,24 @@ public:
 	~RenderThread();
 
 public:
-	void requestRender(UPtr<RenderData>&& renderData);
-	void requestTerminate();
+	UPtr<RenderJob> newRenderJob(RenderDevice* renderDevice, u64 frameCount);
+	void requestRender(UPtr<RenderJob> renderJob);
+
+	//void requestRender(UPtr<RenderData> renderData);
+	void terminate();
 
 public:
+	void render(UPtr<RenderJob> renderJob);
+
+public:
+	void waitSignaled();
 	void waitTerminated();
 
 public:
 	bool	isTerminated()				const;
 	bool	isReadyToProcess()			const;
 	bool	isIdle()					const;
+	bool	isSignaled()				const;
 	bool	isFrameFinished(u64 frame)	const;
 	u64		currentFrameCount()			const;
 	u64		lastFinishedFrameCount()	const;
@@ -65,9 +73,8 @@ protected:
 	virtual void onDestroy();
 	virtual void onThreadState_Terminate();
 
-
 	virtual void* onRoutine() override;
-	void render(RenderData& renderData);
+	//void render(RenderData& renderData);
 
 public:		// TODO: remove temp
 	void _temp_render();
@@ -77,10 +84,12 @@ protected:
 	bool isState(RenderThreadState state) const;
 
 private:
-	AtmQueue<UPtr<RenderData> > _rdDataQueue;
 	Atm<RenderThreadState>		_state = RenderThreadState::None;
 	Atm<u64>					_curFrameCount = 0;
 	Atm<u64>					_lastFinishedFrameCount = 0;
+
+	AtmQueue<UPtr<RenderJob> >	_rdJobConsumerQueue;
+	//RenderThreadQueue			_rdThreadQueue;		// use other name, maybe like Dx12 called Engine as an interface for RenderThread
 };
 
 #endif

@@ -2,7 +2,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/common/rdsVk_RenderApi_Common.h"
 #include "rds_render_api_layer/backend/vulkan/common/rdsRenderResource_Vk.h"
-#include "rds_render_api_layer/rdsRenderDevice.h"
+#include "rds_render_api_layer/backend/base/rdsProxy_RenderDevice.h"
 #include "rdsVk_MemoryContext.h"
 #include "rdsVk_RenderFrame.h" 
 
@@ -31,11 +31,11 @@ using Vk_PhysicalDeviceVulkanFeatures = VkPhysicalDeviceVulkan12Features;
 #endif // 0
 #if 1
 
-class RenderDevice_Vk : public RenderResource_Vk<RenderDevice>
+class RenderDevice_Vk : public RenderResource_Vk<Proxy_RenderDevice>
 {
 	friend class RenderContext_Vk;
 public:
-	using Base = RenderResource_Vk<RenderDevice>;
+	using Base = RenderResource_Vk<Proxy_RenderDevice>;
 	using Util = Vk_RenderApiUtil;
 
 	using Vk_QueueFamilyProperties = Vector<VkQueueFamilyProperties, QueueFamilyIndices::s_kQueueTypeCount>;
@@ -70,16 +70,7 @@ public:
 public:
 
 protected:
-	virtual SPtr<RenderContext>			onCreateContext(			const	RenderContext_CreateDesc&		cDesc)	override;
-	virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc)	override;
-	virtual SPtr<Texture2D>				onCreateTexture2D(					Texture2D_CreateDesc&			cDesc)	override;
-	virtual SPtr<Texture3D>				onCreateTexture3D(					Texture3D_CreateDesc&			cDesc)	override;
-	virtual SPtr<TextureCube>			onCreateTextureCube(				TextureCube_CreateDesc&			cDesc)	override;
-	virtual SPtr<Texture2DArray>		onCreateTexture2DArray(				Texture2DArray_CreateDesc&		cDesc)	override;
-	virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&				cDesc)	override;
-	virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&			cDesc)	override;
-
-	virtual UPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	override;
+	RDS_RENDER_DEVICE_INTERFACE_ON_CREATE(Vk);
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc) override;
@@ -145,7 +136,7 @@ inline
 TransferFrame_Vk&
 RenderDevice_Vk::transferFrameVk()								
 { 
-	auto& p = sCast<TransferFrame_Vk&>(transferFrame()); 
+	auto& p = sCast<TransferFrame_Vk&>(Base::transferFrame()); 
 	return p;
 }
 
