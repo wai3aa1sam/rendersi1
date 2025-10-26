@@ -5,21 +5,6 @@
 #include "command/rds_transfer_command.h"
 
 #define RDS_OLD_TSF_FRAME_IMPL 0
-#if 0
-private:
-TransferCommandSafeBuffer	_createRdRscQueue;
-TransferCommandSafeBuffer	_destroyRdRscQueue;
-
-using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameInFlightCount> >;
-TransferFramePool									_tsfFramePool;
-Vector<UPtr<TransferFrame>, s_kFrameInFlightCount>	_prevTsfFrames;
-UPtr<TransferFrame>									_curTsfFrame = nullptr;
-
-protected:
-	void releasePreviousTransferFrame();
-
-#endif // 0
-
 
 namespace rds
 {
@@ -82,8 +67,7 @@ void
 TransferContext::submit(RenderJob* rdJob)
 {
 	auto curTsfFrameIdx		= _tsfFrameIdx.load();
-	auto nextTsfFrameIdx	= sCast<u32>((_tsfFrameIdx.load() + 1) % s_kMaxFrameAheadCountHardLimit);
-	_tsfFrames[nextTsfFrameIdx]->reset();
+	auto nextTsfFrameIdx	= sCast<u32>((curTsfFrameIdx + 1) % s_kMaxFrameAheadCountHardLimit);
 	_tsfFrameIdx = nextTsfFrameIdx;
 
 	rdJob->_transferFrame = _tsfFrames[curTsfFrameIdx];
@@ -143,6 +127,21 @@ TransferFrame&	TransferContext::transferFrame()		{ return *_tsfFrames[_tsfFrameI
 #endif
 
 #if RDS_OLD_TSF_FRAME_IMPL
+
+#if 0
+private:
+	TransferCommandSafeBuffer	_createRdRscQueue;
+	TransferCommandSafeBuffer	_destroyRdRscQueue;
+
+	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameInFlightCount> >;
+	TransferFramePool									_tsfFramePool;
+	Vector<UPtr<TransferFrame>, s_kFrameInFlightCount>	_prevTsfFrames;
+	UPtr<TransferFrame>									_curTsfFrame = nullptr;
+
+protected:
+	void releasePreviousTransferFrame();
+
+#endif // 0
 
 #if 0
 

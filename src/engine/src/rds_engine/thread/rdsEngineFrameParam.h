@@ -34,7 +34,7 @@ public:
 	//RDS_NODISCARD EngineFrameParamScope makeScope(RenderContext* rdCtx);
 
 public:
-	void reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue);
+	void nextFrame();
 	void commit();
 
 	void wait(u64 frameCount, RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue, bool isWaitGpu);

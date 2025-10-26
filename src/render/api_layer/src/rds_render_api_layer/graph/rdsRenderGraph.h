@@ -217,7 +217,7 @@ public:
 	using Resources			= RenderGraphFrame::Resources;
 	using FramedRscPool		= RenderGraphFrame::FramedRscPool;
 	using PassDepths		= RenderGraphFrame::PassDepths;
-	using RenderGraphFrames = Vector<RenderGraphFrame, s_kFrameInFlightCount>;
+	using RenderGraphFrames = Vector<RenderGraphFrame, s_kMaxFrameAheadCountHardLimit>;
 
 public:
 	static constexpr SizeType s_kPassLocalSize = RenderGraphFrame::s_kPassLocalSize;

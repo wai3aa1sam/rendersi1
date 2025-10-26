@@ -31,6 +31,7 @@ void Proxy_TransferContext::transferEnd()
 	onTransferEnd();
 	//releasePreviousTransferFrame();
 	destroyRenderResources();		// should pass from fn
+	_tsfFrame = nullptr;
 }
 void 
 Proxy_TransferContext::commit(RenderJob* rdJob, bool isWaitImmediate)
@@ -48,6 +49,7 @@ void Proxy_TransferContext::onTransferBegin()
 
 void Proxy_TransferContext::onTransferEnd()
 {
+	
 }
 
 void Proxy_TransferContext::onCommit(RenderJob* rdJob, bool isWaitImmediate)

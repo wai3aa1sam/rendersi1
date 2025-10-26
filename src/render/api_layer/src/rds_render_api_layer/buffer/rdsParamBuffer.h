@@ -52,8 +52,8 @@ protected:
 	bool checkIsInBoundary(SizeType i) const { bool isInBoundary = i < cpuBuffer().size() / sizeof(T); RDS_CORE_ASSERT(isInBoundary, "out of boundary"); return isInBoundary;  }
 
 public:
-	SPtr<RenderGpuMultiBuffer>					_gpuBufs;
-	Vector<Vector<u8>, s_kFrameInFlightCount>	_cpuBufs;
+	SPtr<RenderGpuMultiBuffer>							_gpuBufs;
+	Vector<Vector<u8>, s_kMaxFrameAheadCountHardLimit>	_cpuBufs;		// only 1 cpu buffer is enough
 };
 
 template<class T> inline

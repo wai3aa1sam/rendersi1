@@ -55,7 +55,7 @@ private:
 
 };
 
-template<class T> using FramedT = Vector<T, RenderApiLayerTraits::s_kFrameInFlightCount>;
+template<class T> using FramedT = Vector<T, RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit>;
 
 #endif
 

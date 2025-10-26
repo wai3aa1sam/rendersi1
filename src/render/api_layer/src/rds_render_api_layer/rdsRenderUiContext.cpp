@@ -42,7 +42,7 @@ RenderUiContext::create(RenderContext* renderContext)
 	_shader   = rdDev->createShader("asset/shader/ui/imgui.shader");
 	_material = rdDev->createMaterial();
 	_material->setShader(_shader);
-	_showImageFramedMtlPool.resize(RenderApiLayerTraits::s_kFrameInFlightCount);
+	_showImageFramedMtlPool.resize(RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit);
 
 	_createFontTexture();
 

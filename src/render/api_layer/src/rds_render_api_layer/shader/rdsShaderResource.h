@@ -906,7 +906,7 @@ protected:
 protected:
 	ShaderPass*					_shaderPass				= nullptr;
 	u64							_lastEngineFrameCount	= 0;		// btw can store frameIndex instead
-	FramedT<ShaderResources>	_shaderRscs;
+	Vector<ShaderResources, s_kMaxFrameAheadCountHardLimit> _shaderRscs;
 };
 
 template<class T> inline

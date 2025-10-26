@@ -154,6 +154,8 @@ RenderThread::waitTerminated()
 void
 RenderThread::render(UPtr<RenderJob> renderJob)
 {
+	RDS_TODO("store a last semaphore and chain each time when new job, it is for multiple RenderContext");
+
 	auto curFrame = renderJob->frameCount;
 	//RDS_CORE_ASSERT(renderJob->frameCount == _curFrameCount + 1, "RenderThread order incorrect");
 	_curFrameCount.store(curFrame);

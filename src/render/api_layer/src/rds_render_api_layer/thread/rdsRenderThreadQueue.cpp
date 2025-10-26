@@ -133,7 +133,6 @@ RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCou
 {
 	renderDevice	= renderDevice_;
 	frameCount		= frameCount_;
-	_transferFrame	= nullptr;
 
 	#if 0
 	#if 0
@@ -153,6 +152,11 @@ RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCou
 	
 	renderRequest().reset(rdCtx);
 	//renderGraph().reset();
+
+	if (_transferFrame)
+		_transferFrame->reset();
+	_transferFrame	= nullptr;
+
 }
 
 }

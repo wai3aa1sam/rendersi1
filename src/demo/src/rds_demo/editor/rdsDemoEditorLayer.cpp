@@ -88,27 +88,6 @@ DemoEditorLayer::onCreate()
 
 	_gfxDemo->onCreateScene(&_scene);
 
-	// temp solution for submit to trigger first frame TransferContext::commit
-	#if 0
-	{
-		auto* rdDev = Renderer::renderDevice();
-
-		// RenderJob contains all rendering related data that is needed in this frame
-
-		// this store rdJob in renderDevice as a member, could access by all Resource eg. RenderGpuBuffer, Texture
-		// TODO: pass EngineFrameParam.frameCount()
-		auto rdJob = rdDev->newRenderJob(&rdCtx, RenderApiLayerTraits::s_kFirstFrameCount);
-
-		// TODO: RenderGraph in rdJob
-		renderableSystem().setupRenderJob(*rdJob);
-
-		drawUI(&rdCtx, rdJob);
-		rdDev->submitRenderJob(rds::move(rdJob));
-		rdDev->waitIdle();
-	}
-	#endif // 0
-
-
 	// TODO: onWaitFrame Callback, and set_isWaitFrame();
 	app()._frameControl.isWaitFrame = !RDS_IS_TEST_ENGINE;
 }
@@ -126,14 +105,14 @@ DemoEditorLayer::onUpdate()
 	
 	RDS_TODO("prepareRender is 369, please fix it");
 
-	egFrameParam.reset(&rdCtx, &_rdThreadQueue);		// member is 0 when init
+	egFrameParam.nextFrame();
 	bool isFirstFrame = egFrameParam.frameCount() == RenderApiLayerTraits::s_kFirstFrameCount; RDS_UNUSED(isFirstFrame);
 
-	// TODO: remove, i think save frameCount in RenderDevice is on9
-	// Shader / Material use same strategy as MultiXXXX, save a index in it
-	//rdDev->reset(frameCount);
+	RDS_TODO("remove, i think save frameCount in RenderDevice is on9");
+	RDS_TODO("Shader / Material use same strategy as MultiXXXX, save a index in it");
 
 	auto* rdDev = Renderer::renderDevice();
+	rdDev->resetEngineFrame(egFrameParam.frameCount());
 	auto rdJob = rdDev->newRenderJob(&rdCtx, egFrameParam.frameCount());
 	// TODO: retry and wait if no rdJob available
 	// TODO: start other thread render stuff eg. extra window?
@@ -186,7 +165,7 @@ DemoEditorLayer::onUpdate()
 	// TODO: remove
 	rdableSys.setupRenderJob(*rdJob);
 
-	RDS_TODO("we must confirm that this frame is finished eg. async upload texture...?");
+	RDS_TODO("we must confirm that this frame is finished eg. async upload texture...?, or async");
 	rdDev->submitRenderJob(rds::move(rdJob));
 }
 
@@ -412,20 +391,6 @@ DemoEditorLayer::drawUI(RenderContext* rdCtx, RenderJob* rdJob)
 	rdUiCtx.onEndRender(rdCtx);
 }
 
-void
-DemoEditorLayer::submitRenderJob(RenderDevice* rdDev)
-{
-	auto& egFrameParam	= _egCtx.engineFrameParam();
-	auto& rdableSys		= renderableSystem();
-
-	RenderJob rdJob;
-	rdableSys.setupRenderJob(rdJob);
-	_rdThreadQueue.submit(rdDev, egFrameParam.frameCount(), rds::move(rdJob));
-	#if RDS_USE_RENDER_SINGLE_THREAD_MODE
-	_rdThread._temp_render();
-	#endif // RDS_SINGLE_THREAD_MODE
-}
-
 DemoEditorApp&			DemoEditorLayer::app()					{ return *DemoEditorApp::instance(); }
 DemoEditorMainWindow&	DemoEditorLayer::mainWindow()			{ return app().mainWindow(); }
 EditorViewportWindow&	DemoEditorLayer::editorViewportWindow() { return _edtViewportWnd; }
@@ -495,6 +460,27 @@ DemoEditorLayer::_logForResumeDevelopMustWatchFirst()
 			RDS_TODO("could do cpu job here, btw, cannot wait on above, we must ensure Render Thread not using same frame index fence");
 		}
 		#endif // 0
+	}
+
+
+	/*
+	* --- 2025_10_26
+	*/
+	{
+		/*
+		* change to Producer_Consumer Pattern, but no using ConVar now, later fix it
+		* trying to use a Proxy design instead of inheritance
+		* TransferFrame finally store in TransferContext as Singleton, always exist
+		* each time submitRenderJob() will trigger a Proxy_TransferContext::commit()
+		*/
+
+		/*
+		* bad design: only lock when alloc, must confirm the job is completed when submit
+		RDS_TODO("this design is not good, we must tie the allocation and the upload with a lock"
+		"otherwise, when submit to other thread and destroy, the ptr will be danggling"
+		"or we use a design that will confirm all the Job will be completed before submit if use this design"
+		);
+		*/
 	}
 }
 

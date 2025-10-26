@@ -187,6 +187,8 @@ RenderDevice::onDestroy()
 void 
 RenderDevice::reset(u64 frameCount)
 {
+	RDS_TODO("remove, make a Base class FrameParam and separate frame, also, do not use this frame for Material");
+
 	checkRenderThreadExclusive(RDS_SRCLOC);
 
 	renderFrameParam().reset(frameCount);
@@ -196,6 +198,8 @@ RenderDevice::reset(u64 frameCount)
 void
 RenderDevice::resetEngineFrame(u64 engineFrameCount)
 {
+	RDS_TODO("remove, make a Base class FrameParam and separate frame, also, do not use this frame for Material");
+
 	checkMainThreadExclusive(RDS_SRCLOC);
 
 	auto&	rdFrameParam	= renderFrameParam();

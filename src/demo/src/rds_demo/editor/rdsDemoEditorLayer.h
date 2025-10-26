@@ -60,9 +60,6 @@ protected:
 private:
 	CRenderableSystem& renderableSystem();
 
-protected:
-	void submitRenderJob(RenderDevice* rdDev);
-
 private:
 	void _logForResumeDevelopMustWatchFirst();
 	void _todoList();
@@ -88,9 +85,6 @@ private:
 
 	bool			_isFullScreen = false;
 	SPtr<Material>	_mtl_screenQuad;
-
-	RenderThread		_rdThread;
-	RenderThreadQueue	_rdThreadQueue;
 
 	UPtr<TestEngine> _testEngine;
 };

@@ -27,6 +27,11 @@ LinearStagingBuffer::reset()
 void* 
 LinearStagingBuffer::alloc(StagingHandle& oHnd, SizeType n)
 {
+	RDS_TODO("this design is not good, we must tie the allocation and the upload with a lock"
+		"otherwise, when submit to other thread and destroy, the ptr will be danggling"
+		"or we use a design that will confirm all the Job will be completed before submit if use this design"
+	);
+
 	SizeType chunkId	= StagingHandle::s_kInvalid;
 	SizeType offset		= StagingHandle::s_kInvalid;
 	void*	 buf		= nullptr;

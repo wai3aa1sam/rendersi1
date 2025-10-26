@@ -71,16 +71,10 @@ public:
 	RenderGraph& renderGraph();
 
 protected:
-	RenderRequest& renderRequest(u64 renderFrameIdx);
-
-protected:
-	SPtr<Material>	_mtlScreenQuad;
-
 	/*
 		all of this should have a Vector<Data>, for multi cameras
 	*/
 	RenderGraph						_rdGraph;
-	FramedT<RenderRequest>			_framedRdReq;
 	/*
 		maybe use a two level index table to prevent empty space, since not all ent has Renderable
 		, also, maybe separate mvp and model, since when have two camera, the model since redundant
@@ -95,8 +89,6 @@ protected:
 };
 
 inline RenderGraph&				CRenderableSystem::renderGraph()						{ return _rdGraph; }
-inline RenderRequest&			CRenderableSystem::renderRequest(u64 renderFrameIdx)	{ return _framedRdReq[renderFrameIdx]; }
-
 inline Vector<CRenderable*>&	CRenderableSystem::renderables()						{ return components(); }
 
 inline Span<DrawData*>			CRenderableSystem::drawData()							{ return _drawData; }

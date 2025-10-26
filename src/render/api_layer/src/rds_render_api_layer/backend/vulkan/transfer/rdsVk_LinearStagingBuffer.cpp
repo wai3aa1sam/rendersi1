@@ -183,6 +183,10 @@ Vk_LinearStagingBuffer::alloc(SizeType size)
 {
 	RDS_CORE_ASSERT(_rdDevVk, "not yet create()");
 
+	RDS_TODO("this design is not good, we must tie the allocation and the upload with a lock"
+		"otherwise, when submit to other thread and destroy, the ptr will be danggling"
+		"or we use a design that will confirm all the Job will be completed before submit if use this design"
+	);
 	auto data = _chunks.scopedULock();
 	auto hnd = data->alloc(size, &_vkAlloc, _rdDevVk);
 	return hnd;

@@ -6,27 +6,43 @@
 namespace rds
 {
 
-//EngineFrameParamScope::EngineFrameScope(EngineFrameParam* egFrameParam)
-//{
-//	_egFrameParam = egFrameParam;
-//}
-//
-//EngineFrameParamScope::~EngineFrameScope()
-//{
-//	egFrameParam->endFrame();
-//}
-
 #if 0
 #pragma mark --- rdsEngineFrameParam-Impl ---
 #endif // 0
 #if 1
 
-//EngineFrameParamScope
-//EngineFrameParam::makeFrameScope(RenderContext* rdCtx)
-//{
-//	beginFrame(rdCtx);
-//	return EngineFrameParamScope{this};
-//}
+void 
+EngineFrameParam::nextFrame()
+{
+	RDS_TODO("create a base class FrameParam");
+	checkMainThreadExclusive(RDS_SRCLOC);
+	_frameCount++;
+}
+
+void
+EngineFrameParam::commit()
+{
+	
+}
+
+u64 
+EngineFrameParam::frameCount() const 
+{ 
+	RDS_TODO("");
+	checkMainThreadExclusive(RDS_SRCLOC);
+	return _frameCount; 
+}
+
+u32
+EngineFrameParam::frameIndex() const
+{
+	return sCast<u32>(RenderTraits::rotateFrame(frameCount()));
+}
+
+#endif
+
+// old impl, we do not depends on frame to wait now
+#if 0
 
 void 
 EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue)
@@ -43,18 +59,12 @@ EngineFrameParam::reset(RenderContext* rdCtx, RenderThreadQueue* renderThreadQue
 }
 
 void 
-EngineFrameParam::commit()
-{
-	
-}
-
-void 
 EngineFrameParam::wait(u64 frameCount, RenderContext* rdCtx, RenderThreadQueue* renderThreadQueue, bool isWaitGpu)
 {
 	RDS_PROFILE_SCOPED();
 
 	checkMainThreadExclusive(RDS_SRCLOC);
-	
+
 	#if 1
 	{
 		{
@@ -103,20 +113,6 @@ EngineFrameParam::wait(u64 frameCount, RenderContext* rdCtx, RenderThreadQueue* 
 	#endif // 0
 }
 
-u64 
-EngineFrameParam::frameCount() const 
-{ 
-	checkMainThreadExclusive(RDS_SRCLOC);
-	return _frameCount; 
-}
-
-u32
-EngineFrameParam::frameIndex() const
-{
-	return sCast<u32>(RenderTraits::rotateFrame(frameCount()));
-}
-
-
-#endif
+#endif // 0
 
 }
