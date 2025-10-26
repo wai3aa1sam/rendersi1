@@ -43,10 +43,10 @@ public:
 	void create(EngineContext* egCtx);
 	void destroy();
 
-	void commit(const Scene& scene);
+public:
+	void commit(RenderJob* rdJob, const Scene& scene);
 	void drawUi(RenderContext* renderContext, bool isDrawUi, bool isDrawToScreen);
-	void setupRenderJob(RenderJob& o);
-
+	
 	void render();
 
 public:
@@ -55,8 +55,6 @@ public:
 
 public:
 	Material* getOverrideMaterial(EntityId id, const Shader* shader);
-
-	RenderDevice* renderDevice();
 
 	Span<DrawData*>	drawData();
 	DrawData*		mainDrawData();
@@ -68,13 +66,13 @@ public:
 	Vector<CRenderable*>& renderables();
 
 public:
-	RenderGraph& renderGraph();
+	//RenderGraph& renderGraph();
 
 protected:
 	/*
 		all of this should have a Vector<Data>, for multi cameras
 	*/
-	RenderGraph						_rdGraph;
+	//RenderGraph						_rdGraph;
 	/*
 		maybe use a two level index table to prevent empty space, since not all ent has Renderable
 		, also, maybe separate mvp and model, since when have two camera, the model since redundant
@@ -88,7 +86,7 @@ protected:
 	VectorMap<SPtr<Shader>, VectorMap<EntityId, SPtr<Material> > > _overrideMtls;		// TODO: temporary solution
 };
 
-inline RenderGraph&				CRenderableSystem::renderGraph()						{ return _rdGraph; }
+//inline RenderGraph&				CRenderableSystem::renderGraph()						{ return _rdGraph; }
 inline Vector<CRenderable*>&	CRenderableSystem::renderables()						{ return components(); }
 
 inline Span<DrawData*>			CRenderableSystem::drawData()							{ return _drawData; }

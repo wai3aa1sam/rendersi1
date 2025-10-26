@@ -15,13 +15,15 @@ namespace rds
 {
 
 RenderThread::CreateDesc 
-RenderThread::makeCDesc(JobSystem* jobSystem)
+RenderThread::makeCDesc(RenderDevice* rdDev, JobSystem* jobSystem)
 {
 	auto cDesc = CreateDesc{};
 	cDesc.localId		= Traits::s_kRenderThreadId;
 	cDesc.affinityIdx	= cDesc.localId;
 	cDesc.name			= "RenderThread";
 	cDesc.threadPool	= jobSystem->_internal_threadPool();
+
+	cDesc.renderDevice	= rdDev;
 	return cDesc;
 }
 
@@ -37,36 +39,36 @@ RenderThread::RenderThread()
 
 RenderThread::~RenderThread()
 {
-	RDS_TODO("currently have bug when quit program, the timing in setStaete , it is a bad design, later change to "
-				"cosumer-producer pattern should fix that, State design is bad");
-	// temp fix, only wait if created
-	if (bool hasNotCreated = localId() != Traits::s_kRenderThreadId)
-	{
-		destroy();
-		return;
-	}
-
-	waitTerminated();
 	destroy();
+}
+
+void 
+RenderThread::onCreate(const CreateDesc_Base& cDescBase)
+{
+	Base::onCreate(cDescBase);
+	_rdDev = sCast<const CreateDesc&>(cDescBase).renderDevice;
 }
 
 void 
 RenderThread::onDestroy()
 {
-	
+	waitIdle();
+
+	// clean all transferFrames
+	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
+	{
+		_rdDev->submitRenderJob(_rdDev->newRenderJob(nullptr, i));
+	}
+
+	waitIdle();
+
+	quit();
 }
 
 void 
 RenderThread::onThreadState_Terminate()
 {
-	UPtr<RenderJob> rdJob;
-	while (_rdJobConsumerQueue.try_pop(rdJob))
-	{
-		render(rds::move(rdJob));
-	}
-	Renderer::instance()->destroy();
-
-	setState(RenderThreadState::TerminateEnd);
+	
 }
 
 void*
@@ -74,45 +76,24 @@ RenderThread::onRoutine()
 {
 	RDS_PROFILE_SCOPED();
 
-	setState(RenderThreadState::None);
-	_curFrameCount.store(0);
-	_lastFinishedFrameCount.store(0);
-
-	using State = RenderThreadState;
-	#if 0
-	while (_state != State::Terminated)
 	{
-		switch (_state)
-		{
-			case State::onTerminate: { ThreadState_onTerminate(); } break;
-			default: { RDS_THROW("invalid thread state"); } break;
-		}
+		auto data = _state.scopedULock();
+		data->isStarted = true;
 	}
-	#endif // 0
 
 	for (;;)
 	{
-		if (_state == State::Terminate) { onThreadState_Terminate(); break; }
-
-		UPtr<RenderJob> rdJob;
-		bool hasRequestRender = _rdJobConsumerQueue.try_pop(rdJob);		// seems try_pop is poping front, if no hints could try once more
-		if (hasRequestRender)
 		{
-			setState(RenderThreadState::Processing);
-			render(rds::move(rdJob));
-		}
-		else
-		{
-			setState(RenderThreadState::Stealing);
-			// as a worker thread
-			JobHandle job = nullptr;
-			auto* thp = threadPool();
-			if (thp->trySteal(job))
+			auto data = _state.scopedULock();
+			if (data->isQuit)
 			{
-				RDS_PROFILE_SECTION("work as worker");
-				thp->execute(job);
+				// onThreadState_Terminate();
+				return nullptr;
 			}
 		}
+
+		bool hasRender = tryRender();
+		if (!hasRender) tryExecuteStealJob();
 	}
 
 	return nullptr;
@@ -121,46 +102,48 @@ RenderThread::onRoutine()
 void 
 RenderThread::requestRender(UPtr<RenderJob> rdJob)
 {
-	//RDS_CORE_LOG_ERROR("requestRender() - renderData.frameCount: {}", renderData->frameCount);
-	//RDS_CORE_ASSERT(!isTerminated(), " RenderThread has already terminated");
-	_rdJobConsumerQueue.push(rds::move(rdJob));
+	_pendingRdJobs.push(rds::move(rdJob));
 }
 
 void 
-RenderThread::terminate()
+RenderThread::quit()
 {
-	setState(RenderThreadState::Terminate);
 	// quit the thread
 	// wait quit
 	// process the remaining
+	{
+		auto data = _state.scopedULock();
+		data->isQuit = true;
+	}
 }
 
-void 
-RenderThread::waitTerminated()
+bool 
+RenderThread::tryRender()
 {
 	UPtr<RenderJob> rdJob;
-	bool hasRequestRender = _rdJobConsumerQueue.try_pop(rdJob);		// seems try_pop is poping front, if no hints could try once more
-	if (hasRequestRender)
+	bool hasPending = _pendingRdJobs.try_pop(rdJob);		// seems try_pop is poping front, if no hints could try once more
+	if (rdJob)
 	{
 		render(rds::move(rdJob));
 	}
-
-	/*while (!isFrameFinished(currentFrameCount()) || _state != RenderThreadState::TerminateEnd)
-	{
-		OsUtil::sleep_ms(1);
-	}*/
+	return hasPending;
 }
 
 void
 RenderThread::render(UPtr<RenderJob> renderJob)
 {
+	_rdDev = renderJob->renderDevice;
+
 	RDS_TODO("store a last semaphore and chain each time when new job, it is for multiple RenderContext");
 
-	auto curFrame = renderJob->frameCount;
+	//auto curFrame = renderJob->frameCount;
 	//RDS_CORE_ASSERT(renderJob->frameCount == _curFrameCount + 1, "RenderThread order incorrect");
-	_curFrameCount.store(curFrame);
+	//_curFrameCount.store(curFrame);
+	//RDS_PROFILE_DYNAMIC_FMT("render() - frame {}", curFrame);
+	RDS_PROFILE_SECTION("render()");
 
-	RDS_PROFILE_DYNAMIC_FMT("render() - frame {}", curFrame);
+	//auto* renderJob = renderJob_.ptr();
+	//_processingRdJobs.push(rds::move(renderJob_));
 
 	auto* rdDev			= renderJob->renderDevice;
 	//auto& tsfCtx	= rdDev->transferContext();
@@ -174,6 +157,7 @@ RenderThread::render(UPtr<RenderJob> renderJob)
 		pxy_tsfCtx->transferBegin();
 		pxy_tsfCtx->commit(renderJob, false);
 
+		if (renderJob->renderRequest().renderContext())
 		{
 			auto&	rdGraph		= renderJob->renderGraph();
 			auto*	rdCtx		= rdGraph.renderContext();
@@ -190,26 +174,54 @@ RenderThread::render(UPtr<RenderJob> renderJob)
 		pxy_tsfCtx->transferEnd();
 	}
 
-	RDS_TODO(
-		"curFrame is from rdDev, so if later support multi rdDev, then there maybe a map for each _lastFinishedFrameCount"
-		"\n or there is multi RenderThread"
-	);
-	_lastFinishedFrameCount.store(curFrame);
-
+	//_lastFinishedFrameCount.store(curFrame);
 	rdDev->_internal_freeRenderJob(rds::move(renderJob));
 }
 
-void 
-RenderThread::_temp_render()
+bool 
+RenderThread::tryExecuteStealJob()
 {
-	UPtr<RenderJob> o;
-	bool hasRequestRender = _rdJobConsumerQueue.try_pop(o);
-	if (hasRequestRender)
+	JobHandle job = nullptr;
+	auto* thp = threadPool();
+	if (thp->trySteal(job))
 	{
-		render(rds::move(o));
+		RDS_PROFILE_SECTION("work as worker");
+		thp->execute(job);
 	}
+	return job;
 }
 
+bool 
+RenderThread::hasPendingRenderJobs()
+{
+	return _pendingRdJobs.isEmpty();
+}
+
+void
+RenderThread::waitIdle()
+{
+	waitCpuIdle();
+	waitGpuIdle();
+}
+
+void
+RenderThread::waitCpuIdle()
+{
+	_rdDev->waitCpuIdle();
+}
+
+void
+RenderThread::waitGpuIdle()
+{
+	RDS_TODO("later should put imageAvaliableSmp to Vk_Swapchain, renderCompletedSmp to RenderJob_Vk, no longer in RenderContext");
+	RDS_TODO("all semaphore in RenderContext need to separate FrameAHead and FrameInflight");
+	RDS_TODO("check fence in _processingRdJobs");
+	
+	waitCpuIdle();
+	_rdDev->_internal_waitGpuIdle();
+}
+
+#if 0
 void 
 RenderThread::setState(RenderThreadState state)
 {
@@ -227,10 +239,13 @@ bool	RenderThread::isTerminated()					const { return isState(RenderThreadState::
 bool	RenderThread::isReadyToProcess()				const { return isState(RenderThreadState::Idle) || isState(RenderThreadState::Stealing); }
 bool	RenderThread::isIdle()							const { return isState(RenderThreadState::Idle); }
 
+
 bool	RenderThread::isFrameFinished(u64 frame)	const	{ auto n = lastFinishedFrameCount(); return n >= frame; }
 
 u64		RenderThread::currentFrameCount()			const	{ return _curFrameCount.load(); } //{ auto n = lastFinishedFrameCount(); return n <= 1 && isFrameFinished(n) ? n : n - 1; }
 u64		RenderThread::lastFinishedFrameCount()		const	{ return _lastFinishedFrameCount.load(); }
+
+#endif // 0
 
 #endif
 

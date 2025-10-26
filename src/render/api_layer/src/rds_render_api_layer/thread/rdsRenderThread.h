@@ -11,9 +11,12 @@ namespace rds
 
 class RenderDevice;
 
+using TypeThread_CreateDesc = ::nmsp::TypeThread_CreateDesc;
+using TypeThread			= ::nmsp::TypeThread_T;
+
 struct RenderThread_CreateDesc : public ::nmsp::TypeThread_CreateDesc
 {
-
+	RenderDevice* renderDevice = nullptr;
 };
 
 #define RenderThreadState_ENUM_LIST(E) \
@@ -32,15 +35,15 @@ RDS_ENUM_CLASS(RenderThreadState, u8);
 #endif // 0
 #if 1
 
-class RenderThread : public nmsp::TypeThread_T
+class RenderThread : public TypeThread
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
+	using Base				= TypeThread;
 	using CreateDesc		= RenderThread_CreateDesc;
-	using CreateDesc_Base	= ::nmsp::TypeThread_CreateDesc;
 
 public:
-	static CreateDesc makeCDesc(JobSystem* jobSystem);
+	static CreateDesc makeCDesc(RenderDevice* rdDev, JobSystem* jobSystem);
 
 public:
 	RenderThread();
@@ -48,48 +51,45 @@ public:
 
 public:
 	UPtr<RenderJob> newRenderJob(RenderDevice* renderDevice, u64 frameCount);
-	void requestRender(UPtr<RenderJob> renderJob);
-
-	//void requestRender(UPtr<RenderData> renderData);
-	void terminate();
 
 public:
+	void requestRender(UPtr<RenderJob> renderJob);
+	void quit();
+
+public:
+	bool tryRender();
+	bool tryExecuteStealJob();
+
 	void render(UPtr<RenderJob> renderJob);
 
 public:
-	void waitSignaled();
-	void waitTerminated();
+	bool hasPendingRenderJobs();
 
-public:
-	bool	isTerminated()				const;
-	bool	isReadyToProcess()			const;
-	bool	isIdle()					const;
-	bool	isSignaled()				const;
-	bool	isFrameFinished(u64 frame)	const;
-	u64		currentFrameCount()			const;
-	u64		lastFinishedFrameCount()	const;
+	void waitIdle();
+	void waitCpuIdle();
+	void waitGpuIdle();
 
 protected:
-	virtual void onDestroy();
+	virtual void onCreate(const CreateDesc_Base& cDescBase) override;
+	virtual void onDestroy() override;
+	virtual void* onRoutine() override;
+
 	virtual void onThreadState_Terminate();
 
-	virtual void* onRoutine() override;
-	//void render(RenderData& renderData);
-
-public:		// TODO: remove temp
-	void _temp_render();
-
-protected:
-	void setState(RenderThreadState state);
-	bool isState(RenderThreadState state) const;
-
 private:
-	Atm<RenderThreadState>		_state = RenderThreadState::None;
-	Atm<u64>					_curFrameCount = 0;
-	Atm<u64>					_lastFinishedFrameCount = 0;
+	RenderDevice* _rdDev = nullptr;
 
-	AtmQueue<UPtr<RenderJob> >	_rdJobConsumerQueue;
-	//RenderThreadQueue			_rdThreadQueue;		// use other name, maybe like Dx12 called Engine as an interface for RenderThread
+	//Atm<RenderThreadState>		_state = RenderThreadState::None;
+	struct State
+	{
+		bool isStarted	= false;
+		bool isQuit		= false;
+	};
+	MutexProtected<State>		_state;		// TODO: CondMutexProtected
+	AtmQueue<UPtr<RenderJob> >	_pendingRdJobs;
+	//AtmQueue<UPtr<RenderJob> >	_processingRdJobs;// this is for check the gpu side is completed or not
+
+	//RenderThreadQueue			_rdThreadQueue;		// if, use other name, maybe like Dx12 called Engine as an interface for RenderThread
 };
 
 #endif

@@ -87,7 +87,7 @@ EditorInspectorWindow::drawComponent(EditorPropertyDrawRequest* propDrawReq, CCo
 		if (comp.material)
 		{
 			auto& rdableSys = comp.getSystem(comp.engineContext());
-			auto* rdDev		= rdableSys.renderDevice();
+			auto* rdDev		= comp.material->renderDevice();
 			
 			auto& textureStock = rdDev->textureStock();
 			auto& shadersTable = rdDev->shaderStock().shadersTable();

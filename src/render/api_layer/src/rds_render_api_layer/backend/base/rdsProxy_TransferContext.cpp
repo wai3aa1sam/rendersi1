@@ -17,6 +17,12 @@ Proxy_TransferContext::reset(SPtr<TransferFrame>& tsfFrame)
 	_tsfFrame = tsfFrame;
 }
 
+void 
+Proxy_TransferContext::_temp_reset(SPtr<TransferFrame>& tsfFrame)
+{
+	reset(tsfFrame);
+}
+
 void
 Proxy_TransferContext::transferBegin()
 {
@@ -66,16 +72,22 @@ void
 Proxy_TransferContext::createRenderResources()
 {
 	auto& tsfFrame = _tsfFrame;
-	auto lock = tsfFrame->createRenderResourceBuffer().scopedULock();
-	onCommitRenderResources(*lock, true);
+	if (_tsfFrame)
+	{
+		auto lock = tsfFrame->createRenderResourceBuffer().scopedULock();
+		onCommitRenderResources(*lock, true);
+	}
 }
 
 void 
 Proxy_TransferContext::destroyRenderResources()
 {
 	auto& tsfFrame = _tsfFrame;
-	auto lock = tsfFrame->destroyRenderResourceBuffer().scopedULock();
-	onCommitRenderResources(*lock, true);
+	if (_tsfFrame)
+	{
+		auto lock = tsfFrame->destroyRenderResourceBuffer().scopedULock();
+		onCommitRenderResources(*lock, true);
+	}
 }
 
 void 

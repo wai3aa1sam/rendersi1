@@ -50,7 +50,7 @@ CRenderableSystem::destroy()
 }
 
 void 
-CRenderableSystem::commit(const Scene& scene)
+CRenderableSystem::commit(RenderJob* rdJob, const Scene& scene)
 {
 	// transform system update
 	{
@@ -87,7 +87,7 @@ CRenderableSystem::commit(const Scene& scene)
 		_objTransformBuf.uploadToGpu();
 	}
 	
-	auto& rdGraph = renderGraph();
+	auto& rdGraph = rdJob->renderGraph();
 	{
 		RDS_PROFILE_SECTION("draw param update");
 
@@ -127,14 +127,6 @@ CRenderableSystem::commit(const Scene& scene)
 		rdGraph.execute();
 		//rdGraph.dumpGraphviz();
 	}
-}
-
-void 
-CRenderableSystem::setupRenderJob(RenderJob& o)
-{
-	RDS_TODO("remove");
-	o._renderGraph			= &renderGraph();
-	o._renderGraphFrameIdx	= renderGraph().frameIndex();
 }
 
 void 
@@ -212,9 +204,6 @@ CRenderableSystem::mainDrawData()
 {
 	return _drawData[0];
 }
-
-RenderDevice* CRenderableSystem::renderDevice() { return renderGraph().renderContext()->renderDevice(); }
-
 
 #endif
 

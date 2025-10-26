@@ -164,8 +164,10 @@ void RenderGraph::destroy()
 }
 
 void 
-RenderGraph::reset() 
+RenderGraph::reset(RenderContext* rdCtx) 
 { 
+	_rdCtx = rdCtx;
+
 	RDS_TODO("temporary solution");
 	rotateFrame();
 	auto& rdgFrame = renderGraphFrame(frameIndex());

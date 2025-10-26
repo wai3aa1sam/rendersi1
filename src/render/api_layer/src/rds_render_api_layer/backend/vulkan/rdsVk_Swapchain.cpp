@@ -299,7 +299,7 @@ Vk_Swapchain::destroySwapchain()
 		return;
 
 	auto* rdDevVk = renderDeviceVk();
-	rdDevVk->waitIdle();
+	rdDevVk->_internal_waitGpuIdle();
 
 	_vkDepthImageView.destroy(rdDevVk);
 	_vkDepthImage.destroy();

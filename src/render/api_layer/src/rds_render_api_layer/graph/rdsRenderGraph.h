@@ -229,7 +229,7 @@ public:
 	void create(StrView name, RenderContext* rdCtx, IAllocator* alloc = nullptr);
 	void destroy();
 
-	void reset();
+	void reset(RenderContext* rdCtx);
 
 	void compile();
 	void execute();
@@ -290,8 +290,8 @@ protected:
 	String	_name;
 	u32		_frameIdx = 0;
 
-	RenderContext*	_rdCtx = nullptr;
-	IAllocator*		_alloc = nullptr;
+	SPtr<RenderContext>	_rdCtx = nullptr;
+	IAllocator*			_alloc = nullptr;
 
 	RenderGraphFrames _rdgFrames;
 };

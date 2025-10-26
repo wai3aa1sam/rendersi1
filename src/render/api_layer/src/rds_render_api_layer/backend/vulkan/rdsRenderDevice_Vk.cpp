@@ -81,12 +81,6 @@ RenderDevice_Vk::onResetFrame(u64 frameCount)
 	memoryContext()->vkAlloc()->resetFrame(frameCount);
 }
 
-void 
-RenderDevice_Vk::waitIdle()
-{
-	vkDeviceWaitIdle(vkDevice());
-}
-
 void
 RenderDevice_Vk::createVkInstance()
 {
@@ -365,6 +359,12 @@ RenderDevice_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 	}
 	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice, name);
 	RDS_VK_SET_DEBUG_NAME(_vkDevice, name);
+}
+
+void 
+RenderDevice_Vk::_internal_waitGpuIdle()
+{
+	vkDeviceWaitIdle(vkDevice());
 }
 
 #endif

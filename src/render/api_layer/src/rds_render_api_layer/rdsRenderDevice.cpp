@@ -10,6 +10,8 @@
 
 #include "rdsRenderer.h"
 
+#include "rds_render_api_layer/graph/rdsRenderGraph.h"
+
 namespace rds
 {
 
@@ -75,12 +77,15 @@ RenderDevice::create(const CreateDesc& cDesc)
 
 	if (cDesc.isMultithread)
 	{
-		auto rdThreadCDesc = RenderThread::makeCDesc(JobSystem::instance());
+		auto rdThreadCDesc = RenderThread::makeCDesc(this, JobSystem::instance());
 		_rdThread.create(rdThreadCDesc);
 	}
 
 	_shaderStock.create(this);
 	_textureStock.create(this);
+
+	RDS_TODO("remove temp, save it on RenderJob");
+	_rdGraph = makeUPtr<RenderGraph>();
 }
 
 void 
@@ -89,23 +94,23 @@ RenderDevice::destroy()
 	if (!hasCreated())
 		return;
 
-	waitIdle();
-
-	_rdThread.terminate();
-
+	{
+		RDS_TODO("remove _rdGraph, RenderGraph should be re-design and save in RenderJob");
+		_rdThread.waitGpuIdle();
+		_rdGraph.reset(nullptr);
+	}
+	
+	_rdThread.destroy();
+	
 	_shaderStock.destroy();
 	_textureStock.destroy();
-
-	//_rdFrames.clear();
-	//_tsfFrames.clear();
-	//_tsfFrame.reset(nullptr);
 
 	if (_tsfCtx)
 	{
 		_tsfCtx->destroy();
 		_tsfCtx = nullptr;
 	}
-	
+
 	if (_bindlessRscs)
 	{
 		_bindlessRscs->destroy();
@@ -133,6 +138,7 @@ RenderDevice::newRenderJob(RenderContext* rdCtx, u64 frameCount)
 			break;
 		OsUtil::sleep_ms(1); RDS_TODO("pass a param here");
 	}
+	o->_renderGraph = _rdGraph;
 	o->reset(this, rdCtx, frameCount);
 	return o;
 }
@@ -163,19 +169,6 @@ RenderDevice::onCreate(const CreateDesc& cDesc)
 {
 	_adapterInfo.isDebug		= cDesc.isDebug;
 	_adapterInfo.isMultiThread	= cDesc.isMultithread;
-
-	#if 0
-	_rdFrames.resize(s_kFrameInFlightCount);
-	for (auto& e : _rdFrames)
-	{
-		e.create();
-	}
-	_tsfFrames.resize(s_kFrameInFlightCount);
-	for (auto& e : _tsfFrames)
-	{
-		e.create();
-	}
-	#endif // 0
 }
 
 void 
@@ -206,38 +199,33 @@ RenderDevice::resetEngineFrame(u64 engineFrameCount)
 	auto	frameCount		= engineFrameCount;
 	//auto	frameIdx		= Traits::rotateFrame(frameCount);
 	rdFrameParam.setEngineFrameCount(frameCount);
-
-	RDS_TODO("wait all render context here");
-	// RDS_TODO("maybe no need to wait if all gpu stuff is a command");
-	/*
-	* seems must wait regardless			
-	* all gpu cmd or not, since				
-	* we must wait gpu prev frame to finish	
-	*/
-
-	//_rdFrames[frameIdx].reset();
-	//_tsfFrames[frameIdx].reset(_tsfCtx);
-	//onResetFrame(frameCount);
-
-	//auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-	//_tsfFrame = createTransferFrame(tsfFrameCDesc);
-	
-	//RDS_ASSERT(!_tsfFrame, "not yet submit transferFrame ?");
-	//_tsfFrame = transferContext().allocTransferFrame();
 }
 
 void 
 RenderDevice::waitIdle()
 {
-	RDS_ASSERT(true, "impl wait current frame");
+	_rdThread.waitIdle();
 }
 
-void RenderDevice::waitCpuIdle()
+void 
+RenderDevice::waitCpuIdle()
 {
+	while (_freeRdJobs.size() != s_kMaxFrameAheadCountHardLimit)
+	{
+		OsUtil::sleep_ms(1);
+	};
 }
 
-void RenderDevice::waitGpuIdle()
+void
+RenderDevice::waitGpuIdle()
 {
+	_rdThread.waitGpuIdle();
+}
+
+void 
+RenderDevice::waitRenderThreadIdle()
+{
+	_rdThread.waitCpuIdle();
 }
 
 SPtr<Texture2D>	
@@ -250,7 +238,6 @@ SPtr<Texture2D>
 RenderDevice::createCheckerboardTexture2D(const Color4b& color)
 {
 	return _textureStock.createCheckerboardTexture2D(color);
-
 }
 
 void 

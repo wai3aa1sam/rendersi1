@@ -35,19 +35,14 @@ DemoEditorLayer::DemoEditorLayer()
 DemoEditorLayer::~DemoEditorLayer()
 {
 	#if 1
-	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
-	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
-	//_egCtx.engineFrameParam().wait(_egCtx.engineFrameParam().frameCount(), &rdCtx, &_rdThreadQueue, true);
-	Renderer::renderDevice()->destroy();
-	
 	_testEngine.reset(nullptr);
 	_gfxDemo.reset(nullptr);
 	meshAssets().destroy();
 	_scene.destroy();
 	_egCtx.destroy();
+	DemoEditorApp::instance()->mainWindow().destroy();
 
-	mainWnd.destroy();
-	//_rdThreadQueue.destroy();
+	Renderer::renderDevice()->destroy();
 	#endif // 1
 }
 
@@ -82,9 +77,6 @@ DemoEditorLayer::onCreate()
 	_gfxDemo->onCreate();
 	
 	renderableSystem().addCamera(&mainWindow().camera());
-
-	auto& rdGraph = renderableSystem().renderGraph();
-	rdGraph.create(mainWindow().title(), &rdCtx);
 
 	_gfxDemo->onCreateScene(&_scene);
 
@@ -130,8 +122,6 @@ DemoEditorLayer::onUpdate()
 	auto& rdableSys = renderableSystem();
 	{
 		{
-			auto& rdGraph	= rdableSys.renderGraph();
-			rdGraph.reset();
 			//RDS_LOG_ERROR("rdGraph.reset(), frameCount: {}, graph index: {}", frameCount, rdGraph.frameIndex()); ;
 
 			for (auto& e : rdableSys.drawData())
@@ -141,9 +131,9 @@ DemoEditorLayer::onUpdate()
 				drawData.meshAssets	= _meshAssets.ptr();
 
 				if (isFirstFrame)
-					_gfxDemo->prepareRender(&rdGraph, &drawData);
+					_gfxDemo->prepareRender(&rdJob->renderGraph(), &drawData);
 				else
-					_gfxDemo->executeRender(&rdGraph, &drawData);
+					_gfxDemo->executeRender(&rdJob->renderGraph(), &drawData);
 
 				#if RDS_IS_TEST_ENGINE
 				_testEngineCode();
@@ -157,13 +147,10 @@ DemoEditorLayer::onUpdate()
 		}
 	}
 
-	rdableSys.commit(scene());
+	rdableSys.commit(rdJob, scene());
 
 	// ui
 	drawUI(&rdCtx, rdJob);
-
-	// TODO: remove
-	rdableSys.setupRenderJob(*rdJob);
 
 	RDS_TODO("we must confirm that this frame is finished eg. async upload texture...?, or async");
 	rdDev->submitRenderJob(rds::move(rdJob));

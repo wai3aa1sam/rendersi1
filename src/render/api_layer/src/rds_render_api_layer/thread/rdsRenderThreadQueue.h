@@ -43,7 +43,7 @@ public:
 #if 0
 #pragma mark --- rdsRenderThreadQueue-Decl ---
 #endif // 0
-#if 1
+#if 0
 
 class RenderThreadQueue : public NonCopyable
 {

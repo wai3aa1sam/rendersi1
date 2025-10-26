@@ -10,7 +10,7 @@ namespace rds
 #if 0
 #pragma mark --- rdsRenderThreadQueue-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 RenderThreadQueue::RenderThreadQueue()
 {
@@ -151,7 +151,11 @@ RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCou
 	#endif // 0
 	
 	renderRequest().reset(rdCtx);
-	//renderGraph().reset();
+	if (rdCtx)		// TODO: temp sol. nullptr means it is destroying
+	{
+		renderGraph().reset(rdCtx);
+		_renderGraphFrameIdx = renderGraph().frameIndex();
+	}
 
 	if (_transferFrame)
 		_transferFrame->reset();

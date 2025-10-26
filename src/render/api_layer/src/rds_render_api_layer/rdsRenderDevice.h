@@ -39,6 +39,8 @@ public:
 	bool isShaderCompileMode() const;
 };
 
+class	RenderGraph;
+
 class	RenderContext;
 struct	RenderContext_CreateDesc;
 
@@ -91,10 +93,11 @@ public:
 	void reset(u64 frameCount);
 	void resetEngineFrame(u64 engineFrameCount);
 
-	virtual void waitIdle();
+	void waitIdle();
 	//void waitIdle();
 	void waitCpuIdle();
 	void waitGpuIdle();
+	void waitRenderThreadIdle();
 
 public:
 	SPtr<RenderContext>			createContext(				const	RenderContext_CreateDesc&		cDesc);
@@ -158,7 +161,8 @@ protected:
 	virtual SPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	= 0;
 
 public:
-	void _internal_freeRenderJob(UPtr<RenderJob> rdJob);
+	void			_internal_freeRenderJob(UPtr<RenderJob> rdJob);
+	virtual void	_internal_waitGpuIdle() = 0;
 
 protected:
 	RenderApiType		_apiType = RenderApiType::Vulkan;
@@ -167,6 +171,7 @@ protected:
 	// eg. Render_RenderResource, Render_RenderDevice
 	// Render_RenderDevice* _rd_rdDev = nullptr;
 
+	UPtr<RenderGraph>			_rdGraph = nullptr;	// TODO: temp
 	RenderThread				_rdThread;			// Consumer inside, _pendingRdJobs; 
 	// no need processingRdJobs, this is for check the gpu side is completed or not
 	AtmQueue<UPtr<RenderJob> >	_freeRdJobs;		// Producer

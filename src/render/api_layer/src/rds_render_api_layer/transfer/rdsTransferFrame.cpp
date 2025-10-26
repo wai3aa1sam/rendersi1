@@ -80,18 +80,17 @@ void TransferFrame::onPostCreate(CreateDesc& cDesc)
 
 void TransferFrame::onDestroy()
 {
-	_constBufAlloc.clear();
-	_tsfReq.reset(nullptr);
+	TransferFrame::onReset();
 }
 
 void 
 TransferFrame::onReset()
 {
 	_constBufAlloc.reset();
-	_tsfReq.reset(&transferContext());
 	auto fn_rdRscBuf = [](auto& buf) { auto data = buf.scopedULock(); data->clear(); };
+	fn_rdRscBuf(_destroyRdRscBuf);		// must reset before create, since create will release SPtr
 	fn_rdRscBuf(_createRdRscBuf);
-	fn_rdRscBuf(_destroyRdRscBuf);
+	_tsfReq.reset(&transferContext());
 }
 
 #if 1

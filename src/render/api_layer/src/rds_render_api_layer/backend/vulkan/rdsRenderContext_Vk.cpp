@@ -103,9 +103,8 @@ RenderContext_Vk::onPostCreate(const CreateDesc& cDesc)
 void
 RenderContext_Vk::onDestroy()
 {
-	auto* rdDevVk = renderDeviceVk();
-
-	rdDevVk->waitIdle();
+	//auto* rdDevVk = renderDeviceVk();
+	//rdDevVk->_internal_waitGpuIdle();
 
 	_vkRdFrames.clear();
 

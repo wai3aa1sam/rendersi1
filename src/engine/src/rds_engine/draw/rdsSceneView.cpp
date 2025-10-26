@@ -57,7 +57,7 @@ SceneView::drawScene(RenderRequest& rdReq, DrawData* drawData, const DrawSetting
 {
 	if (auto* shader = drawSettings.overrideShader)
 	{
-		auto* rdDev = renderableSystem().renderGraph().renderContext()->renderDevice();
+		auto* rdDev = rdReq.renderContext()->renderDevice();
 
 		auto&	rdableSys		= renderableSystem();
 		auto	renderableCount = rdableSys.renderables().size();
@@ -94,7 +94,8 @@ SceneView::drawScene(RenderRequest& rdReq, DrawData* drawData, const DrawSetting
 	}
 	else
 	{
-		drawScene(rdReq, nullptr, drawData, drawSettings);
+		Material* mtl= nullptr;
+		drawScene(rdReq, mtl, drawData, drawSettings);
 	}
 }
 

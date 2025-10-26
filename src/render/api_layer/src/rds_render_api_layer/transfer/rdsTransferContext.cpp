@@ -51,16 +51,26 @@ TransferContext::destroy()
 	if (!hasCreated())
 		return;
 
-	#if RDS_OLD_TSF_FRAME_IMPL
-	_prevTsfFrames.clear();
+	_tsfFrames.clear();
+
+	#if 0
 	{
-		auto data = _tsfFramePool.scopedULock();
-		data->clear();
+		auto tsf_cDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
+		auto temp = _tsfFrames;
+
+		_tsfFrames.clear();
+		_tsfFrameIdx = 0;
+		_tsfFrames.emplace_back(renderDevice()->createTransferFrame(tsf_cDesc));
+		temp.clear();
+
+		auto v = SPtr<TransferFrame>(transferFramePtr());
+		_temp_reset(v);
 	}
 	#endif // 0
 
 	onDestroy();
 	Base::destroy();
+
 }
 
 void 

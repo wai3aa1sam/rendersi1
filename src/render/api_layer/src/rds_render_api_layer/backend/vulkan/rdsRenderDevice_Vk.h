@@ -44,8 +44,6 @@ public:
 	RenderDevice_Vk();
 	virtual ~RenderDevice_Vk();
 
-	virtual void waitIdle() override;
-
 public:
 	Vk_MemoryContext*				memoryContext();
 	const VkAllocationCallbacks*	allocCallbacks();
@@ -67,7 +65,6 @@ public:
 	TransferFrame_Vk&		transferFrameVk();
 	//StagingBuffer_Vk&		stagingBufferVk();
 
-public:
 
 protected:
 	RDS_RENDER_DEVICE_INTERFACE_ON_CREATE(Vk);
@@ -90,6 +87,9 @@ private:
 
 public:
 	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
+
+public:
+	virtual void _internal_waitGpuIdle();
 
 private:
 	Vk_MemoryContext				_vkMemoryContext;

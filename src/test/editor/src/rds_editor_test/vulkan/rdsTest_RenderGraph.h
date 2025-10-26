@@ -602,7 +602,7 @@ public:
 	void prepare()
 	{
 		auto* rdGraph = &_rdGraph;
-		rdGraph->reset();
+		rdGraph->reset(_rdCtx);
 
 		RfpPbr::OutputTextures outTexs;
 		outTexs.texBrdfLut				= _texBrdfLut;
@@ -622,7 +622,7 @@ public:
 
 		scene()->update(1.0f / 60.0f, _rdCtx->aspectRatio());
 
-		_rdGraph.reset();
+		_rdGraph.reset(_rdCtx);
 
 		RdgTextureHnd oTex;
 		RdgTextureHnd oTexDepth;

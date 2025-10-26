@@ -139,6 +139,7 @@ public:
 	void drawQuad(const QuadVtxT& topLeft, const QuadVtxT& topRight, const QuadVtxT& botLeft, const QuadVtxT& botRight);
 
 public:
+	RenderContext*					renderContext();
 	Span<RenderCommand*>			commands();
 			RenderCommandBuffer&	commandBuffer();
 	const	RenderCommandBuffer&	commandBuffer() const;
@@ -242,6 +243,7 @@ inline void							RenderRequest::setViewport			(const Rect2f& rect)						{ _rdCm
 inline void							RenderRequest::setViewport			(const Tuple2f& pos, const Tuple2f& size)	{ Rect2f o; o.set(pos, size); setViewport(o); }
 inline void							RenderRequest::setViewportReverse	(const Rect2f& rect)						{ _rdCmdBuf.setViewportReverse(rect); }			
 
+inline RenderContext*				RenderRequest::renderContext()								{ return _rdCtx; }
 inline Span<RenderCommand*>			RenderRequest::commands()									{ return _rdCmdBuf.commands(); }
 
 inline			RenderCommandBuffer&	RenderRequest::commandBuffer()							{ return _rdCmdBuf; }

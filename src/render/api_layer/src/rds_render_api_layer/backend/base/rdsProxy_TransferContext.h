@@ -21,6 +21,7 @@ public:
 
 public:
 	void reset(SPtr<TransferFrame>& tsfFrame);
+	virtual void _temp_reset(SPtr<TransferFrame>& tsfFrame);
 
 public:
 	void transferBegin();
