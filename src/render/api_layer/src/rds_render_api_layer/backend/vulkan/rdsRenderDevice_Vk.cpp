@@ -1,6 +1,8 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderDevice_Vk.h"
 
+#include "rdsRenderJob_Vk.h"
+
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
@@ -41,20 +43,6 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 	loadVkDevFn(_vkExtInfo);
 
 	_vkMemoryContext.create(vkDevice(), vkPhysicalDevice(), vkInstance());
-
-	{
-		auto bindlessRscVkcDesc = BindlessResources_Vk::makeCDesc();
-		bindlessRscVkcDesc._internal_create(this);
-		_bindlessRscsVk.create(bindlessRscVkcDesc);
-		_bindlessRscs = &_bindlessRscsVk;
-	}
-
-	{
-		auto tsfCtxCDesc = TransferContext::makeCDesc();
-		tsfCtxCDesc._internal_create(this);
-		_tsfCtxVk.create(tsfCtxCDesc);
-		_tsfCtx = &_tsfCtxVk;
-	}
 }
 
 void
@@ -483,6 +471,18 @@ Vk_PhysicalDeviceVulkanFeatures*	Vk_PhysicalDeviceFeatures::vkPhyDevVkFeatures()
 }
 
 #endif
+
+#if 1
+
+UPtr<RenderJob> 
+RenderDevice_Vk::onCreateRenderJob(RenderJob_CreateDesc& cDesc)
+{
+	auto p = UPtr<RenderJob>(RDS_NEW(RenderJob_Vk));
+	return p;
+}
+
+#endif // 1
+
 
 }
 

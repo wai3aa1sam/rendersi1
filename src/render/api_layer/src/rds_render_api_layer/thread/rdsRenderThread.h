@@ -9,6 +9,7 @@
 namespace rds
 {
 
+class RenderJob;
 class RenderDevice;
 
 using TypeThread_CreateDesc = ::nmsp::TypeThread_CreateDesc;
@@ -48,9 +49,6 @@ public:
 public:
 	RenderThread();
 	~RenderThread();
-
-public:
-	UPtr<RenderJob> newRenderJob(RenderDevice* renderDevice, u64 frameCount);
 
 public:
 	void requestRender(UPtr<RenderJob> renderJob);

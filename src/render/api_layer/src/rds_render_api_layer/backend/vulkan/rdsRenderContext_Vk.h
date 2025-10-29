@@ -21,6 +21,7 @@ namespace rds
 {
 
 class Vk_RenderGraph;
+class RenderJob_Vk;
 
 #if 0
 #pragma mark --- rdsRenderContext_Vk-Decl ---
@@ -39,13 +40,8 @@ public:
 	RenderContext_Vk();
 	virtual ~RenderContext_Vk();
 
-	void addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd);
-	
-	virtual bool isFrameFinished(u64 frameCount) override;
-	virtual void waitFrameFinished(u64 frameCount) override;
-
 public:
-	Vk_CommandBuffer* requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
+	Vk_CommandBuffer* requestCmdBuf_Graphics(StrView debugName, VkCommandBufferLevel bufLevel = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 public:
 	Vk_Queue* vkGraphicsQueue();
@@ -53,7 +49,8 @@ public:
 	Vk_Queue* vkTransferQueue();
 	Vk_Queue* vkPresentQueue();
 
-	Vk_RenderFrame& vkRenderFrame(u64 frameIndex);
+	RenderJob_Vk&		renderJob_Vk();
+	Vk_RenderFrame&		vkRenderFrame();
 
 public:
 	void onRenderCommand_Dispatch(RenderCommand_Dispatch*	cmd, void* userData);
@@ -83,6 +80,7 @@ protected:
 
 	virtual void onCommit(RenderCommandBuffer&	renderBuf) override;
 	virtual void onCommit(const RenderGraph& rdGraph, RenderGraphFrame&	rdGraphFrame, u32 rdGraphFrameIdx)  override;
+	virtual void onCommit() override;
 
 protected:
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
@@ -91,8 +89,7 @@ public:
 	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 protected:
-	Vk_GpuProfiler _gpuProfilerCtx;
-
+	Vk_GpuProfiler	_gpuProfilerCtx;
 	Vk_Swapchain	_vkSwapchain;
 
 	Vk_Queue _vkGraphicsQueue;
@@ -100,7 +97,7 @@ protected:
 	Vk_Queue _vkPresentQueue;
 	Vk_Queue _vkTransferQueue;
 
-	Vk_RenderFrames		_vkRdFrames;
+	//Vk_RenderFrames		_vkRdFrames;
 	//Vk_CommandBuffer*	_curGraphicsVkCmdBuf = nullptr;
 
 	bool _shdSwapBuffers				= false;
@@ -109,19 +106,17 @@ protected:
 	Vk_RenderPassPool	_vkRdPassPool;		// persistent
 	//Vk_FramebufferPool	_vkFramebufPool;	// clear when invalidate swapchain
 
-	Vector<Vk_CommandBuffer_T*, 32> _pendingGfxVkCmdbufHnds;
+	//Vector<Vk_CommandBuffer_T*, 32> _pendingGfxVkCmdbufHnds;
 };
 
-inline Vk_Queue* RenderContext_Vk::vkGraphicsQueue()	{ return &_vkGraphicsQueue; }
-inline Vk_Queue* RenderContext_Vk::vkComputeQueue()		{ return &_vkComputeQueue; }
-inline Vk_Queue* RenderContext_Vk::vkTransferQueue()	{ return &_vkTransferQueue; }
-inline Vk_Queue* RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; }
-
+inline Vk_Queue*			RenderContext_Vk::vkGraphicsQueue()		{ return &_vkGraphicsQueue; }
+inline Vk_Queue*			RenderContext_Vk::vkComputeQueue()		{ return &_vkComputeQueue; }
+inline Vk_Queue*			RenderContext_Vk::vkTransferQueue()		{ return &_vkTransferQueue; }
+inline Vk_Queue*			RenderContext_Vk::vkPresentQueue()		{ return &_vkPresentQueue; }
 
 //inline Vk_CommandBuffer_T*	RenderContext_Vk::vkCommandBuffer()		{ return _curGraphicsVkCmdBuf->hnd(); }
 //inline Vk_CommandBuffer*	RenderContext_Vk::graphicsVkCmdBuf()	{ return _curGraphicsVkCmdBuf; }
 
-inline Vk_RenderFrame& RenderContext_Vk::vkRenderFrame(u64 frameIndex)	{ return _vkRdFrames[frameIndex]; }
 
 #endif
 }

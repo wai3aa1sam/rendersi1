@@ -8,6 +8,7 @@ namespace rds
 {
 
 class RenderGraphFrame;
+class RenderJob;
 
 #if 0
 #pragma mark --- rdsBackbuffers-Decl ---
@@ -52,6 +53,9 @@ class	TransferCommandBuffer;
 class	TransferRequest;
 class	RenderGraph;
 
+class	RenderJob;
+
+
 class Texture2D;
 
 struct RenderContext_CreateDesc : public RenderResource_CreateDesc
@@ -81,12 +85,15 @@ public:
 	void create	(const CreateDesc& cDesc);
 	void destroy();
 
+public:
+	void Render_reset(RenderJob* rdJob);
 	void beginRender();
 	void endRender();
 
 	void commit(RenderCommandBuffer&	rdCmdBuf);
 	void commit(RenderRequest&			rdReq);
 	void commit(RenderGraph&			rdGraph, u32 rdGraphFrameIdx);
+	void commit();
 
 public:
 	void drawUI(RenderRequest& req);
@@ -121,6 +128,7 @@ protected:
 
 	virtual void onCommit(RenderCommandBuffer&	renderBuf);
 	virtual void onCommit(const RenderGraph& rdGraph, RenderGraphFrame&	rdGraphFrame, u32 rdGraphFrameIdx);
+	virtual void onCommit();
 
 public:
 	virtual void onSetSwapchainSize(const Vec2f& newSize);
@@ -142,6 +150,7 @@ private:
 protected:
 	SPtr<RenderGpuBuffer>	_dummyVtxBuf;
 	GpuProfiler				_gpuProfiler;
+	RenderJob*				_rdJob = nullptr;		// TODO: temp, put to Proxy_RenderContext
 private:
 
 };

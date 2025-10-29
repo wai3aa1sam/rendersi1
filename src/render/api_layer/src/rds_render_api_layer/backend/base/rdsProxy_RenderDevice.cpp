@@ -2,6 +2,7 @@
 #include "rdsProxy_RenderDevice.h"
 
 #include "rdsProxy_TransferContext.h"
+#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 namespace rds
 {

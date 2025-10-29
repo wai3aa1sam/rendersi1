@@ -397,7 +397,7 @@ public:
 	void create(QueueTypeFlags type, u32 familyIdx, Vk_Device_T* vkDevice);
 	void destroy();
 
-	void submit(const VkSubmitInfo2& submitInfo, Vk_Fence_T* signalFenceHnd, const RenderDebugLabel& debugLabel);
+	void submit(const VkSubmitInfo2& submitInfo, Vk_Fence* signalFence, const RenderDebugLabel& debugLabel);
 
 public:
 	void insertDebugLabel(	const char* name, const Color4f& color = Color4f{ 0.7f, 0.8f, 0.9f, 1.0f });
@@ -641,11 +641,18 @@ public:
 	void create	(const VkFenceCreateInfo* pCreateInfo, RenderDevice_Vk* rdDevVk);
 	void destroy(RenderDevice_Vk* rdDevVk);
 
+public:
 	VkResult wait	(RenderDevice_Vk* rdDev, u64 timeout = NumLimit<u64>::max());
 	VkResult reset	(RenderDevice_Vk* rdDev);
+	void markAsSubmitted();
+
+public:
 	VkResult status (RenderDevice_Vk* rdDev) const;
 
 	bool isSignaled(RenderDevice_Vk* rdDev) const;
+
+private:
+	bool _hasSubmitted = false;
 };
 
 #endif

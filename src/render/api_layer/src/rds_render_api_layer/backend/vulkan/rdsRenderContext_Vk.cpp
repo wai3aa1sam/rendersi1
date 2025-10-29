@@ -2,6 +2,7 @@
 #include "rdsRenderContext_Vk.h"
 
 #include "rdsRenderDevice_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderJob_Vk.h"
 
 #include "rds_render_api_layer/backend/vulkan/transfer/rdsVk_TransferFrame.h"
 #include "rds_render_api_layer/thread/rdsRenderFrame.h"
@@ -51,6 +52,12 @@ RenderContext_Vk::~RenderContext_Vk()
 	destroy();
 }
 
+Vk_CommandBuffer* 
+RenderContext_Vk::requestCmdBuf_Graphics(StrView debugName, VkCommandBufferLevel bufLevel)
+{
+	return renderJob_Vk().requestCommandBuffer(_vkGraphicsQueue, bufLevel, debugName);
+}
+
 void
 RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 {
@@ -58,12 +65,6 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	auto* rdDevVk = renderDeviceVk();
 	//auto* vkDevice = rdDevVk->vkDevice();
-
-	_vkRdFrames.resize(s_kFrameInFlightCount);
-	for (size_t i = 0; i < s_kFrameInFlightCount; i++)
-	{
-		_vkRdFrames[i].create(this);
-	}
 
 	_vkGraphicsQueue.create(QueueTypeFlags::Graphics,	rdDevVk);
 	_vkComputeQueue.create( QueueTypeFlags::Compute,	rdDevVk);
@@ -103,11 +104,6 @@ RenderContext_Vk::onPostCreate(const CreateDesc& cDesc)
 void
 RenderContext_Vk::onDestroy()
 {
-	//auto* rdDevVk = renderDeviceVk();
-	//rdDevVk->_internal_waitGpuIdle();
-
-	_vkRdFrames.clear();
-
 	_vkSwapchain.destroy(nullptr);
 	//_backbuffers.destroy();
 
@@ -117,54 +113,19 @@ RenderContext_Vk::onDestroy()
 	Base::onDestroy();
 }
 
-void 
-RenderContext_Vk::addPendingGraphicsVkCommandBufHnd(Vk_CommandBuffer_T* hnd)
-{
-	_pendingGfxVkCmdbufHnds.emplace_back(hnd);
-}
-
-bool 
-RenderContext_Vk::isFrameFinished(u64 frameCount)
-{
-	checkRenderThreadExclusive(RDS_SRCLOC);
-	// vk fence also must be called exclusively, so a lock is needed
-	auto	frameIdx	= Traits::rotateFrame(frameCount);
-	auto&	vkRdFrame	= _vkRdFrames[frameIdx];
-	bool	isCompleted = vkRdFrame.inFlightFence()->isSignaled(renderDeviceVk()) || vkRdFrame.submitCount() == 0;
-	return isCompleted;
-}
-
-void 
-RenderContext_Vk::waitFrameFinished(u64 frameCount)
-{
-	// checkRenderThreadExclusive(RDS_SRCLOC);
-	// vk fence also must be called exclusively, so a lock is needed
-	auto*	rdDevVk		= renderDeviceVk();
-	auto	frameIdx	= Traits::rotateFrame(frameCount);
-	auto&	vkRdFrame	= _vkRdFrames[frameIdx];
-	if (vkRdFrame.submitCount() != 0)
-	{
-		vkRdFrame.inFlightFence()->wait(rdDevVk);
-	}
-}
-
 void
 RenderContext_Vk::onBeginRender()
 {
 	RDS_PROFILE_SCOPED();
 
 	auto*		rdDevVk		= renderDeviceVk();
-	auto		frameIdx	= frameIndex();
-	auto&		vkRdFrame	= vkRenderFrame(frameIdx);
+	auto&		vkRdFrame	= vkRenderFrame();
 
 	VkResult	ret		= {};
 
 	{
 		RDS_PROFILE_SECTION("vkWaitForFences()");
-		if (vkRdFrame.submitCount() != 0)
-		{
-			vkRdFrame.inFlightFence()->wait(rdDevVk);
-		}
+		vkRdFrame.inFlightFence()->wait(rdDevVk);
 	}
 
 	//vkResetFences(vkDevice, vkFenceCount, vkFences);		// reset too early will cause deadlock, since the invalidate wii cause no work submitted (returned) and then no one will signal it
@@ -181,7 +142,7 @@ RenderContext_Vk::onBeginRender()
 
 	if (frameCount() > 0)
 	{
-		vkRdFrame.reset();
+		renderJob_Vk().reset(renderDeviceVk());
 	}
 }
 
@@ -192,19 +153,20 @@ RenderContext_Vk::onEndRender()
 
 	auto* rdDevVk	= renderDeviceVk();
 	auto  frameIdx	= frameIndex();
-	auto& vkRdFrame	= vkRenderFrame(frameIdx);
+	auto& vkRdFrame	= vkRenderFrame();
+	auto& rdJobVk	= renderJob_Vk();
 
 	//rdDevVk->bindlessResourceVk().commit();
 	_gpuProfilerCtx.commit();
 
 	// submit
 	{
-		if (_pendingGfxVkCmdbufHnds.is_empty())
+		if (rdJobVk.pendingGfxVkCmdbufHnds().is_empty())
 		{
 			rdDevVk->waitIdle();
 
 			// easy handle for deadlock when nothing is committed
-			auto* vkCmdBuf = requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "dummyBegin");
+			auto* vkCmdBuf = requestCmdBuf_Graphics("dummyBegin");
 			vkCmdBuf->beginRecord(vkGraphicsQueue());
 			vkCmdBuf->endRecord();
 		}
@@ -226,7 +188,7 @@ RenderContext_Vk::onEndRender()
 
 			RenderDebugLabel debugLabel;
 			debugLabel.name = "RenderContext_Vk::onEndRender()";
-			Vk_CommandBuffer::submit(debugLabel, vkGraphicsQueue(), _pendingGfxVkCmdbufHnds, vkRdFrame.inFlightFence(), waitSmps, signalSmps);
+			Vk_CommandBuffer::submit(debugLabel, vkGraphicsQueue(), renderJob_Vk().pendingGfxVkCmdbufHnds(), vkRdFrame.inFlightFence(), waitSmps, signalSmps);
 		}
 	}
 
@@ -242,8 +204,7 @@ RenderContext_Vk::onEndRender()
 
 	// next frame idx
 	{
-		vkRdFrame.setSubmitCount(_pendingGfxVkCmdbufHnds.size());
-		_pendingGfxVkCmdbufHnds.clear();
+		//_pendingGfxVkCmdbufHnds.clear();
 	}
 }
 
@@ -263,7 +224,7 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 	if (!_vkSwapchain.isValid())
 		return;
 
-	auto* vkCmdBuf = requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "RenderContext_Vk::onCommit-Graphics");
+	auto* vkCmdBuf	= requestCmdBuf_Graphics("RenderContext_Vk::onCommit-Graphics");
 
 	vkCmdBuf->beginRecord(vkGraphicsQueue());
 
@@ -389,8 +350,7 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 
 			Vk_RenderPassPool&	vkRdPassPool	= _rdCtxVk->_vkRdPassPool;
 			//Vk_FramebufferPool& vkFramebufPool	= _rdCtxVk->_vkFramebufPool;
-			auto				frameIdx		= _rdCtxVk->frameIndex();
-			Vk_FramebufferPool& vkFramebufPool	= _rdCtxVk->vkRenderFrame(frameIdx)._vkFramebufPool;
+			Vk_FramebufferPool& vkFramebufPool	= _rdCtxVk->vkRenderFrame()._vkFramebufPool;
 
 			bool hasRenderPass	= pass->hasRenderPass();
 
@@ -565,7 +525,8 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 				return;
 
 			// use Transfer Queue should be better as all exported are only avaliable in next frame, but need modify code
-			auto* vkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Transit Exported Resources");
+			auto& rdJobVk	= _rdCtxVk->renderJob_Vk();
+			auto* vkCmdBuf = rdJobVk.requestCommandBuffer(*_rdCtxVk->vkGraphicsQueue(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, "Transit Exported Resources");
 
 			vkCmdBuf->beginRecord();
 
@@ -626,17 +587,18 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 		{
 			Vk_CommandBuffer* outVkCmdBuf = nullptr;
 
+			auto& rdJobVk	= _rdCtxVk->renderJob_Vk();
 			if		(BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::Transfer))		
 			{ 
-				outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY, name);
+				outVkCmdBuf = rdJobVk.requestCommandBuffer(*_rdCtxVk->vkTransferQueue(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, name);
 			}
 			else if	(BitUtil::hasOnly(typeFlags, RdgPassTypeFlags::AsyncCompute))	
 			{ 
-				outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Compute, VK_COMMAND_BUFFER_LEVEL_PRIMARY, name); 
+				outVkCmdBuf = rdJobVk.requestCommandBuffer(*_rdCtxVk->vkComputeQueue(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, name);
 			}
 			else
 			{
-				outVkCmdBuf = _rdCtxVk->requestCommandBuffer(QueueTypeFlags::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY, name);
+				outVkCmdBuf = _rdCtxVk->requestCmdBuf_Graphics(name);
 			}
 
 			RDS_CORE_ASSERT(outVkCmdBuf);
@@ -688,6 +650,12 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 }
 
 void 
+RenderContext_Vk::onCommit()
+{
+
+}
+
+void 
 RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
 {
 	// VK_ERROR_OUT_OF_DATE_KHR		means window size is changed
@@ -711,20 +679,7 @@ RenderContext_Vk::invalidateSwapchain(VkResult ret, const Vec2f& newSize)
 	}
 }
 
-Vk_CommandBuffer* 
-RenderContext_Vk::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName)
-{
-	using SRC = rds::QueueTypeFlags;
-	auto	frameIdx	= frameIndex();
-	auto&	vkRdFrame	= vkRenderFrame(frameIdx);
-	switch (queueType)
-	{
-		case SRC::Graphics: { auto* o = vkRdFrame.requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkGraphicsQueue); addPendingGraphicsVkCommandBufHnd(o->hnd());	return o; } break;
-		case SRC::Compute:	{ auto* o = vkRdFrame.requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkComputeQueue);	return o; } break;
-		case SRC::Transfer:	{ auto* o = vkRdFrame.requestCommandBuffer(queueType, bufLevel, debugName); o->reset(&_vkTransferQueue);	return o; } break;
-		default: { RDS_THROW("invalid vk queue type"); } break;
-	}
-}
+
 
 #if 0
 #pragma mark --- rdsRenderContext_Vk-createResource
@@ -1187,10 +1142,6 @@ RenderContext_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd
 	Base::onRenderResouce_SetDebugName(cmd);
 	
 	_vkSwapchain.setDebugName(name);
-	for (auto& e : _vkRdFrames)
-	{
-		e.setDebugName(name);
-	}
 
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkGraphicsQueue);
 	RDS_VK_SET_DEBUG_NAME_FMT(_vkComputeQueue);
@@ -1199,6 +1150,10 @@ RenderContext_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd
 }
 
 #endif
+
+RenderJob_Vk&		RenderContext_Vk::renderJob_Vk()		{ return sCast<RenderJob_Vk&>(*_rdJob); }
+Vk_RenderFrame&		RenderContext_Vk::vkRenderFrame()		{ return renderJob_Vk().vkRenderFrame(); }
+
 }
 
 #endif // RDS_RENDER_HAS_VULKAN

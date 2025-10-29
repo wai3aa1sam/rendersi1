@@ -3,8 +3,6 @@
 #include "rds_demo/common/rds_demo_common.h"
 #include "rds_engine/draw/rdsSceneView.h"
 
-#include "rds_render_api_layer/thread/rdsRenderThread.h"
-
 namespace rds
 {
 

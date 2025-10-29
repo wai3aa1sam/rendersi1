@@ -11,6 +11,13 @@
 namespace rds
 {
 
+SPtr<TransferContext> 
+RenderDevice_Vk::onCreateTransferContext(TransferContext_CreateDesc& cDesc)
+{
+	auto p = SPtr<TransferContext>(makeSPtr<TransferContext_Vk>());
+	p->create(cDesc);
+	return p;
+}
 
 #if 0
 #pragma mark --- rdsTransferContext_Vk-Impl ---

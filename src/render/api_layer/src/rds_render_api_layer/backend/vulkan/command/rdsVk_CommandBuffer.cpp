@@ -54,7 +54,7 @@ Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Queue* vkQueue, 
 	submitInfo.pCommandBufferInfos		= cmdBufSubmitInfos.data();
 	
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-	vkQueue->submit(submitInfo, signalFence->hnd(), debugLabel);
+	vkQueue->submit(submitInfo, signalFence, debugLabel);
 }
 
 #endif
@@ -211,7 +211,7 @@ Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFen
 
 	//RDS_CORE_LOG_DEBUG("submit [{}]: vkCmdBuf: {}", debugLabel.name, (void*)hnd());
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-	_vkQueue->submit(submitInfo, signalFence->hnd(), debugLabel);
+	_vkQueue->submit(submitInfo, signalFence, debugLabel);
 }
 
 void 
@@ -232,7 +232,7 @@ Vk_CommandBuffer::submit(const RenderDebugLabel& debugLabel, Vk_Fence* signalFen
 	submitInfo.pCommandBufferInfos		= &cmdBufSubmitInfo;
 
 	//PFN_vkQueueSubmit2KHR vkQueueSubmit2 = (PFN_vkQueueSubmit2KHR)renderer()->extInfo().getDeviceExtFunction("vkQueueSubmit2KHR");
-	_vkQueue->submit(submitInfo, signalFence->hnd(), debugLabel);
+	_vkQueue->submit(submitInfo, signalFence, debugLabel);
 }
 
 void 

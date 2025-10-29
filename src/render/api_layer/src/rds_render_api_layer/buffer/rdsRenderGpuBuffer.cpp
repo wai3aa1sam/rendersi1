@@ -13,6 +13,7 @@ RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateRenderGpuBuffer(cDesc);
+	p->create(cDesc);
 	return p;
 }
 

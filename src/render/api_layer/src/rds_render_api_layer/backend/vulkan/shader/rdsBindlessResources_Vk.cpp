@@ -15,6 +15,14 @@
 namespace rds
 {
 
+SPtr<BindlessResources> 
+RenderDevice_Vk::onCreateBindlessResources(BindlessResources_CreateDesc& cDesc)
+{
+	auto p = SPtr<BindlessResources>(makeSPtr<BindlessResources_Vk>());
+	p->create(cDesc);
+	return p;
+}
+
 #if 0
 #pragma mark --- rdsBindlessResources_Vk-Impl ---
 #endif // 0
@@ -160,6 +168,7 @@ BindlessResources_Vk::reserve(SizeType size)
 	_texInfos.reserve(		n * est);
 	_imgInfos.reserve(		n * est);
 
+	//RDS_CORE_LOG("BindlessResources_Vk::reserve: {}", n);
 	//RDS_TODO("image has 6 or more uav, n is not enough, need to update twice or more");
 }
 

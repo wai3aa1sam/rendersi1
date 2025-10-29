@@ -11,6 +11,7 @@
 #include "rdsRenderer.h"
 
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
+#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 namespace rds
 {
@@ -63,22 +64,28 @@ RenderDevice::create(const CreateDesc& cDesc)
 
 	onCreate(cDesc);
 
+	auto bindlessRscVk_cDesc = BindlessResources::makeCDesc();
+	_bindlessRscs = createBindlessResources(bindlessRscVk_cDesc);
+
+	auto TransferContext_cDesc = TransferContext::makeCDesc();
+	_tsfCtx = createTransferContext(TransferContext_cDesc);
+
 	if (cDesc.isShaderCompileMode())
 		return;
-
-	RDS_CORE_ASSERT(_bindlessRscs,	"");
-	RDS_CORE_ASSERT(_tsfCtx,		"");
 	
 	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
 	{
-		auto o = makeUPtr<RenderJob>();
+		RenderJob_CreateDesc rdJob_cDesc = {};
+		rdJob_cDesc.renderDevice = this;
+		auto o = createRenderJob(rdJob_cDesc);
 		_freeRdJobs.push(rds::move(o));
 	}
 
-	if (cDesc.isMultithread)
+	auto rdThreadCDesc = RenderThread::makeCDesc(this, JobSystem::instance());
+	_rdThread.create(rdThreadCDesc);
+	if (!cDesc.isMultithread)
 	{
-		auto rdThreadCDesc = RenderThread::makeCDesc(this, JobSystem::instance());
-		_rdThread.create(rdThreadCDesc);
+		_rdThread.quit();
 	}
 
 	_shaderStock.create(this);
@@ -99,12 +106,24 @@ RenderDevice::destroy()
 		_rdThread.waitGpuIdle();
 		_rdGraph.reset(nullptr);
 	}
-	
-	_rdThread.destroy();
-	
+
 	_shaderStock.destroy();
 	_textureStock.destroy();
 
+	_debug.rdRscs.clear();
+
+	_rdThread.destroy();
+
+	#if 1
+	Vector< UPtr<RenderJob> > v;
+	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
+	{
+		v.emplace_back(_rdDev->newRenderJob(nullptr, i));
+	}
+	v.clear();
+	#endif // 0
+
+	
 	if (_tsfCtx)
 	{
 		_tsfCtx->destroy();
@@ -151,8 +170,15 @@ RenderDevice::_internal_freeRenderJob(UPtr<RenderJob> rdJob)
 }
 
 void 
+RenderDevice::_internal_createRenderResource(RenderResource* rdRsc)
+{
+	_debug.rdRscs.emplace_back(rdRsc);
+}
+
+void 
 RenderDevice::submitRenderJob(UPtr<RenderJob> rdJob)
 {
+	RDS_TODO("**** must wait all async upload stuff when submit");
 	_tsfCtx->submit(rdJob);
 	if (adapterInfo().isMultiThread)
 	{
@@ -228,24 +254,27 @@ RenderDevice::waitRenderThreadIdle()
 	_rdThread.waitCpuIdle();
 }
 
-SPtr<Texture2D>	
-RenderDevice::createSolidColorTexture2D(const Color4b& color)
-{
-	return _textureStock.createSolidColorTexture2D(color);
-}
-
-SPtr<Texture2D>	
-RenderDevice::createCheckerboardTexture2D(const Color4b& color)
-{
-	return _textureStock.createCheckerboardTexture2D(color);
-}
-
 void 
 RenderDevice::onResetFrame(u64 frameCount)
 {
 }
 
 #endif
+
+#if 0
+#pragma mark --- rdsRenderDevice::RenderResource-Impl ---
+#endif // 0
+#if 1
+
+UPtr<RenderJob> 
+RenderDevice::createRenderJob(RenderJob_CreateDesc& cDesc)
+{
+	auto p = onCreateRenderJob(cDesc);
+	p->create(cDesc);
+	return p;
+}
+
+#endif // 1
 
 TransferRequest&		RenderDevice::transferRequest()				{ checkMainThreadExclusive(RDS_SRCLOC); return transferFrame().transferRequest(); }
 TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);	return transferContext().transferFrame(); }

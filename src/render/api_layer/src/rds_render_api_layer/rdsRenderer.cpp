@@ -61,7 +61,7 @@ Renderer::destroy()
 {
 	for (auto& e : _rdDevs)
 	{
-		e->waitIdle();		// waitIdle must call by one thread only
+		e->destroy();
 	}
 	_rdDevs.clear();
 }

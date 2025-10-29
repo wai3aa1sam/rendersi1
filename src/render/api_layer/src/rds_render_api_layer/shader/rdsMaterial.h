@@ -52,6 +52,9 @@ public:
 	static SPtr<Material>	make(Shader* shader);
 
 public:
+	RenderRequest* _rdReq = nullptr;
+
+public:
 	Material();
 	virtual ~Material();
 

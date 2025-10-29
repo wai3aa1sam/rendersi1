@@ -65,7 +65,11 @@ protected:
 
 private:
 	//AtmQueue<SPtr<TransferFrame> >	_freeTsfFrames;		// Producer, currently do not use this design, should think about when multiple RenderContext
-	using TransferFrames = Vector<SPtr<TransferFrame>, s_kMaxFrameAheadCountHardLimit>;
+
+	// s_kMaxTransferFrameCount to ensure we always has a brandnew frame to use in cpu
+	// so that when newRenderJob, the non-submitted TransferFrame will not be reset, which will cause lost data
+	static constexpr u32 s_kMaxTransferFrameCount = s_kMaxFrameAheadCountHardLimit + 1;
+	using TransferFrames = Vector<SPtr<TransferFrame>, s_kMaxTransferFrameCount>;
 	TransferFrames		_tsfFrames;
 	Atm<u32>			_tsfFrameIdx = 0;
 };

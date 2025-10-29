@@ -3,6 +3,7 @@
 #include "rdsRenderContext.h"
 
 #include "rdsRenderer.h"
+#include "thread/rdsRenderJob.h"
 
 #include "command/rdsRenderRequest.h"
 #include "graph/rdsRenderGraph.h"
@@ -111,6 +112,12 @@ RenderContext::destroy()
 	Base::destroy();
 }
 
+void 
+RenderContext::Render_reset(RenderJob* rdJob)
+{
+	_rdJob = rdJob;
+}
+
 void
 RenderContext::beginRender()
 {
@@ -127,6 +134,7 @@ RenderContext::endRender()
 	
 	onEndRender();
 	//_rdUiCtx.onEndRender(this);
+	_rdJob = nullptr;
 }
 
 void 
@@ -145,6 +153,14 @@ void
 RenderContext::commit(RenderGraph& rdGraph, u32 rdGraphFrameIdx)
 {
 	onCommit(rdGraph, rdGraph.renderGraphFrame(rdGraphFrameIdx), rdGraphFrameIdx);
+}
+
+void 
+RenderContext::commit()
+{
+	RDS_CORE_ASSERT(_rdJob, "Render_reset()");
+	_rdJob->renderGraph().commit(_rdJob->_renderGraphFrameIdx);
+	commit(_rdJob->renderRequest());
 }
 
 void 
@@ -231,6 +247,12 @@ RenderContext::onCommit(RenderCommandBuffer& renderBuf)
 
 void 
 RenderContext::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraphFrame, u32 rdGraphFrameIdx)
+{
+
+}
+
+void 
+RenderContext::onCommit()
 {
 
 }

@@ -237,8 +237,8 @@ protected:
 	RdgPassFlags		_flags;
 
 	//RenderCommandBuffer _cmdBuf;
-	RenderRequest	_rdReq;
-	ExecuteFunc		_executeFunc;
+	RenderRequest		_rdReq;
+	ExecuteFunc			_executeFunc;
 
 	#if RDS_USE_GPU_PROFILER
 	const SrcLocData* _srcLocData = nullptr;

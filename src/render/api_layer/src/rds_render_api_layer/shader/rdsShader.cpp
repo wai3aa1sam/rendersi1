@@ -100,6 +100,7 @@ Shader::onCreate(const CreateDesc& cDesc)
 	throwIf(!Path::isExist(filename), "create shader, filename: {} does not exist", filename);
 
 	_shadername = filename;
+	setDebugName(filename);
 
 	if (cDesc.permuts)
 	{

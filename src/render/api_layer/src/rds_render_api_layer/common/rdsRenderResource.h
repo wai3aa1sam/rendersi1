@@ -199,6 +199,7 @@ public:
 	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
 
 protected:
+	void RenderResource_CreateEnd();
 	template<class T> static void destroyObject(T* p, const RenderFrameParam& rdFrameParam);
 
 protected:
@@ -225,6 +226,8 @@ RenderResource::create(const RenderResource_CreateDescT<T>& cDesc)
 	#if RDS_DEVELOPMENT
 	RDS_DEBUG_SRCLOC = cDesc._debugSrcLoc;
 	#endif // RDS_DEVELOPMENT
+
+	RenderResource_CreateEnd();
 }
 
 inline

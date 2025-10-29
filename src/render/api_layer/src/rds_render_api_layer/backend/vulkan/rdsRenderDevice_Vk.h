@@ -104,8 +104,8 @@ private:
 	Vk_PhysicalDevice				_vkPhysicalDevice;
 	Vk_Device						_vkDevice;
 
-	BindlessResources_Vk			_bindlessRscsVk;
-	TransferContext_Vk				_tsfCtxVk;
+	//BindlessResources_Vk*			_bindlessRscsVk;
+	//TransferContext_Vk*				_tsfCtxVk;
 };
 
 #endif
@@ -118,7 +118,7 @@ private:
 inline			Vk_MemoryContext*				RenderDevice_Vk::memoryContext()					{ return &_vkMemoryContext; }
 inline const	VkAllocationCallbacks*			RenderDevice_Vk::allocCallbacks()					{ return _vkMemoryContext.allocCallbacks(); }
 
-inline			TransferContext_Vk&				RenderDevice_Vk::transferContextVk()				{ return _tsfCtxVk; }
+inline			TransferContext_Vk&				RenderDevice_Vk::transferContextVk()				{ return *sCast<TransferContext_Vk*>(_tsfCtx.ptr()); }
 
 inline			Vk_Instance_T*					RenderDevice_Vk::vkInstance()						{ return _vkInstance.hnd(); }
 inline			Vk_PhysicalDevice_T*			RenderDevice_Vk::vkPhysicalDevice()					{ return _vkPhysicalDevice.hnd(); }
@@ -130,7 +130,7 @@ inline			Vk_SwapchainAvailableInfo&		RenderDevice_Vk::swapchainAvailableInfo()		
 
 inline			QueueFamilyIndices&				RenderDevice_Vk::queueFamilyIndices()				{ return _queueFamilyIndices; }
 
-inline			BindlessResources_Vk&			RenderDevice_Vk::bindlessResourceVk()				{ return _bindlessRscsVk; }
+inline			BindlessResources_Vk&			RenderDevice_Vk::bindlessResourceVk()				{ return *sCast<BindlessResources_Vk*>(_bindlessRscs.ptr()); }
 
 inline 
 TransferFrame_Vk&

@@ -12,6 +12,7 @@
 #include "shader/rdsShaderStock.h"
 
 #include "thread/rdsRenderThread.h"
+#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 namespace rds
 {
@@ -64,8 +65,14 @@ class	ShaderPermutations;
 class	Material;
 struct	Material_CreateDesc;
 
+class	RenderJob;
+struct	RenderJob_CreateDesc;
+class	TransferContext;
+struct	TransferContext_CreateDesc;
 class	TransferFrame;
 struct	TransferFrame_CreateDesc;
+class	BindlessResources;
+struct	BindlessResources_CreateDesc;
 
 class RenderDevice : public RenderResource
 {
@@ -115,12 +122,10 @@ public:
 	SPtr<Material>				createMaterial(						Shader*							shader);
 	SPtr<Material>				createMaterial();
 
-	// frame only exist 1 for 1 frame, Request could have many
-	SPtr<TransferFrame>			createTransferFrame(				TransferFrame_CreateDesc&		cDesc);
-
-public:
-	SPtr<Texture2D>	createSolidColorTexture2D(  const Color4b& color);
-	SPtr<Texture2D>	createCheckerboardTexture2D(const Color4b& color);
+	UPtr<RenderJob>				createRenderJob(				RenderJob_CreateDesc&			cDesc);
+	SPtr<TransferContext>		createTransferContext(			TransferContext_CreateDesc&		cDesc);
+	SPtr<TransferFrame>			createTransferFrame(			TransferFrame_CreateDesc&		cDesc);	// frame only exist 1 for 1 frame, Request could have many
+	SPtr<BindlessResources>		createBindlessResources(		BindlessResources_CreateDesc&	cDesc);
 
 public:
 	const	RenderAdapterInfo&		adapterInfo() const;
@@ -158,11 +163,15 @@ protected:
 	virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&				cDesc)	= 0;
 	virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&			cDesc)	= 0;
 
+	virtual UPtr<RenderJob>				onCreateRenderJob(					RenderJob_CreateDesc&			cDesc)	= 0;
+	virtual SPtr<TransferContext>		onCreateTransferContext(			TransferContext_CreateDesc&		cDesc)	= 0;
 	virtual SPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	= 0;
+	virtual SPtr<BindlessResources>		onCreateBindlessResources(			BindlessResources_CreateDesc&	cDesc)	= 0;
 
 public:
 	void			_internal_freeRenderJob(UPtr<RenderJob> rdJob);
 	virtual void	_internal_waitGpuIdle() = 0;
+	void			_internal_createRenderResource(RenderResource* rdRsc);
 
 protected:
 	RenderApiType		_apiType = RenderApiType::Vulkan;
@@ -186,11 +195,16 @@ protected:
 	*/
 	//Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
 	//Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
-	BindlessResources*		_bindlessRscs	= nullptr;
-	TransferContext*		_tsfCtx			= nullptr;
+	SPtr<BindlessResources>		_bindlessRscs	= nullptr;
+	SPtr<TransferContext>		_tsfCtx			= nullptr;
 
 	ShaderStock			_shaderStock;
 	TextureStock		_textureStock;
+
+	struct Debug
+	{
+		Vector<SPtr<RenderResource>> rdRscs;
+	} _debug;
 };
 
 inline const	RenderAdapterInfo&		RenderDevice::adapterInfo()		const		{ return _adapterInfo; }
@@ -221,14 +235,17 @@ inline			u32						RenderDevice::frameIndex()			const	{ return sCast<u32>((frameC
 }
 
 #define RDS_RENDER_DEVICE_INTERFACE_ON_CREATE(T) \
-virtual SPtr<RenderContext>			onCreateContext(			const	RenderContext_CreateDesc&		cDesc)	override; \
-virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc)	override; \
-virtual SPtr<Texture2D>				onCreateTexture2D(					Texture2D_CreateDesc&			cDesc)	override; \
-virtual SPtr<Texture3D>				onCreateTexture3D(					Texture3D_CreateDesc&			cDesc)	override; \
-virtual SPtr<TextureCube>			onCreateTextureCube(				TextureCube_CreateDesc&			cDesc)	override; \
-virtual SPtr<Texture2DArray>		onCreateTexture2DArray(				Texture2DArray_CreateDesc&		cDesc)	override; \
-virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&				cDesc)	override; \
-virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&			cDesc)	override; \
-																														  \
-virtual SPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	override; \
+virtual SPtr<RenderContext>			onCreateContext(			const	RenderContext_CreateDesc&		cDesc)	override;	\
+virtual SPtr<RenderGpuBuffer>		onCreateRenderGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc)	override;	\
+virtual SPtr<Texture2D>				onCreateTexture2D(					Texture2D_CreateDesc&			cDesc)	override;	\
+virtual SPtr<Texture3D>				onCreateTexture3D(					Texture3D_CreateDesc&			cDesc)	override;	\
+virtual SPtr<TextureCube>			onCreateTextureCube(				TextureCube_CreateDesc&			cDesc)	override;	\
+virtual SPtr<Texture2DArray>		onCreateTexture2DArray(				Texture2DArray_CreateDesc&		cDesc)	override;	\
+virtual SPtr<Shader>				onCreateShader(				const	Shader_CreateDesc&				cDesc)	override;	\
+virtual SPtr<Material>				onCreateMaterial(			const	Material_CreateDesc&			cDesc)	override;	\
+\
+virtual UPtr<RenderJob>				onCreateRenderJob(					RenderJob_CreateDesc&			cDesc)	override;	\
+virtual SPtr<TransferContext>		onCreateTransferContext(			TransferContext_CreateDesc&		cDesc)	override;	\
+virtual SPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	override;	\
+virtual SPtr<BindlessResources>		onCreateBindlessResources(			BindlessResources_CreateDesc&	cDesc)	override;	\
 // ---

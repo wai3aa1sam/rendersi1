@@ -39,18 +39,17 @@ public:
 	Vk_RenderFrame(Vk_RenderFrame&& rhs);
 	void operator=(Vk_RenderFrame&& rhs);
 
-	void create	(RenderContext_Vk* rdCtxVk);
+	void create	(RenderDevice_Vk* rdDevVk);
 	void destroy();
 
-	void reset();
+public:
+	void reset(RenderDevice_Vk* rdDevVk);
 
 						Vk_CommandBuffer*	requestCommandBuffer	(QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 	template<size_t N>	void				requestCommandBuffersTo	(Vector<Vk_CommandBuffer*, N>& out, SizeType n, QueueTypeFlags queueType, VkCommandBufferLevel bufLevel, StrView debugName);
 
 	void resetCommandPools();
 	void resetCommandPool(QueueTypeFlags queueType);
-
-	void setSubmitCount(SizeType n) { _submitCount = n; }
 
 	void setDebugName(StrView name);
 
@@ -64,10 +63,7 @@ public:
 	Vk_Semaphore*	renderCompletedSmp();
 	Vk_Fence*		inFlightFence();
 
-	SizeType		submitCount() const;
-
 	RenderDevice_Vk*	renderDeviceVk();
-	RenderContext_Vk*	rdCtxVk();
 
 protected:
 	void createCommandPool (Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, QueueTypeFlags type);
@@ -77,7 +73,7 @@ protected:
 	void destroySyncObjects	();
 
 protected:
-	RenderContext_Vk* _rdCtxVk = nullptr;
+	RenderDevice_Vk* _rdDevVk = nullptr;
 
 	Vector<Vk_CommandPool, s_kThreadCount> _graphicsCommandPools;
 	Vector<Vk_CommandPool, s_kThreadCount> _computeCommandPools;
@@ -92,8 +88,6 @@ protected:
 	Set<Vk_DescriptorSet*>	_nonBindlessUpdatedDescrSets;
 
 	//Vector<Vk_DescriptorPool, s_kThreadCount> // use VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, only reset the pool
-
-	SizeType _submitCount = 0;
 };
 
 template<size_t N> inline
@@ -134,10 +128,6 @@ inline Set<Vk_DescriptorSet*>& Vk_RenderFrame::nonBindlessUpdatedDescriptorSets(
 inline Vk_Semaphore*			Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
 inline Vk_Semaphore*			Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }
 inline Vk_Fence*				Vk_RenderFrame::inFlightFence()			{ return &_inFlightVkFence; }
-
-inline Vk_RenderFrame::SizeType	Vk_RenderFrame::submitCount() const		{ return _submitCount; }
-
-inline RenderContext_Vk*		Vk_RenderFrame::rdCtxVk() { return _rdCtxVk; }
 
 #endif
 

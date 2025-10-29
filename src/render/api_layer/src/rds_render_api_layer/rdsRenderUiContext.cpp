@@ -88,6 +88,8 @@ RenderUiContext::destroy()
 	_fontTex.reset(nullptr);
 
 	_rdCtx = nullptr;
+
+	_showImageFramedMtlPool.clear();
 }
 
 void
@@ -366,6 +368,7 @@ RenderUiContext::_createFontTexture()
 
 	auto* rdDev = renderDevice();
 	_fontTex = rdDev->createTexture2D(cDesc);
+	_fontTex->setDebugName("tex_font");
 }
 
 int

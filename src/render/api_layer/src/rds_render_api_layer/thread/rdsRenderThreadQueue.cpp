@@ -1,6 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderThreadQueue.h"
 #include "rdsRenderThread.h"
+#include "rds_render_api_layer/rdsRenderContext.h"
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
 
@@ -127,40 +128,5 @@ void RenderThreadQueue::freeRenderJob(UPtr<RenderJob> renderJob)
 }
 
 #endif
-
-void 
-RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_)
-{
-	renderDevice	= renderDevice_;
-	frameCount		= frameCount_;
-
-	#if 0
-	#if 0
-	auto& tsfCtx = renderDevice_->transferContext();
-	//transferFrame = !tsfCtx.transferFramePtr() ? tsfCtx.newTransferFrame() : tsfCtx.transferFramePtr();
-	#else
-	if (!transferFrame)
-	{
-		auto cDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-		transferFrame = renderDevice_->createTransferFrame(cDesc);
-	}
-	renderDevice_->transferContext().reset(transferFrame);
-	#endif // 0
-
-	transferFrame->reset();
-	#endif // 0
-	
-	renderRequest().reset(rdCtx);
-	if (rdCtx)		// TODO: temp sol. nullptr means it is destroying
-	{
-		renderGraph().reset(rdCtx);
-		_renderGraphFrameIdx = renderGraph().frameIndex();
-	}
-
-	if (_transferFrame)
-		_transferFrame->reset();
-	_transferFrame	= nullptr;
-
-}
 
 }

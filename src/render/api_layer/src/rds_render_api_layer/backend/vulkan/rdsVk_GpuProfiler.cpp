@@ -150,7 +150,7 @@ void
 Vk_GpuProfiler::_commit(Vk_GpuProfilerContext& ctx, QueueTypeFlags queuType)
 {
 	auto* rdCtxVk	= renderContexVk();
-	auto* vkCmdBuf	= rdCtxVk->requestCommandBuffer(queuType, VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY, RDS_FUNC_NAME_SZ);
+	auto* vkCmdBuf	= rdCtxVk->requestCmdBuf_Graphics(RDS_FUNC_NAME_SZ);
 	vkCmdBuf->beginRecord();
 	TracyVkCollect(ctx, vkCmdBuf->hnd());
 	vkCmdBuf->endRecord();

@@ -29,7 +29,8 @@ Vk_RenderFrame::Vk_RenderFrame(Vk_RenderFrame&& rhs)
 	operator=(rds::move(rhs));
 }
 
-void Vk_RenderFrame::operator=(Vk_RenderFrame&& rhs)
+void 
+Vk_RenderFrame::operator=(Vk_RenderFrame&& rhs)
 {
 	if (this == &rhs)
 		return;
@@ -40,26 +41,26 @@ void Vk_RenderFrame::operator=(Vk_RenderFrame&& rhs)
 }
 
 void 
-Vk_RenderFrame::create(RenderContext_Vk* rdCtxVk)
+Vk_RenderFrame::create(RenderDevice_Vk* rdDevVk)
 {
 	destroy();
 
-	_rdCtxVk = rdCtxVk;
+	_rdDevVk = rdDevVk;
 
 	createCommandPool(_graphicsCommandPools, QueueTypeFlags::Graphics);
 	createCommandPool(_computeCommandPools,  QueueTypeFlags::Compute);
 	createCommandPool(_transferCommandPools, QueueTypeFlags::Transfer);
 
 	createSyncObjects();
-	_descriptorAlloc.create(renderDeviceVk());
+	_descriptorAlloc.create(_rdDevVk);
 
-	_vkFramebufPool.create(renderDeviceVk());
+	_vkFramebufPool.create(_rdDevVk);
 }
 
 void 
 Vk_RenderFrame::destroy()
 {
-	if (!_rdCtxVk)
+	if (!_rdDevVk)
 		return;
 
 	destroyCommandPool(_graphicsCommandPools);
@@ -73,13 +74,13 @@ Vk_RenderFrame::destroy()
 
 	_vkFramebufPool.destroy();
 
-	_rdCtxVk = nullptr;
+	_rdDevVk = nullptr;
 }
 
 void 
-Vk_RenderFrame::reset()
+Vk_RenderFrame::reset(RenderDevice_Vk* rdDevVk)
 {
-	auto* rdDevVk = renderDeviceVk();
+	_rdDevVk = rdDevVk;
 
 	RDS_TODO("remove temporary test, frame buf should be cache and reuse, but current solution has problem when cache and reuse when using rdGraph");
 	_vkFramebufPool.destroy();
@@ -89,8 +90,6 @@ Vk_RenderFrame::reset()
 	
 	descriptorAllocator().reset();
 	_nonBindlessUpdatedDescrSets.clear();
-
-	setSubmitCount(0);
 
 	inFlightFence()->reset(rdDevVk);
 }
@@ -123,7 +122,6 @@ Vk_RenderFrame::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLe
 	using SRC = QueueTypeFlags;
 
 	auto tlid = OsTraits::threadLocalId();
-
 	switch (queueType)
 	{
 		case SRC::Graphics: { return _graphicsCommandPools[tlid].requestCommandBuffer(bufLevel, debugName, renderDeviceVk()); } break;
@@ -179,12 +177,6 @@ Vk_RenderFrame::destroySyncObjects()
 	_imageAvailableVkSmp.destroy(rdDevVk);
 }
 
-RenderDevice_Vk* 
-Vk_RenderFrame::renderDeviceVk() 
-{ 
-	return rdCtxVk()->renderDeviceVk(); 
-}
-
 void 
 Vk_RenderFrame::setDebugName(StrView name)
 {
@@ -199,6 +191,11 @@ Vk_RenderFrame::setDebugName(StrView name)
 	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_inFlightVkFence,		RDS_SRCLOC, "{}-Vk_RenderFrame::{}", name, "_inFlightVkFence");
 }
 
+RenderDevice_Vk* 
+Vk_RenderFrame::renderDeviceVk() 
+{ 
+	return _rdDevVk;
+}
 
 #endif
 

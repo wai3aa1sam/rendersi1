@@ -24,17 +24,17 @@ TextureStock::create(RenderDevice* rdDev)
 	_rdDev = rdDev;
 	//if (false)
 	{
-		error		= createCheckerboardTexture2D(		Color4b(255, 0,   220, 0));
-		white		= createSolidColorTexture2D(		Color4b(255, 255, 255, 255));
-		black		= createSolidColorTexture2D(		Color4b(0,   0,   0,   255));
-		red			= createSolidColorTexture2D(		Color4b(255, 0,   0,   255));
-		green		= createSolidColorTexture2D(		Color4b(0,   255, 0,   255));
-		blue		= createSolidColorTexture2D(		Color4b(0,   0,   255, 255));
-		magenta		= createSolidColorTexture2D(		Color4b(255, 0,   255, 255));
+		error		= createCheckerboardTexture2D(		Color4b(255, 0,   220, 0));			error		->setDebugName("error	");
+		white		= createSolidColorTexture2D(		Color4b(255, 255, 255, 255));		white		->setDebugName("white	");
+		black		= createSolidColorTexture2D(		Color4b(0,   0,   0,   255));		black		->setDebugName("black	");
+		red			= createSolidColorTexture2D(		Color4b(255, 0,   0,   255));		red			->setDebugName("red		");
+		green		= createSolidColorTexture2D(		Color4b(0,   255, 0,   255));		green		->setDebugName("green	");
+		blue		= createSolidColorTexture2D(		Color4b(0,   0,   255, 255));		blue		->setDebugName("blue	");
+		magenta		= createSolidColorTexture2D(		Color4b(255, 0,   255, 255));		magenta		->setDebugName("magenta	");
 
-		errorArray	= createCheckerboardTexture2DArray(	Color4b(255, 0,   220, 0));
-		error3D		= createCheckerboardTexture3D(		Color4b(255, 0,   220, 0));
-		errorCube	= createCheckerboardTextureCube(	Color4b(255, 0,   220, 0));
+		errorArray	= createCheckerboardTexture2DArray(	Color4b(255, 0,   220, 0));			errorArray	->setDebugName("errorArray	");
+		error3D		= createCheckerboardTexture3D(		Color4b(255, 0,   220, 0));			error3D		->setDebugName("error3D		");
+		errorCube	= createCheckerboardTextureCube(	Color4b(255, 0,   220, 0));			errorCube	->setDebugName("errorCube	");
 	}
 }
 

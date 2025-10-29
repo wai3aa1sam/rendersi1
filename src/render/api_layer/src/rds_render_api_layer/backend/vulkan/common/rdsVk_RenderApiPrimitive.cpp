@@ -219,10 +219,17 @@ Vk_Queue::destroy()
 }
 
 void 
-Vk_Queue::submit(const VkSubmitInfo2& submitInfo, Vk_Fence_T* signalFenceHnd, const RenderDebugLabel& debugLabel)
+Vk_Queue::submit(const VkSubmitInfo2& submitInfo, Vk_Fence* signalFence, const RenderDebugLabel& debugLabel)
 {
+	Vk_Fence_T* signalFncHnd = VK_NULL_HANDLE;
+	if (signalFence)
+	{
+		signalFence->markAsSubmitted();
+		signalFncHnd = signalFence->hnd();
+	}
+
 	beginDebugLabel(debugLabel.name, debugLabel.color);
-	auto ret = vkQueueSubmit2(hnd(), 1, &submitInfo, signalFenceHnd);
+	auto ret = vkQueueSubmit2(hnd(), 1, &submitInfo, signalFncHnd);
 	Util::throwIfError(ret);
 	endDebugLabel();
 }
@@ -636,10 +643,14 @@ Vk_Fence::destroy(RenderDevice_Vk* rdDevVk)
 VkResult 
 Vk_Fence::wait(RenderDevice_Vk* rdDev, u64 timeout)
 {
+	VkResult ret = VkResult::VK_SUCCESS;
+	if (!_hasSubmitted)
+		return ret;
+
 	Vk_Fence_T* vkFences[] = { hnd() };
 	u32 vkFenceCount = ArraySize<decltype(vkFences)>;
 
-	auto ret = vkWaitForFences(rdDev->vkDevice(), vkFenceCount, vkFences, VK_TRUE, timeout);
+	ret = vkWaitForFences(rdDev->vkDevice(), vkFenceCount, vkFences, VK_TRUE, timeout);
 	Util::throwIfError(ret);
 	return ret;
 }
@@ -647,12 +658,21 @@ Vk_Fence::wait(RenderDevice_Vk* rdDev, u64 timeout)
 VkResult
 Vk_Fence::reset(RenderDevice_Vk* rdDev)
 {
+	_hasSubmitted = false;
+
 	Vk_Fence_T* vkFences[]		= { hnd() };
 	u32			vkFenceCount	= ArraySize<decltype(vkFences)>;
 
 	auto ret = vkResetFences(rdDev->vkDevice(), vkFenceCount, vkFences);		// should handle it to signaled if the function throw?
 	Util::throwIfError(ret);
 	return ret;
+}
+
+void 
+Vk_Fence::markAsSubmitted()
+{
+	RDS_CORE_ASSERT(!_hasSubmitted, "not yet reset?");
+	_hasSubmitted = true;
 }
 
 VkResult 

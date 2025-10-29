@@ -52,6 +52,9 @@ RenderThread::onCreate(const CreateDesc_Base& cDescBase)
 void 
 RenderThread::onDestroy()
 {
+	if (!_rdDev)
+		return;
+
 	waitIdle();
 
 	// clean all transferFrames
@@ -59,10 +62,10 @@ RenderThread::onDestroy()
 	{
 		_rdDev->submitRenderJob(_rdDev->newRenderJob(nullptr, i));
 	}
-
 	waitIdle();
 
 	quit();
+	_rdDev = nullptr;
 }
 
 void 
@@ -159,15 +162,10 @@ RenderThread::render(UPtr<RenderJob> renderJob)
 
 		if (renderJob->renderRequest().renderContext())
 		{
-			auto&	rdGraph		= renderJob->renderGraph();
-			auto*	rdCtx		= rdGraph.renderContext();
-			//auto	frameIndex	= rdFrameParam.frameIndex();
-
+			auto*	rdCtx		= renderJob->renderGraph().renderContext();
+			rdCtx->Render_reset(renderJob);
 			rdCtx->beginRender();
-
-			rdGraph.commit(renderJob->_renderGraphFrameIdx);
-			rdCtx->commit(renderJob->renderRequest());
-
+			rdCtx->commit();
 			rdCtx->endRender();
 		}
 

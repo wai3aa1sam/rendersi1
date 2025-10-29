@@ -118,7 +118,13 @@ Material::setShader(Shader* shader)
 				dst.create(shaderPass->info().allStageUnionInfo, shaderPass, 0);
 				dst.copy(_passes[i]->shaderResources());
 			}
-		}
+		}	
+	}
+
+	if (shader)
+	{
+		RDS_TODO("template<class... TArgs> setDebugName(StrView fmt, TArgs&& args...)");
+		setDebugName(RDS_FMT(TempString, "mtl-{}", shader->filename()));		
 	}
 
 	destroy();

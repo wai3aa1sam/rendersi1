@@ -553,7 +553,6 @@ RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Materi
 
 #endif
 
-
 #if 0
 #pragma mark --- rdsRenderRequest::InlineDraw-Impl ---
 #endif // 0

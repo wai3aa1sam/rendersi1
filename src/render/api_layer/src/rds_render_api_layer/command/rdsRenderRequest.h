@@ -66,6 +66,7 @@ public:
 	RenderRequest	(const RenderRequest& rhs) { throwIf(true, ""); }
 	void operator=	(const RenderRequest& rhs) { throwIf(true, ""); }
 
+public:
 	void reset(RenderContext* rdCtx, DrawData_Base* drawData, Material* lineMaterial_);
 	void reset(RenderContext* rdCtx, DrawData_Base* drawData);
 	void reset(RenderContext* rdCtx);

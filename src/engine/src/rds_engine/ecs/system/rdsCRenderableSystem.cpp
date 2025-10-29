@@ -5,11 +5,11 @@
 #include "rds_engine/rdsEngineContext.h"
 #include "rdsCLightSystem.h"
 
-
 #include "../rdsEntity.h"
 #include "../rdsScene.h"
 
 #include "rds_render_api_layer/thread/rdsRenderThreadQueue.h"
+#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 namespace rds
 {

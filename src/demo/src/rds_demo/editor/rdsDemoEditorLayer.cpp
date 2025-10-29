@@ -37,12 +37,14 @@ DemoEditorLayer::~DemoEditorLayer()
 	#if 1
 	_testEngine.reset(nullptr);
 	_gfxDemo.reset(nullptr);
-	meshAssets().destroy();
+	if (_meshAssets)
+		meshAssets().destroy();
 	_scene.destroy();
 	_egCtx.destroy();
+	_edtCtx.destroy();
 	DemoEditorApp::instance()->mainWindow().destroy();
 
-	Renderer::renderDevice()->destroy();
+	_mtl_screenQuad.reset(nullptr);
 	#endif // 1
 }
 
@@ -61,7 +63,6 @@ DemoEditorLayer::onCreate()
 {
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
-	JobSystem::instance()->setSingleThreadMode(false);
 	
 	_egCtx.create();
 

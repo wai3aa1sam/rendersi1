@@ -1,3 +1,5 @@
+#pragma once
+
 #include "rds_shader_compiler-pch.h"
 
 #include "common/rds_shader_compiler_common.h"

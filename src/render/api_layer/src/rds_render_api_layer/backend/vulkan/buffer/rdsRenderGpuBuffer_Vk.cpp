@@ -11,7 +11,6 @@ SPtr<RenderGpuBuffer>
 RenderDevice_Vk::onCreateRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 {
 	auto p = SPtr<RenderGpuBuffer>(makeSPtr<RenderGpuBuffer_Vk>());
-	p->create(cDesc);
 	return p;
 }
 

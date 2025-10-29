@@ -1,6 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsTransferContext.h"
 #include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 #include "command/rds_transfer_command.h"
 
@@ -8,6 +9,14 @@
 
 namespace rds
 {
+
+SPtr<TransferContext>
+RenderDevice::createTransferContext(TransferContext_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateTransferContext(cDesc);
+	return p;
+}
 
 #if 0
 #pragma mark --- rdsTransferContext-Impl ---
@@ -77,7 +86,7 @@ void
 TransferContext::submit(RenderJob* rdJob)
 {
 	auto curTsfFrameIdx		= _tsfFrameIdx.load();
-	auto nextTsfFrameIdx	= sCast<u32>((curTsfFrameIdx + 1) % s_kMaxFrameAheadCountHardLimit);
+	auto nextTsfFrameIdx	= sCast<u32>((curTsfFrameIdx + 1) % s_kMaxTransferFrameCount);
 	_tsfFrameIdx = nextTsfFrameIdx;
 
 	rdJob->_transferFrame = _tsfFrames[curTsfFrameIdx];
@@ -92,11 +101,12 @@ TransferContext::waitFrameFinished(RenderFrameParam& rdFrameParam)
 void 
 TransferContext::onCreate(const CreateDesc& cDesc)
 {
-	_tsfFrames.reserve(s_kMaxFrameAheadCountHardLimit);
-	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
+	_tsfFrames.reserve(s_kMaxTransferFrameCount);
+	for (size_t i = 0; i < s_kMaxTransferFrameCount; i++)
 	{
 		auto tsf_cDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-		_tsfFrames.emplace_back(renderDevice()->createTransferFrame(tsf_cDesc));
+		auto frame = _tsfFrames.emplace_back(renderDevice()->createTransferFrame(tsf_cDesc));
+		//frame->setDebugName("TransferFrame");
 	}
 	
 	#if 0

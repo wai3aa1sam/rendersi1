@@ -33,6 +33,7 @@ EditorMainWindow::onCreate(const CreateDesc_Base& cDesc)
 		RenderContext::CreateDesc rdCtxCDesc;
 		rdCtxCDesc.window = this;
 		_rdCtx = rdDev->createContext(rdCtxCDesc);
+		_rdCtx->setDebugName("main_window");
 	}
 }
 

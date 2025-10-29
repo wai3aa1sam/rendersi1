@@ -7,6 +7,15 @@
 namespace rds
 {
 
+
+SPtr<BindlessResources> 
+RenderDevice::createBindlessResources(BindlessResources_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateBindlessResources(cDesc);
+	return p;
+}
+
 #if 0
 #pragma mark --- rdsBindlessResources-Impl ---
 #endif // 0

@@ -108,6 +108,12 @@ RenderResource::destroyRenderResource(const RenderFrameParam& rdFrameParam)
 	throwError("implement this in backend, but should not call this");
 }
 
+void 
+RenderResource::RenderResource_CreateEnd()
+{
+	//renderDevice()->_internal_createRenderResource(this);
+}
+
 bool 
 RenderResource::hasCreated() const
 {
