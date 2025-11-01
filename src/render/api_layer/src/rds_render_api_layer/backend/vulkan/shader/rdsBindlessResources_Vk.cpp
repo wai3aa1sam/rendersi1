@@ -15,14 +15,6 @@
 namespace rds
 {
 
-SPtr<BindlessResources> 
-RenderDevice_Vk::onCreateBindlessResources(BindlessResources_CreateDesc& cDesc)
-{
-	auto p = SPtr<BindlessResources>(makeSPtr<BindlessResources_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsBindlessResources_Vk-Impl ---
 #endif // 0

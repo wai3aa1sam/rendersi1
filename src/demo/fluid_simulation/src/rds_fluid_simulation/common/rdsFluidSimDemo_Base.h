@@ -25,6 +25,10 @@ public:
 	using Config			= FluidSim_Config;
 
 public:
+	FluidSimDemo_Base();
+	virtual ~FluidSimDemo_Base();
+
+public:
 	virtual void onCreate(GraphicsDemo* parentDemo);
 	virtual void onCreateScene(Scene* oScene);
 

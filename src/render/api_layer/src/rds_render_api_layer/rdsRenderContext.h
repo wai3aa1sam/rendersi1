@@ -66,12 +66,12 @@ struct RenderContext_CreateDesc : public RenderResource_CreateDesc
 };
 
 
-class RenderContext : public RenderResource
+class RenderContext : public RenderResource_T<RenderContext, RenderResourceType::RenderContext>
 {
 	friend class RenderDevice;
 	friend class Backbuffers;
 public:
-	using Base			= RenderResource;
+	using Base			= RenderResource_T<RenderContext, RenderResourceType::RenderContext>;
 	using CreateDesc	= RenderContext_CreateDesc;
 
 public:
@@ -84,6 +84,7 @@ public:
 
 	void create	(const CreateDesc& cDesc);
 	void destroy();
+	void _internal_requestDestroyObject();
 
 public:
 	void Render_reset(RenderJob* rdJob);

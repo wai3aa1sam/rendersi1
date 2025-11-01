@@ -7,14 +7,6 @@
 namespace rds
 {
 
-SPtr<Texture3D> 
-RenderDevice_Vk::onCreateTexture3D(Texture3D_CreateDesc& cDesc)
-{
-	auto p = SPtr<Texture3D>(makeSPtr<Texture3D_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsTexture3D_Vk-Impl ---
 #endif // 0

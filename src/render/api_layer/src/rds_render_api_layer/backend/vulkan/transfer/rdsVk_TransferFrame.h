@@ -64,10 +64,10 @@ public:
 	Vk_TransferFrame(Vk_TransferFrame&&)	{ throwIf(true, ""); }
 	void operator=(Vk_TransferFrame&&)		{ throwIf(true, ""); }
 
-	void create	(TransferContext_Vk* tsfCtxVk);
+	void create	(RenderDevice_Vk* rdDevVk);
 	void destroy();
 
-	void clear();
+public:
 	void waitAndResetQueueData(	QueueTypeFlags type);
 	void resetQueueData(		QueueTypeFlags type);
 	void waitQueueData(			QueueTypeFlags type);
@@ -95,7 +95,7 @@ private:
 	void _setDebugName();
 
 protected:
-	TransferContext_Vk*	_tsfCtxVk = nullptr;
+	RenderDevice_Vk* _rdDevVk = nullptr;
 
 	Vk_QueueData _tsfVkQueueData;
 	Vk_QueueData _gfxVkQueueData;

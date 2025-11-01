@@ -1,23 +1,16 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsTransferContext_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/transfer/rdsTransferFrame_Vk.h"
 
 #include "rds_render_api_layer/backend/vulkan/buffer/rdsRenderGpuBuffer_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rds_vk_texture.h"
-#include "rds_render_api_layer/backend/vulkan/transfer/rdsTransferFrame_Vk.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderContext_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 
 namespace rds
 {
-
-SPtr<TransferContext> 
-RenderDevice_Vk::onCreateTransferContext(TransferContext_CreateDesc& cDesc)
-{
-	auto p = SPtr<TransferContext>(makeSPtr<TransferContext_Vk>());
-	p->create(cDesc);
-	return p;
-}
 
 #if 0
 #pragma mark --- rdsTransferContext_Vk-Impl ---
@@ -37,21 +30,13 @@ TransferContext_Vk::~TransferContext_Vk()
 void 
 TransferContext_Vk::reset(u64 frameCount)
 {
-	auto frameIdx = Traits::rotateFrame(frameCount);
-	vkTransferFrame(frameIdx).clear();
-	RDS_TODO("this design is bug, should explicitly know thread ownership, resource upload should have its own allocator");
+	//RDS_TODO("this design is bug, should explicitly know thread ownership, resource upload should have its own allocator");
 }
 
 void 
 TransferContext_Vk::onCreate(const CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);
-
-	_vkTransferFrames.resize(s_kFrameInFlightCount);
-	for (auto& e : _vkTransferFrames)
-	{
-		e.create(this);
-	}
 
 	auto* rdDevVk = renderDeviceVk();
 
@@ -65,7 +50,6 @@ TransferContext_Vk::onCreate(const CreateDesc& cDesc)
 void 
 TransferContext_Vk::onDestroy()
 {
-	_vkTransferFrames.clear();
 	Base::onDestroy();
 }
 
@@ -96,14 +80,10 @@ TransferContext_Vk::onCommit(RenderJob* rdJob, bool isWaitImmediate)
 	Base::onCommit(rdJob, isWaitImmediate);
 
 	auto* rdDevVk		= renderDeviceVk();
-	auto  frameIdx		= frameIndex();
-	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
+	auto& vkTsfFrame	= vkTransferFrame();
 
-	/*
-	* no wait here then must follow TransferFrame pattern
-	*/
-	auto& vkQueueData		= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
-	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);	// no want to want then may use same method in TransferFrame, but seems on9, just keep simple
+	auto& vkQueueData = vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
+	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);
 
 	auto data = transferFrame().transferRequest().transferCommandBuffer().scopedULock();		// maybe swap to a local, then no need to lock too long, but only this own it now
 	auto& tsfCmdBuf = *data;
@@ -135,7 +115,6 @@ TransferContext_Vk::onCommit(RenderJob* rdJob, bool isWaitImmediate)
 
 	RDS_TODO("2025_10_16, just separate two if wait here, Vk_MultiCommandPool(with ahead_pattern) + Vk_TransferFrame(only contains fence)");
 
-
 	RenderDebugLabel debugLabel;
 	debugLabel.name = "TransferContext_Vk::onCommit()";
 	if (!isWaitImmediate)
@@ -163,8 +142,7 @@ TransferContext_Vk::onCommit(RenderJob* rdJob, bool isWaitImmediate)
 void 
 TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLabel, TransferCommandBuffer& tsfCmdBuf, QueueTypeFlags queueType, bool isWaitImmediate)
 {
-	auto  frameIdx		= frameIndex();
-	auto& vkTsfFrame	= vkTransferFrame(frameIdx);
+	auto& vkTsfFrame	= vkTransferFrame();
 
 	if (BitUtil::has(queueType, QueueTypeFlags::Graphics)	&& !vkTsfFrame.hasTransferedGraphicsResoures())	{ return; }
 	if (BitUtil::has(queueType, QueueTypeFlags::Compute)	&& !vkTsfFrame.hasTransferedComputeResoures())	{ return; }
@@ -280,7 +258,9 @@ TransferContext_Vk::onTransferCommand_CreateMaterial(TransferCommand_CreateMater
 void 
 TransferContext_Vk::onTransferCommand_CreateRenderContext(TransferCommand_CreateRenderContext* cmd)
 {
-
+	auto* rdDevVk	= renderDeviceVk();
+	auto* dst		= sCast<RenderContext_Vk*>(cmd->dst.ptr());
+	dst->createRenderResource(rdDevVk->renderFrameParam());
 }
 
 void 
@@ -323,7 +303,9 @@ TransferContext_Vk::onTransferCommand_DestroyMaterial(TransferCommand_DestroyMat
 void 
 TransferContext_Vk::onTransferCommand_DestroyRenderContext(TransferCommand_DestroyRenderContext* cmd)
 {
-
+	auto* rdDevVk	= renderDeviceVk();
+	auto* dst		= sCast<RenderContext_Vk*>(cmd->dst);
+	RenderResource::destroyObject(dst, rdDevVk->renderFrameParam());
 }
 
 void 
@@ -455,8 +437,8 @@ TransferContext_Vk::onTransferCommand_UploadTexture(TransferCommand_UploadTextur
 
 #endif // 1
 
-Vk_TransferFrame& TransferContext_Vk::vkTransferFrame(u64 frameIdx) { return _vkTransferFrames[frameIdx]; }
-TransferFrame_Vk& TransferContext_Vk::transferFrameVk()				{ return sCast<TransferFrame_Vk&>(Base::transferFrame()); }
+Vk_TransferFrame& TransferContext_Vk::vkTransferFrame() { return transferFrameVk().vkTransferFrame(); }
+TransferFrame_Vk& TransferContext_Vk::transferFrameVk()	{ return sCast<TransferFrame_Vk&>(Base::transferFrame()); }
 
 
 #endif

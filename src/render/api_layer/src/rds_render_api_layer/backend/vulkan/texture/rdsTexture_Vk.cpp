@@ -12,15 +12,6 @@
 namespace rds
 {
 
-SPtr<Texture2D> 
-RenderDevice_Vk::onCreateTexture2D(Texture2D_CreateDesc& cDesc)
-{
-	auto p = SPtr<Texture2D>(makeSPtr<Texture2D_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
-
 #if 0
 #pragma mark --- rdsTexture_Vk-Impl ---
 #endif // 0

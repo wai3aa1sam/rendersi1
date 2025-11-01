@@ -13,14 +13,6 @@
 namespace rds
 {
 
-SPtr<Material> 
-RenderDevice_Vk::onCreateMaterial(const	Material_CreateDesc& cDesc)
-{
-	auto p = SPtr<Material>(makeSPtr<Material_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsVk_MaterialPass_Stage-Impl ---
 #endif // 0

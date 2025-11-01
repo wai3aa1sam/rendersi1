@@ -9,14 +9,6 @@ namespace rds
 
 RDS_Define_TypeInfo(Texture3D);
 
-SPtr<Texture3D> 
-RenderDevice::createTexture3D(Texture3D_CreateDesc& cDesc)
-{
-	cDesc._internal_create(this);
-	auto p = onCreateTexture3D(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsTexture3D-Impl ---
 #endif // 0

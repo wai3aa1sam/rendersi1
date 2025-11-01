@@ -81,7 +81,7 @@ class RenderGpuBuffer : public RenderResource_T<RenderGpuBuffer, RenderResourceT
 {
 	friend class RenderDevice;
 public:
-	using Base			= RenderResource;
+	using Base			= RenderResource_T<RenderGpuBuffer, RenderResourceType::RenderGpuBuffer>;
 	using CreateDesc	= RenderGpuBuffer_CreateDesc;
 	using Desc			= RenderGpuBuffer_Desc;
 

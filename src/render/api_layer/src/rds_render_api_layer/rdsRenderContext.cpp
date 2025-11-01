@@ -13,16 +13,6 @@
 namespace rds
 {
 
-SPtr<RenderContext> 
-RenderDevice::createContext(const RenderContext_CreateDesc& cDesc)
-{
-	cDesc._internal_create(this);
-	auto p = onCreateContext(cDesc);
-	p->onPostCreate(cDesc);
-	return p;
-}
-
-
 #if 0
 #pragma mark --- rdsBackbuffers-Impl ---
 #endif // 0
@@ -98,6 +88,7 @@ RenderContext::create(const CreateDesc& cDesc)
 
 	Base::create(cDesc);
 	onCreate(cDesc);
+	transferContext().transferFrame().createRenderContext(this);
 }
 
 void
@@ -106,10 +97,19 @@ RenderContext::destroy()
 	if (!Base::hasCreated())
 		return;
 
-	_rdUiCtx.destroy();
-
 	onDestroy();
 	Base::destroy();
+}
+
+void 
+RenderContext::_internal_requestDestroyObject()
+{
+	Base::_internal_requestDestroyObject();
+	transferContext().transferFrame().destroyRenderContext(this);
+
+	// prevent spwan more commands when destroy in RenderThread
+	_rdUiCtx.destroy();
+	_dummyVtxBuf.reset(nullptr);
 }
 
 void 

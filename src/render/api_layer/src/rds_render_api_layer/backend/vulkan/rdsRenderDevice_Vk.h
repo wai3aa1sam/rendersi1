@@ -59,12 +59,9 @@ public:
 			Vk_SwapchainAvailableInfo&	swapchainAvailableInfo();
 			QueueFamilyIndices&			queueFamilyIndices();
 
-	RenderDevice_Vk*		renderDeviceVk()	{ RDS_TODO("remove"); return this; }
-
 	BindlessResources_Vk&	bindlessResourceVk();
 	TransferFrame_Vk&		transferFrameVk();
 	//StagingBuffer_Vk&		stagingBufferVk();
-
 
 protected:
 	RDS_RENDER_DEVICE_INTERFACE_ON_CREATE(Vk);
@@ -131,14 +128,7 @@ inline			Vk_SwapchainAvailableInfo&		RenderDevice_Vk::swapchainAvailableInfo()		
 inline			QueueFamilyIndices&				RenderDevice_Vk::queueFamilyIndices()				{ return _queueFamilyIndices; }
 
 inline			BindlessResources_Vk&			RenderDevice_Vk::bindlessResourceVk()				{ return *sCast<BindlessResources_Vk*>(_bindlessRscs.ptr()); }
-
-inline 
-TransferFrame_Vk&
-RenderDevice_Vk::transferFrameVk()								
-{ 
-	auto& p = sCast<TransferFrame_Vk&>(Base::transferFrame()); 
-	return p;
-}
+inline			TransferFrame_Vk&				RenderDevice_Vk::transferFrameVk()					{ return sCast<TransferFrame_Vk&>(Base::transferFrame()); }
 
 //StagingBuffer_Vk& 
 //RenderDevice_Vk::stagingBufferVk()								

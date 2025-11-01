@@ -47,6 +47,9 @@ public:
 public:
 	void reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_);
 
+	bool isDoneUploading();
+	bool isDoneRendering();
+
 public:
 	// Transfer stuff should not in here, please put to RenderUploadSystem
 	//TransferFrame		transferFrame;
@@ -66,6 +69,8 @@ protected:
 	virtual void onDestroy();
 
 	virtual void onReset(RenderContext* rdCtx);
+	virtual bool onCheckUploadCompleted() = 0;
+	virtual bool onCheckRenderCompleted() = 0;
 };
 
 #endif

@@ -3,15 +3,21 @@
 #include "rdsRenderDevice.h"
 //#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
-#include "rds_render_api_layer/transfer/rdsTransferContext.h"
-
-#include "rds_render_api_layer/texture/rdsTexture.h"
-#include "rds_render_api_layer/shader/rdsShader.h"
-
 #include "rdsRenderer.h"
 
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
 #include "rds_render_api_layer/thread/rdsRenderJob.h"
+#include "rds_render_api_layer/rdsRenderContext.h"
+
+#include "rds_render_api_layer/transfer/rdsTransferContext.h"
+#include "rds_render_api_layer/transfer/rdsTransferFrame.h"
+
+#include "rds_render_api_layer/texture/rdsTexture.h"
+#include "rds_render_api_layer/texture/rdsTexture2DArray.h"
+#include "rds_render_api_layer/texture/rdsTexture3D.h"
+#include "rds_render_api_layer/texture/rdsTextureCube.h"
+
+#include "rds_render_api_layer/shader/rdsShader.h"
 
 namespace rds
 {
@@ -103,7 +109,7 @@ RenderDevice::destroy()
 
 	{
 		RDS_TODO("remove _rdGraph, RenderGraph should be re-design and save in RenderJob");
-		_rdThread.waitGpuIdle();
+		_rdThread.waitIdle();
 		_rdGraph.reset(nullptr);
 	}
 
@@ -155,7 +161,8 @@ RenderDevice::newRenderJob(RenderContext* rdCtx, u64 frameCount)
 		_freeRdJobs.try_pop(o);
 		if (o)
 			break;
-		OsUtil::sleep_ms(1); RDS_TODO("pass a param here");
+		_rdThread._checkUploadCompletedJob();
+		OsUtil::sleep_ms(0); RDS_TODO("pass a param here");
 	}
 	o->_renderGraph = _rdGraph;
 	o->reset(this, rdCtx, frameCount);
@@ -274,9 +281,173 @@ RenderDevice::createRenderJob(RenderJob_CreateDesc& cDesc)
 	return p;
 }
 
+SPtr<RenderContext> 
+RenderDevice::createContext(const RenderContext_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateContext(cDesc);
+	p->onPostCreate(cDesc);
+	return p;
+}
+
+SPtr<TransferContext>
+RenderDevice::createTransferContext(TransferContext_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateTransferContext(cDesc);
+	return p;
+}
+
+SPtr<TransferFrame> 
+RenderDevice::createTransferFrame(TransferFrame_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateTransferFrame(cDesc);
+	return p;
+}
+
+SPtr<RenderGpuBuffer> 
+RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateRenderGpuBuffer(cDesc);
+	return p;
+}
+
+SPtr<Texture>
+RenderDevice::createTexture(Texture_CreateDesc& cDesc)
+{
+	SPtr<Texture> o;
+	switch (cDesc.type)
+	{
+		case RenderDataType::Texture2D:			{ auto p = createTexture2D(			sCast<Texture2D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::Texture3D:			{ auto p = createTexture3D(			sCast<Texture3D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::TextureCube:		{ auto p = createTextureCube(		sCast<TextureCube_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::Texture2DArray:	{ auto p = createTexture2DArray(	sCast<Texture2DArray_CreateDesc&>(	cDesc)); o.reset(p.ptr()); } break;
+		default: { RDS_THROW("invalid texture type"); } break;
+	}
+	return o;
+}
+
+SPtr<Texture2D> 
+RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateTexture2D(cDesc);
+	return p;
+}
+
+SPtr<Texture2DArray> 
+RenderDevice::createTexture2DArray(Texture2DArray_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateTexture2DArray(cDesc);
+	return p;
+}
+
+SPtr<Texture3D> 
+RenderDevice::createTexture3D(Texture3D_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateTexture3D(cDesc);
+	return p;
+}
+
+SPtr<TextureCube> 
+RenderDevice::createTextureCube(TextureCube_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateTextureCube(cDesc);
+	return p;
+}
+
+SPtr<Shader> 
+RenderDevice::createShader(const Shader_CreateDesc& cDesc)
+{
+	auto shader = shaderStock().createShader(cDesc);
+	return shader;
+}
+
+SPtr<Shader> 
+RenderDevice::createShader(StrView filename)
+{
+	auto cDesc = Shader::makeCDesc();
+	cDesc.filename	= filename;
+
+	SPtr<Shader> p = createShader(cDesc);
+	return p;
+}
+
+SPtr<Shader>
+RenderDevice::createShader(StrView filename, const ShaderPermutations& permuts)
+{
+	auto cDesc = Shader::makeCDesc();
+	cDesc.filename	= filename;
+	cDesc.permuts	= &permuts;
+
+	SPtr<Shader> p = createShader(cDesc);
+	return p;
+}
+
+SPtr<Material> 
+RenderDevice::createMaterial(const Material_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateMaterial(cDesc);
+	p->setShader(cDesc.shader);
+	return p;
+}
+
+SPtr<Material> 
+RenderDevice::createMaterial(Shader* shader)
+{
+	auto cDesc = Material::makeCDesc();
+	cDesc.shader = shader;
+
+	return createMaterial(cDesc);
+}
+
+SPtr<Material> 
+RenderDevice::createMaterial()
+{
+	auto cDesc = Material::makeCDesc();
+	auto p = createMaterial(cDesc);
+	return p;
+}
+
+
 #endif // 1
 
 TransferRequest&		RenderDevice::transferRequest()				{ checkMainThreadExclusive(RDS_SRCLOC); return transferFrame().transferRequest(); }
 TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);	return transferContext().transferFrame(); }
 
+template<class T>
+void 
+RdsDeleter<T, EnableIf<IsBaseOf<RenderResource, T> > >::rds_delete(T* p) RDS_NOEXCEPT
+{
+	if (p)
+	{
+		RDS_TODO("some type are using SPtr<RenderResource>, it will make it fail to call _internal_requestDestroyObject() \n"
+			"it is ok to block the usage of SPtr<RenderResource> later"
+		);
+
+		#if 0
+
+		// if constexpr (IsBaseOf<Texture, T> || IsSame<T, RenderGpuBuffer>) {}	// this work btw, but not work when T is RenderResource
+		p->_internal_requestDestroyObject();
+
+		#else
+
+		using SRC = RenderResourceType;
+		switch (p->renderResourceType())
+		{
+			case SRC::RenderContext:	{ reinCast<RenderContext*>(		p)->_internal_requestDestroyObject(); } break;
+			case SRC::RenderGpuBuffer:	{ reinCast<RenderGpuBuffer*>(	p)->_internal_requestDestroyObject(); } break;
+			case SRC::Texture:			{ reinCast<Texture*>(			p)->_internal_requestDestroyObject(); } break;
+			default: { rds_delete_impl(p); } break;
+		}
+
+		#endif // 0
+	}
+}
 }

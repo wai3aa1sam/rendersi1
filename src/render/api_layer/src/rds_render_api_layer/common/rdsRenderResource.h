@@ -21,6 +21,7 @@ class TransferRequest;
 class TransferFrame;
 class TransferContext;
 
+class RenderContext;
 class Texture;
 class RenderGpuBuffer;
 
@@ -251,32 +252,7 @@ inline ProjectSetting& RenderResource::projectSetting() { return *ProjectSetting
 template<class T> 
 struct RdsDeleter<T, EnableIf<IsBaseOf<RenderResource, T> > >
 {
-	static void rds_delete(T* p) RDS_NOEXCEPT
-	{
-		if (p)
-		{
-			RDS_TODO("some type are using SPtr<RenderResource>, it will make it fail to call _internal_requestDestroyObject() \n"
-				"it is ok to block the usage of SPtr<RenderResource> later"
-			);
-
-			#if 0
-
-			// if constexpr (IsBaseOf<Texture, T> || IsSame<T, RenderGpuBuffer>) {}	// this work btw, but not work when T is RenderResource
-			p->_internal_requestDestroyObject();
-
-			#else
-
-			using SRC = RenderResourceType;
-			switch (p->renderResourceType())
-			{
-				case SRC::RenderGpuBuffer:	{ reinCast<RenderGpuBuffer*>(	p)->_internal_requestDestroyObject(); } break;
-				case SRC::Texture:			{ reinCast<Texture*>(			p)->_internal_requestDestroyObject(); } break;
-				default: { rds_delete_impl(p); } break;
-			}
-			
-			#endif // 0
-		}
-	}
+	static void rds_delete(T* p) RDS_NOEXCEPT;
 };
 
 template<class T> 

@@ -8,15 +8,6 @@
 namespace rds
 {
 
-SPtr<RenderGpuBuffer> 
-RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
-{
-	cDesc._internal_create(this);
-	auto p = onCreateRenderGpuBuffer(cDesc);
-	p->create(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsRenderGpuBuffer-Impl ---
 #endif // 0

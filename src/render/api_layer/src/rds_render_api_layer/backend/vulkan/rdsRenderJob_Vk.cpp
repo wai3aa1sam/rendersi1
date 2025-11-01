@@ -33,6 +33,20 @@ RenderJob_Vk::reset(RenderDevice_Vk* rdDevVk)
 	_pendingGfxVkCmdbufHnds.clear();
 }
 
+bool 
+RenderJob_Vk::onCheckUploadCompleted()
+{
+	auto& vkTsfFrame	= vkTransferFrame();
+	auto& vkQueueData	= vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
+	return vkQueueData.inFlightVkFence.isSignaled(renderDeviceVk());
+}
+
+bool 
+RenderJob_Vk::onCheckRenderCompleted()
+{
+	return _vk_rdFrame.inFlightFence()->isSignaled(renderDeviceVk());
+}
+
 void 
 RenderJob_Vk::onCreate(CreateDesc& cDesc)
 {

@@ -7,15 +7,6 @@
 namespace rds
 {
 
-SPtr<TextureCube> 
-RenderDevice::createTextureCube(TextureCube_CreateDesc& cDesc)
-{
-	cDesc._internal_create(this);
-	auto p = onCreateTextureCube(cDesc);
-	return p;
-}
-
-
 #if 0
 #pragma mark --- rdsTextureCube-Impl ---
 #endif // 0

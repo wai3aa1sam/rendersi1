@@ -231,7 +231,6 @@ inline			u32						RenderDevice::frameIndex()			const	{ return sCast<u32>((frameC
 
 #endif
 
-
 }
 
 #define RDS_RENDER_DEVICE_INTERFACE_ON_CREATE(T) \
@@ -249,3 +248,4 @@ virtual SPtr<TransferContext>		onCreateTransferContext(			TransferContext_Create
 virtual SPtr<TransferFrame>			onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc)	override;	\
 virtual SPtr<BindlessResources>		onCreateBindlessResources(			BindlessResources_CreateDesc&	cDesc)	override;	\
 // ---
+

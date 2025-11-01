@@ -7,14 +7,6 @@
 namespace rds
 {
 
-SPtr<Texture2DArray> 
-RenderDevice_Vk::onCreateTexture2DArray(Texture2DArray_CreateDesc& cDesc)
-{
-	auto p = SPtr<Texture2DArray>(makeSPtr<Texture2DArray_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsTexture2DArray_Vk-Impl ---
 #endif // 0

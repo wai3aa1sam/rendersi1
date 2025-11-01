@@ -7,14 +7,6 @@
 namespace rds
 {
 
-SPtr<TransferFrame> 
-RenderDevice_Vk::onCreateTransferFrame(TransferFrame_CreateDesc& cDesc)
-{
-	auto p = SPtr<TransferFrame>(makeSPtr<TransferFrame_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsStagingBuffer_Vk-Impl ---
 #endif // 0
@@ -78,6 +70,7 @@ TransferFrame_Vk::onCreate(CreateDesc& cDesc)
 	Base::onCreate(cDesc);
 
 	_vkLinearStagingBuf.create(renderDeviceVk());
+	_vkTsfFrame.create(renderDeviceVk());
 }
 
 void 
@@ -100,7 +93,9 @@ TransferFrame_Vk::onReset()
 {
 	Base::onReset();
 
+	// we must ensure the tsf is completed before reset staging buf
 	_vkLinearStagingBuf.reset();
+	//_vkTsfFrame.reset();		// we have waited when newRenderJob(), compatible with the old code, wait and reset there
 }
 
 void 
@@ -108,38 +103,6 @@ TransferFrame_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd
 {
 
 }
-
-//StagingHandle 
-//StagingBuffer_Vk::alloc(SizeType size)
-//{
-//	RDS_CORE_ASSERT(_rdDevVk, "not yet create()");
-//
-//	auto data = _chunks.scopedULock();
-//	auto hnd = data->alloc(size, &_vkAlloc, _rdDevVk);
-//	return hnd;
-//}
-
-//void 
-//StagingBuffer_Vk::reset()
-//{
-//	auto data = _chunks.scopedULock();
-//	data->reset();
-//}
-//
-//void 
-//StagingBuffer_Vk::clear()
-//{
-//	auto data = _chunks.scopedULock();
-//	data->clear();
-//}
-//
-//Vk_Buffer_T* 
-//StagingBuffer_Vk::vkStagingBufHnd(StagingHandle hnd)
-//{
-//	auto data = _chunks.scopedSLock();
-//	auto* bufHnd = data->vkStagingBufHnd(hnd);
-//	return bufHnd;
-//}
 
 #endif
 

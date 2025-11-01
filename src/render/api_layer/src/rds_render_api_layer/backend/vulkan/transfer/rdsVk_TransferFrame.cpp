@@ -64,12 +64,11 @@ Vk_TransferFrame::~Vk_TransferFrame()
 }
 
 void 
-Vk_TransferFrame::create(TransferContext_Vk* tsfCtxVk)
+Vk_TransferFrame::create(RenderDevice_Vk* rdDevVk)
 {
-	RDS_CORE_ASSERT(tsfCtxVk, "");
+	RDS_CORE_ASSERT(rdDevVk, "");
 
-	_tsfCtxVk = tsfCtxVk;
-	auto* rdDevVk = tsfCtxVk->renderDeviceVk();
+	_rdDevVk = rdDevVk;
 
 	// auto& queueFamily = rdDevVk->queueFamilyIndices();
 	// u32 transferQueueFamilyIdx	= queueFamily.getFamilyIdx(QueueTypeFlags::Transfer);
@@ -89,19 +88,9 @@ Vk_TransferFrame::create(TransferContext_Vk* tsfCtxVk)
 void 
 Vk_TransferFrame::destroy()
 {
-	clear();
-
 	//auto* rdDevVk = renderDeviceVk();
 	_gfxVkQueueData.destroy();
 	_tsfVkQueueData.destroy();
-}
-
-void 
-Vk_TransferFrame::clear()
-{
-	//_linearStagingBuf.reset();
-	//_hasTransferedGraphicsResoures	= false;
-	//_hasTransferedComputeResoures	= false;
 }
 
 void 
@@ -140,8 +129,6 @@ Vk_TransferFrame::_setDebugName()
 	_tsfVkQueueData.setDebugName(RDS_SRCLOC, ":_tsfVkQueueData");
 	_gfxVkQueueData.setDebugName(RDS_SRCLOC, ":_gfxVkQueueData");
 }
-
-RenderDevice_Vk* Vk_TransferFrame::renderDeviceVk() { return _tsfCtxVk->renderDeviceVk(); }
 
 Vk_QueueData& 
 Vk_TransferFrame::getVkQueueData(QueueTypeFlags type)
@@ -206,6 +193,7 @@ Vk_TransferFrame::hasTransferedResoures(QueueTypeFlags type) const
 		default: { RDS_THROW(""); }
 	}
 }
+RenderDevice_Vk* Vk_TransferFrame::renderDeviceVk() { return _rdDevVk; }
 
 #endif
 

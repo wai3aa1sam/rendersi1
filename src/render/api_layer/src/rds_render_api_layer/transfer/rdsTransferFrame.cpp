@@ -4,24 +4,20 @@
 #include "rds_render_api_layer/rdsRenderDevice.h"
 #include "rds_render_api_layer/transfer/command/rdsTransferCommand_Impl.h"
 
+#define RDS_RENDER_CMD_CREATE_RENDER_RSC(T, v)								\
+auto lock = _createRdRscBuf.scopedULock();									\
+auto* cmd = lock->newCommand<RDS_CONCAT(TransferCommand_Create, T)>();		\
+cmd->dst = v;																\
+// ---
+
+#define RDS_RENDER_CMD_DESTROY_RENDER_RSC(T, v)								\
+auto lock = _destroyRdRscBuf.scopedULock();									\
+auto* cmd = lock->newCommand<RDS_CONCAT(TransferCommand_Destroy, T)>();		\
+cmd->dst = v;																\
+// ---
+
 namespace rds
 {
-
-SPtr<TransferFrame> 
-RenderDevice::createTransferFrame(TransferFrame_CreateDesc& cDesc)
-{
-	#if 0
-	{
-		static Atm<u32> debugCreateCount = 0;
-		debugCreateCount++;
-		RDS_CORE_ASSERT(debugCreateCount <= s_kFrameSafeInFlightCount, "TransferFrame should not > s_kFrameSafeInFlightCount");
-	}
-	#endif // 0
-
-	cDesc._internal_create(this);
-	auto p = onCreateTransferFrame(cDesc);
-	return p;
-}
 
 #if 0
 #pragma mark --- rdsTransferFrame-Impl ---
@@ -106,6 +102,12 @@ TransferFrame::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
 }
 
 void 
+TransferFrame::createRenderContext(RenderContext* rdCtx)
+{
+	RDS_RENDER_CMD_CREATE_RENDER_RSC(RenderContext, rdCtx);
+}
+
+void
 TransferFrame::createRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
 	auto lock = _createRdRscBuf.scopedULock();
@@ -126,6 +128,12 @@ TransferFrame::createTexture(Texture* texture)
 }
 
 void 
+TransferFrame::destroyRenderContext(RenderContext* rdCtx)
+{
+	RDS_RENDER_CMD_DESTROY_RENDER_RSC(RenderContext, rdCtx);
+}
+
+void
 TransferFrame::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
 	auto lock = _destroyRdRscBuf.scopedULock();

@@ -33,6 +33,10 @@ public:
 	//void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout dstLayout, QueueTypeFlags queueType);
 
 public:
+	Vk_TransferFrame& vkTransferFrame();
+	TransferFrame_Vk& transferFrameVk();
+
+public:
 	void onTransferCommand_CreateRenderGpuBuffer(	TransferCommand_CreateRenderGpuBuffer*	cmd);
 	void onTransferCommand_CreateTexture(			TransferCommand_CreateTexture*			cmd);
 	void onTransferCommand_CreateShader(			TransferCommand_CreateShader*			cmd);
@@ -53,9 +57,6 @@ public:
 	void onTransferCommand_CopyBuffer(				TransferCommand_CopyBuffer*		cmd);
 	void onTransferCommand_UploadBuffer(			TransferCommand_UploadBuffer*	cmd);
 	void onTransferCommand_UploadTexture(			TransferCommand_UploadTexture*	cmd);
-	
-public:
-	Vk_TransferFrame& vkTransferFrame(u64 frameIdx);
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc)	override;
@@ -75,11 +76,6 @@ protected:
 	void _setDebugName();
 
 protected:
-	TransferFrame_Vk& transferFrameVk();
-
-protected:
-	Vk_TransferFrames	_vkTransferFrames;
-
 	Vk_Queue _vkGraphicsQueue;
 	Vk_Queue _vkTransferQueue;
 	Vk_Queue _vkComputeQueue;

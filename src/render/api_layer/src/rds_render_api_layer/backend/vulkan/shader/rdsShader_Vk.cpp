@@ -9,15 +9,6 @@
 namespace rds
 {
 
-SPtr<Shader> 
-RenderDevice_Vk::onCreateShader(const Shader_CreateDesc& cDesc)
-{
-	auto p = SPtr<Shader>(makeSPtr<Shader_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
-
 #if 0
 #pragma mark --- rdsVk_Descriptor_Helper-Impl ---
 #endif // 0

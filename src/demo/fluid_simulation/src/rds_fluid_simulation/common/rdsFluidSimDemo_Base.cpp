@@ -9,7 +9,15 @@ namespace rds
 #endif // 0
 #if 1
 
-void 
+FluidSimDemo_Base::FluidSimDemo_Base()
+{
+}
+
+FluidSimDemo_Base::~FluidSimDemo_Base()
+{
+}
+
+void
 FluidSimDemo_Base::onCreate(GraphicsDemo* parentDemo)
 {
 	_parentDemo = parentDemo;

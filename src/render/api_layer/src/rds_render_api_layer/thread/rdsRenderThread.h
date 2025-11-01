@@ -74,6 +74,10 @@ protected:
 
 	virtual void onThreadState_Terminate();
 
+public:
+	bool _checkUploadCompletedJob();
+	bool _checkRenderCompletedJob();
+
 private:
 	RenderDevice* _rdDev = nullptr;
 
@@ -85,7 +89,7 @@ private:
 	};
 	MutexProtected<State>		_state;		// TODO: CondMutexProtected
 	AtmQueue<UPtr<RenderJob> >	_pendingRdJobs;
-	//AtmQueue<UPtr<RenderJob> >	_processingRdJobs;// this is for check the gpu side is completed or not
+	AtmQueue<UPtr<RenderJob> >	_processingRdJobs;// this is for check the gpu side is completed or not
 
 	//RenderThreadQueue			_rdThreadQueue;		// if, use other name, maybe like Dx12 called Engine as an interface for RenderThread
 };

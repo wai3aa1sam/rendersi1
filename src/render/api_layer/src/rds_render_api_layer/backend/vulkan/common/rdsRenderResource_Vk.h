@@ -35,8 +35,6 @@ public:
 	u32 transferQueueFamilyIdx	();
 	u32 computeQueueFamilyIdx	();
 
-	Vk_TransferFrame&	vkTransferFrame(u64 frameIndex);
-
 	TransferContext_Vk&	transferContextVk();
 	TransferFrame_Vk&	transferFrameVk();
 
@@ -52,7 +50,6 @@ template<class BASE> inline u32					RenderResource_Vk<BASE>::graphicsQueueFamily
 template<class BASE> inline u32					RenderResource_Vk<BASE>::transferQueueFamilyIdx	()						{ return renderDeviceVk()->queueFamilyIndices().transfer.value(); }
 template<class BASE> inline u32					RenderResource_Vk<BASE>::computeQueueFamilyIdx	()						{ return renderDeviceVk()->queueFamilyIndices().compute.value(); }
 
-template<class BASE> inline Vk_TransferFrame&	RenderResource_Vk<BASE>::vkTransferFrame(u64 frameIndex)				{ return transferContextVk().vkTransferFrame(frameIndex); }
 template<class BASE> inline TransferContext_Vk&	RenderResource_Vk<BASE>::transferContextVk()							{ return renderDeviceVk()->transferContextVk(); }
 template<class BASE> inline	TransferFrame_Vk&	RenderResource_Vk<BASE>::transferFrameVk()								{ return renderDeviceVk()->transferFrameVk(); }
 

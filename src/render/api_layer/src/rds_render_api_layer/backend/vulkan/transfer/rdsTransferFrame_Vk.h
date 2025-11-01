@@ -5,8 +5,8 @@
 #include "rds_render_api_layer/transfer/rdsTransferFrame.h"
 
 #include "rds_render_api_layer/backend/vulkan/rdsVk_Allocator.h"
+#include "rdsVk_TransferFrame.h"
 #include "rdsVk_LinearStagingBuffer.h"
-
 
 #if RDS_RENDER_HAS_VULKAN
 
@@ -50,6 +50,7 @@ private:
 
 public:
 	Vk_LinearStagingBuffer& vkLinearStagingBuffer();
+	Vk_TransferFrame&		vkTransferFrame();
 
 protected:
 	virtual void onCreate(		CreateDesc& cDesc)	override;
@@ -61,10 +62,13 @@ public:
 	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 protected:
-	Vk_LinearStagingBuffer _vkLinearStagingBuf;
+	Vk_TransferFrame		_vkTsfFrame;
+	Vk_LinearStagingBuffer	_vkLinearStagingBuf;
 };
 
-inline Vk_LinearStagingBuffer& TransferFrame_Vk::vkLinearStagingBuffer() { return _vkLinearStagingBuf; }
+inline Vk_LinearStagingBuffer&	TransferFrame_Vk::vkLinearStagingBuffer()	{ return _vkLinearStagingBuf; }
+inline Vk_TransferFrame&		TransferFrame_Vk::vkTransferFrame()			{ return _vkTsfFrame; }
+
 
 #endif
 }

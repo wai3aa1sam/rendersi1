@@ -9,14 +9,6 @@ namespace rds
 
 RDS_Define_TypeInfo(Texture2DArray);
 
-SPtr<Texture2DArray> 
-RenderDevice::createTexture2DArray(Texture2DArray_CreateDesc& cDesc)
-{
-	cDesc._internal_create(this);
-	auto p = onCreateTexture2DArray(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsTexture2DArray-Impl ---
 #endif // 0

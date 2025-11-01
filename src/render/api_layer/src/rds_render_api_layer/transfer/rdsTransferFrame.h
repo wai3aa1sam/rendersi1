@@ -56,9 +56,11 @@ public:
 public:
 	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
 
+	void createRenderContext(	RenderContext*		rdCtx);
 	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
 	void createTexture(			Texture*			texture);
 
+	void destroyRenderContext(	RenderContext*		rdCtx);
 	void destroyRenderGpuBuffer(RenderGpuBuffer*	buffer);
 	void destroyTexture(		Texture*			texture);
 

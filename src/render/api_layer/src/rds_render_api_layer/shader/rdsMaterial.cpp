@@ -6,32 +6,6 @@
 namespace rds
 {
 
-SPtr<Material> 
-RenderDevice::createMaterial(const Material_CreateDesc& cDesc)
-{
-	cDesc._internal_create(this);
-	auto p = onCreateMaterial(cDesc);
-	p->setShader(cDesc.shader);
-	return p;
-}
-
-SPtr<Material> 
-RenderDevice::createMaterial(Shader* shader)
-{
-	auto cDesc = Material::makeCDesc();
-	cDesc.shader = shader;
-
-	return createMaterial(cDesc);
-}
-
-SPtr<Material> 
-RenderDevice::createMaterial()
-{
-	auto cDesc = Material::makeCDesc();
-	auto p = createMaterial(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsMaterial-Impl ---
 #endif // 0
@@ -80,7 +54,7 @@ Material::destroy()
 	if (!_shader || _passes.is_empty())
 		return;
 
-	checkMainThreadExclusive(RDS_SRCLOC);
+//	checkMainThreadExclusive(RDS_SRCLOC);
 
 	renderDevice()->shaderStock().removeMaterial(this);
 

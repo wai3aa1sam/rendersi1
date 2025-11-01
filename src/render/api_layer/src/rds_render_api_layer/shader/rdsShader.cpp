@@ -7,34 +7,6 @@
 namespace rds
 {
 
-SPtr<Shader> 
-RenderDevice::createShader(const Shader_CreateDesc& cDesc)
-{
-	auto shader = shaderStock().createShader(cDesc);
-	return shader;
-}
-
-SPtr<Shader> 
-RenderDevice::createShader(StrView filename)
-{
-	auto cDesc = Shader::makeCDesc();
-	cDesc.filename	= filename;
-
-	SPtr<Shader> p = createShader(cDesc);
-	return p;
-}
-
-SPtr<Shader>
-RenderDevice::createShader(StrView filename, const ShaderPermutations& permuts)
-{
-	auto cDesc = Shader::makeCDesc();
-	cDesc.filename	= filename;
-	cDesc.permuts	= &permuts;
-
-	SPtr<Shader> p = createShader(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsShader-Impl ---
 #endif // 0

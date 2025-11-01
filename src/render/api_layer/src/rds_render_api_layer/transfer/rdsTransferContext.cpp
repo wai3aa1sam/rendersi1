@@ -10,14 +10,6 @@
 namespace rds
 {
 
-SPtr<TransferContext>
-RenderDevice::createTransferContext(TransferContext_CreateDesc& cDesc)
-{
-	cDesc._internal_create(this);
-	auto p = onCreateTransferContext(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsTransferContext-Impl ---
 #endif // 0

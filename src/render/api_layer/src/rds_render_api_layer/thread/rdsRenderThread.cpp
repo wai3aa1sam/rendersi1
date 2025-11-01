@@ -62,8 +62,8 @@ RenderThread::onDestroy()
 	{
 		_rdDev->submitRenderJob(_rdDev->newRenderJob(nullptr, i));
 	}
-	waitIdle();
-
+	// some destroy command may miss if the Render_destroy will spwan other destroy command, 
+	// maybe check all the destroyBuf only quit when no destroy commands
 	quit();
 	_rdDev = nullptr;
 }
@@ -72,6 +72,38 @@ void
 RenderThread::onThreadState_Terminate()
 {
 	
+}
+
+bool 
+RenderThread::_checkUploadCompletedJob()
+{
+	UPtr<RenderJob> o = nullptr;
+	while (_processingRdJobs.try_pop(o))
+	{
+		if (!o->isDoneUploading())		// we can start new job when Upload is completed, we will check again when render
+		{
+			_processingRdJobs.push(rds::move(o));
+			return false;
+		}
+		_rdDev->_internal_freeRenderJob(rds::move(o));
+	}
+	return true;
+}
+
+bool 
+RenderThread::_checkRenderCompletedJob()
+{
+	UPtr<RenderJob> o = nullptr;
+	while (_processingRdJobs.try_pop(o))
+	{
+		if (!o->isDoneRendering())		// we can start new job when Upload is completed, we will check again when render
+		{
+			_processingRdJobs.push(rds::move(o));
+			return false;
+		}
+		_rdDev->_internal_freeRenderJob(rds::move(o));
+	}
+	return true;
 }
 
 void*
@@ -86,6 +118,8 @@ RenderThread::onRoutine()
 
 	for (;;)
 	{
+		_checkUploadCompletedJob();
+
 		{
 			auto data = _state.scopedULock();
 			if (data->isQuit)
@@ -111,6 +145,8 @@ RenderThread::requestRender(UPtr<RenderJob> rdJob)
 void 
 RenderThread::quit()
 {
+	waitIdle();
+
 	// quit the thread
 	// wait quit
 	// process the remaining
@@ -173,7 +209,7 @@ RenderThread::render(UPtr<RenderJob> renderJob)
 	}
 
 	//_lastFinishedFrameCount.store(curFrame);
-	rdDev->_internal_freeRenderJob(rds::move(renderJob));
+	_processingRdJobs.push(rds::move(renderJob));	// ensure only 1 thread is accessing
 }
 
 bool 
@@ -205,18 +241,24 @@ RenderThread::waitIdle()
 void
 RenderThread::waitCpuIdle()
 {
+	{
+		auto data = _state.scopedULock();
+		if (data->isQuit)
+			return;
+	}
 	_rdDev->waitCpuIdle();
 }
 
 void
 RenderThread::waitGpuIdle()
 {
-	RDS_TODO("later should put imageAvaliableSmp to Vk_Swapchain, renderCompletedSmp to RenderJob_Vk, no longer in RenderContext");
-	RDS_TODO("all semaphore in RenderContext need to separate FrameAHead and FrameInflight");
-	RDS_TODO("check fence in _processingRdJobs");
+	//RDS_TODO("later should put imageAvaliableSmp to Vk_Swapchain, renderCompletedSmp to RenderJob_Vk, no longer in RenderContext");
+	//RDS_TODO("all semaphore in RenderContext need to separate FrameAHead and FrameInflight");
+	//RDS_TODO("check fence in _processingRdJobs");
 	
-	waitCpuIdle();
-	_rdDev->_internal_waitGpuIdle();
+	while (!_checkRenderCompletedJob() || !_processingRdJobs.isEmpty());
+	
+	//_rdDev->_internal_waitGpuIdle();
 }
 
 #if 0

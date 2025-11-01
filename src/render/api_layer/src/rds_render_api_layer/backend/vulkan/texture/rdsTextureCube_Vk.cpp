@@ -8,14 +8,6 @@
 namespace rds
 {
 
-SPtr<TextureCube> 
-RenderDevice_Vk::onCreateTextureCube(TextureCube_CreateDesc& cDesc)
-{
-	auto p = SPtr<TextureCube>(makeSPtr<TextureCube_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsTextureCube_Vk-Impl ---
 #endif // 0

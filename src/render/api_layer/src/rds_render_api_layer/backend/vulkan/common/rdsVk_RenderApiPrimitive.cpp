@@ -689,7 +689,7 @@ Vk_Fence::isSignaled(RenderDevice_Vk* rdDev) const
 	
 	if (ret == VkResult::VK_SUCCESS || ret == VkResult::VK_NOT_READY)
 	{
-		return ret == VkResult::VK_SUCCESS;
+		return ret == VkResult::VK_SUCCESS || !_hasSubmitted;
 	}
 
 	Util::throwIfError(ret);

@@ -7,13 +7,6 @@
 namespace rds
 {
 
-SPtr<RenderGpuBuffer> 
-RenderDevice_Vk::onCreateRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
-{
-	auto p = SPtr<RenderGpuBuffer>(makeSPtr<RenderGpuBuffer_Vk>());
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsRenderGpuBuffer_Vk-Impl ---
 #endif // 0

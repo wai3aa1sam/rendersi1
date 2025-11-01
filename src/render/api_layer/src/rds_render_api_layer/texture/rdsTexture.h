@@ -279,7 +279,7 @@ class Texture : public RenderResource_T<Texture, RenderResourceType::Texture>
 {
 	friend class Backbuffers;
 public:
-	using Base				= RenderResource;
+	using Base				= RenderResource_T<Texture, RenderResourceType::Texture>;
 	using This				= Texture;
 	using CreateDesc		= Texture_CreateDesc;
 	using Desc				= Texture_Desc;

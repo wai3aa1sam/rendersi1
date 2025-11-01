@@ -36,13 +36,20 @@ public:
 	Vk_CommandBuffer* requestCommandBuffer(Vk_Queue& vk_queue, VkCommandBufferLevel bufLevel, StrView debugName);
 
 public:
-	Vk_RenderFrame& vkRenderFrame();
-	Vk_CmdBufHnds&	pendingGfxVkCmdbufHnds();
+	Vk_RenderFrame&		vkRenderFrame();
+	Vk_CmdBufHnds&		pendingGfxVkCmdbufHnds();
+
+	RenderDevice_Vk*	renderDeviceVk();
+	Vk_TransferFrame&	vkTransferFrame();
+	TransferFrame_Vk&	transferFrameVk();
 
 protected:
 	virtual void onCreate(CreateDesc& cDesc)			override;
 	virtual void onDestroy()							override;
 	virtual void onReset(RenderContext* rdCtx)			override;
+
+	virtual bool onCheckUploadCompleted() override;
+	virtual bool onCheckRenderCompleted() override;
 
 public:
 	//virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
@@ -56,6 +63,10 @@ protected:
 
 inline Vk_RenderFrame&				RenderJob_Vk::vkRenderFrame()			{ return _vk_rdFrame; }
 inline RenderJob_Vk::Vk_CmdBufHnds&	RenderJob_Vk::pendingGfxVkCmdbufHnds()	{ return _pendingGfxVkCmdbufHnds; }
+
+inline RenderDevice_Vk*				RenderJob_Vk::renderDeviceVk()			{ return transferFrameVk().renderDeviceVk(); }
+inline Vk_TransferFrame&			RenderJob_Vk::vkTransferFrame()			{ return transferFrameVk().vkTransferFrame(); }
+inline TransferFrame_Vk&			RenderJob_Vk::transferFrameVk()			{ return sCast<TransferFrame_Vk&>(*_transferFrame); }
 
 }
 #endif

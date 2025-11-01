@@ -12,29 +12,6 @@ namespace rds
 
 RDS_Define_TypeInfo(Texture2D);
 
-SPtr<Texture>
-RenderDevice::createTexture(Texture_CreateDesc& cDesc)
-{
-	SPtr<Texture> o;
-	switch (cDesc.type)
-	{
-		case RenderDataType::Texture2D:			{ auto p = createTexture2D(			sCast<Texture2D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
-		case RenderDataType::Texture3D:			{ auto p = createTexture3D(			sCast<Texture3D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
-		case RenderDataType::TextureCube:		{ auto p = createTextureCube(		sCast<TextureCube_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
-		case RenderDataType::Texture2DArray:	{ auto p = createTexture2DArray(	sCast<Texture2DArray_CreateDesc&>(	cDesc)); o.reset(p.ptr()); } break;
-		default: { RDS_THROW("invalid texture type"); } break;
-	}
-	return o;
-}
-
-SPtr<Texture2D> 
-RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
-{
-	cDesc._internal_create(this);
-	auto p = onCreateTexture2D(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsSamplerState-Impl ---
 #endif // 0

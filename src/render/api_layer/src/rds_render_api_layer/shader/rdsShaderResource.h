@@ -1,5 +1,6 @@
 #pragma once
 
+#include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rdsShaderInfo.h"
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
@@ -110,7 +111,7 @@ template<class INFO> inline bool ShaderResource<INFO>::isValid() const { return 
 
 template<class INFO> inline const typename ShaderResource<INFO>::Info&		ShaderResource<INFO>::info		() const { return *_info; }
 template<class INFO> inline const String&									ShaderResource<INFO>::name		() const { return info().name; }
-template<class INFO> inline typename ShaderResource<INFO>::DataType			ShaderResource<INFO>::dataType	() const { return info().dataType; }
+//template<class INFO> inline typename ShaderResource<INFO>::DataType			ShaderResource<INFO>::dataType	() const { return info().dataType; }
 template<class INFO> inline u16												ShaderResource<INFO>::bindPoint	() const { return info().bindPoint; }
 template<class INFO> inline u16												ShaderResource<INFO>::bindCount	() const { return info().bindCount; }
 

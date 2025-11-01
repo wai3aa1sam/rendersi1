@@ -28,14 +28,6 @@ namespace rds
 //static VkFormat g_testSwapchainVkFormat = VK_FORMAT_B8G8R8A8_UNORM; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 static VkFormat g_testSwapchainVkFormat = VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_B8G8R8A8_SRGB VK_FORMAT_B8G8R8A8_UNORM;
 
-SPtr<RenderContext> 
-RenderDevice_Vk::onCreateContext(const RenderContext_CreateDesc& cDesc)
-{
-	auto p = SPtr<RenderContext>(makeSPtr<RenderContext_Vk>());
-	p->create(cDesc);
-	return p;
-}
-
 #if 0
 #pragma mark --- rdsRenderContext_Vk-Impl ---
 #endif // 0
@@ -52,17 +44,9 @@ RenderContext_Vk::~RenderContext_Vk()
 	destroy();
 }
 
-Vk_CommandBuffer* 
-RenderContext_Vk::requestCmdBuf_Graphics(StrView debugName, VkCommandBufferLevel bufLevel)
+void 
+RenderContext_Vk::createRenderResource(const RenderFrameParam& rdFrameParam)
 {
-	return renderJob_Vk().requestCommandBuffer(_vkGraphicsQueue, bufLevel, debugName);
-}
-
-void
-RenderContext_Vk::onCreate(const CreateDesc& cDesc)
-{
-	Base::onCreate(cDesc);
-
 	auto* rdDevVk = renderDeviceVk();
 	//auto* vkDevice = rdDevVk->vkDevice();
 
@@ -71,9 +55,10 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 	_vkPresentQueue.create( QueueTypeFlags::Present,	rdDevVk);
 	_vkTransferQueue.create(QueueTypeFlags::Transfer,	rdDevVk);
 
-	auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
-
 	RDS_TODO("remove");
+	auto cDesc = makeCDesc();
+	cDesc.window = this->nativeUIWindow();
+	auto vkSwapchainCDesc = _vkSwapchain.makeCDesc();
 	Backbuffers _backbuffers;
 	vkSwapchainCDesc.create(cDesc, this, &_backbuffers);
 	_vkSwapchain.create(vkSwapchainCDesc);
@@ -92,6 +77,28 @@ RenderContext_Vk::onCreate(const CreateDesc& cDesc)
 
 	_vkRdPassPool.create(renderDeviceVk());
 	//_vkFramebufPool.create(renderDeviceVk());
+}
+
+void 
+RenderContext_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+{
+	_vkSwapchain.destroy(nullptr);
+	//_backbuffers.destroy();
+
+	//_vkFramebufPool.destroy();
+	_vkRdPassPool.destroy();
+}
+
+Vk_CommandBuffer* 
+RenderContext_Vk::requestCmdBuf_Graphics(StrView debugName, VkCommandBufferLevel bufLevel)
+{
+	return renderJob_Vk().requestCommandBuffer(_vkGraphicsQueue, bufLevel, debugName);
+}
+
+void
+RenderContext_Vk::onCreate(const CreateDesc& cDesc)
+{
+	Base::onCreate(cDesc);
 
 }
 
@@ -104,12 +111,7 @@ RenderContext_Vk::onPostCreate(const CreateDesc& cDesc)
 void
 RenderContext_Vk::onDestroy()
 {
-	_vkSwapchain.destroy(nullptr);
-	//_backbuffers.destroy();
-
-	//_vkFramebufPool.destroy();
-	_vkRdPassPool.destroy();
-
+	
 	Base::onDestroy();
 }
 
@@ -152,7 +154,6 @@ RenderContext_Vk::onEndRender()
 	RDS_PROFILE_SCOPED();
 
 	auto* rdDevVk	= renderDeviceVk();
-	auto  frameIdx	= frameIndex();
 	auto& vkRdFrame	= vkRenderFrame();
 	auto& rdJobVk	= renderJob_Vk();
 
@@ -175,7 +176,7 @@ RenderContext_Vk::onEndRender()
 			Vector<Vk_SmpSubmitInfo, 8> waitSmps;
 			Vector<Vk_SmpSubmitInfo, 8> signalSmps;
 
-			if (auto* tsfCompletedVkSmp = vkTransferFrame(frameIdx).getCompletedVkSemaphore(QueueTypeFlags::Graphics))
+			if (auto* tsfCompletedVkSmp = vkTransferFrame().getCompletedVkSemaphore(QueueTypeFlags::Graphics))
 			{
 				waitSmps.emplace_back(Vk_SmpSubmitInfo{tsfCompletedVkSmp->hnd(), VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT});
 			}
@@ -1153,6 +1154,7 @@ RenderContext_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd
 
 RenderJob_Vk&		RenderContext_Vk::renderJob_Vk()		{ return sCast<RenderJob_Vk&>(*_rdJob); }
 Vk_RenderFrame&		RenderContext_Vk::vkRenderFrame()		{ return renderJob_Vk().vkRenderFrame(); }
+Vk_TransferFrame&	RenderContext_Vk::vkTransferFrame()		{ return renderJob_Vk().vkTransferFrame(); }
 
 }
 

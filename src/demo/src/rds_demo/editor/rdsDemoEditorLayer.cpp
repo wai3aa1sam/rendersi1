@@ -34,6 +34,8 @@ DemoEditorLayer::DemoEditorLayer()
 
 DemoEditorLayer::~DemoEditorLayer()
 {
+	auto& tsfFrame = Renderer::renderDevice()->transferFrame(); RDS_UNUSED(tsfFrame);
+
 	#if 1
 	_testEngine.reset(nullptr);
 	_gfxDemo.reset(nullptr);

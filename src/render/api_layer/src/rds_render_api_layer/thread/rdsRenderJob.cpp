@@ -13,24 +13,6 @@ namespace rds
 #endif // 0
 #if 1
 
-void 
-RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_)
-{
-	renderDevice	= renderDevice_;
-	frameCount		= frameCount_;
-
-	if (rdCtx)		// TODO: temp sol. nullptr means it is destroying
-	{
-		renderGraph().reset(rdCtx);
-		_renderGraphFrameIdx = renderGraph().frameIndex();
-	}
-	renderRequest().reset(rdCtx);
-
-	if (_transferFrame)
-		_transferFrame->reset();
-	_transferFrame	= nullptr;
-}
-
 RenderJob::RenderJob()
 {
 
@@ -50,6 +32,38 @@ RenderJob::create(CreateDesc& cDesc)
 void RenderJob::destroy()
 {
 	onDestroy();
+}
+
+
+void 
+RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_)
+{
+	renderDevice	= renderDevice_;
+	frameCount		= frameCount_;
+
+	if (_transferFrame)
+		_transferFrame->reset();
+	_transferFrame	= nullptr;
+
+	RDS_TODO("temp sol. nullptr means it is destroying, prevent dangling ptr");
+	if (rdCtx)
+	{
+		renderGraph().reset(rdCtx);
+		_renderGraphFrameIdx = renderGraph().frameIndex();
+	}
+	renderRequest().reset(rdCtx);
+}
+
+bool 
+RenderJob::isDoneUploading()
+{
+	return onCheckUploadCompleted();
+}
+
+bool 
+RenderJob::isDoneRendering()
+{
+	return onCheckRenderCompleted();
 }
 
 void 
