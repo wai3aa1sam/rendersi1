@@ -59,6 +59,8 @@ RenderDevice_Vk::onCreate(const CreateDesc& cDesc)
 void
 RenderDevice_Vk::onDestroy()
 {
+	Base::onDestroy();
+
 	_vkMemoryContext.destroy();
 
 	RDS_TODO("since VkAllocCallbacks is inside _vkMemoryContext, destroyed will cause VkDevice, ... cannot destroy, or they just use nullptr for VkAllocCallbacks");;
@@ -67,8 +69,6 @@ RenderDevice_Vk::onDestroy()
 	_vkPhysicalDevice.destroy();
 	_vkDebugMessenger.destroy(this);
 	_vkInstance.destroy(this);
-
-	Base::onDestroy();
 }
 
 void 
@@ -485,18 +485,18 @@ Vk_PhysicalDeviceVulkanFeatures*	Vk_PhysicalDeviceFeatures::vkPhyDevVkFeatures()
 
 #if 1
 
-UPtr<RenderJob>				RenderDevice_Vk::onCreateRenderJob(					RenderJob_CreateDesc&			cDesc) { auto p = UPtr<RenderJob>(			RDS_NEW(RenderJob_Vk));								return p; }
-SPtr<RenderContext>			RenderDevice_Vk::onCreateContext(			const	RenderContext_CreateDesc&		cDesc) { auto p = SPtr<RenderContext>(		RDS_NEW(RenderContext_Vk));		p->create(cDesc);	return p; }
-SPtr<TransferContext>		RenderDevice_Vk::onCreateTransferContext(			TransferContext_CreateDesc&		cDesc) { auto p = SPtr<TransferContext>(	RDS_NEW(TransferContext_Vk));	p->create(cDesc);	return p; }
-SPtr<TransferFrame>			RenderDevice_Vk::onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc) { auto p = SPtr<TransferFrame>(		RDS_NEW(TransferFrame_Vk));		p->create(cDesc);	return p; }
-SPtr<BindlessResources>		RenderDevice_Vk::onCreateBindlessResources(			BindlessResources_CreateDesc&	cDesc) { auto p = SPtr<BindlessResources>(	RDS_NEW(BindlessResources_Vk)); p->create(cDesc);	return p; }
-SPtr<RenderGpuBuffer>		RenderDevice_Vk::onCreateRenderGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc) { auto p = SPtr<RenderGpuBuffer>(	RDS_NEW(RenderGpuBuffer_Vk));	p->create(cDesc);	return p; }
-SPtr<Texture2D>				RenderDevice_Vk::onCreateTexture2D(					Texture2D_CreateDesc&			cDesc) { auto p = SPtr<Texture2D>(			RDS_NEW(Texture2D_Vk));			p->create(cDesc);	return p; }
-SPtr<Texture2DArray>		RenderDevice_Vk::onCreateTexture2DArray(			Texture2DArray_CreateDesc&		cDesc) { auto p = SPtr<Texture2DArray>(		RDS_NEW(Texture2DArray_Vk));	p->create(cDesc);	return p; }
-SPtr<Texture3D>				RenderDevice_Vk::onCreateTexture3D(					Texture3D_CreateDesc&			cDesc) { auto p = SPtr<Texture3D>(			RDS_NEW(Texture3D_Vk));			p->create(cDesc);	return p; }
-SPtr<TextureCube>			RenderDevice_Vk::onCreateTextureCube(				TextureCube_CreateDesc&			cDesc) { auto p = SPtr<TextureCube>(		RDS_NEW(TextureCube_Vk));		p->create(cDesc);	return p; }
-SPtr<Shader>				RenderDevice_Vk::onCreateShader(			const	Shader_CreateDesc&				cDesc) { auto p = SPtr<Shader>(				RDS_NEW(Shader_Vk));			p->create(cDesc);	return p; }
-SPtr<Material>				RenderDevice_Vk::onCreateMaterial(			const	Material_CreateDesc&			cDesc) { auto p = SPtr<Material>(			RDS_NEW(Material_Vk));			p->create(cDesc);	return p; }
+UPtr<RenderJob>				RenderDevice_Vk::onCreateRenderJob(					RenderJob_CreateDesc&			cDesc) { auto p = UPtr<RenderJob>(			RDS_NEW(RenderJob_Vk));			return p; }
+SPtr<RenderContext>			RenderDevice_Vk::onCreateContext(			const	RenderContext_CreateDesc&		cDesc) { auto p = SPtr<RenderContext>(		RDS_NEW(RenderContext_Vk));		return p; }
+SPtr<TransferContext>		RenderDevice_Vk::onCreateTransferContext(			TransferContext_CreateDesc&		cDesc) { auto p = SPtr<TransferContext>(	RDS_NEW(TransferContext_Vk));	return p; }
+SPtr<TransferFrame>			RenderDevice_Vk::onCreateTransferFrame(				TransferFrame_CreateDesc&		cDesc) { auto p = SPtr<TransferFrame>(		RDS_NEW(TransferFrame_Vk));		return p; }
+SPtr<BindlessResources>		RenderDevice_Vk::onCreateBindlessResources(			BindlessResources_CreateDesc&	cDesc) { auto p = SPtr<BindlessResources>(	RDS_NEW(BindlessResources_Vk)); return p; }
+SPtr<RenderGpuBuffer>		RenderDevice_Vk::onCreateRenderGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc) { auto p = SPtr<RenderGpuBuffer>(	RDS_NEW(RenderGpuBuffer_Vk));	return p; }
+SPtr<Texture2D>				RenderDevice_Vk::onCreateTexture2D(					Texture2D_CreateDesc&			cDesc) { auto p = SPtr<Texture2D>(			RDS_NEW(Texture2D_Vk));			return p; }
+SPtr<Texture2DArray>		RenderDevice_Vk::onCreateTexture2DArray(			Texture2DArray_CreateDesc&		cDesc) { auto p = SPtr<Texture2DArray>(		RDS_NEW(Texture2DArray_Vk));	return p; }
+SPtr<Texture3D>				RenderDevice_Vk::onCreateTexture3D(					Texture3D_CreateDesc&			cDesc) { auto p = SPtr<Texture3D>(			RDS_NEW(Texture3D_Vk));			return p; }
+SPtr<TextureCube>			RenderDevice_Vk::onCreateTextureCube(				TextureCube_CreateDesc&			cDesc) { auto p = SPtr<TextureCube>(		RDS_NEW(TextureCube_Vk));		return p; }
+SPtr<Shader>				RenderDevice_Vk::onCreateShader(			const	Shader_CreateDesc&				cDesc) { auto p = SPtr<Shader>(				RDS_NEW(Shader_Vk));			return p; }
+SPtr<Material>				RenderDevice_Vk::onCreateMaterial(			const	Material_CreateDesc&			cDesc) { auto p = SPtr<Material>(			RDS_NEW(Material_Vk));			return p; }
 
 #endif // 1
 

@@ -28,10 +28,6 @@ public:
 	virtual ~TextureCube_Vk();
 
 protected:
-	virtual void onCreate		(CreateDesc& cDesc) override;
-	virtual void onPostCreate	(CreateDesc& cDesc) override;
-	virtual void onDestroy		() override;
-
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 };
 

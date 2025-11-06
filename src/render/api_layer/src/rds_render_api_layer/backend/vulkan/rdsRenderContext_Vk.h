@@ -40,8 +40,8 @@ public:
 	RenderContext_Vk();
 	virtual ~RenderContext_Vk();
 
-	void createRenderResource(const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+	void onTransferCommand_Create(CmdCreate* cmd);
+	void onTransferCommand_Destroy();
 
 public:
 	Vk_CommandBuffer* requestCmdBuf_Graphics(StrView debugName, VkCommandBufferLevel bufLevel = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);

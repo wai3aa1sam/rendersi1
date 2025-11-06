@@ -27,18 +27,7 @@ public:
 	Texture3D_Vk();
 	virtual ~Texture3D_Vk();
 
-public:
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
-
-	virtual void setDebugName(StrView name) override;
-	virtual void setNull() override;
-
 protected:
-	virtual void onCreate		(CreateDesc& cDesc) override;
-	virtual void onPostCreate	(CreateDesc& cDesc) override;
-	virtual void onDestroy		() override;
-
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 
 protected:

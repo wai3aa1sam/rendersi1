@@ -73,6 +73,8 @@ class RenderContext : public RenderResource_T<RenderContext, RenderResourceType:
 public:
 	using Base			= RenderResource_T<RenderContext, RenderResourceType::RenderContext>;
 	using CreateDesc	= RenderContext_CreateDesc;
+	using CmdCreate		= TransferCommand_CreateRenderContext;
+	using CmdDestroy	= TransferCommand_DestroyRenderContext;
 
 public:
 	static CreateDesc			makeCDesc();
@@ -83,8 +85,7 @@ public:
 	virtual ~RenderContext();
 
 	void create	(const CreateDesc& cDesc);
-	void destroy();
-	void _internal_requestDestroyObject();
+	//void destroy();
 
 public:
 	void Render_reset(RenderJob* rdJob);

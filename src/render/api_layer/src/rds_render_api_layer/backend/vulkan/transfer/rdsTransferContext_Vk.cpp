@@ -223,24 +223,15 @@ TransferContext_Vk::_setDebugName()
 void 
 TransferContext_Vk::onTransferCommand_CreateRenderGpuBuffer(TransferCommand_CreateRenderGpuBuffer* cmd)
 {
-	auto* rdDevVk		= renderDeviceVk();
-	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
-	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr());
-
-	dstBuf->createRenderResource(rdDevVk->renderFrameParam());
-	bindlessRscVk.onCommit_RenderGpuBuffer(dstBuf);
+	sCast<RenderGpuBuffer_Vk*>(cmd->dst.ptr())->onTransferCommand_Create(cmd);
 }
 
 void 
 TransferContext_Vk::onTransferCommand_CreateTexture(TransferCommand_CreateTexture* cmd)
 {
-	using SRC = RenderDataType;
-	auto* rdDevVk		= renderDeviceVk();
-	auto& bindlessRscVk = rdDevVk->bindlessResourceVk();
-	auto* dstTex		= cmd->dst.ptr();
-
-	RDS_VK_TEXTURE_INVOKE(dstTex, createRenderResource(rdDevVk->renderFrameParam()));
-	bindlessRscVk.onCommit_Texture(dstTex);
+	sCast<Texture*>(cmd->dst.ptr())->onTransferCommand_Create(cmd);
+	//RDS_VK_TEXTURE_INVOKE(dstTex, createRenderResource(rdDevVk->renderFrameParam()));
+	//bindlessRscVk.onCommit_Texture(dstTex);
 }
 
 void 
@@ -258,9 +249,7 @@ TransferContext_Vk::onTransferCommand_CreateMaterial(TransferCommand_CreateMater
 void 
 TransferContext_Vk::onTransferCommand_CreateRenderContext(TransferCommand_CreateRenderContext* cmd)
 {
-	auto* rdDevVk	= renderDeviceVk();
-	auto* dst		= sCast<RenderContext_Vk*>(cmd->dst.ptr());
-	dst->createRenderResource(rdDevVk->renderFrameParam());
+	sCast<RenderContext_Vk*>(cmd->dst.ptr())->onTransferCommand_Create(cmd);
 }
 
 void 
@@ -272,20 +261,13 @@ TransferContext_Vk::onTransferCommand_CreateRenderDevice(TransferCommand_CreateR
 void
 TransferContext_Vk::onTransferCommand_DestroyRenderGpuBuffer(TransferCommand_DestroyRenderGpuBuffer* cmd)
 {
-	auto* rdDevVk		= renderDeviceVk();
-	auto* dstBuf		= sCast<RenderGpuBuffer_Vk*>(cmd->dst);
-
-	RenderResource::destroyObject(dstBuf, rdDevVk->renderFrameParam());
+	RenderResource::destroyObject(sCast<RenderGpuBuffer_Vk*>(cmd->dst), cmd);
 }
 
 void 
 TransferContext_Vk::onTransferCommand_DestroyTexture(TransferCommand_DestroyTexture* cmd)
 {
-	auto* rdDevVk		= renderDeviceVk();
-	auto* dstTex		= cmd->dst;
-
-	RDS_VK_TEXTURE_INVOKE(dstTex, destroyRenderResource(rdDevVk->renderFrameParam()));
-	RenderResource::destroyObject(dstTex, rdDevVk->renderFrameParam());
+	RenderResource::destroyObject(sCast<Texture*>(cmd->dst), cmd);
 }
 
 void 
@@ -303,9 +285,7 @@ TransferContext_Vk::onTransferCommand_DestroyMaterial(TransferCommand_DestroyMat
 void 
 TransferContext_Vk::onTransferCommand_DestroyRenderContext(TransferCommand_DestroyRenderContext* cmd)
 {
-	auto* rdDevVk	= renderDeviceVk();
-	auto* dst		= sCast<RenderContext_Vk*>(cmd->dst);
-	RenderResource::destroyObject(dst, rdDevVk->renderFrameParam());
+	RenderResource::destroyObject(sCast<RenderContext_Vk*>(cmd->dst), cmd);
 }
 
 void 

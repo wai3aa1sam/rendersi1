@@ -59,10 +59,10 @@ Renderer::create(const CreateDesc& cDesc)
 void 
 Renderer::destroy()
 {
-	for (auto& e : _rdDevs)
+	/*for (auto& e : _rdDevs)
 	{
 		e->destroy();
-	}
+	}*/
 	_rdDevs.clear();
 }
 

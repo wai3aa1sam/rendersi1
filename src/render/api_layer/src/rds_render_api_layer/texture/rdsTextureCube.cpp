@@ -44,6 +44,13 @@ void TextureCube::create(CreateDesc& cDesc)
 }
 
 void 
+TextureCube::onDestroy()
+{
+
+	Base::onDestroy();
+}
+
+void 
 TextureCube::uploadToGpu(CreateDesc& cDesc)
 {
 	checkMainThreadExclusive(RDS_SRCLOC);
@@ -74,20 +81,11 @@ TextureCube::onPostCreate(CreateDesc& cDesc)
 }
 
 void 
-TextureCube::onDestroy()
-{
-
-
-	Base::onDestroy();
-}
-
-void 
 TextureCube::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)
 {
 	RDS_CORE_ASSERT(cmd, "");
 	
 }
-
 
 #endif
 

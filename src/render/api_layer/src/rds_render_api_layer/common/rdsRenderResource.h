@@ -180,9 +180,6 @@ public:
 
 	ProjectSetting& projectSetting();
 
-public:
-	void _internal_requestDestroyObject();
-
 protected:
 	void Engine_setSubResourceCount(SizeType n);
 
@@ -193,15 +190,10 @@ public:
 public:
 	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd);		// onRenderResouce_onSetDebugName
 
-	void onRenderResouce_Create(	const RenderFrameParam& rdFrameParam);
-	void onRenderResouce_Destroy(	const RenderFrameParam& rdFrameParam);
-
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
-
 protected:
+	virtual void onDestroy();
 	void RenderResource_CreateEnd();
-	template<class T> static void destroyObject(T* p, const RenderFrameParam& rdFrameParam);
+	template<class T> static void destroyObject(T* p, typename T::CmdDestroy* cmd);
 
 protected:
 	RDS_DEBUG_SRCLOC_DECL;
@@ -255,12 +247,12 @@ struct RdsDeleter<T, EnableIf<IsBaseOf<RenderResource, T> > >
 	static void rds_delete(T* p) RDS_NOEXCEPT;
 };
 
-template<class T> 
+template<class T> inline
 void 
-RenderResource::destroyObject(T* p, const RenderFrameParam& rdFrameParam)
+RenderResource::destroyObject(T* p, typename T::CmdDestroy* cmd)
 {
 	checkRenderThreadExclusive(RDS_SRCLOC);
-	p->destroyRenderResource(rdFrameParam);
+	p->onTransferCommand_Destroy();
 	rds_delete_impl(p);
 }
 

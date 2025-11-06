@@ -52,10 +52,9 @@ void TransferFrame::create(CreateDesc& cDesc)
 	onPostCreate(cDesc);
 }
 
-void TransferFrame::destroy()
+void TransferFrame::onDestroy()
 {
-	onDestroy();
-	Base::destroy();
+	TransferFrame::onReset();
 }
 
 void 
@@ -72,11 +71,6 @@ void TransferFrame::onCreate(CreateDesc& cDesc)
 void TransferFrame::onPostCreate(CreateDesc& cDesc)
 {
 
-}
-
-void TransferFrame::onDestroy()
-{
-	TransferFrame::onReset();
 }
 
 void 
@@ -108,12 +102,13 @@ TransferFrame::createRenderContext(RenderContext* rdCtx)
 }
 
 void
-TransferFrame::createRenderGpuBuffer(RenderGpuBuffer* buffer)
+TransferFrame::createRenderGpuBuffer(RenderGpuBuffer* buffer, const RenderGpuBuffer_CreateDesc& cDesc)
 {
 	auto lock = _createRdRscBuf.scopedULock();
 	auto* cmd = lock->newCommand<TransferCommand_CreateRenderGpuBuffer>();
 
-	cmd->dst = buffer;
+	cmd->dst	= buffer;
+	cmd->cDesc	= cDesc;
 }
 
 void 

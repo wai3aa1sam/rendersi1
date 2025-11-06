@@ -36,7 +36,7 @@ Material::Material()
 
 Material::~Material()
 {
-	Base::destroy();
+	
 }
 
 void 
@@ -45,24 +45,23 @@ Material::create(const CreateDesc& cDesc)
 	destroy();
 
 	Base::create(cDesc);
-	onCreate(cDesc);
+	setShader(cDesc.shader);
 }
 
-void 
-Material::destroy()
+void
+Material::onDestroy()
 {
 	if (!_shader || _passes.is_empty())
 		return;
 
-//	checkMainThreadExclusive(RDS_SRCLOC);
+	//	checkMainThreadExclusive(RDS_SRCLOC);
 
 	renderDevice()->shaderStock().removeMaterial(this);
 
 	_passes.clear();
 	_shader.reset(nullptr);
 
-	onDestroy();
-	Base::destroy();
+	Base::onDestroy();
 }
 
 void 
@@ -93,12 +92,6 @@ Material::setShader(Shader* shader)
 				dst.copy(_passes[i]->shaderResources());
 			}
 		}	
-	}
-
-	if (shader)
-	{
-		RDS_TODO("template<class... TArgs> setDebugName(StrView fmt, TArgs&& args...)");
-		setDebugName(RDS_FMT(TempString, "mtl-{}", shader->filename()));		
 	}
 
 	destroy();
@@ -134,20 +127,22 @@ Material::setShader(Shader* shader)
 	{
 		setParamsToDefault();
 	}
+
+	if (shader)
+	{
+		RDS_TODO("template<class... TArgs> setDebugName(StrView fmt, TArgs&& args...)");
+		setDebugName(RDS_FMT(TempString, "mtl-{}", shader->filename()));		
+	}
 }
 
 void
 Material::onCreate(const CreateDesc& cDesc)
 {
+	
 }
 
 void
 Material::onPostCreate(const CreateDesc& cDesc)
-{
-}
-
-void
-Material::onDestroy()
 {
 }
 

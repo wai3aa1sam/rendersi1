@@ -19,7 +19,7 @@ RenderResource::RenderResource()
 
 RenderResource::~RenderResource()
 {
-	RDS_CORE_ASSERT(!hasCreated(), " has not call destroy()");
+	//RDS_CORE_ASSERT(!hasCreated(), " has not call destroy()");
 }
 
 void 
@@ -49,7 +49,9 @@ RenderResource::create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc&
 void 
 RenderResource::destroy()
 {
-	_rdDev = nullptr;
+	checkMainThreadExclusive(RDS_SRCLOC);
+	onDestroy();
+	//_rdDev = nullptr;
 }
 
 void 
@@ -59,12 +61,6 @@ RenderResource::setDebugName(StrView name)
 	_debugName = name;
 	transferContext().transferFrame().setRenderResourceDebugName(this, name);
 	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
-}
-
-void 
-RenderResource::_internal_requestDestroyObject()
-{
-	
 }
 
 void 
@@ -97,15 +93,9 @@ RenderResource::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 }
 
 void 
-RenderResource::createRenderResource(const RenderFrameParam& rdFrameParam)
+RenderResource::onDestroy()
 {
-	throwError("implement this in backend, but should not call this");
-}
-
-void 
-RenderResource::destroyRenderResource(const RenderFrameParam& rdFrameParam)
-{
-	throwError("implement this in backend, but should not call this");
+	
 }
 
 void 

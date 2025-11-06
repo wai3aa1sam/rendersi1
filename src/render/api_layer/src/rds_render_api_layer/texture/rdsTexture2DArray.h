@@ -112,6 +112,8 @@ public:
 	virtual ~Texture2DArray();
 
 	void create		(CreateDesc& cDesc);
+
+public:
 	void uploadToGpu(CreateDesc& cDesc);
 
 protected:
@@ -120,9 +122,6 @@ protected:
 	virtual void onDestroy		();
 
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
-
-private:
-	void _create(CreateDesc& cDesc);
 
 protected:
 	//Size _size;

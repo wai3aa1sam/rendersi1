@@ -84,32 +84,22 @@ RenderContext::~RenderContext()
 void
 RenderContext::create(const CreateDesc& cDesc)
 {
-	destroy();
-
 	Base::create(cDesc);
 	onCreate(cDesc);
 	transferContext().transferFrame().createRenderContext(this);
 }
 
 void
-RenderContext::destroy()
+RenderContext::onDestroy()
 {
-	if (!Base::hasCreated())
-		return;
-
-	onDestroy();
-	Base::destroy();
-}
-
-void 
-RenderContext::_internal_requestDestroyObject()
-{
-	Base::_internal_requestDestroyObject();
-	transferContext().transferFrame().destroyRenderContext(this);
-
+	//RDS_CORE_ASSERT(_backbuffers.isEmpty(), "must clear in backend");
 	// prevent spwan more commands when destroy in RenderThread
 	_rdUiCtx.destroy();
 	_dummyVtxBuf.reset(nullptr);
+
+	transferContext().transferFrame().destroyRenderContext(this);
+
+	Base::onDestroy();
 }
 
 void 
@@ -225,18 +215,14 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 		_dummyVtxBuf = renderDevice()->createRenderGpuBuffer(bufCDesc);
 		_dummyVtxBuf->setDebugName("dummyVtxBuf");
 	}
+
+	_rdUiCtx.create(this);
 }
 
 void
 RenderContext::onPostCreate(const CreateDesc& cDesc)
 {
-	_rdUiCtx.create(this);
-}
-
-void
-RenderContext::onDestroy()
-{
-	//RDS_CORE_ASSERT(_backbuffers.isEmpty(), "must clear in backend");
+	
 }
 
 void 

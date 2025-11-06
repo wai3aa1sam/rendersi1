@@ -23,8 +23,9 @@ namespace rds
 class TransferCommand_Create ## TYPE : public TransferCommand		 		   \
 {																 			   \
 public:															 			   \
-	using Base = TransferCommand;								 			   \
-	using This = TransferCommand_Create ## TYPE;					 		   \
+	using Base			= TransferCommand;								 	   \
+	using This			= TransferCommand_Create ## TYPE;					   \
+	using CreateDesc	= TYPE ## :: ## CreateDesc;					 		   \
 																			   \
 public:															 			   \
 	TransferCommand_Create ## TYPE() : Base(Type::Create ## TYPE) {} 		   \
@@ -32,6 +33,7 @@ public:															 			   \
 																 			   \
 public:															 			   \
 	SPtr<TYPE> dst = nullptr;												   \
+	CreateDesc cDesc;														   \
 };																 			   \
 // ---
 

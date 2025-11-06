@@ -42,7 +42,7 @@ public:
 	void destroy();
 
 public:
-	SPtr<Shader>	createShader(const Shader_CreateDesc& cDesc);
+	SPtr<Shader>	findShader(const Shader_CreateDesc& cDesc);
 	//SPtr<Shader>	createShader(StrView filename);
 	//SPtr<Shader>	createShader(Shader* shader, const ShaderPermutations& permuts);
 	//SPtr<Material>	createMaterial();
@@ -50,8 +50,9 @@ public:
 	void removeShader(Shader* shader);
 
 public:
-	void appendUniqueMaterial(Material* mtl, Shader* shader);
-	void removeMaterial(Material* mtl);
+	SPtr<Shader>	appendUnqiueShader(const Shader_CreateDesc& cDesc);
+	void			appendUniqueMaterial(Material* mtl, Shader* shader);
+	void			removeMaterial(Material* mtl);
 
 	void sendPermutationRequest(Material* mtl);
 	void clearPermutationRequest();

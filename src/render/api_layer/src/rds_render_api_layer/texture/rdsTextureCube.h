@@ -98,15 +98,20 @@ public:
 	TextureCube();
 	virtual ~TextureCube();
 
-	void create		(CreateDesc& cDesc);
+	void create(CreateDesc& cDesc);
+
+protected:
+	virtual void onDestroy() override;
+
+public:
 	void uploadToGpu(CreateDesc& cDesc);
 
+public:
 	Size size() const;
 
 protected:
 	virtual void onCreate		(CreateDesc& cDesc);
 	virtual void onPostCreate	(CreateDesc& cDesc);
-	virtual void onDestroy		();
 
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
 

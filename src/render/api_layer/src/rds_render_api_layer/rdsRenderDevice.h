@@ -90,7 +90,6 @@ public:
 	virtual ~RenderDevice();
 
 	void create(const CreateDesc& cDesc);
-	void destroy();
 
 public:
 	class RenderInputFrameParam;
@@ -183,7 +182,7 @@ protected:
 	UPtr<RenderGraph>			_rdGraph = nullptr;	// TODO: temp
 	RenderThread				_rdThread;			// Consumer inside, _pendingRdJobs; 
 	// no need processingRdJobs, this is for check the gpu side is completed or not
-	AtmQueue<UPtr<RenderJob> >	_freeRdJobs;		// Producer
+	CondQueue<UPtr<RenderJob> >	_freeRdJobs;		// Producer
 
 	RenderFrameParam			_rdFrameParam;
 

@@ -6,6 +6,8 @@
 
 #include "rdsRenderThreadQueue.h"
 
+#include "EASTL/slist.h"
+
 namespace rds
 {
 
@@ -30,6 +32,35 @@ struct RenderThread_CreateDesc : public ::nmsp::TypeThread_CreateDesc
 	E(_kCount, ) \
 //---
 RDS_ENUM_CLASS(RenderThreadState, u8);
+
+#if 1
+
+
+template<class T> 
+class CondQueue : public AtmQueue<T>
+{
+public:
+	using Base		= AtmQueue<T>;
+	using SizeType	= typename Base::SizeType;
+
+public:
+	CondQueue() = default;
+	~CondQueue() = default;
+
+	void push(const T& data)	{ _size++;  Base::push(data); }
+	void push(		T&& data)	{ _size++;  Base::push(rds::move(data)); }
+
+	bool try_pop(T& o) { bool isSuccess = Base::try_pop(o); if (isSuccess) { _size--; }  return isSuccess; }
+
+	SizeType	size()		const { return _size; }
+	bool		isEmpty()	const { return _size == 0; }
+
+private:
+	Atm<u32>	_size = 0;
+};
+
+#endif // 1
+
 
 #if 0
 #pragma mark --- rdsRenderThread-Decl ---
@@ -88,8 +119,8 @@ private:
 		bool isQuit		= false;
 	};
 	MutexProtected<State>		_state;		// TODO: CondMutexProtected
-	AtmQueue<UPtr<RenderJob> >	_pendingRdJobs;
-	AtmQueue<UPtr<RenderJob> >	_processingRdJobs;// this is for check the gpu side is completed or not
+	CondQueue<UPtr<RenderJob> >	_pendingRdJobs;
+	CondQueue<UPtr<RenderJob> >	_processingRdJobs;// this is for check the gpu side is completed or not
 
 	//RenderThreadQueue			_rdThreadQueue;		// if, use other name, maybe like Dx12 called Engine as an interface for RenderThread
 };

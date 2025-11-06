@@ -20,16 +20,17 @@ RenderGpuBuffer_Vk::RenderGpuBuffer_Vk()
 
 RenderGpuBuffer_Vk::~RenderGpuBuffer_Vk()
 {
-	destroy();
+	
 }
 
 void 
-RenderGpuBuffer_Vk::createRenderResource(const RenderFrameParam& rdFrameParam)
+RenderGpuBuffer_Vk::onTransferCommand_Create(CmdCreate* cmd)
 {
 	auto* rdDevVk	= renderDeviceVk();
 	auto* vkAlloc	= rdDevVk->memoryContext()->vkAlloc();
 
-	auto targetSize = math::alignTo(bufSize(), s_kAlign);
+	RDS_TODO("do not call the stuff in Engine side, although it is immutable");
+	auto targetSize = math::alignTo(cmd->cDesc.bufSize, s_kAlign);
 
 	Vk_AllocInfo allocInfo = {};
 
@@ -55,32 +56,15 @@ RenderGpuBuffer_Vk::createRenderResource(const RenderFrameParam& rdFrameParam)
 
 	RDS_TODO("TransferCommand_setDebugName");
 	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkBuf);
+
+	renderDeviceVk()->bindlessResourceVk().onCommit_RenderGpuBuffer(this);
 }
 
 void 
-RenderGpuBuffer_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+RenderGpuBuffer_Vk::onTransferCommand_Destroy()
 {
 	_vkBuf.destroy();
 	_gpuAddress = 0;
-}
-
-void
-RenderGpuBuffer_Vk::onCreate(CreateDesc& cDesc)
-{
-	Base::onCreate(cDesc);
-}
-
-void
-RenderGpuBuffer_Vk::onPostCreate(CreateDesc& cDesc)
-{
-	Base::onPostCreate(cDesc);
-}
-
-void
-RenderGpuBuffer_Vk::onDestroy()
-{
-	
-	Base::onDestroy();
 }
 
 void 

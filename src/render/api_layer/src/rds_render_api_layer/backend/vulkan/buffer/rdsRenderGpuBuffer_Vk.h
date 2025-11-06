@@ -22,8 +22,8 @@ public:
 	RenderGpuBuffer_Vk();
 	virtual ~RenderGpuBuffer_Vk();
 
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+	void onTransferCommand_Create(CmdCreate* cmd);
+	void onTransferCommand_Destroy();
 
 public:
 	Vk_Buffer*		vkBuf();
@@ -32,11 +32,7 @@ public:
 	u64				gpuAddress() const;
 
 protected:
-	virtual void onCreate		(CreateDesc& cDesc)	override;
-	virtual void onPostCreate	(CreateDesc& cDesc)	override;
-	virtual void onDestroy		()					override;
-
-	virtual void onUploadToGpu	(TransferCommand_UploadBuffer* cmd) override;
+	virtual void onUploadToGpu(TransferCommand_UploadBuffer* cmd) override;
 
 public:
 	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;

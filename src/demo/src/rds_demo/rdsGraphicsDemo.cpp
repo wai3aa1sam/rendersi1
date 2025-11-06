@@ -261,8 +261,7 @@ GraphicsDemo::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrVie
 	auto& mtl		= *oMtl;
 
 	shader	= Renderer::renderDevice()->createShader(filename);
-	mtl		= Renderer::renderDevice()->createMaterial();
-	mtl->setShader(shader);
+	mtl		= Renderer::renderDevice()->createMaterial(shader);
 
 	if (fnSetParam)
 		fnSetParam(mtl);

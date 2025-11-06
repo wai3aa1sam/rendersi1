@@ -65,6 +65,9 @@ RenderDevice::~RenderDevice()
 void 
 RenderDevice::create(const CreateDesc& cDesc)
 {
+	_adapterInfo.isDebug		= cDesc.isDebug;
+	_adapterInfo.isMultiThread	= cDesc.isMultithread;
+
 	_apiType = cDesc.apiType;
 	_rdDev	 = this;
 
@@ -102,7 +105,13 @@ RenderDevice::create(const CreateDesc& cDesc)
 }
 
 void 
-RenderDevice::destroy()
+RenderDevice::onCreate(const CreateDesc& cDesc)
+{
+
+}
+
+void 
+RenderDevice::onDestroy()
 {
 	if (!hasCreated())
 		return;
@@ -129,7 +138,7 @@ RenderDevice::destroy()
 	v.clear();
 	#endif // 0
 
-	
+
 	if (_tsfCtx)
 	{
 		_tsfCtx->destroy();
@@ -142,14 +151,12 @@ RenderDevice::destroy()
 		_bindlessRscs = nullptr;
 	}
 
-	onDestroy();
-
-	Base::destroy();
-
 	RDS_CORE_ASSERT(!_bindlessRscs,			"forgot to call destroy() _bindlessRscs");
 	RDS_CORE_ASSERT(!_tsfCtx,				"forgot to call destroy() _tsfCtx");
 	//RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
 	//RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");
+
+	Base::onDestroy();
 }
 
 UPtr<RenderJob> 
@@ -195,19 +202,6 @@ RenderDevice::submitRenderJob(UPtr<RenderJob> rdJob)
 	{
 		_rdThread.render(rds::move(rdJob));
 	}
-}
-
-void 
-RenderDevice::onCreate(const CreateDesc& cDesc)
-{
-	_adapterInfo.isDebug		= cDesc.isDebug;
-	_adapterInfo.isMultiThread	= cDesc.isMultithread;
-}
-
-void 
-RenderDevice::onDestroy()
-{
-	
 }
 
 void 
@@ -286,7 +280,7 @@ RenderDevice::createContext(const RenderContext_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateContext(cDesc);
-	p->onPostCreate(cDesc);
+	p->create(cDesc);
 	return p;
 }
 
@@ -295,6 +289,7 @@ RenderDevice::createTransferContext(TransferContext_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateTransferContext(cDesc);
+	p->create(cDesc);
 	return p;
 }
 
@@ -303,6 +298,16 @@ RenderDevice::createTransferFrame(TransferFrame_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateTransferFrame(cDesc);
+	p->create(cDesc);
+	return p;
+}
+
+SPtr<BindlessResources> 
+RenderDevice::createBindlessResources(BindlessResources_CreateDesc& cDesc)
+{
+	cDesc._internal_create(this);
+	auto p = onCreateBindlessResources(cDesc);
+	p->create(cDesc);
 	return p;
 }
 
@@ -311,6 +316,7 @@ RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateRenderGpuBuffer(cDesc);
+	p->create(cDesc);
 	return p;
 }
 
@@ -334,6 +340,7 @@ RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateTexture2D(cDesc);
+	p->create(cDesc);
 	return p;
 }
 
@@ -342,6 +349,7 @@ RenderDevice::createTexture2DArray(Texture2DArray_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateTexture2DArray(cDesc);
+	p->create(cDesc);
 	return p;
 }
 
@@ -350,6 +358,7 @@ RenderDevice::createTexture3D(Texture3D_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateTexture3D(cDesc);
+	p->create(cDesc);
 	return p;
 }
 
@@ -358,14 +367,25 @@ RenderDevice::createTextureCube(TextureCube_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateTextureCube(cDesc);
+	p->create(cDesc);
 	return p;
 }
 
 SPtr<Shader> 
 RenderDevice::createShader(const Shader_CreateDesc& cDesc)
 {
-	auto shader = shaderStock().createShader(cDesc);
-	return shader;
+	auto& ss = shaderStock();
+	if (auto p = ss.findShader(cDesc))
+	{
+		return p;
+	}
+
+	cDesc._internal_create(this);
+	auto p = onCreateShader(cDesc);
+	p->create(cDesc);
+
+	ss.appendUnqiueShader(cDesc);
+	return p;
 }
 
 SPtr<Shader> 
@@ -394,7 +414,7 @@ RenderDevice::createMaterial(const Material_CreateDesc& cDesc)
 {
 	cDesc._internal_create(this);
 	auto p = onCreateMaterial(cDesc);
-	p->setShader(cDesc.shader);
+	p->create(cDesc);
 	return p;
 }
 
@@ -403,7 +423,6 @@ RenderDevice::createMaterial(Shader* shader)
 {
 	auto cDesc = Material::makeCDesc();
 	cDesc.shader = shader;
-
 	return createMaterial(cDesc);
 }
 
@@ -438,12 +457,16 @@ RdsDeleter<T, EnableIf<IsBaseOf<RenderResource, T> > >::rds_delete(T* p) RDS_NOE
 
 		#else
 
+		RDS_TODO("no RenderResource then all can call T::destroy()"
+			"/ just use RenderResource::destroy to call onDestroy()"
+			"call destroy() in here is better? Derived class no need to call destroy() in dtor"
+		);
 		using SRC = RenderResourceType;
 		switch (p->renderResourceType())
 		{
-			case SRC::RenderContext:	{ reinCast<RenderContext*>(		p)->_internal_requestDestroyObject(); } break;
-			case SRC::RenderGpuBuffer:	{ reinCast<RenderGpuBuffer*>(	p)->_internal_requestDestroyObject(); } break;
-			case SRC::Texture:			{ reinCast<Texture*>(			p)->_internal_requestDestroyObject(); } break;
+			case SRC::RenderContext:	{ reinCast<RenderContext*>(		p)->destroy(); } break;
+			case SRC::RenderGpuBuffer:	{ reinCast<RenderGpuBuffer*>(	p)->destroy(); } break;
+			case SRC::Texture:			{ reinCast<Texture*>(			p)->destroy(); } break;
 			default: { rds_delete_impl(p); } break;
 		}
 

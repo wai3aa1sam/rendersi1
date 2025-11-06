@@ -19,16 +19,16 @@ Texture2DArray_Vk::Texture2DArray_Vk()
 
 Texture2DArray_Vk::~Texture2DArray_Vk()
 {
-	destroy();
+	
 }
 
 void 
-Texture2DArray_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
+Texture2DArray_Vk::onTransferCommand_Create(CmdCreate* cmd)
 {
-	Base::createRenderResource(rdFrameParam);
-
 	if (isValid())
 	{
+		Base::onTransferCommand_Create(cmd);
+
 		auto layerCount = this->layerCount();
 		_srvLayerVkImageViews.resize(layerCount);
 		for (u32 i = 0; i < layerCount; i++)
@@ -39,34 +39,15 @@ Texture2DArray_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
 }
 
 void 
-Texture2DArray_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+Texture2DArray_Vk::onTransferCommand_Destroy()
 {
-	Base::destroyRenderResource(rdFrameParam);
-
 	auto* rdDevVk = renderDeviceVk();
 	for (auto& e : _srvLayerVkImageViews)
 	{
 		e.destroy(rdDevVk);
 	}
-}
 
-void 
-Texture2DArray_Vk::onCreate(CreateDesc& cDesc)
-{
-	Base::onCreate(cDesc);
-	
-}
-
-void 
-Texture2DArray_Vk::onPostCreate(CreateDesc& cDesc)
-{
-	Base::onPostCreate(cDesc);
-}
-
-void 
-Texture2DArray_Vk::onDestroy()
-{
-	Base::onDestroy();
+	Base::onTransferCommand_Destroy();
 }
 
 void 

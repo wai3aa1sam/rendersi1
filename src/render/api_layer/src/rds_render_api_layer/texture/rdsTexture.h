@@ -2,7 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/shader/rdsBindlessResourceHandle.h"
-#include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"
+#include "rds_render_api_layer/transfer/command/rdsTransferCommand.h"
 
 namespace rds
 {
@@ -284,16 +284,20 @@ public:
 	using CreateDesc		= Texture_CreateDesc;
 	using Desc				= Texture_Desc;
 	using TextureCreateDesc	= Texture_CreateDesc;
+	using CmdCreate			= TransferCommand_CreateTexture;
+	using CmdDestroy		= TransferCommand_DestroyTexture;
 
 	using Size				= Vec3u;
 
 public:
 	virtual ~Texture();
-	void	destroy();
 
-public:
-	void createRenderResource( const RenderFrameParam& rdFrameParam) { /* dummy function for compatibility */ }
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam) { /* dummy function for compatibility */ }
+	virtual void onTransferCommand_Create(CmdCreate* cmd) = 0;
+	virtual void onTransferCommand_Destroy() = 0;
+
+protected:
+	Texture(RenderDataType type);
+	virtual void onDestroy() override;
 
 public:
 	RenderDataType			type()				const;
@@ -322,8 +326,6 @@ public:
 
 	virtual bool isNull() const = 0;
 
-protected:
-	Texture(RenderDataType type);
 
 	virtual void setNull() = 0;	// only use  for swapchain
 
@@ -334,10 +336,6 @@ protected:
 
 protected:
 	void onCreate(TextureCreateDesc& cDesc);
-	virtual void onDestroy();
-
-public:
-	void _internal_requestDestroyObject();
 
 protected:
 	struct  EngineData;
@@ -409,7 +407,12 @@ public:
 	Texture2D();
 	virtual ~Texture2D();
 
-	void create(	 CreateDesc& cDesc);
+	void create(CreateDesc& cDesc);
+
+protected:
+	virtual void onDestroy() override;
+
+public:
 	void uploadToGpu(CreateDesc& cDesc);
 
 public:
@@ -418,7 +421,6 @@ public:
 protected:
 	virtual void onCreate(		CreateDesc& cDesc);
 	virtual void onPostCreate(	CreateDesc& cDesc);
-	virtual void onDestroy();
 
 	virtual void onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
 

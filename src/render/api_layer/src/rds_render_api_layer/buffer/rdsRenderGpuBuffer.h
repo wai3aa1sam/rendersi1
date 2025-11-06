@@ -2,6 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/shader/rdsBindlessResourceHandle.h"
+#include "rds_render_api_layer/transfer/command/rdsTransferCommand.h"
 
 namespace rds
 {
@@ -84,6 +85,8 @@ public:
 	using Base			= RenderResource_T<RenderGpuBuffer, RenderResourceType::RenderGpuBuffer>;
 	using CreateDesc	= RenderGpuBuffer_CreateDesc;
 	using Desc			= RenderGpuBuffer_Desc;
+	using CmdCreate		= TransferCommand_CreateRenderGpuBuffer;
+	using CmdDestroy	= TransferCommand_DestroyRenderGpuBuffer;
 
 	using TypeFlags		= RenderGpuBufferTypeFlags;
 	
@@ -98,9 +101,8 @@ public:
 	RenderGpuBuffer();
 	virtual ~RenderGpuBuffer();
 
-	void create(CreateDesc& cDesc);
-	void destroy();
 
+public:
 	void uploadToGpu		(ByteSpan data, SizeType offset = 0);
 	void uploadToGpuAsync	(CreateDesc& cDesc);
 
@@ -119,13 +121,9 @@ public:
 
 	BindlessResourceHandle	bindlessHandle() const;
 
-public:
-	void _internal_requestDestroyObject();
-
 protected:
-	virtual void onCreate		(CreateDesc& cDesc);
-	virtual void onPostCreate	(CreateDesc& cDesc);
-	virtual void onDestroy		();
+			void create(CreateDesc& cDesc);
+	virtual void onDestroy() override;
 
 protected:
 	Desc					_desc;

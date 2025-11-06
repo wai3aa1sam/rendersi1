@@ -118,18 +118,19 @@ public:
 	Texture3D();
 	virtual ~Texture3D();
 
-	void create		(CreateDesc& cDesc);
+	void create(CreateDesc& cDesc);
+
+protected:
+	virtual void onDestroy() override;
+
+public:
 	void uploadToGpu(CreateDesc& cDesc);
 
 protected:
 	virtual void onCreate		(CreateDesc& cDesc);
 	virtual void onPostCreate	(CreateDesc& cDesc);
-	virtual void onDestroy		();
 
 	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd);
-
-private:
-	void _create(CreateDesc& cDesc);
 
 protected:
 	//Size _size;

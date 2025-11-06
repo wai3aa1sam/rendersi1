@@ -19,25 +19,7 @@ TextureCube_Vk::TextureCube_Vk()
 
 TextureCube_Vk::~TextureCube_Vk()
 {
-	destroy();
-}
-
-void 
-TextureCube_Vk::onCreate(CreateDesc& cDesc)
-{
-	Base::onCreate(cDesc);
-}
-
-void 
-TextureCube_Vk::onPostCreate(CreateDesc& cDesc)
-{
-	Base::onPostCreate(cDesc);
-}
-
-void 
-TextureCube_Vk::onDestroy()
-{
-	Base::onDestroy();
+	
 }
 
 void 

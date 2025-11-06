@@ -6,6 +6,7 @@
 #include "rds_render_api_layer/rdsRenderer.h"
 
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
+#include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"
 
 namespace rds
 {
@@ -93,18 +94,24 @@ Texture::~Texture()
 	//RDS_LOG_ERROR("~Texture() {}", debugName());
 }
 
-//void 
-//Texture::create	(CreateDesc& cDesc)
-//{
-//	Base::create(cDesc);
-//	_desc = cDesc;
-//}
-
 void 
-Texture::destroy()
+Texture::onDestroy()
 {
-	onDestroy();
-	Base::destroy();
+	auto* rdDev = renderDevice();
+	if (bindlessHandle().isValid())
+	{
+		rdDev->textureStock().textures.remove(this);		// TextureStock only store ShaderResource, must before remove bindless
+		rdDev->bindlessResource().freeTexture(this);
+	}
+
+	if (uavBindlessHandle().isValid())
+	{
+		rdDev->bindlessResource().freeImage(this);
+	}
+
+	transferContext().transferFrame().destroyTexture(this);
+
+	Base::onDestroy();
 }
 
 void 
@@ -130,30 +137,6 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 	}
 
 	transferContext().transferFrame().createTexture(this);
-}
-
-void 
-Texture::onDestroy()
-{
-	auto* rdDev = renderDevice();
-
-	if (bindlessHandle().isValid())
-	{
-		rdDev->textureStock().textures.remove(this);		// TextureStock only store ShaderResource, must before remove bindless
-		rdDev->bindlessResource().freeTexture(this);
-	}
-
-	if (uavBindlessHandle().isValid())
-	{
-		rdDev->bindlessResource().freeImage(this);
-	}
-}
-
-void 
-Texture::_internal_requestDestroyObject()
-{
-	Base::_internal_requestDestroyObject();
-	transferContext().transferFrame().destroyTexture(this);
 }
 
 bool 
@@ -226,6 +209,13 @@ Texture2D::create(CreateDesc& cDesc)
 }
 
 void 
+Texture2D::onDestroy()
+{
+
+	Base::onDestroy();
+}
+
+void 
 Texture2D::uploadToGpu(CreateDesc& cDesc)
 {
 	checkMainThreadExclusive(RDS_SRCLOC);
@@ -252,14 +242,6 @@ void
 Texture2D::onPostCreate(CreateDesc& cDesc)
 {
 
-}
-
-void 
-Texture2D::onDestroy()
-{
-
-
-	Base::onDestroy();
 }
 
 void 

@@ -4,6 +4,7 @@
 
 #include "command/rdsTransferRequest.h"
 #include "rdsLinearStagingBuffer.h"
+#include "rds_render_api_layer/rdsRenderDevice.h"
 
 namespace rds
 {
@@ -39,8 +40,10 @@ public:
 	virtual ~TransferFrame();
 
 	void create(CreateDesc& cDesc);
-	void destroy();
-	
+
+protected:
+	virtual void onDestroy();
+
 public:
 	void	reset();
 
@@ -57,7 +60,7 @@ public:
 	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
 
 	void createRenderContext(	RenderContext*		rdCtx);
-	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer);
+	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer, const RenderGpuBuffer_CreateDesc& cDesc);
 	void createTexture(			Texture*			texture);
 
 	void destroyRenderContext(	RenderContext*		rdCtx);
@@ -67,11 +70,7 @@ public:
 protected:
 	virtual void onCreate(		CreateDesc& cDesc);
 	virtual void onPostCreate(	CreateDesc& cDesc);
-	virtual void onDestroy();
 	virtual void onReset();
-	
-public:
-	void _internal_requestDestroyObject();
 
 public:
 	TransferRequest&			transferRequest();

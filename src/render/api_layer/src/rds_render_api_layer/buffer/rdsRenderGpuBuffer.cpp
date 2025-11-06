@@ -33,18 +33,7 @@ RenderGpuBuffer::~RenderGpuBuffer()
 void RenderGpuBuffer::create(CreateDesc& cDesc)
 {
 	Base::create(cDesc);
-	onCreate(cDesc);
-	onPostCreate(cDesc);
-}
 
-void RenderGpuBuffer::destroy()
-{
-	onDestroy();
-	Base::destroy();
-}
-
-void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
-{
 	_desc = cDesc;
 	Engine_setSubResourceCount(1);
 	/*
@@ -52,31 +41,20 @@ void RenderGpuBuffer::onCreate(CreateDesc& cDesc)
 	if it is write, maybe Transfer_Dst, but we do not need to transit state as Tsf_Dst
 	so no need to set the state
 	*/
-
 	if (isComputeBuffer())
 	{
 		_bindlessHnd = renderDevice()->bindlessResource().allocBuffer(this);
 	}
 
-	transferContext().transferFrame().createRenderGpuBuffer(this);
+	transferContext().transferFrame().createRenderGpuBuffer(this, cDesc);
 }
-
-void RenderGpuBuffer::onPostCreate(CreateDesc& cDesc)
-{
-
-}
-
-void RenderGpuBuffer::onDestroy()
-{
-	renderDevice()->bindlessResource().freeBuffer(this);
-}
-
 
 void 
-RenderGpuBuffer::_internal_requestDestroyObject()
+RenderGpuBuffer::onDestroy()
 {
-	Base::_internal_requestDestroyObject();
+	renderDevice()->bindlessResource().freeBuffer(this);
 	transferContext().transferFrame().destroyRenderGpuBuffer(this);
+	Base::onDestroy();
 }
 
 void 

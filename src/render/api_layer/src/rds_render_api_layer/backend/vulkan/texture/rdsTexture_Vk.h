@@ -21,12 +21,18 @@ class Texture_Vk : public RenderResource_Vk<TEX_BASE>
 	friend class	Vk_Swapchain;
 	friend struct	Vk_Texture;
 public:
-	using Base = TEX_BASE;
-	using CreateDesc = typename Base::CreateDesc;
+	using Base			= TEX_BASE;
+	using CreateDesc	= typename Base::CreateDesc;
+	using CmdCreate		= typename Base::CmdCreate;
 
 public:
 	Texture_Vk();
 	virtual ~Texture_Vk();
+
+public:
+	virtual void onTransferCommand_Create(CmdCreate* cmd) override;
+	virtual void onTransferCommand_Destroy() override;
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 public:
 	virtual bool isNull() const;
@@ -40,19 +46,9 @@ public:
 	Vk_ImageView_T* uavVkImageViewHnd(u32 mipLevel);
 
 protected:
-	virtual void onCreate(		CreateDesc& cDesc) override;
-	virtual void onPostCreate(	CreateDesc& cDesc) override;
-	virtual void onDestroy() override;
-
 	virtual void onUploadToGpu(	CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 
 	virtual void setNull() override;
-
-public:
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
-
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
 
 protected:
 	Vk_Image					_vkImage;
@@ -78,16 +74,12 @@ public:
 	Texture2D_Vk();
 	virtual ~Texture2D_Vk();
 
-protected:
-	virtual void onCreate		(CreateDesc& cDesc) override;
-	virtual void onPostCreate	(CreateDesc& cDesc) override;
-	virtual void onDestroy		() override;
-
-	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
-
 public:
-	void createRenderResource( const RenderFrameParam& rdFrameParam);
-	void destroyRenderResource(const RenderFrameParam& rdFrameParam);
+	virtual void onTransferCommand_Create(CmdCreate* cmd) override;
+	virtual void onTransferCommand_Destroy() override;
+
+protected:
+	virtual void onUploadToGpu	(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd) override;
 
 protected:
 
@@ -112,14 +104,17 @@ Texture_Vk<TEX_BASE>::~Texture_Vk()
 	
 }
 
-template<class TEX_BASE> inline void 
-Texture_Vk<TEX_BASE>::createRenderResource( const RenderFrameParam& rdFrameParam)
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::onTransferCommand_Create(CmdCreate* cmd)
 {
 	Vk_Texture::createVkResource(this);
+	renderDeviceVk()->bindlessResourceVk().onCommit_Texture(this);
 }
 
-template<class TEX_BASE> inline void 
-Texture_Vk<TEX_BASE>::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+template<class TEX_BASE> inline 
+void 
+Texture_Vk<TEX_BASE>::onTransferCommand_Destroy()
 {
 	if (!_vkImage)
 		return;
@@ -132,29 +127,6 @@ Texture_Vk<TEX_BASE>::destroyRenderResource(const RenderFrameParam& rdFrameParam
 		e.destroy(rdDevVk);
 	}
 	_vkImage.destroy();
-}
-
-template<class TEX_BASE> inline 
-void 
-Texture_Vk<TEX_BASE>::onCreate(CreateDesc& cDesc)
-{
-	Base::onCreate(cDesc);
-}
-
-template<class TEX_BASE> inline 
-void 
-Texture_Vk<TEX_BASE>::onPostCreate(CreateDesc& cDesc)
-{
-	Base::onPostCreate(cDesc);
-}
-
-template<class TEX_BASE> inline 
-void 
-Texture_Vk<TEX_BASE>::onDestroy()
-{
-	
-
-	Base::onDestroy();
 }
 
 template<class TEX_BASE> inline 

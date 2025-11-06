@@ -52,15 +52,15 @@ public:
 	static SPtr<Material>	make(Shader* shader);
 
 public:
-	RenderRequest* _rdReq = nullptr;
-
-public:
 	Material();
 	virtual ~Material();
 
 	void create	(const CreateDesc& cDesc);
-	void destroy();
 
+protected:
+	virtual void onDestroy() override;
+
+public:
 	void setShader(Shader* shader);
 
 	void setParam(StrView name,			Texture*			v);
@@ -116,7 +116,6 @@ public:
 protected:
 	virtual void onCreate		(const CreateDesc& cDesc);
 	virtual void onPostCreate	(const CreateDesc& cDesc);
-	virtual void onDestroy		();
 
 	virtual UPtr<MaterialPass> onMakePass() = 0;
 

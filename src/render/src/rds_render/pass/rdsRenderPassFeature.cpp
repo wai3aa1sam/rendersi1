@@ -65,8 +65,7 @@ RenderUtil::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView 
 		return;
 
 	createShader(&shader, filename);
-	mtl		= Renderer::renderDevice()->createMaterial();
-	mtl->setShader(shader);
+	mtl = Renderer::renderDevice()->createMaterial(shader);
 
 	if (fnSetParam)
 		fnSetParam(mtl);
@@ -90,9 +89,7 @@ RenderUtil::createMaterial(Shader* shader, SPtr<Material>* oMtl)
 
 	if (mtl)
 		return;
-
-	mtl		= Renderer::renderDevice()->createMaterial();
-	mtl->setShader(shader);
+	mtl = Renderer::renderDevice()->createMaterial(shader);
 }
 
 void 

@@ -47,6 +47,13 @@ Texture2DArray::create(CreateDesc& cDesc)
 }
 
 void 
+Texture2DArray::onDestroy()
+{
+
+	Base::onDestroy();
+}
+
+void 
 Texture2DArray::uploadToGpu(CreateDesc& cDesc)
 {
 	_notYetSupported(RDS_SRCLOC);
@@ -62,14 +69,6 @@ void
 Texture2DArray::onPostCreate(CreateDesc& cDesc)
 {
 
-}
-
-void 
-Texture2DArray::onDestroy()
-{
-
-
-	Base::onDestroy();
 }
 
 void 

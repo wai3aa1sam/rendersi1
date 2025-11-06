@@ -37,45 +37,30 @@ ShaderStock::destroy()
 }
 
 SPtr<Shader>
-ShaderStock::createShader(const Shader_CreateDesc& cDesc)
+ShaderStock::findShader(const Shader_CreateDesc& cDesc)
 {
-	bool isPermut	= cDesc.permuts;
-	auto filename	= cDesc.filename;
+	bool	hasPermuts	= cDesc.permuts;
+	StrView filename	= cDesc.filename;
 
 	// find shader
 	auto it = _shadersTable.find(filename);
 	bool hasFound = it != _shadersTable.end();
-	if (hasFound && !isPermut) 
+	if (!hasFound)
+		return nullptr;
+
+	if (!hasPermuts) 
 	{
 		return it->second.front();
 	}
 
-	auto& shaders = hasFound ? it->second : _shadersTable[filename];
-	if (isPermut)
+	auto& shaders = it->second;
+	for (auto& s : shaders)
 	{
-		auto& permuts = *cDesc.permuts;
-		for (auto& s : shaders)
-		{
-			if (s->permutations() == permuts)
-			{
-				return s;
-			}
-		}
+		if (s->permutations() == *cDesc.permuts)
+			return s;
 	}
 
-	/*
-	*	find failed
-	*/
-	auto& rdDev = renderDevice();
-	cDesc._internal_create(&rdDev);
-	SPtr<Shader> shader = rdDev.onCreateShader(cDesc);
-
-	shaders.emplace_back(shader);
-	if (!isPermut)
-	{
-		_mtlsTable[shader];
-	}
-	return shader;
+	return nullptr;
 }
 
 #if 0
@@ -155,7 +140,27 @@ ShaderStock::removeShader(Shader* shader)
 	_shadersTable.erase(filename);
 }
 
-void 
+SPtr<Shader> 
+ShaderStock::appendUnqiueShader(const Shader_CreateDesc& cDesc)
+{
+	SPtr<Shader> p = findShader(cDesc);
+	if (p)
+		return p;
+
+	StrView filename = cDesc.filename;
+	auto& shaders = _shadersTable[filename];
+	shaders.emplace_back(p);
+
+	bool hasPermuts = cDesc.permuts;
+	if (!hasPermuts)
+	{
+		_mtlsTable[p];
+	}
+
+	return p;
+}
+
+void
 ShaderStock::appendUniqueMaterial(Material* mtl, Shader* shader)
 {
 	if (!mtl || !shader)

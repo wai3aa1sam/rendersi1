@@ -41,11 +41,10 @@ RenderContext_Vk::RenderContext_Vk()
 RenderContext_Vk::~RenderContext_Vk()
 {
 	RDS_PROFILE_SCOPED();
-	destroy();
 }
 
 void 
-RenderContext_Vk::createRenderResource(const RenderFrameParam& rdFrameParam)
+RenderContext_Vk::onTransferCommand_Create(CmdCreate* cmd)
 {
 	auto* rdDevVk = renderDeviceVk();
 	//auto* vkDevice = rdDevVk->vkDevice();
@@ -80,7 +79,7 @@ RenderContext_Vk::createRenderResource(const RenderFrameParam& rdFrameParam)
 }
 
 void 
-RenderContext_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
+RenderContext_Vk::onTransferCommand_Destroy()
 {
 	_vkSwapchain.destroy(nullptr);
 	//_backbuffers.destroy();

@@ -12,46 +12,13 @@ namespace rds
 #endif // 0
 #if 1
 
-
 Texture3D_Vk::Texture3D_Vk()
 {
 }
 
 Texture3D_Vk::~Texture3D_Vk()
 {
-	destroy();
-}
-
-void 
-Texture3D_Vk::onCreate(CreateDesc& cDesc)
-{
-	Base::onCreate(cDesc);
 	
-}
-
-void 
-Texture3D_Vk::onPostCreate(CreateDesc& cDesc)
-{
-	Base::onPostCreate(cDesc);
-}
-
-void 
-Texture3D_Vk::onDestroy()
-{
-	Base::onDestroy();
-}
-
-void 
-Texture3D_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
-{
-	Base::createRenderResource(rdFrameParam);
-}
-
-void 
-Texture3D_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
-{
-
-	Base::destroyRenderResource(rdFrameParam);
 }
 
 void 
@@ -64,19 +31,6 @@ Texture3D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 	{
 		transferFrameVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
 	}
-}
-
-void 
-Texture3D_Vk::setDebugName(StrView name)
-{
-	Base::setDebugName(name);
-}
-
-// only use  for swapchain
-void 
-Texture3D_Vk::setNull()
-{
-	Base::setNull();
 }
 
 #endif

@@ -47,6 +47,14 @@ Texture3D::create(CreateDesc& cDesc)
 }
 
 void 
+Texture3D::onDestroy()
+{
+
+
+	Base::onDestroy();
+}
+
+void 
 Texture3D::uploadToGpu(CreateDesc& cDesc)
 {
 	_notYetSupported(RDS_SRCLOC);
@@ -69,13 +77,6 @@ Texture3D::onPostCreate(CreateDesc& cDesc)
 
 }
 
-void 
-Texture3D::onDestroy()
-{
-
-
-	Base::onDestroy();
-}
 
 void 
 Texture3D::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cmd)

@@ -63,6 +63,11 @@ DemoEditorLayer::init(UPtr<GraphicsDemo> gfxDemo)
 void
 DemoEditorLayer::onCreate()
 {
+	if (true)
+	{
+		//return;
+	}
+
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();
 	auto& rdCtx		= mainWnd.renderContext();		RDS_UNUSED(rdCtx);
 	
@@ -90,6 +95,11 @@ DemoEditorLayer::onCreate()
 void
 DemoEditorLayer::onUpdate()
 {
+	if (true)
+	{
+		//return;
+	}
+
 	RDS_PROFILE_SCOPED();
 
 	auto& mainWnd	= DemoEditorApp::instance()->mainWindow();

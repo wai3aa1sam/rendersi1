@@ -32,27 +32,21 @@ Texture2D_Vk::Texture2D_Vk()
 Texture2D_Vk::~Texture2D_Vk()
 {
 	//RDS_LOG_ERROR("~Texture2D_Vk(): {}, refCount: {}, srvVkImageViewHnd: {}", debugName(), _refCount.load(), (void*)srvVkImageViewHnd());
-	destroy();
 }
 
 void 
-Texture2D_Vk::onCreate(CreateDesc& cDesc)
+Texture2D_Vk::onTransferCommand_Create(CmdCreate* cmd)
 {
-	Base::onCreate(cDesc);
-
-	
+	if (!isBackBuffer() && isValid())
+	{
+		Base::onTransferCommand_Create(cmd);
+	}
 }
 
 void 
-Texture2D_Vk::onPostCreate(CreateDesc& cDesc)
+Texture2D_Vk::onTransferCommand_Destroy()
 {
-	Base::onPostCreate(cDesc);
-}
-
-void 
-Texture2D_Vk::onDestroy()
-{
-	Base::onDestroy();
+	Base::onTransferCommand_Destroy();
 }
 
 void
@@ -65,21 +59,6 @@ Texture2D_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTexture* cm
 	{
 		transferFrameVk().uploadToStagingBuf(cmd->_stagingHnd, srcImage.data());
 	}
-}
-
-void 
-Texture2D_Vk::createRenderResource( const RenderFrameParam& rdFrameParam)
-{
-	if (!isBackBuffer() && isValid())
-	{
-		Base::createRenderResource(rdFrameParam);
-	}
-}
-
-void 
-Texture2D_Vk::destroyRenderResource(const RenderFrameParam& rdFrameParam)
-{
-	Base::destroyRenderResource(rdFrameParam);
 }
 
 #endif

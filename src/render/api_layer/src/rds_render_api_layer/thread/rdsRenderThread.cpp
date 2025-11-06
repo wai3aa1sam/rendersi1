@@ -58,9 +58,13 @@ RenderThread::onDestroy()
 	waitIdle();
 
 	// clean all transferFrames
-	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
+	for (size_t j = 0; j < 10; j++)
 	{
-		_rdDev->submitRenderJob(_rdDev->newRenderJob(nullptr, i));
+		for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
+		{
+			_rdDev->submitRenderJob(_rdDev->newRenderJob(nullptr, i));
+		}
+		waitIdle();
 	}
 	// some destroy command may miss if the Render_destroy will spwan other destroy command, 
 	// maybe check all the destroyBuf only quit when no destroy commands
@@ -289,4 +293,97 @@ u64		RenderThread::lastFinishedFrameCount()		const	{ return _lastFinishedFrameCo
 
 #endif
 
+#if 0
+
+
+static void s()
+{
+	eastl::slist<int> q;
+	q.pop_front();
+
+	q.pop();
+	q.push()
 }
+
+class SList : public eastl::slist<int>
+{
+public:
+	using T = int;
+public:
+	void insert(T* v) { push_front(v); }
+};
+
+template<class T>
+class CondQueue : public NonCopyable
+{
+public:
+	struct MData 
+	{
+		u32				maxSize = NumLimit<u32>::max();
+		eastl::queue<T> queue; // cannot use DList, because DListNode::removeFromList() may cause race condition
+	};
+
+public:
+	void	clear() {
+		auto md = _mdata.scopedULock();
+		md->list.clear();
+	}
+
+	void	insert	(T* p)	{
+		auto md = _mdata.scopedULock();
+		while (md->list.size() >= md->maxSize) {
+			md.wait();
+		}
+		md->list.insert(p); 
+	}
+
+	void	append	(T* p)	{
+		auto md = _mdata.scopedULock();
+		while (md->list.size() >= md->maxSize) {
+			md.wait();
+		}
+		md->list.append(p);
+	}
+
+	void	insert	(UPtr<T> p)	{ insert(p.ptr()); p.detach(); }
+	void	append	(UPtr<T> p)	{ append(p.ptr()); p.detach(); }
+
+	void	setMaxSize(u32 n) { _mdata.scopedULock()->maxSize = n; }
+
+	UPtr<T>	popHead	()	{ return _mdata.scopedULock()->list.pop_front(); }
+	UPtr<T>	popTail	()	{ return _mdata.scopedULock()->list.popTail(); }
+
+	UPtr<T>	waitHead() {
+		auto md = _mdata.scopedULock();
+		for(;;) {
+			auto p = md->list.popHead();
+			if (p) return p;
+			//md.wait();
+		}
+	}
+
+	UPtr<T>	timedWaitHead(int milliseconds) {
+		auto md = _mdata.scopedULock();
+		for(;;) {
+			auto p = md->list.popHead();
+			if (p) return p;
+			/*if (!md.timedWait(milliseconds))
+			return nullptr;*/
+		}
+	}
+
+	u32 size() {
+		auto md = _mdata.scopedULock();
+		return md->list.size();
+	}
+
+private:
+	MutexProtected<MData> _mdata;
+};
+
+
+#endif // 0
+
+
+}
+

@@ -10,8 +10,8 @@ class ShaderCompileRequest;
 
 struct Shader_CreateDesc : public RenderResource_CreateDesc
 {
-	StrView filename;
-	const ShaderPermutations* permuts = nullptr;
+	TempString					filename;
+	const ShaderPermutations*	permuts = nullptr;
 };
 
 #if 0
@@ -49,7 +49,9 @@ public:
 
 	void create(const CreateDesc& cDesc);
 	void create(StrView filename);
-	void destroy();
+
+protected:
+	virtual void onDestroy() override;
 
 public:
 	ShaderParamId getParamId() const;
@@ -67,7 +69,6 @@ public:
 protected:
 	virtual void onCreate		(const CreateDesc& cDesc);
 	virtual void onPostCreate	(const CreateDesc& cDesc);
-	virtual void onDestroy		();
 
 	virtual void onReset();
 

@@ -50,16 +50,15 @@ Shader::create(StrView filename)
 }
 
 void 
-Shader::destroy()
+Shader::onDestroy()
 {
+	_passes.clear();
+
 	RDS_TODO("rework, shaderStock use in main thread only, destroy are in RenderThread + Main now, may have bug");
 	//checkMainThreadExclusive(RDS_SRCLOC);
+	renderDevice()->shaderStock().removeShader(this);
 
-	auto& shaderStock = renderDevice()->shaderStock();
-	shaderStock.removeShader(this);
-
-	onDestroy();
-	Base::destroy();
+	Base::onDestroy();
 }
 
 void 
@@ -89,12 +88,6 @@ void
 Shader::onPostCreate(const CreateDesc& cDesc)
 {
 
-}
-
-void 
-Shader::onDestroy()
-{
-	_passes.clear();
 }
 
 void 
