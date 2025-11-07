@@ -39,7 +39,7 @@ public:
 	RdgPass& sort(StrView name, RdgBufferHnd buf_list, u32 listSize, RenderGraph* rdGraph);
 
 private:
-	RdgPass& addPass_quickSort(StrView name, RdgBufferHnd buf_list, u32 listSize, RenderGraph* rdGraph);
+	RdgPass& addPass_bitonicMergeSort(StrView name, RdgBufferHnd buf_list, u32 listSize, RenderGraph* rdGraph);
 	RdgPass& addPass_bubbleSort(StrView name, RdgBufferHnd buf_list, u32 listSize, RenderGraph* rdGraph);
 
 private:

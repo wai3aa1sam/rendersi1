@@ -252,7 +252,8 @@ RenderThread::waitCpuIdle()
 		if (data->isQuit)
 			return;
 	}
-	_rdDev->waitCpuIdle();
+	if (_rdDev)
+		_rdDev->waitCpuIdle();
 }
 
 void

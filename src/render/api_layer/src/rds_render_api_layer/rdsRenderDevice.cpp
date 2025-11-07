@@ -29,18 +29,17 @@ namespace rds
 
 RenderDevice_CreateDesc::RenderDevice_CreateDesc()
 {
-	apiType				= RenderApiType::Vulkan;
-	isPresent			= true;
-	isMultithread		= true;
-	isCompileShaderMode = false;
-	
-	isDebug = RDS_DEBUG;
+	info.apiType				= RenderApiType::Vulkan;
+	info.isPresent				= true;
+	info.isMultithread			= true;
+	info.isCompileShaderMode	= false;
+	info.isDebug				= RDS_DEBUG;
 }
 
 bool 
 RenderDevice_CreateDesc::isShaderCompileMode() const
 {
-	return isCompileShaderMode;
+	return info.isCompileShaderMode;
 }
 
 #endif
@@ -65,10 +64,8 @@ RenderDevice::~RenderDevice()
 void 
 RenderDevice::create(const CreateDesc& cDesc)
 {
-	_adapterInfo.isDebug		= cDesc.isDebug;
-	_adapterInfo.isMultiThread	= cDesc.isMultithread;
+	_adapterInfo.create(cDesc.info);
 
-	_apiType = cDesc.apiType;
 	_rdDev	 = this;
 
 	onCreate(cDesc);
@@ -92,7 +89,7 @@ RenderDevice::create(const CreateDesc& cDesc)
 
 	auto rdThreadCDesc = RenderThread::makeCDesc(this, JobSystem::instance());
 	_rdThread.create(rdThreadCDesc);
-	if (!cDesc.isMultithread)
+	if (!_adapterInfo.isMultithread)
 	{
 		_rdThread.quit();
 	}
@@ -196,7 +193,7 @@ RenderDevice::submitRenderJob(UPtr<RenderJob> rdJob)
 {
 	RDS_TODO("**** must wait all async upload stuff when submit");
 	_tsfCtx->submit(rdJob);
-	if (adapterInfo().isMultiThread)
+	if (adapterInfo().isMultithread)
 	{
 		_rdThread.requestRender(rds::move(rdJob));
 	}

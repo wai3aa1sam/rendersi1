@@ -51,7 +51,7 @@ ShaderCompilerConsoleApp::create()
 		#if RDS_USE_RENDERER
 		{
 			auto cDesc = Renderer::makeCDesc();
-			cDesc.isCompileShaderMode = true;
+			cDesc.info.isCompileShaderMode = true;
 			Renderer::instance()->create(cDesc);
 		}
 		#endif

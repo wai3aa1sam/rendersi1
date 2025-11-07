@@ -46,7 +46,7 @@ Renderer::create(const CreateDesc& cDesc)
 	_rdDevs.resize(cDesc.gpuCount);
 	for (auto& e : _rdDevs)
 	{
-		switch (cDesc.apiType)
+		switch (cDesc.info.apiType)
 		{
 			using SRC = RenderApiType;
 			case SRC::Vulkan: { e.reset(RDS_NEW(RenderDevice_Vk)()); }	break;

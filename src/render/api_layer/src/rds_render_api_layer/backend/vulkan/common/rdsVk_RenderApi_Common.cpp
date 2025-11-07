@@ -1261,8 +1261,11 @@ Vk_RenderApiUtil::setDebugUtilObjectName(Vk_Device_T* vkDevHnd, VkObjectType vkO
 	info.pObjectName	= name;
 	info.pNext			= VK_NULL_HANDLE;
 
-	auto ret = vkSetDebugUtilsObjectName(vkDevHnd, &info);
-	throwIfError(ret);
+	if (vkSetDebugUtilsObjectName)
+	{
+		auto ret = vkSetDebugUtilsObjectName(vkDevHnd, &info);
+		throwIfError(ret);
+	}
 }
 
 void 
@@ -1864,7 +1867,7 @@ Vk_ExtensionInfo::createPhyDeviceExtensions(RenderAdapterInfo& outAdapterInfo, c
 		emplaceIfExist(o, VK_EXT_DEBUG_UTILS_EXTENSION_NAME,			availablePhyDeviceExts());
 		
 	}
-	if (rdDevCDesc.isPresent)
+	if (rdDevCDesc.info.isPresent)
 	{
 		o.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}

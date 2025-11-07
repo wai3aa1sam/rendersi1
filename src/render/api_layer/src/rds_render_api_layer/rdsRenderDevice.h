@@ -29,12 +29,7 @@ public:
 	RenderDevice_CreateDesc();
 
 public:
-	RenderApiType apiType;
-
-	bool isDebug				: 1;
-	bool isMultithread			: 1;
-	bool isPresent				: 1;
-	bool isCompileShaderMode	: 1;
+	RenderAdapterInfo_Base info;
 
 public:
 	bool isShaderCompileMode() const;
@@ -202,7 +197,7 @@ protected:
 
 	struct Debug
 	{
-		Vector<SPtr<RenderResource>> rdRscs;
+		Vector<SPtr<RenderResource> > rdRscs;
 	} _debug;
 };
 

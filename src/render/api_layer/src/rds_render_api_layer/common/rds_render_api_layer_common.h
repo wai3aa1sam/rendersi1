@@ -18,17 +18,29 @@ namespace rds
 #endif // 0
 #if 1
 
-struct RenderAdapterInfo 
+struct RenderAdapterInfo_Base
+{
+	RenderApiType apiType;
+
+	bool	isDebug					: 1;
+	bool	isMultithread			: 1;
+	bool	isPresent				: 1;
+	bool	isCompileShaderMode		: 1;
+};
+
+struct RenderAdapterInfo : public RenderAdapterInfo_Base
 {
 	String	adapterName;
 	i64		memorySize = 0;
 
-	bool	isDebug			: 1;
-	bool	isMultiThread	: 1;
-
 public:
 	RenderAdapterInfo()
 	{
+	}
+
+	void create(const RenderAdapterInfo_Base& info)
+	{
+		sCast<RenderAdapterInfo_Base&>(*this) = info;
 	}
 
 public:

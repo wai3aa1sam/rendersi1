@@ -26,8 +26,8 @@ DemoEditorLayer::DemoEditorLayer()
 	_todoList();
 	
 	auto rdrCDesc = Renderer::makeCDesc();
-	rdrCDesc.isDebug = (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
-	rdrCDesc.isMultithread = !RDS_USE_RENDER_SINGLE_THREAD_MODE;
+	rdrCDesc.info.isDebug		= (RDS_IS_TEST_ENGINE || RDS_DEBUG) && 1;
+	rdrCDesc.info.isMultithread = !RDS_USE_RENDER_SINGLE_THREAD_MODE;
 	DemoEditorApp::instance()->createRenderer(rdrCDesc);
 	JobSystem::instance()->setSingleThreadMode(RDS_USE_RENDER_SINGLE_THREAD_MODE);
 }

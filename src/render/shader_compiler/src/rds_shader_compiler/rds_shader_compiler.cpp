@@ -74,17 +74,24 @@ int main(int argc, char* argv[])
 	
 	int exitCode = 0;
 
-	MemoryContext::init();
+	try
 	{
-		rds::ShaderCompilerConsoleApp app;
-		#if RDS_TEST_SHADER_COMPILER
-		app.parseCmdLine(CmdLineArgsView{ argvs });
-		#else
-		app.parseCmdLine(CmdLineArgsView{argc, argv});
-		#endif // 0
-		exitCode = app.run();
+		MemoryContext::init();
+		{
+			rds::ShaderCompilerConsoleApp app;
+			#if RDS_TEST_SHADER_COMPILER
+			app.parseCmdLine(CmdLineArgsView{ argvs });
+			#else
+			app.parseCmdLine(CmdLineArgsView{argc, argv});
+			#endif // 0
+			exitCode = app.run();
+		}
+		MemoryContext::terminate();
 	}
-	MemoryContext::terminate();
+	catch (const std::exception& v)
+	{
+		RDS_LOG("std::exception: {}", v.what());
+	}
 
 	return exitCode;
 }

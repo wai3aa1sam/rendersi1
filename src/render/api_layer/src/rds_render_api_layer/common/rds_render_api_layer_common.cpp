@@ -13,7 +13,7 @@ namespace rds
 void 
 checkRenderThreadExclusive(RDS_DEBUG_SRCLOC_PARAM)
 {
-	throwIf(!RenderApiLayerTraits::isRenderThread() && Renderer::renderDevice()->adapterInfo().isMultiThread, "only could execute in render thread, {}", RDS_DEBUG_SRCLOC_ARG);
+	throwIf(!RenderApiLayerTraits::isRenderThread() && Renderer::renderDevice()->adapterInfo().isMultithread, "only could execute in render thread, {}", RDS_DEBUG_SRCLOC_ARG);
 }
 
 #endif
