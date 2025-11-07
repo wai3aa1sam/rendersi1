@@ -8,6 +8,8 @@
 namespace rds
 {
 
+class RenderDevice;
+
 class Shader;
 class RenderContext;
 
@@ -28,11 +30,14 @@ struct Material_CreateDesc : public RenderResource_CreateDesc
 
 class Material : public RenderResource
 {
+	friend class RenderDevice;
 public:
 	using Base			= RenderResource;
 	using This			= Material;
 
 	using CreateDesc	= Material_CreateDesc;
+	using CmdCreate		= TransferCommand_CreateMaterial;
+	using CmdDestroy	= TransferCommand_DestroyMaterial;
 
 	using Pass			= MaterialPass;
 	using Stage			= MaterialPass_Stage;
@@ -55,9 +60,8 @@ public:
 	Material();
 	virtual ~Material();
 
-	void create	(const CreateDesc& cDesc);
-
 protected:
+	void create	(const CreateDesc& cDesc);
 	virtual void onDestroy() override;
 
 public:
@@ -102,7 +106,11 @@ public:
 
 public:
 	Pass*			getPass		(SizeType i);
-	ShaderParamId	getParamId	(StrView name) const;
+	ShaderPropId	makePropId	(StrView name) const;
+	ShaderPassId	makeCsPassId(StrView name) const;
+
+	bool			isValidPropId(	const ShaderPropId& propId) const;
+	bool			isValidCsPassId(const ShaderPassId& passId) const;
 
 	Span<UPtr<Pass> >	passes();
 			Shader*		shader();

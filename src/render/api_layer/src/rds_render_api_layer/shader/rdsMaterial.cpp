@@ -146,11 +146,38 @@ Material::onPostCreate(const CreateDesc& cDesc)
 {
 }
 
-ShaderParamId 
-Material::getParamId(StrView name) const
+ShaderPropId 
+Material::makePropId(StrView name) const
 {
-	RDS_NOT_YET_SUPPORT();
-	return 0;
+	return _shader->makePropId(name);
+}
+
+ShaderPassId
+Material::makeCsPassId(StrView name) const
+{
+	return _shader->makeCsPassId(name);
+}
+
+bool 
+Material::isValidPropId(const ShaderPropId& propId) const
+{
+	#if RDS_DEBUG
+	auto v = _shader->makePropId(propId.Debug_getName());
+	return v == propId;
+	#else
+	return true;
+	#endif // RDS_DEBUG
+}
+
+bool 
+Material::isValidCsPassId(const ShaderPassId& passId) const
+{
+	#if RDS_DEBUG
+	auto v = _shader->makeCsPassId(passId.Debug_getName());
+	return v == passId;
+	#else
+	return true;
+	#endif // RDS_DEBUG
 }
 
 void 

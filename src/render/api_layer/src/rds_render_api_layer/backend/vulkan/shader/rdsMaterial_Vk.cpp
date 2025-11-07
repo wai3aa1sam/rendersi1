@@ -204,6 +204,18 @@ Material_Vk::~Material_Vk()
 }
 
 void 
+Material_Vk::onTransferCommand_Create(CmdCreate* cmd)
+{
+	RDS_TODO("Material_Vk::onTransferCommand_Create(CmdCreate* cmd), see comment on Shader::onCreate(const CreateDesc& cDesc)");
+}
+
+void 
+Material_Vk::onTransferCommand_Destroy()
+{
+
+}
+
+void 
 Material_Vk::onCreate(const CreateDesc& cDesc)
 {
 	Base::onCreate(cDesc);

@@ -81,10 +81,13 @@ Shader::onCreate(const CreateDesc& cDesc)
 		_permuts = permuts;
 	}
 
+	// TODO: cmd for create shader, the permuts design is shit
+	// shader will recompile, the command design maybe a little complex
+	// same as Material, command store the Vector<UPtr<Pass>, N>?
 	onReset();
 }
 
-void 
+void
 Shader::onPostCreate(const CreateDesc& cDesc)
 {
 
@@ -120,6 +123,7 @@ Shader::onReset()
 		TempString allStageUnionInfoPath;
 		ShaderCompileRequest::getAllStageUnionInfoFilepathTo(allStageUnionInfoPath, binPassDir, iPass);
 		passInfo.allStageUnionInfo.create(allStageUnionInfoPath, true);
+		passInfo.allStageUnionInfo.createShaderPropIdMap(passInfo.propIdMap);
 
 		auto pass = onMakePass(this, passInfo);
 		pass->create(this, &passInfo, binPassDir);
@@ -133,6 +137,37 @@ Shader::isPermutatedShader() const
 	return !_permuts.isEmpty();
 }
 
+ShaderPropId 
+Shader::makePropId(StrView name) const
+{
+	RDS_TODO("use in Material::setParam");
+	return ShaderPropId::make(name);
+}
+
+ShaderPassId 
+Shader::makeCsPassId(StrView name) const
+{
+	for (u32 i = 0; i < _passes.size(); i++)
+	{
+		auto& e = _passes[i];
+		bool isSame = StrUtil::isSame(name, e->info().csFunc);
+		RDS_DUMP_VAR(e->info().csFunc);
+
+		#if RDS_DEBUG
+		if (isSame) return ShaderPassId::make(i, name);
+		#else
+		if (isSame) return ShaderPassId::make(i);
+		#endif // 0
+	}
+	RDS_CORE_ASSERT(false, "invalid cs pass id: {}", name);
+	return ShaderPassId::makeInvalid();
+}
+
+Shader::SizeType 
+Shader::getCsIndexBy(const ShaderPassId& id) const
+{
+	return id.getId();
+}
 
 #endif
 

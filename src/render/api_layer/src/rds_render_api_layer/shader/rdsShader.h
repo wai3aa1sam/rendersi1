@@ -6,6 +6,7 @@
 namespace rds
 {
 
+class RenderDevice;
 class ShaderCompileRequest;
 
 struct Shader_CreateDesc : public RenderResource_CreateDesc
@@ -21,11 +22,14 @@ struct Shader_CreateDesc : public RenderResource_CreateDesc
 
 class Shader : public RenderResource
 {
+	friend class RenderDevice;
 	friend class ShaderCompileRequest;
 public:
 	using Base			= RenderResource;
 	using This			= Shader;
 	using CreateDesc	= Shader_CreateDesc;
+	using CmdCreate		= TransferCommand_CreateShader;
+	using CmdDestroy	= TransferCommand_DestroyShader;
 
 	using Pass	= ShaderPass;
 	using Stage = ShaderStage;
@@ -47,15 +51,19 @@ public:
 	Shader();
 	virtual ~Shader();
 
+protected:
 	void create(const CreateDesc& cDesc);
 	void create(StrView filename);
 
-protected:
 	virtual void onDestroy() override;
 
 public:
-	ShaderParamId getParamId() const;
-	
+	ShaderPropId makePropId(	StrView name) const;
+	ShaderPassId makeCsPassId(	StrView name) const;
+
+	SizeType getPropIndexBy(	const ShaderPropId& id) const;
+	SizeType getCsIndexBy(		const ShaderPassId& id) const;
+
 	Span<UPtr<Pass> > passes();
 
 	const String&	filename()	const;

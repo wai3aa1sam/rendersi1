@@ -120,6 +120,20 @@ RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, 
 }
 
 void 
+RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPassId& passId, Tuple3u total, Tuple3u nThreads)
+{
+	RDS_CORE_ASSERT(mtl->isValidCsPassId(passId), "invalid cs PropId, should use makeCsPassId()");
+	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, sCast<u32>(passId.getId()), total, nThreads);
+}
+
+void 
+RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPassId& passId, Tuple3u total)
+{
+	RDS_CORE_ASSERT(mtl->isValidCsPassId(passId), "invalid cs PropId, should use makeCsPassId()");
+	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, sCast<u32>(passId.getId()), total);
+}
+
+void 
 RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl)
 {
 	for (auto& e : rdMesh.subMeshes())

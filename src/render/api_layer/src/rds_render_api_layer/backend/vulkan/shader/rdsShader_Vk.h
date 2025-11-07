@@ -5,6 +5,17 @@
 #include "rds_render_api_layer/shader/rdsShader.h"
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
+/*
+
+vkCreatePipelineLayout for shader variables info (descriptor set)
+vkCreateGraphicsPipelines needs pipeline layout + renderPass, spirv and render state, vertex layout
+if subpasses are merged, new renderPass + vkCreateGraphicsPipelines should be recreated
+
+RenderPass need attachment desc and subpass
+framebuffer need RenderPass and image view
+
+
+*/
 
 #if RDS_RENDER_HAS_VULKAN
 namespace rds
@@ -15,7 +26,7 @@ class ShaderPass_Vk;
 class Vk_RenderPass;
 
 #if 0
-#pragma mark --- rdsShaderPass_Vk-Decl ---
+#pragma mark --- rdsVk_ShaderStage-Decl ---
 #endif // 0
 #if 1
 
@@ -139,6 +150,13 @@ public:
 
 };
 
+#endif
+
+#if 0
+#pragma mark --- rdsShaderPass_Vk-Decl ---
+#endif // 0
+#if 1
+
 class ShaderPass_Vk : public ShaderPass
 {
 public:
@@ -203,34 +221,6 @@ protected:
 	Vk_DescriptorSetLayout	_vkDescriptorSetLayout;
 };
 
-template<size_t N> inline 
-void 
-ShaderPass_Vk::createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos)
-{
-	auto& passInfo = info();
-	outCInfos.clear();
-	outCInfos.reserve(Traits::s_kShaderStageCount);
-	if (!passInfo.vsFunc.is_empty())	{ outCInfos.emplace_back(	_vkVertexStage.createVkStageInfo(passInfo.vsFunc.c_str())); }
-	if (!passInfo.tescFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTescStage.createVkStageInfo(passInfo.tescFunc.c_str())); }
-	if (!passInfo.teseFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTeseStage.createVkStageInfo(passInfo.teseFunc.c_str())); }
-	if (!passInfo.geomFunc.is_empty())	{ outCInfos.emplace_back( _vkGeometryStage.createVkStageInfo(passInfo.geomFunc.c_str())); }
-	if (!passInfo.psFunc.is_empty())	{ outCInfos.emplace_back(	 _vkPixelStage.createVkStageInfo(passInfo.psFunc.c_str())); }
-}
-
-inline Shader_Vk*		ShaderPass_Vk::shaderVk()		{ return sCast<Shader_Vk*>(_shader); }
-
-inline ShaderPass_Vk::VertexStage*					ShaderPass_Vk::vkVertexStage	()				{ return &_vkVertexStage; }
-inline ShaderPass_Vk::TessellationControlStage*		ShaderPass_Vk::vkTessellationControlStage()		{ return &_vkTescStage; }
-inline ShaderPass_Vk::TessellationEvaluationStage*	ShaderPass_Vk::vkTessellationEvaluationStage()	{ return &_vkTeseStage; }
-inline ShaderPass_Vk::GeometryStage*				ShaderPass_Vk::vkGeometryStage()				{ return &_vkGeometryStage; }
-inline ShaderPass_Vk::PixelStage*					ShaderPass_Vk::vkPixelStage		()				{ return &_vkPixelStage; }
-inline ShaderPass_Vk::ComputeStage*					ShaderPass_Vk::vkComputeStage	()				{ return &_vkComputeStage; }
-
-inline Vk_DescriptorSetLayout&		ShaderPass_Vk::vkDescriptorSetLayout()	{ return _vkDescriptorSetLayout; }
-
-inline Vk_PipelineLayout&			ShaderPass_Vk::vkPipelineLayout()		{ return _vkPipelineLayout; }
-inline Vk_Pipeline&					ShaderPass_Vk::computeVkPipeline()		{ return _computeVkPipeline; }
-
 #endif
 
 #if 0
@@ -248,15 +238,17 @@ public:
 	Shader_Vk();
 	~Shader_Vk();
 
-
-protected:
-	virtual void onCreate		(const CreateDesc& cDesc);
-	virtual void onPostCreate	(const CreateDesc& cDesc);
-	virtual void onDestroy		();
-
-	virtual void onReset() override;
+	void onTransferCommand_Create(CmdCreate* cmd);
+	void onTransferCommand_Destroy();
 
 	virtual UPtr<ShaderPass> onMakePass(Shader* shader, const ShaderPass::Info& info) override;
+
+protected:
+	virtual void onCreate		(const CreateDesc& cDesc) override;
+	virtual void onPostCreate	(const CreateDesc& cDesc) override;
+
+	virtual void onDestroy()	override;
+	virtual void onReset()		override;
 
 protected:
 
@@ -296,18 +288,42 @@ private:
 
 #endif
 
+#if 0
+#pragma mark --- rdsShaderPass_Vk-Decl ---
+#endif // 0
+#if 1
+
+template<size_t N> inline 
+void 
+ShaderPass_Vk::createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo, N>& outCInfos)
+{
+	auto& passInfo = info();
+	outCInfos.clear();
+	outCInfos.reserve(Traits::s_kShaderStageCount);
+	if (!passInfo.vsFunc.is_empty())	{ outCInfos.emplace_back(	_vkVertexStage.createVkStageInfo(passInfo.vsFunc.c_str())); }
+	if (!passInfo.tescFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTescStage.createVkStageInfo(passInfo.tescFunc.c_str())); }
+	if (!passInfo.teseFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTeseStage.createVkStageInfo(passInfo.teseFunc.c_str())); }
+	if (!passInfo.geomFunc.is_empty())	{ outCInfos.emplace_back( _vkGeometryStage.createVkStageInfo(passInfo.geomFunc.c_str())); }
+	if (!passInfo.psFunc.is_empty())	{ outCInfos.emplace_back(	 _vkPixelStage.createVkStageInfo(passInfo.psFunc.c_str())); }
+}
+
+inline Shader_Vk*		ShaderPass_Vk::shaderVk()		{ return sCast<Shader_Vk*>(_shader); }
+
+inline ShaderPass_Vk::VertexStage*					ShaderPass_Vk::vkVertexStage	()				{ return &_vkVertexStage; }
+inline ShaderPass_Vk::TessellationControlStage*		ShaderPass_Vk::vkTessellationControlStage()		{ return &_vkTescStage; }
+inline ShaderPass_Vk::TessellationEvaluationStage*	ShaderPass_Vk::vkTessellationEvaluationStage()	{ return &_vkTeseStage; }
+inline ShaderPass_Vk::GeometryStage*				ShaderPass_Vk::vkGeometryStage()				{ return &_vkGeometryStage; }
+inline ShaderPass_Vk::PixelStage*					ShaderPass_Vk::vkPixelStage		()				{ return &_vkPixelStage; }
+inline ShaderPass_Vk::ComputeStage*					ShaderPass_Vk::vkComputeStage	()				{ return &_vkComputeStage; }
+
+inline Vk_DescriptorSetLayout&		ShaderPass_Vk::vkDescriptorSetLayout()	{ return _vkDescriptorSetLayout; }
+
+inline Vk_PipelineLayout&			ShaderPass_Vk::vkPipelineLayout()		{ return _vkPipelineLayout; }
+inline Vk_Pipeline&					ShaderPass_Vk::computeVkPipeline()		{ return _computeVkPipeline; }
+
+#endif // 1
+
 
 }
 #endif
 
-/*
-
-vkCreatePipelineLayout for shader variables info (descriptor set)
-vkCreateGraphicsPipelines needs pipeline layout + renderPass, spirv and render state, vertex layout
-if subpasses are merged, new renderPass + vkCreateGraphicsPipelines should be recreated
-
-RenderPass need attachment desc and subpass
-framebuffer need RenderPass and image view
- 
-
-*/

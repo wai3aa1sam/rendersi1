@@ -101,6 +101,9 @@ public:
 	RenderGpuBuffer();
 	virtual ~RenderGpuBuffer();
 
+protected:
+	void create(CreateDesc& cDesc);
+	virtual void onDestroy() override;
 
 public:
 	void uploadToGpu		(ByteSpan data, SizeType offset = 0);
@@ -120,10 +123,6 @@ public:
 	bool isComputeBuffer()	const;
 
 	BindlessResourceHandle	bindlessHandle() const;
-
-protected:
-			void create(CreateDesc& cDesc);
-	virtual void onDestroy() override;
 
 protected:
 	Desc					_desc;

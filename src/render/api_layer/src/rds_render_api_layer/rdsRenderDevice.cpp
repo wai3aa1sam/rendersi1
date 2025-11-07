@@ -133,7 +133,9 @@ RenderDevice::onDestroy()
 	Vector< UPtr<RenderJob> > v;
 	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
 	{
-		v.emplace_back(_rdDev->newRenderJob(nullptr, i));
+		UPtr<RenderJob> o;
+		_freeRdJobs.try_pop(o);
+		v.emplace_back(rds::move(o));
 	}
 	v.clear();
 	#endif // 0

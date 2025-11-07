@@ -89,14 +89,6 @@ public:
 	struct SimArgs
 	{
 	public:
-		// TODO: get pass id by compute string
-		static constexpr int s_kPassIdx_Cs_calcExternalForce				= 0;
-		static constexpr int s_kPassIdx_Cs_calcDensityData					= 1;
-		static constexpr int s_kPassIdx_Cs_calcPressureForce				= 2;
-		static constexpr int s_kPassIdx_Cs_calcViscosity					= 3;
-		static constexpr int s_kPassIdx_Cs_updatePosition					= 4;
-
-	public:
 		RenderGraph*	rdGraph		= nullptr;
 		DrawData*		drawData	= nullptr;
 		Vec2u			screenSize	= Vec2u::s_zero();

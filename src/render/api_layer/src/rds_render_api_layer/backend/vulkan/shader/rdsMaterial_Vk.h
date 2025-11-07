@@ -246,6 +246,9 @@ public:
 	Material_Vk();
 	~Material_Vk();
 
+	void onTransferCommand_Create(CmdCreate* cmd);
+	void onTransferCommand_Destroy();
+
 protected:
 	virtual void onCreate		(const CreateDesc& cDesc) override;
 	virtual void onPostCreate	(const CreateDesc& cDesc) override;

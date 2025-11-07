@@ -58,7 +58,10 @@ RenderThread::onDestroy()
 	waitIdle();
 
 	// clean all transferFrames
-	for (size_t j = 0; j < 10; j++)
+	// some destroy command may miss if the Render_destroy will spwan other destroy command, 
+	// maybe check all the destroyBuf only quit when no destroy commands
+	constexpr size_t tryCount = 10;
+	for (size_t j = 0; j < tryCount; j++)
 	{
 		for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
 		{
@@ -66,8 +69,7 @@ RenderThread::onDestroy()
 		}
 		waitIdle();
 	}
-	// some destroy command may miss if the Render_destroy will spwan other destroy command, 
-	// maybe check all the destroyBuf only quit when no destroy commands
+	
 	quit();
 	_rdDev = nullptr;
 }

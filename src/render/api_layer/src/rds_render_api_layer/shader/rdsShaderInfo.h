@@ -5,10 +5,10 @@
 #include "rds_render_api_layer/shader/rdsRenderState.h"
 #include "rds_render_api_layer/shader/rdsShaderInterop.h"
 #include "rdsShaderPermutations.h"
+#include "rdsShaderPropId.h"
 
 namespace rds
 {
-using ShaderParamId = int;
 
 class Texture2D;
 
@@ -178,6 +178,47 @@ public:
 		if (isLoadDefaultPushConst)
 		{
 			createDefaultPushConstant();
+		}
+	}
+
+	void createShaderPropIdMap(VectorMap<ShaderPropId, u32>& o_propIdMap)
+	{
+		o_propIdMap.clear();
+		// createPropIdMap()
+		{
+			RDS_TODO("onJsonIo() for VectorMap");
+			{
+				o_propIdMap.reserve(o_propIdMap.size() + constBufs.size());
+				for (auto& e : constBufs)
+				{
+					o_propIdMap.reserve(o_propIdMap.size() + e.variables.size());
+					for (auto& v : e.variables)
+					{
+						auto id				= ShaderPropId::make(v.name);
+						auto pair_it		= o_propIdMap.emplace(id, v.offset);
+						bool isDuplicated	= pair_it.second != true;
+						RDS_CORE_ASSERT(!isDuplicated, "duplicated key");
+					}
+				}
+
+				auto fn = [](auto& o_propIdMap_, auto& infos)
+					{
+						o_propIdMap_.reserve(o_propIdMap_.size() + infos.size());
+						for (u32 i = 0; i < infos.size(); ++i)
+						{
+							auto& e				= infos[i];
+							auto id				= ShaderPropId::make(e.name);
+							auto pair_it		= o_propIdMap_.emplace(id, i);
+							bool isDuplicated	= pair_it.second != true;
+							RDS_CORE_ASSERT(!isDuplicated, "duplicated key");
+						}
+					};
+
+				fn(o_propIdMap, textures);
+				fn(o_propIdMap, samplers);
+				fn(o_propIdMap, storageBufs);
+				fn(o_propIdMap, storageImages);
+			}
 		}
 	}
 
@@ -510,7 +551,9 @@ public:
 	RenderState renderState;
 
 	// --- no need to serialize
-	ShaderStageInfo	allStageUnionInfo;
+	ShaderStageInfo					allStageUnionInfo;
+	// TODO: onJsonIo() for VectorMap
+	VectorMap<ShaderPropId, u32>	propIdMap;
 
 public:
 	template<class JSON_SE>

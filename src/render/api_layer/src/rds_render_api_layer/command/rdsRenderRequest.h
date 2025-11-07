@@ -82,6 +82,9 @@ public:
 	void dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total);
 	void dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u total);
 
+	void dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPassId& passId, Tuple3u total, Tuple3u nThreads);
+	void dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPassId& passId, Tuple3u total);
+
 	RenderCommand_ClearFramebuffers* clearFramebuffers();
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color);
 	RenderCommand_ClearFramebuffers* clearFramebuffers(const Color4f& color, float depth, u32 stencil = 0);

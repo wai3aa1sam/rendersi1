@@ -759,22 +759,34 @@ Shader_Vk::~Shader_Vk()
 }
 
 void 
-Shader_Vk::onCreate(const CreateDesc& cDesc)
+Shader_Vk::onTransferCommand_Create(CmdCreate* cmd)
 {
-	Base::onCreate(cDesc);
-	
+	RDS_TODO("Shader_Vk::onTransferCommand_Create(CmdCreate* cmd), see comment on Shader::onCreate(const CreateDesc& cDesc)");
 }
 
 void 
-Shader_Vk::onPostCreate(const CreateDesc& cDesc)
+Shader_Vk::onTransferCommand_Destroy()
 {
-	Base::onPostCreate(cDesc);
+
 }
 
 void 
 Shader_Vk::onDestroy()
 {
 	Base::onDestroy();
+}
+
+void 
+Shader_Vk::onCreate(const CreateDesc& cDesc)
+{
+	Base::onCreate(cDesc);
+
+}
+
+void 
+Shader_Vk::onPostCreate(const CreateDesc& cDesc)
+{
+	Base::onPostCreate(cDesc);
 }
 
 void 
