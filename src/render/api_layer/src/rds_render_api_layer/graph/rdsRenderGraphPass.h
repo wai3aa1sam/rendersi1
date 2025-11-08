@@ -134,6 +134,8 @@ public:
 		_executeFunc = rds::move(func);
 	}*/
 
+	void setDebugLabelGroup(StrView name, const Color4f& color = s_defaultDebugColor);
+
 	void setRenderTarget(RdgTextureHnd		hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp);
 	//void setRenderTarget(RdgTextureHndSpan	hnds);
 	void setDepthStencil(RdgTextureHnd		hnd,				 Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp);
@@ -152,7 +154,9 @@ public:
 	void writeBuffers	(RdgBufferHndSpan	hnds,	RenderGpuBufferTypeFlags usage = RenderGpuBufferTypeFlags::Compute,		ShaderStageFlag useStage = ShaderStageFlag::Compute);
 
 	void runAfter(RdgPass* pass);
+	void dependsOn(RdgPass* pass);
 
+public:
 	RdgPassFlags		flags()				const;
 	RdgPassTypeFlags	typeFlags()			const;
 	RdgId				id()				const;
@@ -189,6 +193,8 @@ public:
 	#if RDS_USE_GPU_PROFILER
 	const SrcLocData* srcLocData()		const;
 	#endif
+
+	const RenderDebugLabel& debugLabelGroup() const;
 
 public:
 	void _internal_commit();
@@ -243,6 +249,8 @@ protected:
 	#if RDS_USE_GPU_PROFILER
 	const SrcLocData* _srcLocData = nullptr;
 	#endif // RDS_USE_GPU_PROFILER
+
+	RenderDebugLabel _debugLabelGroup;
 };
 
 template<class HND_SPAN> inline
@@ -326,7 +334,9 @@ RdgPass::checkValid() const
 inline bool RdgPass::hasRenderTargetOrDepth()	const { return (!_rdTargets.is_empty() || _depthStencil); }
 inline bool RdgPass::hasDependency()			const { return dependencyCount() != 0; }
 
-inline const SrcLocData* RdgPass::srcLocData() const  { return _srcLocData; }
+inline const SrcLocData*		RdgPass::srcLocData()		const { return _srcLocData; }
+
+inline const RenderDebugLabel&	RdgPass::debugLabelGroup()	const { return _debugLabelGroup; }
 
 #endif
 

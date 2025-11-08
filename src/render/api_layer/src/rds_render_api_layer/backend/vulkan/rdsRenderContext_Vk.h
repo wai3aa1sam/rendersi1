@@ -57,6 +57,7 @@ public:
 	Vk_TransferFrame&	vkTransferFrame();
 
 public:
+	// TODO: a marco for declare all those onRenderCommand_XXXX
 	void onRenderCommand_Dispatch(RenderCommand_Dispatch*	cmd, void* userData);
 
 	void onRenderCommand_ClearFramebuffers	(RenderCommand_ClearFramebuffers*	cmd, void* userData);
@@ -71,6 +72,10 @@ public:
 	void onRenderCommand_DrawRenderables(RenderCommand_DrawRenderables* cmd, void* userData);
 
 	void onRenderCommand_CopyTexture(RenderCommand_CopyTexture* cmd, void* userData);
+
+	void onRenderCommand_DebugLabelBegin(	RenderCommand_DebugLabelBegin*	cmd, void* userData);
+	void onRenderCommand_DebugLabelEnd(		RenderCommand_DebugLabelEnd*	cmd, void* userData);
+	void onRenderCommand_DebugLabelInsert(	RenderCommand_DebugLabelInsert* cmd, void* userData);
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);

@@ -36,10 +36,42 @@ RDS_ENUM_CLASS(RenderApiType, u8);
 #endif // 0
 #if 1
 
-struct RenderDebugLabel
+inline Color4f s_defaultDebugColor = Color4f{0.831f, 0.949f, 0.824f, 1.0f};
+
+struct DebugLabel
 {
-	const char* name	= "";
-	Color4f		color	= {0.831f, 0.949f, 0.824f, 1.0f};
+public:
+	DebugLabel() = default;
+	DebugLabel(const char*	name, const Color4f& color_ = s_defaultDebugColor) { create(name, color); }
+	DebugLabel(StrView		name, const Color4f& color_ = s_defaultDebugColor) { create(name, color); }
+
+	void create(const char* name, const Color4f& color_)	{ setName(name); color = color_; }
+	void create(StrView		name, const Color4f& color)		{ create(name.data(), color);  }
+
+	void destroy()											{ _name.clear(); color = s_defaultDebugColor; }
+
+public:
+	void setName(const char*	v) { _name = v; }
+	void setName(StrView		v) { _name = v.data(); }
+
+public:
+	// compatible when store "const char* _name;"
+	bool		isValid()		const { return StrUtil::len(_name.c_str()) > 0;}
+	const char* name()			const { return _name.c_str();}
+
+	bool operator==(const DebugLabel& v) const { return StrUtil::isSame(_name, v.name()) /*&& color == v.color*/; }
+	bool operator!=(const DebugLabel& v) const { return !operator==(v); }
+
+public:
+	Color4f		color = s_defaultDebugColor;
+
+private:
+	TempString	_name;		// maybe change to const char* _name
+};
+	
+struct RenderDebugLabel : public DebugLabel
+{
+	
 };
 
 struct RenderApiUtil

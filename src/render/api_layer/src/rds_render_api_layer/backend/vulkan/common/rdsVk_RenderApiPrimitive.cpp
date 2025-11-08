@@ -228,7 +228,7 @@ Vk_Queue::submit(const VkSubmitInfo2& submitInfo, Vk_Fence* signalFence, const R
 		signalFncHnd = signalFence->hnd();
 	}
 
-	beginDebugLabel(debugLabel.name, debugLabel.color);
+	beginDebugLabel(debugLabel.name(), debugLabel.color);
 	auto ret = vkQueueSubmit2(hnd(), 1, &submitInfo, signalFncHnd);
 	Util::throwIfError(ret);
 	endDebugLabel();

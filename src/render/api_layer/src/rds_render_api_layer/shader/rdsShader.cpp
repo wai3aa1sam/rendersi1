@@ -151,7 +151,7 @@ Shader::makeCsPassId(StrView name) const
 	{
 		auto& e = _passes[i];
 		bool isSame = StrUtil::isSame(name, e->info().csFunc);
-		RDS_DUMP_VAR(e->info().csFunc);
+		//RDS_DUMP_VAR(e->info().csFunc);
 
 		#if RDS_DEBUG
 		if (isSame) return ShaderPassId::make(i, name);

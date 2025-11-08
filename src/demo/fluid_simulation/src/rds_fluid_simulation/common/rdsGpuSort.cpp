@@ -59,6 +59,7 @@ GpuSort::addPass_bitonicMergeSort(StrView name, RdgBufferHnd buf_list, u32 listS
 
 			auto& pass = rdGraph->addPass(RDS_RDG_EVENT_NAME("{}_bitonicMergeSort_stg{}_stp{}", name, stageIndex, stepIndex)
 				, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute);
+			pass.setDebugLabelGroup("bitonicMergeSort");
 			pass.writeBuffer(buf_list);
 			pass.setExecuteFunc(
 				[=](RenderRequest& rdReq)
@@ -74,7 +75,6 @@ GpuSort::addPass_bitonicMergeSort(StrView name, RdgBufferHnd buf_list, u32 listS
 					mtl->setParam("u_list",			buf_list.renderResource());
 
 					//RDS_DUMP_VAR(stageIndex, stepIndex, groupWidth, groupHeight);
-
 					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u{sCast<u32>(math::nextPow2(size) / 2), 1, 1});
 				}
 			);

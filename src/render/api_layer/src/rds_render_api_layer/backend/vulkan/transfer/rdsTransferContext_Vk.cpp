@@ -115,8 +115,7 @@ TransferContext_Vk::onCommit(RenderJob* rdJob, bool isWaitImmediate)
 
 	RDS_TODO("2025_10_16, just separate two if wait here, Vk_MultiCommandPool(with ahead_pattern) + Vk_TransferFrame(only contains fence)");
 
-	RenderDebugLabel debugLabel;
-	debugLabel.name = "TransferContext_Vk::onCommit()";
+	auto debugLabel = RenderDebugLabel {"TransferContext_Vk::onCommit()"};
 	if (!isWaitImmediate)
 	{
 		vkCmdBuf->submit(debugLabel, &inFlightVkFnc, 
@@ -135,7 +134,7 @@ TransferContext_Vk::onCommit(RenderJob* rdJob, bool isWaitImmediate)
 	}
 
 	//frame._inFlightVkFence.wait(device());
-	debugLabel.name = "TransferContext_Vk::_commitUploadCmdsToDstQueue()";
+	debugLabel = RenderDebugLabel {"TransferContext_Vk::_commitUploadCmdsToDstQueue()"};
 	_commitUploadCmdsToDstQueue(debugLabel, tsfCmdBuf, QueueTypeFlags::Graphics, isWaitImmediate);
 }
 

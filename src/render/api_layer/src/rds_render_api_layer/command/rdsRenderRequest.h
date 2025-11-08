@@ -143,6 +143,11 @@ public:
 	void drawQuad(const QuadVtxT& topLeft, const QuadVtxT& topRight, const QuadVtxT& botLeft, const QuadVtxT& botRight);
 
 public:
+	void debugLabelBegin( StrView name, const Color4f& color = s_defaultDebugColor);
+	void debugLabelEnd();
+	void debugLabelInsert(StrView name, const Color4f& color = s_defaultDebugColor);
+
+public:
 	RenderContext*					renderContext();
 	Span<RenderCommand*>			commands();
 			RenderCommandBuffer&	commandBuffer();

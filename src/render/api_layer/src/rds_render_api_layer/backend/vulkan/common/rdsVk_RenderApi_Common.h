@@ -274,6 +274,7 @@ public:
 	static void setDebugUtilObjectTag( Vk_Device_T* vkDevHnd, VkObjectType vkObjT, u64			tagName, SizeType tagSize, void* tagData,	const void* vkHnd);
 
 	static VkDebugUtilsLabelEXT toVkDebugUtilsLabel(const char* name, const Color4f& color);
+	static VkDebugUtilsLabelEXT toVkDebugUtilsLabel(const RenderDebugLabel& label);
 
 public:
 	static Vk_Buffer*	toVkBuf		(		RenderGpuBuffer* rdGpuBuf);

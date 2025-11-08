@@ -70,6 +70,10 @@ RdgPass::destroy()
 	_executeFunc = {};
 
 	_name.clear();
+
+	#if RDS_DEVELOPMENT
+	_debugLabelGroup.destroy();
+	#endif
 }
 
 void 
@@ -94,6 +98,14 @@ RdgPass::setExecuteFunc(ExecuteFunc&& func)
 }
 
 void 
+RdgPass::setDebugLabelGroup(StrView name, const Color4f& color)
+{
+	#if RDS_DEVELOPMENT
+	_debugLabelGroup.create(name, color);
+	#endif // RDS_DEVELOPMENT
+}
+
+void
 RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp)
 {
 	RDS_CORE_ASSERT(hnd, "invalid RenderTarget hnd");
@@ -222,6 +234,12 @@ RdgPass::runAfter(RdgPass* pass)
 	{
 		pass->_runAfter.emplace_back(this);
 	}
+}
+
+void 
+RdgPass::dependsOn(RdgPass* pass)
+{
+	runAfter(pass);
 }
 
 void 

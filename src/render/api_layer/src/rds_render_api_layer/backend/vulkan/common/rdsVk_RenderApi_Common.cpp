@@ -1302,6 +1302,12 @@ Vk_RenderApiUtil::toVkDebugUtilsLabel(const char* name, const Color4f& color)
 	return o;
 }
 
+VkDebugUtilsLabelEXT 
+Vk_RenderApiUtil::toVkDebugUtilsLabel(const RenderDebugLabel& label)
+{
+	return toVkDebugUtilsLabel(label.name(), label.color);
+}
+
 Vk_Buffer*		Vk_RenderApiUtil::toVkBuf		(		RenderGpuBuffer* rdGpuBuf) { return sCast<RenderGpuBuffer_Vk*>(rdGpuBuf)->vkBuf(); }
 Vk_Buffer*		Vk_RenderApiUtil::toVkBuf		(const	RenderGpuBuffer* rdGpuBuf) { return constCast(sCast<const RenderGpuBuffer_Vk*>(rdGpuBuf))->vkBuf(); }
 Vk_Buffer_T*	Vk_RenderApiUtil::toVkBufHnd	(		RenderGpuBuffer* rdGpuBuf) { return toVkBuf(rdGpuBuf)->hnd(); }

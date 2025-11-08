@@ -80,10 +80,14 @@ inline PFN_vkQueueSubmit2KHR vkQueueSubmit2;
 
 inline PFN_vkSetDebugUtilsObjectNameEXT		vkSetDebugUtilsObjectName;
 inline PFN_vkSetDebugUtilsObjectTagEXT		vkSetDebugUtilsObjectTag;
-//inline PFN_vkDebugMarkerSetObjectTagEXT		vkDebugMarkerSetObjectTag;		// deprecated
 inline PFN_vkCmdBeginDebugUtilsLabelEXT		vkCmdBeginDebugUtilsLabel;
 inline PFN_vkCmdEndDebugUtilsLabelEXT		vkCmdEndDebugUtilsLabel;
 inline PFN_vkCmdInsertDebugUtilsLabelEXT	vkCmdInsertDebugUtilsLabel;
+
+//inline PFN_vkDebugMarkerSetObjectTagEXT		vkDebugMarkerSetObjectTag;		// deprecated
+inline PFN_vkCmdDebugMarkerBeginEXT			vkCmdDebugMarkerBegin;
+inline PFN_vkCmdDebugMarkerEndEXT			vkCmdDebugMarkerEnd;
+inline PFN_vkCmdDebugMarkerInsertEXT		vkCmdDebugMarkerInsert;
 
 inline PFN_vkQueueBeginDebugUtilsLabelEXT	vkQueueBeginDebugUtilsLabel;
 inline PFN_vkQueueEndDebugUtilsLabelEXT		vkQueueEndDebugUtilsLabel;

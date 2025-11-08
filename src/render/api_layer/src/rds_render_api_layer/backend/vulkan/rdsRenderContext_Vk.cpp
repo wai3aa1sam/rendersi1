@@ -186,8 +186,7 @@ RenderContext_Vk::onEndRender()
 				signalSmps.emplace_back(Vk_SmpSubmitInfo{vkRdFrame.renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
 			}
 
-			RenderDebugLabel debugLabel;
-			debugLabel.name = "RenderContext_Vk::onEndRender()";
+			auto debugLabel = RenderDebugLabel { "RenderContext_Vk::onEndRender()"};
 			Vk_CommandBuffer::submit(debugLabel, vkGraphicsQueue(), renderJob_Vk().pendingGfxVkCmdbufHnds(), vkRdFrame.inFlightFence(), waitSmps, signalSmps);
 		}
 	}
@@ -288,19 +287,21 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 
 			{
 				auto* vkCmdBuf = _curVkCmdBufGraphics;
-				_curVkCmdBufGraphics->beginRecord();
+				vkCmdBuf->beginRecord();
+
 				rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 				rdDevVk->bindlessResourceVk().bind(vkCmdBuf->hnd(), VK_PIPELINE_BIND_POINT_COMPUTE);
-			}
 
-			//_curVkCmdBufCompute->beginRecord();
-			Span<RdgPass*> resultPasses = renderGraphFrame().resultPasses;
-			for (RdgPass* pass : resultPasses)
-			{
-				_commitPass(pass);
-			}
+				//_curVkCmdBufCompute->beginRecord();
+				Span<RdgPass*> resultPasses = renderGraphFrame().resultPasses;
+				for (RdgPass* pass : resultPasses)
+				{
+					_commitPass(pass);
+				}
 
-			_curVkCmdBufGraphics->endRecord();
+				state.debugLabelGroupEnd(vkCmdBuf);
+				vkCmdBuf->endRecord();
+			}
 		}
 
 		void _commitPass(RdgPass* pass)
@@ -403,6 +404,7 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 			}
 			else
 			{
+				state.debugLabelGroupBegin(pass, vkCmdBuf);
 				vkCmdBuf->beginDebugLabel(passName);
 			}
 
@@ -621,6 +623,45 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 			bool				isGraphicsQueue	= BitUtil::hasAny(typeFlags, RdgPassTypeFlags::Graphics | RdgPassTypeFlags::Compute | RdgPassTypeFlags::Transfer);
 			return isGraphicsQueue;
 		}
+	
+	public:
+		struct State
+		{
+			RenderDebugLabel	debugLabelGroup;
+			bool				hasBegunDebuLabelGroup = false;
+
+		public:
+			void debugLabelGroupBegin(RdgPass* pass, Vk_CommandBuffer* vkCmdBuf)
+			{
+				#if RDS_DEVELOPMENT
+				bool hasChangedDebugLabelGroup = debugLabelGroup != pass->debugLabelGroup();
+				if (pass->debugLabelGroup().isValid() && hasChangedDebugLabelGroup)
+				{
+					if (!hasBegunDebuLabelGroup)
+						vkCmdBuf->beginDebugLabel(pass->debugLabelGroup());
+					hasBegunDebuLabelGroup = true;
+				}
+				else
+				{
+					if (hasBegunDebuLabelGroup)
+						vkCmdBuf->endDebugLabel();
+					hasBegunDebuLabelGroup = false;
+				}
+				#endif // 0
+			}
+
+			void debugLabelGroupEnd(Vk_CommandBuffer* vkCmdBuf)
+			{
+				#if RDS_DEVELOPMENT
+				if (hasBegunDebuLabelGroup)
+				{
+					vkCmdBuf->endDebugLabel();
+					hasBegunDebuLabelGroup = false;
+				}
+				#endif
+			}
+
+		} state;
 
 	private:
 		RenderContext_Vk*				_rdCtxVk		= nullptr;
@@ -630,6 +671,7 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 		Vk_CommandBuffer*				_curVkCmdBufCompute		= nullptr;
 
 		RenderGraphFrame* _rdgFrame = nullptr;
+
 	};
 
 	RDS_PROFILE_SCOPED();
@@ -1129,6 +1171,27 @@ RenderContext_Vk::onRenderCommand_CopyTexture(RenderCommand_CopyTexture* cmd, vo
 	copyRegion.dstSubresource.mipLevel			= cmd->dstMip;
 
 	vkCmdBuf->cmd_copyImage(dst, src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copyRegion);
+}
+
+void 
+RenderContext_Vk::onRenderCommand_DebugLabelBegin(RenderCommand_DebugLabelBegin* cmd, void* userData)
+{
+	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
+	vkCmdBuf->beginDebugLabel(cmd->label);
+}
+
+void 
+RenderContext_Vk::onRenderCommand_DebugLabelEnd(RenderCommand_DebugLabelEnd* cmd, void* userData)
+{
+	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
+	vkCmdBuf->endDebugLabel();
+}
+
+void 
+RenderContext_Vk::onRenderCommand_DebugLabelInsert(	RenderCommand_DebugLabelInsert* cmd, void* userData)
+{
+	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
+	vkCmdBuf->insertDebugLabel(cmd->label);
 }
 
 #endif // 1

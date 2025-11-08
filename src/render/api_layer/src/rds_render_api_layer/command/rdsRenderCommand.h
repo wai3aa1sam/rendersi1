@@ -24,6 +24,17 @@ using DrawingSettings = u64;
 #endif // 0
 #if 1
 
+#define RDS_RenderCommand_COMMON_BODY(T) \
+public:																		\
+using Base = RenderCommand;													\
+using This = RDS_CONCAT(RenderCommand_, T);									\
+																			\
+public:																		\
+	RDS_CONCAT(RenderCommand_, T)() : Base(RDS_CONCAT(Type::, T)) {}		\
+	virtual ~RDS_CONCAT(RenderCommand_, T)() {};							\
+private:																	\
+// ---
+
 #define RenderCommandType_ENUM_LIST(E) \
 	E(None, = 0) \
 	E(ClearFramebuffers,) \
@@ -41,6 +52,10 @@ using DrawingSettings = u64;
 	E(ClearColorImage,) \
 	E(FillBuffer,) \
 	\
+	E(DebugLabelBegin,) \
+	E(DebugLabelEnd,) \
+	E(DebugLabelInsert,) \
+	\
 	E(CopyBuffer,) \
 	E(_kCount,) \
 //---
@@ -55,6 +70,8 @@ public:
 
 	using SizeType = Traits::SizeType;
 
+public:
+	//static constexpr Color4f s_defaultDebugColor = Color4f{ 0.1f, 0.2f, 0.3f, 1.0f };
 
 public:
 	RenderCommand(Type type) : _type(type) {}
@@ -64,11 +81,11 @@ public:
 
 	#if RDS_DEVELOPMENT
 	void setDebugSrcLoc(const SrcLoc& srcLoc)	{ _debugSrcLoc	= srcLoc; }
-	void setDebugName  (StrView name)			{ _debugName	= name; }
-	void setDebugColor (const Color4f& color)	{ _debugColor	= color; }
+	void setDebugName  (StrView name)			{ _debugLabel.setName(name.data()); }
+	void setDebugColor (const Color4f& color)	{ _debugLabel.color	= color; }
 
-	const char*		debugName()		const { return _debugName.c_str(); }
-	const Color4f&	debugColor()	const { return _debugColor; }
+	const char*		debugName()		const { return _debugLabel.name(); }
+	const Color4f&	debugColor()	const { return _debugLabel.color; }
 
 	#else
 	void setDebugSrcLoc(const SrcLoc& srcLoc)	{  }
@@ -76,17 +93,16 @@ public:
 	void setDebugColor (const Color4f& color)	{  }
 
 	const char*		debugName()		const { return ""; }
-	const Color4f&	debugColor()	const { return Color4f { 0.1f, 0.2f, 0.3f, 1.0f }; }
+	const Color4f&	debugColor()	const { return s_defaultDebugColor; }
 
-	#endif
+#endif
 protected:
 	RenderCommandType _type;
 
 	#if RDS_DEVELOPMENT
 	RDS_DEBUG_SRCLOC_DECL;
-	TempString	_debugName;
-	Color4f		_debugColor = Color4f { 0.1f, 0.2f, 0.3f, 1.0f };
-	#endif // RDS_DEVELOPMENT
+	RenderDebugLabel _debugLabel;
+#endif // RDS_DEVELOPMENT
 };
 
 #endif
@@ -233,6 +249,34 @@ public:
 };
 
 #endif
+
+#if 0
+#pragma mark --- rdsRenderCommand_Debug-Impl ---
+#endif // 0
+#if 1
+
+class RenderCommand_DebugLabelBegin : public RenderCommand
+{
+	RDS_RenderCommand_COMMON_BODY(DebugLabelBegin)
+public:
+	RenderDebugLabel label;
+};
+
+class RenderCommand_DebugLabelEnd : public RenderCommand
+{
+	RDS_RenderCommand_COMMON_BODY(DebugLabelEnd)
+public:
+};
+
+class RenderCommand_DebugLabelInsert : public RenderCommand
+{
+	RDS_RenderCommand_COMMON_BODY(DebugLabelInsert)
+public:
+	RenderDebugLabel label;
+};
+
+#endif
+
 
 #if 0
 #pragma mark --- rdsTransfer-RenderCommand-Impl ---

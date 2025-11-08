@@ -183,6 +183,10 @@ RenderContext::_dispatchCommand(CTX* ctx, RenderCommand* cmd, void* userData)
 		_DISPACH_CMD_CASE(DrawCall,				userData);
 		_DISPACH_CMD_CASE(DrawRenderables,		userData);
 		_DISPACH_CMD_CASE(CopyTexture,			userData);
+
+		_DISPACH_CMD_CASE(DebugLabelBegin,		userData);
+		_DISPACH_CMD_CASE(DebugLabelEnd,		userData);
+		_DISPACH_CMD_CASE(DebugLabelInsert,		userData);
 		default: { throwError("undefined render command"); } break;
 	}
 

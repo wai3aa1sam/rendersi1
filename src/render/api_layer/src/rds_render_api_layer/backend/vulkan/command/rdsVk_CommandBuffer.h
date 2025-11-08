@@ -144,9 +144,12 @@ public:
 	void cmd_bindDescriptorSet(	VkPipelineBindPoint vkBindPt, u32 setIndex, Vk_DescriptorSet_T*	hnd, Vk_PipelineLayout_T* layoutHnd);
 
 public:
-	void insertDebugLabel(	const char* name, const Color4f& color = Color4f{0.824f, 0.949f, 0.945f, 1.0f});
-	void beginDebugLabel(	const char* name, const Color4f& color = Color4f{0.831f, 0.949f, 0.824f, 1.0f});
+	void insertDebugLabel(	const char* name, const Color4f& color = s_defaultDebugColor); // Color4f{0.824f, 0.949f, 0.945f, 1.0f}
+	void beginDebugLabel(	const char* name, const Color4f& color = s_defaultDebugColor); // Color4f{0.831f, 0.949f, 0.824f, 1.0f}
 	void endDebugLabel();
+
+	void insertDebugLabel(	const RenderDebugLabel& label); // Color4f{0.824f, 0.949f, 0.945f, 1.0f}
+	void beginDebugLabel(	const RenderDebugLabel& label); // Color4f{0.831f, 0.949f, 0.824f, 1.0f}
 
 public:
 	bool hasBoundPipeline(		Vk_Pipeline_T*		vkPipelineHnd) const;

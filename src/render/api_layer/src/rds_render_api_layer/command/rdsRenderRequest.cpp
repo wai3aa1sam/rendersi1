@@ -505,6 +505,28 @@ RenderRequest::drawQuad(const QuadVtxT& topLeft, const QuadVtxT& topRight, const
 	_inlineDrawCircle._drawCalls.emplace_back(cmd);
 }
 
+void 
+RenderRequest::debugLabelBegin(StrView name, const Color4f& color)
+{
+	auto* cmd = commandBuffer().newCommand<RenderCommand_DebugLabelBegin>();
+	cmd->label.setName(name);
+	cmd->label.color = color;
+}
+
+void 
+RenderRequest::debugLabelEnd()
+{
+	auto* cmd = commandBuffer().newCommand<RenderCommand_DebugLabelEnd>(); RDS_UNUSED(cmd);
+}
+
+void 
+RenderRequest::debugLabelInsert(StrView name, const Color4f& color)
+{
+	auto* cmd = commandBuffer().newCommand<RenderCommand_DebugLabelInsert>();
+	cmd->label.setName(name);
+	cmd->label.color = color;
+}
+
 #if 0
 
 void 

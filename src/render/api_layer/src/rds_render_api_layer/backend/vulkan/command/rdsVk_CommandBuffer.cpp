@@ -738,6 +738,18 @@ Vk_CommandBuffer::insertDebugLabel(const char* name, const Color4f& color)
 	#endif
 }
 
+void
+Vk_CommandBuffer::insertDebugLabel(const RenderDebugLabel& label)
+{
+	insertDebugLabel(label.name(), label.color);
+}
+
+void
+Vk_CommandBuffer::beginDebugLabel(const RenderDebugLabel& label)
+{
+	beginDebugLabel(label.name(), label.color);
+}
+
 //Renderer_Vk*		Vk_CommandBuffer::renderer()	{ return _vkCommandPool-> }
 //RenderDevice_Vk*	Vk_CommandBuffer::device()		{ return _vkC }
 
