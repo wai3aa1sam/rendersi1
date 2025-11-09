@@ -1,9 +1,8 @@
 #include "rds_render_api_layer-pch.h"
-
 #include "rdsRenderer.h"
-#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
-#include "rds_render_api_layer/texture/rdsTexture.h"
+#include "rdsRenderDevice.h"
+#include "rds_render_api_layer/backend/vulkan/rdsRenderDevice_Vk.h"
 
 namespace rds
 {

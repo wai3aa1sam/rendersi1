@@ -1,20 +1,32 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rdsRenderDevice.h"
 
 namespace rds
 {
 
-#if 0
-#pragma mark --- rdsRenderer-Decl ---
-#endif // 0
-#if 1
+struct RenderDevice_CreateDesc
+{
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	RenderDevice_CreateDesc();
+
+public:
+	RenderAdapterInfo_Base info;
+
+public:
+	bool isShaderCompileMode() const;
+};
 
 struct Renderer_CreateDesc : public RenderDevice_CreateDesc
 {
 	SizeType		gpuCount				= 1;
 };
+
+#if 0
+#pragma mark --- rdsRenderer-Decl ---
+#endif // 0
+#if 1
 
 class Renderer : public Singleton<Renderer>
 {

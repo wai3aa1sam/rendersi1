@@ -79,13 +79,7 @@ RenderDevice::create(const CreateDesc& cDesc)
 	if (cDesc.isShaderCompileMode())
 		return;
 	
-	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
-	{
-		RenderJob_CreateDesc rdJob_cDesc = {};
-		rdJob_cDesc.renderDevice = this;
-		auto o = createRenderJob(rdJob_cDesc);
-		_freeRdJobs.push(rds::move(o));
-	}
+	_createRenderJobs();
 
 	auto rdThreadCDesc = RenderThread::makeCDesc(this, JobSystem::instance());
 	_rdThread.create(rdThreadCDesc);
@@ -96,9 +90,6 @@ RenderDevice::create(const CreateDesc& cDesc)
 
 	_shaderStock.create(this);
 	_textureStock.create(this);
-
-	RDS_TODO("remove temp, save it on RenderJob");
-	_rdGraph = makeUPtr<RenderGraph>();
 }
 
 void 
@@ -113,30 +104,17 @@ RenderDevice::onDestroy()
 	if (!hasCreated())
 		return;
 
-	{
-		RDS_TODO("remove _rdGraph, RenderGraph should be re-design and save in RenderJob");
-		_rdThread.waitIdle();
-		_rdGraph.reset(nullptr);
-	}
-
 	_shaderStock.destroy();
 	_textureStock.destroy();
 
 	_debug.rdRscs.clear();
 
-	_rdThread.destroy();
-
-	#if 1
-	Vector< UPtr<RenderJob> > v;
-	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
-	{
-		UPtr<RenderJob> o;
-		_freeRdJobs.try_pop(o);
-		v.emplace_back(rds::move(o));
-	}
-	v.clear();
-	#endif // 0
-
+	RDS_TODO("revise, kind of weird, may be tsfCtx could just run destroyRenderResources is ok");
+	_rdThread.waitIdle();
+	_freeRdJobs.clear();	// ensure all the resources will be free
+	_createRenderJobs();	// destroy need to submit, so need to create
+	_rdThread.destroy();	
+	_freeRdJobs.clear();	// release TransferFrame before destroy TransferContext
 
 	if (_tsfCtx)
 	{
@@ -170,7 +148,7 @@ RenderDevice::newRenderJob(RenderContext* rdCtx, u64 frameCount)
 		_rdThread._checkUploadCompletedJob();
 		OsUtil::sleep_ms(0); RDS_TODO("pass a param here");
 	}
-	o->_renderGraph = _rdGraph;
+	//o->_renderGraph = _rdGraph;
 	o->reset(this, rdCtx, frameCount);
 	return o;
 }
@@ -186,6 +164,18 @@ void
 RenderDevice::_internal_createRenderResource(RenderResource* rdRsc)
 {
 	_debug.rdRscs.emplace_back(rdRsc);
+}
+
+void 
+RenderDevice::_createRenderJobs()
+{
+	for (size_t i = 0; i < s_kMaxFrameAheadCountHardLimit; i++)
+	{
+		RenderJob_CreateDesc rdJob_cDesc = {};
+		rdJob_cDesc.renderDevice = this;
+		auto o = createRenderJob(rdJob_cDesc);
+		_freeRdJobs.push(rds::move(o));
+	}
 }
 
 void 

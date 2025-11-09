@@ -140,16 +140,16 @@ RenderContext::commit(RenderRequest& rdReq)
 }
 
 void 
-RenderContext::commit(RenderGraph& rdGraph, u32 rdGraphFrameIdx)
+RenderContext::commit(RenderGraph& rdGraph)
 {
-	onCommit(rdGraph, rdGraph.renderGraphFrame(rdGraphFrameIdx), rdGraphFrameIdx);
+	onCommit(rdGraph);
 }
 
 void 
 RenderContext::commit()
 {
-	RDS_CORE_ASSERT(_rdJob, "Render_reset()");
-	_rdJob->renderGraph().commit(_rdJob->_renderGraphFrameIdx);
+	RDS_CORE_ASSERT(_rdJob, "Proxy_RenderContext::reset(RenderJob*)");
+	_rdJob->renderGraph().commit();
 	commit(_rdJob->renderRequest());
 }
 
@@ -183,19 +183,6 @@ RenderContext::setSwapchainSize(const Vec2f& newSize)
 	transferRequest().setSwapchainSize(this, newSize);
 }
 
-bool 
-RenderContext::isFrameFinished(u64 frameCount) 
-{ 
-	throwIf(true, "should not call this");
-	return false;
-}
-
-void 
-RenderContext::waitFrameFinished(u64 frameCount) 
-{ 
-	throwIf(true, "should not call this");
-}
-
 void
 RenderContext::onCreate(const CreateDesc& cDesc)
 {
@@ -206,8 +193,8 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 	
 	#if 0
 	_backbuffers.create(this, s_kFrameInFlightCount);
-
 	#endif // 0
+
 	{
 		auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
 		bufCDesc.bufSize	= 16;
@@ -232,7 +219,7 @@ RenderContext::onCommit(RenderCommandBuffer& renderBuf)
 }
 
 void 
-RenderContext::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraphFrame, u32 rdGraphFrameIdx)
+RenderContext::onCommit(RenderGraph& rdGraph)
 {
 
 }

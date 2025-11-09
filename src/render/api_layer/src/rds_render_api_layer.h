@@ -6,6 +6,8 @@
 
 #include "rds_render_api_layer/rdsRenderContext.h"
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
+#include "rds_render_api_layer/graph/rdsRenderGraph.h"
+#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
 #include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"

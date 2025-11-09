@@ -127,7 +127,7 @@ RdgDrawer::_dumpPasses()
 
 	headerComment("dump passes");
 
-	auto& rdGraphFrame = _rdgGraph->renderGraphFrame(_rdgGraph->frameIndex());
+	auto& rdGraphFrame = _rdgGraph->renderGraphFrame();
 	for (const auto& e : rdGraphFrame.resultPasses) 
 	{
 		auto id					= e->id();

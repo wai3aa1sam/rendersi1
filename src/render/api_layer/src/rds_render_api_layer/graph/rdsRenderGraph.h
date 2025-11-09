@@ -1,7 +1,6 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rds_render_api_layer/rdsRenderer.h"
 #include "rdsRenderGraphResourcePool.h"
 #include "rdsRenderGraphResource.h"
 #include "rdsRenderGraphPass.h"
@@ -233,7 +232,8 @@ public:
 
 	void compile();
 	void execute();
-	void commit(u32 frameIndex);
+	//void commit(u32 frameIndex);
+	void commit();
 	void dumpGraphviz(			StrView filename = "debug/render_graph");				// visualization in https://dreampuf.github.io/GraphvizOnline/
 	void dumpResourceStateGraph(StrView filename = "debug/render_graph_rsc_state");		// visualization in https://dreampuf.github.io/GraphvizOnline/
 
@@ -256,12 +256,11 @@ public:
 	RdgBufferHnd	findBuffer (StrView name);
 
 public:
-	RenderContext* renderContext();
+	const String&	name() const;
+	RenderContext*	renderContext();
+	RenderDevice*	renderDevice();
 
-	const String& name() const;
-
-	u32 frameIndex() const;
-	RenderDevice* renderDevice();
+	//u32 frameIndex() const;
 
 protected:
 	template<class T> typename RdgResourceTraits<T>::Hnd createRdgResource(StrView name, const RdgResource_CreateDescT<T>& cDesc);
@@ -270,17 +269,18 @@ protected:
 	template<class T>					void	deleteT(T* p);
 
 	//void resetFrame();
-	void rotateFrame();
+	//void rotateFrame();
 
 	void _setResourcesState(const Passes& sortedPasses, const PassDepths& passDepths);
 
-	RenderGraphFrame&	renderGraphFrame(u32 frameIndex);
+public:
+	//RenderGraphFrame&	renderGraphFrame(u32 frameIndex);
 	RenderGraphFrame&	renderGraphFrame();
-	RdgResourcePool&	resourcePool(	 u32 frameIndex);
 	
 	Passes&		passes();
-	Resources&	resources();
+	Passes&		resultPasses();
 
+	Resources&	resources();
 
 private:
 	void* alloc(SizeType n, SizeType align);
@@ -288,12 +288,14 @@ private:
 
 protected:
 	String	_name;
-	u32		_frameIdx = 0;
 
 	SPtr<RenderContext>	_rdCtx = nullptr;
 	IAllocator*			_alloc = nullptr;
 
-	RenderGraphFrames _rdgFrames;
+	RenderGraphFrame _rdgFrame;
+
+	//u32		_frameIdx = 0;
+	//RenderGraphFrames _rdgFrames;
 };
 
 template<class T> inline
@@ -326,17 +328,15 @@ RenderGraph::deleteT(T* p)
 	free(p, s_kAlign);
 }
 
-inline RenderContext* RenderGraph::renderContext() { return _rdCtx; }
+inline RenderContext*	RenderGraph::renderContext()	{ return _rdCtx; }
+inline const String&	RenderGraph::name()		const	{ return _name; }
 
-inline const String&	RenderGraph::name()		const { return _name; }
-
-inline u32				RenderGraph::frameIndex()	const { checkMainThreadExclusive(RDS_SRCLOC); return _frameIdx; }
-
-inline RenderGraphFrame&		RenderGraph::renderGraphFrame(u32 frameIndex)	{ return _rdgFrames[frameIndex]; }
-inline RenderGraphFrame&		RenderGraph::renderGraphFrame()					{ return _rdgFrames[frameIndex()]; }
-inline RdgResourcePool&			RenderGraph::resourcePool(u32 frameIndex)		{ return renderGraphFrame(frameIndex).resourcePool; }
+//inline u32					RenderGraph::frameIndex()	const				{ checkMainThreadExclusive(RDS_SRCLOC); return _frameIdx; }
+//inline RenderGraphFrame&		RenderGraph::renderGraphFrame(u32 frameIndex)	{ return _rdgFrames[frameIndex]; }
+inline RenderGraphFrame&		RenderGraph::renderGraphFrame()					{ return _rdgFrame; }
 
 inline RenderGraph::Passes&		RenderGraph::passes()							{ return renderGraphFrame().passes; }
+inline RenderGraph::Passes&		RenderGraph::resultPasses()						{ return renderGraphFrame().resultPasses; }
 inline RenderGraph::Resources&	RenderGraph::resources()						{ return renderGraphFrame().resources; }
 
 #endif

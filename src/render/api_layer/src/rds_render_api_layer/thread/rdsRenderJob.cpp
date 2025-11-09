@@ -20,7 +20,7 @@ RenderJob::RenderJob()
 
 RenderJob::~RenderJob()
 {
-
+	reset(nullptr, nullptr, 0);
 }
 
 void 
@@ -34,7 +34,6 @@ void RenderJob::destroy()
 	onDestroy();
 }
 
-
 void 
 RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_)
 {
@@ -45,12 +44,7 @@ RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCou
 		_transferFrame->reset();
 	_transferFrame	= nullptr;
 
-	RDS_TODO("temp sol. nullptr means it is destroying, prevent dangling ptr");
-	if (rdCtx)
-	{
-		renderGraph().reset(rdCtx);
-		_renderGraphFrameIdx = renderGraph().frameIndex();
-	}
+	renderGraph().reset(rdCtx);
 	renderRequest().reset(rdCtx);
 }
 

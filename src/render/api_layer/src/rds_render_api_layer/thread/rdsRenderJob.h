@@ -2,6 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/command/rdsRenderRequest.h"
+#include "rds_render_api_layer/graph/rdsRenderGraph.h"
 
 namespace rds
 {
@@ -36,13 +37,21 @@ public:
 public:
 	// maybe support multiple? so use a function first. but seems no need anyways
 	RenderRequest&		renderRequest() { return _renderRequest; };
-	RenderGraph&		renderGraph()	{ return *_renderGraph; };
+	RenderGraph&		renderGraph()	{ return _renderGraph; };
 
 public:
 	// TODO: change to private, and to RenderGraph no need RenderGraphFrame
 	RenderRequest		_renderRequest;
-	RenderGraph*		_renderGraph				= nullptr; // need a share pointer
-	u32					_renderGraphFrameIdx		= 0;
+	RenderGraph			_renderGraph;
+	//u32					_renderGraphFrameIdx		= 0;
+
+public:
+	RenderJob();
+	virtual ~RenderJob();
+
+public:
+	void create(CreateDesc& cDesc);
+	void destroy();
 
 public:
 	void reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_);
@@ -55,14 +64,6 @@ public:
 	//TransferFrame		transferFrame;
 	//UPtr<TransferFrame>	transferFrame = nullptr;
 	SPtr<TransferFrame>	_transferFrame = nullptr;
-
-public:
-	RenderJob();
-	virtual ~RenderJob();
-
-public:
-	void create(CreateDesc& cDesc);
-	void destroy();
 
 protected:
 	virtual void onCreate(CreateDesc& cDesc);

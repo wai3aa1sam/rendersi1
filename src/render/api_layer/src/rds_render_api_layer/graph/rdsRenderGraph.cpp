@@ -122,8 +122,8 @@ void RenderGraph::create(StrView name, RenderContext* rdCtx, IAllocator* alloc)
 	_rdCtx = rdCtx;
 	_alloc = alloc;
 
-	auto& rdgFrame = _rdgFrames.emplace_back();
-	rdgFrame.create(this);
+	//auto& rdgFrame = _rdgFrames.emplace_back();
+	_rdgFrame.create(this);
 }
 
 void RenderGraph::destroy()
@@ -152,12 +152,14 @@ void RenderGraph::destroy()
 		deleteT(e);
 	}
 	_passes.clear();
-	#endif // 0
-	
-	for (auto& frame : _rdgFrames)
+
+	/*for (auto& frame : _rdgFrames)
 	{
-		frame.destroy();
-	}
+	frame.destroy();
+	}*/
+	#endif // 0
+
+	_rdgFrame.destroy();
 
 	_alloc = nullptr;
 	_rdCtx = nullptr;
@@ -166,12 +168,12 @@ void RenderGraph::destroy()
 void 
 RenderGraph::reset(RenderContext* rdCtx) 
 { 
-	_rdCtx = rdCtx;
-
-	RDS_TODO("temporary solution");
-	rotateFrame();
-	auto& rdgFrame = renderGraphFrame(frameIndex());
+	//RDS_TODO("temporary solution");
+	//rotateFrame();
+	auto& rdgFrame = renderGraphFrame();
 	rdgFrame.reset();
+
+	_rdCtx = rdCtx;
 }
 
 void 
@@ -187,7 +189,7 @@ RenderGraph::compile()
 	since we have multi frame, all the RdgPass and RdgResource can not reuse (after hash and confirm same as last frame)
 	, only the order (orderedPassId) can be reuse
 	*/
-	auto& rdgFrame	= renderGraphFrame(frameIndex());
+	auto& rdgFrame	= renderGraphFrame();
 	auto& resources = rdgFrame.resources;
 
 	// cull no reference passes
@@ -361,27 +363,26 @@ RenderGraph::execute()
 
 	RDS_PROFILE_SCOPED();
 
-	auto	frameCount	= renderContext()->engineFrameCount();
-	auto&	rdgFrame	= renderGraphFrame(frameIndex());
+	//auto	frameCount	= renderContext()->engineFrameCount();
+	auto&	rdgFrame	= renderGraphFrame();
 
 	for (auto& pass : rdgFrame.resultPasses)
 	{
 		const auto& name = pass->name(); RDS_UNUSED(name);
-		RDS_PROFILE_DYNAMIC_FMT("{} i[{}] - engineFrame[{}]", name, frameIndex(), frameCount);
+		//RDS_PROFILE_DYNAMIC_FMT("{} i[{}] - engineFrame[{}]", name, frameIndex(), frameCount);
 
 		if (pass->isCulled())
 			continue;
 		pass->execute();
-		pass->_rdReq.uploadToGpu();
 	}
 }
 
 void 
-RenderGraph::commit(u32 frameIndex)
+RenderGraph::commit()
 {
 	// should call in render thread
 
-	auto& rdgFrame	= renderGraphFrame(frameIndex);
+	auto& rdgFrame	= renderGraphFrame();
 	//auto& resources = rdgFrame.resources;
 
 	Passes&		sortedPasses	= rdgFrame.resultPasses;
@@ -396,7 +397,7 @@ RenderGraph::commit(u32 frameIndex)
 		_setResourcesState(sortedPasses, passDepths);
 	}
 
-	_rdCtx->commit(*this, frameIndex);
+	_rdCtx->commit(*this);
 }
 
 void 
@@ -467,7 +468,7 @@ RenderGraph::importTexture(TextureT* tex)
 void 
 RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, ShaderStageFlag stage, Access access)
 {
-	auto& rdgFrame	= renderGraphFrame(frameIndex());
+	auto& rdgFrame	= renderGraphFrame();
 	auto& exportRsc = rdgFrame.exportedTextures.emplace_back();
 	exportRsc.rdgRsc = hnd.resource();
 	exportRsc.rdgRsc->setExport(true);
@@ -510,7 +511,7 @@ RenderGraph::importBuffer(Buffer* buf)
 void 
 RenderGraph::exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlag, Access access)
 {
-	auto& rdgFrame	= renderGraphFrame(frameIndex());
+	auto& rdgFrame	= renderGraphFrame();
 	auto& exportRsc = rdgFrame.exportedBuffers.emplace_back();
 	exportRsc.rdgRsc = hnd.resource();
 	exportRsc.rdgRsc->setExport(true);
@@ -572,6 +573,7 @@ void RenderGraph::free(void* p, SizeType align)
 //	renderGraphFrame().reset();
 //}
 
+#if 0
 void RenderGraph::rotateFrame()
 {
 	auto& frameIdx = _frameIdx;
@@ -586,6 +588,8 @@ void RenderGraph::rotateFrame()
 		back.create(this);
 	}
 }
+
+#endif // 0
 
 void 
 RenderGraph::_setResourcesState(const Passes& sortedPasses, const PassDepths& passDepths)

@@ -269,16 +269,16 @@ RenderContext_Vk::onCommit(RenderCommandBuffer& renderCmdBuf)
 }
 
 void 
-RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraphFrame, u32 rdGraphFrameIdx)
+RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 {
 	class Vk_RenderGraph
 	{
 	public:
-		void commit(const RenderGraph& rdGraph, RenderGraphFrame* rdgFrame, u32 renderGraphFrameIdx, RenderContext_Vk* rdCtxVk, GpuProfiler& gpuProfiler)
+		void commit(RenderGraph& rdGraph, RenderContext_Vk* rdCtxVk, GpuProfiler& gpuProfiler)
 		{
+			_rdGraph		= &rdGraph;
 			_rdCtxVk		= rdCtxVk;
 			_gpuProfiler	= &gpuProfiler;
-			_rdgFrame		= rdgFrame;
 
 			auto*	rdDevVk			= _rdCtxVk->renderDeviceVk();
 
@@ -608,12 +608,13 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 			return outVkCmdBuf;
 		}
 
+	public:
 		bool isMainVkCommandBuffer(Vk_CommandBuffer* vkCmdBuf) const
 		{
 			return vkCmdBuf == _curVkCmdBufGraphics || vkCmdBuf == _curVkCmdBufCompute;
 		}
 
-		RenderGraphFrame& renderGraphFrame() { return *_rdgFrame; }
+		RenderGraphFrame& renderGraphFrame() { return _rdGraph->renderGraphFrame(); }
 
 		//Span<Vk_CommandBuffer_T*> graphicsVkCmdBufsHnds() { return _graphicsVkCmdBufsHnds; }
 
@@ -664,30 +665,25 @@ RenderContext_Vk::onCommit(const RenderGraph& rdGraph, RenderGraphFrame& rdGraph
 		} state;
 
 	private:
+		RenderGraph*					_rdGraph		= nullptr;
 		RenderContext_Vk*				_rdCtxVk		= nullptr;
 		GpuProfiler*					_gpuProfiler	= nullptr;
 		//Vector<Vk_CommandBuffer_T*, 64> _graphicsVkCmdBufsHnds;
 		Vk_CommandBuffer*				_curVkCmdBufGraphics	= nullptr;
 		Vk_CommandBuffer*				_curVkCmdBufCompute		= nullptr;
 
-		RenderGraphFrame* _rdgFrame = nullptr;
-
+		//RenderGraphFrame* _rdgFrame = nullptr;
 	};
 
 	RDS_PROFILE_SCOPED();
 
-	auto& rdgFrame = rdGraphFrame;
+	if (rdGraph.resultPasses().is_empty())	return;
+	//if (!_vkSwapchain.isValid())			return;		// maybe only have comptue work, so no need to return
 
-	if (rdgFrame.resultPasses.is_empty())
-		return;
-
-	//if (!_vkSwapchain.isValid())
-	//	return;
-
-	Base::onCommit(rdGraph, rdGraphFrame, rdGraphFrameIdx);
+	Base::onCommit(rdGraph);
 
 	Vk_RenderGraph vkRdGraph;
-	vkRdGraph.commit(rdGraph, &rdGraphFrame, rdGraphFrameIdx, this, _gpuProfiler);
+	vkRdGraph.commit(rdGraph, this, _gpuProfiler);
 	vkRdGraph.transitExportedResources();
 }
 

@@ -88,6 +88,8 @@ RdgPass::execute()
 		return;
 	
 	_executeFunc(_rdReq);
+	_rdReq.uploadToGpu();
+
 	_isExecuted = true;
 }
 

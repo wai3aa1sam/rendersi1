@@ -47,11 +47,15 @@ public:
 	CondQueue() = default;
 	~CondQueue() = default;
 
-	void push(const T& data)	{ _size++;  Base::push(data); }
+public:
+	void push(const T& data)	{ _size++;  Base::push(data); RDS_TODO("real impl for CondQueue, CondVarProtected"); }
 	void push(		T&& data)	{ _size++;  Base::push(rds::move(data)); }
 
 	bool try_pop(T& o) { bool isSuccess = Base::try_pop(o); if (isSuccess) { _size--; }  return isSuccess; }
 
+	void clear() { T o; while(try_pop(o)) {}; }
+
+public:
 	SizeType	size()		const { return _size; }
 	bool		isEmpty()	const { return _size == 0; }
 

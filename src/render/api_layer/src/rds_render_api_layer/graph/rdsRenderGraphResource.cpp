@@ -26,7 +26,7 @@ void
 RdgResource::create(const RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported)
 {
 	#if RDS_DEVELOPMENT
-	fmtTo(_name, "{}-f{}", name, rdGraph.frameIndex());
+	fmtTo(_name, "{}", name);
 	#else
 	_name		= name;
 	#endif

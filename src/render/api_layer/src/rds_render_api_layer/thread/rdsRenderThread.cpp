@@ -6,7 +6,7 @@
 #include "../transfer/rdsTransferContext.h"
 
 #include "rds_render_api_layer/rdsRenderer.h"
-#include "rds_render_api_layer/graph/rdsRenderGraph.h"
+#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 #include "rds_render_api_layer/backend/base/rdsProxy_RenderDevice.h"
 #include "rds_render_api_layer/backend/base/rdsProxy_TransferContext.h"

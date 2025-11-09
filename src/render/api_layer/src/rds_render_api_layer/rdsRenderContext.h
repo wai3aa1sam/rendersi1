@@ -65,7 +65,6 @@ struct RenderContext_CreateDesc : public RenderResource_CreateDesc
 	ColorType		depthFormat			= ColorType::Depth;
 };
 
-
 class RenderContext : public RenderResource_T<RenderContext, RenderResourceType::RenderContext>
 {
 	friend class RenderDevice;
@@ -94,7 +93,7 @@ public:
 
 	void commit(RenderCommandBuffer&	rdCmdBuf);
 	void commit(RenderRequest&			rdReq);
-	void commit(RenderGraph&			rdGraph, u32 rdGraphFrameIdx);
+	void commit(RenderGraph&			rdGraph);
 	void commit();
 
 public:
@@ -102,9 +101,6 @@ public:
 	bool onUiMouseEvent(	UiMouseEvent&		ev);
 	bool onUiKeyboardEvent(	UiKeyboardEvent&	ev);
 	void setSwapchainSize(const Vec2f& newSize);
-
-	virtual bool isFrameFinished(u64 frameCount);
-	virtual void waitFrameFinished(u64 frameCount);
 
 	//Texture2D* backBuffer();		// this is fake, backBuffer before beginRender() is different with after beginRender()
 
@@ -127,9 +123,9 @@ protected:
 	virtual void onBeginRender()	{};
 	virtual void onEndRender()		{};
 
-
-	virtual void onCommit(RenderCommandBuffer&	renderBuf);
-	virtual void onCommit(const RenderGraph& rdGraph, RenderGraphFrame&	rdGraphFrame, u32 rdGraphFrameIdx);
+	virtual void onCommit(RenderCommandBuffer&	rdCmdBuf);
+	virtual void onCommit(RenderGraph&			rdGraph);
+	//virtual void onCommit(const RenderGraph& rdGraph, RenderGraphFrame&	rdGraphFrame, u32 rdGraphFrameIdx);
 	virtual void onCommit();
 
 public:

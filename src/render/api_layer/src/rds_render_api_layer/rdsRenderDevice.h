@@ -1,6 +1,9 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
+
+#include "rdsRenderer.h"
+
 #include "vertex/rdsVertexLayoutManager.h"
 #include "thread/rdsRenderFrame.h"
 #include "thread/rdsRenderFrameParam.h"
@@ -12,7 +15,6 @@
 #include "shader/rdsShaderStock.h"
 
 #include "thread/rdsRenderThread.h"
-#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 namespace rds
 {
@@ -21,19 +23,6 @@ namespace rds
 #pragma mark --- rdsRenderDevice-Decl ---
 #endif // 0
 #if 1
-
-struct RenderDevice_CreateDesc
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	RenderDevice_CreateDesc();
-
-public:
-	RenderAdapterInfo_Base info;
-
-public:
-	bool isShaderCompileMode() const;
-};
 
 class	RenderGraph;
 
@@ -167,6 +156,9 @@ public:
 	virtual void	_internal_waitGpuIdle() = 0;
 	void			_internal_createRenderResource(RenderResource* rdRsc);
 
+private:
+	void _createRenderJobs();
+
 protected:
 	RenderApiType		_apiType = RenderApiType::Vulkan;
 
@@ -174,7 +166,7 @@ protected:
 	// eg. Render_RenderResource, Render_RenderDevice
 	// Render_RenderDevice* _rd_rdDev = nullptr;
 
-	UPtr<RenderGraph>			_rdGraph = nullptr;	// TODO: temp
+	//UPtr<RenderGraph>			_rdGraph = nullptr;	// TODO: temp
 	RenderThread				_rdThread;			// Consumer inside, _pendingRdJobs; 
 	// no need processingRdJobs, this is for check the gpu side is completed or not
 	CondQueue<UPtr<RenderJob> >	_freeRdJobs;		// Producer
