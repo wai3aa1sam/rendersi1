@@ -3,9 +3,6 @@
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 
 #include "nmsp_job_system/thread/nmspTypeThread.h"
-
-#include "rdsRenderThreadQueue.h"
-
 #include "EASTL/slist.h"
 
 namespace rds
@@ -96,7 +93,7 @@ public:
 	void render(UPtr<RenderJob> renderJob);
 
 public:
-	bool hasPendingRenderJobs();
+	bool isQuit();
 
 	void waitIdle();
 	void waitCpuIdle();

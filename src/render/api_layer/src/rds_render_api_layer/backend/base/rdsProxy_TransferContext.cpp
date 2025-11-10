@@ -1,7 +1,8 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsProxy_TransferContext.h"
-#include "rds_render_api_layer/thread/rdsRenderThreadQueue.h"
+
 #include "rds_render_api_layer/rdsRenderDevice.h"
+#include "rds_render_api_layer/thread/rdsRenderJob.h"
 
 namespace rds
 {
@@ -83,9 +84,15 @@ void
 Proxy_TransferContext::destroyRenderResources()
 {
 	auto& tsfFrame = _tsfFrame;
-	if (_tsfFrame)
+	_destroyRenderResources(tsfFrame);
+}
+
+void 
+Proxy_TransferContext::_destroyRenderResources(TransferFrame* frame)
+{
+	if (frame)
 	{
-		auto lock = tsfFrame->destroyRenderResourceBuffer().scopedULock();
+		auto lock = frame->destroyRenderResourceBuffer().scopedULock();
 		onCommitRenderResources(*lock, true);
 	}
 }

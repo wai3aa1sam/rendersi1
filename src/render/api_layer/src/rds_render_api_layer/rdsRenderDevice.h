@@ -131,6 +131,8 @@ public:
 	u64				frameCount()		const;
 	u32				frameIndex()		const;
 
+	bool			isQuit();
+
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onDestroy();

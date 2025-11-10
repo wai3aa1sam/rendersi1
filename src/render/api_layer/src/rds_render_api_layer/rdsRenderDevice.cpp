@@ -109,12 +109,17 @@ RenderDevice::onDestroy()
 
 	_debug.rdRscs.clear();
 
+	#if 0	// old impl
 	RDS_TODO("revise, kind of weird, may be tsfCtx could just run destroyRenderResources is ok");
-	_rdThread.waitIdle();
-	_freeRdJobs.clear();	// ensure all the resources will be free
-	_createRenderJobs();	// destroy need to submit, so need to create
+	//_rdThread.waitIdle();
+	//_freeRdJobs.clear();	// ensure all the resources will be free
+	//_createRenderJobs();	// destroy need to submit, so need to create
 	_rdThread.destroy();	
 	_freeRdJobs.clear();	// release TransferFrame before destroy TransferContext
+	#else
+	_rdThread.destroy();
+	_freeRdJobs.clear();
+	#endif // 0
 
 	if (_tsfCtx)
 	{
@@ -428,6 +433,7 @@ RenderDevice::createMaterial()
 
 TransferRequest&		RenderDevice::transferRequest()				{ checkMainThreadExclusive(RDS_SRCLOC); return transferFrame().transferRequest(); }
 TransferFrame&			RenderDevice::transferFrame()				{ checkMainThreadExclusive(RDS_SRCLOC);	return transferContext().transferFrame(); }
+bool					RenderDevice::isQuit()						{ return _rdThread.isQuit(); }
 
 template<class T>
 void 

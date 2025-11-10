@@ -52,26 +52,14 @@ TransferContext::destroy()
 	if (!hasCreated())
 		return;
 
-	_tsfFrames.clear();
-
-	#if 0
+	for (auto& e : _tsfFrames)
 	{
-		auto tsf_cDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-		auto temp = _tsfFrames;
-
-		_tsfFrames.clear();
-		_tsfFrameIdx = 0;
-		_tsfFrames.emplace_back(renderDevice()->createTransferFrame(tsf_cDesc));
-		temp.clear();
-
-		auto v = SPtr<TransferFrame>(transferFramePtr());
-		_temp_reset(v);
+		_destroyRenderResources(e);
 	}
-	#endif // 0
+	_tsfFrames.clear();
 
 	onDestroy();
 	Base::destroy();
-
 }
 
 void 
@@ -100,31 +88,6 @@ TransferContext::onCreate(const CreateDesc& cDesc)
 		auto frame = _tsfFrames.emplace_back(renderDevice()->createTransferFrame(tsf_cDesc));
 		//frame->setDebugName("TransferFrame");
 	}
-	
-	#if 0
-	{
-		auto lock = _tsfFramePool.scopedULock();
-		auto& data = *lock;
-		data.resize(s_kFrameSafeInFlightCount);
-		for (auto& e : data)
-		{
-			auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-			e = renderDevice()->createTransferFrame(tsfFrameCDesc);
-		}
-	}
-	#endif // 0
-
-
-	#if 0
-	{
-		auto data = _createRdRscQueue.scopedULock();
-		data->reset(RDS_NEW(TransferCommandBuffer));
-	}
-	{
-		auto data = _destroyRdRscQueue.scopedULock();
-		data->reset(RDS_NEW(TransferCommandBuffer));
-	}
-	#endif // 0
 }
 
 void 

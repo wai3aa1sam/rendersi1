@@ -1,4 +1,3 @@
-
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderThread.h"
 #include "../rdsRenderDevice.h"
@@ -57,6 +56,7 @@ RenderThread::onDestroy()
 
 	waitIdle();
 
+	#if 0
 	// clean all transferFrames
 	// some destroy command may miss if the Render_destroy will spwan other destroy command, 
 	// maybe check all the destroyBuf only quit when no destroy commands
@@ -69,6 +69,7 @@ RenderThread::onDestroy()
 		}
 		waitIdle();
 	}
+	#endif // 0
 	
 	quit();
 	_rdDev = nullptr;
@@ -232,9 +233,12 @@ RenderThread::tryExecuteStealJob()
 }
 
 bool 
-RenderThread::hasPendingRenderJobs()
+RenderThread::isQuit()
 {
-	return _pendingRdJobs.isEmpty();
+	{
+		auto data = _state.scopedULock();
+		return data->isQuit;
+	}
 }
 
 void

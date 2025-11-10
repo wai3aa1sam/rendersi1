@@ -39,6 +39,9 @@ protected:
 	void createRenderResources( );
 	void destroyRenderResources();
 
+protected:
+	virtual void _destroyRenderResources(TransferFrame* frame) override;
+
 public:
 	TransferFrame& transferFrame();
 

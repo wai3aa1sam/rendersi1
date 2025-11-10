@@ -45,6 +45,7 @@ public:
 
 protected:
 	virtual void waitFrameFinished(RenderFrameParam& rdFrameParam);
+	virtual void _destroyRenderResources(TransferFrame* frame) = 0;
 
 public:
 	#if 0
