@@ -334,6 +334,15 @@ RenderGraph::compile()
 
 	}
 
+
+	/*
+	since commit() only called in render thread,
+	we only touch (read and write) the RenderResourceState in render thread, all pass is ordered (alias resource may have some problem
+	, as they may share the same state but they should not share),
+	may rework when impl async compute
+	*/
+	_setResourcesState(rdgFrame.resultPasses);
+
 	// export resources
 	{
 		RDS_PROFILE_SECTION("export resources");
@@ -345,13 +354,15 @@ RenderGraph::compile()
 			if (!expBuf.outRdRsc)
 				continue;
 			(*expBuf.outRdRsc).reset(sCast<RenderGpuBuffer*>(expBuf.rdgRsc->renderResource()));
+			expBuf.srcState = expBuf.rdgRsc->renderResource()->renderResourceStateFlags();
 		}
 
 		for (auto& expTex : expTexs)
 		{
 			if (!expTex.outRdRsc)
 				continue;
-			(*expTex.outRdRsc).reset(sCast<Texture2D*>(expTex.rdgRsc->renderResource()));
+			(*expTex.outRdRsc).reset(sCast<Texture*>(expTex.rdgRsc->renderResource()));
+			expTex.srcState = expTex.rdgRsc->renderResource()->renderResourceStateFlags();
 		}
 	}
 }
@@ -359,13 +370,12 @@ RenderGraph::compile()
 void 
 RenderGraph::execute()
 {
-	RDS_CORE_ASSERT(_rdCtx, "");
-
 	RDS_PROFILE_SCOPED();
+
+	RDS_CORE_ASSERT(_rdCtx, "");
 
 	//auto	frameCount	= renderContext()->engineFrameCount();
 	auto&	rdgFrame	= renderGraphFrame();
-
 	for (auto& pass : rdgFrame.resultPasses)
 	{
 		const auto& name = pass->name(); RDS_UNUSED(name);
@@ -381,22 +391,7 @@ void
 RenderGraph::commit()
 {
 	// should call in render thread
-
-	auto& rdgFrame	= renderGraphFrame();
-	//auto& resources = rdgFrame.resources;
-
-	Passes&		sortedPasses	= rdgFrame.resultPasses;
-	PassDepths&	passDepths		= rdgFrame.resultPassDepths;
-	{
-		/*
-		since commit() only called in render thread,
-		we only touch (read and write) the RenderResourceState in render thread, all pass is ordered (alias resource may have some problem
-			, as they may share the same state but they should not share),
-		may rework when impl async compute
-		*/
-		_setResourcesState(sortedPasses, passDepths);
-	}
-
+	checkRenderThreadExclusive(RDS_SRCLOC);
 	_rdCtx->commit(*this);
 }
 
@@ -592,7 +587,7 @@ void RenderGraph::rotateFrame()
 #endif // 0
 
 void 
-RenderGraph::_setResourcesState(const Passes& sortedPasses, const PassDepths& passDepths)
+RenderGraph::_setResourcesState(const Passes& sortedPasses)
 {
 	using StateTrack = RdgResourceStateTrack;
 
@@ -636,7 +631,7 @@ RenderGraph::_setResourcesState(const Passes& sortedPasses, const PassDepths& pa
 
 			auto* rdRsc = rsc->renderResource();
 			rscAccess.srcState = rdRsc->renderResourceStateFlags();
-			rdRsc->_internal_Render_setRenderResourceState(rscAccess.dstState);
+			rdRsc->setRenderResourceState(rscAccess.dstState);
 
 			RenderResourceStateFlagsUtil::debugWatcher(rscAccess.srcState);
 			RenderResourceStateFlagsUtil::debugWatcher(rscAccess.dstState);

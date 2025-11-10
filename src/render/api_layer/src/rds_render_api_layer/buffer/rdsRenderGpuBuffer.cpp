@@ -35,7 +35,7 @@ void RenderGpuBuffer::create(CreateDesc& cDesc)
 	Base::create(cDesc);
 
 	_desc = cDesc;
-	Engine_setSubResourceCount(1);
+	setSubResourceCount(1);
 	/*
 	no need to set a state as if it is read, then it should not be mutable,
 	if it is write, maybe Transfer_Dst, but we do not need to transit state as Tsf_Dst

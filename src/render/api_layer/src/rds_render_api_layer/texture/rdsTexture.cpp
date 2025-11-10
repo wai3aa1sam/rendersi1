@@ -119,7 +119,7 @@ Texture::onCreate(TextureCreateDesc& cDesc)
 {
 	isValid(cDesc);
 	engineData()._desc = cDesc;
-	Engine_setSubResourceCount(desc().mipCount);
+	setSubResourceCount(desc().mipCount);
 
 	auto*	rdDev		= renderDevice();
 	auto&	bindlessRsc	= rdDev->bindlessResource();

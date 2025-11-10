@@ -536,10 +536,10 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 			{
 				using SRC = RdgResourceType;
 
-				auto* rsc				= expBuf.rdgRsc;
-				const auto& stateTrack = sCast<const RdgResource*>(rsc)->stateTrack(); RDS_UNUSED(stateTrack);
+				//auto* rsc				= expBuf.rdgRsc;
+				//const auto& stateTrack = sCast<const RdgResource*>(rsc)->stateTrack(); RDS_UNUSED(stateTrack);
 
-				auto srcState	= rsc->renderResource()->renderResourceStateFlags();
+				auto srcState	= expBuf.srcState;
 
 				#if 0
 				auto srcUsage	= StateUtil::getBufferUsageFlags(srcState);
@@ -552,6 +552,7 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				if (srcState == expBuf.pendingState)
 					continue;
 
+				RDS_TODO("revise, memory barrier is for global, not for buffer particular buffer");
 				vkCmdBuf->cmd_addMemoryBarrier(srcState, expBuf.pendingState);
 			}
 
@@ -560,9 +561,9 @@ RenderContext_Vk::onCommit(RenderGraph& rdGraph)
 				using SRC = RdgResourceType;
 
 				auto* rsc				= expTex.rdgRsc;
-				const auto& stateTrack	= sCast<const RdgResource*>(rsc)->stateTrack(); RDS_UNUSED(stateTrack);
+				//const auto& stateTrack	= sCast<const RdgResource*>(rsc)->stateTrack(); RDS_UNUSED(stateTrack);
 
-				auto srcState	= rsc->renderResource()->renderResourceStateFlags();
+				auto srcState	= expTex.srcState;
 
 				if (srcState == expTex.pendingState)
 					continue;

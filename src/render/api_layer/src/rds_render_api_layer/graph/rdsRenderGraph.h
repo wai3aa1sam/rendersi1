@@ -71,6 +71,7 @@ public:
 
 		RdgResource*	rdgRsc		= nullptr;
 		SPtr<T>*		outRdRsc	= nullptr;
+		State			srcState;
 		State			pendingState;
 	};
 	using ExportedTexture	= ExportedResourceT<Texture>;
@@ -271,7 +272,8 @@ protected:
 	//void resetFrame();
 	//void rotateFrame();
 
-	void _setResourcesState(const Passes& sortedPasses, const PassDepths& passDepths);
+	void _setResourcesState(const Passes& sortedPasses);
+	//void _setResourcesState(const Passes& sortedPasses, const PassDepths& passDepths);
 
 public:
 	//RenderGraphFrame&	renderGraphFrame(u32 frameIndex);

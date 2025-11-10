@@ -94,7 +94,8 @@ Vk_Swapchain::create(const CreateDesc& cDesc)
 	//_swapchainInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR; // vsync
 
 	createRenderPass(_swapchainInfo.surfaceFormat.format, _swapchainInfo.depthFormat);
-	createSwapchain(cDesc.outBackbuffers, info().rect2f, &_vkRdPass);
+	//createSwapchain(cDesc.outBackbuffers, info().rect2f, &_vkRdPass);
+	createSwapchain(nullptr, info().rect2f, &_vkRdPass);
 }
 
 void 

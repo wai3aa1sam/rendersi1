@@ -64,25 +64,16 @@ RenderResource::setDebugName(StrView name)
 }
 
 void 
-RenderResource::Engine_setSubResourceCount(SizeType n)
+RenderResource::setSubResourceCount(SizeType n)
 {
-	/*
-	#define RDS_CHECK_CALL_ONCE_ONLY() do { static bool hasCalled = false; RDS_THROW_IF(hasCalled, "should only call once"); hasCalled = true; } while(false)
-	RDS_CHECK_CALL_ONCE_ONLY();*/
+	checkMainThreadExclusive(RDS_SRCLOC);
 	_rdState.setSubResourceCount(n);
 }
 
 void 
-RenderResource::_internal_Render_setSubResourceCount(SizeType n)
+RenderResource::setRenderResourceState(RenderResourceStateFlags state, u32 subResource)
 {
-	checkRenderThreadExclusive(RDS_SRCLOC);
-	_rdState.setSubResourceCount(n);
-}
-
-void 
-RenderResource::_internal_Render_setRenderResourceState(RenderResourceStateFlags state, u32 subResource)
-{
-	checkRenderThreadExclusive(RDS_SRCLOC);
+	checkMainThreadExclusive(RDS_SRCLOC);
 	_rdState.setState(state, subResource);
 }
 
@@ -129,7 +120,7 @@ TransferRequest&		RenderResource::transferRequest()					{ return renderDevice()-
 RenderResourceStateFlags 
 RenderResource::renderResourceStateFlags(u32 subResource) const 
 { 
-	checkRenderThreadExclusive(RDS_SRCLOC); 
+	checkMainThreadExclusive(RDS_SRCLOC); 
 	return _rdState.state(subResource); 
 }
 
