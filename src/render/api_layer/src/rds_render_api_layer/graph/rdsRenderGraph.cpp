@@ -53,8 +53,8 @@ RenderGraphFrame::reset()
 	{
 		switch (rsc->type())
 		{
-			case RdgResourceType::Buffer:	{ deleteT(sCast<RdgBuffer*>(rsc)); }	break;
-			case RdgResourceType::Texture:	{ deleteT(sCast<RdgTexture*>(rsc)); }	break;
+			case RdgResourceType::Buffer:	{ deleteRdgResource(sCast<RdgBuffer*>(rsc)); }	break;
+			case RdgResourceType::Texture:	{ deleteRdgResource(sCast<RdgTexture*>(rsc)); }	break;
 			default: { RDS_THROW("invalid RdgResourceType"); } break;
 		}
 	}
@@ -64,10 +64,13 @@ RenderGraphFrame::reset()
 	resources.clear();
 
 	resourcePool.reset();
-	_alloc.clear();
+	_rdgBuf_alloc.clear();
+	_rdgTex_alloc.clear();
 
 	exportedTextures.clear();
 	exportedBuffers.clear();
+
+	state().isExecuted = false;
 }
 
 RenderGraphFrame::Pass* 
@@ -172,7 +175,7 @@ RenderGraph::reset(RenderContext* rdCtx)
 	//rotateFrame();
 	auto& rdgFrame = renderGraphFrame();
 	rdgFrame.reset();
-
+	
 	_rdCtx = rdCtx;
 }
 
@@ -385,6 +388,8 @@ RenderGraph::execute()
 			continue;
 		pass->execute();
 	}
+
+	state().isExecuted = true;
 }
 
 void 
@@ -439,7 +444,7 @@ RenderGraph::importTexture(StrView name, TextureT* tex)
 	cDesc.create(tex->desc());
 
 	auto	hnd		= createTexture(name, cDesc);
-	auto*	rdgTex	= sCast<RdgTexture*>(hnd._rdgRsc);
+	auto*	rdgTex	= hnd.get();
 
 	// setName here will have sync problem btw
 	// TODO: framed _debugName
@@ -465,7 +470,7 @@ RenderGraph::exportTexture(SPtr<Texture>* out, RdgTextureHnd hnd, TextureUsageFl
 {
 	auto& rdgFrame	= renderGraphFrame();
 	auto& exportRsc = rdgFrame.exportedTextures.emplace_back();
-	exportRsc.rdgRsc = hnd.resource();
+	exportRsc.rdgRsc = hnd.get();
 	exportRsc.rdgRsc->setExport(true);
 
 	exportRsc.outRdRsc		= out;
@@ -486,7 +491,7 @@ RenderGraph::importBuffer(StrView name, Buffer* buf)
 	cDesc.create(buf->desc());
 
 	auto	hnd		= createBuffer(name, cDesc);
-	auto*	rdgBuf	= sCast<RdgBuffer*>(hnd._rdgRsc);
+	auto*	rdgBuf	= hnd.get();
 
 	rdgBuf->_desc = buf->desc();
 	rdgBuf->setImport(true);
@@ -508,7 +513,7 @@ RenderGraph::exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTy
 {
 	auto& rdgFrame	= renderGraphFrame();
 	auto& exportRsc = rdgFrame.exportedBuffers.emplace_back();
-	exportRsc.rdgRsc = hnd.resource();
+	exportRsc.rdgRsc = hnd.get();
 	exportRsc.rdgRsc->setExport(true);
 
 	exportRsc.outRdRsc		= out;
@@ -522,7 +527,7 @@ RdgTextureHnd RenderGraph::findTexture(StrView name)
 	{
 		if (StrUtil::isSame(rsc->name().data(), name.data()))
 		{
-			o._rdgRsc = rsc;
+			o.reset(rsc, this);
 		}
 	}
 	return o;
@@ -535,7 +540,7 @@ RdgBufferHnd RenderGraph::findBuffer(StrView name)
 	{
 		if (StrUtil::isSame(rsc->name().data(), name.data()))
 		{
-			o._rdgRsc = rsc;
+			o.reset(rsc, this);
 		}
 	}
 	return o;

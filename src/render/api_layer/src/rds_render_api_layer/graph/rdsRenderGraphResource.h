@@ -134,7 +134,7 @@ public:
 	bool setCurrentUsageAccess(Usage usage, Access access)
 	{
 		bool isValid = true;
-		
+
 		_state.srcAccess = access;
 		_state.srcUsage	 = usage;
 		return isValid;
@@ -172,7 +172,7 @@ protected:
 	// later for same depth async compute
 	Access	_pendingAccess	= Access::None;
 	Usage	_pendingUsage	= {};
-	
+
 	u32 _lastAccessPassDepth = 0;
 
 	*/
@@ -231,7 +231,41 @@ public:
 	static constexpr RdgResourceType s_kType = RdgResourceType::Buffer;
 };
 
-class RdgResource
+class RdgResource_WeakBlock : public RefCount_Base
+{
+public:
+	struct Data
+	{
+		RefCount_Base* obj = nullptr;
+
+	public:
+		//Data* scopedLock() { return this; }	// real WeakBlock, should have a spinLock to protect it
+	};
+
+	// real WeakBlock, should have a spinLock to protect it
+	template<class T> using SpinLockProtected = MutexProtected<T>;
+
+public:
+	SpinLockProtected<Data> data;
+};
+
+class RdgResource_WeakRefBase : public RefCount_Base
+{
+public:
+	SPtr<RdgResource_WeakBlock> _weakBlock = nullptr;
+
+public:
+	~RdgResource_WeakRefBase()
+	{
+		if (_weakBlock)
+		{
+			auto data = _weakBlock->data.scopedULock();
+			data->obj = nullptr;
+		}
+	}
+};
+
+class RdgResource : public RdgResource_WeakRefBase
 {
 	friend class RenderGraph;
 	friend class RdgPass;
@@ -255,10 +289,10 @@ public:
 
 public:
 	RdgResource() = default;
-	RdgResource(const RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported = false, bool isExported = false);
+	RdgResource(RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported = false, bool isExported = false);
 	~RdgResource();
 
-	void create(const RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported);
+	void create(RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported);
 
 public:
 	StrView name() const;
@@ -306,6 +340,224 @@ protected:
 	SPtr<RenderResource>	_spRdRsc;
 };
 
+template<class T>
+class RdgResourceT : public RdgResource
+{
+	friend class RenderGraph;
+	friend class RdgPass;
+	friend class RdgResourceAccessor;
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+public:
+	using Base				= RdgResource;
+
+	using ResourceTraits	= RdgResourceTraits<T>;
+	using RenderResourceT	= T;
+	using CreateDesc		= typename ResourceTraits::CreateDesc;
+	using Desc				= typename ResourceTraits::Desc;
+
+public:
+	RdgResourceT() = default;
+
+	RdgResourceT(RenderGraph& rdGraph, const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
+		//: Base(ResourceTraits::s_kType, name, id, isImport, isExport)
+	{
+		create(rdGraph, cDesc, name, id, isImport, isExport);
+	}
+
+	void create(RenderGraph& rdGraph, const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
+	{
+		Base::create(rdGraph, ResourceTraits::s_kType, name, id, isImport, isExport);
+		_desc = cDesc;
+	}
+
+	const Desc&			desc()	const { return _desc; }
+
+protected:
+			RenderResourceT*	access()		{ return sCast<		 RenderResourceT*>(_pRdRsc); }
+	const	RenderResourceT*	access() const	{ return sCast<const RenderResourceT*>(_pRdRsc); }
+
+	//void commitResouce(RenderResourceT* rsc);
+
+protected:
+	Desc					_desc;
+};
+
+class RdgResourceHnd
+{
+	friend class RenderGraph;
+	friend class RdgPass;
+public:
+	using Type	= RdgResourceType;
+
+public:
+	RdgResourceHnd() = default;
+	~RdgResourceHnd();
+
+public:
+	explicit operator bool() const { return isValidHandle(); }
+
+public:
+	void reset(RdgResource* rdgRsc, RenderGraph* rdGraph);
+
+public:
+	bool	isValidHandle()			const { return get(); }
+
+	StrView name()		const { return get()->name(); }
+	RdgId	id	()		const { return get()->id(); }
+	Type	type()		const { return get()->type(); }
+
+protected:
+	RdgResource* get()		;
+	RdgResource* get() const;
+
+protected:
+	RenderGraph* _rdGraph = nullptr;
+	SPtr<RdgResource_WeakBlock> _weakBlock = nullptr;
+};
+
+template<class T>
+class RdgResourceHndT : public RdgResourceHnd
+{
+	friend class	RenderGraph;
+	friend class	RdgPass;
+	friend class	RdgResourceAccessor;
+	friend struct	RdgTarget;
+	friend struct	RdgRenderTarget;
+	friend struct	RdgDepthStencil;
+	RDS_RENDER_API_LAYER_COMMON_BODY();
+
+public:
+	using Base				= RdgResourceHnd;
+	using ResourceTraits	= RdgResourceTraits<T>;
+	using ResourceT			= typename ResourceTraits::ResourceT;
+	using RenderResourceT	= typename ResourceTraits::RenderResourceT;
+
+	using Desc				= typename ResourceTraits::Desc;
+
+public:
+	RdgResourceHndT()
+	{
+		static_assert(sizeof(RdgResourceHndT<T>) == sizeof(RdgResourceHnd), "no member should be added");
+	}
+
+public:
+	explicit operator bool() const { return get(); }
+
+public:
+	const Desc& desc() const			{ return get()->desc(); }
+
+	ResourceT* get()		{ return sCast<ResourceT*>(Base::get()); }
+	ResourceT* get() const	{ return sCast<ResourceT*>(Base::get()); }
+
+	RenderResourceT* renderResource()		{ RDS_CORE_ASSERT(isValidHandle(), "invalid rdgResource"); return sCast<RenderResourceT*>(get()->renderResource()); }
+	RenderResourceT* renderResource() const	{ RDS_CORE_ASSERT(isValidHandle(), "invalid rdgResource"); return sCast<RenderResourceT*>(get()->renderResource()); }
+};
+
+class RdgTexture : public RdgResourceT<RdgResource_TextureT>
+{
+	friend class RenderGraph;
+	friend class RdgPass;
+	friend class RdgTextureHnd;
+	friend class RdgResourceAccessor;
+public:
+	using Size = RdgResource_TextureT::Size;
+
+public:
+	RdgTexture()	{};
+	~RdgTexture()	{};
+
+	Size		size()		const { return access()->size(); }
+	ColorType	format()	const { return desc().format; }
+};
+
+
+class RdgBuffer : public RdgResourceT<RdgResource_BufferT>
+{
+	friend class RenderGraph;
+	friend class RdgPass;
+	friend class RdgBufferHnd;
+	friend class RdgResourceAccessor;
+public:
+	RdgBuffer() {};
+	~RdgBuffer() {};
+
+public:
+};
+
+class RdgTextureHnd : public RdgResourceHndT<RdgResource_TextureT>
+{
+	friend class RenderGraph;
+	friend class RdgPass;
+	friend class RdgBufferHnd;
+	friend class RdgResourceAccessor;
+public:
+	using RenderResource	= RdgResource_TextureT;
+	using Size				= RenderResource::Size;
+
+public:
+	RdgTextureHnd() = default;
+
+	Size				size()				const	{ return desc().size; }
+	ColorType			format()			const	{ return desc().format; }
+	TextureUsageFlags	usageFlags()		const	{ return desc().usageFlags; }
+
+	Texture*			texture()					{ return sCast<Texture*>(get()->renderResource()); }
+
+	Texture2D*			texture2D()					{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);		return sCast<Texture2D*>(get()->renderResource()); }
+	Texture2D*			texture2D()			const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);		return sCast<Texture2D*>(get()->renderResource()); }
+
+	Texture3D*			texture3D()					{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);		return sCast<Texture3D*>(get()->renderResource()); }
+	Texture3D*			texture3D()			const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);		return sCast<Texture3D*>(get()->renderResource()); }
+
+	TextureCube*		textureCube()				{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);		return sCast<TextureCube*>(get()->renderResource()); }
+	TextureCube*		textureCube()		const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);		return sCast<TextureCube*>(get()->renderResource()); }
+
+	Texture2DArray*		texture2DArray()			{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2DArray);	return sCast<Texture2DArray*>(get()->renderResource()); }
+	Texture2DArray*		texture2DArray()	const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2DArray);	return sCast<Texture2DArray*>(get()->renderResource()); }
+};
+
+class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>
+{
+	friend class RenderGraph;
+	friend class RdgPass;
+	friend class RdgBufferHnd;
+	friend class RdgResourceAccessor;
+public:
+	using RenderResource	= RdgResource_BufferT;
+
+public:
+	RdgBufferHnd() = default;
+
+	RenderGpuBufferTypeFlags	usageFlags()		const	{ return desc().typeFlags; }
+};
+
+class RdgResourceAccessor
+{
+public:
+	static RdgResource_TextureT*	access(RdgTextureHnd hnd)	{ return hnd.get()->access(); }
+	static RdgResource_BufferT*		access(RdgBufferHnd hnd)	{ return hnd.get()->access(); }
+
+	static RdgResource_TextureT*	access(RdgTexture*	tex)	{ return tex->access(); }
+	static RdgResource_BufferT*		access(RdgBuffer*	buf)	{ return buf->access(); }
+
+	template<class RD_RSC_API> static RD_RSC_API access(RdgTextureHnd	tex)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base, RdgTexture::RenderResourceT>, ""); return sCast<RD_RSC_API>(tex.resource()->access()); }
+	template<class RD_RSC_API> static RD_RSC_API access(RdgBufferHnd	buf)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base,  RdgBuffer::RenderResourceT>, ""); return sCast<RD_RSC_API>(buf.resource()->access()); }
+
+	template<class RD_RSC_API> static RD_RSC_API access(RdgTexture*		tex)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base, RdgTexture::RenderResourceT>, ""); return sCast<RD_RSC_API>(tex->access()); }
+	template<class RD_RSC_API> static RD_RSC_API access(RdgBuffer*		buf)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base,  RdgBuffer::RenderResourceT>, ""); return sCast<RD_RSC_API>(buf->access()); }
+
+	//template<class RD_RSC_API> static RD_RSC_API access(RdgResource*	rsc)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base,  RdgBuffer::RenderResourceT>, ""); return sCast<RD_RSC_API>(buf->access()); }
+
+private:
+	//RdgResource* _rdgRsc = nullptr;
+};
+
+#endif
+
+#if 0
+#pragma mark --- rdsRdgResource-Decl ---
+#endif // 0
+#if 1
 inline void RdgResource::setImport(bool v) { _isImported = v; }
 inline void RdgResource::setExport(bool v) { _isExported = v; }
 
@@ -339,233 +591,5 @@ inline Span<const	RdgResource::Pass*>	RdgResource::producers() const	{ return sp
 //inline			RdgResource::State&	RdgResource::state()		{ return _state; }
 //inline const	RdgResource::State&	RdgResource::state() const	{ return _state; }
 
-
-template<class T>
-class RdgResourceT : public RdgResource
-{
-	friend class RenderGraph;
-	friend class RdgPass;
-	friend class RdgResourceAccessor;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	using Base				= RdgResource;
-
-	using ResourceTraits	= RdgResourceTraits<T>;
-	using RenderResourceT	= T;
-	using CreateDesc		= typename ResourceTraits::CreateDesc;
-	using Desc				= typename ResourceTraits::Desc;
-
-public:
-	RdgResourceT() = default;
-
-	RdgResourceT(const RenderGraph& rdGraph, const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
-		//: Base(ResourceTraits::s_kType, name, id, isImport, isExport)
-	{
-		create(rdGraph, cDesc, name, id, isImport, isExport);
-	}
-
-	void create(const RenderGraph& rdGraph, const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
-	{
-		Base::create(rdGraph, ResourceTraits::s_kType, name, id, isImport, isExport);
-		_desc = cDesc;
-	}
-
-	const Desc&			desc()	const;
-
-protected:
-			RenderResourceT*	access()		{ return sCast<		 RenderResourceT*>(_pRdRsc); }
-	const	RenderResourceT*	access() const	{ return sCast<const RenderResourceT*>(_pRdRsc); }
-
-	//void commitResouce(RenderResourceT* rsc);
-
-protected:
-	Desc					_desc;
-};
-
-template<class T> inline const typename RdgResourceT<T>::Desc& RdgResourceT<T>::desc() const { return _desc; }
-
-//template<class T> inline 
-//void 
-//RdgResourceT<T>::commitResouce(RenderResourceT* rsc)
-//{
-//	_pRdRsc		= rsc;
-//	_spRdRsc	= rsc;
-//}
-
-class RdgResourceHnd
-{
-	friend class RenderGraph;
-	friend class RdgPass;
-public:
-	using Type = RdgResourceType;
-
-public:
-	RdgResourceHnd() = default;
-	RdgResourceHnd(RdgResource* rdgRsc) : _rdgRsc(rdgRsc) {}
-
-	StrView name() const { return _rdgRsc->name(); }
-	RdgId	id	() const { return _rdgRsc->id(); }
-	Type	type() const { return _rdgRsc->type(); }
-
-protected:
-	RdgResource* _rdgRsc = nullptr;
-};
-
-template<class T>
-class RdgResourceHndT : public RdgResourceHnd
-{
-	friend class	RenderGraph;
-	friend class	RdgPass;
-	friend class	RdgResourceAccessor;
-	friend struct	RdgTarget;
-	friend struct	RdgRenderTarget;
-	friend struct	RdgDepthStencil;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	using ResourceTraits	= RdgResourceTraits<T>;
-	using ResourceT			= typename ResourceTraits::ResourceT;
-	using RenderResourceT	= typename ResourceTraits::RenderResourceT;
-
-	using Desc				= typename ResourceTraits::Desc;
-
-public:
-	RdgResourceHndT()
-	{
-		static_assert(sizeof(RdgResourceHndT<T>) == sizeof(RdgResourceHnd), "no member should be added");
-	}
-
-	/*		RdgResourceT<T>* resource()			{ return sCast<			RdgResourceT<T>*>(_rdgRsc); }
-	const	RdgResourceT<T>* resource() const	{ return sCast<const	RdgResourceT<T>*>(_rdgRsc); }
-	*/
-
-public:
-	explicit operator bool() const { return resource(); }
-
-public:
-	bool isValid()					const { return isValidRenderResource(); }
-	bool isValidRdgResource()		const { RDS_TODO("do not use isValidRenderResource now, since current design is not thread safe, we must modify to fit this api"); return resource() && resource()->type() != RdgResourceType::None; }
-	bool isValidRenderResource()	const { return isValidRdgResource() && renderResource(); }
-
-	const Desc& desc() const			{ return resource()->desc(); }
-
-	RenderResourceT* renderResource()		{ return sCast<RenderResourceT*>(resource()->renderResource()); }
-	RenderResourceT* renderResource() const	{ return sCast<RenderResourceT*>(_rdgRsc->renderResource()); }
-
-protected:
-			ResourceT* resource()		{ return sCast<			ResourceT*>(_rdgRsc); }
-			ResourceT* resource() const	{ return sCast<			ResourceT*>(_rdgRsc); }
-
-	//		RenderResourceT* renderResource()		{ return sCast<			RenderResourceT*>(resource()->access()); }
-	//const	RenderResourceT* renderResource() const	{ return sCast<const	RenderResourceT*>(resource()->access()); }
-};
-
-//using RdgBuffer		= RdgResourceT		<RdgResource_BufferT>;
-//using RdgBufferHnd	= RdgResourceHndT	<RdgResource_BufferT>;
-
-//using RdgTexture	= RdgResourceT		<RdgResource_TextureT>;
-//using RdgTextureHnd	= RdgResourceHndT	<RdgResource_TextureT>;
-
-
-class RdgTexture : public RdgResourceT<RdgResource_TextureT>
-{
-	friend class RenderGraph;
-	friend class RdgPass;
-	friend class RdgTextureHnd;
-	friend class RdgResourceAccessor;
-public:
-	using Size = RdgResource_TextureT::Size;
-
-public:
-	RdgTexture()	{};
-	~RdgTexture()	{};
-
-	const Size&		size()		const { return access()->size(); }
-	ColorType		format()	const { return desc().format; }
-};
-
-
-class RdgBuffer : public RdgResourceT<RdgResource_BufferT>
-{
-	friend class RenderGraph;
-	friend class RdgPass;
-	friend class RdgBufferHnd;
-	friend class RdgResourceAccessor;
-public:
-	RdgBuffer() {};
-	~RdgBuffer() {};
-
-public:
-
-};
-
-class RdgTextureHnd : public RdgResourceHndT<RdgResource_TextureT>
-{
-	friend class RenderGraph;
-	friend class RdgPass;
-	friend class RdgBufferHnd;
-	friend class RdgResourceAccessor;
-public:
-	using RenderResource	= RdgResource_TextureT;
-	using Size				= RenderResource::Size;
-
-public:
-	RdgTextureHnd() = default;
-
-	Size				size()				const	{ return desc().size; }
-	ColorType			format()			const	{ return desc().format; }
-	TextureUsageFlags	usageFlags()		const	{ return desc().usageFlags; }
-
-	Texture*			texture()					{ return sCast<Texture*>(resource()->renderResource()); }
-	
-	Texture2D*			texture2D()					{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);		return sCast<Texture2D*>(resource()->renderResource()); }
-	Texture2D*			texture2D()			const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2D);		return sCast<Texture2D*>(resource()->renderResource()); }
-
-	Texture3D*			texture3D()					{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);		return sCast<Texture3D*>(resource()->renderResource()); }
-	Texture3D*			texture3D()			const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture3D);		return sCast<Texture3D*>(resource()->renderResource()); }
-
-	TextureCube*		textureCube()				{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);		return sCast<TextureCube*>(resource()->renderResource()); }
-	TextureCube*		textureCube()		const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::TextureCube);		return sCast<TextureCube*>(resource()->renderResource()); }
-
-	Texture2DArray*		texture2DArray()			{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2DArray);	return sCast<Texture2DArray*>(resource()->renderResource()); }
-	Texture2DArray*		texture2DArray()	const	{ RDS_CORE_ASSERT(desc().type == RenderDataType::Texture2DArray);	return sCast<Texture2DArray*>(resource()->renderResource()); }
-};
-
-class RdgBufferHnd : public RdgResourceHndT<RdgResource_BufferT>
-{
-	friend class RenderGraph;
-	friend class RdgPass;
-	friend class RdgBufferHnd;
-	friend class RdgResourceAccessor;
-public:
-	using RenderResource	= RdgResource_BufferT;
-
-public:
-	RdgBufferHnd() = default;
-
-	RenderGpuBufferTypeFlags	usageFlags()		const	{ return desc().typeFlags; }
-};
-
-class RdgResourceAccessor
-{
-public:
-	static RdgResource_TextureT*	access(RdgTextureHnd hnd)	{ return hnd.resource()->access(); }
-	static RdgResource_BufferT*		access(RdgBufferHnd hnd)	{ return hnd.resource()->access(); }
-
-	static RdgResource_TextureT*	access(RdgTexture*	tex)	{ return tex->access(); }
-	static RdgResource_BufferT*		access(RdgBuffer*	buf)	{ return buf->access(); }
-
-	template<class RD_RSC_API> static RD_RSC_API access(RdgTextureHnd	tex)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base, RdgTexture::RenderResourceT>, ""); return sCast<RD_RSC_API>(tex.resource()->access()); }
-	template<class RD_RSC_API> static RD_RSC_API access(RdgBufferHnd	buf)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base,  RdgBuffer::RenderResourceT>, ""); return sCast<RD_RSC_API>(buf.resource()->access()); }
-
-	template<class RD_RSC_API> static RD_RSC_API access(RdgTexture*		tex)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base, RdgTexture::RenderResourceT>, ""); return sCast<RD_RSC_API>(tex->access()); }
-	template<class RD_RSC_API> static RD_RSC_API access(RdgBuffer*		buf)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base,  RdgBuffer::RenderResourceT>, ""); return sCast<RD_RSC_API>(buf->access()); }
-
-	//template<class RD_RSC_API> static RD_RSC_API access(RdgResource*	rsc)	{ static_assert(IsSame<typename RemovePtr<RD_RSC_API>::Base,  RdgBuffer::RenderResourceT>, ""); return sCast<RD_RSC_API>(buf->access()); }
-
-private:
-	//RdgResource* _rdgRsc = nullptr;
-};
-
 #endif
-
 }

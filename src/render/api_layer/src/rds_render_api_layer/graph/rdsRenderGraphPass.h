@@ -41,10 +41,12 @@ RDS_ENUM_ALL_OPERATOR(RdgPassFlags);
 
 struct RdgTarget
 {
-	ColorType			format()	const { return targetHnd.format(); }
-	explicit operator	bool()		const { return targetHnd.resource(); }
+public:
+	ColorType			format()	const { return rdgTex->format(); }
+	explicit operator	bool()		const { return rdgTex; }
 
-	RdgTextureHnd		targetHnd;
+public:
+	RdgTexture*			rdgTex = nullptr;
 	RenderTargetLoadOp	loadOp;
 
 	u32					layerIndex = 0;
@@ -157,6 +159,8 @@ public:
 	void dependsOn(RdgPass* pass);
 
 public:
+	RenderGraph*		renderGraph();
+
 	RdgPassFlags		flags()				const;
 	RdgPassTypeFlags	typeFlags()			const;
 	RdgId				id()				const;
@@ -261,6 +265,7 @@ RdgPass::toHndSpan(HND_SPAN hndTs)
 	return RdgResourceHndSpan{reinCast<ElementT*>(hndTs.data()), hndTs.size()};
 }
 
+inline RenderGraph*		RdgPass::renderGraph()				{ return _rdGraph; }
 inline RdgPassFlags		RdgPass::flags()			const	{ return _flags; }
 inline RdgPassTypeFlags	RdgPass::typeFlags()		const	{ return _typeFlags; }
 inline RdgId			RdgPass::id()				const	{ return _id; }
@@ -286,12 +291,12 @@ RdgPass::renderTargetExtent()  const
 	Opt<Rect2f> o;
 	if (!_rdTargets.is_empty())
 	{
-		const auto& size = _rdTargets[0].targetHnd.size();
+		const auto& size = _rdTargets[0].rdgTex->size();
 		o = Rect2f { Tuple2f::s_zero(), Tuple2f{size.x, size.y} };
 	}
 	else if (const RdgDepthStencil& depthStencil = _depthStencil)
 	{
-		const auto& size = depthStencil.targetHnd.size();
+		const auto& size = depthStencil.rdgTex->size();
 		o = Rect2f{ Tuple2f::s_zero(), Tuple2f{size.x, size.y} };
 	}
 	return o; 

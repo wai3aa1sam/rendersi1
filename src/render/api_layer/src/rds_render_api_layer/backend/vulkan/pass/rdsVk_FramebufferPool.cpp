@@ -124,18 +124,18 @@ Vk_FramebufferPool::request(RdgPass* pass, Vk_RenderPass_T* vkRdPassHnd)
 	auto getSrvImageViewHandle = [](RdgTarget& target) -> Vk_ImageView_T*
 		{
 			using SRC = RenderDataType;
-			auto			type	= target.targetHnd.desc().type;
+			auto			type	= target.rdgTex->desc().type;
 			VkImageView_T*	hnd		= VK_NULL_HANDLE;
 			switch (type)
 			{
 				case SRC::Texture2D:
 				{
-					auto* texVk	= sCast<Texture2D_Vk*>(RdgResourceAccessor::access(target.targetHnd));
+					auto* texVk	= sCast<Texture2D_Vk*>(target.rdgTex->renderResource());
 					hnd = texVk->srvVkImageViewHnd();
 				} break;
 				case SRC::Texture2DArray:
 				{
-					auto* texVk	= sCast<Texture2DArray_Vk*>(RdgResourceAccessor::access(target.targetHnd));
+					auto* texVk	= sCast<Texture2DArray_Vk*>(target.rdgTex->renderResource());
 					hnd = texVk->srvLayerVkImageViewHnd(target.layerIndex);
 				} break;
 

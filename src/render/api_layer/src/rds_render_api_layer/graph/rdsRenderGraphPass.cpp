@@ -110,17 +110,16 @@ RdgPass::setDebugLabelGroup(StrView name, const Color4f& color)
 void
 RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTargetStoreOp storeOp)
 {
-	RDS_CORE_ASSERT(hnd, "invalid RenderTarget hnd");
 	RDS_CORE_ASSERT(BitUtil::has(_typeFlags, TypeFlag::Graphics));
 	//accessResource(hnd, Access::Write);
 	//RDS_CORE_ASSERT(!isDuplicatedHnd(_rdTargets[0].span(), hnd), "RenderPass: {} has repeated read resource {}", _name, hnd.name());
 	
-	RDS_TODO("check is unqiue");
+	RDS_TODO("check is unique");
 
 	auto& dst = _rdTargets.emplace_back();
 	dst.loadOp		= loadOp;
 	dst.storeOp		= storeOp;
-	dst.targetHnd	= hnd;
+	dst.rdgTex		= hnd.get();
 	dst._localId	= sCast<int>(_rscAccesses.size());
 
 	auto usage = TextureUsageFlags::RenderTarget;
@@ -131,14 +130,13 @@ RdgPass::setRenderTarget(RdgTextureHnd hnd, RenderTargetLoadOp loadOp, RenderTar
 void 
 RdgPass::setDepthStencil(RdgTextureHnd hnd, u32 layerIndex, Access access, RenderTargetLoadOp depthLoadOp, RenderTargetLoadOp stencilLoadOp)
 {
-	RDS_CORE_ASSERT(hnd, "invalid DepthStencil hnd");
 	RDS_CORE_ASSERT(!_depthStencil, "depthStencil already set");
 	RDS_CORE_ASSERT(BitUtil::has(_typeFlags, TypeFlag::Graphics));
 	RDS_CORE_ASSERT(BitUtil::has(hnd.usageFlags(), TextureUsageFlags::DepthStencil));
 
 	_depthStencil.loadOp		= depthLoadOp;
 	_depthStencil.stencilLoadOp = stencilLoadOp;
-	_depthStencil.targetHnd		= hnd;
+	_depthStencil.rdgTex		= hnd.get();
 	_depthStencil.access		= access;
 	_depthStencil.layerIndex	= layerIndex;
 	_depthStencil._localId		= sCast<int>(_rscAccesses.size());
@@ -259,9 +257,9 @@ RdgPass::accessResource(RdgResourceHnd hnd, RenderResourceStateFlags state, bool
 	RDS_TODO("check unique resource");
 	using SRC		= RenderAccess;
 
-	RDS_CORE_ASSERT(hnd._rdgRsc, "invalid hnd");
+	RDS_CORE_ASSERT(hnd.isValidHandle(),	"invalid hnd");
 
-	auto* rdgRsc = hnd._rdgRsc;
+	auto* rdgRsc = hnd.get();
 
 	auto& rscAccess = _rscAccesses.emplace_back();
 	rscAccess.rsc				= rdgRsc;

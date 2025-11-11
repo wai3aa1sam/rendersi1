@@ -232,13 +232,11 @@ FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Con
 	pass.setRenderTarget(rtColor,	RenderTargetLoadOp::Clear, RenderTargetStoreOp::Store);
 	pass.setDepthStencil(dsBuf,	RdgAccess::Write, RenderTargetLoadOp::Clear, RenderTargetLoadOp::Clear);	// currently use the pre-pass will cause z-flight
 
-	#if 1
-	if (useCurSimRes)
+	if (cachedSimArgs.bufPos)
 	{
 		pass.readBuffer(cachedSimArgs.bufPos, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
 		pass.readBuffer(cachedSimArgs.bufVel, RenderGpuBufferTypeFlags::Vertex, ShaderStageFlag::Vertex);
 	}
-	#endif // 0
 
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
@@ -252,12 +250,8 @@ FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Con
 			if (!_debug.useVoxel)
 			{
 				auto& v = constCast(cachedSimArgs);
-				// must not use isValidRenderResource now (see the code in there)
-				//auto* pos		= v.bufPos.isValidRenderResource() ? v.bufPos.renderResource() : v.positions.ptr();
-				//auto* vel		= v.bufVel.isValidRenderResource() ? v.bufVel.renderResource() : v.velocities.ptr();
-
-				auto* pos		= useCurSimRes ? v.bufPos.renderResource() : v.positions.ptr();
-				auto* vel		= useCurSimRes ? v.bufVel.renderResource() : v.velocities.ptr();
+				auto* pos		= v.bufPos ? v.bufPos.renderResource() : v.positions.ptr();
+				auto* vel		= v.bufVel ? v.bufVel.renderResource() : v.velocities.ptr();
 				_ptcDisplay.draw(rdReq, drawData, pos, vel, getBoundingBoxTransform()->localPosition(), _simConfig.particleSize, n);
 			}
 

@@ -11,7 +11,7 @@ namespace rds
 #endif // 0
 #if 1
 
-RdgResource::RdgResource(const RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported)
+RdgResource::RdgResource(RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported)
 //: _name(name), _id(id), _type(type), _isImported(isImported), _isExported(isExported)
 {
 	create(rdGraph, type, name, id, isImported, isExported);
@@ -19,11 +19,11 @@ RdgResource::RdgResource(const RenderGraph& rdGraph, Type type, StrView name, Rd
 
 RdgResource::~RdgResource()
 {
-
+	
 }
 
 void 
-RdgResource::create(const RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported)
+RdgResource::create(RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported)
 {
 	#if RDS_DEVELOPMENT
 	fmtTo(_name, "{}", name);
@@ -59,5 +59,71 @@ RdgResource::isUniqueProducer(RdgPass* producer) const
 }
 
 #endif
+
+#if 1
+
+RdgResourceHnd::~RdgResourceHnd()
+{
+	checkMainThreadExclusive(RDS_SRCLOC);		// if not main exclusive, then no need to use ObjectPool, or thread safe ObjectPool
+
+	if (_weakBlock)
+	{
+		auto* p = _weakBlock.release();
+		if (p->isRefCount0())
+		{
+			_rdGraph->_rdgHndPool.deleteObject(p);
+		}
+	}
+}
+
+void 
+RdgResourceHnd::reset(RdgResource* rdgRsc, RenderGraph* rdGraph)
+{
+	_rdGraph = rdGraph;
+
+	 if (!rdgRsc)
+		return _weakBlock.reset(nullptr);
+
+	auto* p = rdgRsc->_weakBlock.ptr();		// *** must copy
+	if (p)
+	{
+		_weakBlock = p;
+		return;
+	}
+
+	if (_rdGraph)
+	{
+		_weakBlock = _rdGraph->_rdgHndPool.newObject();
+		rdgRsc->_weakBlock.reset(_weakBlock);
+
+		auto data = _weakBlock->data.scopedULock();
+		data->obj = rdgRsc;
+	}
+}
+
+RdgResource* 
+RdgResourceHnd::get()			
+{ 
+	checkMainThreadExclusive(RDS_SRCLOC);		// if not main exclusive, then no need to use ObjectPool, or thread safe ObjectPool
+	if (!_weakBlock /*|| _rdGraph->isExecuted()*/) 
+		return nullptr; 
+	auto data = _weakBlock->data.scopedULock();				
+	return sCast<RdgResource*>(data->obj); 
+}
+
+RdgResource* 
+RdgResourceHnd::get() const	
+{ 
+	checkMainThreadExclusive(RDS_SRCLOC);		// if not main exclusive, then no need to use ObjectPool, or thread safe ObjectPool
+	if (!_weakBlock /*|| _rdGraph->isExecuted()*/)
+		return nullptr; 
+	auto data = constCast(_weakBlock)->data.scopedULock();	
+	return sCast<RdgResource*>(data->obj); 
+}
+
+#endif // 1
+
+template class RdgResourceHndT<RdgResource_BufferT>;
+template class RdgResourceHndT<RdgResource_TextureT>;
 
 }

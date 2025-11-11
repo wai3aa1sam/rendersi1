@@ -133,39 +133,72 @@ public:
 	Pass* addPass(RenderGraph* rdGraph, const SrcLocData* srcLocData, RdgPassTypeFlags typeFlag, RdgPassFlags flag);
 
 	template<class T>
-	RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc, const RenderGraph& rdGraph)
+	RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc, RenderGraph& rdGraph)
 	{
 		using Tratis	= RdgResourceTraits<T>;
 		using ResourceT = typename Tratis::ResourceT;
 
 		auto id		= sCast<RdgId>(resources.size());
 		//auto* rdgRsc = newT<RdgResourceT<T> >(cDesc, name, id, false, false);
-		auto* rdgRsc = sCast<ResourceT*>(resources.emplace_back(newT<ResourceT>()));
+		auto* rdgRsc = sCast<ResourceT*>(resources.emplace_back(newRdgResource<ResourceT>()));
 		rdgRsc->create(rdGraph, cDesc, name, id, false, false);
 		return rdgRsc;
 	}
 
 private:
 	template<class T, class... ARGS>
-	T* newT(ARGS&&... args)
+	T* 
+	newRdgResource(ARGS&&... args)
 	{
-		void*	buf = _alloc.allocate(sizeof(T));
-		T*		p	= new(buf) T(rds::forward<ARGS>(args)...);
+		auto&	alloc	= getRdgAlloc<T>();
+		void*	buf		= alloc.allocate(sizeof(T));
+		T*		p		= new(buf) T(rds::forward<ARGS>(args)...);
 		return p;
 	}
 
 	template<class T>
-	void deleteT(T* p)
+	void 
+	deleteRdgResource(T* p)
 	{
 		p->~T();
-		_alloc.free(p);
+
+		auto&	alloc	= getRdgAlloc<T>();
+		alloc.free(p);
+	}
+
+	template<class T> 
+	LinearAllocator& 
+	getRdgAlloc()
+	{
+		static_assert(IsSame<T, RdgBuffer> || IsSame<T, RdgTexture>, "only support RdgBuffer/RdgTexture");
+		if constexpr (IsSame<T, RdgBuffer>)
+		{
+			return _rdgBuf_alloc;
+		}
+		else if constexpr (IsSame<T, RdgTexture>)
+		{
+			return _rdgTex_alloc;
+		}
 	}
 
 private:
-	LinearAllocator _alloc;
+	// since those Buffer and Texture has different size
+	// , separate the allocator to ensure when access the "dangling" ptr (freed when reset, but user still holding the Hnd)
+	// , it will not access to wrong member ptr
+	LinearAllocator _rdgBuf_alloc;
+	LinearAllocator _rdgTex_alloc;
 
 	Passes			_freePasses;
 	LinearAllocator _passAlloc;
+
+protected:
+	struct State
+	{
+		bool isExecuted : 1;
+	} _state;
+
+			State&	state()			{ checkMainThreadExclusive(RDS_SRCLOC); return _state; }
+	const	State&	state() const	{ checkMainThreadExclusive(RDS_SRCLOC); return _state; }
 };
 
 #endif
@@ -177,6 +210,9 @@ private:
 
 class RenderGraph : public NonCopyable
 {
+	friend class RdgResourceHnd;
+	friend class RdgResource;
+
 	friend class RenderContext;
 	friend class RdgDrawer;
 	RDS_RENDER_API_LAYER_COMMON_BODY();
@@ -218,6 +254,7 @@ public:
 	using FramedRscPool		= RenderGraphFrame::FramedRscPool;
 	using PassDepths		= RenderGraphFrame::PassDepths;
 	using RenderGraphFrames = Vector<RenderGraphFrame, s_kMaxFrameAheadCountHardLimit>;
+	using State				= RenderGraphFrame::State;
 
 public:
 	static constexpr SizeType s_kPassLocalSize = RenderGraphFrame::s_kPassLocalSize;
@@ -277,12 +314,16 @@ protected:
 
 public:
 	//RenderGraphFrame&	renderGraphFrame(u32 frameIndex);
-	RenderGraphFrame&	renderGraphFrame();
-	
+			RenderGraphFrame&	renderGraphFrame();
+	const	RenderGraphFrame&	renderGraphFrame() const;
+
 	Passes&		passes();
 	Passes&		resultPasses();
 
 	Resources&	resources();
+
+
+	bool isExecuted() const;
 
 private:
 	void* alloc(SizeType n, SizeType align);
@@ -296,8 +337,54 @@ protected:
 
 	RenderGraphFrame _rdgFrame;
 
+protected:
+	const	State& state() const;
+			State& state();
+
 	//u32		_frameIdx = 0;
 	//RenderGraphFrames _rdgFrames;
+
+protected:
+	struct RdgHndPool
+	{
+	public:
+		using T = RdgResource_WeakBlock;
+	public:
+		~RdgHndPool()
+		{
+			_alloc.destructAndClear<T>(_alloc.s_kDefaultAlign);
+		}
+
+		//void			reset();
+		//template<class... TArgs>
+		//T*				newObject(TArgs&&... args)
+		T*				newObject()
+		{
+			if (!_freedObjs.is_empty())
+			{
+				auto obj = _freedObjs.moveBack();
+				return obj;
+			}
+			else
+			{
+				auto* buf		= _alloc.alloc(sizeof(T));;
+				auto* newObj	= new(buf) T();
+				//_objs.emplace_back(newObj);
+				return newObj;
+			}
+		}
+		void deleteObject(T* obj)
+		{
+			_freedObjs.emplace_back(obj);
+		}
+
+	public:
+		LinearAllocator _alloc;
+		//Vector<T*> _objs;
+		Vector<T*> _freedObjs;
+		//Vector<T*, 16> _objs;
+	};
+	RdgHndPool _rdgHndPool;
 };
 
 template<class T> inline
@@ -310,7 +397,7 @@ RenderGraph::createRdgResource(StrView name, const RdgResource_CreateDescT<T>& c
 
 	HndT out	= {};
 	auto* rdgRsc = renderGraphFrame().createRdgResouce<T>(name, cDesc, *this);
-	out._rdgRsc = rdgRsc;
+	out.reset(rdgRsc, this);
 	return out;
 }
 
@@ -335,11 +422,16 @@ inline const String&	RenderGraph::name()		const	{ return _name; }
 
 //inline u32					RenderGraph::frameIndex()	const				{ checkMainThreadExclusive(RDS_SRCLOC); return _frameIdx; }
 //inline RenderGraphFrame&		RenderGraph::renderGraphFrame(u32 frameIndex)	{ return _rdgFrames[frameIndex]; }
-inline RenderGraphFrame&		RenderGraph::renderGraphFrame()					{ return _rdgFrame; }
+inline			RenderGraphFrame&		RenderGraph::renderGraphFrame()					{ return _rdgFrame; }
+inline const	RenderGraphFrame&		RenderGraph::renderGraphFrame()		const		{ return _rdgFrame; }
 
 inline RenderGraph::Passes&		RenderGraph::passes()							{ return renderGraphFrame().passes; }
 inline RenderGraph::Passes&		RenderGraph::resultPasses()						{ return renderGraphFrame().resultPasses; }
 inline RenderGraph::Resources&	RenderGraph::resources()						{ return renderGraphFrame().resources; }
+
+inline bool							RenderGraph::isExecuted() const {  return state().isExecuted; }
+inline			RenderGraph::State&	RenderGraph::state()			{ checkMainThreadExclusive(RDS_SRCLOC); return renderGraphFrame().state(); }
+inline const	RenderGraph::State&	RenderGraph::state() const		{ checkMainThreadExclusive(RDS_SRCLOC); return renderGraphFrame().state(); }
 
 #endif
 
