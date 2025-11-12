@@ -127,7 +127,7 @@ FluidSim2D_Gpu::addPass_simulateFluid2D(SimArgs& simArgs)
 		mtl->setParam("u_interactionInputPoint",	_mouseRayWorld.origin.toVec2());
 
 		mtl->setParam("u_boundarySize",				simConfig.boundingRegion.size);
-		mtl->setParam("u_obstacleCenter",			Rect2T_center(simConfig.obstacle));
+		mtl->setParam("u_obstacleCenter",			simConfig.obstacle.center());
 		mtl->setParam("u_obstacleSize",				simConfig.obstacle.size);
 
 		mtl->setParam("u_particleMass",				simConfig.particleMass);

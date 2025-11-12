@@ -42,7 +42,9 @@ ShaderPropId::ShaderPropId(SizeType id)
 ShaderPropId::ShaderPropId(SizeType id, StrView name)
 {
 	_id			= id;
+	#if RDS_DEBUG
 	_debug.name	= name;
+	#endif
 }
 
 const char* 

@@ -239,11 +239,12 @@ public:
 		RefCount_Base* obj = nullptr;
 
 	public:
-		//Data* scopedLock() { return this; }	// real WeakBlock, should have a spinLock to protect it
+		Data* scopedULock() { return this; }	// real WeakBlock, should have a spinLock to protect it
 	};
 
 	// real WeakBlock, should have a spinLock to protect it
-	template<class T> using SpinLockProtected = MutexProtected<T>;
+	//template<class T> using SpinLockProtected = MutexProtected<T>;
+	template<class T> using SpinLockProtected = Data;
 
 public:
 	SpinLockProtected<Data> data;

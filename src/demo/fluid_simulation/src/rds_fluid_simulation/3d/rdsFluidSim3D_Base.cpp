@@ -127,7 +127,7 @@ void FluidSim3D_Base::debug_drawSpatialGrid(RenderRequest& rdReq)
 {
 	Color4f color = Color4f(0.2f, 0.6f, 0.2f, 1.0f);
 
-	auto boundingRegionSize = AABBox3T_size(_simConfig.boundingRegion3D);
+	auto boundingRegionSize = _simConfig.boundingRegion3D.size();
 	auto gridCellCount = boundingRegionSize / _simConfig.smoothingRadius;
 	gridCellCount.x = math::ceil(gridCellCount.x);
 	gridCellCount.y = math::ceil(gridCellCount.y);
@@ -135,7 +135,7 @@ void FluidSim3D_Base::debug_drawSpatialGrid(RenderRequest& rdReq)
 
 	auto cellSize = boundingRegionSize / gridCellCount;
 
-	auto minExtent = AABBox3T_center(_simConfig.boundingRegion3D) - boundingRegionSize / 2.0f - cellSize / 2.0f;
+	auto minExtent = _simConfig.boundingRegion3D.center() - boundingRegionSize / 2.0f - cellSize / 2.0f;
 	for (int z = -2; z < gridCellCount.z + 2; z++)
 	{
 		float posZ = minExtent.z + cellSize.z * z;

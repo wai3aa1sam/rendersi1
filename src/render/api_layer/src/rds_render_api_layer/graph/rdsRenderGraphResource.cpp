@@ -64,6 +64,8 @@ RdgResource::isUniqueProducer(RdgPass* producer) const
 
 RdgResourceHnd::~RdgResourceHnd()
 {
+	RDS_PROFILE_SCOPED();
+
 	checkMainThreadExclusive(RDS_SRCLOC);		// if not main exclusive, then no need to use ObjectPool, or thread safe ObjectPool
 
 	if (_weakBlock)
@@ -79,6 +81,8 @@ RdgResourceHnd::~RdgResourceHnd()
 void 
 RdgResourceHnd::reset(RdgResource* rdgRsc, RenderGraph* rdGraph)
 {
+	RDS_PROFILE_SCOPED();
+
 	_rdGraph = rdGraph;
 
 	 if (!rdgRsc)
@@ -104,6 +108,7 @@ RdgResourceHnd::reset(RdgResource* rdgRsc, RenderGraph* rdGraph)
 RdgResource* 
 RdgResourceHnd::get()			
 { 
+	RDS_PROFILE_SCOPED();
 	checkMainThreadExclusive(RDS_SRCLOC);		// if not main exclusive, then no need to use ObjectPool, or thread safe ObjectPool
 	if (!_weakBlock /*|| _rdGraph->isExecuted()*/) 
 		return nullptr; 
@@ -114,6 +119,7 @@ RdgResourceHnd::get()
 RdgResource* 
 RdgResourceHnd::get() const	
 { 
+	RDS_PROFILE_SCOPED();
 	checkMainThreadExclusive(RDS_SRCLOC);		// if not main exclusive, then no need to use ObjectPool, or thread safe ObjectPool
 	if (!_weakBlock /*|| _rdGraph->isExecuted()*/)
 		return nullptr; 

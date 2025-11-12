@@ -144,7 +144,7 @@ FluidSim_ParticleSpawner::_spawnTo_Positions(Vector<Vec2f>& outPositions)
 	outPositions.clear();
 	outPositions.reserve(nParticles);
 
-	auto spawnRegionCenter	= Rect2T_center(spawnRegion);
+	auto spawnRegionCenter	= spawnRegion.center();
 	auto spawnRegionSize	= Vec2f{spawnRegion.size};
 	for (size_t y = 0; y < nParticlesPerAxis.y; y++)
 	{
@@ -183,8 +183,8 @@ FluidSim_ParticleSpawner::_spawnTo_Positions(Vector<Vec3f>& outPositions)
 	outPositions.clear();
 	outPositions.reserve(nParticles);
 
-	auto spawnRegionCenter	= AABBox3T_center(spawnRegion3D);
-	auto spawnRegionSize	= AABBox3T_halfSize(spawnRegion3D);
+	auto spawnRegionCenter	= spawnRegion3D.center();
+	auto spawnRegionSize	= spawnRegion3D.halfSize();
 
 	for (size_t x = 0; x < nParticlesPerAxis.x; x++)
 	{

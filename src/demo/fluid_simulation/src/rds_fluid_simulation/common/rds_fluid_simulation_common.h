@@ -10,13 +10,6 @@
 namespace rds
 {
 
-
-template<class T> inline Vec2<T>	Rect2T_center(		const Rect2<T>& v)		{ return Vec2<T>{ v.pos } + Vec2<T>{ v.size } / sCast<T>(2.0); }
-template<class T> inline Vec3<T>	AABBox3T_center(	const AABBox3<T>& v)	{ return (Vec3<T>{ v.max } + Vec3<T>{ v.min }) / sCast<T>(2.0); }
-template<class T> inline Vec3<T>	AABBox3T_size(		const AABBox3<T>& v)	{ return (Vec3<T>{ v.max } - Vec3<T>{ v.min }); }
-template<class T> inline Vec3<T>	AABBox3T_halfSize(	const AABBox3<T>& v)	{ return AABBox3T_size(v) / sCast<T>(2.0); }
-template<class T> inline Rect2<T>	AABBox3T_toRect2(const AABBox3<T>& v)		{ Rect2<T> o; o.set(v.min.toVec2(), AABBox3T_size(v).toVec2()); return o; }
-
 #if 0
 #pragma mark --- rdsMaterialPool-Decl ---
 #endif // 0

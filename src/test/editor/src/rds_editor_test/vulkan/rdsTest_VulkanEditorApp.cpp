@@ -403,7 +403,7 @@ public:
 		auto* mainWnd	= VulkanEditorApp::instance()->mainWin();
 		auto& rdCtx		= mainWnd->renderContext();
 
-		#if 1
+		#if 0
 		{
 			RDS_PROFILE_SECTION("wait frame");
 			throwIf(true, "legacy");
