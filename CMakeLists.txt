@@ -28,6 +28,7 @@ set(JobSystem_kMaxFrameInFlight   4)
 find_package(fmt                    CONFIG REQUIRED)
 find_package(benchmark              CONFIG REQUIRED)
 find_package(imgui                  CONFIG REQUIRED)
+find_package(imguizmo               CONFIG REQUIRED)
 find_package(assimp                 CONFIG REQUIRED)
 
 # --- vulkan

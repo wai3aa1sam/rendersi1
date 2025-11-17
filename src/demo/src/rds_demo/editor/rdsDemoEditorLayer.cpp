@@ -345,6 +345,7 @@ DemoEditorLayer::drawUI(RenderContext* rdCtx, RenderJob* rdJob)
 {
 	auto& rdUiCtx = rdCtx->renderdUiContex();
 	rdUiCtx.onBeginRender(rdCtx);
+
 	{
 		auto uiDrawReq = editorContext().makeUiDrawRequest(nullptr);
 		{
@@ -354,6 +355,9 @@ DemoEditorLayer::drawUI(RenderContext* rdCtx, RenderJob* rdJob)
 
 			_gfxDemo->onDrawGui(uiDrawReq);
 		}
+
+
+		//ImGuizmo::
 
 		bool isDrawUi		= !_isFullScreen;
 		bool isDrawToScreen = true;

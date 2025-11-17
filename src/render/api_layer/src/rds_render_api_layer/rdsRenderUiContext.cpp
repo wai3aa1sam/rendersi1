@@ -2,7 +2,9 @@
 #include "rdsRenderUiContext.h"
 #include "rdsRenderContext.h"
 #include "command/rdsRenderRequest.h"
-#include "rdsRenderer.h"
+#include "rdsRenderDevice.h"
+
+#include "ImGuizmo.h"
 
 namespace rds
 {
@@ -23,6 +25,8 @@ RenderUiContext::create(RenderContext* renderContext)
 	if (!IMGUI_CHECKVERSION()) RDS_THROW("ImGui version error");
 	_ctx = ImGui::CreateContext();
 	if (!_ctx) RDS_THROW("ImGui error create context");
+
+	ImGuizmo::SetImGuiContext(_ctx);
 
 	_rdCtx			= renderContext;
 	_vertexLayout	= Vertex::vertexLayout();
@@ -104,6 +108,7 @@ RenderUiContext::onBeginRender(RenderContext* renderContext)
 	io.DeltaTime = 1.0f / 60.0f;
 
 	ImGui::NewFrame();
+	ImGuizmo::BeginFrame();
 }
 
 void

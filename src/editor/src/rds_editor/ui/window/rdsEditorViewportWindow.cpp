@@ -5,6 +5,7 @@
 #include "../property/rdsEditorPropertyDrawer.h"
 #include "../property/rdsEditorPropertyDrawRequest.h"
 
+#include "ImGuizmo.h"
 
 namespace rds
 {
@@ -33,6 +34,28 @@ EditorViewportWindow::draw(EditorUiDrawRequest* edtDrawReq, Texture2D* tex, bool
 	{
 		_camCtrl.update(camera, dt, mouseEv, uiInput);
 	}
+
+
+	//ImGuizmo::ViewManipulate();
+
+	ImGuizmo::Enable(true);
+	ImGuizmo::SetOrthographic(false);
+	ImGuizmo::SetDrawlist();
+
+	auto rect = this->clientRect();
+	ImGuizmo::SetRect(rect.x, rect.y, rect.w, rect.h);
+
+	const auto& cam = *camera;
+	auto mat_view = cam.viewMatrix();
+	auto mat_proj = cam.projMatrix();
+	
+	auto axisSize = 128.0f;
+	
+	ImGuizmo::DrawGrid(mat_view.toData(), mat_proj.toData(), Mat4f::s_identity().toData(), 32.0f);
+	ImGuizmo::ViewManipulate(mat_view.toData(), 10.0, ImVec2{ rect.xMax() - axisSize, rect.y}, ImVec2{axisSize, axisSize}, ImGui::GetColorU32(ImVec4{1.0, 1.0, 1.0, 0.0}));
+	
+	// cam.setViewMatrix(mat_view);
+	//ImGuizmo::Manipulate(mat_view.toData(), mat_proj.toData(), ImGuizmo::OPERATION::ROTATE_SCREEN, ImGuizmo::MODE::WORLD, Mat4f::s_identity().toData());
 }
 
 
