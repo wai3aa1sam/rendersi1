@@ -5,23 +5,7 @@
 namespace rds
 {
 
-struct RenderDevice_CreateDesc
-{
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	RenderDevice_CreateDesc();
-
-public:
-	RenderAdapterInfo_Base info;
-
-public:
-	bool isShaderCompileMode() const;
-};
-
-struct Renderer_CreateDesc : public RenderDevice_CreateDesc
-{
-	SizeType		gpuCount				= 1;
-};
+class RenderDevice;
 
 #if 0
 #pragma mark --- rdsRenderer-Decl ---

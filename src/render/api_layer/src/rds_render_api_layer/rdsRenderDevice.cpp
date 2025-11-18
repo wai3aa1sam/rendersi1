@@ -5,6 +5,8 @@
 
 #include "rdsRenderer.h"
 
+#include "vertex/rdsVertexLayoutManager.h"
+
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
 #include "rds_render_api_layer/thread/rdsRenderJob.h"
 #include "rds_render_api_layer/rdsRenderContext.h"
@@ -66,7 +68,7 @@ RenderDevice::create(const CreateDesc& cDesc)
 {
 	_adapterInfo.create(cDesc.info);
 
-	_rdDev	 = this;
+	_vertexLayoutManager = makeUPtr<VertexLayoutManager>();
 
 	onCreate(cDesc);
 
@@ -93,6 +95,12 @@ RenderDevice::create(const CreateDesc& cDesc)
 }
 
 void 
+RenderDevice::destroy()
+{
+	onDestroy();
+}
+
+void 
 RenderDevice::onCreate(const CreateDesc& cDesc)
 {
 
@@ -101,9 +109,6 @@ RenderDevice::onCreate(const CreateDesc& cDesc)
 void 
 RenderDevice::onDestroy()
 {
-	if (!hasCreated())
-		return;
-
 	_shaderStock.destroy();
 	_textureStock.destroy();
 
@@ -137,8 +142,6 @@ RenderDevice::onDestroy()
 	RDS_CORE_ASSERT(!_tsfCtx,				"forgot to call destroy() _tsfCtx");
 	//RDS_CORE_ASSERT(_rdFrames.is_empty(),	"forgot to clear RenderFrame in derived class");
 	//RDS_CORE_ASSERT(_tsfFrames.is_empty(),	"forgot to clear TransferFrame in derived class");
-
-	Base::onDestroy();
 }
 
 UPtr<RenderJob> 
@@ -314,6 +317,16 @@ RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 	return p;
 }
 
+
+SPtr<RenderGpuMultiBuffer> 
+RenderDevice::createRenderGpuMultiBuffer(RenderGpuBuffer_CreateDesc& cDesc)
+{
+	auto p = makeSPtr<RenderGpuMultiBuffer>();
+	cDesc._internal_create(this);
+	p->create(cDesc);
+	return p;
+}
+
 SPtr<Texture>
 RenderDevice::createTexture(Texture_CreateDesc& cDesc)
 {
@@ -378,7 +391,7 @@ RenderDevice::createShader(const Shader_CreateDesc& cDesc)
 	auto p = onCreateShader(cDesc);
 	p->create(cDesc);
 
-	ss.appendUnqiueShader(cDesc);
+	ss.appendUnqiueShader(p);
 	return p;
 }
 

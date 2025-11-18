@@ -38,11 +38,6 @@ public:
 	virtual void setupMaterial(	Material*	oMtl) override;
 
 	void setupDrawParam(DrawParam*	oDrawParam);
-
-	SPtr<Material>& lineMaterial() const;
-
-public:
-	SPtr<Material> _mtlLine;
 };
 
 #endif

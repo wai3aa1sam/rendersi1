@@ -189,6 +189,7 @@ PbrIbl::onExecuteRender(RenderPassPipeline* renderPassPipeline)
 	addSkyboxPass(rdGraph, drawData, _rpfPbrIblResult.cubeEnvMap, rtColor, dsBuf);
 	addPostProcessingPass(rdGraph, drawData, &rtColor);
 	//addDrawLightOutlinePass(rdGraph, drawData, rtColor, drawData->mtlLine());
+	addDisplayAABBoxPass(rdGraph, drawData, rtColor, {});
 
 	drawData->oTexPresent = rtColor;
 }

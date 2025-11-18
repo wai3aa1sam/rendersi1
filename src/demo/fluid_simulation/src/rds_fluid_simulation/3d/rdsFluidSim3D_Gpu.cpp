@@ -241,7 +241,7 @@ FluidSim3D_Gpu::addPass_renderFluidSim3D(CachedSimArgs& cachedSimArgs, const Con
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
+			rdReq.reset(rdGraph->renderContext(), drawData);
 
 			auto* clearValue = rdReq.clearFramebuffers();
 			clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });

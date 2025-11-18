@@ -2,6 +2,7 @@
 #include "rdsMaterial.h"
 #include "rdsShader.h"
 #include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/rdsRenderDevice.h"
 
 namespace rds
 {

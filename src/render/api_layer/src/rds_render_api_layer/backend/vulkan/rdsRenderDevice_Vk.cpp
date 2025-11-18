@@ -350,6 +350,7 @@ RenderDevice_Vk::loadVkDevFn(Vk_ExtensionInfo& vkExtInfo)
 void 
 RenderDevice_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 {
+	#if 0
 	auto& name = cmd->name;
 
 	Base::onRenderResouce_SetDebugName(cmd);
@@ -361,6 +362,7 @@ RenderDevice_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
 	}
 	RDS_VK_SET_DEBUG_NAME(_vkPhysicalDevice, name);
 	RDS_VK_SET_DEBUG_NAME(_vkDevice, name);
+	#endif // 0
 }
 
 void 

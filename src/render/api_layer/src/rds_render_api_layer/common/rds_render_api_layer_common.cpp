@@ -1,5 +1,7 @@
 #include "rds_render_api_layer-pch.h"
 #include "rds_render_api_layer_common.h"
+
+#include "rds_render_api_layer/rdsRenderer.h"
 #include "rds_render_api_layer/rdsRenderDevice.h"
 
 namespace rds

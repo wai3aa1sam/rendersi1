@@ -2,7 +2,8 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rdsRenderCommand.h"
-#include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+#include "rdsInlineDraw.h"
+#include "rdsDrawSettings.h"
 
 /*
 	references:
@@ -41,11 +42,11 @@ class RenderRequest : public NonCopyable
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	using LineVtxType = Vertex_PosColor<1>;
-	using LineIdxType = u16;
-
-	using QuadVtxT = Vertex_PosColorUvNormal<1>;
-	using QuadIdxT = u16;
+	using InlineDraw = InlineDraw;
+	using LineVtxT = InlineDraw::LineVtxT;
+	using LineIdxT = InlineDraw::LineIdxT;
+	using QuadVtxT = InlineDraw::QuadVtxT;
+	using QuadIdxT = InlineDraw::QuadIdxT;
 
 public:
 	//static void drawMesh	(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderMesh& rdMesh, const Mat4f& transform = Mat4f::s_identity());
@@ -56,10 +57,6 @@ public:
 	template<class T> static T ceilingDvision(T x, T n) { return (x + n - 1) / n; }
 
 public:
-	SPtr<Material> lineMaterial;
-	SPtr<Material> circleMaterial;
-
-public:
 	RenderRequest();
 	~RenderRequest();
 
@@ -67,7 +64,6 @@ public:
 	void operator=	(const RenderRequest& rhs) { throwIf(true, ""); }
 
 public:
-	void reset(RenderContext* rdCtx, DrawData_Base* drawData, Material* lineMaterial_);
 	void reset(RenderContext* rdCtx, DrawData_Base* drawData);
 	void reset(RenderContext* rdCtx);
 
@@ -121,8 +117,8 @@ public:
 	
 public:
 	void drawLine(const Vec3f& pt0, const Vec3f& pt1, const Color4f& color = Color4f(1.0f, 0.0f,  1.0f, 1.0f));
-	void drawLine(LineVtxType pt0, LineVtxType pt1);
-	void drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices);
+	void drawLine(const LineVtxT& pt0, const LineVtxT& pt1);
+	void drawLines(Span<LineVtxT> pts, Span<LineIdxT> indices);
 
 	void drawFrustum(const Frustum3f& frustum, const Color4b& color);
 	void drawFrustum(const Frustum3f& frustum, const Color4f& color);
@@ -139,6 +135,9 @@ public:
 
 	void drawSceneQuad(RDS_RD_CMD_DEBUG_PARAM, Material* mtl);
 
+private:
+	void _drawQuad(InlineDraw& inlineDraw, const QuadVtxT& topLeft, const QuadVtxT& topRight, const QuadVtxT& botLeft, const QuadVtxT& botRight);
+public:
 	void drawCircle(const Vec2f& pos, float radius, const Color4f& color = Color4f(0.0f, 0.0f, 1.0f, 1.0f));
 	void drawQuad(const QuadVtxT& topLeft, const QuadVtxT& topRight, const QuadVtxT& botLeft, const QuadVtxT& botRight);
 
@@ -152,6 +151,8 @@ public:
 	Span<RenderCommand*>			commands();
 			RenderCommandBuffer&	commandBuffer();
 	const	RenderCommandBuffer&	commandBuffer() const;
+
+	DrawData_Base*					drawData();
 
 public:
 	RenderCommand_SwapBuffers*	swapBuffers();
@@ -178,32 +179,15 @@ public:
 	void _internal_commit();
 
 private:
-	RenderContext*		_rdCtx = nullptr;
+	RenderContext*		_rdCtx		= nullptr;
+	DrawData_Base*		_drawData	= nullptr;
 	RenderCommandBuffer _rdCmdBuf;		// render frame
 	//Vector<RenderCommandBuffer, s_kThreadCount>	_RenderCommandBuffers;
 
 private:
-	struct InlineDraw 
-	{
-		Vector<u8>	vertexData;
-		Vector<u8>	indexData;
-		SPtr<RenderGpuBuffer> vertexBuffer;
-		SPtr<RenderGpuBuffer> indexBuffer;
-
-		void reset(RenderContext* rdCtx);
-		void uploadToGpu(RenderContext* rdCtx);
-	private:
-		void _uploadToGpu(SPtr<RenderGpuBuffer>& buf, const Vector<u8>& data, RenderGpuBufferTypeFlags type, RenderContext* rdCtx);
-
-	public:
-		/*
-		* TODO: draw lines can batch drawCall
-		*/
-		Vector<RenderCommand_DrawCall*, 64> _drawCalls;
-	};
-
-	InlineDraw	_inlineDraw;
-	InlineDraw	_inlineDrawCircle;
+	InlineDraw	_inlineDraw_line;
+	InlineDraw	_inlineDraw_quad;
+	InlineDraw	_inlineDraw_circle;
 };
 
 #if 1
@@ -254,6 +238,7 @@ inline void							RenderRequest::setViewportReverse	(const Rect2f& rect)						{ 
 
 inline RenderContext*				RenderRequest::renderContext()								{ return _rdCtx; }
 inline Span<RenderCommand*>			RenderRequest::commands()									{ return _rdCmdBuf.commands(); }
+inline DrawData_Base*				RenderRequest::drawData()									{ return _drawData; }
 
 inline			RenderCommandBuffer&	RenderRequest::commandBuffer()							{ return _rdCmdBuf; }
 inline const	RenderCommandBuffer&	RenderRequest::commandBuffer() const					{ return _rdCmdBuf; }

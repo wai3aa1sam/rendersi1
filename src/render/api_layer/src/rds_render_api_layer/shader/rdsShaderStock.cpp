@@ -26,6 +26,9 @@ void
 ShaderStock::create(RenderDevice* rdDev)
 {
 	_rdDev = rdDev;
+
+	rdDev->createShader("asset/shader/line.shader");
+	rdDev->createShader("asset/shader/circle.shader");
 }
 
 void 
@@ -141,17 +144,22 @@ ShaderStock::removeShader(Shader* shader)
 }
 
 SPtr<Shader> 
-ShaderStock::appendUnqiueShader(const Shader_CreateDesc& cDesc)
+ShaderStock::appendUnqiueShader(Shader* shader)
 {
-	SPtr<Shader> p = findShader(cDesc);
+	StrView filename = shader->filename();
+	Shader* p = findShader(filename);
 	if (p)
-		return p;
+	{
+		RDS_CORE_ASSERT(p == shader, "found but not same shader?");
+		return shader;
+	}
 
-	StrView filename = cDesc.filename;
+	p = shader;
+
 	auto& shaders = _shadersTable[filename];
 	shaders.emplace_back(p);
 
-	bool hasPermuts = cDesc.permuts;
+	bool hasPermuts = shader->permutations().isEmpty();
 	if (!hasPermuts)
 	{
 		_mtlsTable[p];
@@ -241,5 +249,19 @@ ShaderStock::getMaterials(Shader* shader)
 }
 
 #endif
+
+#if 0
+#pragma mark --- rdsShaderStock-Impl ---
+#endif // 0
+#if 1
+
+#define RDS_SHADER_PATH ""
+
+SPtr<Shader> ShaderStock::lineShader()		{ return findShader("asset/shader/line.shader"); }
+SPtr<Shader> ShaderStock::quadShader()		{ return findShader("asset/shader/circle.shader"); }
+SPtr<Shader> ShaderStock::circleShader()	{ return findShader("asset/shader/circle.shader"); }
+
+#endif // 1
+
 
 }

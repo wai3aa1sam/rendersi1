@@ -3,6 +3,7 @@
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
 #include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/rdsRenderDevice.h"
 
 namespace rds
 {

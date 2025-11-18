@@ -2,19 +2,11 @@
 #include "rdsRenderGpuMultiBuffer.h"
 
 #include "../rdsRenderer.h"
+#include "../rdsRenderDevice.h"
 #include "../transfer/command/rdsTransferRequest.h"
 
 namespace rds
 {
-
-SPtr<RenderGpuMultiBuffer> 
-RenderDevice::createRenderGpuMultiBuffer(RenderGpuBuffer_CreateDesc& cDesc)
-{
-	auto p = makeSPtr<RenderGpuMultiBuffer>();
-	cDesc._internal_create(this);
-	p->create(cDesc);
-	return p;
-}
 
 #if 0
 #pragma mark --- rdsRenderGpuMultiBuffer-Impl ---

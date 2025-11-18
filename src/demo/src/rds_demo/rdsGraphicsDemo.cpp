@@ -351,8 +351,8 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
-			auto mtl = material ? material :drawData->lineMaterial();	RDS_UNUSED(mtl);
+			rdReq.reset(rdGraph->renderContext(), drawData);
+			auto mtl = material;	RDS_UNUSED(mtl);
 			mtl->setParam("rds_matrix_vp", drawData->camera->viewProjMatrix());
 
 			{
@@ -365,11 +365,11 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 					auto posWs		= transform.localPosition();
 					auto dirWs		= transform.forward().normalize();
 
-					RenderRequest::LineVtxType v0;
+					RenderRequest::LineVtxT v0;
 					v0.position		= posWs;
 					v0.colors[0]	= Color4b{255, 0, 0, 255};
 
-					RenderRequest::LineVtxType v1;
+					RenderRequest::LineVtxT v1;
 					v1.position		= posWs + dirWs * (light->lightType() == LightType::Directional ? 10 : light->range());
 					v1.colors[0]	= Color4b{0, 255, 0, 255};
 
@@ -378,11 +378,11 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 			}
 
 			{
-				RenderRequest::LineVtxType v0;
+				RenderRequest::LineVtxT v0;
 				v0.position		= Tuple3f{0.0, 0.0, 0.0};
 				v0.colors[0]	= Color4b{255, 0, 0, 255};
 
-				RenderRequest::LineVtxType v1;
+				RenderRequest::LineVtxT v1;
 				v1.position		= Tuple3f{10.0, 0.0, 0.0};
 				v1.colors[0]	= Color4b{255, 0, 0, 255};
 
@@ -390,22 +390,22 @@ GraphicsDemo::addDrawLightOutlinePass(RenderGraph* oRdGraph, DrawData* drawData,
 }
 
 			{
-				RenderRequest::LineVtxType v0;
+				RenderRequest::LineVtxT v0;
 				v0.position		= Tuple3f{0.0, 0.0, 0.0};
 				v0.colors[0]	= Color4b{255, 0, 0, 255};
 
-				RenderRequest::LineVtxType v1;
+				RenderRequest::LineVtxT v1;
 				v1.position		= Tuple3f{0.0, 10.0, 0.0};
 				v1.colors[0]	= Color4b{255, 0, 0, 255};
 
 				rdReq.drawLine(v0, v1);
 			}
 			{
-				RenderRequest::LineVtxType v0;
+				RenderRequest::LineVtxT v0;
 				v0.position		= Tuple3f{0.0, 0.0, 0.0};
 				v0.colors[0]	= Color4b{255, 0, 0, 255};
 
-				RenderRequest::LineVtxType v1;
+				RenderRequest::LineVtxT v1;
 				v1.position		= Tuple3f{0.0, 0.0, 10.0};
 				v1.colors[0]	= Color4b{255, 0, 0, 255};
 
@@ -447,7 +447,7 @@ GraphicsDemo::addDisplayAABBoxPass(RenderGraph* oRdGraph, DrawData* drawData, Rd
 		pass.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
+				rdReq.reset(rdGraph->renderContext(), drawData);
 
 				#if 0
 				if (drawSettings.cullingSetting.mode == CullingMode::CameraFustrum)
@@ -497,11 +497,11 @@ addDrawLineTest()
 				auto mtl = drawData->mtlLine();	RDS_UNUSED(mtl);
 				mtl->setParam("rds_matrix_vp", drawData->camera->viewProjMatrix());
 				{
-					RenderRequest::LineVtxType v0;
+					RenderRequest::LineVtxT v0;
 					v0.position		= Tuple3f{0.0, 0.0, 0.0};
 					v0.colors[0]	= Color4b{255, 0, 0, 255};
 
-					RenderRequest::LineVtxType v1;
+					RenderRequest::LineVtxT v1;
 					v1.position		= Tuple3f{10.0, 0.0, 0.0};
 					v1.colors[0]	= Color4b{255, 0, 0, 255};
 
@@ -509,22 +509,22 @@ addDrawLineTest()
 				}
 
 				{
-					RenderRequest::LineVtxType v0;
+					RenderRequest::LineVtxT v0;
 					v0.position		= Tuple3f{0.0, 0.0, 0.0};
 					v0.colors[0]	= Color4b{255, 0, 0, 255};
 
-					RenderRequest::LineVtxType v1;
+					RenderRequest::LineVtxT v1;
 					v1.position		= Tuple3f{0.0, 10.0, 0.0};
 					v1.colors[0]	= Color4b{255, 0, 0, 255};
 
 					rdReq.drawLine(v0, v1, mtl);
 				}
 				{
-					RenderRequest::LineVtxType v0;
+					RenderRequest::LineVtxT v0;
 					v0.position		= Tuple3f{0.0, 0.0, 0.0};
 					v0.colors[0]	= Color4b{255, 0, 0, 255};
 
-					RenderRequest::LineVtxType v1;
+					RenderRequest::LineVtxT v1;
 					v1.position		= Tuple3f{0.0, 0.0, 10.0};
 					v1.colors[0]	= Color4b{255, 0, 0, 255};
 

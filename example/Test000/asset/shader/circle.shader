@@ -34,7 +34,7 @@ struct VertexIn
     float4 positionOS  			: SV_POSITION;
 	float4 color 				: COLOR;
     float2 uv           		: TEXCOORD0;
-    float3 centerAndRadius      : NORMAL0;		// useless, delete later
+    //float3 centerAndRadius      : NORMAL0;		// useless, delete later
     //float2 fadeAndThickness     : TEXCOORD2;
 };
 
@@ -43,14 +43,15 @@ struct PixelIn
 	float4 positionHCS  : SV_POSITION;
 	float4 color 		: COLOR;
     float2 uv           : TEXCOORD0;
-	float  radius		: TEXCOORD1;
-	float2 posOs		: TEXCOORD2;
-
+	//float  radius		: TEXCOORD1;
+	//float2 posOs		: TEXCOORD2;
 };
 
 //RDS_TEXTURE_2D(texture0);
 //float 	raduis;
 //float2 	center;
+
+float4x4 mat_vp;
 
 PixelIn vs_main(VertexIn i)
 {
@@ -58,8 +59,8 @@ PixelIn vs_main(VertexIn i)
 	o.positionHCS = mul(RDS_MATRIX_VP, i.positionOS);
 	o.color		  = i.color;
     o.uv          = i.uv;
-	o.radius	  = i.centerAndRadius.z;
-	o.posOs	  	  = i.positionOS.xy;
+	//o.radius	  = i.centerAndRadius.z;
+	//o.posOs	  	  = i.positionOS.xy;
     return o;
 }
 

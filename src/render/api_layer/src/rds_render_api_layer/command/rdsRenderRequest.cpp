@@ -25,16 +25,10 @@ RenderRequest::~RenderRequest()
 }
 
 void 
-RenderRequest::reset(RenderContext* rdCtx, DrawData_Base* drawData, Material* lineMaterial_)
-{
-	reset(rdCtx);
-	lineMaterial = lineMaterial_;
-}
-
-void 
 RenderRequest::reset(RenderContext* rdCtx, DrawData_Base* drawData)
 {
 	reset(rdCtx);
+	_drawData = drawData;
 }
 
 void 
@@ -48,8 +42,9 @@ RenderRequest::reset(RenderContext* rdCtx)
 		_rdCmdBuf.setScissorRect(	Rect2f{ Vec2f::s_zero(), _rdCtx->swapchainSize()}); 
 	}
 
-	_inlineDraw.reset(rdCtx);
-	_inlineDrawCircle.reset(rdCtx);
+	_inlineDraw_line.reset(rdCtx,	InlineDraw::Type::Line);
+	_inlineDraw_quad.reset(rdCtx,	InlineDraw::Type::Quad);
+	_inlineDraw_circle.reset(rdCtx,	InlineDraw::Type::Circle);
 }
 
 void 
@@ -65,8 +60,9 @@ RenderRequest::_internal_commit()
 void 
 RenderRequest::uploadToGpu()
 {
-	_inlineDraw.uploadToGpu(_rdCtx);
-	_inlineDrawCircle.uploadToGpu(_rdCtx);
+	_inlineDraw_line.uploadToGpu(	this);
+	_inlineDraw_quad.uploadToGpu(	this);
+	_inlineDraw_circle.uploadToGpu(	this);
 }
 
 void 
@@ -284,11 +280,11 @@ RenderRequest::drawLine(const Vec3f& pt0, const Vec3f& pt1, const Color4f& color
 {
 	auto c = color.toColorRGBAb();
 
-	LineVtxType v0;
+	LineVtxT v0;
 	v0.position		= pt0;
 	v0.colors[0]	= c;
 
-	LineVtxType v1;
+	LineVtxT v1;
 	v1.position		= pt1;
 	v1.colors[0]	= c;
 
@@ -296,13 +292,13 @@ RenderRequest::drawLine(const Vec3f& pt0, const Vec3f& pt1, const Color4f& color
 }
 
 void
-RenderRequest::drawLine(LineVtxType pt0, LineVtxType pt1)
+RenderRequest::drawLine(const LineVtxT& pt0, const LineVtxT& pt1)
 {
-	Vector<LineVtxType, 2> pts;
+	Vector<LineVtxT, 2> pts;
 	pts.emplace_back(pt0);
 	pts.emplace_back(pt1);
 
-	Vector<LineIdxType, 2> indices;
+	Vector<LineIdxT, 2> indices;
 	indices.emplace_back(0);
 	indices.emplace_back(1);
 
@@ -310,34 +306,22 @@ RenderRequest::drawLine(LineVtxType pt0, LineVtxType pt1)
 }
 
 void 
-RenderRequest::drawLines(Span<LineVtxType> pts, Span<LineIdxType> indices)
+RenderRequest::drawLines(Span<LineVtxT> pts, Span<LineIdxT> indices)
 {
-	RDS_CORE_ASSERT(lineMaterial, "lineMaterial is nullptr");
-
 	if (indices.size() <= 0) 
 		return;
 
 	RDS_TODO("this should be optimized, use one draw call for all lines only");
 	//RDS_CORE_ASSERT(mtlLine->shader() == _rdCtx->renderDevice()->shaderStock().shaderLine, "material is not with a line shader, use DrawParam::materialLine()");
 
-	auto* cmd = addDrawCall();
+	auto vtxCount = sCast<LineIdxT>(_inlineDraw_line.vertexCount());
+	for (auto& e : indices)
+	{
+		e = vtxCount + e;
+	}
 
-	cmd->vertexOffset = _inlineDraw.vertexData.size();
-	cmd->indexOffset  = _inlineDraw.indexData.size();
-
-	_inlineDraw.vertexData.appendRange(spanCast<const u8>(pts));
-	_inlineDraw.indexData.appendRange( spanCast<const u8>(indices));
-
-	cmd->setMaterial(lineMaterial);
-	cmd->renderPrimitiveType	= RenderPrimitiveType::Line;
-	cmd->vertexLayout			= LineVtxType::vertexLayout();
-	cmd->indexType				= RenderDataTypeUtil::get<LineIdxType>();
-	//cmd->vertexBuffer			= _inlineDraw.vertexBuffer;
-	//cmd->indexBuffer			= _inlineDraw.indexBuffer;
-	cmd->vertexCount			= pts.size();
-	cmd->indexCount				= indices.size();
-
-	_inlineDraw._drawCalls.emplace_back(cmd);
+	_inlineDraw_line.vertexData.appendRange(spanCast<const u8>(pts));
+	_inlineDraw_line.indexData.appendRange( spanCast<const u8>(indices));
 }
 
 void 
@@ -447,6 +431,27 @@ RenderRequest::drawSceneQuad(RDS_RD_CMD_DEBUG_PARAM, Material* mtl)
 }
 
 void 
+RenderRequest::_drawQuad(InlineDraw& inlineDraw, const QuadVtxT& topLeft, const QuadVtxT& topRight, const QuadVtxT& botLeft, const QuadVtxT& botRight)
+{
+	Vector<QuadVtxT, 4> vtxs;
+	vtxs.emplace_back(topLeft);
+	vtxs.emplace_back(topRight);
+	vtxs.emplace_back(botLeft);
+	vtxs.emplace_back(botRight);
+
+	auto vtxCount = sCast<LineIdxT>(inlineDraw.vertexCount());
+	Vector<QuadIdxT, 6> idxs;
+	idxs.emplace_back(vtxCount + 0); idxs.emplace_back(vtxCount + 2); idxs.emplace_back(vtxCount + 1);
+	idxs.emplace_back(vtxCount + 3); idxs.emplace_back(vtxCount + 1); idxs.emplace_back(vtxCount + 2);
+
+	if (idxs.size() <= 0) 
+		return;
+
+	inlineDraw.vertexData.appendRange(spanCast<const u8>(vtxs.span()));
+	inlineDraw.indexData.appendRange( spanCast<const u8>(idxs.span()));
+}
+
+void 
 RenderRequest::drawCircle(const Vec2f& pos, float radius, const Color4f& color)
 {
 	auto c = color.toColorRGBAb();
@@ -454,53 +459,18 @@ RenderRequest::drawCircle(const Vec2f& pos, float radius, const Color4f& color)
 
 	Vector<QuadVtxT, 4> vtxs;
 	vtxs.resize(4);
-	vtxs[0].position = Vec3f{pos + Vec2f{ -size, +size }, 0.0f}; vtxs[0].colors[0] = c; vtxs[0].uvs[0] = Vec2f{0.0, 0.0}; vtxs[0].normals[0] = Vec3f{pos, radius};
-	vtxs[1].position = Vec3f{pos + Vec2f{ +size, +size }, 0.0f}; vtxs[1].colors[0] = c; vtxs[1].uvs[0] = Vec2f{1.0, 0.0}; vtxs[1].normals[0] = Vec3f{pos, radius};
-	vtxs[2].position = Vec3f{pos + Vec2f{ -size, -size }, 0.0f}; vtxs[2].colors[0] = c; vtxs[2].uvs[0] = Vec2f{0.0, 1.0}; vtxs[2].normals[0] = Vec3f{pos, radius};
-	vtxs[3].position = Vec3f{pos + Vec2f{ +size, -size }, 0.0f}; vtxs[3].colors[0] = c; vtxs[3].uvs[0] = Vec2f{1.0, 1.0}; vtxs[3].normals[0] = Vec3f{pos, radius};
+	vtxs[0].position = Vec3f{pos + Vec2f{ -size, +size }, 0.0f}; vtxs[0].colors[0] = c; vtxs[0].uvs[0] = Vec2f{0.0, 0.0}; // vtxs[0].normals[0] = Vec3f{pos, radius};
+	vtxs[1].position = Vec3f{pos + Vec2f{ +size, +size }, 0.0f}; vtxs[1].colors[0] = c; vtxs[1].uvs[0] = Vec2f{1.0, 0.0}; // vtxs[1].normals[0] = Vec3f{pos, radius};
+	vtxs[2].position = Vec3f{pos + Vec2f{ -size, -size }, 0.0f}; vtxs[2].colors[0] = c; vtxs[2].uvs[0] = Vec2f{0.0, 1.0}; // vtxs[2].normals[0] = Vec3f{pos, radius};
+	vtxs[3].position = Vec3f{pos + Vec2f{ +size, -size }, 0.0f}; vtxs[3].colors[0] = c; vtxs[3].uvs[0] = Vec2f{1.0, 1.0}; // vtxs[3].normals[0] = Vec3f{pos, radius};
 
-	drawQuad(vtxs[0], vtxs[1], vtxs[2], vtxs[3]);
+	_drawQuad(_inlineDraw_circle, vtxs[0], vtxs[1], vtxs[2], vtxs[3]);
 }
 
 void 
 RenderRequest::drawQuad(const QuadVtxT& topLeft, const QuadVtxT& topRight, const QuadVtxT& botLeft, const QuadVtxT& botRight)
 {
-	RDS_CORE_ASSERT(circleMaterial, "circleMaterial is nullptr");
-
-	Vector<QuadVtxT, 4> vtxs;
-	vtxs.emplace_back(topLeft);
-	vtxs.emplace_back(topRight);
-	vtxs.emplace_back(botLeft);
-	vtxs.emplace_back(botRight);
-
-	Vector<QuadIdxT, 6> idxs;
-	idxs.emplace_back(0); idxs.emplace_back(2); idxs.emplace_back(1);
-	idxs.emplace_back(3); idxs.emplace_back(1); idxs.emplace_back(2);
-
-	if (idxs.size() <= 0) 
-		return;
-
-	RDS_TODO("this should be optimized, use one draw call for all lines only");
-	//RDS_CORE_ASSERT(mtlLine->shader() == _rdCtx->renderDevice()->shaderStock().shaderLine, "material is not with a line shader, use DrawParam::materialLine()");
-
-	auto* cmd = addDrawCall();
-
-	cmd->vertexOffset = _inlineDrawCircle.vertexData.size();
-	cmd->indexOffset  = _inlineDrawCircle.indexData.size();
-
-	_inlineDrawCircle.vertexData.appendRange(spanCast<const u8>(vtxs.span()));
-	_inlineDrawCircle.indexData.appendRange( spanCast<const u8>(idxs.span()));
-
-	cmd->setMaterial(circleMaterial);
-	cmd->renderPrimitiveType	= RenderPrimitiveType::Triangle;
-	cmd->vertexLayout			= QuadVtxT::vertexLayout();
-	cmd->indexType				= RenderDataTypeUtil::get<QuadIdxT>();
-	//cmd->vertexBuffer			= _inlineDrawCircle.vertexBuffer;
-	//cmd->indexBuffer			= _inlineDrawCircle.indexBuffer;
-	cmd->vertexCount			= vtxs.size();
-	cmd->indexCount				= idxs.size();
-
-	_inlineDrawCircle._drawCalls.emplace_back(cmd);
+	_drawQuad(_inlineDraw_quad, topLeft, topRight, botLeft, botRight);
 }
 
 void 
@@ -587,82 +557,5 @@ RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Materi
 
 #endif
 
-#if 0
-#pragma mark --- rdsRenderRequest::InlineDraw-Impl ---
-#endif // 0
-#if 1
-
-void RenderRequest::InlineDraw::reset(RenderContext* rdCtx)
-{
-	RDS_CORE_ASSERT(vertexData.is_empty() && indexData.is_empty(), "not yet upload line buffer, please upload in update thread");
-
-	/*
-	auto* rdDev = rdCtx->renderDevice();
-	if (!vertexBuffer) 
-	{
-		RenderGpuBuffer::CreateDesc desc;
-		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
-		desc.bufSize	= 16;
-		desc.stride		= sizeof(LineVtxType);
-		vertexBuffer = rdDev->createRenderGpuBuffer(desc);
-	}
-
-	if (!indexBuffer) 
-	{
-		RenderGpuBuffer::CreateDesc desc;
-		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
-		desc.bufSize	= 16;
-		desc.stride		= sizeof(LineIdxType);
-		indexBuffer = rdDev->createRenderGpuBuffer(desc);
-	}*/
-
-	vertexData.clear();
-	indexData.clear();
-	_drawCalls.clear();
-}
-
-void 
-RenderRequest::InlineDraw::uploadToGpu(RenderContext* rdCtx) 
-{
-	if (!rdCtx)
-		return;
-
-	_uploadToGpu(vertexBuffer, vertexData,	RenderGpuBufferTypeFlags::Vertex, rdCtx);
-	_uploadToGpu(indexBuffer,  indexData,	RenderGpuBufferTypeFlags::Index , rdCtx);
-
-	{
-		RDS_TODO("this could be deleted and assign when call draw()");
-		for (auto* cmd : _drawCalls)
-		{
-			cmd->vertexBuffer	= vertexBuffer;
-			cmd->indexBuffer	= indexBuffer;
-		}
-	}
-
-	vertexData.clear();
-	indexData.clear();
-}
-
-void 
-RenderRequest::InlineDraw::_uploadToGpu(SPtr<RenderGpuBuffer>& buf, const Vector<u8>& data, RenderGpuBufferTypeFlags type, RenderContext* rdCtx) 
-{
-	auto*	rdDev	= rdCtx->renderDevice();
-	auto	n		= data.size();
-
-	if (n <= 0) 
-		return;
-	if (!buf || buf->bufSize() < n)
-	{
-		auto newSize = math::nextPow2(n);
-		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
-		cDesc.bufSize	= newSize;
-		cDesc.typeFlags = type;
-		buf = rdDev->createRenderGpuBuffer(cDesc);
-		buf->setDebugName(BitUtil::has(cDesc.typeFlags, RenderGpuBufferTypeFlags::Vertex) ? "draw_line_vtxBuf" : "draw_line_idxBuf");
-	}
-	buf->uploadToGpu(data);
-}
-
-#endif
 
 }

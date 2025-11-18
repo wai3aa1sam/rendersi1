@@ -106,8 +106,6 @@ SceneView::drawSceneAABBox(RenderRequest& rdReq, DrawData* drawData, const DrawS
 
 	auto& rdableSys = renderableSystem();
 
-	auto& mtl = rdReq.lineMaterial;
-	drawData->setupMaterial(mtl);
 	for (auto* e : rdableSys.renderables())
 	{
 		if (e->isRenderableMesh)

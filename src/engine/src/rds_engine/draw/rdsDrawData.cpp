@@ -90,12 +90,6 @@ DrawData::setupMaterial(Material* oMtl)
 	#endif // 0
 }
 
-SPtr<Material>& 
-DrawData::lineMaterial() const
-{
-	return constCast(_mtlLine);
-}
-
 #endif
 
 }

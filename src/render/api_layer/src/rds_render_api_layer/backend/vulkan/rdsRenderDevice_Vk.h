@@ -31,11 +31,11 @@ using Vk_PhysicalDeviceVulkanFeatures = VkPhysicalDeviceVulkan12Features;
 #endif // 0
 #if 1
 
-class RenderDevice_Vk : public RenderResource_Vk<Proxy_RenderDevice>
+class RenderDevice_Vk : public Proxy_RenderDevice // RenderResource_Vk<Proxy_RenderDevice>
 {
 	friend class RenderContext_Vk;
 public:
-	using Base = RenderResource_Vk<Proxy_RenderDevice>;
+	using Base = Proxy_RenderDevice; // RenderResource_Vk<Proxy_RenderDevice>;
 	using Util = Vk_RenderApiUtil;
 
 	using Vk_QueueFamilyProperties = Vector<VkQueueFamilyProperties, QueueFamilyIndices::s_kQueueTypeCount>;
@@ -83,7 +83,7 @@ private:
 	void loadVkDevFn	(Vk_ExtensionInfo& vkExtInfo);
 
 public:
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd);
 
 public:
 	virtual void _internal_waitGpuIdle();

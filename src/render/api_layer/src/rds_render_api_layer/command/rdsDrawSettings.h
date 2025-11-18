@@ -1,11 +1,13 @@
 #pragma once
 
-//#include "rds_engine/common/rds_engine_common.h"
-#include "rds_render/common/rds_render_common.h"
+#include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rdsCullingSettings.h"
 
 namespace rds
 {
+
+class Material;
+class Shader;
 
 #if 0
 #pragma mark --- rdsDrawSettings-Decl ---

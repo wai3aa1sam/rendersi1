@@ -3,7 +3,9 @@
 #include "rdsTexture3D.h"
 #include "rdsTextureCube.h"
 #include "rdsTexture2DArray.h"
+
 #include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/rdsRenderDevice.h"
 
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
 #include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"

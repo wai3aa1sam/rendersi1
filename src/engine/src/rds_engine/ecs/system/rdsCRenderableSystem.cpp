@@ -114,8 +114,6 @@ CRenderableSystem::commit(RenderJob* rdJob, const Scene& scene)
 			}
 
 			transitPresentTexture(rdGraph, &drawData);
-
-			drawData.setupMaterial(drawData._mtlLine);
 		}
 	}
 
@@ -138,8 +136,6 @@ CRenderableSystem::addCamera(math::Camera3f* camera)
 	drawData.renderableSystem	= this;
 	drawData.camera				= camera;
 	drawData.drawParamIdx		= drawParamIdx;
-
-	RenderUtil::createMaterial(&drawData._mtlLine, "asset/shader/line.shader");
 }
 
 void 

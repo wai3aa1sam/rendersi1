@@ -191,7 +191,7 @@ SpatialLut::Debug_renderSpatialLut(FluidSim_ParticleDisplay& ptcDisplay, RdgText
 	pass.setExecuteFunc(
 		[=, &ptcDisplay](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
+			rdReq.reset(rdGraph->renderContext(), drawData);
 			auto* gpuBuf = buf_pos.renderResource();
 			ptcDisplay.debug_draw(rdReq, drawData, gpuBuf, gpuBuf, pos, particleSize, n);
 		}

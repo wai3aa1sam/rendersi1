@@ -178,14 +178,11 @@ FluidSim2D_Gpu::addPass_renderFluidSim2D(CachedSimArgs& cachedSimArgs, const Con
 	pass.setExecuteFunc(
 		[=](RenderRequest& rdReq)
 		{
-			rdReq.reset(rdGraph->renderContext(), drawData, drawData->lineMaterial());
+			rdReq.reset(rdGraph->renderContext(), drawData);
 
 			auto* clearValue = rdReq.clearFramebuffers();
 			clearValue->setClearColor(Color4f{ 0.1f, 0.2f, 0.3f, 1.0f });
 			clearValue->setClearDepth(1.0f);
-
-			drawData->setupMaterial(_parentDemo->mtlDrawCircle);
-			rdReq.circleMaterial = _parentDemo->mtlDrawCircle;
 
 			debug_drawBoundary(rdReq);
 			debug_drawSpatialGrid(rdReq);

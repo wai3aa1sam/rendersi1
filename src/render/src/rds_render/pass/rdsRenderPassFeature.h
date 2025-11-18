@@ -4,8 +4,8 @@
 #include "rds_render_api_layer/graph/rdsRenderGraphPass.h"
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
 
-#include "rdsDrawData_Base.h"
-#include "rds_render/setting/rdsDrawSettings.h"
+#include "rds_render_api_layer/command/rdsDrawData_Base.h"
+#include "rds_render_api_layer/command/rdsDrawSettings.h"
 
 namespace rds
 {

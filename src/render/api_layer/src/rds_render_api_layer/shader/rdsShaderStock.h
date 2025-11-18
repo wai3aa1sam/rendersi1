@@ -16,6 +16,11 @@ class	Material;
 class ShaderStock
 {
 public:
+	SPtr<Shader> lineShader();
+	SPtr<Shader> quadShader();
+	SPtr<Shader> circleShader();
+
+public:
 	/*
 	using a HashedPermutationVectorMap for faster search
 	, hash with its index and value
@@ -50,7 +55,7 @@ public:
 	void removeShader(Shader* shader);
 
 public:
-	SPtr<Shader>	appendUnqiueShader(const Shader_CreateDesc& cDesc);
+	SPtr<Shader>	appendUnqiueShader(Shader* shader);
 	void			appendUniqueMaterial(Material* mtl, Shader* shader);
 	void			removeMaterial(Material* mtl);
 

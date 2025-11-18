@@ -2,9 +2,6 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 
-#include "rdsRenderer.h"
-
-#include "vertex/rdsVertexLayoutManager.h"
 #include "thread/rdsRenderFrame.h"
 #include "thread/rdsRenderFrameParam.h"
 
@@ -24,6 +21,7 @@ namespace rds
 #endif // 0
 #if 1
 
+class	VertexLayoutManager;
 class	RenderGraph;
 
 class	RenderContext;
@@ -58,12 +56,12 @@ struct	TransferFrame_CreateDesc;
 class	BindlessResources;
 struct	BindlessResources_CreateDesc;
 
-class RenderDevice : public RenderResource
+class RenderDevice : public RefCount_Base
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class ShaderStock;
 public:
-	using Base			= RenderResource;
+	using Base			= RefCount_Base;
 	using CreateDesc	= RenderDevice_CreateDesc;
 
 public:
@@ -74,6 +72,7 @@ public:
 	virtual ~RenderDevice();
 
 	void create(const CreateDesc& cDesc);
+	void destroy();
 
 public:
 	class RenderInputFrameParam;
@@ -176,7 +175,7 @@ protected:
 	RenderFrameParam			_rdFrameParam;
 
 	RenderAdapterInfo	_adapterInfo;
-	VertexLayoutManager _vertexLayoutManager;
+	UPtr<VertexLayoutManager> _vertexLayoutManager;
 
 	/*
 	* TODO: rework

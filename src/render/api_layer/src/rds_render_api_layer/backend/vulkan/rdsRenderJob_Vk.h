@@ -6,6 +6,7 @@
 
 #include "rds_render_api_layer/backend/vulkan/rdsVk_Allocator.h"
 #include "rds_render_api_layer/backend/vulkan/rdsVk_RenderFrame.h"
+#include "rds_render_api_layer/backend/vulkan/transfer/rdsTransferFrame_Vk.h"
 
 #if RDS_RENDER_HAS_VULKAN
 

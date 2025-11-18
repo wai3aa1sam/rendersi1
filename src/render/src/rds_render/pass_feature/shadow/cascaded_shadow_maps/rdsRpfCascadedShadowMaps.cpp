@@ -223,7 +223,6 @@ RpfCascadedShadowMaps::addDebugFrustumsPass(Material* mtl_, RdgTextureHnd rtColo
 			[=, param = param](RenderRequest& rdReq)
 			{
 				rdReq.reset(rdGraph->renderContext(), drawData);
-				rdReq.lineMaterial = mtl;
 
 				//auto* clearValue = rdReq.clearFramebuffers();
 				//clearValue->setClearColor();

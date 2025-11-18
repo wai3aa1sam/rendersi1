@@ -2,6 +2,8 @@
 #include "rdsRenderGpuBuffer.h"
 
 #include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/rdsRenderDevice.h"
+
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
 #include "rds_render_api_layer/transfer/command/rds_transfer_command.h"
 

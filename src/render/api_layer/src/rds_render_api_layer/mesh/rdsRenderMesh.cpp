@@ -1,6 +1,8 @@
 #include "rds_render_api_layer-pch.h"
 #include "rdsRenderMesh.h"
+
 #include "rds_render_api_layer/rdsRenderer.h"
+#include "rds_render_api_layer/rdsRenderDevice.h"
 
 namespace rds
 {

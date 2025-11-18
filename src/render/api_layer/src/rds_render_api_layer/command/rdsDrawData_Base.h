@@ -1,12 +1,13 @@
 #pragma once
 
-#include "rds_render/common/rds_render_common.h"
+#include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rds_render_api_layer/graph/rdsRenderGraphResource.h"
 
 namespace rds
 {
 
-struct DrawSettings;
+class	Material;
+struct	DrawSettings;
 
 #if 0
 #pragma mark --- rdsDrawData_Base-Decl ---
