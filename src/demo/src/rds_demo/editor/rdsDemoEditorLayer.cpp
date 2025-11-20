@@ -143,6 +143,7 @@ DemoEditorLayer::onUpdate()
 				drawData.sceneView	= &_sceneView;
 				drawData.meshAssets	= _meshAssets.ptr();
 
+				// class PerFrameData? PerRequestData
 				if (isFirstFrame)
 					_gfxDemo->prepareRender(&rdJob->renderGraph(), &drawData);
 				else

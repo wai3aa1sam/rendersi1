@@ -45,7 +45,6 @@ RenderUiContext::create(RenderContext* renderContext)
 	auto* rdDev = _rdCtx->renderDevice();
 	_shader   = rdDev->createShader("asset/shader/ui/imgui.shader");
 	_material = rdDev->createMaterial(_shader);
-	_showImageFramedMtlPool.resize(RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit);
 
 	_createFontTexture();
 
@@ -92,7 +91,7 @@ RenderUiContext::destroy()
 
 	_rdCtx = nullptr;
 
-	_showImageFramedMtlPool.clear();
+	_showImgMtlPool.destroy();
 }
 
 void
@@ -133,8 +132,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 	int fb_height	= sCast<int>((data->DisplaySize.y * data->FramebufferScale.y));
 	if (fb_width <= 0 || fb_height <= 0) return;
 
-	auto& showImageMtlPool = _showImageFramedMtlPool[renderDevice()->engineFrameIndex()];
-	showImageMtlPool.reset();
+	_showImgMtlPool.reset();
 
 	float L = data->DisplayPos.x;
 	float R = data->DisplayPos.x + data->DisplaySize.x;
@@ -283,7 +281,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 					cmd->vertexBuffer->setDebugName("imgui vtx buf");
 					cmd->indexBuffer ->setDebugName("imgui idx buf");
 
-					initCmd_ShowImage(showImageMtlPool, cmd, srcBuf, mat);
+					initCmd_ShowImage(cmd, srcBuf, mat);
 				}
 			}
 
@@ -433,7 +431,7 @@ RenderUiContext::_setDarkTheme()
 RenderDevice* RenderUiContext::renderDevice() { return _rdCtx->renderDevice(); }
 
 void 
-RenderUiContext::initCmd_ShowImage(MaterialPool& pool, RenderCommand_DrawCall* cmd, ImDrawCmd& srcBuf, Mat4f& mat)
+RenderUiContext::initCmd_ShowImage(RenderCommand_DrawCall* cmd, ImDrawCmd& srcBuf, Mat4f& mat)
 {
 	#if RDS_SHADER_USE_BINDLESS
 
@@ -449,7 +447,7 @@ RenderUiContext::initCmd_ShowImage(MaterialPool& pool, RenderCommand_DrawCall* c
 	#else
 	if (auto texId = srcBuf.GetTexID())
 	{
-		SPtr<Material> mtl = pool.newObject(_shader);
+		SPtr<Material> mtl = _showImgMtlPool.newObject(_shader);
 
 		mtl->setParam("rds_matrix_proj",	mat);
 		mtl->setParam("texture0",			reinCast<Texture*>(texId));
@@ -458,43 +456,6 @@ RenderUiContext::initCmd_ShowImage(MaterialPool& pool, RenderCommand_DrawCall* c
 	}
 
 	#endif // 0
-}
-
-
-SPtr<Material> 
-RenderUiContext::MaterialPool::newObject(Shader* shader)
-{
-	RDS_CORE_ASSERT(shader);
-	auto* rdDev = shader->renderDevice();
-
-	if (!_freedObjs.is_empty())
-	{
-		auto obj = _objs.emplace_back(_freedObjs.moveBack());
-		return obj;
-	}
-	else
-	{
-		auto& newObj = _objs.emplace_back();
-		newObj = rdDev->createMaterial(shader);
-		return newObj;
-	}
-}
-
-void 
-RenderUiContext::MaterialPool::deleteObject(SPtr<Material> obj)
-{
-	RDS_TODO("check object ptr is valid, eg. within the pool");
-	_freedObjs.emplace_back(obj);
-}
-
-void 
-RenderUiContext::MaterialPool::reset()
-{
-	for (auto& e : _objs)
-	{
-		_freedObjs.emplace_back(e);
-	}
-	_objs.clear();
 }
 
 }

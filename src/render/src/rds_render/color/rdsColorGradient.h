@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rds_fluid_simulation/common/rds_fluid_simulation_common.h"
+#include "rds_render/common/rds_render_common.h"
 
 namespace rds
 {

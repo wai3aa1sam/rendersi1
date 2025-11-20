@@ -5,6 +5,7 @@
 #include "buffer/rdsRenderGpuMultiBuffer.h"
 #include "shader/rdsShader.h"
 #include "shader/rdsMaterial.h"
+#include "shader/rdsMaterialPool.h"
 
 #include <imgui.h>
 
@@ -89,24 +90,10 @@ protected:
 	ImGuiContext*	_ctx = nullptr;
 
 private:
-	class MaterialPool
-	{
-	public:
-		SPtr<Material>	newObject(Shader* shader);		// general objectPool should return *
-		void			deleteObject(SPtr<Material> obj);
-
-		void reset();
-
-	private:
-		Vector<SPtr<Material>, 16> _freedObjs;
-		Vector<SPtr<Material>, 16> _objs;
-	};
+	void initCmd_ShowImage(RenderCommand_DrawCall* cmd, ImDrawCmd& srcBuf, Mat4f& mat);
 
 private:
-	void initCmd_ShowImage(MaterialPool& pool, RenderCommand_DrawCall* cmd, ImDrawCmd& srcBuf, Mat4f& mat);
-
-private:
-	FramedT<MaterialPool> _showImageFramedMtlPool;
+	MutliMaterialPool _showImgMtlPool;
 };
 
 inline Vec2f makeVec2f(const ImVec2& v) { return Vec2f(v.x, v.y); }
