@@ -12,9 +12,9 @@ namespace rds
 #if 0
 #pragma mark --- rdsRenderFrame-Decl ---
 #endif // 0
-#if 1
+#if 0
 
-class RenderFrame : public NonCopyable
+class RenderFrame : public NC_RenderApiLayerCommon_Base
 {
 	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
@@ -53,12 +53,11 @@ inline RenderQueue&			RenderFrame::renderQueue()				{ return _renderQueue; }
 #if 0
 #pragma mark --- rdsRenderFrameContext-Decl ---
 #endif // 0
-#if 1
+#if 0
 
 
-class RenderFrameContext : public NonCopyable
+class RenderFrameContext : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	RenderFrameContext();
 	~RenderFrameContext();
@@ -72,7 +71,7 @@ public:
 
 protected:
 	Atm<u32> iFrame = 0;
-	Vector<RenderFrame,				s_kFrameInFlightCount> _renderFrames;
+	Vector<RenderFrame,				s_kMaxFrameAheadCountHardLimit> _renderFrames;
 };
 
 inline RenderFrame& RenderFrameContext::renderFrame() { return _renderFrames[iFrame]; }

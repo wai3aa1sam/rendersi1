@@ -121,7 +121,8 @@ Vk_RenderFrame::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLe
 {
 	using SRC = QueueTypeFlags;
 
-	auto tlid = OsTraits::threadLocalId();
+	//auto tlid = OsTraits::threadLocalId();
+	auto tlid = 0;
 	switch (queueType)
 	{
 		case SRC::Graphics: { return _graphicsCommandPools[tlid].requestCommandBuffer(bufLevel, debugName, renderDeviceVk()); } break;
@@ -134,12 +135,12 @@ Vk_RenderFrame::requestCommandBuffer(QueueTypeFlags queueType, VkCommandBufferLe
 }
 
 void 
-Vk_RenderFrame::createCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, QueueTypeFlags type)
+Vk_RenderFrame::createCommandPool(Vk_CommandPools& cmdPool, QueueTypeFlags type)
 {
 	auto& queueFamily	= renderDeviceVk()->queueFamilyIndices();
 
-	cmdPool.reserve(s_kThreadCount);
-	for (size_t i = 0; i < s_kThreadCount; i++)
+	cmdPool.reserve(cmdPool.s_kLocalSize);
+	for (size_t i = 0; i < _kMaxVkCommandPoolCount; i++)
 	{
 		auto& e = cmdPool.emplace_back();
 		e.create(queueFamily.getFamilyIdx(type), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, renderDeviceVk());
@@ -148,7 +149,7 @@ Vk_RenderFrame::createCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPoo
 }
 
 void 
-Vk_RenderFrame::destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool)
+Vk_RenderFrame::destroyCommandPool(Vk_CommandPools& cmdPool)
 {
 	for (auto& e : cmdPool)
 	{
@@ -180,7 +181,7 @@ Vk_RenderFrame::destroySyncObjects()
 void 
 Vk_RenderFrame::setDebugName(StrView name)
 {
-	for (size_t i = 0; i < s_kThreadCount; i++)
+	for (size_t i = 0; i < _graphicsCommandPools.size(); i++)
 	{
 		RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_graphicsCommandPools[i],		RDS_SRCLOC, "{}-Vk_RenderFrame::{}-tid-[{}]", name, "_graphicsCommandPools",	i);
 		RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_computeCommandPools[i],		RDS_SRCLOC, "{}-Vk_RenderFrame::{}-tid-[{}]", name, "_computeCommandPools",		i);

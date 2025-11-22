@@ -11,9 +11,8 @@ namespace rds
 #endif // 0
 #if 1
 
-class Scene : public NonCopyable
+class Scene : public NC_EngineCommon_Base
 {
-	RDS_ENGINE_COMMON_BODY();
 public:
 	using EntityVecTable = EcsVectorTable<Entity, SPtr<Entity/*, DefaultDestructor<Entity>*/ > >;
 

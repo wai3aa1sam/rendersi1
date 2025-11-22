@@ -3,6 +3,7 @@
 #include "rdsRenderDataType.h"
 #include "rdsRenderResourceState.h"
 #include "rdsRenderResourceType.h"
+#include "rdsRenderApiLayerCommon_Base.h"
 
 namespace rds
 {
@@ -92,10 +93,8 @@ protected:
 struct Empty {};
 
 template<class BASE>
-struct RenderResource_CreateDescT : public BASE
+struct RenderResource_CreateDescT : public BASE, public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-
 	friend class RenderResource;
 	friend class RenderDevice;
 public:
@@ -129,9 +128,8 @@ using RenderResource_CreateDesc = RenderResource_CreateDescT<Empty>;
 
 #endif // 0
 
-class RenderResource : public RefCount_Base
+class RenderResource : public RefCount_Base, public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class Renderer;
 	friend class RenderGraph;
 	template<class T, class ENABLE> friend struct RdsDeleter;

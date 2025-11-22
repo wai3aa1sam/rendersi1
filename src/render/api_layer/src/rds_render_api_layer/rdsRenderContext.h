@@ -15,17 +15,16 @@ class RenderJob;
 #endif // 0
 #if 1
 
-class Backbuffers
+class Backbuffers : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	using Images = Vector<SPtr<Texture2D>, s_kFrameInFlightCount>;
+	using Images = Vector<SPtr<Texture2D>, s_kMaxFrameAheadCountHardLimit>;
 
 public:
 	Backbuffers()	{ }
 	~Backbuffers()	{ destroy(); }
 
-	void create(RenderContext* rdCtx, SizeType imageCount = s_kFrameInFlightCount);
+	void create(RenderContext* rdCtx, SizeType imageCount = s_kMaxFrameAheadCountHardLimit);
 	void destroy();
 
 	Texture2D*	backbuffer();

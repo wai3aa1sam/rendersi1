@@ -41,9 +41,8 @@ RDS_ENUM_CLASS(SamplerFilter, u8);
 //---
 RDS_ENUM_CLASS(SamplerWrap, u8);
 
-struct SamplerState
+struct SamplerState : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Filter	= SamplerFilter;
 	using Wrap		= SamplerWrap;
@@ -118,9 +117,8 @@ inline constexpr SamplerState SamplerState::makeLinearClampToBorder()		{ Sampler
 #endif // 0
 #if 1
 
-struct Texture_Desc
+struct Texture_Desc : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	RenderDataType		type			= RenderDataType::None;
 	Tuple3u				size			= {};

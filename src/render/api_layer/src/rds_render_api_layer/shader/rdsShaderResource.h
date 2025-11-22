@@ -20,20 +20,20 @@ class Shader;
 class ShaderPass;
 
 struct	ShaderResources;
-//using	FramedShaderResources = Vector<ShaderResources, RenderApiLayerTraits::s_kFrameInFlightCount>;
+//using	FramedShaderResources = Vector<ShaderResources, RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit>;
 
 struct SamplerParam;
 
 /*
 3 design: 
 
-1. FramedShaderResources (Vector<ShaderResources, s_kFrameInFlightCount> as data member at MaterialPass)
+1. FramedShaderResources (Vector<ShaderResources, s_kMaxFrameAheadCountHardLimit> as data member at MaterialPass)
 - but the all resources need to copy when rotateFrame
 
 2. Vector<FramedShaderResource<T>, N> _xxParams on ShaderResources
 - but need vkUpdateDescriptorSets when rotateFrame on ConstBuffer
 
-3. hybrid - Vector<Vector<ConstBuffer, s_kLocalConstBufSize>, s_kFrameInFlightCount> +  Vector<FramedShaderResource<T>, N> _xxParams on ShaderResources
+3. hybrid - Vector<Vector<ConstBuffer, s_kLocalConstBufSize>, s_kMaxFrameAheadCountHardLimit> +  Vector<FramedShaderResource<T>, N> _xxParams on ShaderResources
 - no need copy for other Params
 - only need to copy cpu data after rotateFrame, only need to uploadToGpu() and copy cpu data, as each descr set bind on each ConstBuffer
 
@@ -49,9 +49,8 @@ when making inspector window, I realized that draw command should save the frame
 #if 1
 
 template<class INFO>
-struct ShaderResource
+struct ShaderResource : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Info = typename INFO;
 
@@ -134,7 +133,7 @@ public:
 	using Base				= ShaderResource<typename SHADER_RSC::Info>;
 	using Info				= typename SHADER_RSC::Info;
 	using ShaderResource	= SHADER_RSC;
-	using ShaderResources	= Vector<SHADER_RSC, s_kFrameInFlightCount>;
+	using ShaderResources	= Vector<SHADER_RSC, s_kMaxFrameAheadCountHardLimit>;
 
 public:
 	void create(const Info* info, ShaderPass* pass)
@@ -143,7 +142,7 @@ public:
 
 		Base::create(info);
 
-		_shaderRscs.reserve(s_kFrameInFlightCount);
+		_shaderRscs.reserve(s_kMaxFrameAheadCountHardLimit);
 		auto& dst = _shaderRscs.emplace_back();
 		dst.create(info, nullptr);
 
@@ -160,7 +159,7 @@ public:
 
 	void roatateFrame()
 	{
-		_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
+		_iFrame = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
 		if (_iFrame + 1 > _shaderRscs.size())
 		{
 			auto& dst = _shaderRscs.emplace_back();
@@ -190,9 +189,8 @@ protected:
 #endif // 0
 #if 1
 
-struct ShaderResources
+struct ShaderResources : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 
 	#if 0
@@ -577,7 +575,7 @@ protected:
 
 	#if 0
 	u32	_iFrame	= 0;
-	Vector<Vector<ConstBuffer, s_kLocalConstBufSize>, s_kFrameInFlightCount> _framedConstBufs;
+	Vector<Vector<ConstBuffer, s_kLocalConstBufSize>, s_kMaxFrameAheadCountHardLimit> _framedConstBufs;
 
 	// each has framed then
 	//Vector<FramedShaderResource<ConstBuffer>	, s_kLocalConstBufSize>	_constBufs;
@@ -874,9 +872,8 @@ inline Texture* ShaderResources::ImageParam::image()  { return _image; }
 #endif // 0
 #if 1
 
-class FramedShaderResources : public NonCopyable
+class FramedShaderResources : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	FramedShaderResources();
 	~FramedShaderResources();
@@ -960,7 +957,7 @@ FramedShaderResources::setImageParam(StrView name, Texture* v)
 inline ShaderResources&		FramedShaderResources::shaderResource()					{ return _shaderRscs[lastEngineFrameIndex()]; }
 inline ShaderResources&		FramedShaderResources::shaderResource(u32 frameIdx)		{ return _shaderRscs[frameIdx]; }
 
-inline u32					FramedShaderResources::lastEngineFrameIndex()	const	{ return sCast<u32>(Traits::rotateFrame(lastEngineFrameCount())); }
+inline u32					FramedShaderResources::lastEngineFrameIndex()	const	{ return sCast<u32>(RenderApiLayerTraits::rotateFrame(lastEngineFrameCount())); }
 inline u64					FramedShaderResources::lastEngineFrameCount()	const	{ return _lastEngineFrameCount; }
 
 #endif

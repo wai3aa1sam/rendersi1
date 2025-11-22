@@ -22,7 +22,7 @@ class RenderContext_Vk;
 class Vk_RenderPass;
 class Vk_Framebuffer;
 
-using Vk_FramedDescrSets = Vector<Vk_DescriptorSet, RenderApiLayerTraits::s_kFrameInFlightCount>;
+using Vk_FramedDescrSets = Vector<Vk_DescriptorSet, RenderApiLayerTraits::s_kFrameAheadCount>;
 
 struct MaterialStage_Helper;
 

@@ -21,9 +21,8 @@ class RenderGraph;
 
 // for dumping graphviz
 // visualize in https://dreampuf.github.io/GraphvizOnline/
-class RdgDrawer
+class RdgDrawer : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 	struct StyleSheet 
 	{
 		bool useClusters = true;

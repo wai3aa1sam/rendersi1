@@ -74,9 +74,8 @@ struct RenderDebugLabel : public DebugLabel
 	
 };
 
-struct RenderApiUtil
+struct RenderApiUtil : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	static void createTempWindow(NativeUIWindow& out);
 

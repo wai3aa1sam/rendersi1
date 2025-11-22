@@ -16,9 +16,8 @@ class Shader;
 // no virtual, virtual in upper layer (ShaderPass) as a whole
 // one virtual for all
 // TODO: add a template
-struct ShaderStage
+struct ShaderStage : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Info = ShaderStageInfo;
 	
@@ -93,9 +92,8 @@ protected:
 #endif // 0
 #if 1
 
-class ShaderPass : public NonCopyable
+class ShaderPass : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Stage							= ShaderStage;
 	using VertexStage					= VertexShaderStage;

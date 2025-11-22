@@ -33,7 +33,7 @@ RenderThreadQueue::create(RenderThread* renderThread)
 
 	{
 		//auto lock = _rdFramePool.scopedULock();
-		for (size_t i = 0; i < RenderApiLayerTraits::s_kFrameInFlightCount; i++)
+		for (size_t i = 0; i < RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit; i++)
 		{
 			_rdJobProducerQueue.push(makeUPtr<RenderJob>());
 		}
@@ -105,9 +105,9 @@ RenderThreadQueue::isSignaled(u64 engineFrameCount) const
 {
 	auto rdThreadCurrentFrameCount = currentFrameCount();
 	bool isSameFrameIndex	= RenderApiLayerTraits::rotateFrame(engineFrameCount) == RenderApiLayerTraits::rotateFrame(rdThreadCurrentFrameCount);
-	bool isLeadingRender	= engineFrameCount >= rdThreadCurrentFrameCount + RenderApiLayerTraits::s_kFrameInFlightCount;
+	bool isLeadingRender	= engineFrameCount >= rdThreadCurrentFrameCount + RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit;
 
-	bool shdWait = isLeadingRender || isSameFrameIndex; // && !_rdThread->isFrameFinished(engineFrameCount));	// not work for RenderApiLayerTraits::s_kFrameInFlightCount == 1
+	bool shdWait = isLeadingRender || isSameFrameIndex; // && !_rdThread->isFrameFinished(engineFrameCount));	// not work for RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit == 1
 	return !shdWait || _rdThread->isFrameFinished(engineFrameCount);
 	//  (|| _rdThread->isReadyToProcess()) is wrong, since the RenderThread could have job on queue but not pop yet
 }

@@ -28,9 +28,8 @@ class Texture2D;
 RDS_ENUM_CLASS(ShaderPropType, u8);
 
 
-struct ShaderPropTypeUtil
+struct ShaderPropTypeUtil : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	ShaderPropTypeUtil() = delete;
 
@@ -81,9 +80,8 @@ template<> inline constexpr ShaderPropType ShaderPropTypeUtil::get<Texture2D>()	
 //---
 RDS_ENUM_CLASS(ShaderResourceType, u8);
 
-struct ShaderPropValueConstPtr
+struct ShaderPropValueConstPtr : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	ShaderPropValueConstPtr() = default;
 
@@ -124,9 +122,8 @@ public:
 	}
 };
 
-struct ShaderVariableInfo
+struct ShaderVariableInfo : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	RenderDataType	dataType = RenderDataType::None;
 	u32				offset;
@@ -149,9 +146,8 @@ public:
 	}
 };
 
-struct ShaderStageInfo
+struct ShaderStageInfo : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Variable = ShaderVariableInfo;
 	using DataType = RenderDataType;
@@ -532,9 +528,8 @@ public:
 	Tuple4i _specialConstant;
 };
 
-struct ShaderPassInfo
+struct ShaderPassInfo : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 
 	String name;
@@ -571,9 +566,8 @@ public:
 	}
 };
 
-struct ShaderInfo : public NonCopyable
+struct ShaderInfo : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Prop		= ShaderPropInfo;
 	using Pass		= ShaderPassInfo;

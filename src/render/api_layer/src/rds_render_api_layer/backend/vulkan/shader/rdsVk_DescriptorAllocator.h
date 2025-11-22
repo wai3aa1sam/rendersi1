@@ -36,9 +36,8 @@ struct Vk_DescriptorAllocator_CreateDesc
 };
 
 
-class Vk_DescriptorAllocator : public NonCopyable
+class Vk_DescriptorAllocator : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using CreateDesc	= Vk_DescriptorAllocator_CreateDesc;
 	using PoolSizes		= DescriptorPoolSizes;
@@ -96,9 +95,8 @@ inline RenderDevice_Vk* Vk_DescriptorAllocator::renderDeviceVk() { return _rdDev
 #endif // 0
 #if 1
 
-class Vk_DescriptorBuilder
+class Vk_DescriptorBuilder : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Util			= Vk_RenderApiUtil;
 	using ConstBuffer	= MaterialPass_Stage::ConstBuffer;

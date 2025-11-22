@@ -11,9 +11,8 @@ namespace rds
 #endif // 0
 #if 1
 
-class RdgModule : public NonCopyable
+class RdgModule : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 
 

@@ -75,7 +75,7 @@ RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 void 
 RenderGpuMultiBuffer::onCreate(CreateDesc& cDesc)
 {
-	_renderGpuBuffers.resize(s_kFrameInFlightCount);
+	_renderGpuBuffers.resize(s_kFrameAheadCount);
 	_desc = cDesc;
 	//auto& e = _renderGpuBuffers.emplace_back(RenderGpuBuffer::make(cDesc)); RDS_UNUSED(e);	
 }
@@ -93,7 +93,7 @@ void RenderGpuMultiBuffer::onDestroy()
 
 void RenderGpuMultiBuffer::rotate()
 {
-	_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
+	_iFrame = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
 }
 
 void 
@@ -114,12 +114,12 @@ RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 	RDS_CORE_ASSERT(StrUtil::len(debugName()) > 0, "set a debug name for gpu buffer");
 
 	// do acutal rotate in this function, then tsfFrame / ctx no need to update the frame separately
-	//auto idx = (_iFrame + 1) % s_kFrameInFlightCount;
-	auto idx = _iFrame % s_kFrameInFlightCount;;
+	//auto idx = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
+	auto idx = _iFrame % s_kMaxFrameAheadCountHardLimit;;
 
 	if (!_renderGpuBuffers[idx] || _renderGpuBuffers[idx]->bufSize() < bufSize) // _renderGpuBuffers.size() < (idx + 1) || 
 	{
-		//_renderGpuBuffers.resize(s_kFrameInFlightCount);
+		//_renderGpuBuffers.resize(s_kMaxFrameAheadCountHardLimit);
 		_renderGpuBuffers[idx] = _makeNewBuffer(bufSize);
 		_renderGpuBuffers[idx]->setDebugName(fmtAs_T<TempString>("{}-{}", debugName(), idx));
 		//RDS_LOG_ERROR("created: {}-{}", debugName(), idx);

@@ -17,10 +17,8 @@ class CLightSystem;
 #endif // 0
 #if 1
 
-class EngineContext : public NonCopyable
+class EngineContext : public NC_EngineCommon_Base
 {
-	RDS_ENGINE_COMMON_BODY();
-	//template<class T> friend struct EngineContext_Deleter;
 public:
 	static constexpr SizeType s_kSystemLocalSize = 32;
 

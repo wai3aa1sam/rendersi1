@@ -43,9 +43,8 @@ public:
 #endif // 0
 #if 1
 
-class Vk_FramebufferPool : public NonCopyable
+class Vk_FramebufferPool : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Vk_FramebufferHash = SizeType;
 

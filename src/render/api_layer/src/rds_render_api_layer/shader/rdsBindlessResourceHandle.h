@@ -12,10 +12,9 @@ class BindlessResources;
 #endif // 0
 #if 1
 
-struct BindlessResourceHandle
+struct BindlessResourceHandle : public RenderApiLayerCommon_Base
 {
     friend class BindlessResources;
-    RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
     using IndexT = u32;
 

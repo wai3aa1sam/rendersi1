@@ -192,7 +192,7 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 	_nativeUIWindow = cDesc.window;
 	
 	#if 0
-	_backbuffers.create(this, s_kFrameInFlightCount);
+	_backbuffers.create(this, s_kMaxFrameAheadCountHardLimit);
 	#endif // 0
 
 	{

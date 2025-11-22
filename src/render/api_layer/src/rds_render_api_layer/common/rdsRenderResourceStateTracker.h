@@ -11,9 +11,8 @@ namespace rds
 #endif // 0
 #if 1
 
-class RenderResourceStateMiniTracker : public NonCopyable
+class RenderResourceStateMiniTracker : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using PendingState = RenderResourceStateFlags;
 	using PendingStates = VectorMap<RenderResource*, PendingState>;
@@ -24,9 +23,8 @@ protected:
 };
 
 
-class RenderResourceStateTracker : public NonCopyable
+class RenderResourceStateTracker : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using PendingState	= RenderResourceState;
 	using PendingStates = VectorMap<RenderResource*, PendingState>;

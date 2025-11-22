@@ -20,13 +20,11 @@ class Vk_Allocator;
 #endif // 0
 #if 1
 
-class Vk_LinearStagingBuffer : public NonCopyable
+class Vk_LinearStagingBuffer : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
-	struct Chunk
+	struct Chunk : public NC_RenderApiLayerCommon_Base
 	{
-		RDS_RENDER_API_LAYER_COMMON_BODY();
 	public:
 		Chunk(SizeType n, Vk_Allocator* alloc, RenderDevice_Vk* rdDevVk);
 		~Chunk();
@@ -45,9 +43,8 @@ public:
 		u32			_size		= 0;
 	};
 
-	class Chunks : public NonCopyable
+	class Chunks : public NC_RenderApiLayerCommon_Base
 	{
-		RDS_RENDER_API_LAYER_COMMON_BODY();
 	public:
 		Chunks();
 		~Chunks();

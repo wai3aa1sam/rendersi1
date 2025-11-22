@@ -31,10 +31,8 @@ class CRenderableSystem : public CSystemT<CRenderable> // Singleton<CRenderableS
 	friend class	CRenderable;
 	friend class	SceneView;
 	friend class	DrawData;		// temporary
-	RDS_ENGINE_COMMON_BODY();
 public:
 	using RenderableTable		= VectorMap<EntityId, SPtr<CRenderable> >;
-	using FramedRenderRequest	= Vector<RenderRequest, RenderApiLayerTraits::s_kFrameInFlightCount>;
 
 public:
 	CRenderableSystem();

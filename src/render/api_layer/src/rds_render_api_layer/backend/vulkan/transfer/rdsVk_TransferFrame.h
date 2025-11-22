@@ -45,10 +45,8 @@ public:
 #endif // 0
 #if 1
 
-class Vk_TransferFrame : public NonCopyable
+class Vk_TransferFrame : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-
 	friend class TransferContext_Vk;
 public:
 	using Util = Vk_RenderApiUtil;

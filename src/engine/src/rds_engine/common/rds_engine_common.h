@@ -4,6 +4,7 @@
 
 #include "rds_engine-config.h"
 #include "rds_engine_traits.h"
+#include "rdsEngineCommon_Base.h"
 
 namespace rds
 {
@@ -27,9 +28,8 @@ class Entity;
 #endif // 0
 #if 1
 
-struct EntityId
+struct EntityId : public EngineCommon_Base
 {
-	RDS_ENGINE_COMMON_BODY();
 public:
 	static constexpr SizeType s_kInvalid = 0;
 

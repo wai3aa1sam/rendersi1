@@ -20,9 +20,6 @@ namespace rds
 class TransferContext_Vk : public RenderResource_Vk<Proxy_TransferContext>
 {
 public:
-	using Vk_TransferFrames = Vector<Vk_TransferFrame, s_kFrameInFlightCount>;
-
-public:
 	TransferContext_Vk();
 	~TransferContext_Vk();
 

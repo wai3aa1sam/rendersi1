@@ -40,7 +40,7 @@ public:
 	virtual void setDebugName(StrView name) override;
 
 public:
-	u32		iFrame()	const;
+	int		iFrame()	const;
 	bool	isEmpty()	const;
 
 	const Desc& desc() const;
@@ -69,12 +69,15 @@ protected:
 	SPtr<RenderGpuBuffer> _makeNewBuffer(SizeType bufSize);
 
 protected:
-	Atm<u32>	_iFrame = 0;
+	Atm<int>	_iFrame = 0;
 	Desc		_desc;
-	Vector<SPtr<RenderGpuBuffer>, s_kFrameInFlightCount> _renderGpuBuffers;
+
+	static constexpr SizeType s_kMaxBufferCount = s_kMaxFrameAheadCountHardLimit;
+	using Buffers = Vector<SPtr<RenderGpuBuffer>, s_kMaxBufferCount>;
+	Buffers _renderGpuBuffers;
 };
 
-inline u32 RenderGpuMultiBuffer::iFrame() const { return _iFrame; }
+inline int RenderGpuMultiBuffer::iFrame() const { return _iFrame; }
 inline bool RenderGpuMultiBuffer::isEmpty() const { return _renderGpuBuffers.is_empty(); }
 
 inline const RenderGpuMultiBuffer::Desc& RenderGpuMultiBuffer::desc()		const	{ return _renderGpuBuffers[_iFrame]->desc(); }
@@ -86,8 +89,8 @@ inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const
 inline			RenderGpuBuffer* RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[_iFrame]; }
 inline const	RenderGpuBuffer* RenderGpuMultiBuffer::renderGpuBuffer() const		{ return _renderGpuBuffers[_iFrame]; }
 
-inline			RenderGpuBuffer* RenderGpuMultiBuffer::previousBuffer()				{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kFrameInFlightCount]; }
-inline const	RenderGpuBuffer* RenderGpuMultiBuffer::previousBuffer() const		{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kFrameInFlightCount]; }
+inline			RenderGpuBuffer* RenderGpuMultiBuffer::previousBuffer()				{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kMaxBufferCount]; }
+inline const	RenderGpuBuffer* RenderGpuMultiBuffer::previousBuffer() const		{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kMaxBufferCount]; }
 
 
 #endif

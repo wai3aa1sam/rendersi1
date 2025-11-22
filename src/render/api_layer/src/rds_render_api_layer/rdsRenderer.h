@@ -12,9 +12,8 @@ class RenderDevice;
 #endif // 0
 #if 1
 
-class Renderer : public Singleton<Renderer>
+class Renderer : public Singleton<Renderer>, public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
     using Base			= Singleton<Renderer>;
 	using CreateDesc	= Renderer_CreateDesc;

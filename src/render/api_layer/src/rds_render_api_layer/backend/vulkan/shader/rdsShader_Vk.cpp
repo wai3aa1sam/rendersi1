@@ -14,9 +14,8 @@ namespace rds
 #endif // 0
 #if 1
 
-struct Vk_Descriptor_Helper
+struct Vk_Descriptor_Helper : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	template<class INFO, size_t N, class ALLOC> static 
 	void 
@@ -97,7 +96,7 @@ public:
 
 struct Vk_ShaderStagesCDesc : public Vk_CDesc_Base
 {
-	using Vk_ShaderStageCInfos = Vector<VkPipelineShaderStageCreateInfo, Traits::s_kShaderStageCount>;
+	using Vk_ShaderStageCInfos = Vector<VkPipelineShaderStageCreateInfo, s_kShaderStageCount>;
 
 public:
 	static constexpr SizeType s_kLocalSize = 8;
@@ -106,7 +105,7 @@ public:
 	void createGraphics(VkGraphicsPipelineCreateInfo& out, ShaderPass_Vk* shaderPass)
 	{
 		destroy();
-		_shaderStageCInfos.reserve(Traits::s_kShaderStageCount);
+		_shaderStageCInfos.reserve(s_kShaderStageCount);
 
 		const auto& info = shaderPass->info(); RDS_UNUSED(info);
 
@@ -167,8 +166,8 @@ public:
 			VkViewport viewport = {};
 			viewport.x			= 0.0f;
 			viewport.y			= 0.0f;
-			viewport.width		= Traits::s_kDefaultWindowWidth;
-			viewport.height		= Traits::s_kDefaultWindowHeight;
+			viewport.width		= s_kDefaultWindowWidth;
+			viewport.height		= s_kDefaultWindowHeight;
 			viewport.minDepth	= 0.0f;
 			viewport.maxDepth	= 1.0f;
 
@@ -294,8 +293,8 @@ protected:
 
 		_viewport.x			= 0.0f;
 		_viewport.y			= 0.0f;
-		_viewport.width		= Traits::s_kDefaultWindowWidth;
-		_viewport.height	= Traits::s_kDefaultWindowHeight;
+		_viewport.width		= s_kDefaultWindowWidth;
+		_viewport.height	= s_kDefaultWindowHeight;
 		_viewport.minDepth	= 0.0f;
 		_viewport.maxDepth	= 1.0f;
 
@@ -440,7 +439,6 @@ private:
 
 struct Vk_VertexInputCDesc : public Vk_CDesc_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	static constexpr SizeType s_kVtxInputAttrLocalSize = 32;
 

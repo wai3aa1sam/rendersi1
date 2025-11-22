@@ -14,9 +14,8 @@ class RdgPass;
 #if 1
 
 template<class T>
-class ObjectAllocator : public NonCopyable
+class ObjectAllocator : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	class Allocation
 	{
@@ -26,9 +25,8 @@ public:
 
 };
 
-class PooledObjectAllocator : public NonCopyable
+class PooledObjectAllocator : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 
 	class Allocation_Base

@@ -17,7 +17,7 @@ RenderThread::CreateDesc
 RenderThread::makeCDesc(RenderDevice* rdDev, JobSystem* jobSystem)
 {
 	auto cDesc = CreateDesc{};
-	cDesc.localId		= Traits::s_kRenderThreadId;
+	cDesc.localId		= s_kRenderThreadId;
 	cDesc.affinityIdx	= cDesc.localId;
 	cDesc.name			= "RenderThread";
 	cDesc.threadPool	= jobSystem->_internal_threadPool();

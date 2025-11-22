@@ -12,9 +12,8 @@ namespace rds
 #endif // 0
 #if 1
 
-class RdgResourcePool : public NonCopyable
+class RdgResourcePool : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	static constexpr SizeType s_kLocalSize = 24;
 

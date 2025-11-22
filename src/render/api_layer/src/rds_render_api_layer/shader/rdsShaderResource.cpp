@@ -109,7 +109,7 @@ ShaderResources::uploadToGpu(ShaderPass* pass)
 		e.uploadToGpu();
 	}
 
-	if (_constBufs.size() < s_kFrameInFlightCount && isDirty)
+	if (_constBufs.size() < s_kMaxFrameAheadCountHardLimit && isDirty)
 	{
 		auto& dst = _constBufs.emplace_back();
 
@@ -123,7 +123,7 @@ ShaderResources::uploadToGpu(ShaderPass* pass)
 
 	if (isDirty)
 	{
-		_iFrame = (_iFrame + 1) % s_kFrameInFlightCount;
+		_iFrame = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
 		auto dst = constBufs();
 		for (size_t i = 0; i < constBufInfos.size(); i++)
 		{
@@ -605,7 +605,7 @@ void
 FramedShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
 {
 	_shaderPass = pass;
-	_shaderRscs.resize(s_kFrameInFlightCount);
+	_shaderRscs.resize(s_kMaxFrameAheadCountHardLimit);
 	u32 i = 0;
 	for (auto& e : _shaderRscs)
 	{
@@ -629,8 +629,8 @@ FramedShaderResources::rotateFrame()
 	}
 
 	auto frameCount = _shaderPass->shader()->engineFrameCount();
-	auto srcFrame	= Traits::rotateFrame(lastEngineFrameCount());
-	auto dstFrame	= Traits::rotateFrame(frameCount);
+	auto srcFrame	= RenderApiLayerTraits::rotateFrame(lastEngineFrameCount());
+	auto dstFrame	= RenderApiLayerTraits::rotateFrame(frameCount);
 
 	if (srcFrame == dstFrame)
 	{

@@ -4,6 +4,7 @@
 
 #include "rds_render_api_layer-config.h"
 #include "rds_render_api_layer_traits.h"
+#include "rdsRenderApiLayerCommon_Base.h"
 
 #include "rdsRenderApi_Common.h"
 
@@ -76,9 +77,8 @@ public:
 	Limit	limit;
 };
 
-struct RenderDevice_CreateDesc
+struct RenderDevice_CreateDesc : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	RenderDevice_CreateDesc();
 

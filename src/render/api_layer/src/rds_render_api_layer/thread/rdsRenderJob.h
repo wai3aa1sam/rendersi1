@@ -24,9 +24,8 @@ struct RenderJob_CreateDesc
 #if 1
 
 // maybe use RenderRequest as a name is better, and original class RenderRequest -> class RenderCommandList
-class RenderJob : public NonCopyable
+class RenderJob : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using CreateDesc = RenderJob_CreateDesc;
 

@@ -269,9 +269,8 @@ Shader_Vk::onMakePass(Shader* shader, const ShaderPass::Info& info)
 #endif // 0
 #if 1
 
-struct Vk_PipelineLayoutCDesc
+struct Vk_PipelineLayoutCDesc : public Vk_CDesc_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	static constexpr SizeType s_kLocalSize = 8;
 
@@ -299,7 +298,7 @@ ShaderPass_Vk::createVkShaderStageCInfos(Vector<VkPipelineShaderStageCreateInfo,
 {
 	auto& passInfo = info();
 	outCInfos.clear();
-	outCInfos.reserve(Traits::s_kShaderStageCount);
+	outCInfos.reserve(s_kShaderStageCount);
 	if (!passInfo.vsFunc.is_empty())	{ outCInfos.emplace_back(	_vkVertexStage.createVkStageInfo(passInfo.vsFunc.c_str())); }
 	if (!passInfo.tescFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTescStage.createVkStageInfo(passInfo.tescFunc.c_str())); }
 	if (!passInfo.teseFunc.is_empty())	{ outCInfos.emplace_back(	  _vkTeseStage.createVkStageInfo(passInfo.teseFunc.c_str())); }

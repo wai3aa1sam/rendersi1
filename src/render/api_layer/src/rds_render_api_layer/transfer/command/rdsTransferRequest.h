@@ -22,9 +22,8 @@ class TransferCommand_UploadTexture;
 #endif // 0
 #if 1
 
-class TransferRequest : public NonCopyable
+class TransferRequest : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class Texture2D;
 	friend class RenderGpuBuffer;
 public:

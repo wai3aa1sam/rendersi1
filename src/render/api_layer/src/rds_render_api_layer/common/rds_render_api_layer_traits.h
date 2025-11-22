@@ -6,20 +6,6 @@
 namespace rds 
 {
 
-#define RDS_RENDER_API_LAYER_COMMON_BODY() \
-public:																								\
-	using Traits	= RenderApiLayerTraits;															\
-	using SizeType	= Traits::SizeType;																\
-	using DataType	= RenderDataType;																\
-public:																								\
-	static constexpr SizeType s_kThreadCount					= Traits::s_kThreadCount;					\
-	static constexpr SizeType s_kFrameInFlightCount				= Traits::s_kFrameInFlightCount;			\
-	static constexpr SizeType s_kFrameAheadCount				= Traits::s_kFrameAheadCount;				\
-	static constexpr SizeType s_kMaxFrameAheadCountHardLimit	= Traits::s_kMaxFrameAheadCountHardLimit;	\
-	static constexpr SizeType s_kSwapchainImageLocalSize	= Traits::s_kSwapchainImageLocalSize;			\
-private:																									\
-//---
-
 #if 0
 #pragma mark --- RenderApiLayerTraits-Impl ---
 #endif // 0
@@ -40,27 +26,26 @@ public:
 	static constexpr SizeType s_kShaderStageCount			= 6;
 
 	static constexpr SizeType s_kFirstFrameCount				= 1;
-	static constexpr SizeType s_kFrameAheadCount				= 0;
-	static constexpr SizeType s_kFrameInFlightCount				= 2;	// vk get swapchain count is 2, so cannot be 1 now
-	static constexpr SizeType s_kMaxFrameAheadCountHardLimit	= s_kFrameInFlightCount + s_kFrameAheadCount;
+	static constexpr SizeType s_kFrameAheadCount				= 2;
+	static constexpr SizeType s_kMaxFrameAheadCountHardLimit	= s_kFrameAheadCount;
 
 	#if 0
 	/*
 	* 
 	* mt-able no wait (always lead) needs infinite frame (until wait)
-	* , but we are waiting on engine, and it is possible demand is > s_kFrameInFlightCount
+	* , but we are waiting on engine, and it is possible demand is > s_kMaxFrameAheadCountHardLimit
 	*/
-	static constexpr SizeType s_kFrameSafeInFlightCount		= s_kFrameInFlightCount * 2;
+	static constexpr SizeType s_kFrameSafeInFlightCount		= s_kMaxFrameAheadCountHardLimit * 2;
 	#endif // 0
 
-	static constexpr SizeType s_kSwapchainImageLocalSize	= s_kFrameInFlightCount;
+	static constexpr SizeType s_kSwapchainImageLocalSize	= s_kFrameAheadCount;
 	static constexpr SizeType s_kThreadCount				= OsTraits::s_kJobSystemLogicalThreadCount;
 
 	static constexpr SizeType s_kDefaultWindowWidth		= 1280;
 	static constexpr SizeType s_kDefaultWindowHeight	= 720;
 
 
-	static_assert(math::isPowOf2(s_kFrameInFlightCount));
+	static_assert(math::isPowOf2(s_kFrameAheadCount));
 
 public:
 	static bool					isRenderThread();
@@ -69,7 +54,7 @@ public:
 
 inline bool					RenderApiLayerDefaultTraits_T::isRenderThread()				{ return OsTraits::threadLocalId() == s_kRenderThreadId; }
 
-template<class T> inline T	RenderApiLayerDefaultTraits_T::rotateFrame(T frameCount)	{ return frameCount % s_kFrameInFlightCount; }
+template<class T> inline T	RenderApiLayerDefaultTraits_T::rotateFrame(T frameCount)	{ return frameCount % s_kFrameAheadCount; }
 
 
 #if !RDS_RENDER_CUSTOM_TRAITS

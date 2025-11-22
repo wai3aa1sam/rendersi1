@@ -51,9 +51,8 @@ extern ShaderGnuMake_VarName gnuMakeVarName;
 #endif // 0
 #if 1
 
-struct ShaderCompileUtil
+struct ShaderCompileUtil : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using ApiType = RenderApiType;
 

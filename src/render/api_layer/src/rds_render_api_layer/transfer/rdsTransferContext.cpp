@@ -108,9 +108,9 @@ private:
 	TransferCommandSafeBuffer	_createRdRscQueue;
 	TransferCommandSafeBuffer	_destroyRdRscQueue;
 
-	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kFrameInFlightCount> >;
+	using TransferFramePool = MutexProtected<Vector<UPtr<TransferFrame>, s_kMaxFrameAheadCountHardLimit> >;
 	TransferFramePool									_tsfFramePool;
-	Vector<UPtr<TransferFrame>, s_kFrameInFlightCount>	_prevTsfFrames;
+	Vector<UPtr<TransferFrame>, s_kMaxFrameAheadCountHardLimit>	_prevTsfFrames;
 	UPtr<TransferFrame>									_curTsfFrame = nullptr;
 
 protected:
@@ -148,7 +148,7 @@ TransferContext::releasePreviousTransferFrame()
 	bool isFristFrame = _prevTsfFrames.is_empty(); // emplace_back to detect first cycle
 	if (isFristFrame)
 	{
-		_prevTsfFrames.resize(s_kFrameInFlightCount);		
+		_prevTsfFrames.resize(s_kMaxFrameAheadCountHardLimit);		
 	}
 
 	auto& prevTsfFrame = _prevTsfFrames[frameIdx];
@@ -182,8 +182,8 @@ TransferContext::allocTransferFrame()
 			auto tsfFrameCDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
 			lock->emplace_back(renderDevice()->createTransferFrame(tsfFrameCDesc));
 		}
-		RDS_ASSERT(lock->size()		<= s_kFrameInFlightCount, "lock->size():	 {}, s_kFrameInFlightCount assumption is wrong, need modify", lock->size());
-		RDS_ASSERT(lock->capacity() == s_kFrameInFlightCount, "lock->capacity(): {}, s_kFrameInFlightCount assumption is wrong, need modify", lock->capacity());
+		RDS_ASSERT(lock->size()		<= s_kMaxFrameAheadCountHardLimit, "lock->size():	 {}, s_kMaxFrameAheadCountHardLimit assumption is wrong, need modify", lock->size());
+		RDS_ASSERT(lock->capacity() == s_kMaxFrameAheadCountHardLimit, "lock->capacity(): {}, s_kMaxFrameAheadCountHardLimit assumption is wrong, need modify", lock->capacity());
 
 		auto tmp = lock->moveBack();
 		tmp->reset();

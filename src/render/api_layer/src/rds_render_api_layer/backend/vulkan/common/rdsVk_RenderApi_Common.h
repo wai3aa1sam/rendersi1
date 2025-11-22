@@ -131,9 +131,8 @@ struct Vk_SwapchainInfo
 
 #if 1
 
-struct Vk_CDesc_Base
+struct Vk_CDesc_Base : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Util = Vk_RenderApiUtil;
 

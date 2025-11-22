@@ -15,9 +15,8 @@ using TransferCommandSafeBuffer = MutexProtected<TransferCommandBuffer>;
 #if 1
 
 class TransferRequest;
-class TransferCommandBuffer : public NonCopyable
+class TransferCommandBuffer : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class TransferRequest;
 public:
 	static constexpr SizeType s_kLocalSize = 64;

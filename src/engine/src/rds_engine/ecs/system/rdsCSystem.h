@@ -11,9 +11,8 @@ namespace rds
 #endif // 0
 #if 1
 
-class CSystem : public NonCopyable
+class CSystem : public NC_EngineCommon_Base
 {
-	RDS_ENGINE_COMMON_BODY();
 public:
 	virtual ~CSystem() = default;
 

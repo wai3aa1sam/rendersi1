@@ -19,15 +19,14 @@ class RenderContext_Vk;
 #endif // 0
 #if 1
 
-class Vk_RenderFrame : public NonCopyable	// not a derived class of RenderFrame
+class Vk_RenderFrame : public NC_RenderApiLayerCommon_Base	// not a derived class of RenderFrame
 {
 public:
 	using Util = Vk_RenderApiUtil;
 	using SizeType = RenderApiLayerTraits::SizeType;
 
-public:
-	static constexpr SizeType s_kThreadCount		= RenderApiLayerTraits::s_kThreadCount;
-	static constexpr SizeType s_kFrameInFlightCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
+	static constexpr int _kMaxVkCommandPoolCount = 1;
+	using Vk_CommandPools = Vector<Vk_CommandPool, _kMaxVkCommandPoolCount>;
 
 public:
 	Vk_FramebufferPool	_vkFramebufPool;	// TODO: remove
@@ -66,8 +65,8 @@ public:
 	RenderDevice_Vk*	renderDeviceVk();
 
 protected:
-	void createCommandPool (Vector<Vk_CommandPool, s_kThreadCount>& cmdPool, QueueTypeFlags type);
-	void destroyCommandPool(Vector<Vk_CommandPool, s_kThreadCount>& cmdPool);
+	void createCommandPool (Vk_CommandPools& cmdPool, QueueTypeFlags type);
+	void destroyCommandPool(Vk_CommandPools& cmdPool);
 
 	void createSyncObjects	();
 	void destroySyncObjects	();
@@ -75,9 +74,9 @@ protected:
 protected:
 	RenderDevice_Vk* _rdDevVk = nullptr;
 
-	Vector<Vk_CommandPool, s_kThreadCount> _graphicsCommandPools;
-	Vector<Vk_CommandPool, s_kThreadCount> _computeCommandPools;
-	Vector<Vk_CommandPool, s_kThreadCount> _transferCommandPools;
+	Vk_CommandPools _graphicsCommandPools;
+	Vk_CommandPools _computeCommandPools;
+	Vk_CommandPools _transferCommandPools;
 
 	// maybe put back on RenderContext_Vk
 	Vk_Semaphore	_imageAvailableVkSmp;

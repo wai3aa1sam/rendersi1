@@ -68,9 +68,8 @@ private:
 #endif // 0
 #if 1
 
-class RenderThread : public TypeThread
+class RenderThread : public TypeThread, public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Base				= TypeThread;
 	using CreateDesc		= RenderThread_CreateDesc;

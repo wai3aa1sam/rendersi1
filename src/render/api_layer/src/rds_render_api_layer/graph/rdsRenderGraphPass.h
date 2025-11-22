@@ -86,12 +86,11 @@ public:
 #endif // 0
 #if 1
 
-class RdgPass : public NonCopyable
+class RdgPass : public NC_RenderApiLayerCommon_Base
 {
 	friend class RenderGraphFrame;
 	friend class RenderGraph;
 	friend class RdgDrawer;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	static constexpr SizeType s_kFuncLocalSize = 128 * 4;
 
@@ -104,7 +103,7 @@ public:
 	using Access	= RenderAccess;
 	using Usage		= RdgResourceUsage;
 
-	using ExecuteFunc		= Function<void(RenderRequest& rdReq), s_kFuncLocalSize, Traits::s_kDefaultAlign, NoFallbackAllocator_Policy>;
+	using ExecuteFunc		= Function<void(RenderRequest& rdReq), s_kFuncLocalSize, s_kDefaultAlign, NoFallbackAllocator_Policy>;
 	//using ExecuteFunc		= std::function<void(RenderRequest& rdReq)>;
 
 	// const for std::initlist

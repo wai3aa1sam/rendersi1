@@ -40,9 +40,8 @@ namespace rds
 //---
 RDS_ENUM_CLASS(TransferCommandType, u8);
 
-class TransferCommand : public NonCopyable
+class TransferCommand : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Type = TransferCommandType;
 

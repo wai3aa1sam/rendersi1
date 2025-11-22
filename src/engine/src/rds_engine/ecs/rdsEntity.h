@@ -22,9 +22,8 @@ namespace rds
 
 class Scene;
 
-class Entity : public Object
+class Entity : public Object, public EngineCommon_Base
 {
-	RDS_ENGINE_COMMON_BODY();
 	friend class Scene;
 public:
 	using Components = Vector<SPtr<CComponent/*, DefaultDestructor<CComponent> */>, 4>;

@@ -10,9 +10,8 @@ namespace rds
 #endif // 0
 #if 1
 
-class Asset : public Object
+class Asset : public Object, public EngineCommon_Base
 {
-	RDS_ENGINE_COMMON_BODY();
 public:
 	static constexpr u32 s_kInvalidId = NumLimit<u32>::max();
 

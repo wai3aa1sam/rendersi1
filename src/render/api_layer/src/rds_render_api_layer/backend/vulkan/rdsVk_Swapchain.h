@@ -64,7 +64,7 @@ public:
 	VkColorSpaceKHR		colorSpace	= VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	VkFormat			depthFormat	= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-	u32					imageCount	= RenderApiLayerTraits::s_kFrameInFlightCount;
+	u32					imageCount	= RenderApiLayerTraits::s_kFrameAheadCount;
 
 public:
 	void create(NativeUIWindow* window_, RenderContext_Vk* renderContextVk_, Backbuffers* outBackbuffers_, VkFormat colorFormat_, VkColorSpaceKHR colorSpace_, VkFormat depthFormat_);

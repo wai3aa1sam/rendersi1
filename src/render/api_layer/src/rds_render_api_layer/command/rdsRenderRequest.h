@@ -38,9 +38,8 @@ class	DrawData_Base;
 #endif // RDS_DEBUG
 
 
-class RenderRequest : public NonCopyable
+class RenderRequest : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using InlineDraw = InlineDraw;
 	using LineVtxT = InlineDraw::LineVtxT;

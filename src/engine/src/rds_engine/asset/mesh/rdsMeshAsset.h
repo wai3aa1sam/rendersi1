@@ -61,9 +61,8 @@ public:
 	#endif // 0
 };
 
-struct MeshAssetMaterialList
+struct MeshAssetMaterialList : public EngineCommon_Base
 {
-	RDS_ENGINE_COMMON_BODY();
 public:
 	static constexpr SizeType s_kLocalSize = 2;
 

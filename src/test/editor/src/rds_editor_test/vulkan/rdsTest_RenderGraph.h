@@ -137,9 +137,8 @@ EditMesh getFullScreenTriangleMesh()
 
 MeshAssets meshAssets;
 
-class TestScene
+class TestScene : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	static constexpr SizeType s_kObjectCount = 25;
 
@@ -229,10 +228,9 @@ private:
 	math::Camera3f* _camera = nullptr;
 };
 
-class RenderFeaturePass {};
+class RenderFeaturePass : public RenderApiLayerCommon_Base {};
 class RfpPbr : RenderFeaturePass
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	virtual ~RfpPbr()
 	{

@@ -108,9 +108,8 @@ class	Vk_Fence;
 #if 1
 
 template<class T, VkObjectType VK_OBJ_T> 
-class Vk_RenderApiPrimitive : public NonCopyable
+class Vk_RenderApiPrimitive : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Util		= Vk_RenderApiUtil;
 	using HndType	= T*;

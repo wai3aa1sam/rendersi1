@@ -77,7 +77,7 @@ MaterialPass_Vk::onCreate(Material* material, ShaderPass* shaderPass)
 		_computeStage = &_vkComputeStage;
 	}
 
-	_vkFramedDescrSets.resize(s_kFrameInFlightCount);
+	_vkFramedDescrSets.resize(s_kMaxFrameAheadCountHardLimit);
 }
 
 void 

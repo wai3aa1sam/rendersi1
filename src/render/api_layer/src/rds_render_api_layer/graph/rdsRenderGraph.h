@@ -40,9 +40,8 @@ class RenderContext;
 #endif // 0
 #if 1
 
-class RenderGraphFrame : public NonCopyable
+class RenderGraphFrame : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class RenderGraph;
 public:
 	using StateUtil = RenderResourceStateFlagsUtil;
@@ -85,7 +84,7 @@ public:
 public:
 	using Passes			= Vector<RdgPass*,			s_kPassLocalSize>;
 	using Resources			= Vector<RdgResource*,		s_kResourceLocalSize>;
-	using FramedRscPool		= Vector<RdgResourcePool,	s_kFrameInFlightCount>;
+	using FramedRscPool		= Vector<RdgResourcePool,	s_kMaxFrameAheadCountHardLimit>;
 	using PassDepths		= Vector<u32,				s_kPassLocalSize>;
 
 public:
@@ -208,14 +207,13 @@ protected:
 #endif // 0
 #if 1
 
-class RenderGraph : public NonCopyable
+class RenderGraph : public NC_RenderApiLayerCommon_Base
 {
 	friend class RdgResourceHnd;
 	friend class RdgResource;
 
 	friend class RenderContext;
 	friend class RdgDrawer;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 
 public:
 	using StateUtil			= RenderGraphFrame::StateUtil;

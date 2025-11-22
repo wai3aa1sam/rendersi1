@@ -5,9 +5,8 @@ namespace rds
 {
 
 template<class T>
-class ParamBuffer
+class ParamBuffer : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	//using T = Mat4f;
 
@@ -43,8 +42,8 @@ public:
 			Vector<u8>& cpuBuffer()					{ return _cpuBufs[_gpuBufs->iFrame()]; }
 	const	Vector<u8>& cpuBuffer() const			{ return _cpuBufs[_gpuBufs->iFrame()]; }
 
-			Vector<u8>& prevCpuBuffer()				{ auto iPrevFrame = (sCast<int>(iFrame()) - 1) % s_kFrameInFlightCount; return _cpuBufs[iPrevFrame]; }
-	const	Vector<u8>& prevCpuBuffer() const		{ auto iPrevFrame = (sCast<int>(iFrame()) - 1) % s_kFrameInFlightCount; return _cpuBufs[iPrevFrame]; }
+			Vector<u8>& prevCpuBuffer()				{ auto iPrevFrame = (sCast<int>(iFrame()) - 1) % s_kFrameAheadCount; return _cpuBufs[iPrevFrame]; }
+	const	Vector<u8>& prevCpuBuffer() const		{ auto iPrevFrame = (sCast<int>(iFrame()) - 1) % s_kFrameAheadCount; return _cpuBufs[iPrevFrame]; }
 
 	u32 iFrame() const { return _gpuBufs->iFrame(); }
 
@@ -59,7 +58,7 @@ public:
 template<class T> inline
 ParamBuffer<T>::ParamBuffer()
 {
-	_cpuBufs.resize(s_kFrameInFlightCount);
+	_cpuBufs.resize(s_kFrameAheadCount);
 }
 
 template<class T> inline

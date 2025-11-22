@@ -6,6 +6,7 @@ namespace rds
 {
 
 class Material;
+class Shader;
 
 #if 0
 #pragma mark --- rdsMaterialPool-Decl ---

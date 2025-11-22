@@ -266,13 +266,12 @@ public:
 	}
 };
 
-class RdgResource : public RdgResource_WeakRefBase
+class RdgResource : public RdgResource_WeakRefBase, public NC_RenderApiLayerCommon_Base
 {
 	friend class RenderGraph;
 	friend class RdgPass;
 	friend class RdgResourcePool;
 	template<class T> friend class RdgResourceHndT;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Type = RdgResourceType;
 
@@ -347,7 +346,6 @@ class RdgResourceT : public RdgResource
 	friend class RenderGraph;
 	friend class RdgPass;
 	friend class RdgResourceAccessor;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Base				= RdgResource;
 
@@ -383,7 +381,7 @@ protected:
 	Desc					_desc;
 };
 
-class RdgResourceHnd
+class RdgResourceHnd : public RenderApiLayerCommon_Base
 {
 	friend class RenderGraph;
 	friend class RdgPass;
@@ -425,7 +423,6 @@ class RdgResourceHndT : public RdgResourceHnd
 	friend struct	RdgTarget;
 	friend struct	RdgRenderTarget;
 	friend struct	RdgDepthStencil;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 
 public:
 	using Base				= RdgResourceHnd;

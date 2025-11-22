@@ -204,11 +204,8 @@ RDS_ENUM_CLASS(RenderResourceStateFlags, u64);
 #endif // 0
 #if 1
 
-class RenderResourceState : public NonCopyable
+class RenderResourceState : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-
 public:
 	static constexpr SizeType   s_kMaxMipCount      = 15;
     static constexpr u32        s_kAllSubResource  = ~u32(0);

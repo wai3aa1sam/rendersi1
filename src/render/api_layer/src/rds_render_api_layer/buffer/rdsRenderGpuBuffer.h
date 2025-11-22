@@ -31,9 +31,8 @@ RDS_ENUM_CLASS(RenderGpuBufferFlags, u8);
 #endif // 0
 #if 1
 
-struct RenderGpuBuffer_Desc
+struct RenderGpuBuffer_Desc : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Type		= RenderGpuBufferTypeFlags;
 

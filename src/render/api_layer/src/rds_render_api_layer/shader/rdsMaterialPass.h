@@ -26,10 +26,9 @@ class RenderContext;
 #if 1
 
 // TODO: add a template here
-struct MaterialPass_Stage
+struct MaterialPass_Stage : public RenderApiLayerCommon_Base
 {
 	friend class Material;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Info			= ShaderStageInfo;
 	using ConstBuffer	= ShaderResources::ConstBuffer;
@@ -209,10 +208,9 @@ inline const	ComputeShaderStage*					MaterialPass_ComputeStage::shaderStage() co
 #endif // 0
 #if 1
 
-class MaterialPass
+class MaterialPass : public NC_RenderApiLayerCommon_Base
 {
 	friend class Material;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Stage							= MaterialPass_Stage;
 	using VertexStage					= MaterialPass_VertexStage;

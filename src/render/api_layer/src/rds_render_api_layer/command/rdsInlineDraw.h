@@ -14,9 +14,8 @@ class	Material;
 #endif // 0
 #if 1
 
-struct InlineDraw 
+struct InlineDraw : public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using LineVtxT = Vertex_PosColor<1>;
 	using LineIdxT = u16;

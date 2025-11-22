@@ -34,7 +34,6 @@ class RenderContext_Vk : public RenderResource_Vk<RenderContext>
 
 public:
 	using Base				= RenderResource_Vk<RenderContext>;
-	using Vk_RenderFrames	= Vector<Vk_RenderFrame, s_kFrameInFlightCount>;
 
 public:
 	RenderContext_Vk();

@@ -108,7 +108,7 @@ TransferContext_Vk::onCommit(RenderJob* rdJob, bool isWaitImmediate)
 
 	vkCmdBuf->endRecord();
 	
-	// if wait in here, then must follow TransferFrame pattern (aka ahead_pattern), instead of s_kFrameInFlightCount
+	// if wait in here, then must follow TransferFrame pattern (aka ahead_pattern), instead of s_kMaxFrameAheadCountHardLimit
 	RDS_TODO("must wait last submit here, since same frame index gpu may using the resources, currently waited in Engine so it is safe now");
 	RDS_TODO("btw need revisit vulkan barrier, will diff submit being pick and have race condition?");
 	RDS_TODO("revisit _hasTransferedGraphicsResoures");

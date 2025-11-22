@@ -122,9 +122,8 @@ public:
 #endif // 0
 #if 1
 
-class Vk_RenderPassPool : public NonCopyable
+class Vk_RenderPassPool : public NC_RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 public:
 	using Vk_RenderPassHash = SizeType;
 

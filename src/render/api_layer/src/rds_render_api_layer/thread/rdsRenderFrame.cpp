@@ -8,7 +8,7 @@ namespace rds
 #if 0
 #pragma mark --- rdsRenderFrame-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 RenderFrame::RenderFrame()
 {
@@ -73,13 +73,13 @@ RenderFrame::requestCommandBuffer()
 #if 0
 #pragma mark --- rdsRenderFrameContext-Impl ---
 #endif // 0
-#if 1
+#if 0
 
 //RenderFrameContext* RenderFrameContext::s_instance = nullptr;
 
 RenderFrameContext::RenderFrameContext()
 {
-	_renderFrames.resize(s_kFrameInFlightCount);
+	_renderFrames.resize(s_kMaxFrameAheadCountHardLimit);
 }
 
 RenderFrameContext::~RenderFrameContext()
@@ -103,7 +103,7 @@ RenderFrameContext::rotate()
 {
 	RDS_TODO("RenderFrameContext should belong to Renderer");
 
-	iFrame = math::modPow2Val(iFrame + 1, s_kFrameInFlightCount);
+	iFrame = math::modPow2Val(iFrame + 1, s_kMaxFrameAheadCountHardLimit);
 	renderFrame().reset();
 }
 

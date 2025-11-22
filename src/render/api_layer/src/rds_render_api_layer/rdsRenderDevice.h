@@ -56,9 +56,8 @@ struct	TransferFrame_CreateDesc;
 class	BindlessResources;
 struct	BindlessResources_CreateDesc;
 
-class RenderDevice : public RefCount_Base
+class RenderDevice : public RefCount_Base, public RenderApiLayerCommon_Base
 {
-	RDS_RENDER_API_LAYER_COMMON_BODY();
 	friend class ShaderStock;
 public:
 	using Base			= RefCount_Base;
@@ -180,8 +179,8 @@ protected:
 	/*
 	* TODO: rework
 	*/
-	//Vector<RenderFrame,		s_kFrameInFlightCount> _rdFrames;
-	//Vector<TransferFrame,	s_kFrameInFlightCount> _tsfFrames;
+	//Vector<RenderFrame,		s_kMaxFrameAheadCountHardLimit> _rdFrames;
+	//Vector<TransferFrame,	s_kMaxFrameAheadCountHardLimit> _tsfFrames;
 	SPtr<BindlessResources>		_bindlessRscs	= nullptr;
 	SPtr<TransferContext>		_tsfCtx			= nullptr;
 
@@ -212,9 +211,9 @@ inline const	RenderFrameParam&		RenderDevice::renderFrameParam() const		{ return
 inline			RenderApiType			RenderDevice::apiType()		const			{ return _apiType; }
 
 inline			u64						RenderDevice::engineFrameCount()	const	{ return renderFrameParam().engineFrameCount(); }
-inline			u32						RenderDevice::engineFrameIndex()	const	{ return sCast<u32>((engineFrameCount()) % s_kFrameInFlightCount); }
+inline			u32						RenderDevice::engineFrameIndex()	const	{ return sCast<u32>(rotateFrame(engineFrameCount())); }
 inline			u64						RenderDevice::frameCount()			const	{ return renderFrameParam().frameCount(); }
-inline			u32						RenderDevice::frameIndex()			const	{ return sCast<u32>((frameCount()) % s_kFrameInFlightCount); }
+inline			u32						RenderDevice::frameIndex()			const	{ return sCast<u32>(rotateFrame(frameCount())); }
 
 #endif
 
