@@ -4,7 +4,7 @@
 #include "rdsTransferCommand.h"
 
 #include "rds_render_api_layer/buffer/rdsRenderGpuBuffer.h"
-#include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+#include "rds_render_api_layer/buffer/rdsRenderMultiGpuBuffer.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
 #include "rds_render_api_layer/shader/rdsShader.h"
 #include "rds_render_api_layer/shader/rdsMaterial.h"

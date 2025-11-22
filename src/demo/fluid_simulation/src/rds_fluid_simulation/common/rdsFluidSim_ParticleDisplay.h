@@ -52,8 +52,8 @@ private:
 	RenderMesh		_rdMesh;
 
 	// actually do not need these, we can create on RenderGraph
-	SPtr<RenderGpuMultiBuffer>	_posBufGpu;
-	SPtr<RenderGpuMultiBuffer>	_velBufGpu;
+	SPtr<RenderMultiGpuBuffer>	_posBufGpu;
+	SPtr<RenderMultiGpuBuffer>	_velBufGpu;
 };
 
 

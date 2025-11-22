@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
-#include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+#include "rds_render_api_layer/buffer/rdsRenderMultiGpuBuffer.h"
 #include "rdsEditMesh.h"
 
 namespace rds
@@ -59,8 +59,8 @@ public:
 
 protected:
 	RenderMesh*					_renderMesh = nullptr;
-	SPtr<RenderGpuMultiBuffer>	_vtxBuf;
-	SPtr<RenderGpuMultiBuffer>	_idxBuf;
+	SPtr<RenderMultiGpuBuffer>	_vtxBuf;
+	SPtr<RenderMultiGpuBuffer>	_idxBuf;
 
 	RenderDataType	_idxType	= RenderDataType::UInt16;
 	u32 _vtxOffset	= 0;

@@ -72,10 +72,10 @@ FluidSim_ParticleDisplay::create2D(const ColorGradient& colorGrad)
 	cDesc.bufSize	= 16;
 	cDesc.stride	= sizeof(Vec2f);
 	cDesc.typeFlags = RenderGpuBufferTypeFlags::Vertex | RenderGpuBufferTypeFlags::Compute;
-	_posBufGpu = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);	_posBufGpu->setDebugName("_posBufGpu");
+	_posBufGpu = Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc);	_posBufGpu->setDebugName("_posBufGpu");
 
 	cDesc.typeFlags = RenderGpuBufferTypeFlags::Index | RenderGpuBufferTypeFlags::Compute;
-	_velBufGpu = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);	_velBufGpu->setDebugName("_velBufGpu");
+	_velBufGpu = Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc);	_velBufGpu->setDebugName("_velBufGpu");
 
 	RenderUtil::createMaterial(&_shaderPtcDisplay, &_mtlPtcDisplay,			"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_ParticleDisplay.shader");
 	RenderUtil::createMaterial(&_shaderPtcDisplay, &_debug.mtlPtcDisplay,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_ParticleDisplay.shader");

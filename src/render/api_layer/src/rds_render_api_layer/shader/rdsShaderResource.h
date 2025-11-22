@@ -3,7 +3,7 @@
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "rdsShaderInfo.h"
 
-#include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+#include "rds_render_api_layer/buffer/rdsRenderMultiGpuBuffer.h"
 #include "rds_render_api_layer/texture/rdsTexture.h"
 #include "rds_render_api_layer/texture/rdsTexture3D.h"
 #include "rds_render_api_layer/texture/rdsTextureCube.h"

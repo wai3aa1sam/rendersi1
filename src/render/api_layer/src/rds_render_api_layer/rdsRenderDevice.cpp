@@ -318,10 +318,10 @@ RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 }
 
 
-SPtr<RenderGpuMultiBuffer> 
-RenderDevice::createRenderGpuMultiBuffer(RenderGpuBuffer_CreateDesc& cDesc)
+SPtr<RenderMultiGpuBuffer> 
+RenderDevice::createRenderMultiGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 {
-	auto p = makeSPtr<RenderGpuMultiBuffer>();
+	auto p = makeSPtr<RenderMultiGpuBuffer>();
 	cDesc._internal_create(this);
 	p->create(cDesc);
 	return p;

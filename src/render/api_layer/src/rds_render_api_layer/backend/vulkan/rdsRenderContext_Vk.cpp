@@ -10,7 +10,7 @@
 #include "rds_render_api_layer/backend/vulkan/shader/rdsMaterial_Vk.h"
 #include "rds_render_api_layer/backend/vulkan/texture/rds_vk_texture.h"
 
-#include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+#include "rds_render_api_layer/buffer/rdsRenderMultiGpuBuffer.h"
 #include "rds_render_api_layer/graph/rdsRenderGraph.h"
 
 

@@ -7,11 +7,11 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsRenderGpuMultiBuffer-Decl ---
+#pragma mark --- rdsRenderMultiGpuBuffer-Decl ---
 #endif // 0
 #if 1
 
-class RenderGpuMultiBuffer : public RenderResource
+class RenderMultiGpuBuffer : public RenderResource
 {
 	friend class RenderDevice;
 public:
@@ -21,11 +21,11 @@ public:
 
 public:
 	static CreateDesc					makeCDesc(RDS_DEBUG_SRCLOC_PARAM);
-	static SPtr<RenderGpuMultiBuffer>	make(CreateDesc& cDesc);
+	static SPtr<RenderMultiGpuBuffer>	make(CreateDesc& cDesc);
 
 public:
-	RenderGpuMultiBuffer();
-	virtual ~RenderGpuMultiBuffer();
+	RenderMultiGpuBuffer();
+	virtual ~RenderMultiGpuBuffer();
 
 	/*
 	* should not let other to use the buffer before upload
@@ -77,20 +77,20 @@ protected:
 	Buffers _renderGpuBuffers;
 };
 
-inline int RenderGpuMultiBuffer::iFrame() const { return _iFrame; }
-inline bool RenderGpuMultiBuffer::isEmpty() const { return _renderGpuBuffers.is_empty(); }
+inline int RenderMultiGpuBuffer::iFrame() const { return _iFrame; }
+inline bool RenderMultiGpuBuffer::isEmpty() const { return _renderGpuBuffers.is_empty(); }
 
-inline const RenderGpuMultiBuffer::Desc& RenderGpuMultiBuffer::desc()		const	{ return _renderGpuBuffers[_iFrame]->desc(); }
+inline const RenderMultiGpuBuffer::Desc& RenderMultiGpuBuffer::desc()		const	{ return _renderGpuBuffers[_iFrame]->desc(); }
 
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::stride()		const	{ return _renderGpuBuffers[_iFrame]->stride(); }
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::bufSize()		const	{ return _renderGpuBuffers[_iFrame]->bufSize(); }
-inline RenderGpuMultiBuffer::SizeType RenderGpuMultiBuffer::elementCount()	const	{ return _renderGpuBuffers[_iFrame]->elementCount(); }
+inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::stride()		const	{ return _renderGpuBuffers[_iFrame]->stride(); }
+inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::bufSize()		const	{ return _renderGpuBuffers[_iFrame]->bufSize(); }
+inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::elementCount()	const	{ return _renderGpuBuffers[_iFrame]->elementCount(); }
 
-inline			RenderGpuBuffer* RenderGpuMultiBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[_iFrame]; }
-inline const	RenderGpuBuffer* RenderGpuMultiBuffer::renderGpuBuffer() const		{ return _renderGpuBuffers[_iFrame]; }
+inline			RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[_iFrame]; }
+inline const	RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer() const		{ return _renderGpuBuffers[_iFrame]; }
 
-inline			RenderGpuBuffer* RenderGpuMultiBuffer::previousBuffer()				{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kMaxBufferCount]; }
-inline const	RenderGpuBuffer* RenderGpuMultiBuffer::previousBuffer() const		{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kMaxBufferCount]; }
+inline			RenderGpuBuffer* RenderMultiGpuBuffer::previousBuffer()				{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kMaxBufferCount]; }
+inline const	RenderGpuBuffer* RenderMultiGpuBuffer::previousBuffer() const		{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kMaxBufferCount]; }
 
 
 #endif

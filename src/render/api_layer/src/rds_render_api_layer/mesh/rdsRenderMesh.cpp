@@ -29,7 +29,7 @@ RenderSubMesh::create(const EditMesh& editMesh)
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Vertex;
 		if (!_vtxBuf)
 		{
-			_vtxBuf = rdDev->createRenderGpuMultiBuffer(cDesc);
+			_vtxBuf = rdDev->createRenderMultiGpuBuffer(cDesc);
 			_vtxBuf->setDebugName("RenderSubMesh-vtxBuf");
 		}
 		_vtxBuf->uploadToGpu(buf.byteSpan());
@@ -71,7 +71,7 @@ RenderSubMesh::create(const EditMesh& editMesh)
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Index;
 		if (!_idxBuf)
 		{
-			_idxBuf = rdDev->createRenderGpuMultiBuffer(cDesc);
+			_idxBuf = rdDev->createRenderMultiGpuBuffer(cDesc);
 			_idxBuf ->setDebugName("RenderSubMesh-idxBuf");
 		}
 		_idxBuf->uploadToGpu(idxDataSpan);

@@ -29,7 +29,7 @@ struct	RenderContext_CreateDesc;
 
 class	RenderGpuBuffer;
 struct	RenderGpuBuffer_CreateDesc;
-class	RenderGpuMultiBuffer;
+class	RenderMultiGpuBuffer;
 
 class	Texture;
 class	Texture2D;
@@ -90,7 +90,7 @@ public:
 public:
 	SPtr<RenderContext>			createContext(				const	RenderContext_CreateDesc&		cDesc);
 	SPtr<RenderGpuBuffer>		createRenderGpuBuffer(				RenderGpuBuffer_CreateDesc&		cDesc);
-	SPtr<RenderGpuMultiBuffer>	createRenderGpuMultiBuffer(			RenderGpuBuffer_CreateDesc&		cDesc);
+	SPtr<RenderMultiGpuBuffer>	createRenderMultiGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc);
 	SPtr<Texture>				createTexture(						Texture_CreateDesc&				cDesc);
 	SPtr<Texture2D>				createTexture2D(					Texture2D_CreateDesc&			cDesc);
 	SPtr<Texture3D>				createTexture3D(					Texture3D_CreateDesc&			cDesc);

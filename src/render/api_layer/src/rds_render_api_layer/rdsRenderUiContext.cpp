@@ -56,7 +56,7 @@ RenderUiContext::create(RenderContext* renderContext)
 		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 		desc.bufSize	= totalVertexDataSize;
-		_vtxBuf = rdDev->createRenderGpuMultiBuffer(desc);
+		_vtxBuf = rdDev->createRenderMultiGpuBuffer(desc);
 		_vtxBuf->setDebugName("ui-vtxBuf");
 	}
 
@@ -65,7 +65,7 @@ RenderUiContext::create(RenderContext* renderContext)
 		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
 		desc.bufSize	= totalIndexDataSize;
-		_idxBuf = rdDev->createRenderGpuMultiBuffer(desc);
+		_idxBuf = rdDev->createRenderMultiGpuBuffer(desc);
 		_idxBuf->setDebugName("ui-idxBuf");
 	}
 }
@@ -175,7 +175,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 		desc.bufSize	= totalVertexDataSize;
 		desc.stride		= vertexSize;
-		_vtxBuf = rdDev->createRenderGpuMultiBuffer(desc);
+		_vtxBuf = rdDev->createRenderMultiGpuBuffer(desc);
 	}
 
 	if (!_idxBuf || _idxBuf->bufSize() < totalIndexDataSize) 
@@ -184,7 +184,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
 		desc.bufSize	= totalIndexDataSize;
 		desc.stride		= indexSize;
-		_idxBuf = rdDev->createRenderGpuMultiBuffer(desc);
+		_idxBuf = rdDev->createRenderMultiGpuBuffer(desc);
 	}
 	#else
 

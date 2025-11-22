@@ -2,7 +2,7 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 #include "vertex/rdsVertex.h"
-#include "buffer/rdsRenderGpuMultiBuffer.h"
+#include "buffer/rdsRenderMultiGpuBuffer.h"
 #include "shader/rdsShader.h"
 #include "shader/rdsMaterial.h"
 #include "shader/rdsMaterialPool.h"
@@ -81,8 +81,8 @@ protected:
 
 	const VertexLayout*		_vertexLayout = nullptr;
 
-	SPtr<RenderGpuMultiBuffer>	_vtxBuf;
-	SPtr<RenderGpuMultiBuffer>	_idxBuf;
+	SPtr<RenderMultiGpuBuffer>	_vtxBuf;
+	SPtr<RenderMultiGpuBuffer>	_idxBuf;
 
 	Vector<u8>	_vertexData;
 	Vector<u8>	_indexData;

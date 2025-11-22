@@ -13,7 +13,7 @@
 #include "rds_render_api_layer/transfer/rdsTransferContext.h"
 #include "rds_render_api_layer/transfer/command/rdsTransferRequest.h"
 
-#include "rds_render_api_layer/buffer/rdsRenderGpuMultiBuffer.h"
+#include "rds_render_api_layer/buffer/rdsRenderMultiGpuBuffer.h"
 
 #include "rds_render_api_layer/shader/rdsShader.h"
 #include "rds_render_api_layer/shader/rdsMaterial.h"

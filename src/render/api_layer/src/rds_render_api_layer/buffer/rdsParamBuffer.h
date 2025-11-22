@@ -51,7 +51,7 @@ protected:
 	bool checkIsInBoundary(SizeType i) const { bool isInBoundary = i < cpuBuffer().size() / sizeof(T); RDS_CORE_ASSERT(isInBoundary, "out of boundary"); return isInBoundary;  }
 
 public:
-	SPtr<RenderGpuMultiBuffer>							_gpuBufs;
+	SPtr<RenderMultiGpuBuffer>							_gpuBufs;
 	Vector<Vector<u8>, s_kMaxFrameAheadCountHardLimit>	_cpuBufs;		// only 1 cpu buffer is enough
 };
 
@@ -93,7 +93,7 @@ ParamBuffer<T>::resize(SizeType n)
 		cDesc.bufSize	= bufSize;
 		cDesc.stride	= sizeof(T);
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute;
-		_gpuBufs = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);
+		_gpuBufs = Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc);
 	}
 
 	cpuBuffer().resize(bufSize);

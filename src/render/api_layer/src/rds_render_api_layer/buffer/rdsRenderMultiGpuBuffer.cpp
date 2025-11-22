@@ -1,5 +1,5 @@
 #include "rds_render_api_layer-pch.h"
-#include "rdsRenderGpuMultiBuffer.h"
+#include "rdsRenderMultiGpuBuffer.h"
 
 #include "../rdsRenderer.h"
 #include "../rdsRenderDevice.h"
@@ -9,33 +9,33 @@ namespace rds
 {
 
 #if 0
-#pragma mark --- rdsRenderGpuMultiBuffer-Impl ---
+#pragma mark --- rdsRenderMultiGpuBuffer-Impl ---
 #endif // 0
 #if 1
 
-RenderGpuMultiBuffer::CreateDesc 
-RenderGpuMultiBuffer::makeCDesc(RDS_DEBUG_SRCLOC_PARAM) 
+RenderMultiGpuBuffer::CreateDesc 
+RenderMultiGpuBuffer::makeCDesc(RDS_DEBUG_SRCLOC_PARAM) 
 { 
 	return CreateDesc{}; 
 }
 
-SPtr<RenderGpuMultiBuffer> 
-RenderGpuMultiBuffer::make(CreateDesc& cDesc) 
+SPtr<RenderMultiGpuBuffer> 
+RenderMultiGpuBuffer::make(CreateDesc& cDesc) 
 { 
-	return Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc); 
+	return Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc); 
 }
 
-RenderGpuMultiBuffer::RenderGpuMultiBuffer()
+RenderMultiGpuBuffer::RenderMultiGpuBuffer()
 {
 	_iFrame = 0;
 }
 
-RenderGpuMultiBuffer::~RenderGpuMultiBuffer()
+RenderMultiGpuBuffer::~RenderMultiGpuBuffer()
 {
 	destroy();
 }
 
-void RenderGpuMultiBuffer::create(CreateDesc& cDesc)
+void RenderMultiGpuBuffer::create(CreateDesc& cDesc)
 {
 	RDS_CORE_ASSERT(_renderGpuBuffers.is_empty(), "already create");
 
@@ -44,14 +44,14 @@ void RenderGpuMultiBuffer::create(CreateDesc& cDesc)
 	onPostCreate(cDesc);
 }
 
-void RenderGpuMultiBuffer::destroy()
+void RenderMultiGpuBuffer::destroy()
 {
 	onDestroy();
 	Base::destroy();
 }
 
 void 
-RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
+RenderMultiGpuBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 {
 	/*
 	* correct framed resource impl, only rotate when *commit, just like copy on write
@@ -73,7 +73,7 @@ RenderGpuMultiBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 }
 
 void 
-RenderGpuMultiBuffer::onCreate(CreateDesc& cDesc)
+RenderMultiGpuBuffer::onCreate(CreateDesc& cDesc)
 {
 	_renderGpuBuffers.resize(s_kFrameAheadCount);
 	_desc = cDesc;
@@ -81,23 +81,23 @@ RenderGpuMultiBuffer::onCreate(CreateDesc& cDesc)
 }
 
 void 
-RenderGpuMultiBuffer::onPostCreate(CreateDesc& cDesc)
+RenderMultiGpuBuffer::onPostCreate(CreateDesc& cDesc)
 {
 
 }
 
-void RenderGpuMultiBuffer::onDestroy()
+void RenderMultiGpuBuffer::onDestroy()
 {
 	_renderGpuBuffers.clear();
 }
 
-void RenderGpuMultiBuffer::rotate()
+void RenderMultiGpuBuffer::rotate()
 {
 	_iFrame = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
 }
 
 void 
-RenderGpuMultiBuffer::setDebugName(StrView name)
+RenderMultiGpuBuffer::setDebugName(StrView name)
 {
 	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
 	_debugName = name;
@@ -109,7 +109,7 @@ RenderGpuMultiBuffer::setDebugName(StrView name)
 }
 
 SPtr<RenderGpuBuffer>& 
-RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
+RenderMultiGpuBuffer::makeBufferOnDemand(SizeType bufSize)
 {
 	RDS_CORE_ASSERT(StrUtil::len(debugName()) > 0, "set a debug name for gpu buffer");
 
@@ -128,7 +128,7 @@ RenderGpuMultiBuffer::makeBufferOnDemand(SizeType bufSize)
 }
 
 SPtr<RenderGpuBuffer> 
-RenderGpuMultiBuffer::_makeNewBuffer(SizeType bufSize)
+RenderMultiGpuBuffer::_makeNewBuffer(SizeType bufSize)
 {
 	auto newCDesc = makeCDesc(RDS_DEBUG_SRCLOC);
 	newCDesc.typeFlags	= _desc.typeFlags;

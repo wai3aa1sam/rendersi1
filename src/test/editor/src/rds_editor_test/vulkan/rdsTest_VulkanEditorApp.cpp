@@ -466,17 +466,17 @@ public:
 		#if 1
 		if (!_testMultiBuffer)
 		{
-			auto makeBuf = [](SPtr<RenderGpuMultiBuffer>& buf, float z = 0.0f)
-			{
-				auto data			= makeRndColorTriangleData(z);
+			auto makeBuf = [](SPtr<RenderMultiGpuBuffer>& buf, float z = 0.0f)
+				{
+					auto data			= makeRndColorTriangleData(z);
 
-				auto bufCDesc		= RenderGpuBuffer_CreateDesc { RDS_SRCLOC };
-				bufCDesc.bufSize	= data.size();
-				bufCDesc.stride		= getVertexLayout_RndColorTriangle()->stride();
-				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
+					auto bufCDesc		= RenderGpuBuffer_CreateDesc { RDS_SRCLOC };
+					bufCDesc.bufSize	= data.size();
+					bufCDesc.stride		= getVertexLayout_RndColorTriangle()->stride();
+					bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 
-				buf = RenderGpuMultiBuffer::make(bufCDesc);
-			};
+					buf = RenderMultiGpuBuffer::make(bufCDesc);
+				};
 			makeBuf(_testMultiBuffer);
 			makeBuf(_testMultiBuffer2, 0.5f);
 
@@ -528,8 +528,8 @@ protected:
 
 	RenderRequest	_rdReq;
 
-	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
-	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer2;
+	SPtr<RenderMultiGpuBuffer>	_testMultiBuffer;
+	SPtr<RenderMultiGpuBuffer>	_testMultiBuffer2;
 
 	SPtr<RenderGpuBuffer>		_testVtxBuf;
 	SPtr<RenderGpuBuffer>		_testIdxBuf;

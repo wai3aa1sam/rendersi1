@@ -109,21 +109,21 @@ inline bool					DemoEditorLayer::isFocusOnEditorViewport() const	{ RDS_TODO("tem
 struct TestEngine
 {
 	SPtr<RenderGpuBuffer>		_testBuffer;
-	SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
+	SPtr<RenderMultiGpuBuffer>	_testMultiBuffer;
 	SPtr<Texture2D>				_testTex2D;
 
 	void testRenderResource()
 	{
 		auto fn =
 			[]
-			(SPtr<RenderGpuBuffer>& testBuffer, SPtr<RenderGpuMultiBuffer>& testMultiBuffer, SPtr<Texture2D>& testTex2D)
+			(SPtr<RenderGpuBuffer>& testBuffer, SPtr<RenderMultiGpuBuffer>& testMultiBuffer, SPtr<Texture2D>& testTex2D)
 			{
 				{
 					if (Renderer::renderDevice()->engineFrameCount() % 2 == 0)
 					{
 						/*
 						SPtr<RenderGpuBuffer>		_testBuffer;
-						SPtr<RenderGpuMultiBuffer>	_testMultiBuffer;
+						SPtr<RenderMultiGpuBuffer>	_testMultiBuffer;
 						SPtr<Texture2D>				_testTex2D;
 						*/
 						{
@@ -137,7 +137,7 @@ struct TestEngine
 							testBuffer->setDebugName("_testBuffer");
 							//testBuffer->uploadToGpu(data);
 
-							testMultiBuffer = Renderer::renderDevice()->createRenderGpuMultiBuffer(cDesc);
+							testMultiBuffer = Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc);
 							testMultiBuffer->setDebugName("_testMultiBuffer");
 							//testMultiBuffer->uploadToGpu(data);
 						}
@@ -157,7 +157,7 @@ struct TestEngine
 
 		{
 			SPtr<RenderGpuBuffer>		testBuffer;
-			SPtr<RenderGpuMultiBuffer>	testMultiBuffer;
+			SPtr<RenderMultiGpuBuffer>	testMultiBuffer;
 			SPtr<Texture2D>				testTex2D;
 
 			fn(testBuffer, testMultiBuffer, testTex2D);
