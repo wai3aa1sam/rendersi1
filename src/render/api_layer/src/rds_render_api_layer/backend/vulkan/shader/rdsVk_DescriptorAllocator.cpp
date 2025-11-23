@@ -339,7 +339,7 @@ Vk_DescriptorBuilder::bindConstantBuffer(Vk_DescriptorSet& dstSet, ConstBuffer& 
 	const auto& info = constBuf.info();
 
 	auto& bufInfo	= _bufInfos.emplace_back();
-	bufInfo.buffer	= Util::toVkBufHnd(constBuf._gpuBuffer.ptr());
+	bufInfo.buffer	= Util::toVkBufHnd(constBuf._gpuBuffer->renderGpuBuffer());
 	bufInfo.offset	= 0;
 	bufInfo.range	= info.size;
 

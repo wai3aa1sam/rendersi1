@@ -11,6 +11,8 @@ namespace rds
 #endif // 0
 #if 1
 
+// TODO: NameId and PersistentString, instead of this "ShaderPropId"
+
 struct ShaderPropId
 {
 public:

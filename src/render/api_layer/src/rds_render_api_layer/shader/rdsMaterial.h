@@ -212,48 +212,30 @@ template<class TEX> inline
 void 
 Material::_setTexParam(StrView name, TEX* v)
 {
-	#if RDS_SHADER_USE_BINDLESS
-	auto bindlessIdx = v->bindlessHandle().getResourceIndex();
-	setParam(name, bindlessIdx);
-	#else
 	for (auto& pass : _passes)
 	{
 		pass->setTexParam(name, v);
 	}
-	#endif
 }
 
 inline
 void 
 Material::_setBufferParam(StrView name, RenderGpuBuffer* v)
 {
-	#if RDS_SHADER_USE_BINDLESS
-	auto bindlessIdx = v->bindlessHandle().getResourceIndex();
-	setParam(name, bindlessIdx);
-	#else
 	for (auto& pass : _passes)
 	{
 		pass->setBufferParam(name, v);
 	}
-	#endif // RDS_SHADER_USE_BINDLESS
 }
 
 template<class TEX> inline 
 void 
 Material::_setImageParam(StrView name, TEX* v, u32 mipLevel)
 {
-	RDS_CORE_ASSERT(v->hasMipmapView(),					"{} cannot use as image, no TextureUsageFlags::UnorderedAccess usageFlags", v->debugName());
-	RDS_CORE_ASSERT(mipLevel < v->mipmapViewCount(),	"mipLevel out of boundary");
-
-	#if RDS_SHADER_USE_BINDLESS
-	auto bindlessIdx = v->uavBindlessHandle().getResourceIndex(mipLevel);
-	setParam(name, bindlessIdx);
-	#else
 	for (auto& pass : _passes)
 	{
 		pass->setImageParam(name, v, mipLevel);
 	}
-	#endif // 0
 }
 
 inline const ShaderPermutations&	Material::permutations()	const { return _permuts; }

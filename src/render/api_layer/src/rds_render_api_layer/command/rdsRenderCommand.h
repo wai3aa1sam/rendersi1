@@ -61,7 +61,7 @@ private:																	\
 //---
 RDS_ENUM_CLASS(RenderCommandType, u8);
 
-class RenderCommand : public NonCopyable
+class RenderCommand : public NC_RenderApiLayerCommon_Base
 {
 public:
 	using Type = RenderCommandType;
@@ -152,11 +152,34 @@ public:
 	virtual ~RenderCommand_SwapBuffers() {};
 };
 
-class RenderCommand_DrawCall : public RenderCommand
+class RenderCommand_Callable_Base : public RenderCommand
+{
+public:
+	using Base = RenderCommand;
+
+public:
+	RenderCommand_Callable_Base(Type type) : Base(type) {}
+	virtual ~RenderCommand_Callable_Base() {};
+
+public:
+	void setMaterial(Material* mtl, int mtlPassIdx = 0);
+
+public:
+	Material*		material()						{ return _mtl; }
+	Material::Pass* getMaterialPass()				{ return _mtl ? _mtl->getPass(_i_mtlPass) : nullptr; }
+	int				shaderResourcesIndex() const	{ return _i_shaderRscs; }
+
+protected:
+	int				_i_shaderRscs	= 0;
+	int				_i_mtlPass		= 0;
+	SPtr<Material>	_mtl;
+};
+
+class RenderCommand_DrawCall : public RenderCommand_Callable_Base
 {
 	friend class RenderCommandBuffer;
 public:
-	using Base = RenderCommand;
+	using Base = RenderCommand_Callable_Base;
 	using This = RenderCommand_DrawCall;
 
 public:
@@ -174,26 +197,15 @@ public:
 	SPtr<RenderGpuBuffer>	indexBuffer;
 
 public:
-	Material*	material()					{ return _mtl; }
 	void*		extraData()					{ return _extraData; }
 	SizeType	extraDataSize()	const		{ return _extraDataSize; }
-
-	u32			materialFrameIndex() const	{ return _mtlRscFrameIdx; }
 
 protected:
 	// storage for extra data
 	void*		_extraData		= nullptr;
 	SizeType	_extraDataSize	= 0;
 
-	u32				_mtlRscFrameIdx	= 0;
-	u32				_mtlPassIdx		= 0;
-	SPtr<Material>	_mtl;
-
-
 public:
-	Material::Pass* getMaterialPass() { return _mtl ? _mtl->getPass(_mtlPassIdx) : nullptr; }
-
-	void setMaterial(Material* mtl, SizeType mtlPassIdx = 0);
 	void setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset = 0, SizeType idxOffset = 0);
 
 	template<class T>
@@ -316,29 +328,18 @@ public:
 #endif // 0
 #if 1
 
-class RenderCommand_Dispatch : public RenderCommand
+class RenderCommand_Dispatch : public RenderCommand_Callable_Base
 {
 public:
-	using Base = RenderCommand;
+	using Base = RenderCommand_Callable_Base;
 	using This = RenderCommand_Dispatch;
 
 public:
 	Tuple3u			threadGroups	= Tuple3u{1, 1, 1};
-	
-protected:
-	u32				_mtlRscFrameIdx	= 0;
-	u32				_mtlPassIdx		= 0;
-	SPtr<Material>	_mtl;
 
 public:
 	RenderCommand_Dispatch() : Base(Type::Dispatch) {}
 	virtual ~RenderCommand_Dispatch() {};
-
-	void setMaterial(Material* mtl, SizeType mtlPassIdx = 0);
-
-public:
-	Material::Pass* getMaterialPass()			{ return _mtl ? _mtl->getPass(_mtlPassIdx) : nullptr; }
-	u32				materialFrameIndex() const	{ return _mtlRscFrameIdx; }
 };
 
 #endif // 0

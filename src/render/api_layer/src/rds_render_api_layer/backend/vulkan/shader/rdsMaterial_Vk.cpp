@@ -77,7 +77,7 @@ MaterialPass_Vk::onCreate(Material* material, ShaderPass* shaderPass)
 		_computeStage = &_vkComputeStage;
 	}
 
-	_vkFramedDescrSets.resize(s_kMaxFrameAheadCountHardLimit);
+	_vkDescrSets.resize(_vkDescrSets.s_kLocalSize);
 }
 
 void 
@@ -121,7 +121,7 @@ MaterialPass_Vk::onDestroy()
 		_computeStage	= nullptr;
 	}
 
-	_vkFramedDescrSets.clear();
+	_vkDescrSets.clear();
 
 	Base::onDestroy();
 }
@@ -142,13 +142,13 @@ MaterialPass_Vk::onBind(RenderContext* ctx, const VertexLayout* vtxLayout, Rende
 }
 
 void 
-MaterialPass_Vk::onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame)
+MaterialPass_Vk::onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, int i_shaderRscs)
 {
 	VkPipelineBindPoint vkBindPt = VK_PIPELINE_BIND_POINT_COMPUTE;
 
 	auto* vkPipelineHnd = shaderPass()->computeVkPipeline().hnd();
 	vkCmdBuf->cmd_bindPipeline(vkBindPt, vkPipelineHnd);
-	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf, iFrame);
+	bindDescriptorSet(vkBindPt, ctx, vkCmdBuf, i_shaderRscs);
 }
 
 void 
@@ -164,18 +164,18 @@ MaterialPass_Vk::bindPipeline(Vk_CommandBuffer* vkCmdBuf, Vk_RenderPass* vkRdPas
 }
 
 void 
-MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame)
+MaterialPass_Vk::bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, int i_shaderRscs)
 {
 	auto* rdDevVk	= renderDeviceVk();
 	auto* vkCtx		= sCast<RenderContext_Vk*>(ctx);
 
 	{
-		auto& shaderRsc		= _framedShaderRscs.shaderResource(iFrame);
-		auto& vkDescrSet	= _vkFramedDescrSets[iFrame];
+		auto& shaderRscs	= _shaderRscs.shaderResources(i_shaderRscs);
+		auto& vkDescrSet	= _vkDescrSets[i_shaderRscs];
 
 		auto&	vkRdFrame		= vkCtx->vkRenderFrame();
 		auto	builder			= Vk_DescriptorBuilder::make(&vkRdFrame.descriptorAllocator(), vkRdFrame.nonBindlessUpdatedDescriptorSets());
-		builder.build(vkDescrSet, shaderPass()->vkDescriptorSetLayout(), shaderRsc, shaderPass());
+		builder.build(vkDescrSet, shaderPass()->vkDescriptorSetLayout(), shaderRscs, shaderPass());
 
 		auto* vkDescrSetHnd			= vkDescrSet.hnd();
 		auto* vkPipelineLayoutHnd	= vkPipelineLayout().hnd();

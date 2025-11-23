@@ -26,7 +26,6 @@ public:
 	SizeType	size()		const;
 	bool		is_empty()	const;
 
-
 	/*
 	* do not store the ptr, store the index instead, since it will rotate and the cpuBuffer will resize, all ptr will be invalid
 	*/
@@ -39,32 +38,44 @@ public:
 			RenderGpuBuffer* prevGpuBuffer()		{ return _gpuBufs->previousBuffer(); }
 	const	RenderGpuBuffer* prevGpuBuffer() const	{ return _gpuBufs->previousBuffer(); }
 
-			Vector<u8>& cpuBuffer()					{ return _cpuBufs[_gpuBufs->iFrame()]; }
-	const	Vector<u8>& cpuBuffer() const			{ return _cpuBufs[_gpuBufs->iFrame()]; }
+	#if 1
+			Vector<u8>& cpuBuffer()					{ return _cpuBuf; }
+	const	Vector<u8>& cpuBuffer() const			{ return _cpuBuf; }
 
-			Vector<u8>& prevCpuBuffer()				{ auto iPrevFrame = (sCast<int>(iFrame()) - 1) % s_kFrameAheadCount; return _cpuBufs[iPrevFrame]; }
-	const	Vector<u8>& prevCpuBuffer() const		{ auto iPrevFrame = (sCast<int>(iFrame()) - 1) % s_kFrameAheadCount; return _cpuBufs[iPrevFrame]; }
+	#else
+			Vector<u8>& cpuBuffer()					{ return _cpuBufs[bufferIndex()]; }
+	const	Vector<u8>& cpuBuffer() const			{ return _cpuBufs[bufferIndex()]; }
 
-	u32 iFrame() const { return _gpuBufs->iFrame(); }
+			Vector<u8>& prevCpuBuffer()				{ return _cpuBufs[s_previousBufferIndex(bufferIndex())]; }
+	const	Vector<u8>& prevCpuBuffer() const		{ return _cpuBufs[s_previousBufferIndex(bufferIndex())]; }
+
+	#endif // 0
+
+	int bufferIndex() const { return _gpuBufs->bufferIndex(); }
 
 protected:
-	bool checkIsInBoundary(SizeType i) const { bool isInBoundary = i < cpuBuffer().size() / sizeof(T); RDS_CORE_ASSERT(isInBoundary, "out of boundary"); return isInBoundary;  }
+	bool checkIsInBoundary(SizeType i) const { bool isInBoundary = i < (cpuBuffer().size() / sizeof(T)); RDS_CORE_ASSERT(isInBoundary, "out of boundary"); return isInBoundary;  }
 
-public:
-	SPtr<RenderMultiGpuBuffer>							_gpuBufs;
-	Vector<Vector<u8>, s_kMaxFrameAheadCountHardLimit>	_cpuBufs;		// only 1 cpu buffer is enough
+private:
+	bool _isDirty : 1;
+
+	Vector<u8>					_cpuBuf;
+	SPtr<RenderMultiGpuBuffer>	_gpuBufs;
+	//Vector<Vector<u8>, s_kMaxFrameAheadCountHardLimit>	_cpuBufs;		// only 1 cpu buffer is enough
 };
 
 template<class T> inline
 ParamBuffer<T>::ParamBuffer()
 {
-	_cpuBufs.resize(s_kFrameAheadCount);
+	//_cpuBufs.resize(s_kFrameAheadCount);
 }
 
 template<class T> inline
 T& 
 ParamBuffer<T>::add()
 {
+	_isDirty = true;
+
 	auto size = this->size();
 	resize(size + 1);
 	return at(size);		// size is the last idx
@@ -97,6 +108,8 @@ ParamBuffer<T>::resize(SizeType n)
 	}
 
 	cpuBuffer().resize(bufSize);
+
+	_isDirty = true;
 }
 
 template<class T> inline
@@ -116,22 +129,27 @@ void
 ParamBuffer<T>::setValue(SizeType i, const T& v)
 {
 	at(i) = v;
+	_isDirty = true;
 }
 
 template<class T> inline
 void 
 ParamBuffer<T>::uploadToGpu()
 {
-	if (cpuBuffer().is_empty())
+	/*if (cpuBuffer().is_empty())
 	{
 		return;
+	}*/
+
+	if (_isDirty)
+	{
+		_gpuBufs->uploadToGpu(cpuBuffer());
+		_isDirty = false;
 	}
 
-	_gpuBufs->uploadToGpu(cpuBuffer());
-
-	auto prevSize = prevCpuBuffer().size();
-	cpuBuffer().resize(prevSize);
-	memory_copy(cpuBuffer().data(), prevCpuBuffer().data(), prevSize);
+	//auto prevSize = prevCpuBuffer().size();
+	//cpuBuffer().resize(prevSize);
+	//memory_copy(cpuBuffer().data(), prevCpuBuffer().data(), prevSize);
 }
 
 template<class T> inline typename ParamBuffer<T>::SizeType	ParamBuffer<T>::size()		const { return cpuBuffer().size() / sizeof(T); }

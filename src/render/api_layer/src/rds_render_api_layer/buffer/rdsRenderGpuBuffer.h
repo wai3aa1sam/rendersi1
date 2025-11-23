@@ -51,6 +51,9 @@ public:
 	{
 
 	}
+
+public:
+	SizeType elementCount()	const { return bufSize / stride; }
 };
 
 struct RenderGpuBuffer_CreateDesc : public RenderResource_CreateDescT<RenderGpuBuffer_Desc>

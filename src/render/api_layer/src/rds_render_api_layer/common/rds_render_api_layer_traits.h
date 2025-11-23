@@ -50,11 +50,27 @@ public:
 public:
 	static bool					isRenderThread();
 	template<class T> static T	rotateFrame(T frameCount);
+
+	template<class T, class N>	RDS_NODISCARD static T	s_bufferIndex(			T i, N maxCount);
+	template<class T, class N>	RDS_NODISCARD static T	s_nextBufferIndex(		T i, N maxCount);
+	template<class T, class N>	RDS_NODISCARD static T	s_previousBufferIndex(	T i, N maxCount);
+
+	template<class T>			RDS_NODISCARD static T s_bufferIndex(			T i);
+	template<class T>			RDS_NODISCARD static T s_nextBufferIndex(		T i);
+	template<class T>			RDS_NODISCARD static T s_previousBufferIndex(	T i);
 };
 
 inline bool					RenderApiLayerDefaultTraits_T::isRenderThread()				{ return OsTraits::threadLocalId() == s_kRenderThreadId; }
 
-template<class T> inline T	RenderApiLayerDefaultTraits_T::rotateFrame(T frameCount)	{ return frameCount % s_kFrameAheadCount; }
+template<class T> inline T	RenderApiLayerDefaultTraits_T::rotateFrame(T frameCount)		{ return frameCount % s_kFrameAheadCount; }
+
+template<class T, class N>	inline T RenderApiLayerDefaultTraits_T::s_bufferIndex(			T i, N maxCount)	{ return (i)				% sCast<T>(maxCount); }
+template<class T, class N>	inline T RenderApiLayerDefaultTraits_T::s_nextBufferIndex(		T i, N maxCount)	{ return (i + sCast<T>(1))  % sCast<T>(maxCount); }
+template<class T, class N>	inline T RenderApiLayerDefaultTraits_T::s_previousBufferIndex(	T i, N maxCount)	{ return sCast<T>((sCast<int>(i) - 1) % sCast<u32>(maxCount)); }
+
+template<class T>			inline T RenderApiLayerDefaultTraits_T::s_bufferIndex(			T i)				{ return (i)				% sCast<T>(s_kMaxFrameAheadCountHardLimit); }
+template<class T>			inline T RenderApiLayerDefaultTraits_T::s_nextBufferIndex(		T i)				{ return (i + sCast<T>(1))  % sCast<T>(s_kMaxFrameAheadCountHardLimit); }
+template<class T>			inline T RenderApiLayerDefaultTraits_T::s_previousBufferIndex(	T i)				{ return sCast<T>((sCast<int>(i) - 1) % sCast<u32>(s_kMaxFrameAheadCountHardLimit)); }
 
 
 #if !RDS_RENDER_CUSTOM_TRAITS

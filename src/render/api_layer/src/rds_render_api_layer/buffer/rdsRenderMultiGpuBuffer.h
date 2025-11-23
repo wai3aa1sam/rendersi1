@@ -35,13 +35,11 @@ public:
 
 	void uploadToGpu(ByteSpan data, SizeType offset = 0);
 
-	void rotate();
-
 	virtual void setDebugName(StrView name) override;
 
 public:
-	int		iFrame()	const;
-	bool	isEmpty()	const;
+	int		bufferIndex()	const;
+	bool	isEmpty()		const;
 
 	const Desc& desc() const;
 
@@ -69,7 +67,7 @@ protected:
 	SPtr<RenderGpuBuffer> _makeNewBuffer(SizeType bufSize);
 
 protected:
-	Atm<int>	_iFrame = 0;
+	int			_i_buffer = 0;
 	Desc		_desc;
 
 	static constexpr SizeType s_kMaxBufferCount = s_kMaxFrameAheadCountHardLimit;
@@ -77,20 +75,20 @@ protected:
 	Buffers _renderGpuBuffers;
 };
 
-inline int RenderMultiGpuBuffer::iFrame() const { return _iFrame; }
-inline bool RenderMultiGpuBuffer::isEmpty() const { return _renderGpuBuffers.is_empty(); }
+inline int	RenderMultiGpuBuffer::bufferIndex() const { return _i_buffer; }
+inline bool RenderMultiGpuBuffer::isEmpty()		const { return _renderGpuBuffers.is_empty(); }
 
-inline const RenderMultiGpuBuffer::Desc& RenderMultiGpuBuffer::desc()		const	{ return _renderGpuBuffers[_iFrame]->desc(); }
+inline const RenderMultiGpuBuffer::Desc& RenderMultiGpuBuffer::desc()		const	{ return _desc; }
 
-inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::stride()		const	{ return _renderGpuBuffers[_iFrame]->stride(); }
-inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::bufSize()		const	{ return _renderGpuBuffers[_iFrame]->bufSize(); }
-inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::elementCount()	const	{ return _renderGpuBuffers[_iFrame]->elementCount(); }
+inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::stride()		const	{ return desc().stride; }
+inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::bufSize()		const	{ return desc().bufSize; }
+inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::elementCount()	const	{ return desc().elementCount(); }
 
-inline			RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[_iFrame]; }
-inline const	RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer() const		{ return _renderGpuBuffers[_iFrame]; }
+inline			RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[s_bufferIndex(_i_buffer)]; }
+inline const	RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer() const		{ return _renderGpuBuffers[s_bufferIndex(_i_buffer)]; }
 
-inline			RenderGpuBuffer* RenderMultiGpuBuffer::previousBuffer()				{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kMaxBufferCount]; }
-inline const	RenderGpuBuffer* RenderMultiGpuBuffer::previousBuffer() const		{ return _renderGpuBuffers[(sCast<int>(_iFrame) - 1) % s_kMaxBufferCount]; }
+inline			RenderGpuBuffer* RenderMultiGpuBuffer::previousBuffer()				{ return _renderGpuBuffers[s_previousBufferIndex(_i_buffer)]; }
+inline const	RenderGpuBuffer* RenderMultiGpuBuffer::previousBuffer() const		{ return _renderGpuBuffers[s_previousBufferIndex(_i_buffer)]; }
 
 
 #endif

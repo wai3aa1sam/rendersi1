@@ -27,7 +27,7 @@ RenderMultiGpuBuffer::make(CreateDesc& cDesc)
 
 RenderMultiGpuBuffer::RenderMultiGpuBuffer()
 {
-	_iFrame = 0;
+	_i_buffer = 0;
 }
 
 RenderMultiGpuBuffer::~RenderMultiGpuBuffer()
@@ -57,8 +57,10 @@ RenderMultiGpuBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 	* correct framed resource impl, only rotate when *commit, just like copy on write
 	* , we can get the exact resource, only rotate when write 
 	*/
-	rotate();
 
+	// if (!_renderGpuBuffers.is_empty())
+	_i_buffer = s_nextBufferIndex(_i_buffer);
+	
 	#if 0
 	bool isFirstCreated = _renderGpuBuffers.size() == 1;
 	if (!isFirstCreated)
@@ -68,14 +70,13 @@ RenderMultiGpuBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 	#endif // 0
 
 	transferRequest().uploadBuffer(makeBufferOnDemand(data.size() - offset), data, offset);
-	//nextBuffer(data.size() - offset)->uploadToGpu(data, offset);
-	//onUploadToGpu(data, offset);
+	_desc.bufSize = data.size();
 }
 
 void 
 RenderMultiGpuBuffer::onCreate(CreateDesc& cDesc)
 {
-	_renderGpuBuffers.resize(s_kFrameAheadCount);
+	_renderGpuBuffers.resize(s_kMaxBufferCount);
 	_desc = cDesc;
 	//auto& e = _renderGpuBuffers.emplace_back(RenderGpuBuffer::make(cDesc)); RDS_UNUSED(e);	
 }
@@ -89,11 +90,6 @@ RenderMultiGpuBuffer::onPostCreate(CreateDesc& cDesc)
 void RenderMultiGpuBuffer::onDestroy()
 {
 	_renderGpuBuffers.clear();
-}
-
-void RenderMultiGpuBuffer::rotate()
-{
-	_iFrame = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
 }
 
 void 
@@ -114,9 +110,8 @@ RenderMultiGpuBuffer::makeBufferOnDemand(SizeType bufSize)
 	RDS_CORE_ASSERT(StrUtil::len(debugName()) > 0, "set a debug name for gpu buffer");
 
 	// do acutal rotate in this function, then tsfFrame / ctx no need to update the frame separately
-	//auto idx = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
-	auto idx = _iFrame % s_kMaxFrameAheadCountHardLimit;;
-
+	//auto idx = (_i_buffer + 1) % s_kMaxFrameAheadCountHardLimit;
+	auto idx = s_bufferIndex(_i_buffer);
 	if (!_renderGpuBuffers[idx] || _renderGpuBuffers[idx]->bufSize() < bufSize) // _renderGpuBuffers.size() < (idx + 1) || 
 	{
 		//_renderGpuBuffers.resize(s_kMaxFrameAheadCountHardLimit);

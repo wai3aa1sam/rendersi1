@@ -740,7 +740,7 @@ RenderContext_Vk::onRenderCommand_Dispatch(RenderCommand_Dispatch* cmd, void* us
 	if (auto* pass = cmd->getMaterialPass())
 	{
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
-		vkMtlPass->onBind(this, vkCmdBuf, cmd->materialFrameIndex());
+		vkMtlPass->onBind(this, vkCmdBuf, cmd->shaderResourcesIndex());
 	}
 	else
 	{
@@ -852,7 +852,7 @@ RenderContext_Vk::_onRenderCommand_DrawCall(RenderCommand_DrawCall* cmd, Vk_Comm
 	{
 		auto* vkMtlPass = sCast<MaterialPass_Vk*>(pass);
 
-		vkMtlPass->onBind(this, vtxLayout, cmd->renderPrimitiveType, cmdBuf, cmd->materialFrameIndex());
+		vkMtlPass->onBind(this, vtxLayout, cmd->renderPrimitiveType, cmdBuf, cmd->shaderResourcesIndex());
 
 		for (const auto& e : vkMtlPass->info().allStageUnionInfo.pushConstants)
 		{

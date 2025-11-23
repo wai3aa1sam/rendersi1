@@ -922,7 +922,7 @@ Vk_DescriptorSet::destroy()
 {
 	Base::destroy();
 
-	if (_vkDescrPool)
+	if (_vkDescrPool && hnd())
 	{
 		_vkDescrPool->usedCount--;
 		_vkDescrPool = nullptr;

@@ -81,72 +81,21 @@ ShaderResources::destroy()
 	_info = nullptr;
 }
 
-void 
+bool 
 ShaderResources::uploadToGpu(ShaderPass* pass)
 {
-	const auto& constBufInfos = info().constBufs;
-	auto src = constBufs();
-	bool isDirty = !constBufInfos.is_empty() && !src.is_empty() && src[0]._isDirty;
-	if (!isDirty)
-		return;
-
-	#if 0
-	auto copyCpuBufToNextFrame =
-		[&](auto* oConstBufs)
-		{
-			auto& dst = *oConstBufs;
-			for (size_t i = 0; i < constBufInfos.size(); i++)
-			{
-				dst[i]._cpuBuf = src[i]._cpuBuf;
-				// gpu buffer will create on demand in backend
-			}
-		};
-	#endif // 0
-
-	#if 0
-	for (auto& e : src)
-	{
-		e.uploadToGpu();
-	}
-
-	if (_constBufs.size() < s_kMaxFrameAheadCountHardLimit && isDirty)
-	{
-		auto& dst = _constBufs.emplace_back();
-
-		dst.reserve(constBufInfos.size());
-		for (const auto& e : constBufInfos)
-		{
-			auto& cb = dst.emplace_back();
-			cb.create(&e, pass, sCast<u32>(_constBufs.size() - 1));
-		}
-	}
-
-	if (isDirty)
-	{
-		_iFrame = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
-		auto dst = constBufs();
-		for (size_t i = 0; i < constBufInfos.size(); i++)
-		{
-			dst[i]._cpuBuf = src[i]._cpuBuf;
-			// gpu buffer will create on demand in backend
-		}
-	}
-	#endif // 0
-
+	bool isDirty = false;
 	for (auto& e : _constBufs)
 	{
-		e.uploadToGpu();
+		isDirty |= e.uploadToGpu();
 	}
+
+	return isDirty;
 }
 
 void 
 ShaderResources::clear()
 {
-	/*for (auto& e : _constBufs)
-	{
-		e.destroy();
-	}*/
-
 	for (auto& e : _constBufs)
 	{
 		e.destroy();
@@ -172,7 +121,6 @@ ShaderResources::clear()
 		e.destroy();
 	}
 
-	//_constBufs.clear();
 	_constBufs.clear();
 	_texParams.clear();
 	_samplerParams.clear();
@@ -185,16 +133,9 @@ ShaderResources::clear()
 void 
 ShaderResources::copy(const ShaderResources& rsc)
 {
+	if (this == &rsc)
+		return;
 	//RDS_CORE_ASSERT(&rsc.info() == &info(), "all ShaderResources must be created");
-	
-	// simple assign will call ctor instead of operator=(), _info will be invalid
-	#if 0
-	_constBufs		= rsc._constBufs;
-	_texParams		= rsc._texParams;
-	_samplerParams	= rsc._samplerParams;
-	_bufferParams	= rsc._bufferParams;
-	_imageParams	= rsc._imageParams;
-	#endif // 0
 
 	auto nCopyConstBuf		= math::min(constBufs().size(),		rsc.constBufs().size());
 	auto nCopyTexParam		= math::min(texParams().size(),		rsc.texParams().size());
@@ -207,26 +148,6 @@ ShaderResources::copy(const ShaderResources& rsc)
 	for (size_t i = 0; i < nCopySamplerParam;	++i) { auto& src = rsc._samplerParams[i];	auto& dst = _samplerParams[i];	dst.copy(src); }
 	for (size_t i = 0; i < nCopyBufferParam;	++i) { auto& src = rsc._bufferParams[i];	auto& dst = _bufferParams[i];	dst.copy(src); }
 	for (size_t i = 0; i < nCopyImageParam;		++i) { auto& src = rsc._imageParams[i];		auto& dst = _imageParams[i];	dst.copy(src); }
-
-	#if 0
-	for (size_t i = 0; i < rsc.constBufs().size(); ++i)
-	{
-		const auto& src = constBufs(i);
-		auto& dst		= rsc.constBufs(i);
-		dst._cpuBuf = src._cpuBuf;
-	}
-
-	for (size_t i = 0; i < rsc.texParams().size(); ++i)
-	{
-		const auto& src = texParams(i);
-		auto& dst		= rsc.texParams(i);
-		if (src._tex.ptr() != dst._tex.ptr())
-		{
-			//dst._tex.reset(src._tex.ptr());
-			dst._tex = src._tex;
-		}
-	}
-	#endif // 0
 }
 
 void 
@@ -368,14 +289,14 @@ ShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
 }
 
 bool 
-ShaderResources::setImageParam(StrView name, Texture* v)
+ShaderResources::setImageParam(StrView name, Texture* v, u32 mipLevel)
 {
 	auto it			= findImageParam(name);
 	bool isDirty	= false;
 	if (it)
 	{
 		auto& rsc	= *it;
-		isDirty		= rsc.setImageParam(v);
+		isDirty		= rsc.setImageParam(v, mipLevel);
 	}
 	_isTexBufImgDirty |= isDirty;
 	return isDirty;
@@ -416,7 +337,7 @@ ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass, u32 idx
 	auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
 	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Constant;
 	bufCDesc.bufSize	= bufSize;
-	_gpuBuffer = rdDev->createRenderGpuBuffer(bufCDesc);
+	_gpuBuffer = rdDev->createRenderMultiGpuBuffer(bufCDesc);
 	_gpuBuffer->setDebugName(fmtAs_T<TempString>("{}-cb-{}-{}", pass->shader()->filename(), info->name, idx));
 }
 
@@ -450,17 +371,17 @@ ShaderResources::ConstBuffer::destroy()
 	_isDirty = false;
 }
 
-void 
+bool
 ShaderResources::ConstBuffer::uploadToGpu()
 {
 	if (!_isDirty || info().size > _gpuBuffer->bufSize())
-		return;
+		return false;
 
-	// ByteSpan{_cpuBuf.data(), _cpuBuf.size()}
 	_gpuBuffer->uploadToGpu(_cpuBuf);
 	_isDirty = false;
-}
 
+	return true;
+}
 
 #endif
 
@@ -568,14 +489,15 @@ ShaderResources::ImageParam::create(const Info* info, ShaderPass* pass)
 }
 
 bool 
-ShaderResources::ImageParam::setImageParam(Texture* v)
+ShaderResources::ImageParam::setImageParam(Texture* v, u32 mipLevel)
 {
 	if (!v) RDS_CORE_ASSERT(false, "Texture == nullptr");
 
-	bool isSame = _image == v;
+	bool isSame = _image == v && _mipLevel == mipLevel;
 	if (!isSame)
 	{
 		_image.reset(v);
+		_mipLevel = mipLevel;
 	}
 
 	bool isDirty = !isSame;
@@ -587,25 +509,25 @@ ShaderResources::ImageParam::setImageParam(Texture* v)
 
 
 #if 0
-#pragma mark --- rdsFramedShaderResource-Impl ---
+#pragma mark --- rdsMultiShaderResource-Impl ---
 #endif // 0
 #if 1
 
-FramedShaderResources::FramedShaderResources()
+MultiShaderResources::MultiShaderResources()
 {
 
 }
 
-FramedShaderResources::~FramedShaderResources()
+MultiShaderResources::~MultiShaderResources()
 {
 	destroy();
 }
 
 void 
-FramedShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
+MultiShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
 {
 	_shaderPass = pass;
-	_shaderRscs.resize(s_kMaxFrameAheadCountHardLimit);
+	_shaderRscs.resize(s_kMaxShaderResourcesCount);
 	u32 i = 0;
 	for (auto& e : _shaderRscs)
 	{
@@ -615,53 +537,38 @@ FramedShaderResources::create(const ShaderStageInfo& info_, ShaderPass* pass)
 }
 
 void 
-FramedShaderResources::destroy()
+MultiShaderResources::destroy()
 {
 	_shaderRscs.clear();
 }
 
-void 
-FramedShaderResources::rotateFrame()
+int 
+MultiShaderResources::uploadToGpu()
 {
-	if (!shouldRotateFrame())
+	bool isDirty = shaderResources().uploadToGpu(_shaderPass); RDS_UNUSED(isDirty);
+	
+	#if RDS_SHADER_USE_BINDLESS
+	return _constBuf._gpuBuffer->bufferIndex();
+	#else
+	auto i_src = _i_shaderRscs;
+	if (isDirty)
 	{
-		return;
+		RDS_TODO("MultiT<T, N> _m, _m.nextBufferIndex()");
+		auto i_dst = s_nextBufferIndex(i_src, s_kMaxShaderResourcesCount);
+		
+		auto& dst = _shaderRscs[i_dst];
+		dst.copy(_shaderRscs[i_src]);
+		dst.resetTexBufImgDirty();
+
+		_i_shaderRscs = i_dst;
+		return i_src;
 	}
-
-	auto frameCount = _shaderPass->shader()->engineFrameCount();
-	auto srcFrame	= RenderApiLayerTraits::rotateFrame(lastEngineFrameCount());
-	auto dstFrame	= RenderApiLayerTraits::rotateFrame(frameCount);
-
-	if (srcFrame == dstFrame)
+	else
 	{
-		_lastEngineFrameCount = frameCount;
-		return;
+		return s_previousBufferIndex(_i_shaderRscs, s_kMaxShaderResourcesCount);
 	}
-
-	auto& src = _shaderRscs[srcFrame];
-	auto& dst = _shaderRscs[dstFrame];
-
-	dst.copy(src);
-	dst.resetTexBufImgDirty();
-
-	_lastEngineFrameCount = frameCount;
+	#endif
 }
-
-bool 
-FramedShaderResources::shouldRotateFrame() const
-{
-	RDS_TODO("add a last thread id to debug whether two / more thread want to access the same material");
-
-	auto frameCount = _shaderPass->shader()->engineFrameCount();
-	return _lastEngineFrameCount != frameCount;
-}
-
-void 
-FramedShaderResources::uploadToGpu()
-{
-	shaderResource().uploadToGpu(_shaderPass);
-}
-
 
 #endif
 

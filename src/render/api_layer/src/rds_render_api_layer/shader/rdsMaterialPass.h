@@ -230,7 +230,7 @@ public:
 	void destroy();
 
 public:
-	void uploadToGpu();
+	RDS_NODISCARD int uploadToGpu();
 
 public:
 	//void bind(RenderContext* ctx, const VertexLayout* vtxLayout);
@@ -256,7 +256,7 @@ public:
 	ShaderPass&			shaderPass();
 	ShaderResources&	shaderResources();
 
-	u32 lastEngineFrameIndex() const;
+	//int shaderResourcesIndex() const;
 
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass);
@@ -274,88 +274,48 @@ protected:
 	PixelStage*						_pixelStage		= nullptr;
 	ComputeStage*					_computeStage	= nullptr;
 
-	FramedShaderResources _framedShaderRscs;
+	MultiShaderResources _shaderRscs;
 };
 
 template<class T> inline 
 void 
 MaterialPass::setParam(StrView name, const T& v)
 {
-	auto* mtl = _material; RDS_UNUSED(mtl);
-
-	#if RDS_SHADER_USE_BINDLESS
-	_framedShaderRscs.setParam(name, v);
-	#else
-	_framedShaderRscs.setParam(name, v);
-
-	// old impl
-	#if 0
-	if (_vertexStage)	_vertexStage ->setParam(mtl, name, v);
-	if (_pixelStage)	_pixelStage	 ->setParam(mtl, name, v);
-	if (_computeStage)	_computeStage->setParam(mtl, name, v);
-	#endif // 0
-
-	#endif
+	_shaderRscs.setParam(name, v);
 }
 
 template<class T> inline
 void 
 MaterialPass::setArray(StrView name, const Span<T>& v)
 {
-	auto* mtl = _material; RDS_UNUSED(mtl);
-	_framedShaderRscs.setArray(name, v);
+	_shaderRscs.setArray(name, v);
 }
 
 template<class TEX> inline 
 void 
 MaterialPass::setTexParam(StrView name, TEX* v)
 {
-	auto* mtl = _material; RDS_UNUSED(mtl);
-
-	#if RDS_SHADER_USE_BINDLESS
-	_framedShaderRscs.setParam(name, v);
-	#else
-	_framedShaderRscs.setTexParam(name, v);
-	#endif
+	_shaderRscs.setTexParam(name, v);
 }
 
 inline
 void 
 MaterialPass::setSamplerParam(StrView name, u32 samplerIndex, const SamplerState& v)
 {
-	auto* mtl = _material; RDS_UNUSED(mtl);
-
-	#if RDS_SHADER_USE_BINDLESS
-	_framedShaderRscs.setParam(name, samplerIndex);
-	#else
-	_framedShaderRscs.setParam(name, samplerIndex);
-	_framedShaderRscs.setSamplerParam(name, v);
-	#endif
+	_shaderRscs.setSamplerParam(name, samplerIndex, v);
 }
 
 inline
 void 
 MaterialPass::setBufferParam(StrView name, RenderGpuBuffer* v)
 {
-	auto* mtl = _material; RDS_UNUSED(mtl);
-
-	#if RDS_SHADER_USE_BINDLESS
-	_framedShaderRscs.setParam(name, v);
-	#else
-	_framedShaderRscs.setBufferParam(name, v);
-	#endif
+	_shaderRscs.setBufferParam(name, v);
 }
 
 template<class TEX> inline
 void MaterialPass::setImageParam(StrView name, TEX* v, u32 mipLevel)
 {
-	auto* mtl = _material; RDS_UNUSED(mtl);
-
-	#if RDS_SHADER_USE_BINDLESS
-	_framedShaderRscs.setParam(name, v);
-	#else
-	_framedShaderRscs.setImageParam(name, v);
-	#endif
+	_shaderRscs.setImageParam(name, v, mipLevel);
 }
 
 inline const MaterialPass::Info& MaterialPass::info() const { return _shaderPass->info(); }
@@ -369,9 +329,9 @@ inline MaterialPass::ComputeStage*					MaterialPass::computeStage()				{ return 
 
 inline Material&					MaterialPass::material()					{ return *_material; }
 inline ShaderPass&					MaterialPass::shaderPass()					{ return *_shaderPass; }
-inline ShaderResources&				MaterialPass::shaderResources()				{ return _framedShaderRscs.shaderResource(); }
+inline ShaderResources&				MaterialPass::shaderResources()				{ return _shaderRscs.shaderResources(); }
 
-inline u32							MaterialPass::lastEngineFrameIndex() const	{ return _framedShaderRscs.lastEngineFrameIndex(); }
+//inline int							MaterialPass::shaderResourcesIndex() const	{ return _shaderRscs.shaderResourcesIndex(); }
 
 #endif
 

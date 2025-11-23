@@ -20,20 +20,20 @@ class Shader;
 class ShaderPass;
 
 struct	ShaderResources;
-//using	FramedShaderResources = Vector<ShaderResources, RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit>;
+//using	MultiShaderResources = Vector<ShaderResources, RenderApiLayerTraits::s_kMaxFrameAheadCountHardLimit>;
 
 struct SamplerParam;
 
 /*
 3 design: 
 
-1. FramedShaderResources (Vector<ShaderResources, s_kMaxFrameAheadCountHardLimit> as data member at MaterialPass)
+1. MultiShaderResources (Vector<ShaderResources, s_kMaxFrameAheadCountHardLimit> as data member at MaterialPass)
 - but the all resources need to copy when rotateFrame
 
-2. Vector<FramedShaderResource<T>, N> _xxParams on ShaderResources
+2. Vector<MultiShaderResource<T>, N> _xxParams on ShaderResources
 - but need vkUpdateDescriptorSets when rotateFrame on ConstBuffer
 
-3. hybrid - Vector<Vector<ConstBuffer, s_kLocalConstBufSize>, s_kMaxFrameAheadCountHardLimit> +  Vector<FramedShaderResource<T>, N> _xxParams on ShaderResources
+3. hybrid - Vector<Vector<ConstBuffer, s_kLocalConstBufSize>, s_kMaxFrameAheadCountHardLimit> +  Vector<MultiShaderResource<T>, N> _xxParams on ShaderResources
 - no need copy for other Params
 - only need to copy cpu data after rotateFrame, only need to uploadToGpu() and copy cpu data, as each descr set bind on each ConstBuffer
 
@@ -116,74 +116,6 @@ template<class INFO> inline u16												ShaderResource<INFO>::bindCount	() co
 
 #endif
 
-/*
-	useless 
-*/
-#if 0
-#pragma mark --- rdsFramedShaderResource-Decl ---
-#endif // 0
-#if 0
-
-template<class SHADER_RSC >
-struct FramedShaderResource : public ShaderResource<typename SHADER_RSC::Info>
-{
-	//friend struct SHADER_RSC;
-	RDS_RENDER_API_LAYER_COMMON_BODY();
-public:
-	using Base				= ShaderResource<typename SHADER_RSC::Info>;
-	using Info				= typename SHADER_RSC::Info;
-	using ShaderResource	= SHADER_RSC;
-	using ShaderResources	= Vector<SHADER_RSC, s_kMaxFrameAheadCountHardLimit>;
-
-public:
-	void create(const Info* info, ShaderPass* pass)
-	{
-		destroy();
-
-		Base::create(info);
-
-		_shaderRscs.reserve(s_kMaxFrameAheadCountHardLimit);
-		auto& dst = _shaderRscs.emplace_back();
-		dst.create(info, nullptr);
-
-	}
-
-	void destroy()
-	{
-		for (auto& rsc : _shaderRscs)
-		{
-			rsc.destroy();
-			Base::destroy();
-		}
-	}
-
-	void roatateFrame()
-	{
-		_iFrame = (_iFrame + 1) % s_kMaxFrameAheadCountHardLimit;
-		if (_iFrame + 1 > _shaderRscs.size())
-		{
-			auto& dst = _shaderRscs.emplace_back();
-			dst.create(&Base::info(), nullptr);
-		}
-		shaderResource()._internal_onPostRotateFrame(this);
-	}
-
-public:
-			ShaderResource& shaderResource()				{ return _shaderRscs[iFrame()]; }
-	const	ShaderResource& shaderResource() const			{ return _shaderRscs[iFrame()]; }
-
-			ShaderResource& previousShaderResource()		{ auto prevFrameIdx = sCast<int>(iFrame()) - 1; return _shaderRscs[prevFrameIdx]; }
-	const	ShaderResource& previousShaderResource() const	{ auto prevFrameIdx = sCast<int>(iFrame()) - 1; return _shaderRscs[prevFrameIdx]; }
-
-	u32 iFrame() const { return _iFrame; }
-
-protected:
-	ShaderResources _shaderRscs;
-	u32				_iFrame = 0;
-};
-
-#endif
-
 #if 0
 #pragma mark --- rdsShaderResources-Decl ---
 #endif // 0
@@ -204,19 +136,11 @@ public:
 	struct BufferParam;
 	struct ImageParam;
 
-	#if 0
-	using ConstBufferT		= ConstBuffer;
-	using TexParamT			= FramedShaderResource<TexParam>;
-	using SamplerParamT		= FramedShaderResource<SamplerParam>;
-	using BufferParamT		= FramedShaderResource<BufferParam>;
-	using ImageParamT		= FramedShaderResource<ImageParam>;
-	#else
 	using ConstBufferT		= ConstBuffer;
 	using TexParamT			= TexParam;
 	using SamplerParamT		= SamplerParam;
 	using BufferParamT		= BufferParam;
 	using ImageParamT		= ImageParam;
-	#endif // 0
 
 	using ConstBuffersView		= Span<ConstBufferT>;
 	using CConstBuffersView		= Span<const ConstBufferT>;
@@ -236,14 +160,22 @@ public:
 	#endif
 
 public:
-	static constexpr SizeType s_kLocalConstBufSize	= 2;
-	static constexpr SizeType s_kLocalTextureSize	= 4;
-	static constexpr SizeType s_kLocalBufferSize	= 4;
-	static constexpr SizeType s_kLocalImageSize		= 4;
+	static constexpr SizeType s_kConstBufferLocalSize	= 1;
+	static constexpr SizeType s_kTexParamLocalSize		= 4;
+	static constexpr SizeType s_kBufferParamLocalSize	= 4;
+	static constexpr SizeType s_kImageParamLocalSize	= 4;
 
 	//static constexpr const char* s_kAutoSamplerNamePrefix = "_rds_";
 	static constexpr const char* s_kAutoSamplerNameSuffix	= "_sampler";
 	static constexpr const char* s_kAutoTextureStNameSuffix = "_ST_";
+
+public:
+	using ConstBuffers	= Vector<ConstBuffer,	s_kConstBufferLocalSize>;
+
+	using TexParams		= Vector<TexParam,		s_kTexParamLocalSize>;
+	using SamplerParams	= Vector<SamplerParam,	s_kTexParamLocalSize>;
+	using BufferParams	= Vector<BufferParam,	s_kBufferParamLocalSize>;
+	using ImageParams	= Vector<ImageParam,	s_kImageParamLocalSize>	;
 
 public:
 	static void getSamplerNameTo(TempString& out, StrView name);
@@ -251,17 +183,19 @@ public:
 	static void getTextureStNameTo(TempString& out, StrView name);
 
 public:
+	void create	(const ShaderStageInfo& info_, ShaderPass* pass, u32 frameIdx);
+	void destroy();
+
+public:
 	template<class T>	bool setParam(			StrView name, const T&				v);
 	template<class T>	bool setArray(			StrView name, const Span<T>&		v);
 	template<class TEX>	bool setTexParam(		StrView name, TEX*					v);
 						bool setSamplerParam(	StrView name, const SamplerState&	v);
 						bool setBufferParam(	StrView name, RenderGpuBuffer*		v);
-						bool setImageParam(		StrView name, Texture*				v);
+						bool setImageParam(		StrView name, Texture*				v, u32 mipLevel);
 
-	void create	(const ShaderStageInfo& info_, ShaderPass* pass, u32 frameIdx);
-	void destroy();
-
-	void uploadToGpu(ShaderPass* pass);
+public:
+	bool uploadToGpu(ShaderPass* pass);		// return true (isDirty) if upload is executed
 
 	void clear();
 	void copy(const ShaderResources& rsc);
@@ -353,7 +287,7 @@ public:
 		template<class T>	T*		findParamT(StrView name);
 							void*	findParam( StrView name);
 
-		void uploadToGpu();
+		bool uploadToGpu(); // return true (isDirty) if upload is executed
 
 		void copy(const ConstBuffer& rhs)
 		{
@@ -363,14 +297,6 @@ public:
 	public:
 				u8* data();
 		const	u8* data() const;
-
-	public:
-		//template<class FRAMED_SHADER_RSC>
-		//void _internal_onPostRotateFrame(FRAMED_SHADER_RSC* rsc)
-		//{
-		//	//FramedShaderResource<ShaderResources::ConstBuffer>* rsc;
-		//	_cpuBuf = rsc->previousShaderResource()._cpuBuf;
-		//}
 
 	protected:
 		bool _setParam(const VarInfo& varInfo, const bool&			v)	{ return _setParamCheckType(varInfo, v); }
@@ -401,11 +327,9 @@ public:
 		
 		void* _getValue(const VarInfo& varInfo);
 
-	protected:
-
 	public:
-		Vector<u8>				_cpuBuf;
-		SPtr<RenderGpuBuffer>	_gpuBuffer;
+		Vector<u8>					_cpuBuf;
+		SPtr<RenderMultiGpuBuffer>	_gpuBuffer;		// ignore for non-bindless side, just keep it simple
 
 		bool _isDirty = false;
 	};
@@ -538,13 +462,18 @@ public:
 
 		void create(const Info* info, ShaderPass* pass);
 
-		bool setImageParam(Texture* v);
+		bool operator==(const ImageParam& v) const { return _image == v._image && _mipLevel == v._mipLevel; }
+		bool operator!=(const ImageParam& v) const { return !operator==(v); }
+
+	public:
+		bool setImageParam(Texture* v, u32 mipLevel);
 
 		void copy(const ImageParam& rhs)
 		{
-			if (_image.ptr() != rhs._image.ptr())
+			if (this != &rhs)
 			{
-				_image = rhs._image;
+				_image		= rhs._image;
+				_mipLevel	= rhs._mipLevel;
 			}
 		}
 	
@@ -560,7 +489,8 @@ public:
 		Texture* image();
 
 	public:
-		SPtr<Texture> _image;
+		SPtr<Texture>	_image;
+		u32				_mipLevel = 0;
 	};
 
 	#endif
@@ -568,29 +498,12 @@ public:
 protected:
 	const ShaderStageInfo*							_info = nullptr;
 
-	/*Vector<ConstBuffer,	s_kLocalConstBufSize>	_constBufs;
-	Vector<TexParam,		s_kLocalTextureSize>	_texParams;
-	Vector<SamplerParam,	s_kLocalTextureSize>	_samplerParams;
-	Vector<BufferParam,		s_kLocalBufferSize>		_bufferParams;*/
+	ConstBuffers	_constBufs;
 
-	#if 0
-	u32	_iFrame	= 0;
-	Vector<Vector<ConstBuffer, s_kLocalConstBufSize>, s_kMaxFrameAheadCountHardLimit> _framedConstBufs;
-
-	// each has framed then
-	//Vector<FramedShaderResource<ConstBuffer>	, s_kLocalConstBufSize>	_constBufs;
-	Vector<FramedShaderResource<TexParam>		, s_kLocalTextureSize>	_texParams;
-	Vector<FramedShaderResource<SamplerParam>	, s_kLocalTextureSize>	_samplerParams;
-	Vector<FramedShaderResource<BufferParam>	, s_kLocalBufferSize>	_bufferParams;
-	Vector<FramedShaderResource<ImageParam>		, s_kLocalImageSize>	_imageParams;
-	#endif // 0
-
-	Vector<ConstBuffer,		s_kLocalConstBufSize>	_constBufs;
-	Vector<TexParam,		s_kLocalTextureSize>	_texParams;
-	Vector<SamplerParam,	s_kLocalTextureSize>	_samplerParams;
-	Vector<BufferParam,		s_kLocalBufferSize>		_bufferParams;
-	Vector<ImageParam,		s_kLocalImageSize>		_imageParams;
-
+	TexParams		_texParams;
+	SamplerParams	_samplerParams;
+	BufferParams	_bufferParams;
+	ImageParams		_imageParams;
 	bool _isTexBufImgDirty : 1;
 };
 
@@ -601,7 +514,7 @@ ShaderResources::setParam(StrView name, const T& v)
 	bool isDirty = false;
 	for (auto& e : constBufs())
 	{
-		auto& rsc = e/*.shaderResource()*/;
+		auto& rsc = e/*.shaderResources()*/;
 		isDirty |= rsc.setParam(name, v);
 	}
 	return isDirty;
@@ -613,7 +526,7 @@ ShaderResources::setArray(StrView name, const Span<T>& v)
 	bool isDirty = false;
 	for (auto& e : constBufs())
 	{
-		auto& rsc = e/*.shaderResource()*/;
+		auto& rsc = e/*.shaderResources()*/;
 		isDirty |= rsc.setArray(name, v);
 	}
 	return isDirty;
@@ -627,7 +540,7 @@ ShaderResources::setTexParam(StrView name, TEX* v)
 	bool isDirty	= false;
 	if (it)
 	{
-		auto& rsc = *it/*->shaderResource()*/;
+		auto& rsc = *it/*->shaderResources()*/;
 		isDirty = rsc.setTexure(v);
 	}
 	_isTexBufImgDirty |= isDirty;
@@ -755,6 +668,9 @@ ShaderResources::ConstBuffer::_setValue(const VarInfo& varInfo, const T& v)
 	throwIf(end > _cpuBuf.size() || !data(), "material set param failed, cpuBuffer overflow");
 
 	auto* dst = sCast<T*>(_getValue(varInfo));
+	RDS_TODO("impl operator==() for all Data");
+	//if (*dst == v) return false;
+
 	*dst = v;
 
 	_isDirty = true;
@@ -770,6 +686,9 @@ ShaderResources::ConstBuffer::_setArrayValue(const VarInfo& varInfo, const Span<
 	throwIf(end > _cpuBuf.size() || !data() || commitSize > varInfo.size, "material set param failed, cpuBuffer overflow");
 
 	auto* dst = sCast<T*>(_getValue(varInfo));
+	RDS_TODO("impl operator==() for all Data");
+	//if (*dst == v) return false;
+
 	memory_copy(dst, v.data(), v.size());
 
 	_isDirty = true;
@@ -868,97 +787,134 @@ inline Texture* ShaderResources::ImageParam::image()  { return _image; }
 #endif
 
 #if 0
-#pragma mark --- rdsFramedShaderResource-Decl ---
+#pragma mark --- rdsMultiShaderResource-Decl ---
 #endif // 0
 #if 1
 
-class FramedShaderResources : public NC_RenderApiLayerCommon_Base
+class MultiShaderResources : public NC_RenderApiLayerCommon_Base
 {
 public:
-	FramedShaderResources();
-	~FramedShaderResources();
+	#if RDS_SHADER_USE_BINDLESS
+	static constexpr int s_kMaxShaderResourcesCount = s_kFrameAheadCount; 
+	#else
+	// s_kMaxFrameAheadCountHardLimit + 1, ensure no race-condition when copy in EngineThread
+	// since RenderThread may not be read-only for ShaderResources (currently is read-only, but if later change design may gg)
+	static constexpr int s_kMaxShaderResourcesCount = s_kFrameAheadCount + 1; 
+	#endif // RDS_SHADER_USE_BINDLESS
+	using MultiT		= Vector<ShaderResources, s_kMaxShaderResourcesCount>;
+	using ConstBuffer	= ShaderResources::ConstBuffer;
+
+public:
+	MultiShaderResources();
+	~MultiShaderResources();
 
 	void create(const ShaderStageInfo& info_, ShaderPass* pass);
 	void destroy();
 
+public:
+	RDS_NODISCARD int uploadToGpu();	// return uploaded ShaderResourceIndex
+
 	template<class T>	bool setParam(			StrView name, const T&				v);
 	template<class T>	bool setArray(			StrView name, const Span<T>&		v);
-	template<class TEX>	bool setTexParam(		StrView name, TEX*					v);
-						bool setSamplerParam(	StrView name, const SamplerState&	v);
-						bool setBufferParam(	StrView name, RenderGpuBuffer*		v);
-						bool setImageParam(		StrView name, Texture*				v);
-	
-	void uploadToGpu();
 
 public:
-	ShaderResources&	shaderResource();
-	ShaderResources&	shaderResource(u32 frameIdx);
-	u32					lastEngineFrameIndex()	const;
-	u64					lastEngineFrameCount()	const;
+	template<class TEX>	bool setTexParam(		StrView name, TEX*					v);
+	bool setSamplerParam(	StrView name, u32 samplerIndex, const SamplerState& v);
+	bool setBufferParam(	StrView name, RenderGpuBuffer*		v);
+	bool setImageParam(		StrView name, Texture*				v, u32 mipLevel);
 
-protected:
-	void rotateFrame();
-
-	bool shouldRotateFrame() const;
+#if !RDS_SHADER_USE_BINDLESS
+public:
+	ShaderResources&	shaderResources();
+	ShaderResources&	shaderResources(int i);
+private:
+#endif // !RDS_SHADER_USE_BINDLESS
 
 protected:
 	ShaderPass*					_shaderPass				= nullptr;
-	u64							_lastEngineFrameCount	= 0;		// btw can store frameIndex instead
-	Vector<ShaderResources, s_kMaxFrameAheadCountHardLimit> _shaderRscs;
+	
+	#if RDS_SHADER_USE_BINDLESS
+	ConstBuffer _constBuf;
+	#else
+	MultiT	_shaderRscs;
+	int		_i_shaderRscs = 0;
+	#endif // RDS_SHADER_USE_BINDLESS
 };
 
 template<class T> inline
 bool 
-FramedShaderResources::setParam(StrView name, const T& v)
+MultiShaderResources::setParam(StrView name, const T& v)
 {
-	rotateFrame();
-	return shaderResource().setParam(name, v);
+	#if RDS_SHADER_USE_BINDLESS
+	return _constBuf.setParam(name, v);
+	#else
+	return shaderResources().setParam(name, v);
+	#endif // RDS_SHADER_USE_BINDLESS		
 }
 
-template<class T> bool 
-FramedShaderResources::setArray(StrView name, const Span<T>& v)
+template<class T> inline
+bool 
+MultiShaderResources::setArray(StrView name, const Span<T>& v)
 {
-	rotateFrame();
-	return shaderResource().setArray(name, v);
+	#if RDS_SHADER_USE_BINDLESS
+	return _constBuf.setArray(name, v);
+	#else
+	return shaderResources().setArray(name, v);
+	#endif // RDS_SHADER_USE_BINDLESS	
 }
 
 template<class TEX>	inline
 bool 
-FramedShaderResources::setTexParam(StrView name, TEX* v)
+MultiShaderResources::setTexParam(StrView name, TEX* v)
 {
-	rotateFrame();
-	return shaderResource().setTexParam(name, v);
+	#if RDS_SHADER_USE_BINDLESS
+	auto bindlessIdx = v->bindlessHandle().getResourceIndex();
+	return setParam(name, bindlessIdx);
+	#else
+	return shaderResources().setTexParam(name, v);
+	#endif
 }
 
 inline
 bool 
-FramedShaderResources::setSamplerParam(StrView name, const SamplerState& v)
+MultiShaderResources::setSamplerParam(StrView name, u32 samplerIndex, const SamplerState& v)
 {
-	rotateFrame();
-	return shaderResource().setSamplerParam(name, v);
+	bool isDirty = setParam(name, samplerIndex);
+	#if !RDS_SHADER_USE_BINDLESS
+	shaderResources().setSamplerParam(name, v);
+	#endif
+	return isDirty;
 }
 
 inline
 bool 
-FramedShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
+MultiShaderResources::setBufferParam(StrView name, RenderGpuBuffer* v)
 {
-	rotateFrame();
-	return shaderResource().setBufferParam(name, v);
+	#if RDS_SHADER_USE_BINDLESS
+	auto bindlessIdx = v->bindlessHandle().getResourceIndex();
+	return setParam(name, bindlessIdx);
+	#else
+	return shaderResources().setBufferParam(name, v);
+	#endif
 }
 
 inline
 bool 
-FramedShaderResources::setImageParam(StrView name, Texture* v)
+MultiShaderResources::setImageParam(StrView name, Texture* v, u32 mipLevel)
 {
-	rotateFrame();
-	return shaderResource().setImageParam(name, v);
+	RDS_CORE_ASSERT(v->hasMipmapView(),					"{} cannot use as image, no TextureUsageFlags::UnorderedAccess usageFlags", v->debugName());
+	RDS_CORE_ASSERT(mipLevel < v->mipmapViewCount(),	"mipLevel out of boundary");
+
+	#if RDS_SHADER_USE_BINDLESS
+	auto bindlessIdx = v->uavBindlessHandle().getResourceIndex(mipLevel);
+	return setParam(name, bindlessIdx);
+	#else
+	return shaderResources().setImageParam(name, v, mipLevel);
+	#endif
 }
 
-inline ShaderResources&		FramedShaderResources::shaderResource()					{ return _shaderRscs[lastEngineFrameIndex()]; }
-inline ShaderResources&		FramedShaderResources::shaderResource(u32 frameIdx)		{ return _shaderRscs[frameIdx]; }
-
-inline u32					FramedShaderResources::lastEngineFrameIndex()	const	{ return sCast<u32>(RenderApiLayerTraits::rotateFrame(lastEngineFrameCount())); }
-inline u64					FramedShaderResources::lastEngineFrameCount()	const	{ return _lastEngineFrameCount; }
+inline ShaderResources&		MultiShaderResources::shaderResources()					{ return _shaderRscs[s_bufferIndex(_i_shaderRscs, s_kMaxShaderResourcesCount)]; }
+inline ShaderResources&		MultiShaderResources::shaderResources(int i)			{ return _shaderRscs[i]; }
 
 #endif
 

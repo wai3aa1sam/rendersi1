@@ -73,8 +73,9 @@ RenderCommandBuffer::setViewportReverse(const Rect2f& rect)
 
 #endif
 
+template<class T>
 void 
-RenderCommand_DrawCall::setMaterial(Material* mtl, SizeType mtlPassIdx)
+setMaterial(T* o, Material* mtl, int mtlPassIdx)
 {
 	RDS_CORE_ASSERT(mtl);
 
@@ -107,17 +108,15 @@ RenderCommand_DrawCall::setSubMesh(RenderSubMesh* subMesh, SizeType vtxOffset, S
 }
 
 void 
-RenderCommand_Dispatch::setMaterial(Material* mtl, SizeType mtlPassIdx)
+RenderCommand_Callable_Base::setMaterial(Material* mtl, int mtlPassIdx)
 {
 	RDS_CORE_ASSERT(mtl);
 
 	_mtl				= mtl;
-	_mtlPassIdx			= sCast<u32>(mtlPassIdx);
+	_i_mtlPass			= mtlPassIdx;
 
-	auto& pass = mtl->passes()[_mtlPassIdx];
-	_mtlRscFrameIdx		= pass->lastEngineFrameIndex();
-
-	pass->uploadToGpu();
+	auto& pass = mtl->passes()[_i_mtlPass];
+	_i_shaderRscs = pass->uploadToGpu();
 }
 
 }

@@ -22,7 +22,7 @@ class RenderContext_Vk;
 class Vk_RenderPass;
 class Vk_Framebuffer;
 
-using Vk_FramedDescrSets = Vector<Vk_DescriptorSet, RenderApiLayerTraits::s_kFrameAheadCount>;
+using Vk_MultiDescrSets = Vector<Vk_DescriptorSet, MultiShaderResources::s_kMaxShaderResourcesCount>;
 
 struct MaterialStage_Helper;
 
@@ -152,10 +152,10 @@ public:
 	virtual ~MaterialPass_Vk();
 
 	virtual void onBind(RenderContext* ctx, const VertexLayout* vtxLayout, RenderPrimitiveType primitive, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
-	virtual void onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
+	virtual void onBind(RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, int i_shaderRscs);
 
 protected:
-	void bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, u32 iFrame);
+	void bindDescriptorSet(VkPipelineBindPoint vkBindPt, RenderContext* ctx, Vk_CommandBuffer* vkCmdBuf, int i_shaderRscs);
 
 public:
 	Material_Vk*	material	();
@@ -180,7 +180,7 @@ public:
 	RenderDevice_Vk* renderDeviceVk();
 
 	Vk_DescriptorSetLayout& vkDescriptorSetLayout();
-	Vk_DescriptorSet&		vkDescriptorSet(u32 iFrame);
+	Vk_DescriptorSet&		vkDescriptorSet(int i);
 
 protected:
 	virtual void onCreate(Material* material, ShaderPass* shaderPass) override;
@@ -197,7 +197,7 @@ protected:
 	ComputeStage					_vkComputeStage;
 
 	// TODO: use a union reflection, no, use bindless then only the Material_Vk has it
-	Vk_FramedDescrSets		_vkFramedDescrSets;
+	Vk_MultiDescrSets		_vkDescrSets;
 	
 	// per Renderer Pipeline state, created if not find 
 	// after submit add to _vkPipelineMap
@@ -222,7 +222,7 @@ inline MaterialPass_Vk::PixelStage&						MaterialPass_Vk::vkPixelStage_noCheck()
 inline MaterialPass_Vk::ComputeStage&					MaterialPass_Vk::vkComputeStage_noCheck()					{ return _vkComputeStage; }
 
 inline Vk_DescriptorSetLayout&			MaterialPass_Vk::vkDescriptorSetLayout()		{ return shaderPass()->vkDescriptorSetLayout(); }
-inline Vk_DescriptorSet&				MaterialPass_Vk::vkDescriptorSet(u32 iFrame)	{ return _vkFramedDescrSets[iFrame]; }
+inline Vk_DescriptorSet&				MaterialPass_Vk::vkDescriptorSet(int i)	{ return _vkDescrSets[i]; }
 
 
 #endif
