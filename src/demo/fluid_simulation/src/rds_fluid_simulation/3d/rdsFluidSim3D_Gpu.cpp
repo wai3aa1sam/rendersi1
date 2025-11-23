@@ -279,8 +279,7 @@ FluidSim3D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 			mtl->setParam("u_predictedPositions",	simArgs.bufPredictedPos.renderResource());
 			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
 
-			static auto passId = mtl->makeCsPassId("Cs_calcExternalForce");
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, passId, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_calcExternalForce"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -310,8 +309,7 @@ FluidSim3D_Gpu::addPass_calcDensityData(SimArgs& simArgs)
 			mtl->setParam("u_densityData",					simArgs.bufDensityData.renderResource());
 			simArgs.setSpatialParam(mtl);
 
-			static auto passId = mtl->makeCsPassId("Cs_calcDensityData");
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, passId, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_calcDensityData"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 	return pass;
@@ -333,8 +331,7 @@ FluidSim3D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
 			mtl->setParam("u_velocities", simArgs.bufVel.renderResource());
 			simArgs.setSpatialParam(mtl);
 
-			static auto passId = mtl->makeCsPassId("Cs_calcPressureForce");
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, passId, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_calcPressureForce"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -356,8 +353,7 @@ FluidSim3D_Gpu::addPass_calcViscosity(SimArgs& simArgs)
 			mtl->setParam("u_velocities", simArgs.bufVel.renderResource());
 			simArgs.setSpatialParam(mtl);
 
-			static auto passId = mtl->makeCsPassId("Cs_calcViscosity");
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, passId, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_calcViscosity"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -379,8 +375,7 @@ FluidSim3D_Gpu::addPass_updatePosition(SimArgs& simArgs)
 			mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
 			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
 
-			static auto passId = mtl->makeCsPassId("Cs_updatePosition");
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, passId, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_updatePosition"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 

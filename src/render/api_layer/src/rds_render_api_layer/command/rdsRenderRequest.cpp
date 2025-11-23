@@ -114,17 +114,17 @@ RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, 
 }
 
 void 
-RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPassId& passId, Tuple3u total, Tuple3u nThreads)
+RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPropId& nameId, Tuple3u total, Tuple3u nThreads)
 {
-	RDS_CORE_ASSERT(mtl->isValidCsPassId(passId), "invalid cs PropId, should use makeCsPassId()");
-	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, sCast<u32>(passId.getId()), total, nThreads);
+	RDS_CORE_ASSERT(mtl->isValidNameIdForPass(nameId), "invalid cs PropId");
+	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, mtl->shader()->getPassIndexBy(nameId), total, nThreads);
 }
 
 void 
-RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPassId& passId, Tuple3u total)
+RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPropId& nameId, Tuple3u total)
 {
-	RDS_CORE_ASSERT(mtl->isValidCsPassId(passId), "invalid cs PropId, should use makeCsPassId()");
-	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, sCast<u32>(passId.getId()), total);
+	RDS_CORE_ASSERT(mtl->isValidNameIdForPass(nameId), "invalid cs PropId");
+	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, mtl->shader()->getPassIndexBy(nameId), total);
 }
 
 void 

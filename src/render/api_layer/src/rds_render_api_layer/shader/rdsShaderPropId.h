@@ -6,6 +6,8 @@
 namespace rds
 {
 
+#define RDS_NameId_STATIC(name) ([] { static auto _name = ShaderPropId::make(name); return _name; }())
+
 #if 0
 #pragma mark --- rdsShaderPropId-Decl ---
 #endif // 0
@@ -16,19 +18,19 @@ namespace rds
 struct ShaderPropId
 {
 public:
-	using SizeType = CoreTraits::SizeType;
+	using Id = i64;
 
 public:
-	static constexpr SizeType s_kInvalid = NumLimit<SizeType>::max();
+	static constexpr Id s_kInvalid = -1;
 
 public:
 	static ShaderPropId makeInvalid();
-	static ShaderPropId make(SizeType id);
-	static ShaderPropId make(SizeType id, StrView name);
+	static ShaderPropId make(Id id);
+	static ShaderPropId make(Id id, StrView name);
 	static ShaderPropId make(StrView name);
 
 public:
-	SizeType	getId() const;
+	Id	getId() const;
 
 	bool operator==(const ShaderPropId& other) const;
 	bool operator!=(const ShaderPropId& other) const;
@@ -38,11 +40,11 @@ public:
 	const char* Debug_getName() const;
 
 protected:
-	ShaderPropId(SizeType id);
-	ShaderPropId(SizeType id, StrView name);
+	ShaderPropId(Id id);
+	ShaderPropId(Id id, StrView name);
 
 protected:
-	SizeType _id = s_kInvalid;
+	Id _id = s_kInvalid;
 
 	struct Debug
 	{
@@ -53,21 +55,12 @@ protected:
 	#endif
 };
 
-struct ShaderPassId : public ShaderPropId
-{
-public:
-	using Base = ShaderPropId;
-
-public:
-	ShaderPassId(const ShaderPropId& propId);
-};
-
 #endif
 
 inline bool						ShaderPropId::operator==(const ShaderPropId& other) const { return _id == other._id; }
 inline bool						ShaderPropId::operator!=(const ShaderPropId& other) const { return !operator==(other); }
 inline bool						ShaderPropId::operator<(const ShaderPropId& other)	const { return _id < other._id; }
 
-inline ShaderPropId::SizeType	ShaderPropId::getId()								const { return _id; }
+inline ShaderPropId::Id	ShaderPropId::getId()								const { return _id; }
 
 }

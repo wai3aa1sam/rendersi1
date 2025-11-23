@@ -59,11 +59,10 @@ protected:
 	virtual void onDestroy() override;
 
 public:
-	ShaderPropId makePropId(	StrView name) const;
-	ShaderPassId makeCsPassId(	StrView name) const;
+	ShaderPropId makePropNameId(StrView name) const;
 
-	SizeType getPropIndexBy(	const ShaderPropId& id) const;
-	SizeType getCsIndexBy(		const ShaderPassId& id) const;
+	int getPropIndexBy(	const ShaderPropId& nameId) const;
+	int getPassIndexBy(	const ShaderPropId& nameId) const;
 
 	Span<UPtr<Pass> > passes();
 
@@ -90,6 +89,8 @@ protected:
 	
 	Passes		_passes;
 	Permuts		_permuts;
+
+	VectorMap<ShaderPropId, int> _passNameIdMap;
 };
 
 inline Span<UPtr<Shader::Pass> >	Shader::passes()			{ return _passes.span(); }

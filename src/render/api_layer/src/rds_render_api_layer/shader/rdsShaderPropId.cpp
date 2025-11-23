@@ -16,13 +16,13 @@ ShaderPropId::makeInvalid()
 }
 
 ShaderPropId 
-ShaderPropId::make(SizeType id)
+ShaderPropId::make(Id id)
 {
 	return ShaderPropId(id);
 }
 
 ShaderPropId 
-ShaderPropId::make(SizeType id, StrView name)
+ShaderPropId::make(Id id, StrView name)
 {
 	return ShaderPropId(id, name);
 }
@@ -34,12 +34,12 @@ ShaderPropId::make(StrView name)
 	return ShaderPropId(h, name);
 }
 
-ShaderPropId::ShaderPropId(SizeType id)
+ShaderPropId::ShaderPropId(Id id)
 {
 	_id = id;
 }
 
-ShaderPropId::ShaderPropId(SizeType id, StrView name)
+ShaderPropId::ShaderPropId(Id id, StrView name)
 {
 	_id			= id;
 	#if RDS_DEBUG
@@ -59,16 +59,5 @@ ShaderPropId::Debug_getName() const
 }
 
 #endif
-
-#if 1
-
-ShaderPassId::ShaderPassId(const ShaderPropId& propId)
-	: Base(propId)
-{
-
-}
-
-#endif // 1
-
 
 }

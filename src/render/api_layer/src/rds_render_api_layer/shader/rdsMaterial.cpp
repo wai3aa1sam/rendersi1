@@ -148,34 +148,30 @@ Material::onPostCreate(const CreateDesc& cDesc)
 }
 
 ShaderPropId 
-Material::makePropId(StrView name) const
+Material::makePropNameId(StrView name) const
 {
-	return _shader->makePropId(name);
-}
-
-ShaderPassId
-Material::makeCsPassId(StrView name) const
-{
-	return _shader->makeCsPassId(name);
+	return _shader->makePropNameId(name);
 }
 
 bool 
-Material::isValidPropId(const ShaderPropId& propId) const
+Material::isValidNameIdForProp(const ShaderPropId& nameId) const
 {
-	#if RDS_DEBUG
-	auto v = _shader->makePropId(propId.Debug_getName());
-	return v == propId;
+	_notYetSupported(RDS_SRCLOC);
+	RDS_TODO("make a map to search");
+	#if RDS_DEVELOPMENT
+	auto v = _shader->makePropNameId(nameId.Debug_getName());
+	return v == nameId;
 	#else
 	return true;
 	#endif // RDS_DEBUG
 }
 
 bool 
-Material::isValidCsPassId(const ShaderPassId& passId) const
+Material::isValidNameIdForPass(const ShaderPropId& nameId) const
 {
-	#if RDS_DEBUG
-	auto v = _shader->makeCsPassId(passId.Debug_getName());
-	return v == passId;
+	#if RDS_DEVELOPMENT
+	auto v = _shader->getPassIndexBy(nameId);
+	return v != ShaderPropId::makeInvalid().getId();
 	#else
 	return true;
 	#endif // RDS_DEBUG

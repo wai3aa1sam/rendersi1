@@ -105,12 +105,11 @@ public:
 	void clearPermutation()												;
 
 public:
-	Pass*			getPass		(SizeType i);
-	ShaderPropId	makePropId	(StrView name) const;
-	ShaderPassId	makeCsPassId(StrView name) const;
+	Pass*			getPass(SizeType i);
+	ShaderPropId	makePropNameId(StrView name) const;
 
-	bool			isValidPropId(	const ShaderPropId& propId) const;
-	bool			isValidCsPassId(const ShaderPassId& passId) const;
+	bool			isValidNameIdForProp(const ShaderPropId& nameId) const;
+	bool			isValidNameIdForPass(const ShaderPropId& nameId) const;
 
 	Span<UPtr<Pass> >	passes();
 			Shader*		shader();

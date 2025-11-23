@@ -54,6 +54,7 @@ void
 Shader::onDestroy()
 {
 	_passes.clear();
+	_passNameIdMap.clear();
 
 	RDS_TODO("rework, shaderStock use in main thread only, destroy are in RenderThread + Main now, may have bug");
 	//checkMainThreadExclusive(RDS_SRCLOC);
@@ -86,6 +87,20 @@ Shader::onCreate(const CreateDesc& cDesc)
 	// shader will recompile, the command design maybe a little complex
 	// same as Material, command store the Vector<UPtr<Pass>, N>?
 	onReset();
+
+	{
+		// create _passNameIdMap
+		for (int i = 0; i < _passes.size(); i++)
+		{
+			auto& e = _passes[i];
+			if (!e->info().csFunc.is_empty())	_passNameIdMap.emplace(makePropNameId(e->info().csFunc),	i);
+
+			if (!e->info().vsFunc.is_empty())	_passNameIdMap.emplace(makePropNameId(e->info().vsFunc),	i);
+			if (!e->info().psFunc.is_empty())	_passNameIdMap.emplace(makePropNameId(e->info().psFunc),	i);
+			if (!e->info().tescFunc.is_empty()) _passNameIdMap.emplace(makePropNameId(e->info().tescFunc),	i);
+			if (!e->info().teseFunc.is_empty()) _passNameIdMap.emplace(makePropNameId(e->info().teseFunc),	i);
+		}
+	}
 }
 
 void
@@ -138,36 +153,30 @@ Shader::isPermutatedShader() const
 	return !_permuts.isEmpty();
 }
 
-ShaderPropId 
-Shader::makePropId(StrView name) const
+ShaderPropId
+Shader::makePropNameId(StrView name) const
 {
 	RDS_TODO("use in Material::setParam");
 	return ShaderPropId::make(name);
 }
 
-ShaderPassId 
-Shader::makeCsPassId(StrView name) const
+int 
+Shader::getPropIndexBy(const ShaderPropId& nameId) const
 {
-	for (u32 i = 0; i < _passes.size(); i++)
-	{
-		auto& e = _passes[i];
-		bool isSame = StrUtil::isSame(name, e->info().csFunc);
-		//RDS_DUMP_VAR(e->info().csFunc);
-
-		#if RDS_DEBUG
-		if (isSame) return ShaderPassId::make(i, name);
-		#else
-		if (isSame) return ShaderPassId::make(i);
-		#endif // 0
-	}
-	RDS_CORE_ASSERT(false, "invalid cs pass id: {}", name);
-	return ShaderPassId::makeInvalid();
+	_notYetSupported(RDS_SRCLOC);
+	return 0;
 }
 
-Shader::SizeType 
-Shader::getCsIndexBy(const ShaderPassId& id) const
+int
+Shader::getPassIndexBy(const ShaderPropId& nameId) const
 {
-	return id.getId();
+	auto it = _passNameIdMap.find(nameId);
+	if (it == _passNameIdMap.end())
+	{
+		RDS_CORE_ASSERT("invalid pass name");
+		return sCast<int>(ShaderPropId::makeInvalid().getId());
+	}
+	return it->second;
 }
 
 #endif
