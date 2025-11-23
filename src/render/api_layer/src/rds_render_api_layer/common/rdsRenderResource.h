@@ -159,19 +159,10 @@ public:
 	RenderApiType		apiType()				const;
 	RenderResourceType	renderResourceType()	const;
 
-	u64					engineFrameCount()		const;
-	u32					engineFrameIndex()		const;
-	u64					frameCount()			const;
-	u32					frameIndex()			const;
-
 public:
 	Renderer*			renderer();
 	RenderDevice*		renderDevice();
 	RenderDevice*		renderDevice() const;
-
-	RenderFrameParam&	renderFrameParam();
-
-	//RenderFrame&		renderFrame(u64 frameIdx);
 
 	TransferContext&	transferContext();
 	TransferRequest&	transferRequest();

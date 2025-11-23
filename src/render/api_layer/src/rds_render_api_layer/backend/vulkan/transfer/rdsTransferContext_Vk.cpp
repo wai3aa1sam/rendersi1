@@ -28,7 +28,7 @@ TransferContext_Vk::~TransferContext_Vk()
 }
 
 void 
-TransferContext_Vk::reset(u64 frameCount)
+TransferContext_Vk::reset(i64 frameCount)
 {
 	//RDS_TODO("this design is bug, should explicitly know thread ownership, resource upload should have its own allocator");
 }
@@ -58,9 +58,9 @@ TransferContext_Vk::onTransferBegin()
 {
 	Base::onTransferBegin();
 
-	auto& rdFrameParam = renderFrameParam();
+	//auto& rdFrameParam = renderFrameParam();
 	//waitFrameFinished(rdFrameParam);
-	reset(rdFrameParam.frameCount());
+	reset(_frameCount);
 
 	// should not use reset
 	// separate the reset() to reset(Type type) and to wait(Type type)

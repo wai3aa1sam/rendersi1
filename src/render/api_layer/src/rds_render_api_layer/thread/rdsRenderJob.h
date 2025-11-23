@@ -30,7 +30,7 @@ public:
 	using CreateDesc = RenderJob_CreateDesc;
 
 public:
-	u64					frameCount		= 0;
+	i64					frameCount		= 0;
 	RenderDevice*		renderDevice	= nullptr;
 
 public:
@@ -53,7 +53,7 @@ public:
 	void destroy();
 
 public:
-	void reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_);
+	void reset(RenderDevice* renderDevice_, RenderContext* rdCtx, i64 frameCount_);
 
 	bool isDoneUploading();
 	bool isDoneRendering();

@@ -193,11 +193,11 @@ Vk_LinearStagingBuffer::alloc(SizeType size)
 }
 
 void 
-Vk_LinearStagingBuffer::reset()
+Vk_LinearStagingBuffer::reset(i64 frameCount)
 {
 	auto data = _chunks.scopedULock();
 	data->reset();
-	_vkAlloc.resetFrame(_rdDevVk->engineFrameCount());
+	_vkAlloc.resetFrame(frameCount);
 }
 
 void 

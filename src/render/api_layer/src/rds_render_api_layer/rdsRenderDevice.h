@@ -75,11 +75,11 @@ public:
 
 public:
 	class RenderInputFrameParam;
-	UPtr<RenderJob> newRenderJob(RenderContext* rdCtx, u64 frameCount);
+	UPtr<RenderJob> newRenderJob(RenderContext* rdCtx, i64 frameCount);
 	void submitRenderJob(UPtr<RenderJob> rdJob);
 
-	void reset(u64 frameCount);
-	void resetEngineFrame(u64 engineFrameCount);
+	//void reset(u64 frameCount);
+	//void resetEngineFrame(u64 engineFrameCount);
 
 	void waitIdle();
 	//void waitIdle();
@@ -119,22 +119,14 @@ public:
 
 			BindlessResources&	bindlessResource();
 
-			RenderFrameParam&	renderFrameParam();
-	const	RenderFrameParam&	renderFrameParam() const;
-
 	RenderApiType	apiType()		const;
-
-	u64				engineFrameCount()	const;
-	u32				engineFrameIndex()	const;
-	u64				frameCount()		const;
-	u32				frameIndex()		const;
 
 	bool			isQuit();
 
 protected:
 	virtual void onCreate(const CreateDesc& cDesc);
 	virtual void onDestroy();
-	virtual void onResetFrame(u64 frameCount);
+	virtual void onResetFrame(i64 frameCount);
 
 protected:
 	virtual SPtr<RenderContext>			onCreateContext(			const	RenderContext_CreateDesc&		cDesc)	= 0;
@@ -171,7 +163,7 @@ protected:
 	// no need processingRdJobs, this is for check the gpu side is completed or not
 	CondQueue<UPtr<RenderJob> >	_freeRdJobs;		// Producer
 
-	RenderFrameParam			_rdFrameParam;
+	//RenderFrameParam			_rdFrameParam;
 
 	RenderAdapterInfo	_adapterInfo;
 	UPtr<VertexLayoutManager> _vertexLayoutManager;
@@ -205,15 +197,7 @@ inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx;
 
 inline			BindlessResources&		RenderDevice::bindlessResource()			{ return *_bindlessRscs; }
 
-inline			RenderFrameParam&		RenderDevice::renderFrameParam()			{ return _rdFrameParam; }
-inline const	RenderFrameParam&		RenderDevice::renderFrameParam() const		{ return _rdFrameParam; }
-
 inline			RenderApiType			RenderDevice::apiType()		const			{ return _apiType; }
-
-inline			u64						RenderDevice::engineFrameCount()	const	{ return renderFrameParam().engineFrameCount(); }
-inline			u32						RenderDevice::engineFrameIndex()	const	{ return sCast<u32>(rotateFrame(engineFrameCount())); }
-inline			u64						RenderDevice::frameCount()			const	{ return renderFrameParam().frameCount(); }
-inline			u32						RenderDevice::frameIndex()			const	{ return sCast<u32>(rotateFrame(frameCount())); }
 
 #endif
 

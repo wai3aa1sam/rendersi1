@@ -145,7 +145,7 @@ RenderDevice::onDestroy()
 }
 
 UPtr<RenderJob> 
-RenderDevice::newRenderJob(RenderContext* rdCtx, u64 frameCount)
+RenderDevice::newRenderJob(RenderContext* rdCtx, i64 frameCount)
 {
 	UPtr<RenderJob> o;
 	for (;;)
@@ -201,29 +201,16 @@ RenderDevice::submitRenderJob(UPtr<RenderJob> rdJob)
 	}
 }
 
-void 
-RenderDevice::reset(u64 frameCount)
-{
-	RDS_TODO("remove, make a Base class FrameParam and separate frame, also, do not use this frame for Material");
-
-	checkRenderThreadExclusive(RDS_SRCLOC);
-
-	renderFrameParam().reset(frameCount);
-	onResetFrame(frameCount);
-}
-
-void
-RenderDevice::resetEngineFrame(u64 engineFrameCount)
-{
-	RDS_TODO("remove, make a Base class FrameParam and separate frame, also, do not use this frame for Material");
-
-	checkMainThreadExclusive(RDS_SRCLOC);
-
-	auto&	rdFrameParam	= renderFrameParam();
-	auto	frameCount		= engineFrameCount;
-	//auto	frameIdx		= Traits::rotateFrame(frameCount);
-	rdFrameParam.setEngineFrameCount(frameCount);
-}
+//void 
+//RenderDevice::reset(u64 frameCount)
+//{
+//	RDS_TODO("remove, make a Base class FrameParam and separate frame, also, do not use this frame for Material");
+//
+//	checkRenderThreadExclusive(RDS_SRCLOC);
+//
+//	//renderFrameParam().reset(frameCount);
+//	onResetFrame(frameCount);
+//}
 
 void 
 RenderDevice::waitIdle()
@@ -253,7 +240,7 @@ RenderDevice::waitRenderThreadIdle()
 }
 
 void 
-RenderDevice::onResetFrame(u64 frameCount)
+RenderDevice::onResetFrame(i64 frameCount)
 {
 }
 

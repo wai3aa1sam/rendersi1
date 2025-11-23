@@ -117,7 +117,7 @@ DemoEditorLayer::onUpdate()
 	RDS_TODO("Shader / Material use same strategy as MultiXXXX, save a index in it");
 
 	auto* rdDev = Renderer::renderDevice();
-	rdDev->resetEngineFrame(egFrameParam.frameCount());
+	//rdDev->resetEngineFrame(egFrameParam.frameCount());
 	auto rdJob = rdDev->newRenderJob(&rdCtx, egFrameParam.frameCount());
 	// TODO: retry and wait if no rdJob available
 	// TODO: start other thread render stuff eg. extra window?

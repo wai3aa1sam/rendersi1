@@ -69,7 +69,7 @@ protected:
 protected:
 	virtual void onCreate(const CreateDesc& cDesc) override;
 	virtual void onDestroy()	override;
-	virtual void onResetFrame(u64 frameCount)	override;
+	virtual void onResetFrame(i64 frameCount)	override;
 
 private:
 	void createVkInstance();

@@ -64,7 +64,7 @@ Vk_Allocator::destroy()
 }
 
 void 
-Vk_Allocator::resetFrame(u64 frameCount)
+Vk_Allocator::resetFrame(i64 frameCount)
 {
 	vmaSetCurrentFrameIndex(_allocator, sCast<u32>(frameCount));
 }

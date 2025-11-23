@@ -45,7 +45,7 @@ protected:
 	virtual void onDestroy();
 
 public:
-	void	reset();
+	void	reset(i64 frameCount);
 
 	// void*	alloc(StagingHandle& oHnd, SizeType n);
 	// void*	uploadToBuffer(	StagingHandle& oHnd, ByteSpan data);
@@ -70,7 +70,7 @@ public:
 protected:
 	virtual void onCreate(		CreateDesc& cDesc);
 	virtual void onPostCreate(	CreateDesc& cDesc);
-	virtual void onReset();
+	virtual void onReset(i64 frameCount);
 
 public:
 	TransferRequest&			transferRequest();

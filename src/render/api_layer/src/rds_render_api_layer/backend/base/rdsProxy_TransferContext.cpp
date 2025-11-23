@@ -13,15 +13,10 @@ namespace rds
 #if 1
 
 void 
-Proxy_TransferContext::reset(SPtr<TransferFrame>& tsfFrame)
+Proxy_TransferContext::reset(SPtr<TransferFrame>& tsfFrame, RenderJob* rdJob)
 {
-	_tsfFrame = tsfFrame;
-}
-
-void 
-Proxy_TransferContext::_temp_reset(SPtr<TransferFrame>& tsfFrame)
-{
-	reset(tsfFrame);
+	_tsfFrame	= tsfFrame;
+	_frameCount = rdJob->frameCount;
 }
 
 void

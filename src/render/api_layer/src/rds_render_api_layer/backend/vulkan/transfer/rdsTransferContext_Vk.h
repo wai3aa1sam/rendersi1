@@ -23,7 +23,7 @@ public:
 	TransferContext_Vk();
 	~TransferContext_Vk();
 
-	void reset(u64 frameCount);
+	void reset(i64 frameCount);
 
 public:
 	//void transitImageLayout(Vk_Image_T* hnd, const Texture_Desc& desc, VkImageLayout srcLayout, VkImageLayout dstLayout, QueueTypeFlags queueType);

@@ -89,12 +89,12 @@ TransferFrame_Vk::onDestroy()
 }
 
 void 
-TransferFrame_Vk::onReset()
+TransferFrame_Vk::onReset(i64 frameCount)
 {
-	Base::onReset();
+	Base::onReset(frameCount);
 
 	// we must ensure the tsf is completed before reset staging buf
-	_vkLinearStagingBuf.reset();
+	_vkLinearStagingBuf.reset(frameCount);
 	//_vkTsfFrame.reset();		// we have waited when newRenderJob(), compatible with the old code, wait and reset there
 }
 

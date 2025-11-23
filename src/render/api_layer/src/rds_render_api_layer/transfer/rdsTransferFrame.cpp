@@ -54,13 +54,14 @@ void TransferFrame::create(CreateDesc& cDesc)
 
 void TransferFrame::onDestroy()
 {
-	TransferFrame::onReset();
+	TransferFrame::onReset(0);
 }
 
 void 
-TransferFrame::reset()
+TransferFrame::reset(i64 frameCount)
 {
-	onReset();
+	checkMainThreadExclusive(RDS_SRCLOC);
+	onReset(frameCount);
 }
 
 void TransferFrame::onCreate(CreateDesc& cDesc)
@@ -74,7 +75,7 @@ void TransferFrame::onPostCreate(CreateDesc& cDesc)
 }
 
 void 
-TransferFrame::onReset()
+TransferFrame::onReset(i64 frameCount)
 {
 	_constBufAlloc.reset();
 	auto fn_rdRscBuf = [](auto& buf) { auto data = buf.scopedULock(); data->clear(); };

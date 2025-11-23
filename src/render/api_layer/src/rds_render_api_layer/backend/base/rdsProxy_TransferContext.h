@@ -20,8 +20,7 @@ public:
 	using Base = TransferContext;
 
 public:
-	void reset(SPtr<TransferFrame>& tsfFrame);
-	virtual void _temp_reset(SPtr<TransferFrame>& tsfFrame);
+	void reset(SPtr<TransferFrame>& tsfFrame, RenderJob* rdJob);
 
 public:
 	void transferBegin();
@@ -51,6 +50,9 @@ protected:
 
 private:
 	SPtr<TransferFrame> _tsfFrame = nullptr;
+
+protected:
+	i64 _frameCount = 0;
 };
 
 #endif

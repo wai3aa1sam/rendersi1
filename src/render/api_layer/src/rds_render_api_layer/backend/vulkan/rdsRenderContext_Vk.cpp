@@ -141,10 +141,7 @@ RenderContext_Vk::onBeginRender()
 		}
 	}
 
-	if (frameCount() > 0)
-	{
-		renderJob_Vk().reset(renderDeviceVk());
-	}
+	renderJob_Vk().reset(renderDeviceVk());
 }
 
 void

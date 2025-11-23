@@ -35,13 +35,13 @@ void RenderJob::destroy()
 }
 
 void 
-RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, u64 frameCount_)
+RenderJob::reset(RenderDevice* renderDevice_, RenderContext* rdCtx, i64 frameCount_)
 {
 	renderDevice	= renderDevice_;
 	frameCount		= frameCount_;
 
 	if (_transferFrame)
-		_transferFrame->reset();
+		_transferFrame->reset(frameCount_);
 	_transferFrame	= nullptr;
 
 	renderGraph().reset(rdCtx);

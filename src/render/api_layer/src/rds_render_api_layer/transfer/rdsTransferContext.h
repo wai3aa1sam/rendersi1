@@ -41,7 +41,6 @@ public:
 
 public:
 	void submit(RenderJob* rdJob);
-	virtual void _temp_reset(SPtr<TransferFrame>& tsfFrame) = 0;
 
 protected:
 	virtual void waitFrameFinished(RenderFrameParam& rdFrameParam);

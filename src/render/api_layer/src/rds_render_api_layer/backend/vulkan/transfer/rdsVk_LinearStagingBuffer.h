@@ -77,7 +77,7 @@ public:
 
 	StagingHandle alloc(SizeType size);
 
-	void reset();
+	void reset(i64 frameCount);
 	void clear();
 
 public:

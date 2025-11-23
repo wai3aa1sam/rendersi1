@@ -56,7 +56,7 @@ protected:
 	virtual void onCreate(		CreateDesc& cDesc)	override;
 	virtual void onPostCreate(	CreateDesc& cDesc)	override;
 	virtual void onDestroy()						override;
-	virtual void onReset()							override;
+	virtual void onReset(i64 frameCount)			override;
 
 public:
 	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;

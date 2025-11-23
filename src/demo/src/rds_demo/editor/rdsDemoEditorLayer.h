@@ -119,7 +119,9 @@ struct TestEngine
 			(SPtr<RenderGpuBuffer>& testBuffer, SPtr<RenderMultiGpuBuffer>& testMultiBuffer, SPtr<Texture2D>& testTex2D)
 			{
 				{
-					if (Renderer::renderDevice()->engineFrameCount() % 2 == 0)
+					static int i = 0;
+					++i;
+					if (i % 2 == 0)
 					{
 						/*
 						SPtr<RenderGpuBuffer>		_testBuffer;

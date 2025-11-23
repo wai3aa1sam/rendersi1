@@ -18,9 +18,9 @@ Proxy_RenderDevice::reset(RenderJob* rdJob, Proxy_TransferContext* pxy_tsfCtx)
 	checkRenderThreadExclusive(RDS_SRCLOC);
 
 	auto frameCount = rdJob->frameCount;
-	pxy_tsfCtx->reset(rdJob->_transferFrame);
+	pxy_tsfCtx->reset(rdJob->_transferFrame, rdJob);
 
-	renderFrameParam().reset(frameCount);
+	//renderFrameParam().reset(frameCount);
 	onResetFrame(frameCount);
 }
 
