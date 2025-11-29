@@ -27,8 +27,8 @@ ShaderStock::create(RenderDevice* rdDev)
 {
 	_rdDev = rdDev;
 
-	rdDev->createShader("asset/shader/line.shader");
-	rdDev->createShader("asset/shader/circle.shader");
+	rdDev->createShader(RDS_DebugLabel(), "asset/shader/line.shader");
+	rdDev->createShader(RDS_DebugLabel(),"asset/shader/circle.shader");
 }
 
 void 

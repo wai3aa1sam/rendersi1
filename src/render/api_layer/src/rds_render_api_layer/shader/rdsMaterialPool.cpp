@@ -48,7 +48,7 @@ MaterialPool::newObject(Shader* shader)
 	else
 	{
 		auto& newObj = _objs.emplace_back();
-		newObj = rdDev->createMaterial(shader);
+		newObj = rdDev->createMaterial(RDS_DebugLabel(), shader);
 		return newObj;
 	}
 }

@@ -22,7 +22,7 @@ RpfDisplayNormal::~RpfDisplayNormal()
 void 
 RpfDisplayNormal::create()
 {
-	RenderUtil::createMaterial(&_shaderDisplayNormal, &_mtlDisplayNormal, "asset/shader/util/rdsDisplayNormals.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderDisplayNormal, &_mtlDisplayNormal, "asset/shader/util/rdsDisplayNormals.shader");
 }
 
 void 

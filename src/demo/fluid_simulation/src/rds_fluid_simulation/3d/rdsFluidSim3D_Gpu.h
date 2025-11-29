@@ -64,7 +64,7 @@ public:
 	public:
 		void create(ParticleSpawner& spawner, u32 n)
 		{
-			RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+			RenderGpuBuffer::makeCDesc();
 
 			auto gpuDim_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT)	* n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute };
 			auto gpuDim_CDesc_WithVs	= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT)	* n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex};
@@ -72,15 +72,10 @@ public:
 			auto gpuIdx3_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_Idx3T) * n, sizeof(Gpu_Idx3T), RenderGpuBufferTypeFlags::Compute};
 
 			//auto cDesc = RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT) * n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex };
-			positions		= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc_WithVs);
-			velocities		= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc_WithVs);
-			densityData		= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc);
-			predictedPos	= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc);
-
-			positions->setDebugName(	"fs3d_bufPos");
-			velocities->setDebugName(	"fs3d_bufVel");
-			densityData->setDebugName(	"fs3d_bufDensityData");
-			predictedPos->setDebugName(	"fs3d_bufPredictedPos");
+			positions		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("fs3d_bufPos"),			gpuDim_CDesc_WithVs);
+			velocities		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("fs3d_bufVel"),			gpuDim_CDesc_WithVs);
+			densityData		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("fs3d_bufDensityData"),	gpuDim_CDesc);
+			predictedPos	= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("fs3d_bufPredictedPos"),	gpuDim_CDesc);
 
 			spawner.spawnTo3D(positions, velocities, predictedPos);
 		}
@@ -195,8 +190,8 @@ public:
 public:
 	void create()
 	{
-		RenderUtil::createMaterial(&_shader_particleToVoxelMap, &_mtl_particleToVoxelMap,	"asset/shader/demo/fluid_simulation/voxel/rdsVoxel_ParticleToTex3D.shader");
-		RenderUtil::createMaterial(&_shader_renderVoxelMap,		&_mtl_renderVoxelMap,		"asset/shader/demo/fluid_simulation/voxel/rdsVoxel_RenderVoxelMap.shader");
+		RenderUtil::createMaterial(RDS_DebugLabel(), &_shader_particleToVoxelMap, &_mtl_particleToVoxelMap,	"asset/shader/demo/fluid_simulation/voxel/rdsVoxel_ParticleToTex3D.shader");
+		RenderUtil::createMaterial(RDS_DebugLabel(), &_shader_renderVoxelMap,		&_mtl_renderVoxelMap,		"asset/shader/demo/fluid_simulation/voxel/rdsVoxel_RenderVoxelMap.shader");
 	}
 
 public:
@@ -255,12 +250,12 @@ public:
 			int d = math::roundToInt(boundingBoxScale.z / maxAxis * voxelMapResolution);
 			voxelMapSize = Vec3u::s_cast(Vec3i{w, h, d});
 			
-			auto cDesc		= Texture3D::makeCDesc(RDS_SRCLOC);
+			auto cDesc		= Texture3D::makeCDesc();
 			cDesc			= Texture3D_CreateDesc{ voxelMapSize, ColorType::Rh, TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource };
 			bool hasInited = vxFluid.voxelMap;
 			if (!hasInited)
 			{
-				vxFluid.voxelMap = Renderer::renderDevice()->createTexture3D(cDesc);
+				vxFluid.voxelMap = Renderer::renderDevice()->createTexture3D(RDS_DebugLabel(), cDesc);
 			}
 
 			rtColor			= rtColor_;

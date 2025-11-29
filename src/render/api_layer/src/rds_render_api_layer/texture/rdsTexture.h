@@ -398,8 +398,8 @@ public:
 	using Size			= Tuple2u;
 
 public:
-	static CreateDesc		makeCDesc(RDS_DEBUG_SRCLOC_PARAM = {});
-	static SPtr<Texture2D>	make(CreateDesc& cDesc);
+	static CreateDesc		makeCDesc();
+	static SPtr<Texture2D>	make(RDS_DebugLabel_PARAM, CreateDesc& cDesc);
 
 public:
 	Texture2D();

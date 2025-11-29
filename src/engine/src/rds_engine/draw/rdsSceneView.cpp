@@ -71,7 +71,7 @@ SceneView::drawScene(RenderRequest& rdReq, DrawData* drawData, const DrawSetting
 			for (auto* e : rdableSys.renderables())
 			{
 				auto& mtl = mtls[e->entity().id()];
-				mtl = rdDev->createMaterial(shader);
+				mtl = rdDev->createMaterial(RDS_DebugLabel(), shader);
 
 				RDS_CORE_ASSERT(e->isRenderableMesh, "isRenderableMesh");
 				auto* rdableMesh = sCast<CRenderableMesh*>(e);

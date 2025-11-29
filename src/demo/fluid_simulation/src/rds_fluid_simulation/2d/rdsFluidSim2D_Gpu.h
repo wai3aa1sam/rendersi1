@@ -61,7 +61,7 @@ public:
 	public:
 		void create(ParticleSpawner& spawner, u32 n)
 		{
-			RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+			RenderGpuBuffer::makeCDesc();
 
 			auto gpuDim_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT)	* n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute };
 			auto gpuDim_CDesc_WithVs	= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT)	* n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex};
@@ -69,15 +69,10 @@ public:
 			auto gpuIdx3_CDesc			= RenderGpuBuffer_CreateDesc{ sizeof(Gpu_Idx3T) * n, sizeof(Gpu_Idx3T), RenderGpuBufferTypeFlags::Compute};
 
 			//auto cDesc = RenderGpuBuffer_CreateDesc{ sizeof(Gpu_DimT) * n, sizeof(Gpu_DimT), RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex };
-			positions		= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc_WithVs);
-			velocities		= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc_WithVs);
-			densityData		= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc);
-			predictedPos	= Renderer::renderDevice()->createRenderGpuBuffer(gpuDim_CDesc);
-
-			positions->setDebugName(	"fs2d_bufPos");
-			velocities->setDebugName(	"fs2d_bufVel");
-			densityData->setDebugName(	"fs2d_bufDensityData");
-			predictedPos->setDebugName(	"fs2d_bufPredictedPos");
+			positions		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("fs2d_bufPos"),			gpuDim_CDesc_WithVs);
+			velocities		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("fs2d_bufVel"),			gpuDim_CDesc_WithVs);
+			densityData		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("fs2d_bufDensityData"),	gpuDim_CDesc);
+			predictedPos	= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("fs2d_bufPredictedPos"),	gpuDim_CDesc);
 
 			spawner.spawnTo(positions, velocities, predictedPos);
 		}

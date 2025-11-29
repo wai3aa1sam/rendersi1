@@ -37,11 +37,11 @@ public:
 	void create(RenderDevice* rdDev);
 	void destroy();
 
-	SPtr<Texture2D>			createSolidColorTexture2D(			const Color4b& color);
-	SPtr<Texture2D>			createCheckerboardTexture2D(		const Color4b& color);
-	SPtr<Texture2DArray>	createCheckerboardTexture2DArray(	const Color4b& color);
-	SPtr<Texture3D>			createCheckerboardTexture3D(		const Color4b& color);
-	SPtr<TextureCube>		createCheckerboardTextureCube(		const Color4b& color);
+	SPtr<Texture2D>			createSolidColorTexture2D(			RDS_DebugLabel_PARAM, const Color4b& color);
+	SPtr<Texture2D>			createCheckerboardTexture2D(		RDS_DebugLabel_PARAM, const Color4b& color);
+	SPtr<Texture2DArray>	createCheckerboardTexture2DArray(	RDS_DebugLabel_PARAM, const Color4b& color);
+	SPtr<Texture3D>			createCheckerboardTexture3D(		RDS_DebugLabel_PARAM, const Color4b& color);
+	SPtr<TextureCube>		createCheckerboardTextureCube(		RDS_DebugLabel_PARAM, const Color4b& color);
 
 public:
 	struct Textures

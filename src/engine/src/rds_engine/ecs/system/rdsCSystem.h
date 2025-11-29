@@ -52,6 +52,9 @@ public:
 	using System = typename T::System;
 
 public:
+	static constexpr int s_kDefaultEntityCount = 100;
+
+public:
 	void create(EngineContext* egCtx);
 	void destroy();
 

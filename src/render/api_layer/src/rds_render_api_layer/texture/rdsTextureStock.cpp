@@ -24,17 +24,17 @@ TextureStock::create(RenderDevice* rdDev)
 	_rdDev = rdDev;
 	//if (false)
 	{
-		error		= createCheckerboardTexture2D(		Color4b(255, 0,   220, 0));			error		->setDebugName("error	");
-		white		= createSolidColorTexture2D(		Color4b(255, 255, 255, 255));		white		->setDebugName("white	");
-		black		= createSolidColorTexture2D(		Color4b(0,   0,   0,   255));		black		->setDebugName("black	");
-		red			= createSolidColorTexture2D(		Color4b(255, 0,   0,   255));		red			->setDebugName("red		");
-		green		= createSolidColorTexture2D(		Color4b(0,   255, 0,   255));		green		->setDebugName("green	");
-		blue		= createSolidColorTexture2D(		Color4b(0,   0,   255, 255));		blue		->setDebugName("blue	");
-		magenta		= createSolidColorTexture2D(		Color4b(255, 0,   255, 255));		magenta		->setDebugName("magenta	");
+		error		= createCheckerboardTexture2D(		RDS_DebugLabel("error	"), Color4b(255, 0,   220, 0));	
+		white		= createSolidColorTexture2D(		RDS_DebugLabel("white	"), Color4b(255, 255, 255, 255));
+		black		= createSolidColorTexture2D(		RDS_DebugLabel("black	"), Color4b(0,   0,   0,   255));
+		red			= createSolidColorTexture2D(		RDS_DebugLabel("red		"), Color4b(255, 0,   0,   255));
+		green		= createSolidColorTexture2D(		RDS_DebugLabel("green	"), Color4b(0,   255, 0,   255));
+		blue		= createSolidColorTexture2D(		RDS_DebugLabel("blue	"), Color4b(0,   0,   255, 255));
+		magenta		= createSolidColorTexture2D(		RDS_DebugLabel("magenta	"), Color4b(255, 0,   255, 255));
 
-		errorArray	= createCheckerboardTexture2DArray(	Color4b(255, 0,   220, 0));			errorArray	->setDebugName("errorArray	");
-		error3D		= createCheckerboardTexture3D(		Color4b(255, 0,   220, 0));			error3D		->setDebugName("error3D		");
-		errorCube	= createCheckerboardTextureCube(	Color4b(255, 0,   220, 0));			errorCube	->setDebugName("errorCube	");
+		errorArray	= createCheckerboardTexture2DArray(	RDS_DebugLabel("errorArray	"), Color4b(255, 0,   220, 0));
+		error3D		= createCheckerboardTexture3D(		RDS_DebugLabel("error3D		"), Color4b(255, 0,   220, 0));
+		errorCube	= createCheckerboardTextureCube(	RDS_DebugLabel("errorCube	"), Color4b(255, 0,   220, 0));
 	}
 }
 
@@ -55,12 +55,12 @@ TextureStock::destroy()
 }
 
 SPtr<Texture2D>	
-TextureStock::createSolidColorTexture2D(const Color4b& color)
+TextureStock::createSolidColorTexture2D(RDS_DebugLabel_PARAM, const Color4b& color)
 {
 	#if 1
 	int w = 4;
 	int h = 4;
-	auto texDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+	auto texDesc = Texture2D::makeCDesc();
 	texDesc.usageFlags	= TextureUsageFlags::ShaderResource;
 	texDesc.format		= ColorType::RGBAb;
 	texDesc.mipCount	= 1;
@@ -77,18 +77,18 @@ TextureStock::createSolidColorTexture2D(const Color4b& color)
 			span[x] = color;
 		}
 	}
-	return _rdDev->createTexture2D(texDesc);
+	return _rdDev->createTexture2D(RDS_DebugLabel_ARG, texDesc);
 	#else
 	return nullptr;
 	#endif // 0
 }
 
 SPtr<Texture2D>	
-TextureStock::createCheckerboardTexture2D(const Color4b& color)
+TextureStock::createCheckerboardTexture2D(RDS_DebugLabel_PARAM, const Color4b& color)
 {
 	int w = 4;
 	int h = 4;
-	auto texDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+	auto texDesc = Texture2D::makeCDesc();
 	texDesc.usageFlags	= TextureUsageFlags::ShaderResource;
 	texDesc.format		= ColorType::RGBAb;
 	texDesc.mipCount	= 1;
@@ -111,17 +111,17 @@ TextureStock::createCheckerboardTexture2D(const Color4b& color)
 			span[x] = ((x + y) % 2 == 0) ? colorA : colorB;
 		}
 	}
-	return _rdDev->createTexture2D(texDesc);
+	return _rdDev->createTexture2D(RDS_DebugLabel_ARG, texDesc);
 }
 
 SPtr<Texture2DArray> 
-TextureStock::createCheckerboardTexture2DArray(const Color4b& color)
+TextureStock::createCheckerboardTexture2DArray(RDS_DebugLabel_PARAM, const Color4b& color)
 {
 	RDS_TODO("shd be later use render graph to setup");
 	
 	int w = 4;
 	int h = 4;
-	auto texDesc		= Texture2DArray::makeCDesc(RDS_SRCLOC);
+	auto texDesc		= Texture2DArray::makeCDesc();
 	texDesc.usageFlags	= TextureUsageFlags::ShaderResource;
 	texDesc.format		= ColorType::RGBAb;
 	texDesc.mipCount	= 1;
@@ -129,17 +129,17 @@ TextureStock::createCheckerboardTexture2DArray(const Color4b& color)
 	texDesc.mipCount	= 1;
 	texDesc.size.set(w, h, 1);
 
-	return _rdDev->createTexture2DArray(texDesc);
+	return _rdDev->createTexture2DArray(RDS_DebugLabel_ARG, texDesc);
 }
 
 SPtr<Texture3D> 
-TextureStock::createCheckerboardTexture3D(const Color4b& color)
+TextureStock::createCheckerboardTexture3D(RDS_DebugLabel_PARAM, const Color4b& color)
 {
 	RDS_TODO("shd be later use render graph to setup");
 
 	int w = 4;
 	int h = 4;
-	auto texDesc		= Texture3D::makeCDesc(RDS_SRCLOC);
+	auto texDesc		= Texture3D::makeCDesc();
 	texDesc.usageFlags	= TextureUsageFlags::ShaderResource;
 	texDesc.format		= ColorType::RGBAb;
 	texDesc.mipCount	= 1;
@@ -147,17 +147,17 @@ TextureStock::createCheckerboardTexture3D(const Color4b& color)
 	texDesc.mipCount	= 1;
 	texDesc.size.set(w, h, 1);
 
-	return _rdDev->createTexture3D(texDesc);
+	return _rdDev->createTexture3D(RDS_DebugLabel_ARG, texDesc);
 }
 
 SPtr<TextureCube> 
-TextureStock::createCheckerboardTextureCube(const Color4b& color)
+TextureStock::createCheckerboardTextureCube(RDS_DebugLabel_PARAM, const Color4b& color)
 {
 	RDS_TODO("shd be later use render graph to setup");
 
 	int w = 4;
 	int h = 4;
-	auto texDesc		= TextureCube::makeCDesc(RDS_SRCLOC);
+	auto texDesc		= TextureCube::makeCDesc();
 	texDesc.usageFlags	= TextureUsageFlags::ShaderResource;
 	texDesc.format		= ColorType::RGBAb;
 	texDesc.mipCount	= 1;
@@ -165,7 +165,7 @@ TextureStock::createCheckerboardTextureCube(const Color4b& color)
 	texDesc.mipCount	= 1;
 	texDesc.size.set(w, h, 1);
 	
-	return _rdDev->createTextureCube(texDesc);
+	return _rdDev->createTextureCube(RDS_DebugLabel_ARG, texDesc);
 }
 
 #endif

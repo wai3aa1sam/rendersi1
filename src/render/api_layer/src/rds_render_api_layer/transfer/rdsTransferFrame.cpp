@@ -25,15 +25,15 @@ namespace rds
 #if 1
 
 TransferFrame::CreateDesc 
-TransferFrame::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
+TransferFrame::makeCDesc()
 {
-	return CreateDesc{RDS_DEBUG_SRCLOC_ARG};
+	return CreateDesc{};
 }
 
 SPtr<TransferFrame> 
-TransferFrame::make(CreateDesc& cDesc)
+TransferFrame::make(RDS_DebugLabel_PARAM, CreateDesc& cDesc)
 {
-	return Renderer::renderDevice()->createTransferFrame(cDesc); 
+	return Renderer::renderDevice()->createTransferFrame(RDS_DebugLabel_ARG, cDesc); 
 }
 
 TransferFrame::TransferFrame()
@@ -81,6 +81,7 @@ TransferFrame::onReset(i64 frameCount)
 	auto fn_rdRscBuf = [](auto& buf) { auto data = buf.scopedULock(); data->clear(); };
 	fn_rdRscBuf(_destroyRdRscBuf);		// must reset before create, since create will release SPtr
 	fn_rdRscBuf(_createRdRscBuf);
+	fn_rdRscBuf(_setDebugName_rdRscBuf);
 	_tsfReq.reset(&transferContext());
 }
 
@@ -89,7 +90,7 @@ TransferFrame::onReset(i64 frameCount)
 void 
 TransferFrame::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
 {
-	auto lock = _createRdRscBuf.scopedULock();
+	auto lock = _setDebugName_rdRscBuf.scopedULock();
 	auto* cmd = lock->newCommand<TransferCommand_SetDebugName>();
 
 	cmd->dst	= rdRsc;

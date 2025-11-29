@@ -24,7 +24,7 @@ RpfClearImage3D::~RpfClearImage3D()
 void 
 RpfClearImage3D::create()
 {
-	RenderUtil::createShader(&_shaderClearImage3D, "asset/shader/pass_feature/utility/image/rdsClearImage3D.shader");
+	RenderUtil::createShader(RDS_DebugLabel(), &_shaderClearImage3D, "asset/shader/pass_feature/utility/image/rdsClearImage3D.shader");
 }
 
 void 
@@ -36,7 +36,7 @@ RpfClearImage3D::destroy()
 RdgPass* 
 RpfClearImage3D::addClearImage3DPass(SPtr<Material>& mtl_, RdgTextureHnd image, const Tuple3u& image_extent, const Tuple3u& image_offset, const Tuple4f& clear_value)
 {
-	RenderUtil::createMaterial(_shaderClearImage3D, &mtl_);
+	RenderUtil::createMaterial(RDS_DebugLabel(), _shaderClearImage3D, &mtl_);
 
 	auto*		rdGraph				= renderGraph();
 	auto*		drawData			= drawDataBase();

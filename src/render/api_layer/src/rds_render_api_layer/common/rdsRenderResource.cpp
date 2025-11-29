@@ -58,8 +58,10 @@ void
 RenderResource::setDebugName(StrView name)
 {
 	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-	_debugName = name;
-	transferContext().transferFrame().setRenderResourceDebugName(this, name);
+	if (transferContextPtr())
+	{
+		transferContext().transferFrame().setRenderResourceDebugName(this, name);
+	}
 	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 }
 
@@ -101,12 +103,29 @@ RenderResource::hasCreated() const
 	return _rdDev != nullptr;
 }
 
+const char* 
+RenderResource::debugName() const
+{
+	return RDS_DebugLabel_GET_NAME(RDS_DebugLabel_VAR_NAME);
+}
+
+bool				
+RenderResource::Debug_hasName()			const
+{
+	#if RDS_ENABLE_DebugLabel
+	return StrUtil::len(debugName()) > 0;
+	#else
+	return false;
+	#endif // 0
+}
+
 RenderApiType			RenderResource::apiType()				const		{ return renderDevice()->apiType(); }
 RenderResourceType		RenderResource::renderResourceType()	const		{ return _rdRscType; }
 
 Renderer*				RenderResource::renderer()							{ return Renderer::instance(); }
 
 TransferContext&		RenderResource::transferContext()					{ return renderDevice()->transferContext(); }
+TransferContext*		RenderResource::transferContextPtr()				{ return renderDevice()->transferContextPtr(); }
 TransferRequest&		RenderResource::transferRequest()					{ return renderDevice()->transferRequest(); }
 
 RenderResourceStateFlags 

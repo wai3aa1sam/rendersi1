@@ -103,6 +103,12 @@ public:
 		_rdDev = rdDev;
 	}
 
+	void _internal_create(RDS_DebugLabel_PARAM, RenderDevice* rdDev) const
+	{
+		_rdDev = rdDev;
+		RDS_DebugLabel_ASSIGN();
+	}
+
 	void _internal_create(RenderDevice* rdDev, bool isBypassChecking) const
 	{
 		_rdDev = rdDev;
@@ -116,12 +122,23 @@ public:
 		RDS_DEBUG_SRCLOC_ASSIGN();
 	}
 
-protected:
+	void _internal_create(RDS_DebugLabel_PARAM, RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_) const
+	{
+		_internal_create(rdDev, isBypassChecking, debugSrcLoc_);
+		RDS_DebugLabel_ASSIGN();
+	}
 
+	#if RDS_ENABLE_DebugLabel
+	StrView debugLabelName() const { return StrView{RDS_DebugLabel_VAR_NAME.name()}; }
+	#else
+	StrView debugLabelName() const { return StrView{""}; }
+	#endif // RDS_ENABLE_DebugLabel
+	
 protected:
 	mutable RenderDevice*	_rdDev				= nullptr;
 	mutable bool			_isBypassChecking	= false;
 	mutable RDS_DEBUG_SRCLOC_DECL;
+	mutable RDS_DebugLabel_VAR;
 };
 
 using RenderResource_CreateDesc = RenderResource_CreateDescT<Empty>;
@@ -130,6 +147,7 @@ using RenderResource_CreateDesc = RenderResource_CreateDescT<Empty>;
 
 class RenderResource : public RefCount_Base, public RenderApiLayerCommon_Base
 {
+	RDS_DebugLabel_COMMON_BODY();
 	friend class Renderer;
 	friend class RenderGraph;
 	template<class T, class ENABLE> friend struct RdsDeleter;
@@ -156,6 +174,8 @@ public:
 public:
 	bool				hasCreated()			const;
 	const char*			debugName()				const;
+	bool				Debug_hasName()			const;
+
 	RenderApiType		apiType()				const;
 	RenderResourceType	renderResourceType()	const;
 
@@ -165,6 +185,7 @@ public:
 	RenderDevice*		renderDevice() const;
 
 	TransferContext&	transferContext();
+	TransferContext*	transferContextPtr();
 	TransferRequest&	transferRequest();
 
 	RenderResourceStateFlags renderResourceStateFlags(u32 subResource = RenderResourceState::s_kAllSubResource) const;
@@ -209,17 +230,8 @@ RenderResource::create(const RenderResource_CreateDescT<T>& cDesc)
 	#endif // RDS_DEVELOPMENT
 
 	RenderResource_CreateEnd();
-}
 
-inline
-const char* 
-RenderResource::debugName() const
-{
-	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-	return _debugName.c_str();
-	#else
-	return "";
-	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
+	setDebugName(cDesc.debugLabelName());
 }
 
 inline RenderDevice*			RenderResource::renderDevice()			{ return _rdDev; }

@@ -91,8 +91,8 @@ public:
 	static constexpr SizeType s_kFaceCount = CreateDesc::s_kFaceCount;
 
 public:
-	static CreateDesc			makeCDesc(RDS_DEBUG_SRCLOC_PARAM = {});
-	static SPtr<TextureCube>	make(CreateDesc& cDesc);
+	static CreateDesc			makeCDesc();
+	static SPtr<TextureCube>	make(RDS_DebugLabel_PARAM, CreateDesc& cDesc);
 
 public:
 	TextureCube();

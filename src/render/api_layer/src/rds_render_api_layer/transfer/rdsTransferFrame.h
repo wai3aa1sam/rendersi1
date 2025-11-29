@@ -32,8 +32,8 @@ public:
 	using SizeType		= RenderApiLayerTraits::SizeType;
 
 public:
-	static CreateDesc				makeCDesc(RDS_DEBUG_SRCLOC_PARAM);
-	static SPtr<TransferFrame>		make(CreateDesc& cDesc);
+	static CreateDesc				makeCDesc();
+	static SPtr<TransferFrame>		make(RDS_DebugLabel_PARAM, CreateDesc& cDesc);
 
 public:
 	TransferFrame();
@@ -77,6 +77,7 @@ public:
 	LinearStagingBuffer&		constBufferAllocator();
 	TransferCommandSafeBuffer&	createRenderResourceBuffer();
 	TransferCommandSafeBuffer&	destroyRenderResourceBuffer();
+	TransferCommandSafeBuffer&	setDebugNameRenderResourceBuffer();
 
 private:
 	LinearStagingBuffer _constBufAlloc;
@@ -84,12 +85,14 @@ private:
 
 	TransferCommandSafeBuffer	_createRdRscBuf;
 	TransferCommandSafeBuffer	_destroyRdRscBuf;
+	TransferCommandSafeBuffer	_setDebugName_rdRscBuf;		// ensure we setDebugName after create
 };
 
-inline TransferRequest&				TransferFrame::transferRequest()				{ return _tsfReq; }
-inline LinearStagingBuffer&			TransferFrame::constBufferAllocator()			{ return _constBufAlloc; }
-inline TransferCommandSafeBuffer&	TransferFrame::createRenderResourceBuffer()		{ return _createRdRscBuf; }
-inline TransferCommandSafeBuffer&	TransferFrame::destroyRenderResourceBuffer()	{ return _destroyRdRscBuf; }
+inline TransferRequest&				TransferFrame::transferRequest()					{ return _tsfReq; }
+inline LinearStagingBuffer&			TransferFrame::constBufferAllocator()				{ return _constBufAlloc; }
+inline TransferCommandSafeBuffer&	TransferFrame::createRenderResourceBuffer()			{ return _createRdRscBuf; }
+inline TransferCommandSafeBuffer&	TransferFrame::destroyRenderResourceBuffer()		{ return _destroyRdRscBuf; }
+inline TransferCommandSafeBuffer&	TransferFrame::setDebugNameRenderResourceBuffer()	{ return _setDebugName_rdRscBuf; }
 
 #endif
 

@@ -13,17 +13,17 @@ namespace rds
 #if 1
 
 TextureCube::CreateDesc	
-TextureCube::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
+TextureCube::makeCDesc()
 {
-	auto o = CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
+	auto o = CreateDesc{};
 	o.type = RenderDataType::Texture3D;
 	return o;
 }
 
 SPtr<TextureCube> 
-TextureCube::make(CreateDesc& cDesc)
+TextureCube::make(RDS_DebugLabel_PARAM, CreateDesc& cDesc)
 {
-	return Renderer::renderDevice()->createTextureCube(cDesc);
+	return Renderer::renderDevice()->createTextureCube(RDS_DebugLabel_ARG, cDesc);
 }
 
 TextureCube::TextureCube()

@@ -236,7 +236,7 @@ ShaderCompileRequest::compilePermutationShader(StrView filename, StrView impShad
 	bool isPermutatedShader = !permuts.isEmpty();
 
 	if (!isPermutatedShader)
-		return rdDev.createShader(filename);
+		return rdDev.createShader(RDS_DebugLabel(), filename);
 
 	TempString shaderPermutDir;
 	TempString permutName;
@@ -246,7 +246,7 @@ ShaderCompileRequest::compilePermutationShader(StrView filename, StrView impShad
 
 	bool isExist = Directory::isExist(shaderPermutDir);
 	if (isExist)
-		return rdDev.createShader(filename, permuts);
+		return rdDev.createShader(RDS_DebugLabel(), filename, permuts);
 
 	RDS_CORE_LOG("--- Compile shader permutation: {}", filename);
 	{
@@ -266,7 +266,7 @@ ShaderCompileRequest::compilePermutationShader(StrView filename, StrView impShad
 		proc.execute(ps.shaderCompilerRoot(), args.stream());
 	}
 
-	return rdDev.createShader(filename, permuts);
+	return rdDev.createShader(RDS_DebugLabel(), filename, permuts);
 }
 
 

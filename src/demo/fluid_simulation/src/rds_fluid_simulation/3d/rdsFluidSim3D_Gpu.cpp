@@ -14,7 +14,7 @@ FluidSim3D_Gpu::onCreate(GraphicsDemo* parentDemo)
 {
 	Base::onCreate(parentDemo);
 
-	RenderUtil::createMaterial(&_shaderFs3d, &_mtlFs3d,	"asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(),  &_shaderFs3d, &_mtlFs3d, "asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D.shader");
 	_spatialLut.create3D("fs3d");
 
 	_cachedSimArgs.create(_particleSpawner, _particleSpawner.particleCount);

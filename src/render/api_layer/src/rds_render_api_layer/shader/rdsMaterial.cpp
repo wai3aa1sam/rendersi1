@@ -19,15 +19,15 @@ Material::makeCDesc()
 }
 
 SPtr<Material> 
-Material::make(const Material_CreateDesc& cDesc)
+Material::make(RDS_DebugLabel_PARAM, const Material_CreateDesc& cDesc)
 {
-	return Renderer::renderDevice()->createMaterial(cDesc);
+	return Renderer::renderDevice()->createMaterial(RDS_DebugLabel_ARG, cDesc);
 }
 
 SPtr<Material>
-Material::make(Shader* shader)
+Material::make(RDS_DebugLabel_PARAM, Shader* shader)
 {
-	return Renderer::renderDevice()->createMaterial(shader);
+	return Renderer::renderDevice()->createMaterial(RDS_DebugLabel_ARG, shader);
 }
 
 Material::Material()
@@ -257,7 +257,7 @@ void Material::clearPermutation()
 	_permuts.clear();
 
 	const auto& filename = shader()->filename();
-	auto shader = renderDevice()->createShader(filename);
+	auto shader = renderDevice()->createShader(RDS_DebugLabel(), filename);
 	setShader(shader);
 }
 

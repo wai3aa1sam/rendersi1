@@ -104,14 +104,14 @@ public:
 	using Desc			= Base::Desc;
 
 public:
-	static CreateDesc			makeCDesc(RDS_DEBUG_SRCLOC_PARAM = {});
-	static SPtr<Texture2DArray>	make(CreateDesc& cDesc);
+	static CreateDesc			makeCDesc();
+	static SPtr<Texture2DArray>	make(RDS_DebugLabel_PARAM, CreateDesc& cDesc);
 
 public:
 	Texture2DArray();
 	virtual ~Texture2DArray();
 
-	void create		(CreateDesc& cDesc);
+	void create(CreateDesc& cDesc);
 
 public:
 	void uploadToGpu(CreateDesc& cDesc);

@@ -23,7 +23,7 @@ RpfShadowMapping::~RpfShadowMapping()
 void 
 RpfShadowMapping::create()
 {
-	RenderUtil::createMaterial(&_shaderShadowMap, &_mtlShadowMap, "asset/shader/pass_feature/shadow/shadow_mapping/rdsShadowMapping_ShadowMap.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderShadowMap, &_mtlShadowMap, "asset/shader/pass_feature/shadow/shadow_mapping/rdsShadowMapping_ShadowMap.shader");
 }
 
 void 
@@ -45,7 +45,7 @@ RpfShadowMapping::addShadowMappingPass(SPtr<Material>& mtl_, Result* oResult, co
 
 	auto viewport = Rect2f{ Tuple2f::s_zero(), Tuple2f{param.mapSize, param.mapSize} };
 
-	RenderUtil::createMaterial(_shaderShadowMap, &mtl_);
+	RenderUtil::createMaterial(RDS_DebugLabel(), _shaderShadowMap, &mtl_);
 	Material* mtl = mtl_;
 	{
 		auto& pass = rdGraph->addPass("shadow_mapping", RdgPassTypeFlags::Graphics);

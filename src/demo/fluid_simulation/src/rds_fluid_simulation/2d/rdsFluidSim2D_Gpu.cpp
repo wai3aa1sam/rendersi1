@@ -14,7 +14,7 @@ FluidSim2D_Gpu::onCreate(GraphicsDemo* parentDemo)
 {
 	Base::onCreate(parentDemo);
 
-	RenderUtil::createMaterial(&_shaderFs2d, &_mtlFs2d,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderFs2d, &_mtlFs2d,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D.shader");
 	_spatialLut.create2D("fs2d");
 
 	_cachedSimArgs.create(_particleSpawner, _particleSpawner.particleCount);

@@ -66,7 +66,7 @@ RpfGeometryBuffer::~RpfGeometryBuffer()
 void 
 RpfGeometryBuffer::create()
 {
-	RenderUtil::createMaterial(&_shaderGeometryBuffer, &_mtlGeometryBuffer, "asset/shader/pass_feature/geometry/rdsGeometryBuffer.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderGeometryBuffer, &_mtlGeometryBuffer, "asset/shader/pass_feature/geometry/rdsGeometryBuffer.shader");
 }
 
 void 

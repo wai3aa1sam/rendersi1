@@ -79,7 +79,7 @@ DemoEditorLayer::onCreate()
 	_sceneView.create(&_scene, &renderableSystem());
 	_edtCtx.create();
 	_meshAssets = makeUPtr<MeshAssets>();
-	RenderUtil::createMaterial(&_mtl_screenQuad, "asset/shader/pass_feature/utility/image/rdsScreenQuad.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(),  & _mtl_screenQuad, "asset/shader/pass_feature/utility/image/rdsScreenQuad.shader");
 
 	RDS_CORE_ASSERT(_gfxDemo, "");
 	_gfxDemo->onCreate();
@@ -531,3 +531,4 @@ DemoEditorLayer::_testEngineCode()
 
 
 }
+

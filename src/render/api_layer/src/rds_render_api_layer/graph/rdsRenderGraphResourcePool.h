@@ -35,8 +35,8 @@ public:
 
 	void reset();
 
-	RdgResource_TextureT*	createTexture	(Texture_CreateDesc&	cDesc, RenderDevice* rdDev);
-	RdgResource_BufferT*	createBuffer	(Buffer_CreateDesc&		cDesc, RenderDevice* rdDev);
+	RdgResource_TextureT*	createTexture(RDS_DebugLabel_PARAM, Texture_CreateDesc&	cDesc, RenderDevice* rdDev);
+	RdgResource_BufferT*	createBuffer(RDS_DebugLabel_PARAM, Buffer_CreateDesc&		cDesc, RenderDevice* rdDev);
 
 protected:
 	//template<class T> RenderResouceT<T>* createResource(CreateDescT<T>& cDesc, RenderDevice* rdDev);

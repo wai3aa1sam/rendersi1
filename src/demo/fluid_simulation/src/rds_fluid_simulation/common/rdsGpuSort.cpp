@@ -12,7 +12,7 @@ namespace rds
 GpuSort::GpuSort()	
 { 
 	//RenderUtil::createShader(&_shaderSort, "asset/shader/demo/fluid_simulation/common/rdsSimpleGpuSort.shader"); 
-	RenderUtil::createShader(&_shaderSort, "asset/shader/demo/fluid_simulation/common/rdsBitonicMergeSort.shader"); 
+	RenderUtil::createShader(RDS_DebugLabel(), &_shaderSort, "asset/shader/demo/fluid_simulation/common/rdsBitonicMergeSort.shader"); 
 }
 
 GpuSort::~GpuSort()	

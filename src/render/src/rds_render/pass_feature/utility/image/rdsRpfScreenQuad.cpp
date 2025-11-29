@@ -23,7 +23,7 @@ RpfScreenQuad::~RpfScreenQuad()
 void 
 RpfScreenQuad::create()
 {
-	RenderUtil::createShader(&_shaderScreenQuad, "asset/shader/pass_feature/utility/image/rdsScreenQuad.shader");
+	RenderUtil::createShader(RDS_DebugLabel(), & _shaderScreenQuad, "asset/shader/pass_feature/utility/image/rdsScreenQuad.shader");
 }
 
 void 
@@ -35,7 +35,7 @@ RpfScreenQuad::destroy()
 RdgPass* 
 RpfScreenQuad::addDrawScreenQuadPass(SPtr<Material>& mtl_, RdgTextureHnd rtColor, RdgTextureHnd texColor)
 {
-	RenderUtil::createMaterial(_shaderScreenQuad, &mtl_);
+	RenderUtil::createMaterial(RDS_DebugLabel(),_shaderScreenQuad, &mtl_);
 
 	auto*		rdGraph				= renderGraph();
 	auto*		drawData			= drawDataBase();

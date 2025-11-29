@@ -43,9 +43,9 @@ InlineDraw::uploadToGpu(RenderRequest* rdReq)
 		using SRC = rds::InlineDraw::Type;
 		switch (type)
 		{
-			case SRC::Line:		{ if (!material) { material = rdDev->createMaterial(rdDev->shaderStock().lineShader()); } }		break;
-			case SRC::Quad:		{ if (!material) { material = rdDev->createMaterial(rdDev->shaderStock().quadShader()); } }		break;
-			case SRC::Circle:	{ if (!material) { material = rdDev->createMaterial(rdDev->shaderStock().circleShader()); } }	break;
+			case SRC::Line:		{ if (!material) { material = rdDev->createMaterial(RDS_DebugLabel(), rdDev->shaderStock().lineShader()); } }		break;
+			case SRC::Quad:		{ if (!material) { material = rdDev->createMaterial(RDS_DebugLabel(), rdDev->shaderStock().quadShader()); } }		break;
+			case SRC::Circle:	{ if (!material) { material = rdDev->createMaterial(RDS_DebugLabel(), rdDev->shaderStock().circleShader()); } }	break;
 			default: { RDS_THROW_IF(true, "invalid type"); } break;
 		}
 	}
@@ -89,11 +89,11 @@ InlineDraw::_uploadToGpu(SPtr<RenderGpuBuffer>& buf, const Vector<u8>& data, Ren
 	if (!buf || buf->bufSize() < n)
 	{
 		auto newSize = math::nextPow2(n);
-		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+		auto cDesc = RenderGpuBuffer::makeCDesc();
 		cDesc.bufSize	= newSize;
 		cDesc.typeFlags = typeFlags;
-		buf = rdDev->createRenderGpuBuffer(cDesc);
-		buf->setDebugName(BitUtil::has(cDesc.typeFlags, RenderGpuBufferTypeFlags::Vertex) ? "draw_line_vtxBuf" : "draw_line_idxBuf");
+		auto getName = [&]() { return BitUtil::has(cDesc.typeFlags, RenderGpuBufferTypeFlags::Vertex) ? "draw_line_vtxBuf" : "draw_line_idxBuf";  }; RDS_UNUSED(getName);
+		buf = rdDev->createRenderGpuBuffer(RDS_DebugLabel(getName()), cDesc);
 	}
 	buf->uploadToGpu(data);
 }

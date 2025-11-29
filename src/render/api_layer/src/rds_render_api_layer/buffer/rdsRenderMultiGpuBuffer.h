@@ -20,8 +20,8 @@ public:
 	using Desc			= RenderGpuBuffer::Desc;
 
 public:
-	static CreateDesc					makeCDesc(RDS_DEBUG_SRCLOC_PARAM);
-	static SPtr<RenderMultiGpuBuffer>	make(CreateDesc& cDesc);
+	static CreateDesc					makeCDesc();
+	static SPtr<RenderMultiGpuBuffer>	make(RDS_DebugLabel_PARAM, CreateDesc& cDesc);
 
 public:
 	RenderMultiGpuBuffer();
@@ -84,8 +84,8 @@ inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::stride()		const	{ re
 inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::bufSize()		const	{ return desc().bufSize; }
 inline RenderMultiGpuBuffer::SizeType RenderMultiGpuBuffer::elementCount()	const	{ return desc().elementCount(); }
 
-inline			RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer()			{ return _renderGpuBuffers[s_bufferIndex(_i_buffer)]; }
-inline const	RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer() const		{ return _renderGpuBuffers[s_bufferIndex(_i_buffer)]; }
+inline			RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer()			{ return isEmpty() ? nullptr : _renderGpuBuffers[s_bufferIndex(_i_buffer)]; }
+inline const	RenderGpuBuffer* RenderMultiGpuBuffer::renderGpuBuffer() const		{ return isEmpty() ? nullptr : _renderGpuBuffers[s_bufferIndex(_i_buffer)]; }
 
 inline			RenderGpuBuffer* RenderMultiGpuBuffer::previousBuffer()				{ return _renderGpuBuffers[s_previousBufferIndex(_i_buffer)]; }
 inline const	RenderGpuBuffer* RenderMultiGpuBuffer::previousBuffer() const		{ return _renderGpuBuffers[s_previousBufferIndex(_i_buffer)]; }

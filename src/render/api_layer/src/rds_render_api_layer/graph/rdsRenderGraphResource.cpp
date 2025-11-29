@@ -11,10 +11,10 @@ namespace rds
 #endif // 0
 #if 1
 
-RdgResource::RdgResource(RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported)
+RdgResource::RdgResource(RDS_DebugLabel_PARAM, RenderGraph& rdGraph, Type type, RdgId id, bool isImported, bool isExported)
 //: _name(name), _id(id), _type(type), _isImported(isImported), _isExported(isExported)
 {
-	create(rdGraph, type, name, id, isImported, isExported);
+	create(RDS_DebugLabel_ARG, rdGraph, type, id, isImported, isExported);
 }
 
 RdgResource::~RdgResource()
@@ -23,13 +23,9 @@ RdgResource::~RdgResource()
 }
 
 void 
-RdgResource::create(RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported)
+RdgResource::create(RDS_DebugLabel_PARAM, RenderGraph& rdGraph, Type type, RdgId id, bool isImported, bool isExported)
 {
-	#if RDS_DEVELOPMENT
-	fmtTo(_name, "{}", name);
-	#else
-	_name		= name;
-	#endif
+	RDS_DebugLabel_ASSIGN();
 
 	_id			= id;
 	_type		= type;
@@ -57,6 +53,7 @@ RdgResource::isUniqueProducer(RdgPass* producer) const
 	}
 	return true;
 }
+
 
 #endif
 

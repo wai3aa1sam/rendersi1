@@ -88,25 +88,25 @@ public:
 	void waitRenderThreadIdle();
 
 public:
-	SPtr<RenderContext>			createContext(				const	RenderContext_CreateDesc&		cDesc);
-	SPtr<RenderGpuBuffer>		createRenderGpuBuffer(				RenderGpuBuffer_CreateDesc&		cDesc);
-	SPtr<RenderMultiGpuBuffer>	createRenderMultiGpuBuffer(			RenderGpuBuffer_CreateDesc&		cDesc);
-	SPtr<Texture>				createTexture(						Texture_CreateDesc&				cDesc);
-	SPtr<Texture2D>				createTexture2D(					Texture2D_CreateDesc&			cDesc);
-	SPtr<Texture3D>				createTexture3D(					Texture3D_CreateDesc&			cDesc);
-	SPtr<TextureCube>			createTextureCube(					TextureCube_CreateDesc&			cDesc);
-	SPtr<Texture2DArray>		createTexture2DArray(				Texture2DArray_CreateDesc&		cDesc);
-	SPtr<Shader>				createShader(				const	Shader_CreateDesc&				cDesc);
-	SPtr<Shader>				createShader(						StrView							filename);
-	SPtr<Shader>				createShader(						StrView							filename, const ShaderPermutations& permuts);
-	SPtr<Material>				createMaterial(				const	Material_CreateDesc&			cDesc);
-	SPtr<Material>				createMaterial(						Shader*							shader);
-	SPtr<Material>				createMaterial();
+	SPtr<RenderContext>			createContext(					RDS_DebugLabel_PARAM,		const	RenderContext_CreateDesc&		cDesc);
+	SPtr<RenderGpuBuffer>		createRenderGpuBuffer(			RDS_DebugLabel_PARAM,				RenderGpuBuffer_CreateDesc&		cDesc);
+	SPtr<RenderMultiGpuBuffer>	createRenderMultiGpuBuffer(		RDS_DebugLabel_PARAM,				RenderGpuBuffer_CreateDesc&		cDesc);
+	SPtr<Texture>				createTexture(					RDS_DebugLabel_PARAM,				Texture_CreateDesc&				cDesc);
+	SPtr<Texture2D>				createTexture2D(				RDS_DebugLabel_PARAM,				Texture2D_CreateDesc&			cDesc);
+	SPtr<Texture3D>				createTexture3D(				RDS_DebugLabel_PARAM,				Texture3D_CreateDesc&			cDesc);
+	SPtr<TextureCube>			createTextureCube(				RDS_DebugLabel_PARAM,				TextureCube_CreateDesc&			cDesc);
+	SPtr<Texture2DArray>		createTexture2DArray(			RDS_DebugLabel_PARAM,				Texture2DArray_CreateDesc&		cDesc);
+	SPtr<Shader>				createShader(					RDS_DebugLabel_PARAM,		const	Shader_CreateDesc&				cDesc);
+	SPtr<Shader>				createShader(					RDS_DebugLabel_PARAM,				StrView							filename);
+	SPtr<Shader>				createShader(					RDS_DebugLabel_PARAM,				StrView							filename, const ShaderPermutations& permuts);
+	SPtr<Material>				createMaterial(					RDS_DebugLabel_PARAM,		const	Material_CreateDesc&			cDesc);
+	SPtr<Material>				createMaterial(					RDS_DebugLabel_PARAM,				Shader*							shader);
+	SPtr<Material>				createMaterial(					RDS_DebugLabel_PARAM);
 
-	UPtr<RenderJob>				createRenderJob(				RenderJob_CreateDesc&			cDesc);
-	SPtr<TransferContext>		createTransferContext(			TransferContext_CreateDesc&		cDesc);
-	SPtr<TransferFrame>			createTransferFrame(			TransferFrame_CreateDesc&		cDesc);	// frame only exist 1 for 1 frame, Request could have many
-	SPtr<BindlessResources>		createBindlessResources(		BindlessResources_CreateDesc&	cDesc);
+	UPtr<RenderJob>				createRenderJob(				RDS_DebugLabel_PARAM, RenderJob_CreateDesc&			cDesc);
+	SPtr<TransferContext>		createTransferContext(			RDS_DebugLabel_PARAM, TransferContext_CreateDesc&		cDesc);
+	SPtr<TransferFrame>			createTransferFrame(			RDS_DebugLabel_PARAM, TransferFrame_CreateDesc&		cDesc);	// frame only exist 1 for 1 frame, Request could have many
+	SPtr<BindlessResources>		createBindlessResources(		RDS_DebugLabel_PARAM, BindlessResources_CreateDesc&	cDesc);
 
 public:
 	const	RenderAdapterInfo&		adapterInfo() const;
@@ -115,6 +115,8 @@ public:
 //			RenderFrame&			renderFrame(	u64	frameIdx);
 			TransferFrame&			transferFrame();
 			TransferContext&		transferContext();
+			TransferContext*		transferContextPtr();
+			
 			TransferRequest&		transferRequest();
 
 			BindlessResources&	bindlessResource();
@@ -194,6 +196,7 @@ inline			TextureStock&			RenderDevice::textureStock()				{ return _textureStock;
 //inline			UPtr<TransferFrame>		RenderDevice::releaseTransferFrame()		{ checkMainThreadExclusive(RDS_SRCLOC);	RDS_ASSERT(_tsfFrame, "_tsfFrame not exist"); auto p = rds::move(_tsfFrame); return p; }
 
 inline			TransferContext&		RenderDevice::transferContext()				{ return *_tsfCtx; }
+inline			TransferContext*		RenderDevice::transferContextPtr()			{ return _tsfCtx; }
 
 inline			BindlessResources&		RenderDevice::bindlessResource()			{ return *_bindlessRscs; }
 

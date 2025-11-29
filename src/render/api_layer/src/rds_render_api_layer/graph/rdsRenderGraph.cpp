@@ -314,24 +314,22 @@ RenderGraph::compile()
 				case RdgResourceType::Texture:
 			{
 					auto* rsc = sCast<RdgTexture*>(e);
-					auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+					auto cDesc = Texture2D::makeCDesc();
 					cDesc.create(rsc->desc());
-					auto* rdRsc = rscPool.createTexture(cDesc, renderDevice());
-					rdRsc->setDebugName(rsc->name());
+					auto* rdRsc = rscPool.createTexture(e->DebugLabel_get(), cDesc, renderDevice());
 					rsc->commitRenderResouce(rdRsc);
 				} break;
 
 				case RdgResourceType::Buffer:
 			{
 					auto* rsc = sCast<RdgBuffer*>(e);
-					auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+					auto cDesc = RenderGpuBuffer::makeCDesc();
 					cDesc.create(rsc->desc());
-					auto* rdRsc = rscPool.createBuffer(cDesc, renderDevice());
-					rdRsc->setDebugName(rsc->name());
+					auto* rdRsc = rscPool.createBuffer(e->DebugLabel_get(), cDesc, renderDevice());
 					rsc->commitRenderResouce(rdRsc);
 				} break;
 
-				default: { RDS_THROW("unknow Render Graph Resource"); } break;
+				default: { RDS_THROW("unknow Render Graph Resource")	; } break;
 			}
 		}
 
@@ -425,30 +423,38 @@ RenderGraph::addPass(const SrcLocData& srcLocData, RdgPassTypeFlags typeFlag, Rd
 	return *pass;
 }
 
+RdgTextureHnd	
+RenderGraph::createTexture(RDS_DebugLabel_PARAM, const TextureCreateDesc & cDesc)
+{
+	return createRdgResource<RdgResource_TextureT>(RDS_DebugLabel_ARG, cDesc);
+}
+
+RdgBufferHnd	
+RenderGraph::createBuffer(RDS_DebugLabel_PARAM, const BufferCreateDesc&	cDesc)
+{
+	return createRdgResource<RdgResource_BufferT>(RDS_DebugLabel_ARG, cDesc);
+}
+
 RdgTextureHnd 
 RenderGraph::createTexture(StrView name, const TextureCreateDesc& cDesc)
 {
-	return createRdgResource<RdgResource_TextureT>(name, cDesc);
+	return createRdgResource<RdgResource_TextureT>(RDS_DebugLabel("{}", name), cDesc);
 }
 
 RdgBufferHnd 
 RenderGraph::createBuffer(StrView name, const BufferCreateDesc& cDesc)
 {
-	return createRdgResource<RdgResource_BufferT>(name, cDesc);
+	return createRdgResource<RdgResource_BufferT>(RDS_DebugLabel("{}", name), cDesc);
 }
 
-RdgTextureHnd 
-RenderGraph::importTexture(StrView name, TextureT* tex)
+RdgTextureHnd
+RenderGraph::importTexture(RDS_DebugLabel_PARAM, TextureT* tex)
 {
 	RdgTexture_CreateDesc cDesc = {};
 	cDesc.create(tex->desc());
 
-	auto	hnd		= createTexture(name, cDesc);
+	auto	hnd		= createTexture(RDS_DebugLabel_ARG, cDesc);
 	auto*	rdgTex	= hnd.get();
-
-	// setName here will have sync problem btw
-	// TODO: framed _debugName
-	//tex->setDebugName(hnd.name());
 
 	rdgTex->_desc = tex->desc();
 	rdgTex->setImport(true);
@@ -460,9 +466,15 @@ RenderGraph::importTexture(StrView name, TextureT* tex)
 }
 
 RdgTextureHnd 
+RenderGraph::importTexture(StrView name, TextureT* tex)
+{
+	return importTexture(RDS_DebugLabel("{}", name), tex);
+}
+
+RdgTextureHnd 
 RenderGraph::importTexture(TextureT* tex)
 {
-	return importTexture(tex->debugName(), tex);
+	return importTexture(tex->DebugLabel_get(), tex);
 }
 
 void 
@@ -485,12 +497,12 @@ RenderGraph::exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Acces
 }
 
 RdgBufferHnd 
-RenderGraph::importBuffer(StrView name, Buffer* buf)
+RenderGraph::importBuffer(RDS_DebugLabel_PARAM, Buffer* buf)
 {
 	RdgBuffer_CreateDesc cDesc = {};
 	cDesc.create(buf->desc());
 
-	auto	hnd		= createBuffer(name, cDesc);
+	auto	hnd		= createBuffer(RDS_DebugLabel_ARG, cDesc);
 	auto*	rdgBuf	= hnd.get();
 
 	rdgBuf->_desc = buf->desc();
@@ -503,9 +515,15 @@ RenderGraph::importBuffer(StrView name, Buffer* buf)
 }
 
 RdgBufferHnd 
+RenderGraph::importBuffer(StrView name, Buffer* buf)
+{
+	return importBuffer(RDS_DebugLabel("{}", name), buf);
+}
+
+RdgBufferHnd 
 RenderGraph::importBuffer(Buffer* buf)
 {
-	return importBuffer(buf->debugName(), buf);
+	return importBuffer(buf->DebugLabel_get(), buf);
 }
 
 void 

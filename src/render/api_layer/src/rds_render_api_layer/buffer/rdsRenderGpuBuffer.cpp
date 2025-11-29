@@ -15,12 +15,12 @@ namespace rds
 #endif // 0
 #if 1
 
-RenderGpuBuffer::CreateDesc RenderGpuBuffer::makeCDesc(RDS_DEBUG_SRCLOC_PARAM) { return CreateDesc { RDS_DEBUG_SRCLOC_ARG }; }
+RenderGpuBuffer::CreateDesc RenderGpuBuffer::makeCDesc() { return CreateDesc {}; }
 
 SPtr<RenderGpuBuffer> 
-RenderGpuBuffer::make(CreateDesc& cDesc)
+RenderGpuBuffer::make(RDS_DebugLabel_PARAM, CreateDesc& cDesc)
 { 
-	return Renderer::renderDevice()->createRenderGpuBuffer(cDesc); 
+	return Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel_ARG, cDesc); 
 }
 
 RenderGpuBuffer::RenderGpuBuffer()
@@ -68,7 +68,7 @@ RenderGpuBuffer::uploadToGpu(ByteSpan data, SizeType offset)
 void 
 RenderGpuBuffer::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 {
-	RDS_CORE_ASSERT(!cmd || StrUtil::len(debugName()) > 0, "set a debug name before upload gpu buffer");
+	//RDS_CORE_ASSERT(!cmd || StrUtil::len(debugName()) > 0, "set a debug name before upload gpu buffer");
 	RDS_CORE_ASSERT(!cmd || cmd->data.size() > 0 && cmd->data.size() <= bufSize(), "");
 
 	//ByteSpan bs = ByteSpan{data.data() + offset, data.size() - offset};

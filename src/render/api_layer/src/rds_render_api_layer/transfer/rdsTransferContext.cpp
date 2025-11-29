@@ -22,7 +22,7 @@ TransferContext::makeCDesc()
 }
 
 SPtr<TransferContext>	
-TransferContext::make(const CreateDesc& cDesc)
+TransferContext::make(RDS_DebugLabel_PARAM, const CreateDesc& cDesc)
 {
 	_notYetSupported(RDS_SRCLOC);
 	return nullptr;
@@ -54,7 +54,7 @@ TransferContext::destroy()
 
 	for (auto& e : _tsfFrames)
 	{
-		_destroyRenderResources(e);
+		_temp_destroyRenderResources(e);
 	}
 	_tsfFrames.clear();
 
@@ -84,9 +84,8 @@ TransferContext::onCreate(const CreateDesc& cDesc)
 	_tsfFrames.reserve(s_kMaxTransferFrameCount);
 	for (size_t i = 0; i < s_kMaxTransferFrameCount; i++)
 	{
-		auto tsf_cDesc = TransferFrame::makeCDesc(RDS_SRCLOC);
-		auto frame = _tsfFrames.emplace_back(renderDevice()->createTransferFrame(tsf_cDesc));
-		//frame->setDebugName("TransferFrame");
+		auto tsf_cDesc = TransferFrame::makeCDesc();
+		auto frame = _tsfFrames.emplace_back(renderDevice()->createTransferFrame(RDS_DebugLabel(), tsf_cDesc));
 	}
 }
 

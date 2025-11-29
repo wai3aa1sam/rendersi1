@@ -46,7 +46,7 @@ public:
 
 public:
 	static CreateDesc		makeCDesc();
-	static SPtr<Shader>		make(const CreateDesc& cDesc);
+	static SPtr<Shader>		make(RDS_DebugLabel_PARAM, const CreateDesc& cDesc);
 
 public:
 	Shader();

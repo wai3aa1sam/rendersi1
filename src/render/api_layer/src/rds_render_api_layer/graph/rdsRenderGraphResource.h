@@ -268,6 +268,7 @@ public:
 
 class RdgResource : public RdgResource_WeakRefBase, public NC_RenderApiLayerCommon_Base
 {
+	RDS_DebugLabel_COMMON_BODY();
 	friend class RenderGraph;
 	friend class RdgPass;
 	friend class RdgResourcePool;
@@ -289,10 +290,10 @@ public:
 
 public:
 	RdgResource() = default;
-	RdgResource(RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported = false, bool isExported = false);
+	RdgResource(RDS_DebugLabel_PARAM, RenderGraph& rdGraph, Type type, RdgId id, bool isImported = false, bool isExported = false);
 	~RdgResource();
 
-	void create(RenderGraph& rdGraph, Type type, StrView name, RdgId id, bool isImported, bool isExported);
+	void create(RDS_DebugLabel_PARAM, RenderGraph& rdGraph, Type type, RdgId id, bool isImported, bool isExported);
 
 public:
 	StrView name() const;
@@ -308,7 +309,6 @@ public:
 	const StateTrack&	stateTrack() const;
 
 	RenderResource* renderResource();
-
 protected:
 	void addProducer(RdgPass* producer);
 
@@ -325,7 +325,7 @@ protected:
 	StateTrack&	stateTrack();
 
 protected:
-	TempString	_name;
+	//TempString	_name;
 	RdgId		_id = -1;
 	Type		_type;
 	bool		_isImported : 1;
@@ -357,15 +357,15 @@ public:
 public:
 	RdgResourceT() = default;
 
-	RdgResourceT(RenderGraph& rdGraph, const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
+	RdgResourceT(RDS_DebugLabel_PARAM, RenderGraph& rdGraph, const CreateDesc& cDesc, RdgId id, bool isImport, bool isExport)
 		//: Base(ResourceTraits::s_kType, name, id, isImport, isExport)
 	{
-		create(rdGraph, cDesc, name, id, isImport, isExport);
+		create(RDS_DebugLabel_ARG, rdGraph, cDesc, id, isImport, isExport);
 	}
 
-	void create(RenderGraph& rdGraph, const CreateDesc& cDesc, StrView name, RdgId id, bool isImport, bool isExport)
+	void create(RDS_DebugLabel_PARAM, RenderGraph& rdGraph, const CreateDesc& cDesc, RdgId id, bool isImport, bool isExport)
 	{
-		Base::create(rdGraph, ResourceTraits::s_kType, name, id, isImport, isExport);
+		Base::create(RDS_DebugLabel_ARG, rdGraph, ResourceTraits::s_kType, id, isImport, isExport);
 		_desc = cDesc;
 	}
 
@@ -575,7 +575,7 @@ inline			RdgResource::StateTrack& RdgResource::stateTrack()			{ return _stateTra
 
 //inline RdgResource::PendingState		RdgResource::pendingState()		 { return _pendingState; }
 
-inline StrView							RdgResource::name		() const { return _name; }
+inline StrView							RdgResource::name		() const { return RDS_DebugLabel_GET_NAME(RDS_DebugLabel_VAR_NAME); }
 inline RdgId							RdgResource::id			() const { return _id; }
 inline RdgResource::Type				RdgResource::type		() const { return _type; }
 inline bool								RdgResource::isImported	() const { return _isImported; }

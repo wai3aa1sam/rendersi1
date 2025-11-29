@@ -129,29 +129,24 @@ struct TestEngine
 						SPtr<Texture2D>				_testTex2D;
 						*/
 						{
-							auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
-							cDesc.bufSize = 16;
-							testBuffer = Renderer::renderDevice()->createRenderGpuBuffer(cDesc);
-
 							Vector<u8, 16> data;
 							data.resize(16);
 
-							testBuffer->setDebugName("_testBuffer");
+							auto cDesc = RenderGpuBuffer::makeCDesc();
+							cDesc.bufSize = 16;
+							testBuffer = Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("_testBuffer"), cDesc);
 							//testBuffer->uploadToGpu(data);
 
-							testMultiBuffer = Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc);
-							testMultiBuffer->setDebugName("_testMultiBuffer");
+							testMultiBuffer = Renderer::renderDevice()->createRenderMultiGpuBuffer(RDS_DebugLabel("_testMultiBuffer"), cDesc);
 							//testMultiBuffer->uploadToGpu(data);
 						}
 
 						{
-							auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+							auto cDesc = Texture2D::makeCDesc();
 							Vector<u8, 16 * 16 * sizeof(ColorRGBAb)> data;
 							data.resize(16 * 16 * sizeof(ColorRGBAb));
 							cDesc.create(data.data(), 16, 16, ColorType::RGBAb);
-							testTex2D = Renderer::renderDevice()->createTexture2D(cDesc);
-							testTex2D->setDebugName("_testTex2D");
-							//testTex2D->uploadToGpu(cDesc);
+							testTex2D = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel("_testTex2D"), cDesc);
 						}
 					}
 				}

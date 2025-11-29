@@ -14,7 +14,7 @@ FluidSim_ParticleDisplay::s_createColorGradientTexture(SPtr<Texture2D>& oTex, co
 {
 	int w = 64;
 	int h = 4;
-	auto texDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+	auto texDesc = Texture2D::makeCDesc();
 	texDesc.usageFlags	= TextureUsageFlags::ShaderResource;
 	texDesc.format		= ColorType::RGBAb;
 	texDesc.mipCount	= 1;
@@ -33,7 +33,7 @@ FluidSim_ParticleDisplay::s_createColorGradientTexture(SPtr<Texture2D>& oTex, co
 		}
 	}
 
-	oTex = Renderer::renderDevice()->createTexture2D(texDesc);
+	oTex = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel("colorGradient"), texDesc);
 }
 
 void 
@@ -68,17 +68,17 @@ FluidSim_ParticleDisplay::create2D(const ColorGradient& colorGrad)
 		rdMesh.create(mesh);
 	}
 
-	auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+	auto cDesc = RenderGpuBuffer::makeCDesc();
 	cDesc.bufSize	= 16;
 	cDesc.stride	= sizeof(Vec2f);
 	cDesc.typeFlags = RenderGpuBufferTypeFlags::Vertex | RenderGpuBufferTypeFlags::Compute;
-	_posBufGpu = Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc);	_posBufGpu->setDebugName("_posBufGpu");
+	_posBufGpu = Renderer::renderDevice()->createRenderMultiGpuBuffer(RDS_DebugLabel("_posBufGpu"), cDesc);
 
 	cDesc.typeFlags = RenderGpuBufferTypeFlags::Index | RenderGpuBufferTypeFlags::Compute;
-	_velBufGpu = Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc);	_velBufGpu->setDebugName("_velBufGpu");
+	_velBufGpu = Renderer::renderDevice()->createRenderMultiGpuBuffer(RDS_DebugLabel("_velBufGpu"), cDesc);
 
-	RenderUtil::createMaterial(&_shaderPtcDisplay, &_mtlPtcDisplay,			"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_ParticleDisplay.shader");
-	RenderUtil::createMaterial(&_shaderPtcDisplay, &_debug.mtlPtcDisplay,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_ParticleDisplay.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderPtcDisplay, &_mtlPtcDisplay,			"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_ParticleDisplay.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderPtcDisplay, &_debug.mtlPtcDisplay,	"asset/shader/demo/fluid_simulation/2d/rdsFluidSim2D_ParticleDisplay.shader");
 		
 	invalidateColorGradient(colorGrad);
 }
@@ -88,8 +88,8 @@ FluidSim_ParticleDisplay::create3D(RenderMesh& rdMesh, const ColorGradient& colo
 {
 	_rdMesh = rdMesh;
 
-	RenderUtil::createMaterial(&_shaderPtcDisplay, &_mtlPtcDisplay,			"asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D_ParticleDisplay.shader");
-	RenderUtil::createMaterial(&_shaderPtcDisplay, &_debug.mtlPtcDisplay,	"asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D_ParticleDisplay.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderPtcDisplay, &_mtlPtcDisplay,			"asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D_ParticleDisplay.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderPtcDisplay, &_debug.mtlPtcDisplay,	"asset/shader/demo/fluid_simulation/3d/rdsFluidSim3D_ParticleDisplay.shader");
 
 	invalidateColorGradient(colorGrad);
 }

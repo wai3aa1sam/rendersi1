@@ -76,7 +76,7 @@ public:
 
 public:
 	static CreateDesc			makeCDesc();
-	static SPtr<RenderContext>	make(const CreateDesc& cDesc);
+	static SPtr<RenderContext>	make(RDS_DebugLabel_PARAM, const CreateDesc& cDesc);
 
 public:
 	RenderContext();

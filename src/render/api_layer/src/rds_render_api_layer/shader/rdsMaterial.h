@@ -53,8 +53,8 @@ public:
 
 public:
 	static CreateDesc		makeCDesc();
-	static SPtr<Material>	make(const CreateDesc& cDesc);
-	static SPtr<Material>	make(Shader* shader);
+	static SPtr<Material>	make(RDS_DebugLabel_PARAM, const CreateDesc& cDesc);
+	static SPtr<Material>	make(RDS_DebugLabel_PARAM, Shader* shader);
 
 public:
 	Material();

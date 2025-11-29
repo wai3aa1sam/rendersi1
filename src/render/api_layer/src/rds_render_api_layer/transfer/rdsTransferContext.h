@@ -30,7 +30,7 @@ public:
 
 public:
 	static CreateDesc				makeCDesc();
-	static SPtr<TransferContext>	make(const CreateDesc& cDesc);
+	static SPtr<TransferContext>	make(RDS_DebugLabel_PARAM, const CreateDesc& cDesc);
 
 public:
 	TransferContext();
@@ -44,7 +44,7 @@ public:
 
 protected:
 	virtual void waitFrameFinished(RenderFrameParam& rdFrameParam);
-	virtual void _destroyRenderResources(TransferFrame* frame) = 0;
+	virtual void _temp_destroyRenderResources(TransferFrame* frame) = 0;
 
 public:
 	#if 0

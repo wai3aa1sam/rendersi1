@@ -90,20 +90,20 @@ RpfVoxelConeTracing::create()
 {
 	destroy();
 
-	RenderUtil::createMaterial(&_shaderVoxelConeTracing,				&_mtlVoxelConeTracing,			"asset/shader/demo/voxel_cone_tracing/rdsVct_VoxelConeTracing.shader");
-	RenderUtil::createMaterial(&_shaderVoxelization,					&_mtlVoxelization,				"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization.shader");
-	RenderUtil::createMaterial(&_shaderOpacityAlpha,					&_mtlOpacityAlpha,				"asset/shader/demo/voxel_cone_tracing/rdsVct_OpacityAlpha.shader");
-	RenderUtil::createMaterial(&_shaderCheckAlpha,						&_mtlCheckAlpha,				"asset/shader/demo/voxel_cone_tracing/rdsVct_CheckAlpha.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderVoxelConeTracing,				&_mtlVoxelConeTracing,			"asset/shader/demo/voxel_cone_tracing/rdsVct_VoxelConeTracing.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderVoxelization,					&_mtlVoxelization,				"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderOpacityAlpha,					&_mtlOpacityAlpha,				"asset/shader/demo/voxel_cone_tracing/rdsVct_OpacityAlpha.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderCheckAlpha,					&_mtlCheckAlpha,				"asset/shader/demo/voxel_cone_tracing/rdsVct_CheckAlpha.shader");
 
-	RenderUtil::createMaterial(&_shaderVoxelizationDebug,				&_mtlVoxelizationDebug,			"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization_Debug.shader");
-	RenderUtil::createMaterial(&_shaderVoxelVisualization,				&_mtlVoxelVisualization,		"asset/shader/demo/voxel_cone_tracing/rdsVct_VoxelVisualization.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderVoxelizationDebug,				&_mtlVoxelizationDebug,			"asset/shader/demo/voxel_cone_tracing/rdsVct_Voxelization_Debug.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderVoxelVisualization,			&_mtlVoxelVisualization,		"asset/shader/demo/voxel_cone_tracing/rdsVct_VoxelVisualization.shader");
 
-	RenderUtil::createMaterial(&_shaderClearVoxelClipmap,				&_mtlClearVoxelClipmap,			"asset/shader/demo/voxel_cone_tracing/rdsVct_ClearVoxelClipmap.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderClearVoxelClipmap,				&_mtlClearVoxelClipmap,			"asset/shader/demo/voxel_cone_tracing/rdsVct_ClearVoxelClipmap.shader");
 
-	RenderUtil::createMaterial(&_shaderLighting,						&_mtlLighting,					"asset/shader/demo/voxel_cone_tracing/rdsVct_Lighting.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderLighting,						&_mtlLighting,					"asset/shader/demo/voxel_cone_tracing/rdsVct_Lighting.shader");
 
 	_mtlsAnisotropicMipmapping.resize(clipmapMaxLevel);
-	RenderUtil::createMaterials(&_shaderAnisotropicMipmapping,			_mtlsAnisotropicMipmapping,		"asset/shader/demo/voxel_cone_tracing/rdsVct_AnisotropicMipmapping.shader");
+	RenderUtil::createMaterials(RDS_DebugLabel(), &_shaderAnisotropicMipmapping,		_mtlsAnisotropicMipmapping,		"asset/shader/demo/voxel_cone_tracing/rdsVct_AnisotropicMipmapping.shader");
 
 	_mtlClearImage2Ds.resize(2);
 
@@ -119,14 +119,12 @@ RpfVoxelConeTracing::create()
 		clipmapSize3u	= Vec3u{voxelResolution, voxelResolution, voxelResolution};
 		dummmySize		= Vec2u{voxelResolution, voxelResolution};
 		#endif // 0
-		auto cDesc = Texture3D::makeCDesc(RDS_SRCLOC);
+		auto cDesc = Texture3D::makeCDesc();
 		cDesc = Texture3D_CreateDesc{ clipmapSize3u,	ColorType::RGBAb,	TextureUsageFlags::UnorderedAccess | TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst | TextureUsageFlags::TransferSrc};
-		_voxelTexRadiance = Renderer::renderDevice()->createTexture3D(cDesc);
-		_voxelTexRadiance->setDebugName("vct_voxelTexRadiance");
+		_voxelTexRadiance = Renderer::renderDevice()->createTexture3D(RDS_DebugLabel("vct_voxelTexRadiance"), cDesc);
 	}
 
-	voxelClipmaps.resize(s_kMaxClipmapLevel);
-	voxelClipmaps.setDebugName("VoxelClipmaps");
+	voxelClipmaps.create(RDS_DebugLabel("VoxelClipmaps"), s_kMaxClipmapLevel);
 }
 
 void 

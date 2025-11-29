@@ -15,17 +15,17 @@ RDS_Define_TypeInfo(Texture3D);
 #if 1
 
 Texture3D::CreateDesc	
-Texture3D::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
+Texture3D::makeCDesc()
 {
-	auto o = CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
+	auto o = CreateDesc{};
 	o.type = RenderDataType::Texture3D;
 	return o;
 }
 
 SPtr<Texture3D>
-Texture3D::make(CreateDesc& cDesc)
+Texture3D::make(RDS_DebugLabel_PARAM, CreateDesc& cDesc)
 {
-	return Renderer::renderDevice()->createTexture3D(cDesc);
+	return Renderer::renderDevice()->createTexture3D(RDS_DebugLabel_ARG, cDesc);
 }
 
 Texture3D::Texture3D()

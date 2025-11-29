@@ -33,7 +33,7 @@ Backbuffers::create(RenderContext* rdCtx, SizeType imageCount)
 	for (size_t i = 0; i < imageCount; i++)
 	{
 		auto& image = _images[i];
-		image = rdCtx->renderDevice()->createTexture2D(texCDesc);
+		image = rdCtx->renderDevice()->createTexture2D(rdCtx->DebugLabel_get(), texCDesc);
 		RDS_RenderResouce_SET_DEBUG_NAME(image, fmtAs_T<TempString>("Backbuffer-{}", i));
 	}
 }
@@ -66,9 +66,9 @@ RenderContext::makeCDesc()
 }
 
 SPtr<RenderContext> 
-RenderContext::make(const CreateDesc& cDesc) 
+RenderContext::make(RDS_DebugLabel_PARAM, const CreateDesc& cDesc) 
 { 
-	return Renderer::renderDevice()->createContext(cDesc); 
+	return Renderer::renderDevice()->createContext(RDS_DebugLabel_ARG, cDesc); 
 }
 
 RenderContext::RenderContext()
@@ -196,11 +196,10 @@ RenderContext::onCreate(const CreateDesc& cDesc)
 	#endif // 0
 
 	{
-		auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+		auto bufCDesc = RenderGpuBuffer::makeCDesc();
 		bufCDesc.bufSize	= 16;
 		bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
-		_dummyVtxBuf = renderDevice()->createRenderGpuBuffer(bufCDesc);
-		_dummyVtxBuf->setDebugName("dummyVtxBuf");
+		_dummyVtxBuf = renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("dummyVtxBuf"), bufCDesc);
 	}
 
 	_rdUiCtx.create(this);

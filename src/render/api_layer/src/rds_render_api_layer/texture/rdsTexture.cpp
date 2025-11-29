@@ -179,17 +179,17 @@ const	Texture::EngineData& Texture::engineData() const	{ /*checkMainThreadExclus
 #if 1
 
 Texture2D::CreateDesc	
-Texture2D::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
+Texture2D::makeCDesc()
 {
-	auto o = CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
+	auto o = CreateDesc{};
 	o.type = RenderDataType::Texture2D;
 	return o;
 }
 
 SPtr<Texture2D>
-Texture2D::make(CreateDesc& cDesc)
+Texture2D::make(RDS_DebugLabel_PARAM, CreateDesc& cDesc)
 {
-	return Renderer::renderDevice()->createTexture2D(cDesc);
+	return Renderer::renderDevice()->createTexture2D(RDS_DebugLabel_ARG,  cDesc);
 }
 
 Texture2D::Texture2D()

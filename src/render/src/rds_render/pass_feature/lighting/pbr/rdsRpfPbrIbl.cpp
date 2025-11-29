@@ -22,11 +22,11 @@ RpfPbrIbl::~RpfPbrIbl()
 void 
 RpfPbrIbl::create()
 {
-	RenderUtil::createShader(&_shaderHdrToCube,				"asset/shader/pass_feature/lighting/pbr/rdsPbr_HdrToCube.shader");
-	RenderUtil::createShader(&_shaderIrradianceEnvCube,		"asset/shader/pass_feature/lighting/pbr/rdsPbr_IrradianceEnvCube.shader");
-	RenderUtil::createShader(&_shaderPrefilteredEnvCube,	"asset/shader/pass_feature/lighting/pbr/rdsPbr_PrefilteredEnvCube.shader");
+	RenderUtil::createShader(RDS_DebugLabel(), &_shaderHdrToCube,				"asset/shader/pass_feature/lighting/pbr/rdsPbr_HdrToCube.shader");
+	RenderUtil::createShader(RDS_DebugLabel(), &_shaderIrradianceEnvCube,		"asset/shader/pass_feature/lighting/pbr/rdsPbr_IrradianceEnvCube.shader");
+	RenderUtil::createShader(RDS_DebugLabel(), &_shaderPrefilteredEnvCube,	"asset/shader/pass_feature/lighting/pbr/rdsPbr_PrefilteredEnvCube.shader");
 
-	RenderUtil::createMaterial(&_shaderBrdfLut, &_mtlBrdfLut, "asset/shader/pass_feature/lighting/pbr/rdsPbr_BrdfLut.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderBrdfLut, &_mtlBrdfLut, "asset/shader/pass_feature/lighting/pbr/rdsPbr_BrdfLut.shader");
 }
 
 void 
@@ -200,7 +200,7 @@ RpfPbrIbl::addRenderToCubePass(StrView name, TextureCube* outCube, Shader* shade
 		for (size_t i = prevSize; i < TextureCube::s_kFaceCount * mipCount; i++)
 		{
 			auto& mtl = mtls[i];
-			RenderUtil::createMaterial(shader,	&mtl);
+			RenderUtil::createMaterial(RDS_DebugLabel(), shader,	&mtl);
 		}
 	}
 
@@ -309,37 +309,30 @@ RpfPbrIbl::createTexture(Result& result_, StrView name, u32 cubeSize, u32 irradi
 	auto irrCubeSize	= irradianceCubeSize;
 	auto cubeFormat		= ColorType::RGBAh;
 
-	auto texCubeCDesc = TextureCube::makeCDesc(RDS_SRCLOC);
+	auto texCubeCDesc = TextureCube::makeCDesc();
 
 	TempString cubeName;
 
 	auto& cubeEnvMap = result_.cubeEnvMap;
-	fmtToNew(cubeName, "{}-cubeHdrEnvMap",			name);
 	texCubeCDesc.create(cubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst);
-	cubeEnvMap = renderDevice()->createTextureCube(texCubeCDesc);
-	cubeEnvMap->setDebugName(cubeName);
+	cubeEnvMap = renderDevice()->createTextureCube(RDS_DebugLabel("{}-cubeHdrEnvMap",	name), texCubeCDesc);
 
 	auto& cubeIrradinceMap = result_.cubeIrradinceMap;
-	fmtToNew(cubeName, "{}-cubeIrradianceEnvMap",	name);
 	texCubeCDesc.create(irrCubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst);
-	cubeIrradinceMap = renderDevice()->createTextureCube(texCubeCDesc);
-	cubeIrradinceMap->setDebugName(cubeName);
+	cubeIrradinceMap = renderDevice()->createTextureCube(RDS_DebugLabel("{}-cubeIrradianceEnvMap",	name), texCubeCDesc);
 
 	auto& cubePrefilteredMap = result_.cubePrefilteredMap;
-	fmtToNew(cubeName, "{}-cubePrefilteredMap",	name);
 	texCubeCDesc.create(cubeSize, cubeFormat, true, TextureUsageFlags::ShaderResource | TextureUsageFlags::TransferDst);
-	cubePrefilteredMap = renderDevice()->createTextureCube(texCubeCDesc);
-	cubePrefilteredMap->setDebugName(cubeName);
+	cubePrefilteredMap = renderDevice()->createTextureCube(RDS_DebugLabel("{}-cubePrefilteredMap",	name), texCubeCDesc);
 
 	bool isFirst = !result_.brdfLut;
 	if (isFirst)
 	{
-		auto texCDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+		auto texCDesc = Texture2D::makeCDesc();
 		texCDesc = Texture2D_CreateDesc{ Tuple2u{ cubeSize, cubeSize }, ColorType::RGh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource };
 
 		auto& brdfLut = result_.brdfLut;
-		brdfLut = renderDevice()->createTexture2D(texCDesc);
-		brdfLut->setDebugName("brdfLut");
+		brdfLut = renderDevice()->createTexture2D(RDS_DebugLabel("brdfLut"), texCDesc);
 	}
 	return isFirst;
 }

@@ -22,7 +22,7 @@ RpfPreDepth::~RpfPreDepth()
 void 
 RpfPreDepth::create()
 {
-	RenderUtil::createMaterial(&_shaderPreDepth, &_mtlPreDepth, "asset/shader/pass_feature/geometry/rdsPreDepth.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderPreDepth, &_mtlPreDepth, "asset/shader/pass_feature/geometry/rdsPreDepth.shader");
 }
 
 void 

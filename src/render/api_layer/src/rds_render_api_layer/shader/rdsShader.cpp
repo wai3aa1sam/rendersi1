@@ -20,9 +20,9 @@ Shader::makeCDesc()
 }
 
 SPtr<Shader>
-Shader::make(const CreateDesc& cDesc)
+Shader::make(RDS_DebugLabel_PARAM, const CreateDesc& cDesc)
 {
-	return Renderer::renderDevice()->createShader(cDesc);
+	return Renderer::renderDevice()->createShader(RDS_DebugLabel_ARG, cDesc);
 }
 
 Shader::Shader()
@@ -73,7 +73,11 @@ Shader::onCreate(const CreateDesc& cDesc)
 	throwIf(!Path::isExist(filename), "create shader, filename: {} does not exist", filename);
 
 	_shadername = filename;
-	setDebugName(filename);
+
+	if (Debug_hasName())
+	{
+		setDebugName(filename);
+	}
 
 	if (cDesc.permuts)
 	{

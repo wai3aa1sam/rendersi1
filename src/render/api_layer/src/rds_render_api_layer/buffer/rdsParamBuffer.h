@@ -12,15 +12,13 @@ public:
 
 public:
 	ParamBuffer();
+	void create(RDS_DebugLabel_PARAM, SizeType n);
 
 	T&	 add();
 	void popBack();
 	void resize(SizeType n);
 	void setValue(SizeType i, const T& v);
 	void uploadToGpu();
-
-public:
-	void setDebugName(StrView name);
 
 public:
 	SizeType	size()		const;
@@ -67,15 +65,29 @@ private:
 template<class T> inline
 ParamBuffer<T>::ParamBuffer()
 {
-	//_cpuBufs.resize(s_kFrameAheadCount);
+	
+}
+
+template<class T> inline
+void 
+ParamBuffer<T>::create(RDS_DebugLabel_PARAM, SizeType n)
+{
+	if (!_gpuBufs)
+	{
+		auto bufSize = n * sizeof(T);
+
+		auto cDesc = RenderGpuBuffer::makeCDesc();
+		cDesc.bufSize	= bufSize;
+		cDesc.stride	= sizeof(T);
+		cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute;
+		_gpuBufs = Renderer::renderDevice()->createRenderMultiGpuBuffer(RDS_DebugLabel_ARG, cDesc);
+	}
 }
 
 template<class T> inline
 T& 
 ParamBuffer<T>::add()
 {
-	_isDirty = true;
-
 	auto size = this->size();
 	resize(size + 1);
 	return at(size);		// size is the last idx
@@ -97,31 +109,8 @@ void
 ParamBuffer<T>::resize(SizeType n)
 {
 	auto bufSize = n * sizeof(T);
-
-	if (!_gpuBufs)
-	{
-		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
-		cDesc.bufSize	= bufSize;
-		cDesc.stride	= sizeof(T);
-		cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute;
-		_gpuBufs = Renderer::renderDevice()->createRenderMultiGpuBuffer(cDesc);
-	}
-
 	cpuBuffer().resize(bufSize);
-
 	_isDirty = true;
-}
-
-template<class T> inline
-void 
-ParamBuffer<T>::setDebugName(StrView name)
-{
-	bool firstTime = !_gpuBufs;
-	if (firstTime)
-		resize(1);
-	_gpuBufs->setDebugName(name);
-	if (firstTime)
-		popBack();
 }
 
 template<class T> inline

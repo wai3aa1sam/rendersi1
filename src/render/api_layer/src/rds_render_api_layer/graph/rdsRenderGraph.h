@@ -132,7 +132,7 @@ public:
 	Pass* addPass(RenderGraph* rdGraph, const SrcLocData* srcLocData, RdgPassTypeFlags typeFlag, RdgPassFlags flag);
 
 	template<class T>
-	RdgResource* createRdgResouce(StrView name, const RdgResource_CreateDescT<T>& cDesc, RenderGraph& rdGraph)
+	RdgResource* createRdgResouce(RDS_DebugLabel_PARAM, const RdgResource_CreateDescT<T>& cDesc, RenderGraph& rdGraph)
 	{
 		using Tratis	= RdgResourceTraits<T>;
 		using ResourceT = typename Tratis::ResourceT;
@@ -140,7 +140,7 @@ public:
 		auto id		= sCast<RdgId>(resources.size());
 		//auto* rdgRsc = newT<RdgResourceT<T> >(cDesc, name, id, false, false);
 		auto* rdgRsc = sCast<ResourceT*>(resources.emplace_back(newRdgResource<ResourceT>()));
-		rdgRsc->create(rdGraph, cDesc, name, id, false, false);
+		rdgRsc->create(RDS_DebugLabel_ARG, rdGraph, cDesc, id, false, false);
 		return rdgRsc;
 	}
 
@@ -276,14 +276,18 @@ public:
 	RdgPass& addPass(StrView name, RdgPassTypeFlags typeFlag, RdgPassFlags flag = RdgPassFlags::None);
 	RdgPass& addPass(const SrcLocData& srcLocData, RdgPassTypeFlags typeFlag, RdgPassFlags flag = RdgPassFlags::None);
 
+	RdgTextureHnd	createTexture	(RDS_DebugLabel_PARAM, const TextureCreateDesc&	cDesc);
+	RdgBufferHnd	createBuffer	(RDS_DebugLabel_PARAM, const BufferCreateDesc&	cDesc);
 	RdgTextureHnd	createTexture	(StrView name, const TextureCreateDesc&	cDesc);
 	RdgBufferHnd	createBuffer	(StrView name, const BufferCreateDesc&	cDesc);
 
+	RdgTextureHnd	importTexture(RDS_DebugLabel_PARAM, TextureT* tex);
 	RdgTextureHnd	importTexture(StrView name, TextureT* tex);
 	RdgTextureHnd	importTexture(TextureT* tex);
 	void			exportTexture(SPtr<Texture>*		out, RdgTextureHnd hnd, TextureUsageFlags usageFlag, ShaderStageFlag stage = ShaderStageFlag::None, Access access = Access::Read);
 	void			exportTexture(RdgTextureHnd hnd, TextureUsageFlags usageFlag, Access access = Access::Read);
 
+	RdgBufferHnd	importBuffer(RDS_DebugLabel_PARAM, Buffer* buf);
 	RdgBufferHnd	importBuffer(StrView name, Buffer* buf);
 	RdgBufferHnd	importBuffer(Buffer* buf);
 	void			exportBuffer(SPtr<Buffer>* out, RdgBufferHnd hnd, RenderGpuBufferTypeFlags usageFlags, Access access = Access::Read);
@@ -299,7 +303,7 @@ public:
 	//u32 frameIndex() const;
 
 protected:
-	template<class T> typename RdgResourceTraits<T>::Hnd createRdgResource(StrView name, const RdgResource_CreateDescT<T>& cDesc);
+	template<class T> typename RdgResourceTraits<T>::Hnd createRdgResource(RDS_DebugLabel_PARAM, const RdgResource_CreateDescT<T>& cDesc);
 
 	template<class T, class... ARGS>	T*		newT(ARGS&&... args);
 	template<class T>					void	deleteT(T* p);
@@ -387,14 +391,14 @@ protected:
 
 template<class T> inline
 typename RdgResourceTraits<T>::Hnd
-RenderGraph::createRdgResource(StrView name, const RdgResource_CreateDescT<T>& cDesc)
+RenderGraph::createRdgResource(RDS_DebugLabel_PARAM, const RdgResource_CreateDescT<T>& cDesc)
 {
 	using Tratis = RdgResourceTraits<T>;
 	using HndT		= Tratis::Hnd;
 	using ResourceT = typename Tratis::ResourceT;
 
 	HndT out	= {};
-	auto* rdgRsc = renderGraphFrame().createRdgResouce<T>(name, cDesc, *this);
+	auto* rdgRsc = renderGraphFrame().createRdgResouce<T>(RDS_DebugLabel_ARG, cDesc, *this);
 	out.reset(rdgRsc, this);
 	return out;
 }

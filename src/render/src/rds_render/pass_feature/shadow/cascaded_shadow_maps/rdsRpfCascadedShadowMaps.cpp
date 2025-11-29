@@ -143,7 +143,7 @@ RpfCascadedShadowMaps::addCascadedShadowMappingPass(Materials& materials, Result
 
 	//oResult->depthMaps.resize(	cascadedLevelCount);
 	materials.resize(			cascadedLevelCount);
-	RenderUtil::createMaterials(&_shaderCsmShadowMap, materials, "asset/shader/pass_feature/shadow/cascaded_shadow_maps/rdsCsm_ShadowMap.shader");
+	RenderUtil::createMaterials(RDS_DebugLabel(), &_shaderCsmShadowMap, materials, "asset/shader/pass_feature/shadow/cascaded_shadow_maps/rdsCsm_ShadowMap.shader");
 
 	computeLightSpaceMatrices(*oResult, param_, camera, lightDir);
 

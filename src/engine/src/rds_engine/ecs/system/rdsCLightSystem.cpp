@@ -16,7 +16,7 @@ namespace rds
 
 CLightSystem::CLightSystem()
 {
-	_lightParamBuf.setDebugName("rds_lights");
+	_lightParamBuf.create(RDS_DebugLabel("rds_lights"), s_kDefaultEntityCount);
 }
 
 CLightSystem::~CLightSystem()

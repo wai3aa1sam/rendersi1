@@ -51,14 +51,14 @@ RpfForwardPlusRendering::~RpfForwardPlusRendering()
 void 
 RpfForwardPlusRendering::create()
 {
-	RenderUtil::createMaterial(&_shaderMakeFrustums,	&_mtlMakeFrustums,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_MakeFrustums.shader");
-	RenderUtil::createMaterial(&_shaderLightsCulling,	&_mtlLightsCulling,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_LightsCulling.shader");
-	RenderUtil::createMaterial(&_shaderLighting,		&_mtlLighting,		"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_Lighting.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderMakeFrustums,	&_mtlMakeFrustums,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_MakeFrustums.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderLightsCulling,	&_mtlLightsCulling,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_LightsCulling.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderLighting,		&_mtlLighting,		"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_Lighting.shader");
 
-	RenderUtil::createShader(&_shaderClearBuffer,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_ClearBuffer.shader");
-	RenderUtil::createShader(&_shaderDebugBuffer,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_DebugBuffer.shader");
+	RenderUtil::createShader(RDS_DebugLabel(), &_shaderClearBuffer,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_ClearBuffer.shader");
+	RenderUtil::createShader(RDS_DebugLabel(), &_shaderDebugBuffer,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_DebugBuffer.shader");
 
-	RenderUtil::createMaterial(&_shaderLightHeatmap,	&_mtlLightHeatmap,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_Heatmap.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderLightHeatmap,	&_mtlLightHeatmap,	"asset/shader/pass_feature/rendering/forward_plus/rdsFwdp_Heatmap.shader");
 }
 
 void 
@@ -150,12 +150,11 @@ RpfForwardPlusRendering::addMakeFrustumsPass(RdgBufferHnd& oBufFrustums)
 		}
 
 		auto data = indiceData.byteSpan();
-		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+		auto cDesc = RenderGpuBuffer::makeCDesc();
 		cDesc.bufSize	= data.size();
 		cDesc.stride	= sizeof(IdxType);
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Index;
-		debugFrustumsIdxBuf = rdGraph->renderContext()->renderDevice()->createRenderGpuBuffer(cDesc);
-		debugFrustumsIdxBuf->setDebugName("debugFrustumsIdxBuf");
+		debugFrustumsIdxBuf = rdGraph->renderContext()->renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("debugFrustumsIdxBuf"), cDesc);
 		debugFrustumsIdxBuf->uploadToGpu(data);
 	}
 
@@ -471,7 +470,7 @@ RpfForwardPlusRendering::addDrawLightHeatmapPass(RdgTextureHnd rtColor, Result& 
 RdgPass* 
 RpfForwardPlusRendering::addClearBufferPass(SPtr<Material>& material, RdgBufferHnd buffer)
 {
-	RenderUtil::createMaterial(_shaderClearBuffer, &material);
+	RenderUtil::createMaterial(RDS_DebugLabel(), _shaderClearBuffer, &material);
 
 	auto*		rdGraph				= renderGraph();
 	auto*		drawData			= drawDataBase();
@@ -516,8 +515,8 @@ RpfForwardPlusRendering::addFwdpDebugBufferPass()
 	RdgBufferHnd	counter		= rdGraph->createBuffer( "counter",		RenderGpuBuffer_CreateDesc{ 1			* uintSize, uintSize, RenderGpuBufferTypeFlags::Compute});
 	RdgBufferHnd	offsets		= rdGraph->createBuffer( "offsets",		RenderGpuBuffer_CreateDesc{ offsetCount	* uintSize, uintSize, RenderGpuBufferTypeFlags::Compute});
 
-	RenderUtil::createMaterial(_shaderClearBuffer, &_mtlClearDebugBuffer0);
-	RenderUtil::createMaterial(_shaderClearBuffer, &_mtlClearDebugBuffer1);
+	RenderUtil::createMaterial(RDS_DebugLabel(), _shaderClearBuffer, &_mtlClearDebugBuffer0);
+	RenderUtil::createMaterial(RDS_DebugLabel(), _shaderClearBuffer, &_mtlClearDebugBuffer1);
 	addClearBufferPass(_mtlClearDebugBuffer0, counter);
 	addClearBufferPass(_mtlClearDebugBuffer1, offsets);
 

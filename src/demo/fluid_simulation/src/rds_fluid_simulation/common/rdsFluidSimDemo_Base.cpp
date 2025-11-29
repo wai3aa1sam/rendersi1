@@ -30,7 +30,7 @@ FluidSimDemo_Base::onCreateScene(Scene* oScene)
 		{
 			auto* ent = oScene->addEntity(name);
 			auto* rdableMesh = ent->addComponent<CRenderableMesh>();
-			rdableMesh->material	= Renderer::renderDevice()->createMaterial(shader);
+			rdableMesh->material	= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), shader);
 			rdableMesh->meshAsset	= mesh;
 			return ent;
 		};

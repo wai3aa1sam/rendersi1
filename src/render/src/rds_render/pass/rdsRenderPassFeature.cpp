@@ -46,17 +46,17 @@ RenderDevice*	RenderPassFeature::renderDevice()	{ return renderGraph()->renderCo
 #if 1
 
 void 
-RenderUtil::createShader(SPtr<Shader>* oShader, StrView filename)
+RenderUtil::createShader(RDS_DebugLabel_PARAM, SPtr<Shader>* oShader, StrView filename)
 {
 	auto& shader	= *oShader;
 	if (shader)
 		return;
 
-	shader	= Renderer::renderDevice()->createShader(filename);
+	shader	= Renderer::renderDevice()->createShader(RDS_DebugLabel_ARG, filename);
 }
 
 void 
-RenderUtil::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam)
+RenderUtil::createMaterial(RDS_DebugLabel_PARAM, SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView filename, const Function<void(Material*)>& fnSetParam)
 {
 	auto& shader	= *oShader;
 	auto& mtl		= *oMtl;
@@ -64,39 +64,39 @@ RenderUtil::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrView 
 	if (mtl)
 		return;
 
-	createShader(&shader, filename);
-	mtl = Renderer::renderDevice()->createMaterial(shader);
+	createShader(RDS_DebugLabel_ARG, &shader, filename);
+	mtl = Renderer::renderDevice()->createMaterial(RDS_DebugLabel_ARG, shader);
 
 	if (fnSetParam)
 		fnSetParam(mtl);
 }
 
 void 
-RenderUtil::createMaterials(SPtr<Shader>* oShader,  Span<SPtr<Material> > oMtls, StrView filename)
+RenderUtil::createMaterials(RDS_DebugLabel_PARAM, SPtr<Shader>* oShader,  Span<SPtr<Material> > oMtls, StrView filename)
 {
-	createShader(oShader, filename);
+	createShader(RDS_DebugLabel_ARG, oShader, filename);
 	for (auto& e : oMtls)
 	{
-		createMaterial(*oShader, &e);
+		createMaterial(RDS_DebugLabel_ARG, *oShader, &e);
 	}
 }
 
 void 
-RenderUtil::createMaterial(Shader* shader, SPtr<Material>* oMtl)
+RenderUtil::createMaterial(RDS_DebugLabel_PARAM, Shader* shader, SPtr<Material>* oMtl)
 {
 	//auto& shader	= *oShader;
 	auto& mtl		= *oMtl;
 
 	if (mtl)
 		return;
-	mtl = Renderer::renderDevice()->createMaterial(shader);
+	mtl = Renderer::renderDevice()->createMaterial(RDS_DebugLabel_ARG, shader);
 }
 
 void 
-RenderUtil::createMaterial(SPtr<Material>* oMtl, StrView filename)
+RenderUtil::createMaterial(RDS_DebugLabel_PARAM, SPtr<Material>* oMtl, StrView filename)
 {
 	SPtr<Shader> shader;
-	createMaterial(&shader, oMtl, filename);
+	createMaterial(RDS_DebugLabel_ARG, &shader, oMtl, filename);
 }
 
 void

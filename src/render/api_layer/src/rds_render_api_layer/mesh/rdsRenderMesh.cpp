@@ -23,14 +23,13 @@ RenderSubMesh::create(const EditMesh& editMesh)
 	editMesh.createPackedVtxData(buf, _aabbox, _renderMesh->vertexLayout());
 
 	{
-		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+		auto cDesc = RenderGpuBuffer::makeCDesc();
 		cDesc.bufSize	= buf.size();
 		cDesc.stride	= vtxLayout->stride();
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Vertex;
 		if (!_vtxBuf)
 		{
-			_vtxBuf = rdDev->createRenderMultiGpuBuffer(cDesc);
-			_vtxBuf->setDebugName("RenderSubMesh-vtxBuf");
+			_vtxBuf = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("RenderSubMesh-vtxBuf"), cDesc);
 		}
 		_vtxBuf->uploadToGpu(buf.byteSpan());
 	}
@@ -65,14 +64,13 @@ RenderSubMesh::create(const EditMesh& editMesh)
 			idxDataSpan = index16Data.byteSpan();
 		}
 
-		auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+		auto cDesc = RenderGpuBuffer::makeCDesc();
 		cDesc.bufSize	= idxDataSpan.size();
 		cDesc.stride	= RenderDataTypeUtil::getByteSize(_idxType);
 		cDesc.typeFlags = RenderGpuBufferTypeFlags::Index;
 		if (!_idxBuf)
 		{
-			_idxBuf = rdDev->createRenderMultiGpuBuffer(cDesc);
-			_idxBuf ->setDebugName("RenderSubMesh-idxBuf");
+			_idxBuf = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("RenderSubMesh-idxBuf"), cDesc);
 		}
 		_idxBuf->uploadToGpu(idxDataSpan);
 	}

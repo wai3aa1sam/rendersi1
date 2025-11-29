@@ -65,31 +65,32 @@ Proxy_TransferContext::onCommitRenderResources(TransferCommandBuffer& rscQueue, 
 }
 
 void 
-Proxy_TransferContext::createRenderResources()
+Proxy_TransferContext::_onCommitRenderResources(TransferFrame* frame, TransferCommandSafeBuffer& rscQueue)
 {
-	auto& tsfFrame = _tsfFrame;
-	if (_tsfFrame)
+	if (frame)
 	{
-		auto lock = tsfFrame->createRenderResourceBuffer().scopedULock();
+		auto lock = rscQueue.scopedULock();
 		onCommitRenderResources(*lock, true);
 	}
+}
+
+void 
+Proxy_TransferContext::createRenderResources()
+{
+	_onCommitRenderResources(_tsfFrame, _tsfFrame->createRenderResourceBuffer());
+	_onCommitRenderResources(_tsfFrame, _tsfFrame->setDebugNameRenderResourceBuffer());
 }
 
 void 
 Proxy_TransferContext::destroyRenderResources()
 {
-	auto& tsfFrame = _tsfFrame;
-	_destroyRenderResources(tsfFrame);
+	_onCommitRenderResources(_tsfFrame, _tsfFrame->destroyRenderResourceBuffer());
 }
 
 void 
-Proxy_TransferContext::_destroyRenderResources(TransferFrame* frame)
+Proxy_TransferContext::_temp_destroyRenderResources(TransferFrame* frame)
 {
-	if (frame)
-	{
-		auto lock = frame->destroyRenderResourceBuffer().scopedULock();
-		onCommitRenderResources(*lock, true);
-	}
+	_onCommitRenderResources(frame, frame->destroyRenderResourceBuffer());
 }
 
 void 

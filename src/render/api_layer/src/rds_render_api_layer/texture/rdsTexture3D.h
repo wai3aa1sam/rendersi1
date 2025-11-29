@@ -111,8 +111,8 @@ public:
 	using Size			= Tuple3u;
 
 public:
-	static CreateDesc		makeCDesc(RDS_DEBUG_SRCLOC_PARAM = {});
-	static SPtr<Texture3D>	make(CreateDesc& cDesc);
+	static CreateDesc		makeCDesc();
+	static SPtr<Texture3D>	make(RDS_DebugLabel_PARAM, CreateDesc& cDesc);
 
 public:
 	Texture3D();

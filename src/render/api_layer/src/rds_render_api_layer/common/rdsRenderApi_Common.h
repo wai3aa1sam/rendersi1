@@ -38,21 +38,37 @@ RDS_ENUM_CLASS(RenderApiType, u8);
 
 inline Color4f s_defaultDebugColor = Color4f{0.831f, 0.949f, 0.824f, 1.0f};
 
-struct DebugLabel
+struct DebugLabel : public SrcLoc
 {
 public:
+	using Base = SrcLoc;
+
+public:
 	DebugLabel() = default;
-	DebugLabel(const char*	name, const Color4f& color_ = s_defaultDebugColor) { create(name, color); }
-	DebugLabel(StrView		name, const Color4f& color_ = s_defaultDebugColor) { create(name, color); }
+	explicit DebugLabel(const char*	name, const Color4f& color_ = s_defaultDebugColor) { create(name, color); }
+	explicit DebugLabel(StrView		name, const Color4f& color_ = s_defaultDebugColor) { create(name, color); }
+	DebugLabel(const SrcLoc& srcLoc, const char* name, const Color4f& color_ = s_defaultDebugColor) : Base(srcLoc) { create(name, color); }
+	DebugLabel(const SrcLoc& srcLoc, TempString&& str, const Color4f& color_ = s_defaultDebugColor) : Base(srcLoc) { create(rds::move(str), color_); }
 
-	void create(const char* name, const Color4f& color_)	{ setName(name); color = color_; }
-	void create(StrView		name, const Color4f& color)		{ create(name.data(), color);  }
+	void create(const char*		name, const Color4f& color_)	{ setName(name); color = color_; }
+	void create(StrView			name, const Color4f& color_)	{ create(name.data(), color_);  }
+	void create(TempString&&	name, const Color4f& color_)	{ setName(rds::move(name)); color = color_; }
 
-	void destroy()											{ _name.clear(); color = s_defaultDebugColor; }
+	void destroy() { _name.clear(); color = s_defaultDebugColor; }
+
+
+	void onFormat(fmt::format_context& ctx, const rds::DebugLabel& v) const
+	{
+		rds::formatTo(ctx, "DebugLabel-name: {} \n ({}:{}: {})", v.name(), v.file, v.line, v.func);
+	}
+
+public:
+	void setSrcLoc(const SrcLoc& srcLoc) { *sCast<SrcLoc*>(this) = srcLoc; }
 
 public:
 	void setName(const char*	v) { _name = v; }
 	void setName(StrView		v) { _name = v.data(); }
+	void setName(TempString&&	v) { _name = rds::move(v); }
 
 public:
 	// compatible when store "const char* _name;"
@@ -68,11 +84,60 @@ public:
 private:
 	TempString	_name;		// maybe change to const char* _name
 };
-	
-struct RenderDebugLabel : public DebugLabel
-{
-	
-};
+
+#if RDS_DEVELOPMENT
+	#ifndef RDS_ENABLE_DebugLabel
+		#define RDS_ENABLE_DebugLabel 1
+	#endif // !RDS_ENABLE_DebugLabel
+#endif
+
+#define RDS_ENABLE_DebugLabel 1
+#define RDS_ENABLE_DebugLabel_NAME 1
+
+
+#if RDS_ENABLE_DebugLabel
+
+#define RDS_DebugLabel_TYPE						const DebugLabel&
+
+#define RDS_DebugLabel_PARAM_NAME				dbLbl_
+#define RDS_DebugLabel_PARAM					RDS_DebugLabel_TYPE RDS_DebugLabel_PARAM_NAME
+#define RDS_DebugLabel_ARG						RDS_DebugLabel_PARAM_NAME
+#define RDS_DebugLabel_C(color, ...)			DebugLabel(RDS_SRCLOC, RDS_FMT(TempString, __VA_ARGS__), color)
+#define RDS_DebugLabel(...)						RDS_DebugLabel_C(Color4f RDS_BRACKET(1.0f, 0.0f, 0.0f, 1.0f), __VA_ARGS__)
+#define RDS_DebugLabel_VAR_NAME					_dblbl
+#define RDS_DebugLabel_VAR						DebugLabel RDS_DebugLabel_VAR_NAME
+#define RDS_DebugLabel_ASSIGN()					RDS_DebugLabel_VAR_NAME = RDS_DebugLabel_PARAM_NAME
+#define RDS_DebugLabel_GET_NAME(var_)			var_.name()
+
+#else
+
+#define RDS_DebugLabel_TYPE						int
+
+#define RDS_DebugLabel_PARAM_NAME				
+#define RDS_DebugLabel_PARAM					RDS_DebugLabel_TYPE
+#define RDS_DebugLabel_ARG						0
+#define RDS_DebugLabel_C(color, ...)			0
+#define RDS_DebugLabel(...)						0
+#define RDS_DebugLabel_VAR_NAME					0
+#define RDS_DebugLabel_VAR						
+#define RDS_DebugLabel_ASSIGN()					
+#define RDS_DebugLabel_GET_NAME(var_)			""
+
+#endif // RDS_DEBUG
+
+#define RDS_DebugLabel_COMMON_BODY()			\
+	public: \
+	RDS_DebugLabel_TYPE		DebugLabel_get()		{ return RDS_DebugLabel_VAR_NAME; } \
+	const char*				DebugLabel_getName()	{ return RDS_DebugLabel_GET_NAME(RDS_DebugLabel_VAR_NAME); } \
+	private: \
+	RDS_DebugLabel_VAR; \
+	private: \
+// ---
+//const char*			DebugLabel_name()	{ return RDS_DebugLabel_VAR_NAME; } \
+
+
+using RenderDebugLabel = DebugLabel;
+
 
 struct RenderApiUtil : public RenderApiLayerCommon_Base
 {
@@ -151,3 +216,12 @@ RDS_ENUM_CLASS(RenderAccess, u8);
 }
 
 
+
+template<> 
+struct fmt::formatter<rds::DebugLabel> {
+	auto parse(fmt::format_parse_context& ctx) const { return ctx.begin(); }
+	auto format(const rds::DebugLabel& v, fmt::format_context& ctx) {
+		v.onFormat(ctx, v);
+		return ctx.out();
+	}
+};

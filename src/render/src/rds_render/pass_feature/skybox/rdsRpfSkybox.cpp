@@ -22,7 +22,7 @@ RpfSkybox::~RpfSkybox()
 void 
 RpfSkybox::create()
 {
-	RenderUtil::createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/demo/geometry_buffer/rdsSkybox.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderSkybox, &_mtlSkybox, "asset/shader/demo/geometry_buffer/rdsSkybox.shader");
 }
 
 void 

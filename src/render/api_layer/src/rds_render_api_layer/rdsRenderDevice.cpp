@@ -72,11 +72,11 @@ RenderDevice::create(const CreateDesc& cDesc)
 
 	onCreate(cDesc);
 
-	auto bindlessRscVk_cDesc = BindlessResources::makeCDesc();
-	_bindlessRscs = createBindlessResources(bindlessRscVk_cDesc);
-
 	auto TransferContext_cDesc = TransferContext::makeCDesc();
-	_tsfCtx = createTransferContext(TransferContext_cDesc);
+	_tsfCtx = createTransferContext(RDS_DebugLabel("tsfCtx"), TransferContext_cDesc);
+
+	auto bindlessRsc_cDesc = BindlessResources::makeCDesc();
+	_bindlessRscs = createBindlessResources(RDS_DebugLabel("bindlessRsc"), bindlessRsc_cDesc);
 
 	if (cDesc.isShaderCompileMode())
 		return;
@@ -181,7 +181,7 @@ RenderDevice::_createRenderJobs()
 	{
 		RenderJob_CreateDesc rdJob_cDesc = {};
 		rdJob_cDesc.renderDevice = this;
-		auto o = createRenderJob(rdJob_cDesc);
+		auto o = createRenderJob(RDS_DebugLabel("rdJob-{}", i), rdJob_cDesc);
 		_freeRdJobs.push(rds::move(o));
 	}
 }
@@ -252,7 +252,7 @@ RenderDevice::onResetFrame(i64 frameCount)
 #if 1
 
 UPtr<RenderJob> 
-RenderDevice::createRenderJob(RenderJob_CreateDesc& cDesc)
+RenderDevice::createRenderJob(RDS_DebugLabel_PARAM, RenderJob_CreateDesc& cDesc)
 {
 	auto p = onCreateRenderJob(cDesc);
 	p->create(cDesc);
@@ -260,45 +260,45 @@ RenderDevice::createRenderJob(RenderJob_CreateDesc& cDesc)
 }
 
 SPtr<RenderContext> 
-RenderDevice::createContext(const RenderContext_CreateDesc& cDesc)
+RenderDevice::createContext(RDS_DebugLabel_PARAM, const RenderContext_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateContext(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<TransferContext>
-RenderDevice::createTransferContext(TransferContext_CreateDesc& cDesc)
+RenderDevice::createTransferContext(RDS_DebugLabel_PARAM, TransferContext_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateTransferContext(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<TransferFrame> 
-RenderDevice::createTransferFrame(TransferFrame_CreateDesc& cDesc)
+RenderDevice::createTransferFrame(RDS_DebugLabel_PARAM, TransferFrame_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateTransferFrame(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<BindlessResources> 
-RenderDevice::createBindlessResources(BindlessResources_CreateDesc& cDesc)
+RenderDevice::createBindlessResources(RDS_DebugLabel_PARAM, BindlessResources_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateBindlessResources(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<RenderGpuBuffer> 
-RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
+RenderDevice::createRenderGpuBuffer(RDS_DebugLabel_PARAM, RenderGpuBuffer_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateRenderGpuBuffer(cDesc);
 	p->create(cDesc);
 	return p;
@@ -306,67 +306,67 @@ RenderDevice::createRenderGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
 
 
 SPtr<RenderMultiGpuBuffer> 
-RenderDevice::createRenderMultiGpuBuffer(RenderGpuBuffer_CreateDesc& cDesc)
+RenderDevice::createRenderMultiGpuBuffer(RDS_DebugLabel_PARAM, RenderGpuBuffer_CreateDesc& cDesc)
 {
 	auto p = makeSPtr<RenderMultiGpuBuffer>();
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<Texture>
-RenderDevice::createTexture(Texture_CreateDesc& cDesc)
+RenderDevice::createTexture(RDS_DebugLabel_PARAM, Texture_CreateDesc& cDesc)
 {
 	SPtr<Texture> o;
 	switch (cDesc.type)
 	{
-		case RenderDataType::Texture2D:			{ auto p = createTexture2D(			sCast<Texture2D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
-		case RenderDataType::Texture3D:			{ auto p = createTexture3D(			sCast<Texture3D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
-		case RenderDataType::TextureCube:		{ auto p = createTextureCube(		sCast<TextureCube_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
-		case RenderDataType::Texture2DArray:	{ auto p = createTexture2DArray(	sCast<Texture2DArray_CreateDesc&>(	cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::Texture2D:			{ auto p = createTexture2D(			RDS_DebugLabel_ARG, sCast<Texture2D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::Texture3D:			{ auto p = createTexture3D(			RDS_DebugLabel_ARG, sCast<Texture3D_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::TextureCube:		{ auto p = createTextureCube(		RDS_DebugLabel_ARG, sCast<TextureCube_CreateDesc&>(		cDesc)); o.reset(p.ptr()); } break;
+		case RenderDataType::Texture2DArray:	{ auto p = createTexture2DArray(	RDS_DebugLabel_ARG, sCast<Texture2DArray_CreateDesc&>(	cDesc)); o.reset(p.ptr()); } break;
 		default: { RDS_THROW("invalid texture type"); } break;
 	}
 	return o;
 }
 
 SPtr<Texture2D> 
-RenderDevice::createTexture2D(Texture2D_CreateDesc& cDesc)
+RenderDevice::createTexture2D(RDS_DebugLabel_PARAM, Texture2D_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateTexture2D(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<Texture2DArray> 
-RenderDevice::createTexture2DArray(Texture2DArray_CreateDesc& cDesc)
+RenderDevice::createTexture2DArray(RDS_DebugLabel_PARAM, Texture2DArray_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateTexture2DArray(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<Texture3D> 
-RenderDevice::createTexture3D(Texture3D_CreateDesc& cDesc)
+RenderDevice::createTexture3D(RDS_DebugLabel_PARAM, Texture3D_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateTexture3D(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<TextureCube> 
-RenderDevice::createTextureCube(TextureCube_CreateDesc& cDesc)
+RenderDevice::createTextureCube(RDS_DebugLabel_PARAM, TextureCube_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateTextureCube(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<Shader> 
-RenderDevice::createShader(const Shader_CreateDesc& cDesc)
+RenderDevice::createShader(RDS_DebugLabel_PARAM, const Shader_CreateDesc& cDesc)
 {
 	auto& ss = shaderStock();
 	if (auto p = ss.findShader(cDesc))
@@ -374,7 +374,7 @@ RenderDevice::createShader(const Shader_CreateDesc& cDesc)
 		return p;
 	}
 
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateShader(cDesc);
 	p->create(cDesc);
 
@@ -383,48 +383,48 @@ RenderDevice::createShader(const Shader_CreateDesc& cDesc)
 }
 
 SPtr<Shader> 
-RenderDevice::createShader(StrView filename)
+RenderDevice::createShader(RDS_DebugLabel_PARAM, StrView filename)
 {
 	auto cDesc = Shader::makeCDesc();
 	cDesc.filename	= filename;
 
-	SPtr<Shader> p = createShader(cDesc);
+	SPtr<Shader> p = createShader(RDS_DebugLabel_ARG, cDesc);
 	return p;
 }
 
 SPtr<Shader>
-RenderDevice::createShader(StrView filename, const ShaderPermutations& permuts)
+RenderDevice::createShader(RDS_DebugLabel_PARAM, StrView filename, const ShaderPermutations& permuts)
 {
 	auto cDesc = Shader::makeCDesc();
 	cDesc.filename	= filename;
 	cDesc.permuts	= &permuts;
 
-	SPtr<Shader> p = createShader(cDesc);
+	SPtr<Shader> p = createShader(RDS_DebugLabel_ARG, cDesc);
 	return p;
 }
 
 SPtr<Material> 
-RenderDevice::createMaterial(const Material_CreateDesc& cDesc)
+RenderDevice::createMaterial(RDS_DebugLabel_PARAM, const Material_CreateDesc& cDesc)
 {
-	cDesc._internal_create(this);
+	cDesc._internal_create(RDS_DebugLabel_ARG, this);
 	auto p = onCreateMaterial(cDesc);
 	p->create(cDesc);
 	return p;
 }
 
 SPtr<Material> 
-RenderDevice::createMaterial(Shader* shader)
+RenderDevice::createMaterial(RDS_DebugLabel_PARAM, Shader* shader)
 {
 	auto cDesc = Material::makeCDesc();
 	cDesc.shader = shader;
-	return createMaterial(cDesc);
+	return createMaterial(RDS_DebugLabel_ARG, cDesc);
 }
 
 SPtr<Material> 
-RenderDevice::createMaterial()
+RenderDevice::createMaterial(RDS_DebugLabel_PARAM)
 {
 	auto cDesc = Material::makeCDesc();
-	auto p = createMaterial(cDesc);
+	auto p = createMaterial(RDS_DebugLabel_ARG, cDesc);
 	return p;
 }
 

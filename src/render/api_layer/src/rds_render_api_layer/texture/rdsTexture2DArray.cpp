@@ -15,17 +15,17 @@ RDS_Define_TypeInfo(Texture2DArray);
 #if 1
 
 Texture2DArray::CreateDesc	
-Texture2DArray::makeCDesc(RDS_DEBUG_SRCLOC_PARAM)
+Texture2DArray::makeCDesc()
 {
-	auto o = CreateDesc{ RDS_DEBUG_SRCLOC_ARG };
+	auto o = CreateDesc{};
 	o.type = RenderDataType::Texture2DArray;
 	return o;
 }
 
 SPtr<Texture2DArray>
-Texture2DArray::make(CreateDesc& cDesc)
+Texture2DArray::make(RDS_DebugLabel_PARAM, CreateDesc& cDesc)
 {
-	return Renderer::renderDevice()->createTexture2DArray(cDesc);
+	return Renderer::renderDevice()->createTexture2DArray(RDS_DebugLabel_ARG, cDesc);
 }
 
 Texture2DArray::Texture2DArray()

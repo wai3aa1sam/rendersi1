@@ -43,8 +43,8 @@ RenderUiContext::create(RenderContext* renderContext)
 	_setDarkTheme();
 	RDS_DUMP_VAR(Path::getCurrentDir());
 	auto* rdDev = _rdCtx->renderDevice();
-	_shader   = rdDev->createShader("asset/shader/ui/imgui.shader");
-	_material = rdDev->createMaterial(_shader);
+	_shader   = rdDev->createShader(RDS_DebugLabel(), "asset/shader/ui/imgui.shader");
+	_material = rdDev->createMaterial(RDS_DebugLabel(), _shader);
 
 	_createFontTexture();
 
@@ -56,8 +56,7 @@ RenderUiContext::create(RenderContext* renderContext)
 		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 		desc.bufSize	= totalVertexDataSize;
-		_vtxBuf = rdDev->createRenderMultiGpuBuffer(desc);
-		_vtxBuf->setDebugName("ui-vtxBuf");
+		_vtxBuf = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("ui-vtxBuf"), desc);
 	}
 
 	if (!_idxBuf /*|| _idxBuf->bufSize() < totalIndexDataSize*/) 
@@ -65,8 +64,7 @@ RenderUiContext::create(RenderContext* renderContext)
 		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
 		desc.bufSize	= totalIndexDataSize;
-		_idxBuf = rdDev->createRenderMultiGpuBuffer(desc);
-		_idxBuf->setDebugName("ui-idxBuf");
+		_idxBuf = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("ui-idxBuf"), desc);
 	}
 }
 
@@ -365,12 +363,11 @@ RenderUiContext::_createFontTexture()
 	using Color = ColorRGBAb;
 	#endif // 0
 
-	auto cDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+	auto cDesc = Texture2D::makeCDesc();
 	cDesc.create(pixels, width, height, Color::s_kColorType);
 
 	auto* rdDev = renderDevice();
-	_fontTex = rdDev->createTexture2D(cDesc);
-	_fontTex->setDebugName("tex_font");
+	_fontTex = rdDev->createTexture2D(RDS_DebugLabel("tex_font"), cDesc);
 }
 
 int

@@ -38,8 +38,10 @@ protected:
 	void createRenderResources( );
 	void destroyRenderResources();
 
+	void _onCommitRenderResources(TransferFrame* frame, TransferCommandSafeBuffer& rscQueue);
+
 protected:
-	virtual void _destroyRenderResources(TransferFrame* frame) override;
+	virtual void _temp_destroyRenderResources(TransferFrame* frame) override;
 
 public:
 	TransferFrame& transferFrame();

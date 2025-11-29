@@ -334,11 +334,12 @@ ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass, u32 idx
 	_info = info;
 	_cpuBuf.resize(bufSize);
 
-	auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+	const auto& filename = pass->shader()->filename();
+
+	auto bufCDesc = RenderGpuBuffer::makeCDesc();
 	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Constant;
 	bufCDesc.bufSize	= bufSize;
-	_gpuBuffer = rdDev->createRenderMultiGpuBuffer(bufCDesc);
-	_gpuBuffer->setDebugName(fmtAs_T<TempString>("{}-cb-{}-{}", pass->shader()->filename(), info->name, idx));
+	_gpuBuffer = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("constBuf-{}-{}-{}", filename, info->name, idx), bufCDesc);
 }
 
 void 

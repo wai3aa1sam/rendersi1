@@ -46,17 +46,14 @@ GraphicsDemo::onCreate()
 {
 	_rdPassPipelines.emplace_back(makeUPtr<RenderPassPipeline>());
 	{
-		auto texCDesc = Texture2D::makeCDesc(RDS_SRCLOC);
+		auto texCDesc = Texture2D::makeCDesc();
 
 		texCDesc.create("asset/texture/uvChecker.png");
-		_texUvChecker = Renderer::renderDevice()->createTexture2D(texCDesc);
-		_texUvChecker->setDebugName("uvChecker");
-
-		_texUvChecker->setDebugName("uvChecker");
+		_texUvChecker = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel("uvChecker"), texCDesc);
 	}
 
 	{
-		auto texCDesc = TextureCube::makeCDesc(RDS_SRCLOC);
+		auto texCDesc = TextureCube::makeCDesc();
 		Vector<StrView, TextureCube::s_kFaceCount> filenames;
 		filenames.emplace_back("asset/texture/skybox/default/right.png");
 		filenames.emplace_back("asset/texture/skybox/default/left.png");
@@ -67,27 +64,25 @@ GraphicsDemo::onCreate()
 
 		texCDesc.create(filenames);
 		texCDesc.isSrgb = true;
-		_texDefaultSkybox = Renderer::renderDevice()->createTextureCube(texCDesc);
-		_texDefaultSkybox->setDebugName("skybox_default");
+		_texDefaultSkybox = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel("skybox_default"), texCDesc);
 	}
 
 	{
 		auto texCDesc = Texture2D::makeCDesc();
 		texCDesc.create("asset/texture/hdr/newport_loft.hdr");
 		texCDesc.isSrgb = true;
-		_texDefaultHdrEnv = Renderer::renderDevice()->createTexture2D(texCDesc);
-		_texDefaultHdrEnv->setDebugName("texHdrEnvMap");
+		_texDefaultHdrEnv = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel("texHdrEnvMap"), texCDesc);
 	}
 
 	createMaterial(&_shaderSkybox, &_mtlSkybox, "asset/shader/skybox.shader"
 		, [&](Material* mtl) {mtl->setParam("skybox", skyboxDefault()); });
 
-	RenderUtil::createMaterial(&_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/rdsDisplayNormals.shader");
+	RenderUtil::createMaterial(	RDS_DebugLabel(), &_shaderDisplayNormals,	&_mtlDisplayNormals,	"asset/shader/util/rdsDisplayNormals.shader");
 
-	RenderUtil::createMaterial(&_mtlPostProcessing, "asset/shader/pass_feature/post_processing/rdsPostProcessing.shader");
-	RenderUtil::createMaterial(&_shaderDrawCircle, &mtlDrawCircle, "asset/shader/circle.shader");
-	RenderUtil::createShader(&_shaderDrawLine,	"asset/shader/line.shader");
-	RenderUtil::createShader(&_shaderWire,		"asset/shader/wire.shader");
+	RenderUtil::createMaterial(	RDS_DebugLabel(), &_mtlPostProcessing, "asset/shader/pass_feature/post_processing/rdsPostProcessing.shader");
+	RenderUtil::createMaterial(	RDS_DebugLabel(), &_shaderDrawCircle, &mtlDrawCircle, "asset/shader/circle.shader");
+	RenderUtil::createShader(	RDS_DebugLabel(), &_shaderDrawLine,	"asset/shader/line.shader");
+	RenderUtil::createShader(	RDS_DebugLabel(), &_shaderWire,		"asset/shader/wire.shader");
 }
 
 void 
@@ -151,7 +146,7 @@ GraphicsDemo::createDefaultScene(Scene* oScene, Shader* shader, MeshAsset* meshA
 
 				auto* rdableMesh = ent->addComponent<CRenderableMesh>();
 				if (shader)
-					rdableMesh->material = Renderer::renderDevice()->createMaterial(shader);
+					rdableMesh->material = Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), shader);
 				rdableMesh->meshAsset = meshAsset;
 
 				auto* transform	= ent->getComponent<CTransform>();
@@ -260,8 +255,8 @@ GraphicsDemo::createMaterial(SPtr<Shader>* oShader, SPtr<Material>* oMtl, StrVie
 	auto& shader	= *oShader;
 	auto& mtl		= *oMtl;
 
-	shader	= Renderer::renderDevice()->createShader(filename);
-	mtl		= Renderer::renderDevice()->createMaterial(shader);
+	shader	= Renderer::renderDevice()->createShader(RDS_DebugLabel(), filename);
+	mtl		= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), shader);
 
 	if (fnSetParam)
 		fnSetParam(mtl);
@@ -621,7 +616,7 @@ MeshAssets::loadSponza(Shader* shader)
 {
 	if (!shader)
 	{
-		shader = Renderer::renderDevice()->createShader("asset/shader/lighting/rdsDefaultLighting.shader");
+		shader = Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/lighting/rdsDefaultLighting.shader");
 	}
 
 	sponza = makeSPtr<MeshAsset>();

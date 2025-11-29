@@ -201,7 +201,7 @@ TransferContext_Vk::_commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLab
 void 
 TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& rscQueue, bool isProcessCreate)
 {
-	if (renderDevice() && isProcessCreate)
+	if (renderDevice())
 	{
 		renderDeviceVk()->bindlessResourceVk().reserve(rscQueue.commands().size());
 	}

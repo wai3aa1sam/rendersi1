@@ -39,18 +39,18 @@ RdgResourcePool::reset()
 }
 
 RdgResource_TextureT*	
-RdgResourcePool::createTexture	(Texture_CreateDesc&	cDesc, RenderDevice* rdDev)
+RdgResourcePool::createTexture(RDS_DebugLabel_PARAM, Texture_CreateDesc&	cDesc, RenderDevice* rdDev)
 {
 	auto& tex = _texs.emplace_back();
-	tex = rdDev->createTexture(cDesc);
+	tex = rdDev->createTexture(RDS_DebugLabel_ARG, cDesc);
 	return tex;
 }
 
 RdgResource_BufferT*	
-RdgResourcePool::createBuffer	(Buffer_CreateDesc&		cDesc, RenderDevice* rdDev)
+RdgResourcePool::createBuffer(RDS_DebugLabel_PARAM, Buffer_CreateDesc&		cDesc, RenderDevice* rdDev)
 {
 	auto& buf = _bufs.emplace_back();
-	buf = rdDev->createRenderGpuBuffer(cDesc);
+	buf = rdDev->createRenderGpuBuffer(RDS_DebugLabel_ARG, cDesc);
 	return buf;
 }
 

@@ -96,8 +96,8 @@ public:
 	static constexpr SizeType s_kAlign = CreateDesc::s_kAlign;
 
 public:
-	static CreateDesc				makeCDesc(RDS_DEBUG_SRCLOC_PARAM);
-	static SPtr<RenderGpuBuffer>	make(CreateDesc& cDesc);
+	static CreateDesc				makeCDesc();
+	static SPtr<RenderGpuBuffer>	make(RDS_DebugLabel_PARAM, CreateDesc& cDesc);
 
 public:
 	RenderGpuBuffer();

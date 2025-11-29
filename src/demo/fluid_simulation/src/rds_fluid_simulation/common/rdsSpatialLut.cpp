@@ -17,8 +17,8 @@ SpatialLut::create2D(StrView name)
 {
 	_is3D = false;
 	_name = name;
-	RenderUtil::createMaterial(&_shaderSpatialLut,		&_mtlSpatialLut,		"asset/shader/demo/fluid_simulation/2d/rdsSpatialLut2D.shader");
-	RenderUtil::createMaterial(&_debug.shaderSpatialLut, &_debug.mtlSpatialLut,	"asset/shader/demo/fluid_simulation/2d/rdsSpatialLut2D_Debug.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderSpatialLut,		&_mtlSpatialLut,		"asset/shader/demo/fluid_simulation/2d/rdsSpatialLut2D.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_debug.shaderSpatialLut, &_debug.mtlSpatialLut,	"asset/shader/demo/fluid_simulation/2d/rdsSpatialLut2D_Debug.shader");
 }
 
 void 
@@ -26,8 +26,8 @@ SpatialLut::create3D(StrView name)
 {
 	_is3D = true;
 	_name = name;
-	RenderUtil::createMaterial(&_shaderSpatialLut,		&_mtlSpatialLut,		"asset/shader/demo/fluid_simulation/3d/rdsSpatialLut3D.shader");
-	RenderUtil::createMaterial(&_debug.shaderSpatialLut, &_debug.mtlSpatialLut,	"asset/shader/demo/fluid_simulation/3d/rdsSpatialLut3D_Debug.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_shaderSpatialLut,		&_mtlSpatialLut,		"asset/shader/demo/fluid_simulation/3d/rdsSpatialLut3D.shader");
+	RenderUtil::createMaterial(RDS_DebugLabel(), &_debug.shaderSpatialLut, &_debug.mtlSpatialLut,	"asset/shader/demo/fluid_simulation/3d/rdsSpatialLut3D_Debug.shader");
 }
 
 RdgPass& 
