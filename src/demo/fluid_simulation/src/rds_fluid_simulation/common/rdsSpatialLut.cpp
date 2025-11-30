@@ -101,7 +101,7 @@ SpatialLut::addPass_initSpatialLut(RdgBufferHnd buf_positions, float radius, u32
 			mtl->setParam("u_elementCount",					elementCount);
 
 			setBuffersToMaterial(mtl, "u_positions");
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, s_kPassIdx_Cs_initSpatialLut, Vec3u{elementCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, s_kPassIdx_Cs_initSpatialLut, Vec3u{elementCount, 1, 1});
 		}
 	);
 	return pass;
@@ -121,7 +121,7 @@ SpatialLut::addPass_updateSpatialLutKeyToStartIndex(float radius, u32 elementCou
 			mtl->setParam("u_radius",						radius);
 			mtl->setParam("u_elementCount",					elementCount);
 			setBuffersToMaterial(mtl, "u_positions");
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, s_kPassIdx_Cs_updateSpatialLutKeyToStartIndex, Vec3u{elementCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, s_kPassIdx_Cs_updateSpatialLutKeyToStartIndex, Vec3u{elementCount, 1, 1});
 		}
 	);
 
@@ -171,7 +171,7 @@ SpatialLut::Debug_addPass_debugSpatialLut(Vec3f samplingPt, float radius, u32 el
 			setBuffersToMaterial(mtl, "u_positions");
 			mtl->setParam("u_spatialLutDebugResultPositions",	_debug.buf_resultPositions.renderResource());
 
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{1, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, Vec3u{1, 1, 1});
 		}
 	);
 	return pass;

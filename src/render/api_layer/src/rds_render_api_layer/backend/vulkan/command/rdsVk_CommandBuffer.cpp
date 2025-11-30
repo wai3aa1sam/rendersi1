@@ -132,7 +132,7 @@ Vk_CommandBuffer::beginRecord(Vk_Queue* vkQueue, VkCommandBufferUsageFlags usage
 
 	auto ret = vkBeginCommandBuffer(hnd(), &beginInfo);
 	Util::throwIfError(ret);
-	beginDebugLabel(debugName());
+	beginDebugLabel(DebugLabel_get());
 }
 
 void 
@@ -145,7 +145,7 @@ Vk_CommandBuffer::beginRecord(VkCommandBufferUsageFlags usageFlags, const VkComm
 void 
 Vk_CommandBuffer::beginRecord(const char* debugName, RenderDevice_Vk* rdDevVk, VkCommandBufferUsageFlags usageFlags, const VkCommandBufferInheritanceInfo* inheriInfo)
 {
-	setDebugName(debugName, rdDevVk);
+	RDS_VK_SET_DEBUG_LABEL(*this, RDS_DebugLabel("{}", debugName), rdDevVk);
 	beginRecord(_vkQueue, usageFlags, inheriInfo);
 }
 

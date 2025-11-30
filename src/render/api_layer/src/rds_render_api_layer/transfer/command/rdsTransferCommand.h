@@ -19,7 +19,7 @@ namespace rds
 	E(UploadBuffer,) \
 	E(UploadTexture,) \
 	\
-	E(SetDebugName,) \
+	E(SetDebugLabel,) \
 	E(SetSwapchainSize,) \
 	\
 	E(CreateRenderGpuBuffer,) \
@@ -62,7 +62,7 @@ class TransferCommand_CopyBuffer;
 class TransferCommand_UploadBuffer;
 class TransferCommand_UploadTexture;
 
-class TransferCommand_SetDebugName;
+class TransferCommand_SetDebugLabel;
 class TransferCommand_SetSwapchainSize;
 
 class TransferCommand_CreateRenderGpuBuffer;

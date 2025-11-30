@@ -68,7 +68,7 @@ Vk_CommandPool::_requestCommandBuffer(Vector<Vk_CommandBuffer*, N>& vkCmdBufs, u
 		cmdBuf->create(this, level, rdDevVk);
 		p = cmdBuf;
 	}
-	RDS_VK_SET_DEBUG_NAME_FMT_IMPL(*p, rdDevVk, "{}", debugName);
+	RDS_VK_SET_DEBUG_LABEL(*p, RDS_DebugLabel("{}_vkCmdBuf", debugName), rdDevVk);
 
 	activeCount++;
 	return p;

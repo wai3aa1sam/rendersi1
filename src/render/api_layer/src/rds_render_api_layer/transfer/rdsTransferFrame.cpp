@@ -91,10 +91,10 @@ void
 TransferFrame::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
 {
 	auto lock = _setDebugName_rdRscBuf.scopedULock();
-	auto* cmd = lock->newCommand<TransferCommand_SetDebugName>();
+	auto* cmd = lock->newCommand<TransferCommand_SetDebugLabel>();
 
 	cmd->dst	= rdRsc;
-	cmd->name	= name;
+	//cmd->name	= name;
 }
 
 void 

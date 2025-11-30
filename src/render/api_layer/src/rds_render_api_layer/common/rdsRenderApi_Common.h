@@ -109,6 +109,10 @@ private:
 #define RDS_DebugLabel_ASSIGN()					RDS_DebugLabel_VAR_NAME = RDS_DebugLabel_PARAM_NAME
 #define RDS_DebugLabel_GET_NAME(var_)			var_.name()
 
+#define RDS_DebugLabel_ASSIGN_IMPL(dst, src)	(dst) = (src)
+#define RDS_DebugLabel_CREATE(dst, src)			(dst).DebugLabel_internal_create(src)
+
+
 #else
 
 #define RDS_DebugLabel_TYPE						int
@@ -123,18 +127,22 @@ private:
 #define RDS_DebugLabel_ASSIGN()					
 #define RDS_DebugLabel_GET_NAME(var_)			""
 
+#define RDS_DebugLabel_ASSIGN_IMPL(dst, src)	
+#define RDS_DebugLabel_CREATE(dst, src)	
+
 #endif // RDS_DEBUG
 
 #define RDS_DebugLabel_COMMON_BODY()			\
 	public: \
-	RDS_DebugLabel_TYPE		DebugLabel_get()		{ return RDS_DebugLabel_VAR_NAME; } \
-	const char*				DebugLabel_getName()	{ return RDS_DebugLabel_GET_NAME(RDS_DebugLabel_VAR_NAME); } \
+	RDS_DebugLabel_TYPE		DebugLabel_get()		const { return RDS_DebugLabel_VAR_NAME; } \
+	const char*				DebugLabel_getName()	const { return RDS_DebugLabel_GET_NAME(RDS_DebugLabel_VAR_NAME); } \
+	constexpr bool			DebugLabel_hasName()	const { return RDS_ENABLE_DebugLabel ? StrUtil::len(DebugLabel_getName()) > 0 : false; } \
+	RDS_DebugLabel_TYPE		DebugLabel_internal_create(RDS_DebugLabel_PARAM) { RDS_CORE_ASSERT(!DebugLable_hasCreated, "already created"); DebugLable_hasCreated = true; RDS_DebugLabel_ASSIGN_IMPL(RDS_DebugLabel_VAR_NAME, RDS_DebugLabel_ARG); return RDS_DebugLabel_VAR_NAME; } \
 	private: \
-	RDS_DebugLabel_VAR; \
+	mutable RDS_DebugLabel_VAR; \
+	mutable bool DebugLable_hasCreated = false; \
 	private: \
 // ---
-//const char*			DebugLabel_name()	{ return RDS_DebugLabel_VAR_NAME; } \
-
 
 using RenderDebugLabel = DebugLabel;
 

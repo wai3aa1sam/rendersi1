@@ -222,7 +222,7 @@ FluidSim2D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 			mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
 			mtl->setParam("u_predictedPositions",	simArgs.bufPredictedPos.renderResource());
 			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcExternalForce, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, SimArgs::s_kPassIdx_Cs_calcExternalForce, Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -251,7 +251,7 @@ FluidSim2D_Gpu::addPass_calcDensityData(SimArgs& simArgs)
 		{
 			mtl->setParam("u_densityData",					simArgs.bufDensityData.renderResource());
 			simArgs.setSpatialParam(mtl);
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcDensityData, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, SimArgs::s_kPassIdx_Cs_calcDensityData, Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 	return pass;
@@ -272,7 +272,7 @@ FluidSim2D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
 		{
 			mtl->setParam("u_velocities", simArgs.bufVel.renderResource());
 			simArgs.setSpatialParam(mtl);
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcPressureForce, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, SimArgs::s_kPassIdx_Cs_calcPressureForce, Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -293,7 +293,7 @@ FluidSim2D_Gpu::addPass_calcViscosity(SimArgs& simArgs)
 		{
 			mtl->setParam("u_velocities", simArgs.bufVel.renderResource());
 			simArgs.setSpatialParam(mtl);
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_calcViscosity, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, SimArgs::s_kPassIdx_Cs_calcViscosity, Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -314,7 +314,7 @@ FluidSim2D_Gpu::addPass_updatePosition(SimArgs& simArgs)
 		{
 			mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
 			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, SimArgs::s_kPassIdx_Cs_updatePosition, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, SimArgs::s_kPassIdx_Cs_updatePosition, Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 

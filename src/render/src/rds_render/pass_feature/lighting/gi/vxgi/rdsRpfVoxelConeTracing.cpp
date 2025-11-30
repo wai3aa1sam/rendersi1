@@ -124,7 +124,7 @@ RpfVoxelConeTracing::create()
 		_voxelTexRadiance = Renderer::renderDevice()->createTexture3D(RDS_DebugLabel("vct_voxelTexRadiance"), cDesc);
 	}
 
-	voxelClipmaps.create(RDS_DebugLabel("VoxelClipmaps"), s_kMaxClipmapLevel);
+	voxelClipmaps.create(RDS_DebugLabel("VoxelClipmaps"));
 }
 
 void 
@@ -192,7 +192,7 @@ RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, cons
 		passCopy.setExecuteFunc(
 			[=](RenderRequest& rdReq)
 			{
-				rdReq.copyTexture(RDS_SRCLOC, voxelTexRadiance.renderResource(), voxelTexRadiancePrev.renderResource(), 0, 0, 0, 0);
+				rdReq.copyTexture(RDS_DebugLabel(), voxelTexRadiance.renderResource(), voxelTexRadiancePrev.renderResource(), 0, 0, 0, 0);
 			}
 		);
 	}
@@ -226,7 +226,7 @@ RpfVoxelConeTracing::addVoxelizationPass(const DrawSettings& drawSettings_, cons
 					mtl->setParam("clear_value",			Vec4f::s_zero());
 					mtl->setImage("image",					voxelTexRadiance.texture3D(), 0);
 					setupCommonParam(mtl, level);
-					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, imageExtent);
+					rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, imageExtent);
 				}
 			);
 		}
@@ -316,7 +316,7 @@ RpfVoxelConeTracing::addOpacityAlphaPass(RpfVoxelConeTracing_Result* oResult)
 				mtl->setImage("voxel_tex_radiance",		voxelTexRadiance.texture3D(), 0);
 
 				setupCommonParam(mtl, level);
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, imageExtent);
+				rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 0, imageExtent);
 			}
 		);
 		passOpacityAlphaPass = &pass;
@@ -350,7 +350,7 @@ RpfVoxelConeTracing::addCheckAlphaPass()
 				mtl->setImage("image",					voxelTexRadiance.texture3D(), 0);
 
 				setupCommonParam(mtl, level);
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, voxelTexRadiance.size());
+				rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 0, voxelTexRadiance.size());
 			}
 		);
 		passCheckAlphaPass = &pass;
@@ -407,7 +407,7 @@ RpfVoxelConeTracing::addVoxelizationDebugPass(RdgTextureHnd rtColor, RdgTextureH
 				mtl->setParam("voxel_tex_radiance",		voxelTexRadiance.texture3D());
 
 				drawData->setupMaterial(mtl);
-				rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
+				rdReq.drawSceneQuad(RDS_DebugLabel(), mtl);
 			}
 		);
 		passVoxelizationDebug = &pass;
@@ -455,8 +455,7 @@ RpfVoxelConeTracing::addVoxelVisualizationPass(RdgTextureHnd rtColor, RdgTexture
 				drawData->setupMaterial(mtl);
 				setupMipmapParam(mtl);
 
-				auto drawCall = rdReq.addDrawCall(sizeof(PerObjectParam));
-				drawCall->setDebugSrcLoc(RDS_SRCLOC);
+				auto drawCall = rdReq.addDrawCall(RDS_DebugLabel(), sizeof(PerObjectParam));
 				drawCall->renderPrimitiveType = RenderPrimitiveType::Point;
 				drawCall->vertexCount = voxelResolution * voxelResolution * voxelResolution * (clipmapMaxLevel * 2 / 3);
 				drawCall->setMaterial(mtl);
@@ -526,7 +525,7 @@ RpfVoxelConeTracing::addAnisotropicMipmappingPass()
 					mtl->setImage("dst_image_neg_z",	voxelTexRadianceMip_NegZ.texture3D(), mipLevel);
 
 					setupCommonParam(mtl, mipLevel);
-					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, mipDimensions);
+					rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 0, mipDimensions);
 				}
 			);
 			lastPass = &pass;
@@ -569,7 +568,7 @@ RpfVoxelConeTracing::addAnisotropicMipmappingPass()
 					mtl->setImage("dst_image_neg_z",	voxelTexRadianceMip_NegZ.texture3D(), mipLevel);
 
 					setupCommonParam(mtl, mipLevel);
-					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 1, mipDimensions);
+					rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 1, mipDimensions);
 				}
 			);
 			mipDimension	= math::max<u32>(mipDimension >> 1, 1);
@@ -663,11 +662,11 @@ RpfVoxelConeTracing::addVoxelConeTracingPass(RdgTextureHnd depth, RpfGeometryBuf
 				drawData->setupMaterial(mtl);
 				if (isUsingCompute)
 				{
-					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u{screenSize, 1});
+					rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 0, Vec3u{screenSize, 1});
 				}
 				else
 				{
-					rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
+					rdReq.drawSceneQuad(RDS_DebugLabel(), mtl);
 				}
 			}
 		);
@@ -712,8 +711,8 @@ RpfVoxelConeTracing::addLightingPass(RdgTextureHnd rtColor, RdgTextureHnd depth,
 
 				setupCommonParam(mtl, level);
 				drawData->setupMaterial(mtl);
-				rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
-				//rdReq.drawMesh(RDS_SRCLOC, DemoEditorApp::instance()->gfxDemo->meshAssets().fullScreenTriangle->renderMesh, mtl);
+				rdReq.drawSceneQuad(RDS_DebugLabel(), mtl);
+				//rdReq.drawMesh(RDS_DebugLabel(), DemoEditorApp::instance()->gfxDemo->meshAssets().fullScreenTriangle->renderMesh, mtl);
 			}
 		);
 		passVctLighting = &pass;

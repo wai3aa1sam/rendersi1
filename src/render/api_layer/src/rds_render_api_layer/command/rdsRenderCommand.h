@@ -24,16 +24,17 @@ using DrawingSettings = u64;
 #endif // 0
 #if 1
 
-#define RDS_RenderCommand_COMMON_BODY(T) \
+#define RDS_RenderCommand_COMMON_BODY_IMPL(T, BASE) \
 public:																		\
-using Base = RenderCommand;													\
+using Base = BASE;															\
 using This = RDS_CONCAT(RenderCommand_, T);									\
 																			\
 public:																		\
-	RDS_CONCAT(RenderCommand_, T)() : Base(RDS_CONCAT(Type::, T)) {}		\
 	virtual ~RDS_CONCAT(RenderCommand_, T)() {};							\
+	RDS_CONCAT(RenderCommand_, T)() : Base(RDS_CONCAT(Type::, T)) {}		\
 private:																	\
 // ---
+#define RDS_RenderCommand_COMMON_BODY(T)  RDS_RenderCommand_COMMON_BODY_IMPL(T, RenderCommand)
 
 #define RenderCommandType_ENUM_LIST(E) \
 	E(None, = 0) \
@@ -79,30 +80,8 @@ public:
 
 	Type type() const { return _type; }
 
-	#if RDS_DEVELOPMENT
-	void setDebugSrcLoc(const SrcLoc& srcLoc)	{ _debugSrcLoc	= srcLoc; }
-	void setDebugName  (StrView name)			{ _debugLabel.setName(name.data()); }
-	void setDebugColor (const Color4f& color)	{ _debugLabel.color	= color; }
-
-	const char*		debugName()		const { return _debugLabel.name(); }
-	const Color4f&	debugColor()	const { return _debugLabel.color; }
-
-	#else
-	void setDebugSrcLoc(const SrcLoc& srcLoc)	{  }
-	void setDebugName  (StrView name)			{  }
-	void setDebugColor (const Color4f& color)	{  }
-
-	const char*		debugName()		const { return ""; }
-	const Color4f&	debugColor()	const { return s_defaultDebugColor; }
-
-#endif
 protected:
 	RenderCommandType _type;
-
-	#if RDS_DEVELOPMENT
-	RDS_DEBUG_SRCLOC_DECL;
-	RenderDebugLabel _debugLabel;
-#endif // RDS_DEVELOPMENT
 };
 
 #endif
@@ -154,12 +133,15 @@ public:
 
 class RenderCommand_Callable_Base : public RenderCommand
 {
+	RDS_DebugLabel_COMMON_BODY();
+	friend class RenderRequest;
 public:
 	using Base = RenderCommand;
 
 public:
-	RenderCommand_Callable_Base(Type type) : Base(type) {}
 	virtual ~RenderCommand_Callable_Base() {};
+
+	RenderCommand_Callable_Base(Type type) : Base(type) {}
 
 public:
 	void setMaterial(Material* mtl, int mtlPassIdx = 0);
@@ -169,6 +151,8 @@ public:
 	Material::Pass* getMaterialPass()				{ return _mtl ? _mtl->getPass(_i_mtlPass) : nullptr; }
 	int				shaderResourcesIndex() const	{ return _i_shaderRscs; }
 
+
+
 protected:
 	int				_i_shaderRscs	= 0;
 	int				_i_mtlPass		= 0;
@@ -177,11 +161,8 @@ protected:
 
 class RenderCommand_DrawCall : public RenderCommand_Callable_Base
 {
+	RDS_RenderCommand_COMMON_BODY_IMPL(DrawCall, RenderCommand_Callable_Base);
 	friend class RenderCommandBuffer;
-public:
-	using Base = RenderCommand_Callable_Base;
-	using This = RenderCommand_DrawCall;
-
 public:
 	RenderDataType		indexType			= RenderDataType::UInt16;
 	RenderPrimitiveType renderPrimitiveType = RenderPrimitiveType::Triangle;
@@ -214,10 +195,6 @@ public:
 		*reinCast<T*>(_extraData)	= data;
 		_extraDataSize				= sizeof(T);
 	}
-
-public:
-	RenderCommand_DrawCall() : Base(Type::DrawCall) {}
-	virtual ~RenderCommand_DrawCall() {};
 };
 
 class RenderCommand_SetScissorRect : public RenderCommand 
@@ -269,22 +246,23 @@ public:
 
 class RenderCommand_DebugLabelBegin : public RenderCommand
 {
-	RDS_RenderCommand_COMMON_BODY(DebugLabelBegin)
+	RDS_RenderCommand_COMMON_BODY(DebugLabelBegin);
+	RDS_DebugLabel_COMMON_BODY();
 public:
-	RenderDebugLabel label;
 };
 
 class RenderCommand_DebugLabelEnd : public RenderCommand
 {
-	RDS_RenderCommand_COMMON_BODY(DebugLabelEnd)
+	RDS_RenderCommand_COMMON_BODY(DebugLabelEnd);
+	RDS_DebugLabel_COMMON_BODY();
 public:
 };
 
 class RenderCommand_DebugLabelInsert : public RenderCommand
 {
-	RDS_RenderCommand_COMMON_BODY(DebugLabelInsert)
+	RDS_RenderCommand_COMMON_BODY(DebugLabelInsert);
+	RDS_DebugLabel_COMMON_BODY();
 public:
-	RenderDebugLabel label;
 };
 
 #endif
@@ -297,10 +275,8 @@ public:
 
 class RenderCommand_CopyTexture : public RenderCommand
 {
-public:
-	using Base = RenderCommand;
-	using This = RenderCommand_CopyTexture;
-
+	RDS_DebugLabel_COMMON_BODY();
+	RDS_RenderCommand_COMMON_BODY(CopyTexture);
 public:
 
 	SPtr<Texture> src;
@@ -315,10 +291,6 @@ public:
 
 	u32 srcLayer	= 0;
 	u32 dstLayer	= 0;
-
-public:
-	RenderCommand_CopyTexture() : Base(Type::CopyTexture) {}
-	virtual ~RenderCommand_CopyTexture() {};
 };
 
 #endif
@@ -460,9 +432,9 @@ RenderCommandBuffer::newCommand()
 
 inline RenderCommand_Dispatch*			RenderCommandBuffer::dispatch()				{ return newCommand<RenderCommand_Dispatch>(); }
 
-inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()	{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
-inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()			{ return newCommand<RenderCommand_SwapBuffers>(); }
-inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()			{ return newCommand<RenderCommand_DrawCall>(); }
+inline RenderCommand_ClearFramebuffers* RenderCommandBuffer::clearFramebuffers()				{ return _clearFramebufCmd.isValid() ? newCommand<RenderCommand_ClearFramebuffers>() : &_clearFramebufCmd; }
+inline RenderCommand_SwapBuffers*		RenderCommandBuffer::swapBuffers()						{ return newCommand<RenderCommand_SwapBuffers>(); }
+inline RenderCommand_DrawCall*			RenderCommandBuffer::addDrawCall()						{ return newCommand<RenderCommand_DrawCall>(); }
 
 inline 
 RenderCommand_DrawCall*			

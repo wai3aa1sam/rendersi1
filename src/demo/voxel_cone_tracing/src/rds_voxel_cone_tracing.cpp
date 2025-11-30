@@ -102,7 +102,7 @@ VoxelConeTracing::onCreateScene(Scene* oScene)
 	addEntity(_rpfVct->getVoxelVisualizationMaterial())->id();
 	addEntity(_rpfVct->getVoxelConeTracingMaterial());
 
-	auto shader = RDS_TEST_SHADOW ? Renderer::renderDevice()->createShader("asset/shader/lighting/rdsDefaultLighting.shader") : _rpfVct->getVoxelizationShader();
+	auto shader = RDS_TEST_SHADOW ? Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/lighting/rdsDefaultLighting.shader") : _rpfVct->getVoxelizationShader();
 
 	{
 		#if RDS_LOAD_SPONZA

@@ -144,7 +144,7 @@ Vk_RenderFrame::createCommandPool(Vk_CommandPools& cmdPool, QueueTypeFlags type)
 	{
 		auto& e = cmdPool.emplace_back();
 		e.create(queueFamily.getFamilyIdx(type), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, renderDeviceVk());
-		RDS_VK_SET_DEBUG_NAME_FMT(e, "Vk_RenderFrame::vk{}CommandPool-threadId: {}", type, i);
+		RDS_VK_SET_DEBUG_LABEL(e, RDS_DebugLabel("{}_Vk_RenderFrame::vk{}CommandPool", DebugLabel_getName(), type), renderDeviceVk());
 	}
 }
 
@@ -183,13 +183,14 @@ Vk_RenderFrame::setDebugName(StrView name)
 {
 	for (size_t i = 0; i < _graphicsCommandPools.size(); i++)
 	{
-		RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_graphicsCommandPools[i],		RDS_SRCLOC, "{}-Vk_RenderFrame::{}-tid-[{}]", name, "_graphicsCommandPools",	i);
-		RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_computeCommandPools[i],		RDS_SRCLOC, "{}-Vk_RenderFrame::{}-tid-[{}]", name, "_computeCommandPools",		i);
-		RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_transferCommandPools[i],		RDS_SRCLOC, "{}-Vk_RenderFrame::{}-tid-[{}]", name, "_transferCommandPools",	i);
+		RDS_VK_SET_DEBUG_LABEL(_graphicsCommandPools[i],	RDS_DebugLabel("{}_Vk_RenderFrame::_graphicsCommandPools[{}]", name, i), renderDeviceVk());
+		RDS_VK_SET_DEBUG_LABEL(_computeCommandPools[i],		RDS_DebugLabel("{}_Vk_RenderFrame::_computeCommandPools[{}]",  name, i), renderDeviceVk());
+		RDS_VK_SET_DEBUG_LABEL(_transferCommandPools[i],	RDS_DebugLabel("{}_Vk_RenderFrame::_transferCommandPools[{}]", name, i), renderDeviceVk());
 	}
-	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_imageAvailableVkSmp,	RDS_SRCLOC, "{}-Vk_RenderFrame::{}", name, "_imageAvailableVkSmp");
-	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_renderCompletedVkSmp, RDS_SRCLOC, "{}-Vk_RenderFrame::{}", name, "_renderCompletedVkSmp");
-	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(_inFlightVkFence,		RDS_SRCLOC, "{}-Vk_RenderFrame::{}", name, "_inFlightVkFence");
+
+	RDS_VK_SET_DEBUG_LABEL(_imageAvailableVkSmp,	RDS_DebugLabel("{}_Vk_RenderFrame::_imageAvailableVkSmp",	name), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_renderCompletedVkSmp,	RDS_DebugLabel("{}_Vk_RenderFrame::_renderCompletedVkSmp",  name), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_inFlightVkFence,		RDS_DebugLabel("{}_Vk_RenderFrame::_inFlightVkFence",		name), renderDeviceVk());
 }
 
 RenderDevice_Vk* 

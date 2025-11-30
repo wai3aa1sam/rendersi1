@@ -21,6 +21,7 @@ class RenderContext_Vk;
 
 class Vk_RenderFrame : public NC_RenderApiLayerCommon_Base	// not a derived class of RenderFrame
 {
+	RDS_DebugLabel_COMMON_BODY();
 public:
 	using Util = Vk_RenderApiUtil;
 	using SizeType = RenderApiLayerTraits::SizeType;

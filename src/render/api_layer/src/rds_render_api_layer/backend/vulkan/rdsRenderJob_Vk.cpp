@@ -68,7 +68,7 @@ RenderJob_Vk::onReset(RenderContext* rdCtx)
 }
 
 //void 
-//RenderJob_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+//RenderJob_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
 //{
 //
 //}

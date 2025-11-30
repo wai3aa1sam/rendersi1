@@ -55,7 +55,7 @@ RpfClearImage3D::addClearImage3DPass(SPtr<Material>& mtl_, RdgTextureHnd image, 
 				mtl->setParam("clear_value",			clear_value);
 				mtl->setImage("image",					image.texture3D(), 0);
 				drawData->setupMaterial(mtl);
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, image_extent);
+				rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, image_extent);
 			}
 		);
 		passClearImage3D = &pass;

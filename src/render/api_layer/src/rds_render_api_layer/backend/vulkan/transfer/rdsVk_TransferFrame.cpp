@@ -37,10 +37,9 @@ Vk_QueueData::destroy()
 void 
 Vk_QueueData::setDebugName(const SrcLoc& srcLoc, StrView name)
 {
-	//auto* rdDevVk = renderDeviceVk();
-	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(inFlightVkFence,		/*rdDevVk,*/ srcLoc, "{}::{}", name, "inFlightVkFence");
-	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(completedVkSemaphore,	/*rdDevVk,*/ srcLoc, "{}::{}", name, "completedVkSemaphore");
-	RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(vkCommandPool,			/*rdDevVk,*/ srcLoc, "{}::{}", name, "vkCommandPool");
+	RDS_VK_SET_DEBUG_LABEL(inFlightVkFence,			RDS_DebugLabel("{}", name), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(completedVkSemaphore,	RDS_DebugLabel("{}", name), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(vkCommandPool,			RDS_DebugLabel("{}", name), renderDeviceVk());
 }
 
 RenderDevice_Vk* Vk_QueueData::renderDeviceVk() { return vkCommandPool.renderDeviceVk(); }

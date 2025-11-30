@@ -7,7 +7,7 @@
 
 #if RDS_DEVELOPMENT
 
-#define RDS_VK_INSERT_DEBUG_LABEL(vkCmdBuf, cmd) if (::rds::StrUtil::len((cmd)->debugName()) > 0) (vkCmdBuf)->insertDebugLabel((cmd)->debugName())
+#define RDS_VK_INSERT_DEBUG_LABEL(vkCmdBuf, cmd) if (::rds::StrUtil::len((cmd)->DebugLabel_getName()) > 0) (vkCmdBuf)->insertDebugLabel((cmd)->DebugLabel_getName())
 
 #else
 

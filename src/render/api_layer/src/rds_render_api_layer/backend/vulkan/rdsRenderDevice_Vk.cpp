@@ -348,7 +348,7 @@ RenderDevice_Vk::loadVkDevFn(Vk_ExtensionInfo& vkExtInfo)
 }
 
 void 
-RenderDevice_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+RenderDevice_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
 {
 	#if 0
 	auto& name = cmd->name;

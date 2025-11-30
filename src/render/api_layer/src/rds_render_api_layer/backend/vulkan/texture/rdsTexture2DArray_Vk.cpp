@@ -57,10 +57,8 @@ Texture2DArray_Vk::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTextur
 }
 
 void 
-Texture2DArray_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+Texture2DArray_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
 {
-	auto& name = cmd->name;
-
 	Base::onRenderResouce_SetDebugName(cmd);
 
 	u32 i = 0;
@@ -68,7 +66,7 @@ Texture2DArray_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cm
 	{
 		if (!e.hnd())
 			continue;
-		RDS_VK_SET_DEBUG_NAME_FMT(_srvLayerVkImageViews[i],	"{}-{}-layer{}-[{}:{}]",	name, "_srvLayerVkImageViews", i,	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+		RDS_VK_SET_DEBUG_LABEL(_srvLayerVkImageViews[i], RDS_DebugLabel("{}_srvLayerVkImageViews[{}]", cmd->DebugLabel_getName(), i), renderDeviceVk());
 		++i;
 	}
 }

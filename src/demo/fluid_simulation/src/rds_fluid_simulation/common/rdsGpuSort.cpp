@@ -75,7 +75,7 @@ GpuSort::addPass_bitonicMergeSort(StrView name, RdgBufferHnd buf_list, u32 listS
 					mtl->setParam("u_list",			buf_list.renderResource());
 
 					//RDS_DUMP_VAR(stageIndex, stepIndex, groupWidth, groupHeight);
-					rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u{sCast<u32>(math::nextPow2(size) / 2), 1, 1});
+					rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 0, Vec3u{sCast<u32>(math::nextPow2(size) / 2), 1, 1});
 				}
 			);
 			pass.runAfter(pass_prev);
@@ -100,7 +100,7 @@ GpuSort::addPass_bubbleSort(StrView name, RdgBufferHnd buf_list, u32 listSize, R
 		{
 			mtl->setParam("u_size",	size);
 			mtl->setParam("u_list",	buf_list.renderResource());
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 1, Vec3u{1, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 1, Vec3u{1, 1, 1});
 		}
 	);
 	return pass;

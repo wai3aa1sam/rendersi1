@@ -60,7 +60,7 @@ public:
 		auto* rdDevVk = pass->renderDeviceVk();
 		_vkModule.create(binFilepath, rdDevVk);
 
-		RDS_VK_SET_DEBUG_NAME_FMT_IMPL(_vkModule, rdDevVk, "{}-{}", pass->shader()->shadername(), stageFlag());
+		RDS_VK_SET_DEBUG_LABEL(_vkModule, RDS_DebugLabel("{}_vkModule-{}", Path::basename(pass->shader()->shadername()), stageFlag()), rdDevVk);
 	}
 
 	void destroy(ShaderPass_Vk* pass)

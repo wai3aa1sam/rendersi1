@@ -226,7 +226,7 @@ BindlessResources_Vk::_onCommit_Texture(Texture* texture/*, VkWriteDescriptorSet
 	auto  type		= rdRsc->type(); RDS_UNUSED(type);
 
 	auto*	srvVkImgViewHnd = Vk_Texture::getSrvVkImageViewHnd(rdRsc);
-	RDS_CORE_ASSERT(srvVkImgViewHnd,	"rsc {}: getSrvVkImageViewHnd == nullptr, refCount: {}", rdRsc->debugName(), rdRsc->_refCount.load());
+	RDS_CORE_ASSERT(srvVkImgViewHnd,	"rsc {}: getSrvVkImageViewHnd == nullptr, refCount: {}", rdRsc->DebugLabel_getName(), rdRsc->_refCount.load());
 	RDS_CORE_ASSERT(rdRsc->isTexture(), "invalid Texture usage, usage has no TextureUsageFlags::ShaderResource or TextureUsageFlags::DepthStencil");
 
 	auto& oVkDescrInfo = _texInfos.emplace_back();

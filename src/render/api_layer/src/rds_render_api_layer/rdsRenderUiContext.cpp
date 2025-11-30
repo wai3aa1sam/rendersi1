@@ -53,7 +53,7 @@ RenderUiContext::create(RenderContext* renderContext)
 
 	if (!_vtxBuf /*|| _vtxBuf->bufSize() < totalVertexDataSize*/) 
 	{
-		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
+		RenderGpuBuffer_CreateDesc desc = {};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 		desc.bufSize	= totalVertexDataSize;
 		_vtxBuf = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("ui-vtxBuf"), desc);
@@ -61,7 +61,7 @@ RenderUiContext::create(RenderContext* renderContext)
 
 	if (!_idxBuf /*|| _idxBuf->bufSize() < totalIndexDataSize*/) 
 	{
-		RenderGpuBuffer_CreateDesc desc = {RDS_SRCLOC};
+		RenderGpuBuffer_CreateDesc desc = {};
 		desc.typeFlags	= RenderGpuBufferTypeFlags::Index;
 		desc.bufSize	= totalIndexDataSize;
 		_idxBuf = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("ui-idxBuf"), desc);
@@ -256,11 +256,7 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 					req.setScissorRect(Rect2f{a, b - a});
 
 					auto* cmd = req.commandBuffer().addDrawCall(sizeof(PerObjectParam));
-
-					#if RDS_DEVELOPMENT
-					cmd->setDebugSrcLoc(RDS_SRCLOC);
-					cmd->setDebugName("draw imgui");
-					#endif
+					RDS_DebugLabel_CREATE(*cmd, RDS_DebugLabel("draw imgui"));
 
 					cmd->setMaterial(_material);
 

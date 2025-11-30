@@ -212,9 +212,9 @@ TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& rscQueue, boo
 void 
 TransferContext_Vk::_setDebugName()
 {
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkGraphicsQueue);
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkTransferQueue);
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkComputeQueue);
+	RDS_VK_SET_DEBUG_LABEL(_vkGraphicsQueue,	RDS_DebugLabel("{}", DebugLabel_getName()), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_vkTransferQueue,	RDS_DebugLabel("{}", DebugLabel_getName()), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_vkComputeQueue,		RDS_DebugLabel("{}", DebugLabel_getName()), renderDeviceVk());
 }
 
 #if 1
@@ -294,7 +294,7 @@ TransferContext_Vk::onTransferCommand_DestroyRenderDevice(TransferCommand_Destro
 }
 
 void 
-TransferContext_Vk::onTransferCommand_SetDebugName(TransferCommand_SetDebugName* cmd)
+TransferContext_Vk::onTransferCommand_SetDebugLabel(TransferCommand_SetDebugLabel* cmd)
 {
 	auto* dst = cmd->dst.ptr();
 	dst->onRenderResouce_SetDebugName(cmd);

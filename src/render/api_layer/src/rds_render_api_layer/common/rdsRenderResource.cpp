@@ -39,14 +39,6 @@ RenderResource::create(RenderDevice* rdDev, bool isBypassChecking)
 }
 
 void 
-RenderResource::create(RenderDevice* rdDev, bool isBypassChecking, const SrcLoc& debugSrcLoc_)
-{
-	CreateDesc cDesc;
-	cDesc._internal_create(rdDev, isBypassChecking, debugSrcLoc_);
-	create(cDesc);
-}
-
-void 
 RenderResource::destroy()
 {
 	checkMainThreadExclusive(RDS_SRCLOC);
@@ -57,12 +49,12 @@ RenderResource::destroy()
 void 
 RenderResource::setDebugName(StrView name)
 {
-	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
+	#if RDS_ENABLE_DebugLabel
 	if (transferContextPtr())
 	{
 		transferContext().transferFrame().setRenderResourceDebugName(this, name);
 	}
-	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
+	#endif // RDS_ENABLE_DebugLabel
 }
 
 void 
@@ -80,7 +72,7 @@ RenderResource::setRenderResourceState(RenderResourceStateFlags state, u32 subRe
 }
 
 void 
-RenderResource::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+RenderResource::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
 {
 
 }
@@ -101,22 +93,6 @@ bool
 RenderResource::hasCreated() const
 {
 	return _rdDev != nullptr;
-}
-
-const char* 
-RenderResource::debugName() const
-{
-	return RDS_DebugLabel_GET_NAME(RDS_DebugLabel_VAR_NAME);
-}
-
-bool				
-RenderResource::Debug_hasName()			const
-{
-	#if RDS_ENABLE_DebugLabel
-	return StrUtil::len(debugName()) > 0;
-	#else
-	return false;
-	#endif // 0
 }
 
 RenderApiType			RenderResource::apiType()				const		{ return renderDevice()->apiType(); }

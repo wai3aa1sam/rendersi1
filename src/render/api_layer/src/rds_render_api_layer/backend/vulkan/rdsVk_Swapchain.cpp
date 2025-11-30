@@ -169,23 +169,22 @@ Vk_Swapchain::swapBuffers(Vk_Queue* presentVkQueue, Vk_Semaphore* vkWaitSmp)
 void 
 Vk_Swapchain::setDebugName(StrView name)
 {
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSurface);
+	RDS_VK_SET_DEBUG_LABEL(_vkSurface, RDS_DebugLabel("{}_vkSurface", name), renderDeviceVk());
 
 	for (size_t i = 0; i < _vkSwapchainImages.size(); i++)
 	{
-		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainImages[i]);
-		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainImageViews[i]);
+		RDS_VK_SET_DEBUG_LABEL(_vkSwapchainImages[i],		RDS_DebugLabel("{}_vkSwapchainImages[{}]",		name, i), renderDeviceVk());
+		RDS_VK_SET_DEBUG_LABEL(_vkSwapchainImageViews[i],	RDS_DebugLabel("{}_vkSwapchainImageViews[{}]",	name, i), renderDeviceVk());
 	}
 
 	for (size_t i = 0; i < _vkSwapchainFramebuffers.size(); i++)
 	{
-		RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkSwapchainFramebuffers[i]);
+		RDS_VK_SET_DEBUG_LABEL(_vkSwapchainFramebuffers[i],		RDS_DebugLabel("{}_vkSwapchainFramebuffers[{}]", name, i), renderDeviceVk());
 	}
 
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImage);
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkDepthImageView);
-
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkRdPass);
+	RDS_VK_SET_DEBUG_LABEL(_vkDepthImage,		RDS_DebugLabel("{}_vkDepthImage",		name), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_vkDepthImageView,	RDS_DebugLabel("{}_vkDepthImageView",	name), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_vkRdPass,			RDS_DebugLabel("{}_vkRdPass",			name),	renderDeviceVk());
 }
 
 bool findAvailableVkSurfaceFormat(VkSurfaceFormatKHR& out, Span<const VkSurfaceFormatKHR> src, VkFormat colorFormat, VkColorSpaceKHR colorSpace)
@@ -287,8 +286,7 @@ Vk_Swapchain::createSwapchain(Backbuffers* outBackbuffers, const Rect2f& framebu
 		for (size_t i = 0; i < outBackbuffers->imageCount(); i++)
 		{
 			auto* backbuffer = outBackbuffers->backbuffer(i);
-			TempString buf = backbuffer->debugName();
-			backbuffer->setDebugName(buf);
+			backbuffer->setDebugName(backbuffer->DebugLabel_getName());
 		}
 	}
 }

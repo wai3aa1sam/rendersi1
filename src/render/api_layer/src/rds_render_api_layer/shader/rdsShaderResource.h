@@ -902,7 +902,7 @@ inline
 bool 
 MultiShaderResources::setImageParam(StrView name, Texture* v, u32 mipLevel)
 {
-	RDS_CORE_ASSERT(v->hasMipmapView(),					"{} cannot use as image, no TextureUsageFlags::UnorderedAccess usageFlags", v->debugName());
+	RDS_CORE_ASSERT(v->hasMipmapView(),					"{} cannot use as image, no TextureUsageFlags::UnorderedAccess usageFlags", v->DebugLabel_getName());
 	RDS_CORE_ASSERT(mipLevel < v->mipmapViewCount(),	"mipLevel out of boundary");
 
 	#if RDS_SHADER_USE_BINDLESS

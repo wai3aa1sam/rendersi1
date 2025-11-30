@@ -83,7 +83,7 @@ private:
 	void loadVkDevFn	(Vk_ExtensionInfo& vkExtInfo);
 
 public:
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd);
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd);
 
 public:
 	virtual void _internal_waitGpuIdle();

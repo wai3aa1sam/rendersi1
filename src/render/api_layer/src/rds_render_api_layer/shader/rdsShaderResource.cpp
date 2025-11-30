@@ -326,7 +326,7 @@ ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass, u32 idx
 	auto* rdDev	= pass->shader()->renderDevice();
 
 	destroy();
-	throwIf(info->size == 0, "constbuffer size is 0");
+	throwIf(info->size == 0, "ConstBuffer size is 0");
 
 	//auto* rdDev		= pass->shader()->renderDevice();
 	auto bufSize	= info->size;
@@ -339,7 +339,7 @@ ShaderResources::ConstBuffer::create(const Info* info, ShaderPass* pass, u32 idx
 	auto bufCDesc = RenderGpuBuffer::makeCDesc();
 	bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Constant;
 	bufCDesc.bufSize	= bufSize;
-	_gpuBuffer = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("constBuf-{}-{}-{}", filename, info->name, idx), bufCDesc);
+	_gpuBuffer = rdDev->createRenderMultiGpuBuffer(RDS_DebugLabel("cBuf-{}-{}-{}", Path::basename(filename), info->name, idx), bufCDesc);
 }
 
 void 

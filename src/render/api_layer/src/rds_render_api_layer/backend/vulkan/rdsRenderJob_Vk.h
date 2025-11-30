@@ -53,7 +53,7 @@ protected:
 	virtual bool onCheckRenderCompleted() override;
 
 public:
-	//virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
+	//virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd) override;
 
 protected:
 	Vk_RenderFrame	_vk_rdFrame;

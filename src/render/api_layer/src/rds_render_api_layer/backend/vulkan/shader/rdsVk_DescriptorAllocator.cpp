@@ -132,7 +132,8 @@ Vk_DescriptorAllocator::alloc(Vk_DescriptorSet* oSet, const Vk_DescriptorSetLayo
 	Util::throwIfError(ret);
 	//Util::throwIfError(ret);
 	RDS_ASSERT(out, "alloc vkDescrSet failed");
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(out);
+	
+	RDS_VK_SET_DEBUG_LABEL(out, RDS_DebugLabel(), renderDeviceVk());
 }
 
 Vk_DescriptorPool*
@@ -147,7 +148,7 @@ Vk_DescriptorAllocator::requestPool()
 	else
 	{
 		createPool(&out, _cDesc.poolSizes, _cDesc.descrCount, _cDesc.cFlag, _rdDevVk);
-		RDS_VK_SET_DEBUG_NAME_FMT(*out, "VkDescPools[{}]", _pools.size());
+		RDS_VK_SET_DEBUG_LABEL(*out, RDS_DebugLabel("VkDescPools[{}]", _pools.size()), renderDeviceVk());
 	}
 
 	throwIf(!out, "requestPool() failed");

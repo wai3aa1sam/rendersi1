@@ -7,12 +7,13 @@ namespace rds
 template<class T>
 class ParamBuffer : public RenderApiLayerCommon_Base
 {
+	RDS_DebugLabel_COMMON_BODY();
 public:
 	//using T = Mat4f;
 
 public:
 	ParamBuffer();
-	void create(RDS_DebugLabel_PARAM, SizeType n);
+	void create(RDS_DebugLabel_PARAM);
 
 	T&	 add();
 	void popBack();
@@ -70,18 +71,9 @@ ParamBuffer<T>::ParamBuffer()
 
 template<class T> inline
 void 
-ParamBuffer<T>::create(RDS_DebugLabel_PARAM, SizeType n)
+ParamBuffer<T>::create(RDS_DebugLabel_PARAM)
 {
-	if (!_gpuBufs)
-	{
-		auto bufSize = n * sizeof(T);
-
-		auto cDesc = RenderGpuBuffer::makeCDesc();
-		cDesc.bufSize	= bufSize;
-		cDesc.stride	= sizeof(T);
-		cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute;
-		_gpuBufs = Renderer::renderDevice()->createRenderMultiGpuBuffer(RDS_DebugLabel_ARG, cDesc);
-	}
+	RDS_DebugLabel_ASSIGN();
 }
 
 template<class T> inline
@@ -129,6 +121,17 @@ ParamBuffer<T>::uploadToGpu()
 	{
 		return;
 	}*/
+
+	if (!_gpuBufs)
+	{
+		auto bufSize = cpuBuffer().size();
+
+		auto cDesc = RenderGpuBuffer::makeCDesc();
+		cDesc.bufSize	= bufSize;
+		cDesc.stride	= sizeof(T);
+		cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute;
+		_gpuBufs = Renderer::renderDevice()->createRenderMultiGpuBuffer(DebugLabel_get(), cDesc);
+	}
 
 	if (_isDirty)
 	{

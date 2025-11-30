@@ -5,30 +5,13 @@
 
 #if RDS_RENDER_HAS_VULKAN
 
-#if RDS_ENABLE_RenderResouce_DEBUG_NAME
+#if RDS_ENABLE_DebugLabel
 
-#define RDS_VK_SET_DEBUG_NAME_IMPL(VK_OBJ, NAME, RD_DEV_VK)						(VK_OBJ).setDebugName(NAME, RD_DEV_VK)
-#define RDS_VK_SET_DEBUG_NAME_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_)			RDS_VK_SET_DEBUG_NAME_IMPL		 (VK_OBJ,	::rds::fmtAs_T<::rds::TempString>("{}:{}-{}", SRCLOC_.func, SRCLOC_.line, RDS_STRINGIFY(VK_OBJ) ), renderDeviceVk() )
-#define RDS_VK_SET_DEBUG_NAME_SRCLOC(VK_OBJ)									RDS_VK_SET_DEBUG_NAME_SRCLOC_IMPL(VK_OBJ, renderDeviceVk(), RDS_SRCLOC)
-#define RDS_VK_SET_DEBUG_NAME(VK_OBJ, NAME)										RDS_VK_SET_DEBUG_NAME_IMPL		 (VK_OBJ, NAME, renderDeviceVk())
-
-#define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_, ...)	RDS_VK_SET_DEBUG_NAME_IMPL				(VK_OBJ, ::rds::fmtAs_T<::rds::TempString>("{}:{}-{}", SRCLOC_.func, SRCLOC_.line, ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__) ), RD_DEV_VK )
-#define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(VK_OBJ, SRCLOC_, ...)					RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL	(VK_OBJ, renderDeviceVk(), SRCLOC_, __VA_ARGS__)
-#define RDS_VK_SET_DEBUG_NAME_FMT_IMPL(VK_OBJ, RD_DEV_VK, ...)					RDS_VK_SET_DEBUG_NAME_IMPL				(VK_OBJ, ::rds::fmtAs_T<::rds::TempString>(__VA_ARGS__), RD_DEV_VK )
-#define RDS_VK_SET_DEBUG_NAME_FMT(VK_OBJ, ...)									RDS_VK_SET_DEBUG_NAME_FMT_IMPL			(VK_OBJ, renderDeviceVk(), __VA_ARGS__ )
+#define RDS_VK_SET_DEBUG_LABEL(hnd, v, rdDevVk) (hnd).setDebugLabel(v, rdDevVk);
 
 #else
 
-#define RDS_VK_SET_DEBUG_NAME_IMPL(VK_OBJ, NAME, RD_DEV_VK)						
-#define RDS_VK_SET_DEBUG_NAME_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_)			
-#define RDS_VK_SET_DEBUG_NAME_SRCLOC(VK_OBJ)									
-#define RDS_VK_SET_DEBUG_NAME(VK_OBJ, NAME)										
-
-#define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC_IMPL(VK_OBJ, RD_DEV_VK, SRCLOC_, ...)	
-#define RDS_VK_SET_DEBUG_NAME_FMT_SRCLOC(VK_OBJ, SRCLOC_, ...)					
-#define RDS_VK_SET_DEBUG_NAME_FMT_IMPL(VK_OBJ, RD_DEV_VK, ...)					
-#define RDS_VK_SET_DEBUG_NAME_FMT(VK_OBJ, ...)									
-
+#define RDS_VK_SET_DEBUG_LABEL(hnd, v, rdDevVk)
 
 #endif // RDS_DEVELOPMENT
 
@@ -110,6 +93,7 @@ class	Vk_Fence;
 template<class T, VkObjectType VK_OBJ_T> 
 class Vk_RenderApiPrimitive : public NC_RenderApiLayerCommon_Base
 {
+	RDS_DebugLabel_COMMON_BODY();
 public:
 	using Util		= Vk_RenderApiUtil;
 	using HndType	= T*;
@@ -127,17 +111,15 @@ public:
 	void destroy() 
 	{  
 		_hnd = VK_NULL_HANDLE;
-		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-		_debugName.clear();
-		#endif
 	}
 
-	void setDebugName(StrView name, RenderDevice_Vk* rdDevVk)
+	void setDebugLabel(RDS_DebugLabel_PARAM, RenderDevice_Vk* rdDevVk)
 	{
 		RDS_CORE_ASSERT(hnd(), "VkObjectType: {}, setDebugName, hnd == nullptr", enumInt(VK_OBJ_T));
-		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-		_debugName = name;
-		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), vkObjectType(), _debugName.c_str(), hnd());
+
+		RDS_DebugLabel_ASSIGN();
+		#if RDS_ENABLE_DebugLabel
+		Util::setDebugUtilObjectName(rdDevVk->vkDevice(), vkObjectType(), DebugLabel_getName(), hnd());
 		#endif // RDS_DEVELOPMENT
 	}
 
@@ -151,32 +133,16 @@ public:
 
 	explicit operator bool () const { return _hnd; }
 
-	const char* debugName() const
-	{
-		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-		return _debugName.c_str();
-		#else
-		return "";
-		#endif // 1
-	}
-
 protected:
 	void move(Vk_RenderApiPrimitive&& rhs) 
 	{
 		_hnd = rhs._hnd; 
 		rhs._hnd = VK_NULL_HANDLE;
-
-		#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-		_debugName = rds::move(rhs._debugName);
-		#endif
+		RDS_DebugLabel_ASSIGN_IMPL(RDS_DebugLabel_VAR_NAME, rds::move(rhs.RDS_DebugLabel_VAR_NAME));
 	}
 
 protected:
 	T*		_hnd = VK_NULL_HANDLE;
-
-	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-	TempString	_debugName;
-	#endif
 };
 
 #endif

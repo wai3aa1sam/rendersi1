@@ -1171,7 +1171,7 @@ void
 RenderContext_Vk::onRenderCommand_DebugLabelBegin(RenderCommand_DebugLabelBegin* cmd, void* userData)
 {
 	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
-	vkCmdBuf->beginDebugLabel(cmd->label);
+	vkCmdBuf->beginDebugLabel(cmd->DebugLabel_get());
 }
 
 void 
@@ -1185,25 +1185,22 @@ void
 RenderContext_Vk::onRenderCommand_DebugLabelInsert(	RenderCommand_DebugLabelInsert* cmd, void* userData)
 {
 	auto* vkCmdBuf = sCast<Vk_CommandBuffer*>(userData);
-	vkCmdBuf->insertDebugLabel(cmd->label);
+	vkCmdBuf->insertDebugLabel(cmd->DebugLabel_get());
 }
 
 #endif // 1
 
 
 void 
-RenderContext_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+RenderContext_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
 {
-	auto& name = cmd->name;
-
 	Base::onRenderResouce_SetDebugName(cmd);
 	
-	_vkSwapchain.setDebugName(name);
-
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkGraphicsQueue);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkComputeQueue);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkPresentQueue);
-	RDS_VK_SET_DEBUG_NAME_FMT(_vkTransferQueue);
+	RDS_VK_SET_DEBUG_LABEL(_vkSwapchain,		cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_vkGraphicsQueue,	cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_vkComputeQueue,		cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_vkPresentQueue,		cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_VK_SET_DEBUG_LABEL(_vkTransferQueue,	cmd->DebugLabel_get(), renderDeviceVk());
 }
 
 #endif

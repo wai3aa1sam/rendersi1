@@ -52,7 +52,7 @@ RpfPbrIbl::addPreparePass(Result* oResult, Texture2D* texHdrEnvMap, const Render
 
 	auto* result = oResult;
 
-	bool isFirst = createTexture(*result, texHdrEnvMap->debugName(), cubeSize, irradianceCubeSize);
+	bool isFirst = createTexture(*result, texHdrEnvMap->DebugLabel_getName(), cubeSize, irradianceCubeSize);
 	RdgPass* passPrefilteredEnvCube = nullptr;
 
 	SamplerState samplerState = SamplerState::makeLinearClampToEdge();
@@ -160,8 +160,7 @@ RpfPbrIbl::addBrdfLutPass(Texture2D* outBrdfLut, RdgPass* dependency)
 				rdReq.setScissorRect(viewport);
 
 				drawData->setupMaterial(mtl);
-				auto drawCall = rdReq.addDrawCall();
-				drawCall->setDebugSrcLoc(RDS_SRCLOC);
+				auto drawCall = rdReq.addDrawCall(RDS_DebugLabel());
 				drawCall->vertexCount = 3;
 				drawCall->setMaterial(mtl);
 			});
@@ -263,7 +262,7 @@ RpfPbrIbl::addRenderToCubePass(StrView name, TextureCube* outCube, Shader* shade
 						drawData->setupMaterial(mtl);
 						RDS_TODO("use a buffer to store matrix_vp and PerObjectParam to get the index");
 						mtl->setParam("matrix_vp", matrixVp);
-						rdReq.drawMesh(RDS_SRCLOC, box, mtl);
+						rdReq.drawMesh(RDS_DebugLabel(), box, mtl);
 					});
 
 				fmtToNew(renderToCubeName, "{}_tex-mip{}-face{}", name, mip, face);
@@ -276,7 +275,7 @@ RpfPbrIbl::addRenderToCubePass(StrView name, TextureCube* outCube, Shader* shade
 				passCopyPbrEnvToCube.setExecuteFunc(
 					[=](RenderRequest& rdReq)
 					{
-						rdReq.copyTexture(RDS_SRCLOC, outCube, texTempToCubeColor.renderResource(), sCast<u32>(viewport.w), sCast<u32>(viewport.h), 0, face, 0, mip);
+						rdReq.copyTexture(RDS_DebugLabel(), outCube, texTempToCubeColor.renderResource(), sCast<u32>(viewport.w), sCast<u32>(viewport.h), 0, face, 0, mip);
 					}
 				);
 

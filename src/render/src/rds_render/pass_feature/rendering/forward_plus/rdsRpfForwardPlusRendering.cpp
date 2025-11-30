@@ -123,7 +123,7 @@ RpfForwardPlusRendering::addMakeFrustumsPass(RdgBufferHnd& oBufFrustums)
 				mtl->setParam("oFrustums",			bufFrustums.renderResource());
 				mtl->setParam("oDebugFrustumsPts",	bufDebugFrustumsPts.renderResource());
 				drawData->setupMaterial(mtl);
-				rdReq.dispatch(RDS_SRCLOC, mtl, 0, Vec3u{nThreadGrps, 1});
+				rdReq.dispatch(RDS_DebugLabel(), mtl, 0, Vec3u{nThreadGrps, 1});
 			}
 		);
 		passMakeFrustums = &pass;
@@ -263,7 +263,7 @@ RpfForwardPlusRendering::addLightCullingPass(Result& oResult, RdgBufferHnd frust
 					mtl->setImage("debug_tex_lightHeatmap",		texLightHeatmap.renderResource(), 0);*/
 
 				drawData->setupMaterial(mtl);
-				rdReq.dispatch(RDS_SRCLOC, mtl, 0, Vec3u{nThreadGrps, 1});
+				rdReq.dispatch(RDS_DebugLabel(), mtl, 0, Vec3u{nThreadGrps, 1});
 			}
 		);
 		passLightCulling = &pass;
@@ -457,7 +457,7 @@ RpfForwardPlusRendering::addDrawLightHeatmapPass(RdgTextureHnd rtColor, Result& 
 				mtl->setParam("lightGrid",			lightGrid.renderResource());
 				//mtl->setParam("tex_color",			lightHeatmap.texture2D());
 				drawData->setupMaterial(mtl);
-				rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
+				rdReq.drawSceneQuad(RDS_DebugLabel(), mtl);
 				//drawData->drawScene(rdReq, mtl);
 			}
 		);
@@ -490,7 +490,7 @@ RpfForwardPlusRendering::addClearBufferPass(SPtr<Material>& material, RdgBufferH
 				mtl->setParam("clear_value",			u32(0));
 				mtl->setParam("buffer",					buffer.renderResource());
 				drawData->setupMaterial(mtl);
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{buferElementCount, 1, 1});
+				rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, Vec3u{buferElementCount, 1, 1});
 			}
 		);
 		passClearBuffer = &pass;
@@ -533,7 +533,7 @@ RpfForwardPlusRendering::addFwdpDebugBufferPass()
 				mtl->setParam("offsets",		offsets.renderResource());
 
 				drawData->setupMaterial(mtl);
-				rdReq.dispatch(RDS_SRCLOC, mtl, 0, dispatchGrp);
+				rdReq.dispatch(RDS_DebugLabel(), mtl, 0, dispatchGrp);
 			}
 		);
 		passFwdpDebugBuffer = &pass;

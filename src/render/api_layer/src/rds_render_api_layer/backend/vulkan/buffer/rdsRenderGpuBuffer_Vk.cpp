@@ -54,9 +54,6 @@ RenderGpuBuffer_Vk::onTransferCommand_Create(CmdCreate* cmd)
 	address_info.buffer = vkBufHnd();
 	_gpuAddress = sCast<u64>(vkGetBufferDeviceAddress(rdDevVk->vkDevice(), &address_info));
 
-	RDS_TODO("TransferCommand_setDebugName");
-	RDS_VK_SET_DEBUG_NAME_SRCLOC(_vkBuf);
-
 	renderDeviceVk()->bindlessResourceVk().onCommit_RenderGpuBuffer(this);
 }
 
@@ -84,12 +81,10 @@ RenderGpuBuffer_Vk::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 }
 
 void 
-RenderGpuBuffer_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+RenderGpuBuffer_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
 {
-	auto& name = cmd->name;
 	Base::onRenderResouce_SetDebugName(cmd);
-	//RDS_LOG_ERROR("onRenderResouce_SetDebugName: {}", name);
-	RDS_VK_SET_DEBUG_NAME(_vkBuf, name);
+	RDS_VK_SET_DEBUG_LABEL(_vkBuf, RDS_DebugLabel("{}_vkBuf", cmd->DebugLabel_getName()), renderDeviceVk());
 }
 
 

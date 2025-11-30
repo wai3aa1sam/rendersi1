@@ -386,7 +386,7 @@ DemoEditorLayer::drawUI(RenderContext* rdCtx, RenderJob* rdJob)
 						RenderRequest temp;
 						rdCtx->drawUI(temp);
 
-						rdReq.drawSceneQuad(RDS_SRCLOC, _mtl_screenQuad);
+						rdReq.drawSceneQuad(RDS_DebugLabel(), _mtl_screenQuad);
 					}
 					//rdReq.swapBuffers();
 				}

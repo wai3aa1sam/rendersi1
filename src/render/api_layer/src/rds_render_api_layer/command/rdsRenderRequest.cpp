@@ -66,115 +66,116 @@ RenderRequest::uploadToGpu()
 }
 
 void 
-RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u threadGrps)
+RenderRequest::dispatch(RDS_DebugLabel_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u threadGrps)
 {
 	auto* cmd = _rdCmdBuf.dispatch();
 	cmd->threadGroups		= threadGrps;
 	cmd->setMaterial(mtl, materialPassIdx);
 
-	RDS_RD_CMD_DEBUG_ASSIGN(cmd);
+	sCast<RenderCommand_Callable_Base*>(cmd)->_dblbl;
+	RDS_DebugLabel_ASSIGN_IMPL(cmd->RDS_DebugLabel_VAR_NAME, RDS_DebugLabel_ARG);
 }
 
 void 
-RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, u32 threadGrpsX, u32 threadGrpsY, u32 threadGrpsZ)
+RenderRequest::dispatch(RDS_DebugLabel_PARAM, Material* mtl, u32 materialPassIdx, u32 threadGrpsX, u32 threadGrpsY, u32 threadGrpsZ)
 {
-	dispatch(RDS_RD_CMD_DEBUG_ARG, mtl, materialPassIdx, Tuple3u{ threadGrpsX, threadGrpsY, threadGrpsZ });
+	dispatch(RDS_DebugLabel_ARG, mtl, materialPassIdx, Tuple3u{ threadGrpsX, threadGrpsY, threadGrpsZ });
 }
 
 void 
-RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 threadGrpsX, u32 threadGrpsY, u32 threadGrpsZ)
+RenderRequest::dispatch(RDS_DebugLabel_PARAM, Material* mtl, u32 threadGrpsX, u32 threadGrpsY, u32 threadGrpsZ)
 {
-	dispatch(RDS_RD_CMD_DEBUG_ARG, mtl, 0, threadGrpsX, threadGrpsY, threadGrpsZ);
+	dispatch(RDS_DebugLabel_ARG, mtl, 0, threadGrpsX, threadGrpsY, threadGrpsZ);
 }
 
 void 
-RenderRequest::dispatch(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u	threadGrps)
+RenderRequest::dispatch(RDS_DebugLabel_PARAM, Material* mtl, Tuple3u	threadGrps)
 {
-	dispatch(RDS_RD_CMD_DEBUG_ARG, mtl, 0, threadGrps);
+	dispatch(RDS_DebugLabel_ARG, mtl, 0, threadGrps);
 }
 
 void 
-RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total, Tuple3u nThreads)
+RenderRequest::dispatchExactThreadGroups(RDS_DebugLabel_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total, Tuple3u nThreads)
 {
 	auto nThreadGrps = computeExactThreadGroups(total, nThreads);
-	dispatch(RDS_RD_CMD_DEBUG_ARG, mtl, materialPassIdx, nThreadGrps);
+	dispatch(RDS_DebugLabel_ARG, mtl, materialPassIdx, nThreadGrps);
 }
 
 void 
-RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total)
+RenderRequest::dispatchExactThreadGroups(RDS_DebugLabel_PARAM, Material* mtl, u32 materialPassIdx, Tuple3u total)
 {
 	Tuple3u nThreads = mtl->getPass(materialPassIdx)->computeStage()->info().numthreads();
-	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, materialPassIdx, total, nThreads);
+	dispatchExactThreadGroups(RDS_DebugLabel_ARG, mtl, materialPassIdx, total, nThreads);
 }
 
 void 
-RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, Tuple3u total)
+RenderRequest::dispatchExactThreadGroups(RDS_DebugLabel_PARAM, Material* mtl, Tuple3u total)
 {
-	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, 0, total);
+	dispatchExactThreadGroups(RDS_DebugLabel_ARG, mtl, 0, total);
 }
 
 void 
-RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPropId& nameId, Tuple3u total, Tuple3u nThreads)
-{
-	RDS_CORE_ASSERT(mtl->isValidNameIdForPass(nameId), "invalid cs PropId");
-	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, mtl->shader()->getPassIndexBy(nameId), total, nThreads);
-}
-
-void 
-RenderRequest::dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_PARAM, Material* mtl, const ShaderPropId& nameId, Tuple3u total)
+RenderRequest::dispatchExactThreadGroups(RDS_DebugLabel_PARAM, Material* mtl, const ShaderPropId& nameId, Tuple3u total, Tuple3u nThreads)
 {
 	RDS_CORE_ASSERT(mtl->isValidNameIdForPass(nameId), "invalid cs PropId");
-	dispatchExactThreadGroups(RDS_RD_CMD_DEBUG_ARG, mtl, mtl->shader()->getPassIndexBy(nameId), total);
+	dispatchExactThreadGroups(RDS_DebugLabel_ARG, mtl, mtl->shader()->getPassIndexBy(nameId), total, nThreads);
 }
 
 void 
-RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl)
+RenderRequest::dispatchExactThreadGroups(RDS_DebugLabel_PARAM, Material* mtl, const ShaderPropId& nameId, Tuple3u total)
+{
+	RDS_CORE_ASSERT(mtl->isValidNameIdForPass(nameId), "invalid cs PropId");
+	dispatchExactThreadGroups(RDS_DebugLabel_ARG, mtl, mtl->shader()->getPassIndexBy(nameId), total);
+}
+
+void 
+RenderRequest::drawMesh(RDS_DebugLabel_PARAM, const RenderMesh& rdMesh, Material* mtl)
 {
 	for (auto& e : rdMesh.subMeshes())
 	{
 		auto* p = addDrawCall();
-		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, e, mtl);
+		drawSubMesh(RDS_DebugLabel_PARAM_NAME, p, e, mtl);
 	}
 }
 
 void 
-RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const PerObjectParam& perObjectParam)
+RenderRequest::drawMesh(RDS_DebugLabel_PARAM, const RenderMesh& rdMesh, Material* mtl, const PerObjectParam& perObjectParam)
 {
-	drawMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, rdMesh, mtl, perObjectParam);
+	drawMeshT(RDS_DebugLabel_PARAM_NAME, rdMesh, mtl, perObjectParam);
 }
 
 void 
-RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl
-						, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix)
+RenderRequest::drawMesh(RDS_DebugLabel_PARAM, const RenderMesh& rdMesh, Material* mtl
+	, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix)
 {
 	for (auto& e : rdMesh.subMeshes())
 	{
 		bool isOverlapped = cullingFrustum.isOverlapped(e.aabbox().makeExpanded(matrix), matrix);
 		if (isOverlapped)
 		{
-			drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, e, mtl, perObjectParam);
+			drawSubMeshT(RDS_DebugLabel_PARAM_NAME, e, mtl, perObjectParam);
 		}
 	}
 }
 
 void 
-RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl
-							, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix)
+RenderRequest::drawSubMesh(RDS_DebugLabel_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl
+	, const PerObjectParam& perObjectParam, const Frustum3f& cullingFrustum, const Mat4f& matrix)
 {
 	bool isOverlapped = cullingFrustum.isOverlapped(rdSubMesh.aabbox().makeExpanded(matrix), matrix);
 	if (isOverlapped)
 	{
-		drawSubMeshT(RDS_RD_CMD_DEBUG_PARAM_NAME, rdSubMesh, mtl, perObjectParam);
+		drawSubMeshT(RDS_DebugLabel_PARAM_NAME, rdSubMesh, mtl, perObjectParam);
 	}
 }
 
 void 
-RenderRequest::drawMesh_Instanced(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, SizeType instanceCount)
+RenderRequest::drawMesh_Instanced(RDS_DebugLabel_PARAM, const RenderMesh& rdMesh, Material* mtl, SizeType instanceCount)
 {
 	for (auto& e : rdMesh.subMeshes())
 	{
 		auto* p = addDrawCall();
-		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, e, mtl);
+		drawSubMesh(RDS_DebugLabel_PARAM_NAME, p, e, mtl);
 		p->instanceCount = instanceCount;
 	}
 }
@@ -205,8 +206,10 @@ RenderRequest::clearFramebuffers(const Color4f& color, float depth, u32 stencil)
 }
 
 void 
-RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl)
+RenderRequest::drawSubMesh(RDS_DebugLabel_PARAM, RenderCommand_DrawCall* p, const RenderSubMesh& rdSubMesh, Material* mtl)
 {
+	RDS_DebugLabel_CREATE(*p, RDS_DebugLabel_ARG);
+
 	/*
 	* support no vtx / idx buffer draw
 	*/
@@ -214,8 +217,6 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, co
 	//	return;
 
 	auto& e = rdSubMesh;
-	
-	RDS_RD_CMD_DEBUG_ASSIGN(p);
 
 	p->indexType			= e.indexType();
 	p->renderPrimitiveType	= e.renderPrimitiveType();
@@ -228,13 +229,13 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, RenderCommand_DrawCall* p, co
 	p->vertexBuffer = parent.vertexBuffer();
 	p->vertexCount  = e.vertexCount();
 	p->vertexOffset = e.vertexOffsetInByte();
-	
+
 	p->indexBuffer	= parent.indexBuffer();
 	p->indexCount	= e.indexCount();
 	p->indexOffset	= e.indexOffsetInByte();
 }
 
-void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, Tuple3u extent, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
+void RenderRequest::copyTexture(RDS_DebugLabel_PARAM, Texture* dst, Texture* src, Tuple3u extent, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
 {
 	RDS_CORE_ASSERT(extent.x <= src->size().x && extent.y <= src->size().y && extent.z <= src->size().z, "invalid extent");
 
@@ -249,28 +250,30 @@ void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* s
 
 	cmd->dstLayer = dstLayer;
 	cmd->dstMip	  = dstMip;
+
+	RDS_DebugLabel_CREATE(*cmd, RDS_DebugLabel_ARG);
 }
 
-void RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 width, u32 height, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
+void RenderRequest::copyTexture(RDS_DebugLabel_PARAM, Texture* dst, Texture* src, u32 width, u32 height, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
 {
-	copyTexture(RDS_RD_CMD_DEBUG_ARG, dst, src, Tuple3u{width, height, 1}, srcLayer, dstLayer, srcMip, dstMip);
+	copyTexture(RDS_DebugLabel_ARG, dst, src, Tuple3u{width, height, 1}, srcLayer, dstLayer, srcMip, dstMip);
 }
 
 void 
-RenderRequest::copyTexture(RDS_RD_CMD_DEBUG_PARAM, Texture* dst, Texture* src, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
+RenderRequest::copyTexture(RDS_DebugLabel_PARAM, Texture* dst, Texture* src, u32 srcLayer, u32 dstLayer, u32 srcMip, u32 dstMip)
 {
-	copyTexture(RDS_RD_CMD_DEBUG_ARG, dst, src, src->size(), srcLayer, dstLayer, srcMip, dstMip);
+	copyTexture(RDS_DebugLabel_ARG, dst, src, src->size(), srcLayer, dstLayer, srcMip, dstMip);
 }
 
 void 
-RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl)
+RenderRequest::present(RDS_DebugLabel_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl)
 {
 	_notYetSupported(RDS_SRCLOC);
-	drawMesh(RDS_RD_CMD_DEBUG_ARG, fullScreenTriangle, presentMtl);
+	drawMesh(RDS_DebugLabel_ARG, fullScreenTriangle, presentMtl);
 }
 
 void 
-RenderRequest::present(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY)
+RenderRequest::present(RDS_DebugLabel_PARAM, const RenderMesh& fullScreenTriangle, Material* presentMtl, bool isFlipY)
 {
 	_notYetSupported(RDS_SRCLOC);
 }
@@ -420,12 +423,10 @@ RenderRequest::drawBox(const Vec3f pts[AABBox3f::s_kVertexCount], const Color4b&
 }
 
 void 
-RenderRequest::drawSceneQuad(RDS_RD_CMD_DEBUG_PARAM, Material* mtl)
+RenderRequest::drawSceneQuad(RDS_DebugLabel_PARAM, Material* mtl)
 {
 	auto* p = addDrawCall();
-	RDS_RD_CMD_DEBUG_ASSIGN(p);
 
-	p->setDebugSrcLoc(RDS_SRCLOC);
 	p->vertexCount = 3;
 	p->setMaterial(mtl);
 }
@@ -477,22 +478,21 @@ void
 RenderRequest::debugLabelBegin(StrView name, const Color4f& color)
 {
 	auto* cmd = commandBuffer().newCommand<RenderCommand_DebugLabelBegin>();
-	cmd->label.setName(name);
-	cmd->label.color = color;
+	RDS_DebugLabel_CREATE(*cmd, RDS_DebugLabel_C(color, "{}", name));
 }
 
 void 
 RenderRequest::debugLabelEnd()
 {
 	auto* cmd = commandBuffer().newCommand<RenderCommand_DebugLabelEnd>(); RDS_UNUSED(cmd);
+	RDS_DebugLabel_CREATE(*cmd, RDS_DebugLabel());
 }
 
 void 
 RenderRequest::debugLabelInsert(StrView name, const Color4f& color)
 {
 	auto* cmd = commandBuffer().newCommand<RenderCommand_DebugLabelInsert>();
-	cmd->label.setName(name);
-	cmd->label.color = color;
+	RDS_DebugLabel_CREATE(*cmd, RDS_DebugLabel_C(color, "{}", name));
 }
 
 #if 0
@@ -534,7 +534,7 @@ RenderRequest::setMaterialCommonParams(Material* mtl, const Mat4f& transform)
 }
 
 void 
-RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform)
+RenderRequest::drawSubMesh(RDS_DebugLabel_PARAM, const RenderSubMesh& rdSubMesh, Material* mtl, const Mat4f& transform)
 {
 	//if (!rdSubMesh.vertexBuffer() || !rdSubMesh.indexBuffer())
 	//	return;
@@ -542,15 +542,15 @@ RenderRequest::drawSubMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderSubMesh& rdSubMes
 
 	auto* p = addDrawCall();
 	setMaterialCommonParams(mtl, transform);
-	drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, p, rdSubMesh, mtl);
+	drawSubMesh(RDS_DebugLabel_PARAM_NAME, p, rdSubMesh, mtl);
 }
 
 void 
-RenderRequest::drawMesh(RDS_RD_CMD_DEBUG_PARAM, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)
+RenderRequest::drawMesh(RDS_DebugLabel_PARAM, const RenderMesh& rdMesh, Material* mtl, const Mat4f& transform)
 {
 	for (auto& e : rdMesh.subMeshes())
 	{
-		drawSubMesh(RDS_RD_CMD_DEBUG_PARAM_NAME, e, mtl, transform);
+		drawSubMesh(RDS_DebugLabel_PARAM_NAME, e, mtl, transform);
 	}
 }
 #endif // 0

@@ -37,8 +37,8 @@ CRenderableSystem::create(EngineContext* egCtx)
 {
 	Base::create(egCtx);
 
-	_objTransformBuf.create(RDS_DebugLabel("rds_objTransforms"),	s_kDefaultEntityCount);
-	_drawPramBuf.create(	RDS_DebugLabel("rds_drawPrams"),		s_kDefaultEntityCount);
+	_objTransformBuf.create(RDS_DebugLabel("rds_objTransforms"));
+	_drawPramBuf.create(	RDS_DebugLabel("rds_drawPrams"));
 }
 
 void 

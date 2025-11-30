@@ -32,7 +32,7 @@ public:
 public:
 	virtual void onTransferCommand_Create(CmdCreate* cmd) override;
 	virtual void onTransferCommand_Destroy() override;
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd) override;
+	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd) override;
 
 public:
 	virtual bool isNull() const;
@@ -138,19 +138,18 @@ Texture_Vk<TEX_BASE>::onUploadToGpu(CreateDesc& cDesc, TransferCommand_UploadTex
 
 template<class TEX_BASE> inline 
 void 
-Texture_Vk<TEX_BASE>::onRenderResouce_SetDebugName(TransferCommand_SetDebugName* cmd)
+Texture_Vk<TEX_BASE>::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
 {
-	auto& name = cmd->name;
 	Base::onRenderResouce_SetDebugName(cmd);
 
 	if (_vkImage.hnd())
 	{
-		RDS_VK_SET_DEBUG_NAME_FMT(_vkImage,				"{}-{}-[{}:{}]",		name, "_vkImage",				RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+		RDS_VK_SET_DEBUG_LABEL(_vkImage, RDS_DebugLabel("{}_vkImage", cmd->DebugLabel_getName()), renderDeviceVk());
 	}
 
 	if (_srvVkImageView.hnd())
 	{
-		RDS_VK_SET_DEBUG_NAME_FMT(_srvVkImageView,		"{}-{}-[{}:{}]",		name, "_srvVkImageView",		RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+		RDS_VK_SET_DEBUG_LABEL(_srvVkImageView, RDS_DebugLabel("{}_srvVkImageView", cmd->DebugLabel_getName()), renderDeviceVk());
 	}
 
 	u32 i = 0;
@@ -158,7 +157,7 @@ Texture_Vk<TEX_BASE>::onRenderResouce_SetDebugName(TransferCommand_SetDebugName*
 	{
 		if (!e.hnd())
 			continue;
-		RDS_VK_SET_DEBUG_NAME_FMT(_uavVkImageViews[i],	"{}-{}-mip{}-[{}:{}]",	name, "_uavVkImageViews", i,	RDS_DEBUG_SRCLOC.func, RDS_DEBUG_SRCLOC.line);
+		RDS_VK_SET_DEBUG_LABEL(_uavVkImageViews[i], RDS_DebugLabel("{}_uavVkImageViews_mip{}", cmd->DebugLabel_getName(), i), renderDeviceVk());
 		++i;
 	}
 }

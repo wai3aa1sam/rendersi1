@@ -282,7 +282,7 @@ GraphicsDemo::addSkyboxPass(RenderGraph* oRdGraph, DrawData* drawData, TextureCu
 
 			mtl->setParam("skybox", texSkybox);
 			drawData->setupMaterial(mtl);
-			rdReq.drawMesh(RDS_SRCLOC, meshAssets().box->renderMesh, mtl);
+			rdReq.drawMesh(RDS_DebugLabel(), meshAssets().box->renderMesh, mtl);
 		});
 	return &skyboxPass;
 }
@@ -313,7 +313,7 @@ GraphicsDemo::addPostProcessingPass(RenderGraph* oRdGraph, DrawData* drawData, R
 				mtl->setImage("out_image", dstColor.texture2D(), 0);
 
 				drawData->setupMaterial(mtl);
-				rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, Vec3u{ screenSize, 1 });
+				rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, Vec3u{ screenSize, 1 });
 			});
 		passPostProcessing = &pass;
 	}

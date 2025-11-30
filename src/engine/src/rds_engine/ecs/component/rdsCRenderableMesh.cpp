@@ -72,12 +72,12 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawDat
 		{
 			if (subMeshIndex == s_kInvalidSubMeshIndex)
 			{
-				rdReq.drawMesh(RDS_RD_CMD_DEBUG_ARG, rdMesh, mtl, perObjParam);
+				rdReq.drawMesh(RDS_DebugLabel(), rdMesh, mtl, perObjParam);
 			}
 			else
 			{
 				auto& subMesh = rdMesh.subMeshes()[subMeshIndex];
-				rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+				rdReq.drawSubMeshT(RDS_DebugLabel(), subMesh, mtl, perObjParam);
 			}
 		} break;
 
@@ -91,7 +91,7 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawDat
 					bool isOverlapped = cullingFrustum.isOverlapped(subMesh.aabbox(), matrix);
 					if (isOverlapped)
 					{
-						rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+						rdReq.drawSubMeshT(RDS_DebugLabel(), subMesh, mtl, perObjParam);
 					}
 				}
 			}
@@ -101,7 +101,7 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawDat
 				bool isOverlapped = cullingFrustum.isOverlapped(subMesh.aabbox(), matrix);
 				if (isOverlapped)
 				{
-					rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+					rdReq.drawSubMeshT(RDS_DebugLabel(), subMesh, mtl, perObjParam);
 				}
 				else
 				{
@@ -119,7 +119,7 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawDat
 					bool isOverlapped = aabbox.isOverlapped(subMesh.aabbox().makeExpanded(matrix));
 					if (isOverlapped)
 					{
-						rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+						rdReq.drawSubMeshT(RDS_DebugLabel(), subMesh, mtl, perObjParam);
 					}
 				}
 			}
@@ -129,7 +129,7 @@ CRenderableMesh::onRender(RenderRequest& rdReq, Material* mtl, DrawData* drawDat
 				bool isOverlapped = aabbox.isOverlapped(subMesh.aabbox().makeExpanded(matrix));
 				if (isOverlapped)
 				{
-					rdReq.drawSubMeshT(RDS_RD_CMD_DEBUG_ARG, subMesh, mtl, perObjParam);
+					rdReq.drawSubMeshT(RDS_DebugLabel(), subMesh, mtl, perObjParam);
 					//RDS_LOG("isOverlapped: {}", entity().name());
 				}
 			}

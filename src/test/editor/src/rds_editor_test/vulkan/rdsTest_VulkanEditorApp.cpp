@@ -255,19 +255,19 @@ public:
 
 		#if 1
 		{
-			_testShader = Renderer::renderDevice()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
+			_testShader = Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
 			_testShader->makeCDesc();
 
-			_testMaterial = Renderer::renderDevice()->createMaterial();
+			_testMaterial = Renderer::renderDevice()->createMaterial(RDS_DebugLabel());
 			_testMaterial->setShader(_testShader);
 
 			auto texCDesc = Texture2D::makeCDesc();
 
 			texCDesc.create("asset/texture/uvChecker.png");
-			_uvCheckerTex = Renderer::renderDevice()->createTexture2D(texCDesc);
+			_uvCheckerTex = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
 
 			texCDesc.create("asset/texture/uvChecker2.png");
-			_uvChecker2Tex = Renderer::renderDevice()->createTexture2D(texCDesc);
+			_uvChecker2Tex = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
 		}
 		#endif // 0
 
@@ -470,12 +470,12 @@ public:
 				{
 					auto data			= makeRndColorTriangleData(z);
 
-					auto bufCDesc		= RenderGpuBuffer_CreateDesc { RDS_SRCLOC };
+					auto bufCDesc		= RenderGpuBuffer_CreateDesc {};
 					bufCDesc.bufSize	= data.size();
 					bufCDesc.stride		= getVertexLayout_RndColorTriangle()->stride();
 					bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 
-					buf = RenderMultiGpuBuffer::make(bufCDesc);
+					buf = RenderMultiGpuBuffer::make(RDS_DebugLabel(), bufCDesc);
 				};
 			makeBuf(_testMultiBuffer);
 			makeBuf(_testMultiBuffer2, 0.5f);
@@ -496,25 +496,25 @@ public:
 
 		{
 			{
-				auto bufCDesc = RenderGpuBuffer_CreateDesc { RDS_SRCLOC };
+				auto bufCDesc = RenderGpuBuffer_CreateDesc {};
 				//Vector<u16, 6> indices = { 0, 1, 2, 2, 3, 0 };
 				Vector<u16, 6> indices = { 0, 2, 1, 2, 0, 3 };
 
 				bufCDesc.stride		= RenderDataTypeUtil::getByteSize(RenderDataTypeUtil::get<u16>());
 				bufCDesc.bufSize	= indices.size() * bufCDesc.stride;
 				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Index;
-				_testIdxBuf			= RenderGpuBuffer::make(bufCDesc);
+				_testIdxBuf			= RenderGpuBuffer::make(RDS_DebugLabel(), bufCDesc);
 				_testIdxBuf->uploadToGpu(indices.byteSpan());
 			}
 			{
 				auto data			= makeRndColorTriangleData();
 
-				auto bufCDesc = RenderGpuBuffer_CreateDesc { RDS_SRCLOC };
+				auto bufCDesc = RenderGpuBuffer_CreateDesc {};
 				bufCDesc.bufSize	= data.size();
 				bufCDesc.stride		= getVertexLayout_RndColorTriangle()->stride();
 				bufCDesc.typeFlags	= RenderGpuBufferTypeFlags::Vertex;
 
-				_testVtxBuf = RenderGpuBuffer::make(bufCDesc);
+				_testVtxBuf = RenderGpuBuffer::make(RDS_DebugLabel(), bufCDesc);
 				_testVtxBuf->uploadToGpu(data.byteSpan());
 			}
 		}

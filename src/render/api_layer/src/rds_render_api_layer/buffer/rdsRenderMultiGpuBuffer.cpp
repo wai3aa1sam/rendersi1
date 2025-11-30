@@ -95,9 +95,6 @@ void RenderMultiGpuBuffer::onDestroy()
 void 
 RenderMultiGpuBuffer::setDebugName(StrView name)
 {
-	#if RDS_ENABLE_RenderResouce_DEBUG_NAME
-	_debugName = name;
-	#endif // RDS_ENABLE_RenderResouce_DEBUG_NAME
 	if (auto* p = renderGpuBuffer())
 	{
 		p->setDebugName(name);
@@ -114,9 +111,7 @@ RenderMultiGpuBuffer::makeBufferOnDemand(SizeType bufSize)
 	auto idx = s_bufferIndex(_i_buffer);
 	if (!_renderGpuBuffers[idx] || _renderGpuBuffers[idx]->bufSize() < bufSize) // _renderGpuBuffers.size() < (idx + 1) || 
 	{
-		//_renderGpuBuffers.resize(s_kMaxFrameAheadCountHardLimit);
 		_renderGpuBuffers[idx] = _makeNewBuffer(bufSize);
-		_renderGpuBuffers[idx]->setDebugName(fmtAs_T<TempString>("{}-{}", debugName(), idx));
 		//RDS_LOG_ERROR("created: {}-{}", debugName(), idx);
 	}
 	return _renderGpuBuffers[idx];

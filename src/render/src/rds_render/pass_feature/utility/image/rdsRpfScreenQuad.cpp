@@ -51,7 +51,7 @@ RpfScreenQuad::addDrawScreenQuadPass(SPtr<Material>& mtl_, RdgTextureHnd rtColor
 			{
 				mtl->setParam("tex_color", texColor.texture2D());
 				drawData->setupMaterial(mtl);
-				rdReq.drawSceneQuad(RDS_SRCLOC, mtl);
+				rdReq.drawSceneQuad(RDS_DebugLabel(), mtl);
 			}
 		);
 		passScreenQuad = &pass;

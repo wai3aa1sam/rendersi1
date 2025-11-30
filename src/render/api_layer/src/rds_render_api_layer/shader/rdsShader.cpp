@@ -74,10 +74,12 @@ Shader::onCreate(const CreateDesc& cDesc)
 
 	_shadername = filename;
 
-	if (Debug_hasName())
+	#if RDS_ENABLE_DebugLabel
+	if (DebugLabel_hasName())
 	{
 		setDebugName(filename);
 	}
+	#endif // 0
 
 	if (cDesc.permuts)
 	{

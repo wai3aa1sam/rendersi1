@@ -137,19 +137,19 @@ public:
 	StagingHandle _stagingHnd;
 };
 
-class TransferCommand_SetDebugName : public TransferCommand
+class TransferCommand_SetDebugLabel : public TransferCommand
 {
+	RDS_DebugLabel_COMMON_BODY();
 public:
 	using Base = TransferCommand;
 	using This = TransferCommand_SetSwapchainSize;
 
 public:
-	TransferCommand_SetDebugName() : Base(Type::SetDebugName) {}
-	virtual ~TransferCommand_SetDebugName() {};
+	TransferCommand_SetDebugLabel() : Base(Type::SetDebugLabel) {}
+	virtual ~TransferCommand_SetDebugLabel() {};
 
 public:
 	SPtr<RenderResource>	dst	= nullptr;
-	TempString				name;
 };
 
 class TransferCommand_SetSwapchainSize : public TransferCommand

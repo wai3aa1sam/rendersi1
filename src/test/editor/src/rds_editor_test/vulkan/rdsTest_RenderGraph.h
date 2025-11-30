@@ -177,7 +177,7 @@ public:
 			for (size_t i = 0; i < s_kObjectCount; i++)
 			{
 				auto& dst = _mtls.emplace_back();
-				dst	= Renderer::renderDevice()->createMaterial(mtl->shader());
+				dst	= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), mtl->shader());
 			}
 		}
 
@@ -200,11 +200,11 @@ public:
 					{
 						(*setMtlFn)(srcMtl, sCast<int>(i));
 					}
-					//rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, matModel);
+					//rdReq.drawMesh(RDS_DebugLabel(), meshAssets.sphere, srcMtl, matModel);
 
 					PerObjectParam perObjectParam;
 					perObjectParam.id = sCast<u32>(i);
-					rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, srcMtl, perObjectParam);
+					rdReq.drawMesh(RDS_DebugLabel(), meshAssets.sphere, srcMtl, perObjectParam);
 					//rdReq.setMaterialCommonParams(srcMtl, matModel);
 				}
 			}
@@ -327,13 +327,13 @@ public:
 			{
 				rdReq.reset(rdGraph->renderContext());
 
-				auto mtl = Renderer::renderDevice()->createMaterial(_shaderBrdfLut);
+				auto mtl = Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _shaderBrdfLut);
 
 				rdReq.setViewport(viewport);
 				rdReq.setScissorRect(viewport);
 
 				//rdReq.setMaterialCommonParams(mtl, Mat4f::s_identity());
-				rdReq.drawMesh(RDS_SRCLOC, meshAssets.fullScreenTriangle, mtl);
+				rdReq.drawMesh(RDS_DebugLabel(), meshAssets.fullScreenTriangle, mtl);
 			});
 
 		auto& passEnvMapTransit = rdGraph->addPass("brdfLut_transit", RdgPassTypeFlags::Graphics);
@@ -367,7 +367,7 @@ public:
 				mtls.resize(TextureCube::s_kFaceCount * mipCount);
 				for (auto& e : mtls)
 				{
-					e = Renderer::renderDevice()->createMaterial(shader);
+					e = Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), shader);
 				}
 			}
 
@@ -376,7 +376,7 @@ public:
 
 			RdgPass* lastCopyPass = nullptr;
 			RdgTextureHnd texTempToCubeColor = rdGraph->createTexture(renderToCubeName
-						, Texture2D_CreateDesc{ sCast<u32>(cubeSize), sCast<u32>(cubeSize), outFormat, TextureUsageFlags::RenderTarget | TextureUsageFlags::TransferSrc});
+				, Texture2D_CreateDesc{ sCast<u32>(cubeSize), sCast<u32>(cubeSize), outFormat, TextureUsageFlags::RenderTarget | TextureUsageFlags::TransferSrc});
 
 			for (u32 mip = 0; mip < mipCount; mip++)
 			{
@@ -419,7 +419,7 @@ public:
 							rdReq.setScissorRect(viewport);
 							//rdReq.matrix_proj = matProj;
 							//rdReq.matrix_view = matView;
-							rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
+							rdReq.drawMesh(RDS_DebugLabel(), meshAssets.box, mtl);
 						});
 
 					fmtToNew(renderToCubeName, "{}_tex-m{}-f{}", name, mip, face);
@@ -432,7 +432,7 @@ public:
 					passCopyPbrEnvToCube.setExecuteFunc(
 						[=](RenderRequest& rdReq)
 						{
-							rdReq.copyTexture(RDS_SRCLOC, outCube, texTempToCubeColor.renderResource(), sCast<u32>(viewport.w), sCast<u32>(viewport.h), 0, face, 0, mip);
+							rdReq.copyTexture(RDS_DebugLabel(), outCube, texTempToCubeColor.renderResource(), sCast<u32>(viewport.w), sCast<u32>(viewport.h), 0, face, 0, mip);
 						}
 					);
 
@@ -486,58 +486,58 @@ public:
 			auto texCDesc = Texture2D::makeCDesc();
 
 			texCDesc.create("asset/texture/uvChecker.png");
-			_uvCheckerTex = Renderer::renderDevice()->createTexture2D(texCDesc);
+			_uvCheckerTex = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
 			_uvCheckerTex->setDebugName("uvChecker");
 
 			texCDesc.create("asset/texture/uvChecker2.png");
-			_uvCheckerTex2 = Renderer::renderDevice()->createTexture2D(texCDesc);
+			_uvCheckerTex2 = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
 			_uvCheckerTex2->setDebugName("uvChecker2");
 		}
 
 		{
 			if (false)
 			{
-				_testShader = Renderer::renderDevice()->createShader("asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
-				_testMtl = Renderer::renderDevice()->createMaterial();
+				_testShader = Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/test/test_texture.shader"); RDS_UNUSED(_testShader);
+				_testMtl = Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _testShader);
 				_testMtl->setShader(_testShader);
 				_testMtl->setParam("texture0", _uvCheckerTex);
 			}
 
-			_testComputeShader	= Renderer::renderDevice()->createShader("asset/shader/test/test_compute_bindless.shader");
-			_testComputeMtl		= Renderer::renderDevice()->createMaterial(_testComputeShader);
+			_testComputeShader	= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/test/test_compute_bindless.shader");
+			_testComputeMtl		= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _testComputeShader);
 			//testCompute(&_rdGraph, nullptr, true);
 
-			_shaderTestBindless	= Renderer::renderDevice()->createShader("asset/shader/test/test_bindless.shader");
-			_mtlTestBindless	= Renderer::renderDevice()->createMaterial(_shaderTestBindless);
+			_shaderTestBindless	= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/test/test_bindless.shader");
+			_mtlTestBindless	= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _shaderTestBindless);
 
-			auto bufCDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+			auto bufCDesc = RenderGpuBuffer::makeCDesc();
 			bufCDesc.typeFlags		= RenderGpuBufferTypeFlags::Compute;
 			bufCDesc.bufSize		= sizeof(TestBindlessBuffer) * RDS_TEST_BUFFER_ELEMENT_COUNT;
 
 			/*static SPtr<RenderGpuBuffer> k;
 			k = Renderer::renderDevice()->createRenderGpuBuffer(bufCDesc);*/
 
-			_testBindlessBuffer		= Renderer::renderDevice()->createRenderGpuBuffer(bufCDesc);
-			_testBindlessRwBuffer	= Renderer::renderDevice()->createRenderGpuBuffer(bufCDesc);
+			_testBindlessBuffer		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel(), bufCDesc);
+			_testBindlessRwBuffer	= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel(), bufCDesc);
 		}
 
 		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
 		_fullScreenTriangle.create(fullScreenTriangleMesh);
 
-		_preDepthShader = Renderer::renderDevice()->createShader("asset/shader/preDepth.shader");
-		_preDepthMtl	= Renderer::renderDevice()->createMaterial(_preDepthShader);
+		_preDepthShader = Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/preDepth.shader");
+		_preDepthMtl	= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _preDepthShader);
 
-		_gBufferShader	= Renderer::renderDevice()->createShader("asset/shader/gBuffer.shader");
-		_gBufferMtl		= Renderer::renderDevice()->createMaterial(_gBufferShader);
+		_gBufferShader	= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/gBuffer.shader");
+		_gBufferMtl		= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _gBufferShader);
 
-		_presentShader	= Renderer::renderDevice()->createShader("asset/shader/present.shader");
-		_presentMtl		= Renderer::renderDevice()->createMaterial(_presentShader);
+		_presentShader	= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/present.shader");
+		_presentMtl		= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _presentShader);
 		_presentMtl->setParam("texture0", _uvCheckerTex);
 
 
 		{
-			_shaderSkybox	= Renderer::renderDevice()->createShader("asset/shader/skybox.shader");
-			_mtlSkybox		= Renderer::renderDevice()->createMaterial();
+			_shaderSkybox	= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/skybox.shader");
+			_mtlSkybox		= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _shaderSkybox);
 			_mtlSkybox->setShader(_shaderSkybox);
 
 			auto texCDesc = TextureCube::makeCDesc();
@@ -550,20 +550,20 @@ public:
 			filenames.emplace_back("asset/texture/skybox/default/back.png");
 
 			texCDesc.create(filenames);
-			_texDefaultSkybox = Renderer::renderDevice()->createTextureCube(texCDesc);
+			_texDefaultSkybox = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel(), texCDesc);
 			_texDefaultSkybox->setDebugName("default_skybox");
 		}
 
 		{
-			_shaderPbr					= Renderer::renderDevice()->createShader("asset/shader/pbr/pbrBasic.shader");
-			_shaderPbrIbl				= Renderer::renderDevice()->createShader("asset/shader/pbr/pbrIbl.shader");
-			_shaderHdrToCube			= Renderer::renderDevice()->createShader("asset/shader/pbr/hdrToCube.shader");
-			_shaderIrradianceEnvCube	= Renderer::renderDevice()->createShader("asset/shader/pbr/irradianceEnvCube.shader");
-			_shaderPrefilteredEnvCube	= Renderer::renderDevice()->createShader("asset/shader/pbr/PrefilteredEnvCube.shader");
-			_shaderBrdfLut				= Renderer::renderDevice()->createShader("asset/shader/pbr/brdfLut.shader");
+			_shaderPbr					= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/pbr/pbrBasic.shader");
+			_shaderPbrIbl				= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/pbr/pbrIbl.shader");
+			_shaderHdrToCube			= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/pbr/hdrToCube.shader");
+			_shaderIrradianceEnvCube	= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/pbr/irradianceEnvCube.shader");
+			_shaderPrefilteredEnvCube	= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/pbr/PrefilteredEnvCube.shader");
+			_shaderBrdfLut				= Renderer::renderDevice()->createShader(RDS_DebugLabel(), "asset/shader/pbr/brdfLut.shader");
 
-			_mtlPbr			= Renderer::renderDevice()->createMaterial(_shaderPbr);
-			_mtlPbrIbl		= Renderer::renderDevice()->createMaterial(_shaderPbrIbl);
+			_mtlPbr			= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _shaderPbr);
+			_mtlPbrIbl		= Renderer::renderDevice()->createMaterial(RDS_DebugLabel(), _shaderPbrIbl);
 
 			SamplerState samplerState;
 			samplerState.wrapU = SamplerWrap::ClampToEdge;
@@ -572,25 +572,25 @@ public:
 
 			auto texCDesc = Texture2D::makeCDesc();
 			texCDesc.create("asset/texture/hdr/newport_loft.hdr");
-			_texHdrEnvMap = Renderer::renderDevice()->createTexture2D(texCDesc);
+			_texHdrEnvMap = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
 			_texHdrEnvMap->setDebugName("texHdrEnvMap");
 
 			auto texCubeCDesc = TextureCube::makeCDesc();
 			texCubeCDesc.create(512, ColorType::RGBAf, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubeEnvMap = Renderer::renderDevice()->createTextureCube(texCubeCDesc);
+			_texCubeEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel(), texCubeCDesc);
 			_texCubeEnvMap->setDebugName("texCubeHdrEnvMap");
 
 			texCubeCDesc.create(32, ColorType::RGBAf, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubeIrradianceEnvMap = Renderer::renderDevice()->createTextureCube(texCubeCDesc);
+			_texCubeIrradianceEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel(), texCubeCDesc);
 			_texCubeIrradianceEnvMap->setDebugName("texCubeIrradianceEnvMap");
-			
+
 			texCubeCDesc.create(512, ColorType::RGBAh, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubePrefilteredEnvMap = Renderer::renderDevice()->createTextureCube(texCubeCDesc);
+			_texCubePrefilteredEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel(), texCubeCDesc);
 			_texCubePrefilteredEnvMap->setDebugName("texCubePrefilteredEnvMap");
 
 			texCDesc = Texture2D_CreateDesc{ Tuple2u{ 512, 512 }, ColorType::RGh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource, samplerState };
 			//texCDesc.create("asset/texture/brdf_lut.png");
-			_texBrdfLut = Renderer::renderDevice()->createTexture2D(texCDesc);
+			_texBrdfLut = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
 			_texBrdfLut->setDebugName("texBrdfLut");
 		}
 
@@ -756,7 +756,7 @@ public:
 				//particle.color		= Color4b(sCast<u8>(rndDist(rndEngine)) * 255, sCast<u8>(rndDist(rndEngine)) * 255, sCast<u8>(rndDist(rndEngine)) * 255, 255);
 				particle.color		= Color4f(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
 			}
-			auto cDesc = RenderGpuBuffer::makeCDesc(RDS_SRCLOC);
+			auto cDesc = RenderGpuBuffer::makeCDesc(RDS_DebugLabel());
 			cDesc.bufSize	= sizeof(Particle) * s_kMaxParticleCount;
 			cDesc.stride	= sizeof(Particle);
 			cDesc.typeFlags = RenderGpuBufferTypeFlags::Compute | RenderGpuBufferTypeFlags::Vertex;
@@ -780,7 +780,7 @@ public:
 				_testComputeMtl->setParam("rds_dt", 1 / 600.0f);
 				_testComputeMtl->setParam("in_particle_buffer",		particlesRead.renderResource());
 				_testComputeMtl->setParam("out_particle_buffer",	particlesWrite.renderResource());
-				rdReq.dispatch(RDS_SRCLOC, _testComputeMtl, s_kMaxParticleCount / RDS_TEST_COMPUTE_GROUP_THREAD, 1, 1);
+				rdReq.dispatch(RDS_DebugLabel(), _testComputeMtl, s_kMaxParticleCount / RDS_TEST_COMPUTE_GROUP_THREAD, 1, 1);
 			}
 		);
 
@@ -857,7 +857,7 @@ public:
 				//mtl->setParam("skybox", _texCubeIrradianceEnvMap);
 				//mtl->setParam("skybox", _texCubePrefilteredEnvMap);
 				rdReq.setMaterialCommonParams(mtl, Mat4f::s_identity());
-				rdReq.drawMesh(RDS_SRCLOC, meshAssets.box, mtl);
+				rdReq.drawMesh(RDS_DebugLabel(), meshAssets.box, mtl);
 			});
 
 		return texColor;
@@ -945,7 +945,7 @@ public:
 				if (false)
 				{
 					Mat4f matModel = Mat4f::s_translate(Vec3f{posLight});
-					rdReq.drawMesh(RDS_SRCLOC, meshAssets.sphere, _testMtl, matModel);
+					rdReq.drawMesh(RDS_DebugLabel(), meshAssets.sphere, _testMtl, matModel);
 				}
 
 				#else
@@ -1044,7 +1044,7 @@ public:
 				//_presentMtl->setParam("texture0",			_uvCheckerTex);
 				_presentMtl->setParam("rds_matrix_model",	Mat4f::s_scale(Vec3f{1.0f, 1.0f, 1.0f}));
 
-				//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl, Mat4f::s_identity());
+				//rdReq.drawMesh(RDS_DebugLabel(), _fullScreenTriangle, _presentMtl, Mat4f::s_identity());
 				//rdGraph->renderContext()->drawUI(rdReq);
 				//rdReq.swapBuffers();
 			}
@@ -1066,7 +1066,7 @@ public:
 			clearValue->setClearColor(Color4f{0.1f, 0.2f, 0.3f, 1.0f});
 			clearValue->setClearDepth(1.0f);
 
-			//rdReq.drawMesh(RDS_SRCLOC, _fullScreenTriangle, _presentMtl, Mat4f::s_identity());
+			//rdReq.drawMesh(RDS_DebugLabel(), _fullScreenTriangle, _presentMtl, Mat4f::s_identity());
 			rdReq.swapBuffers();
 		}
 		RDS_TODO("move to endRender when upload buffer is cpu prefered");

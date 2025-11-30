@@ -24,8 +24,8 @@ TransferRequest::tryPopTransferCommandSafeBuffer(TransferCommandBuffer& dst, Tra
 		{
 			if (e->type() == TransferCommandType::SetDebugName)
 			{
-				auto* cmd = sCast<TransferCommand_SetDebugName*>(e);
-				RDS_LOG("TransferCommand_SetDebugName: {}", cmd->name);
+				auto* cmd = sCast<TransferCommand_SetDebugLabel*>(e);
+				RDS_LOG("TransferCommand_SetDebugLabel: {}", cmd->name);
 			}
 		}
 		#endif // 0

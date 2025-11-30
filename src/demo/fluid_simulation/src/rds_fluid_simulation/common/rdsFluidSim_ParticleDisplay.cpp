@@ -140,7 +140,7 @@ FluidSim_ParticleDisplay::_draw(Material* mtl, Texture2D* colorMap, float depth,
 	mtl->setParam("u_objToWorld",	Mat4f::s_translate(pos));
 
 	drawData->setupMaterial(mtl);
-	rdReq.drawMesh_Instanced(RDS_SRCLOC, _rdMesh, mtl, particleCount);
+	rdReq.drawMesh_Instanced(RDS_DebugLabel(), _rdMesh, mtl, particleCount);
 }
 
 Texture2D* 

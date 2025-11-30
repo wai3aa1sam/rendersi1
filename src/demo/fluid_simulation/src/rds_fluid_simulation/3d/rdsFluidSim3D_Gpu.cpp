@@ -279,7 +279,7 @@ FluidSim3D_Gpu::addPass_calcExternalForce(SimArgs& simArgs)
 			mtl->setParam("u_predictedPositions",	simArgs.bufPredictedPos.renderResource());
 			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
 
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_calcExternalForce"), Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, RDS_NameId_STATIC("Cs_calcExternalForce"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -309,7 +309,7 @@ FluidSim3D_Gpu::addPass_calcDensityData(SimArgs& simArgs)
 			mtl->setParam("u_densityData",					simArgs.bufDensityData.renderResource());
 			simArgs.setSpatialParam(mtl);
 
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_calcDensityData"), Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, RDS_NameId_STATIC("Cs_calcDensityData"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 	return pass;
@@ -331,7 +331,7 @@ FluidSim3D_Gpu::addPass_calcPressureForce(SimArgs& simArgs)
 			mtl->setParam("u_velocities", simArgs.bufVel.renderResource());
 			simArgs.setSpatialParam(mtl);
 
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_calcPressureForce"), Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, RDS_NameId_STATIC("Cs_calcPressureForce"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -353,7 +353,7 @@ FluidSim3D_Gpu::addPass_calcViscosity(SimArgs& simArgs)
 			mtl->setParam("u_velocities", simArgs.bufVel.renderResource());
 			simArgs.setSpatialParam(mtl);
 
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_calcViscosity"), Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, RDS_NameId_STATIC("Cs_calcViscosity"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -375,7 +375,7 @@ FluidSim3D_Gpu::addPass_updatePosition(SimArgs& simArgs)
 			mtl->setParam("u_positions",			simArgs.bufPos.renderResource());
 			mtl->setParam("u_velocities",			simArgs.bufVel.renderResource());
 
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, RDS_NameId_STATIC("Cs_updatePosition"), Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, RDS_NameId_STATIC("Cs_updatePosition"), Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -409,8 +409,8 @@ VoxelFluid::addPass_particleToTex3D(PassArgs& passArgs)
 			mtl->setParam("u_boundingSize",			passArgs.boundingBoxTransform->localScale());
 			mtl->setParam("u_voxelMapSize",			passArgs.voxelMapSize);
 
-			rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u::s_one() * passArgs.voxelMapSize);
-			//rdReq.dispatchExactThreadGroups(RDS_SRCLOC, mtl, 0, Vec3u{simArgs.particleCount, 1, 1});
+			rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 0, Vec3u::s_one() * passArgs.voxelMapSize);
+			//rdReq.dispatchExactThreadGroups(RDS_DebugLabel(), mtl, 0, Vec3u{simArgs.particleCount, 1, 1});
 		}
 	);
 
@@ -444,8 +444,7 @@ VoxelFluid::addPass_renderVoxelMap(PassArgs& passArgs)
 			mtl->setParam("u_colorMap",				passArgs.colorMap);
 			mtl->setParam("u_densityMax",			passArgs.densityMax);
 
-			auto drawCall = rdReq.addDrawCall(sizeof(PerObjectParam));
-			drawCall->setDebugSrcLoc(RDS_SRCLOC);
+			auto drawCall = rdReq.addDrawCall(RDS_DebugLabel(), sizeof(PerObjectParam));
 			drawCall->renderPrimitiveType = RenderPrimitiveType::Point;
 			drawCall->vertexCount = voxelMapSize.x * voxelMapSize.y * voxelMapSize.z;
 			drawCall->setMaterial(mtl);
