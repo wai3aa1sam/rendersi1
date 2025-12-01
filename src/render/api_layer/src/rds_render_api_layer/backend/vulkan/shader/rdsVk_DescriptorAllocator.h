@@ -71,8 +71,8 @@ protected:
 	VkResult createPool	(Vk_DescriptorPool** out, const PoolSizes& poolSizes, u32 setReservedSize, VkDescriptorPoolCreateFlags cFlag, RenderDevice_Vk* rdDevVk);
 	VkResult createSet	(Vk_DescriptorSet& out, const Vk_DescriptorSetLayout* layout, Vk_DescriptorPool* pool);
 
-protected:
-	void _setDebugName();
+public:
+	void setDebugLabel(RDS_DebugLabel_PARAM);
 
 private:
 	RenderDevice_Vk*	_rdDevVk = nullptr;

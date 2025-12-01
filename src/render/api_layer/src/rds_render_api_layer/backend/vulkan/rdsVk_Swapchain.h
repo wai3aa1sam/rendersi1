@@ -93,7 +93,7 @@ public:
 	VkResult acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp);
 	VkResult swapBuffers(Vk_Queue* presentQueue, Vk_Semaphore* waitSmp);
 
-	void setDebugName(StrView name);
+	void setDebugLabel(RDS_DebugLabel_PARAM, RenderDevice_Vk* rdDevVk);
 
 public:
 	Vk_Image_T*				vkImageHnd();

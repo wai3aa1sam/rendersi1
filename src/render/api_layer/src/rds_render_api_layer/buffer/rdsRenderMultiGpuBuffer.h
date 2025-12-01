@@ -35,7 +35,7 @@ public:
 
 	void uploadToGpu(ByteSpan data, SizeType offset = 0);
 
-	virtual void setDebugName(StrView name) override;
+	virtual void setDebugLabel(RDS_DebugLabel_PARAM) override;
 
 public:
 	int		bufferIndex()	const;

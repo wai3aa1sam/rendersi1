@@ -51,7 +51,7 @@ public:
 	void resetCommandPools();
 	void resetCommandPool(QueueTypeFlags queueType);
 
-	void setDebugName(StrView name);
+	void setDebugLabel(RDS_DebugLabel_PARAM);
 
 public:
 	Vk_CommandPool&			commandPool(QueueTypeFlags queueType);

@@ -75,9 +75,13 @@ Shader::onCreate(const CreateDesc& cDesc)
 	_shadername = filename;
 
 	#if RDS_ENABLE_DebugLabel
-	if (DebugLabel_hasName())
+	if (cDesc.DebugLabel_hasName())
 	{
-		setDebugName(filename);
+		setDebugLabel(cDesc.DebugLabel_get());
+	}
+	else
+	{
+		setDebugLabel(RDS_DebugLabel_COPY(cDesc.DebugLabel_get(), "{}", Path::basename(_shadername)));
 	}
 	#endif // 0
 

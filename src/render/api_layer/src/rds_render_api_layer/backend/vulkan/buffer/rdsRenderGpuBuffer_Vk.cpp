@@ -81,10 +81,10 @@ RenderGpuBuffer_Vk::onUploadToGpu(TransferCommand_UploadBuffer* cmd)
 }
 
 void 
-RenderGpuBuffer_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
+RenderGpuBuffer_Vk::onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd)
 {
-	Base::onRenderResouce_SetDebugName(cmd);
-	RDS_VK_SET_DEBUG_LABEL(_vkBuf, RDS_DebugLabel("{}_vkBuf", cmd->DebugLabel_getName()), renderDeviceVk());
+	Base::onRenderResouce_SetDebugLabel(cmd);
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkBuf, RDS_DebugLabel("{}_vkBuf", cmd->DebugLabel_getName()), renderDeviceVk());
 }
 
 

@@ -32,7 +32,7 @@ public:
 	void destroy();
 
 public:
-	void setDebugName(const SrcLoc& srcLoc, StrView name);
+	void setDebugLabel(RDS_DebugLabel_PARAM);
 
 public:
 	RenderDevice_Vk* renderDeviceVk();
@@ -89,8 +89,8 @@ public:
 	Vk_Fence*		getInFlightVkFence(		QueueTypeFlags type);
 	Vk_Semaphore*	getCompletedVkSemaphore(QueueTypeFlags type);
 
-private:
-	void _setDebugName();
+public:
+	void setDebugLabel(RDS_DebugLabel_PARAM);
 
 protected:
 	RenderDevice_Vk* _rdDevVk = nullptr;

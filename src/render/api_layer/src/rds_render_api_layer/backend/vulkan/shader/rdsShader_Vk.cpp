@@ -670,7 +670,7 @@ ShaderPass_Vk::createUnqiueVkPipeline(Vk_RenderPass* vkRdPass, const VertexLayou
 			auto& outVkPipeline = _vkPipelineMap[hash];
 			createVkPipeline(outVkPipeline, vkRdPass, vtxLayout, primitive);
 			vkPipelineHnd = outVkPipeline.hnd();
-			RDS_VK_SET_DEBUG_LABEL(outVkPipeline, RDS_DebugLabel("{}_vkPipeline", shader()->DebugLabel_getName()), renderDeviceVk());
+			RDS_RENDER_VK_SET_DEBUG_LABEL(outVkPipeline, RDS_DebugLabel("{}_vkPipeline", shader()->DebugLabel_getName()), renderDeviceVk());
 		}
 	}
 
@@ -691,7 +691,7 @@ ShaderPass_Vk::createVkPipeline(Vk_Pipeline& out, Vk_RenderPass* vkRdPass, const
 	{
 		Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
 		vkPipelineLayoutCDesc.create(_vkPipelineLayout, info(), &vkDescriptorSetLayout(), rdDevVk);
-		RDS_VK_SET_DEBUG_LABEL(_vkPipelineLayout, RDS_DebugLabel("{}_vkPipelineLayout", shader()->DebugLabel_getName()), renderDeviceVk());
+		RDS_RENDER_VK_SET_DEBUG_LABEL(_vkPipelineLayout, RDS_DebugLabel("{}_vkPipelineLayout", shader()->DebugLabel_getName()), renderDeviceVk());
 	}
 
 	Vk_GraphicsPipelineCDesc vkRenderStateCDesc;
@@ -722,7 +722,7 @@ ShaderPass_Vk::createComputeVkPipeline(Vk_Pipeline& out)
 	{
 		Vk_PipelineLayoutCDesc vkPipelineLayoutCDesc;
 		vkPipelineLayoutCDesc.create(_vkPipelineLayout, info(), &vkDescriptorSetLayout(), rdDevVk);
-		RDS_VK_SET_DEBUG_LABEL(_vkPipelineLayout, RDS_DebugLabel("{}_vkPipelineLayout", shader()->DebugLabel_getName()), renderDeviceVk());
+		RDS_RENDER_VK_SET_DEBUG_LABEL(_vkPipelineLayout, RDS_DebugLabel("{}_vkPipelineLayout", shader()->DebugLabel_getName()), renderDeviceVk());
 	}
 
 	Vk_ShaderStagesCDesc vkShaderStagesCDesc;

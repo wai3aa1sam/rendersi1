@@ -59,7 +59,7 @@ protected:
 	virtual void onReset(i64 frameCount)			override;
 
 public:
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd) override;
+	virtual void onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd) override;
 
 protected:
 	Vk_TransferFrame		_vkTsfFrame;

@@ -348,12 +348,12 @@ RenderDevice_Vk::loadVkDevFn(Vk_ExtensionInfo& vkExtInfo)
 }
 
 void 
-RenderDevice_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
+RenderDevice_Vk::onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd)
 {
 	#if 0
 	auto& name = cmd->name;
 
-	Base::onRenderResouce_SetDebugName(cmd);
+	Base::onRenderResouce_SetDebugLabel(cmd);
 
 	RDS_VK_SET_DEBUG_NAME(_vkInstance, name);	// set debug name for instance will crash RenderDoc
 	if (adapterInfo().isDebug)

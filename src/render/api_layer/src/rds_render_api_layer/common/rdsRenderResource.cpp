@@ -47,12 +47,13 @@ RenderResource::destroy()
 }
 
 void 
-RenderResource::setDebugName(StrView name)
+RenderResource::setDebugLabel(RDS_DebugLabel_PARAM)
 {
 	#if RDS_ENABLE_DebugLabel
+	RDS_DebugLabel_ASSIGN();
 	if (transferContextPtr())
 	{
-		transferContext().transferFrame().setRenderResourceDebugName(this, name);
+		transferContext().transferFrame().setRenderResourceDebugLabel(this, RDS_DebugLabel_ARG);
 	}
 	#endif // RDS_ENABLE_DebugLabel
 }
@@ -72,7 +73,7 @@ RenderResource::setRenderResourceState(RenderResourceStateFlags state, u32 subRe
 }
 
 void 
-RenderResource::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
+RenderResource::onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd)
 {
 
 }

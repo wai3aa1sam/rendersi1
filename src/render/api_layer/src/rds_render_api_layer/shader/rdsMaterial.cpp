@@ -131,8 +131,7 @@ Material::setShader(Shader* shader)
 
 	if (shader)
 	{
-		RDS_TODO("template<class... TArgs> setDebugName(StrView fmt, TArgs&& args...)");
-		setDebugName(RDS_FMT(TempString, "mtl-{}", shader->filename()));		
+		RDS_DebugLabel_SET(*this, RDS_DebugLabel_COPY(DebugLabel_get(), "mtl-{}", shader->filename()));
 	}
 }
 

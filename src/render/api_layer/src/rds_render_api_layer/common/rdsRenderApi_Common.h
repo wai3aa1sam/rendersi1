@@ -49,6 +49,7 @@ public:
 	explicit DebugLabel(StrView		name, const Color4f& color_ = s_defaultDebugColor) { create(name, color); }
 	DebugLabel(const SrcLoc& srcLoc, const char* name, const Color4f& color_ = s_defaultDebugColor) : Base(srcLoc) { create(name, color); }
 	DebugLabel(const SrcLoc& srcLoc, TempString&& str, const Color4f& color_ = s_defaultDebugColor) : Base(srcLoc) { create(rds::move(str), color_); }
+	DebugLabel(const DebugLabel& src, TempString&& name, const Color4f& color_ = s_defaultDebugColor) { setSrcLoc(src); create(name, color); }
 
 	void create(const char*		name, const Color4f& color_)	{ setName(name); color = color_; }
 	void create(StrView			name, const Color4f& color_)	{ create(name.data(), color_);  }
@@ -95,6 +96,7 @@ private:
 #define RDS_ENABLE_DebugLabel_NAME 1
 
 
+// Color4f RDS_BRACKET(1.0f, 0.0f, 0.0f, 1.0f)
 #if RDS_ENABLE_DebugLabel
 
 #define RDS_DebugLabel_TYPE						const DebugLabel&
@@ -103,7 +105,9 @@ private:
 #define RDS_DebugLabel_PARAM					RDS_DebugLabel_TYPE RDS_DebugLabel_PARAM_NAME
 #define RDS_DebugLabel_ARG						RDS_DebugLabel_PARAM_NAME
 #define RDS_DebugLabel_C(color, ...)			DebugLabel(RDS_SRCLOC, RDS_FMT(TempString, __VA_ARGS__), color)
-#define RDS_DebugLabel(...)						RDS_DebugLabel_C(Color4f RDS_BRACKET(1.0f, 0.0f, 0.0f, 1.0f), __VA_ARGS__)
+#define RDS_DebugLabel(...)						RDS_DebugLabel_C(s_defaultDebugColor, __VA_ARGS__)
+#define RDS_DebugLabel_COPY(src, ...)			DebugLabel(src, RDS_FMT(TempString, __VA_ARGS__), s_defaultDebugColor)
+
 #define RDS_DebugLabel_VAR_NAME					_dblbl
 #define RDS_DebugLabel_VAR						DebugLabel RDS_DebugLabel_VAR_NAME
 #define RDS_DebugLabel_ASSIGN()					RDS_DebugLabel_VAR_NAME = RDS_DebugLabel_PARAM_NAME
@@ -111,7 +115,7 @@ private:
 
 #define RDS_DebugLabel_ASSIGN_IMPL(dst, src)	(dst) = (src)
 #define RDS_DebugLabel_CREATE(dst, src)			(dst).DebugLabel_internal_create(src)
-
+#define RDS_DebugLabel_SET(dst, src)			(dst).setDebugLabel(src)
 
 #else
 
@@ -122,6 +126,8 @@ private:
 #define RDS_DebugLabel_ARG						0
 #define RDS_DebugLabel_C(color, ...)			0
 #define RDS_DebugLabel(...)						0
+#define RDS_DebugLabel_COPY(src, ...)
+
 #define RDS_DebugLabel_VAR_NAME					0
 #define RDS_DebugLabel_VAR						
 #define RDS_DebugLabel_ASSIGN()					
@@ -129,6 +135,7 @@ private:
 
 #define RDS_DebugLabel_ASSIGN_IMPL(dst, src)	
 #define RDS_DebugLabel_CREATE(dst, src)	
+#define RDS_DebugLabel_SET(dst, src)			
 
 #endif // RDS_DEBUG
 

@@ -65,12 +65,14 @@ protected:
 	virtual void onTransferBegin()	override;
 	virtual void onTransferEnd()	override;
 
+public:
+	void _setDebugLabel(RDS_DebugLabel_PARAM);
+
 protected:
 	Vk_Queue* requestVkQueue(QueueTypeFlags type);
 
 	void _commitUploadCmdsToDstQueue(const RenderDebugLabel& debugLabel, TransferCommandBuffer& tsfCmdBuf, QueueTypeFlags queueType, bool isWaitImmediate);
 
-	void _setDebugName();
 
 protected:
 	Vk_Queue _vkGraphicsQueue;

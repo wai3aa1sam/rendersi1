@@ -7,11 +7,11 @@
 
 #if RDS_ENABLE_DebugLabel
 
-#define RDS_VK_SET_DEBUG_LABEL(hnd, v, rdDevVk) (hnd).setDebugLabel(v, rdDevVk);
+#define RDS_RENDER_VK_SET_DEBUG_LABEL(hnd, v, ...) (hnd).setDebugLabel(v, __VA_ARGS__);
 
 #else
 
-#define RDS_VK_SET_DEBUG_LABEL(hnd, v, rdDevVk)
+#define RDS_RENDER_VK_SET_DEBUG_LABEL(hnd, v, ...)
 
 #endif // RDS_DEVELOPMENT
 
@@ -115,7 +115,7 @@ public:
 
 	void setDebugLabel(RDS_DebugLabel_PARAM, RenderDevice_Vk* rdDevVk)
 	{
-		RDS_CORE_ASSERT(hnd(), "VkObjectType: {}, setDebugName, hnd == nullptr", enumInt(VK_OBJ_T));
+		RDS_CORE_ASSERT(hnd(), "VkObjectType: {}, setDebugLabel, hnd == nullptr", enumInt(VK_OBJ_T));
 
 		RDS_DebugLabel_ASSIGN();
 		#if RDS_ENABLE_DebugLabel
@@ -169,17 +169,16 @@ public:
 
 	void destroy() { Base::destroy(); _alloc = nullptr; }
 
-	void setDebugName(StrView name, RenderDevice_Vk* rdDevVk)
+	void setDebugLabel(RDS_DebugLabel_PARAM, RenderDevice_Vk* rdDevVk)
 	{
-		#if RDS_DEVELOPMENT
-
-		Base::setDebugName(name, rdDevVk);
+		#if RDS_ENABLE_DebugLabel
+		Base::setDebugLabel(RDS_DebugLabel_ARG, rdDevVk);
 		if (_alloc)
 		{
 			RDS_CORE_ASSERT(_allocHnd, "");
-			_alloc->setAllocationDebugName(debugName(), &_allocHnd);
+			_alloc->setAllocationDebugName(DebugLabel_getName(), &_allocHnd);
 		}
-		#endif // RDS_DEVELOPMENT
+		#endif // RDS_ENABLE_DebugLabel
 	}
 
 	Vk_AllocHnd*	_internal_allocHnd();

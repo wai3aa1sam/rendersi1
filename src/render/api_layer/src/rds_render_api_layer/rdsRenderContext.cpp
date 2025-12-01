@@ -33,8 +33,8 @@ Backbuffers::create(RenderContext* rdCtx, SizeType imageCount)
 	for (size_t i = 0; i < imageCount; i++)
 	{
 		auto& image = _images[i];
-		image = rdCtx->renderDevice()->createTexture2D(rdCtx->DebugLabel_get(), texCDesc);
-		RDS_RenderResouce_SET_DEBUG_NAME(image, fmtAs_T<TempString>("Backbuffer-{}", i));
+		auto dblbl = RDS_DebugLabel_COPY(rdCtx->DebugLabel_get(), "{}.backbuffers[{}]", rdCtx->DebugLabel_getName(), i);
+		image = rdCtx->renderDevice()->createTexture2D(dblbl, texCDesc);
 	}
 }
 

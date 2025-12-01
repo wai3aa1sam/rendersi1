@@ -35,7 +35,7 @@ protected:
 	virtual void onUploadToGpu(TransferCommand_UploadBuffer* cmd) override;
 
 public:
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd) override;
+	virtual void onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd) override;
 
 protected:
 	Vk_Buffer	_vkBuf;

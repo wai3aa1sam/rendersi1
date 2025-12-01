@@ -30,7 +30,7 @@ public:
 public:
 	virtual void onTransferCommand_Create(CmdCreate* cmd) override;
 	virtual void onTransferCommand_Destroy() override;
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd) override;
+	virtual void onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd) override;
 
 public:
 	Vk_ImageView_T* srvLayerVkImageViewHnd(u32 layerIndex);

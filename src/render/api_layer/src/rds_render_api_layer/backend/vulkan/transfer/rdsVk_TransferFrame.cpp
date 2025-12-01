@@ -35,11 +35,12 @@ Vk_QueueData::destroy()
 }
 
 void 
-Vk_QueueData::setDebugName(const SrcLoc& srcLoc, StrView name)
+Vk_QueueData::setDebugLabel(RDS_DebugLabel_PARAM)
 {
-	RDS_VK_SET_DEBUG_LABEL(inFlightVkFence,			RDS_DebugLabel("{}", name), renderDeviceVk());
-	RDS_VK_SET_DEBUG_LABEL(completedVkSemaphore,	RDS_DebugLabel("{}", name), renderDeviceVk());
-	RDS_VK_SET_DEBUG_LABEL(vkCommandPool,			RDS_DebugLabel("{}", name), renderDeviceVk());
+	auto name = RDS_DebugLabel_GET_NAME(RDS_DebugLabel_ARG);
+	RDS_RENDER_VK_SET_DEBUG_LABEL(inFlightVkFence,			RDS_DebugLabel_COPY(RDS_DebugLabel_ARG, "{}_inFlightVkFence",		name), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(completedVkSemaphore,	RDS_DebugLabel_COPY(RDS_DebugLabel_ARG, "{}_completedVkSemaphore",	name), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(vkCommandPool,			RDS_DebugLabel_COPY(RDS_DebugLabel_ARG, "{}_vkCommandPool",			name), renderDeviceVk());
 }
 
 RenderDevice_Vk* Vk_QueueData::renderDeviceVk() { return vkCommandPool.renderDeviceVk(); }
@@ -81,7 +82,7 @@ Vk_TransferFrame::create(RenderDevice_Vk* rdDevVk)
 	//_stagingAlloc.create(rdDevVk);
 	//_linearStagingBuf.create(rdDevVk);
 
-	_setDebugName();
+	setDebugLabel(RDS_DebugLabel());
 }
 
 void 
@@ -123,10 +124,10 @@ Vk_TransferFrame::waitQueueData(QueueTypeFlags type)
 }
 
 void 
-Vk_TransferFrame::_setDebugName()
+Vk_TransferFrame::setDebugLabel(RDS_DebugLabel_PARAM)
 {
-	_tsfVkQueueData.setDebugName(RDS_SRCLOC, ":_tsfVkQueueData");
-	_gfxVkQueueData.setDebugName(RDS_SRCLOC, ":_gfxVkQueueData");
+	_tsfVkQueueData.setDebugLabel(RDS_DebugLabel_COPY(RDS_DebugLabel_ARG, "_tsfVkQueueData"));
+	_gfxVkQueueData.setDebugLabel(RDS_DebugLabel_COPY(RDS_DebugLabel_ARG, "_gfxVkQueueData"));
 }
 
 Vk_QueueData& 

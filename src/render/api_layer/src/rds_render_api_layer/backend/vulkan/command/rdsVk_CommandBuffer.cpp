@@ -145,7 +145,7 @@ Vk_CommandBuffer::beginRecord(VkCommandBufferUsageFlags usageFlags, const VkComm
 void 
 Vk_CommandBuffer::beginRecord(const char* debugName, RenderDevice_Vk* rdDevVk, VkCommandBufferUsageFlags usageFlags, const VkCommandBufferInheritanceInfo* inheriInfo)
 {
-	RDS_VK_SET_DEBUG_LABEL(*this, RDS_DebugLabel("{}", debugName), rdDevVk);
+	RDS_RENDER_VK_SET_DEBUG_LABEL(*this, RDS_DebugLabel("{}", debugName), rdDevVk);
 	beginRecord(_vkQueue, usageFlags, inheriInfo);
 }
 

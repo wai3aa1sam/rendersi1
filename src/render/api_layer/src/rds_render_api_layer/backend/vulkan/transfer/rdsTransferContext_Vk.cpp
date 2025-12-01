@@ -44,7 +44,7 @@ TransferContext_Vk::onCreate(const CreateDesc& cDesc)
 	_vkTransferQueue.create(QueueTypeFlags::Transfer, rdDevVk);
 	 _vkComputeQueue.create(QueueTypeFlags::Compute,  rdDevVk);
 
-	 _setDebugName();
+	 _setDebugLabel(cDesc.DebugLabel_get());
 }
 
 void 
@@ -210,11 +210,12 @@ TransferContext_Vk::onCommitRenderResources(TransferCommandBuffer& rscQueue, boo
 }
 
 void 
-TransferContext_Vk::_setDebugName()
+TransferContext_Vk::_setDebugLabel(RDS_DebugLabel_PARAM)
 {
-	RDS_VK_SET_DEBUG_LABEL(_vkGraphicsQueue,	RDS_DebugLabel("{}", DebugLabel_getName()), renderDeviceVk());
-	RDS_VK_SET_DEBUG_LABEL(_vkTransferQueue,	RDS_DebugLabel("{}", DebugLabel_getName()), renderDeviceVk());
-	RDS_VK_SET_DEBUG_LABEL(_vkComputeQueue,		RDS_DebugLabel("{}", DebugLabel_getName()), renderDeviceVk());
+	auto name = RDS_DebugLabel_GET_NAME(RDS_DebugLabel_ARG);
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkGraphicsQueue,	RDS_DebugLabel_COPY(RDS_DebugLabel_ARG, "{}_vkGraphicsQueue",	name), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkTransferQueue,	RDS_DebugLabel_COPY(RDS_DebugLabel_ARG, "{}_vkTransferQueue",	name), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkComputeQueue,	RDS_DebugLabel_COPY(RDS_DebugLabel_ARG, "{}_vkComputeQueue",	name), renderDeviceVk());
 }
 
 #if 1
@@ -297,7 +298,7 @@ void
 TransferContext_Vk::onTransferCommand_SetDebugLabel(TransferCommand_SetDebugLabel* cmd)
 {
 	auto* dst = cmd->dst.ptr();
-	dst->onRenderResouce_SetDebugName(cmd);
+	dst->onRenderResouce_SetDebugLabel(cmd);
 }
 
 void 

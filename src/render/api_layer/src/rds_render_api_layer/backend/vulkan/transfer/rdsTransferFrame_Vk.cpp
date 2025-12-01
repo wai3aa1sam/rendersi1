@@ -99,7 +99,7 @@ TransferFrame_Vk::onReset(i64 frameCount)
 }
 
 void 
-TransferFrame_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
+TransferFrame_Vk::onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd)
 {
 
 }

@@ -94,7 +94,7 @@ protected:
 	void invalidateSwapchain(VkResult ret, const Vec2f& newSize);
 
 public:
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd) override;
+	virtual void onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd) override;
 
 protected:
 	Vk_GpuProfiler	_gpuProfilerCtx;

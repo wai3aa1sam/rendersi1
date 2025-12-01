@@ -1192,15 +1192,15 @@ RenderContext_Vk::onRenderCommand_DebugLabelInsert(	RenderCommand_DebugLabelInse
 
 
 void 
-RenderContext_Vk::onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd)
+RenderContext_Vk::onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd)
 {
-	Base::onRenderResouce_SetDebugName(cmd);
+	Base::onRenderResouce_SetDebugLabel(cmd);
 	
-	RDS_VK_SET_DEBUG_LABEL(_vkSwapchain,		cmd->DebugLabel_get(), renderDeviceVk());
-	RDS_VK_SET_DEBUG_LABEL(_vkGraphicsQueue,	cmd->DebugLabel_get(), renderDeviceVk());
-	RDS_VK_SET_DEBUG_LABEL(_vkComputeQueue,		cmd->DebugLabel_get(), renderDeviceVk());
-	RDS_VK_SET_DEBUG_LABEL(_vkPresentQueue,		cmd->DebugLabel_get(), renderDeviceVk());
-	RDS_VK_SET_DEBUG_LABEL(_vkTransferQueue,	cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkSwapchain,		cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkGraphicsQueue,	cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkComputeQueue,		cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkPresentQueue,		cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkTransferQueue,	cmd->DebugLabel_get(), renderDeviceVk());
 }
 
 #endif

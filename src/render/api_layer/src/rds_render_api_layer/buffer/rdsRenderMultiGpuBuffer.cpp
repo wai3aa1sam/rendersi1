@@ -93,11 +93,11 @@ void RenderMultiGpuBuffer::onDestroy()
 }
 
 void 
-RenderMultiGpuBuffer::setDebugName(StrView name)
+RenderMultiGpuBuffer::setDebugLabel(RDS_DebugLabel_PARAM)
 {
 	if (auto* p = renderGpuBuffer())
 	{
-		p->setDebugName(name);
+		p->setDebugLabel(RDS_DebugLabel_ARG);
 	}
 }
 

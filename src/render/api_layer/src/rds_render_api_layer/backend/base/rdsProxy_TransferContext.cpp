@@ -77,20 +77,20 @@ Proxy_TransferContext::_onCommitRenderResources(TransferFrame* frame, TransferCo
 void 
 Proxy_TransferContext::createRenderResources()
 {
-	_onCommitRenderResources(_tsfFrame, _tsfFrame->createRenderResourceBuffer());
-	_onCommitRenderResources(_tsfFrame, _tsfFrame->setDebugNameRenderResourceBuffer());
+	_onCommitRenderResources(_tsfFrame, _tsfFrame->renderResourceBuffer_create());
+	_onCommitRenderResources(_tsfFrame, _tsfFrame->renderResourceBuffer_setDebugLabel());
 }
 
 void 
 Proxy_TransferContext::destroyRenderResources()
 {
-	_onCommitRenderResources(_tsfFrame, _tsfFrame->destroyRenderResourceBuffer());
+	_onCommitRenderResources(_tsfFrame, _tsfFrame->renderResourceBuffer_destroy());
 }
 
 void 
 Proxy_TransferContext::_temp_destroyRenderResources(TransferFrame* frame)
 {
-	_onCommitRenderResources(frame, frame->destroyRenderResourceBuffer());
+	_onCommitRenderResources(frame, frame->renderResourceBuffer_destroy());
 }
 
 void 

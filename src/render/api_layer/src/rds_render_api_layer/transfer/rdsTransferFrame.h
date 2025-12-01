@@ -57,7 +57,7 @@ public:
 	//virtual void*	mappedStagingBufData(	StagingHandle  hnd)											= 0;
 
 public:
-	void setRenderResourceDebugName(RenderResource* rdRsc, StrView name);
+	void setRenderResourceDebugLabel(RenderResource* rdRsc, RDS_DebugLabel_PARAM);
 
 	void createRenderContext(	RenderContext*		rdCtx);
 	void createRenderGpuBuffer(	RenderGpuBuffer*	buffer, const RenderGpuBuffer_CreateDesc& cDesc);
@@ -75,24 +75,24 @@ protected:
 public:
 	TransferRequest&			transferRequest();
 	LinearStagingBuffer&		constBufferAllocator();
-	TransferCommandSafeBuffer&	createRenderResourceBuffer();
-	TransferCommandSafeBuffer&	destroyRenderResourceBuffer();
-	TransferCommandSafeBuffer&	setDebugNameRenderResourceBuffer();
+	TransferCommandSafeBuffer&	renderResourceBuffer_create();
+	TransferCommandSafeBuffer&	renderResourceBuffer_destroy();
+	TransferCommandSafeBuffer&	renderResourceBuffer_setDebugLabel();
 
 private:
 	LinearStagingBuffer _constBufAlloc;
 	TransferRequest		_tsfReq;
 
-	TransferCommandSafeBuffer	_createRdRscBuf;
-	TransferCommandSafeBuffer	_destroyRdRscBuf;
-	TransferCommandSafeBuffer	_setDebugName_rdRscBuf;		// ensure we setDebugName after create
+	TransferCommandSafeBuffer	_rdRscBuf_create;
+	TransferCommandSafeBuffer	_rdRscBuf_destroy;
+	TransferCommandSafeBuffer	_rdRscBuf_setDebugLabel;		// ensure we setDebugName after create
 };
 
 inline TransferRequest&				TransferFrame::transferRequest()					{ return _tsfReq; }
 inline LinearStagingBuffer&			TransferFrame::constBufferAllocator()				{ return _constBufAlloc; }
-inline TransferCommandSafeBuffer&	TransferFrame::createRenderResourceBuffer()			{ return _createRdRscBuf; }
-inline TransferCommandSafeBuffer&	TransferFrame::destroyRenderResourceBuffer()		{ return _destroyRdRscBuf; }
-inline TransferCommandSafeBuffer&	TransferFrame::setDebugNameRenderResourceBuffer()	{ return _setDebugName_rdRscBuf; }
+inline TransferCommandSafeBuffer&	TransferFrame::renderResourceBuffer_create()		{ return _rdRscBuf_create; }
+inline TransferCommandSafeBuffer&	TransferFrame::renderResourceBuffer_destroy()		{ return _rdRscBuf_destroy; }
+inline TransferCommandSafeBuffer&	TransferFrame::renderResourceBuffer_setDebugLabel()	{ return _rdRscBuf_setDebugLabel; }
 
 #endif
 

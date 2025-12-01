@@ -29,7 +29,6 @@ class RenderGpuBuffer;
 
 class TransferCommand_SetDebugLabel;
 
-#define RDS_RenderResouce_SET_DEBUG_NAME(RSC, NAME) (RSC)->setDebugName(NAME)
 #define RDS_RenderResource_CreateDesc_COMMON_BODY(T) \
 	T() {} \
 // ---
@@ -101,7 +100,7 @@ public:
 	void create(RenderDevice* rdDev, bool isBypassChecking);
 	void destroy();
 
-	virtual void setDebugName(StrView name);
+	virtual void setDebugLabel(RDS_DebugLabel_PARAM);
 
 public:
 	bool				hasCreated()			const;
@@ -126,7 +125,7 @@ protected:
 	void setRenderResourceState(RenderResourceStateFlags state, u32 subResource = RenderResourceState::s_kAllSubResource);
 
 public:
-	virtual void onRenderResouce_SetDebugName(TransferCommand_SetDebugLabel* cmd);		// onRenderResouce_onSetDebugName
+	virtual void onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* cmd);
 
 protected:
 	virtual void onDestroy();
@@ -152,7 +151,7 @@ RenderResource::create(const RenderResource_CreateDescT<T>& cDesc)
 	RenderResource_CreateEnd();
 
 	RDS_DebugLabel_ASSIGN_IMPL(RDS_DebugLabel_VAR_NAME, cDesc.DebugLabel_get());
-	setDebugName(cDesc.DebugLabel_getName());
+	setDebugLabel(cDesc.DebugLabel_get());
 }
 
 inline RenderDevice*			RenderResource::renderDevice()			{ return _rdDev; }

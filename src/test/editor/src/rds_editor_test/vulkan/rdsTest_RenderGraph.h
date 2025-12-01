@@ -486,12 +486,10 @@ public:
 			auto texCDesc = Texture2D::makeCDesc();
 
 			texCDesc.create("asset/texture/uvChecker.png");
-			_uvCheckerTex = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
-			_uvCheckerTex->setDebugName("uvChecker");
+			_uvCheckerTex = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel("uvChecker"), texCDesc);
 
 			texCDesc.create("asset/texture/uvChecker2.png");
-			_uvCheckerTex2 = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
-			_uvCheckerTex2->setDebugName("uvChecker2");
+			_uvCheckerTex2 = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel("uvChecker2"), texCDesc);
 		}
 
 		{
@@ -517,8 +515,8 @@ public:
 			/*static SPtr<RenderGpuBuffer> k;
 			k = Renderer::renderDevice()->createRenderGpuBuffer(bufCDesc);*/
 
-			_testBindlessBuffer		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel(), bufCDesc);
-			_testBindlessRwBuffer	= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel(), bufCDesc);
+			_testBindlessBuffer		= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("_testBindlessBuffer"), bufCDesc);
+			_testBindlessRwBuffer	= Renderer::renderDevice()->createRenderGpuBuffer(RDS_DebugLabel("_testBindlessRwBuffer"), bufCDesc);
 		}
 
 		auto fullScreenTriangleMesh = getFullScreenTriangleMesh();
@@ -550,8 +548,7 @@ public:
 			filenames.emplace_back("asset/texture/skybox/default/back.png");
 
 			texCDesc.create(filenames);
-			_texDefaultSkybox = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel(), texCDesc);
-			_texDefaultSkybox->setDebugName("default_skybox");
+			_texDefaultSkybox = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel("default_skybox"), texCDesc);
 		}
 
 		{
@@ -572,26 +569,21 @@ public:
 
 			auto texCDesc = Texture2D::makeCDesc();
 			texCDesc.create("asset/texture/hdr/newport_loft.hdr");
-			_texHdrEnvMap = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
-			_texHdrEnvMap->setDebugName("texHdrEnvMap");
+			_texHdrEnvMap = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel("texHdrEnvMap"), texCDesc);
 
 			auto texCubeCDesc = TextureCube::makeCDesc();
 			texCubeCDesc.create(512, ColorType::RGBAf, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubeEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel(), texCubeCDesc);
-			_texCubeEnvMap->setDebugName("texCubeHdrEnvMap");
+			_texCubeEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel("texCubeHdrEnvMap"), texCubeCDesc);
 
 			texCubeCDesc.create(32, ColorType::RGBAf, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubeIrradianceEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel(), texCubeCDesc);
-			_texCubeIrradianceEnvMap->setDebugName("texCubeIrradianceEnvMap");
+			_texCubeIrradianceEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel("texCubeIrradianceEnvMap"), texCubeCDesc);
 
 			texCubeCDesc.create(512, ColorType::RGBAh, true, TextureUsageFlags::TransferDst | TextureUsageFlags::ShaderResource, samplerState);
-			_texCubePrefilteredEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel(), texCubeCDesc);
-			_texCubePrefilteredEnvMap->setDebugName("texCubePrefilteredEnvMap");
+			_texCubePrefilteredEnvMap = Renderer::renderDevice()->createTextureCube(RDS_DebugLabel("texCubePrefilteredEnvMap"), texCubeCDesc);
 
 			texCDesc = Texture2D_CreateDesc{ Tuple2u{ 512, 512 }, ColorType::RGh, TextureUsageFlags::RenderTarget | TextureUsageFlags::ShaderResource, samplerState };
 			//texCDesc.create("asset/texture/brdf_lut.png");
-			_texBrdfLut = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel(), texCDesc);
-			_texBrdfLut->setDebugName("texBrdfLut");
+			_texBrdfLut = Renderer::renderDevice()->createTexture2D(RDS_DebugLabel("texBrdfLut"), texCDesc);
 		}
 
 		_rfpPbr.create(_shaderHdrToCube, _shaderIrradianceEnvCube, _shaderPrefilteredEnvCube, _shaderBrdfLut);
@@ -1150,8 +1142,6 @@ public:
 				//_testBindlessRwBuffer->uploadToGpu(data);
 
 				ImGui::End();
-
-				_testBindlessBuffer->setDebugName("_testBindlessBuffer");
 			}
 		}
 

@@ -5,13 +5,13 @@
 #include "rds_render_api_layer/transfer/command/rdsTransferCommand_Impl.h"
 
 #define RDS_RENDER_CMD_CREATE_RENDER_RSC(T, v)								\
-auto lock = _createRdRscBuf.scopedULock();									\
+auto lock = _rdRscBuf_create.scopedULock();									\
 auto* cmd = lock->newCommand<RDS_CONCAT(TransferCommand_Create, T)>();		\
 cmd->dst = v;																\
 // ---
 
 #define RDS_RENDER_CMD_DESTROY_RENDER_RSC(T, v)								\
-auto lock = _destroyRdRscBuf.scopedULock();									\
+auto lock = _rdRscBuf_destroy.scopedULock();									\
 auto* cmd = lock->newCommand<RDS_CONCAT(TransferCommand_Destroy, T)>();		\
 cmd->dst = v;																\
 // ---
@@ -79,22 +79,22 @@ TransferFrame::onReset(i64 frameCount)
 {
 	_constBufAlloc.reset();
 	auto fn_rdRscBuf = [](auto& buf) { auto data = buf.scopedULock(); data->clear(); };
-	fn_rdRscBuf(_destroyRdRscBuf);		// must reset before create, since create will release SPtr
-	fn_rdRscBuf(_createRdRscBuf);
-	fn_rdRscBuf(_setDebugName_rdRscBuf);
+	fn_rdRscBuf(_rdRscBuf_destroy);		// must reset before create, since create will release SPtr
+	fn_rdRscBuf(_rdRscBuf_create);
+	fn_rdRscBuf(_rdRscBuf_setDebugLabel);
 	_tsfReq.reset(&transferContext());
 }
 
 #if 1
 
 void 
-TransferFrame::setRenderResourceDebugName(RenderResource* rdRsc, StrView name)
+TransferFrame::setRenderResourceDebugLabel(RenderResource* rdRsc, RDS_DebugLabel_PARAM)
 {
-	auto lock = _setDebugName_rdRscBuf.scopedULock();
+	auto lock = _rdRscBuf_setDebugLabel.scopedULock();
 	auto* cmd = lock->newCommand<TransferCommand_SetDebugLabel>();
 
 	cmd->dst	= rdRsc;
-	//cmd->name	= name;
+	RDS_DebugLabel_CREATE(*cmd, RDS_DebugLabel_ARG);
 }
 
 void 
@@ -106,7 +106,7 @@ TransferFrame::createRenderContext(RenderContext* rdCtx)
 void
 TransferFrame::createRenderGpuBuffer(RenderGpuBuffer* buffer, const RenderGpuBuffer_CreateDesc& cDesc)
 {
-	auto lock = _createRdRscBuf.scopedULock();
+	auto lock = _rdRscBuf_create.scopedULock();
 	auto* cmd = lock->newCommand<TransferCommand_CreateRenderGpuBuffer>();
 
 	cmd->dst	= buffer;
@@ -118,7 +118,7 @@ TransferFrame::createTexture(Texture* texture)
 {
 	RDS_TODO("rework command data member for debug SRCLOC, transfer and render also need to rework!!!");
 
-	auto lock = _createRdRscBuf.scopedULock();
+	auto lock = _rdRscBuf_create.scopedULock();
 	auto* cmd = lock->newCommand<TransferCommand_CreateTexture>();
 
 	cmd->dst = texture;
@@ -133,7 +133,7 @@ TransferFrame::destroyRenderContext(RenderContext* rdCtx)
 void
 TransferFrame::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
-	auto lock = _destroyRdRscBuf.scopedULock();
+	auto lock = _rdRscBuf_destroy.scopedULock();
 	auto* cmd = lock->newCommand<TransferCommand_DestroyRenderGpuBuffer>();
 
 	//OsUtil::sleep_ms(1);
@@ -143,7 +143,7 @@ TransferFrame::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 void 
 TransferFrame::destroyTexture(Texture* texture)
 {
-	auto lock = _destroyRdRscBuf.scopedULock();
+	auto lock = _rdRscBuf_destroy.scopedULock();
 	auto* cmd = lock->newCommand<TransferCommand_DestroyTexture>();
 
 	//OsUtil::sleep_ms(1);

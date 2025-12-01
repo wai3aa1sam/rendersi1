@@ -272,9 +272,6 @@ RenderUiContext::onDrawUI(RenderRequest& req)
 					cmd->indexOffset			= (indexStart + srcBuf.IdxOffset) * indexSize;
 					cmd->indexCount				= srcBuf.ElemCount;
 
-					cmd->vertexBuffer->setDebugName("imgui vtx buf");
-					cmd->indexBuffer ->setDebugName("imgui idx buf");
-
 					initCmd_ShowImage(cmd, srcBuf, mat);
 				}
 			}
