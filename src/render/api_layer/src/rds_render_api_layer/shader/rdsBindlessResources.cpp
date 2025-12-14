@@ -94,7 +94,7 @@ BindlessResources::create(const CreateDesc& cDesc)
 	Base::create(cDesc);
 	onCreate(cDesc);
 
-	auto data = _bufAlloc.scopedULock();
+	auto data = _bufAlloc.scopedLock();
 	data->totalResourcesCount();
 }
 
@@ -161,7 +161,7 @@ void ResourceAlloc_destroy(MutexProtected<BindlessResources::ResourceAlloc<RSC> 
 	using ResourceAlloc = BindlessResources::ResourceAlloc<RSC>;
 	//Vector<SPtr<RSC>, ResourceAlloc::s_kLocalSize> rscs;
 	{
-		//auto data = alloc.scopedULock();
+		//auto data = alloc.scopedLock();
 		//rscs.reserve(data->rscs.size());
 		//rscs = rds::move(data->rscs);		
 		//data->rscs.clear();		// move is not work...
@@ -178,8 +178,8 @@ BindlessResources::onDestroy()
 	_samplerStateListTable.clear();
 
 	// this will lock twice
-	//{ auto data = _bufAlloc.scopedULock(); data->rscs.clear(); }
-	//{ auto data = _texAlloc.scopedULock(); data->rscs.clear(); }
+	//{ auto data = _bufAlloc.scopedLock(); data->rscs.clear(); }
+	//{ auto data = _texAlloc.scopedLock(); data->rscs.clear(); }
 }
 
 void 
@@ -211,7 +211,7 @@ BindlessResources::alloc(MutexProtected<ResourceAlloc<T> >& alloc, T* rsc, u32 c
 {
 	auto oHnd = BindlessResourceHandle{};
 	{
-		auto data = alloc.scopedULock();
+		auto data = alloc.scopedLock();
 		oHnd = data->alloc(rsc, this, count, type);
 	}
 	return oHnd;
@@ -224,7 +224,7 @@ BindlessResources::free(MutexProtected<ResourceAlloc<T> >& alloc, BindlessResour
 	if (!hnd.isValid())
 		return;
 	{ 
-		auto data = alloc.scopedULock(); 
+		auto data = alloc.scopedLock(); 
 		data->free(hnd, count, type); 
 	}
 }
@@ -233,7 +233,7 @@ template<class T>
 u32 
 BindlessResources::_totalResourcesCount(MutexProtected<ResourceAlloc<T> >& alloc) const
 { 
-	auto data = alloc.scopedULock();
+	auto data = alloc.scopedLock();
 	return data->totalResourcesCount();
 }
 

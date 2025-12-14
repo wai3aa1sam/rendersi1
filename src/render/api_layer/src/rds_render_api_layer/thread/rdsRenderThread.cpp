@@ -84,15 +84,14 @@ RenderThread::onThreadState_Terminate()
 bool 
 RenderThread::_checkUploadCompletedJob()
 {
-	UPtr<RenderJob> o = nullptr;
-	while (_processingRdJobs.try_pop(o))
+	while (auto job = _processingRdJobs.popHead())
 	{
-		if (!o->isDoneUploading())		// we can start new job when Upload is completed, we will check again when render
+		if (!job->isDoneUploading())		// we can start new job when Upload is completed, we will check again when render
 		{
-			_processingRdJobs.push(rds::move(o));
+			_processingRdJobs.append(rds::move(job));
 			return false;
 		}
-		_rdDev->_internal_freeRenderJob(rds::move(o));
+		_rdDev->_internal_freeRenderJob(rds::move(job));
 	}
 	return true;
 }
@@ -100,15 +99,14 @@ RenderThread::_checkUploadCompletedJob()
 bool 
 RenderThread::_checkRenderCompletedJob()
 {
-	UPtr<RenderJob> o = nullptr;
-	while (_processingRdJobs.try_pop(o))
+	while (auto job = _processingRdJobs.popHead())
 	{
-		if (!o->isDoneRendering())		// we can start new job when Upload is completed, we will check again when render
+		if (!job->isDoneRendering())		// we can start new job when Upload is completed, we will check again when render
 		{
-			_processingRdJobs.push(rds::move(o));
+			_processingRdJobs.append(rds::move(job));
 			return false;
 		}
-		_rdDev->_internal_freeRenderJob(rds::move(o));
+		_rdDev->_internal_freeRenderJob(rds::move(job));
 	}
 	return true;
 }
@@ -119,7 +117,7 @@ RenderThread::onRoutine()
 	RDS_PROFILE_SCOPED();
 
 	{
-		auto data = _state.scopedULock();
+		auto data = _state.scopedLock();
 		data->isStarted = true;
 	}
 
@@ -128,7 +126,7 @@ RenderThread::onRoutine()
 		_checkUploadCompletedJob();
 
 		{
-			auto data = _state.scopedULock();
+			auto data = _state.scopedLock();
 			if (data->isQuit)
 			{
 				// onThreadState_Terminate();
@@ -146,7 +144,7 @@ RenderThread::onRoutine()
 void 
 RenderThread::requestRender(UPtr<RenderJob> rdJob)
 {
-	_pendingRdJobs.push(rds::move(rdJob));
+	_pendingRdJobs.append(rds::move(rdJob));
 }
 
 void 
@@ -158,7 +156,7 @@ RenderThread::quit()
 	// wait quit
 	// process the remaining
 	{
-		auto data = _state.scopedULock();
+		auto data = _state.scopedLock();
 		data->isQuit = true;
 	}
 }
@@ -166,13 +164,13 @@ RenderThread::quit()
 bool 
 RenderThread::tryRender()
 {
-	UPtr<RenderJob> rdJob;
-	bool hasPending = _pendingRdJobs.try_pop(rdJob);		// seems try_pop is poping front, if no hints could try once more
-	if (rdJob)
+	UPtr<RenderJob> job = _pendingRdJobs.popHead();		// seems try_pop is poping front, if no hints could try once more
+	bool hasJob = job;
+	if (job)
 	{
-		render(rds::move(rdJob));
+		render(rds::move(job));
 	}
-	return hasPending;
+	return hasJob;
 }
 
 void
@@ -216,7 +214,7 @@ RenderThread::render(UPtr<RenderJob> renderJob)
 	}
 
 	//_lastFinishedFrameCount.store(curFrame);
-	_processingRdJobs.push(rds::move(renderJob));	// ensure only 1 thread is accessing
+	_processingRdJobs.append(rds::move(renderJob));	// ensure only 1 thread is accessing
 }
 
 bool 
@@ -236,7 +234,7 @@ bool
 RenderThread::isQuit()
 {
 	{
-		auto data = _state.scopedULock();
+		auto data = _state.scopedLock();
 		return data->isQuit;
 	}
 }
@@ -252,7 +250,7 @@ void
 RenderThread::waitCpuIdle()
 {
 	{
-		auto data = _state.scopedULock();
+		auto data = _state.scopedLock();
 		if (data->isQuit)
 			return;
 	}
@@ -332,12 +330,12 @@ public:
 
 public:
 	void	clear() {
-		auto md = _mdata.scopedULock();
+		auto md = _mdata.scopedLock();
 		md->list.clear();
 	}
 
 	void	insert	(T* p)	{
-		auto md = _mdata.scopedULock();
+		auto md = _mdata.scopedLock();
 		while (md->list.size() >= md->maxSize) {
 			md.wait();
 		}
@@ -345,7 +343,7 @@ public:
 	}
 
 	void	append	(T* p)	{
-		auto md = _mdata.scopedULock();
+		auto md = _mdata.scopedLock();
 		while (md->list.size() >= md->maxSize) {
 			md.wait();
 		}
@@ -355,13 +353,13 @@ public:
 	void	insert	(UPtr<T> p)	{ insert(p.ptr()); p.detach(); }
 	void	append	(UPtr<T> p)	{ append(p.ptr()); p.detach(); }
 
-	void	setMaxSize(u32 n) { _mdata.scopedULock()->maxSize = n; }
+	void	setMaxSize(u32 n) { _mdata.scopedLock()->maxSize = n; }
 
-	UPtr<T>	popHead	()	{ return _mdata.scopedULock()->list.pop_front(); }
-	UPtr<T>	popTail	()	{ return _mdata.scopedULock()->list.popTail(); }
+	UPtr<T>	popHead	()	{ return _mdata.scopedLock()->list.pop_front(); }
+	UPtr<T>	popTail	()	{ return _mdata.scopedLock()->list.popTail(); }
 
 	UPtr<T>	waitHead() {
-		auto md = _mdata.scopedULock();
+		auto md = _mdata.scopedLock();
 		for(;;) {
 			auto p = md->list.popHead();
 			if (p) return p;
@@ -370,7 +368,7 @@ public:
 	}
 
 	UPtr<T>	timedWaitHead(int milliseconds) {
-		auto md = _mdata.scopedULock();
+		auto md = _mdata.scopedLock();
 		for(;;) {
 			auto p = md->list.popHead();
 			if (p) return p;
@@ -380,7 +378,7 @@ public:
 	}
 
 	u32 size() {
-		auto md = _mdata.scopedULock();
+		auto md = _mdata.scopedLock();
 		return md->list.size();
 	}
 

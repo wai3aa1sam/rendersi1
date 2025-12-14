@@ -85,8 +85,8 @@ TransferContext_Vk::onCommit(RenderJob* rdJob, bool isWaitImmediate)
 	auto& vkQueueData = vkTsfFrame.getVkQueueData(QueueTypeFlags::Transfer);
 	vkTsfFrame.waitAndResetQueueData(QueueTypeFlags::Transfer);
 
-	auto data = transferFrame().transferRequest().transferCommandBuffer().scopedULock();		// maybe swap to a local, then no need to lock too long, but only this own it now
-	auto& tsfCmdBuf = *data;
+	auto lock = transferFrame().transferRequest().transferCommandBuffer().scopedLock();		// maybe swap to a local, then no need to lock too long, but only this own it now
+	auto& tsfCmdBuf = *lock.data();
 	Span<TransferCommand*> tsfCmds = tsfCmdBuf.commands();
 
 	if (tsfCmds.is_empty())

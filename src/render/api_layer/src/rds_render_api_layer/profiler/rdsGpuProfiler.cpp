@@ -46,7 +46,7 @@ GpuProfiler::addUniqueProfileSection(const SrcLocData& srcLocData)
 const SrcLocData* 
 GpuProfiler::findScLocData(const SrcLocData& srcLocData)
 {
-	auto lock = _srcLocList.scopedSLock();
+	auto lock = _srcLocList.scopedReadLock();
 	auto it = lock->_data.find(&srcLocData);
 	return it != lock->_data.end() ? *it : nullptr;
 }
@@ -57,7 +57,7 @@ GpuProfiler::newUnqiueCStr(StrView v)
 	if (v.is_empty())
 		return "";
 
-	auto lock = _cStrList.scopedULock();
+	auto lock = _cStrList.scopedLock();
 	auto* buf = reinCast<char*>(lock->_alloc.alloc((v.size() + 1) * sizeof(char)));
 	memory_copy(buf, v.data(), v.size());
 	buf[v.size()] = '\0';
@@ -70,7 +70,7 @@ GpuProfiler::newScLocData(const SrcLocData& v)
 	const auto* name = newUnqiueCStr(v.name);
 
 	{
-		auto lock = _srcLocList.scopedULock();
+		auto lock = _srcLocList.scopedLock();
 		auto* buf = lock->_alloc.alloc(sizeof(SrcLocData));
 		auto* obj = new(buf) SrcLocData(v);
 		obj->name = name;

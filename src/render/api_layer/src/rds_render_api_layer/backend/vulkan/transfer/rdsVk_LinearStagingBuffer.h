@@ -107,7 +107,7 @@ template<class T> inline
 T 
 Vk_LinearStagingBuffer::mappedData(StagingHandle hnd)
 {
-	auto data = _chunks.scopedSLock();
+	auto data = _chunks.scopedLock();
 	return data->mappedData<T>(hnd);
 }
 

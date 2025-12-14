@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_core_base/common/rds_core_base_common.h"
-
+#include <nmsp_job_system/thread/nmspTypeThread.h>
 
 #if 0
 #pragma mark --- rds_job_system-Impl ---
@@ -29,6 +29,9 @@ using Job           = ::nmsp::Job_T;
 using JobHandle     = ::nmsp::JobHandle_T;
 
 using JobFlow		= ::nmsp::JobFlow_T;
+
+using TypeThread_CreateDesc = ::nmsp::TypeThread_CreateDesc;
+using TypeThread			= ::nmsp::TypeThread_T;
 
 }
 #endif

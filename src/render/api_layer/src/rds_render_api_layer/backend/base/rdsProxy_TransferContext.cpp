@@ -69,8 +69,8 @@ Proxy_TransferContext::_onCommitRenderResources(TransferFrame* frame, TransferCo
 {
 	if (frame)
 	{
-		auto lock = rscQueue.scopedULock();
-		onCommitRenderResources(*lock, true);
+		auto lock = rscQueue.scopedLock();
+		onCommitRenderResources(*lock.data(), true);
 	}
 }
 

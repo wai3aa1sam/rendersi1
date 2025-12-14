@@ -5,13 +5,13 @@
 #include "rds_render_api_layer/transfer/command/rdsTransferCommand_Impl.h"
 
 #define RDS_RENDER_CMD_CREATE_RENDER_RSC(T, v)								\
-auto lock = _rdRscBuf_create.scopedULock();									\
+auto lock = _rdRscBuf_create.scopedLock();									\
 auto* cmd = lock->newCommand<RDS_CONCAT(TransferCommand_Create, T)>();		\
 cmd->dst = v;																\
 // ---
 
 #define RDS_RENDER_CMD_DESTROY_RENDER_RSC(T, v)								\
-auto lock = _rdRscBuf_destroy.scopedULock();									\
+auto lock = _rdRscBuf_destroy.scopedLock();									\
 auto* cmd = lock->newCommand<RDS_CONCAT(TransferCommand_Destroy, T)>();		\
 cmd->dst = v;																\
 // ---
@@ -78,7 +78,7 @@ void
 TransferFrame::onReset(i64 frameCount)
 {
 	_constBufAlloc.reset();
-	auto fn_rdRscBuf = [](auto& buf) { auto data = buf.scopedULock(); data->clear(); };
+	auto fn_rdRscBuf = [](auto& buf) { auto data = buf.scopedLock(); data->clear(); };
 	fn_rdRscBuf(_rdRscBuf_destroy);		// must reset before create, since create will release SPtr
 	fn_rdRscBuf(_rdRscBuf_create);
 	fn_rdRscBuf(_rdRscBuf_setDebugLabel);
@@ -90,7 +90,7 @@ TransferFrame::onReset(i64 frameCount)
 void 
 TransferFrame::setRenderResourceDebugLabel(RenderResource* rdRsc, RDS_DebugLabel_PARAM)
 {
-	auto lock = _rdRscBuf_setDebugLabel.scopedULock();
+	auto lock = _rdRscBuf_setDebugLabel.scopedLock();
 	auto* cmd = lock->newCommand<TransferCommand_SetDebugLabel>();
 
 	cmd->dst	= rdRsc;
@@ -106,7 +106,7 @@ TransferFrame::createRenderContext(RenderContext* rdCtx)
 void
 TransferFrame::createRenderGpuBuffer(RenderGpuBuffer* buffer, const RenderGpuBuffer_CreateDesc& cDesc)
 {
-	auto lock = _rdRscBuf_create.scopedULock();
+	auto lock = _rdRscBuf_create.scopedLock();
 	auto* cmd = lock->newCommand<TransferCommand_CreateRenderGpuBuffer>();
 
 	cmd->dst	= buffer;
@@ -118,7 +118,7 @@ TransferFrame::createTexture(Texture* texture)
 {
 	RDS_TODO("rework command data member for debug SRCLOC, transfer and render also need to rework!!!");
 
-	auto lock = _rdRscBuf_create.scopedULock();
+	auto lock = _rdRscBuf_create.scopedLock();
 	auto* cmd = lock->newCommand<TransferCommand_CreateTexture>();
 
 	cmd->dst = texture;
@@ -133,7 +133,7 @@ TransferFrame::destroyRenderContext(RenderContext* rdCtx)
 void
 TransferFrame::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 {
-	auto lock = _rdRscBuf_destroy.scopedULock();
+	auto lock = _rdRscBuf_destroy.scopedLock();
 	auto* cmd = lock->newCommand<TransferCommand_DestroyRenderGpuBuffer>();
 
 	//OsUtil::sleep_ms(1);
@@ -143,7 +143,7 @@ TransferFrame::destroyRenderGpuBuffer(RenderGpuBuffer* buffer)
 void 
 TransferFrame::destroyTexture(Texture* texture)
 {
-	auto lock = _rdRscBuf_destroy.scopedULock();
+	auto lock = _rdRscBuf_destroy.scopedLock();
 	auto* cmd = lock->newCommand<TransferCommand_DestroyTexture>();
 
 	//OsUtil::sleep_ms(1);
@@ -160,7 +160,7 @@ TransferFrame::destroyTexture(Texture* texture)
 void 
 TransferFrame::clear()
 {
-	auto data = _alloc.scopedULock();
+	auto data = _alloc.scopedLock();
 	data->clear();
 }
 
@@ -171,7 +171,7 @@ TransferFrame::alloc(StagingHandle& oHnd, SizeType n)
 	SizeType offset		= StagingHandle::s_kInvalid;
 	void*	 buf		= nullptr;
 	{
-		auto data = _alloc.scopedULock();
+		auto data = _alloc.scopedLock();
 		buf = data->alloc(&chunkId, &offset, n);
 	}
 
@@ -190,7 +190,7 @@ TransferFrame::uploadToBuffer(StagingHandle& oHnd, ByteSpan data)
 void
 TransferFrame::uploadToDst(u8* dst, StagingHandle hnd, SizeType n)
 {
-	auto data = _alloc.scopedULock();
+	auto data = _alloc.scopedLock();
 	memory_copy(dst, data->chunks()[hnd.chunkId]->data() + hnd.offset, n);
 }
 

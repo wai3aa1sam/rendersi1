@@ -170,7 +170,7 @@ Vk_LinearStagingBuffer::destroy()
 	if (!_rdDevVk)
 		return;
 	{
-		auto data = _chunks.scopedULock();
+		auto data = _chunks.scopedLock();
 		data->clear();
 	}
 
@@ -184,10 +184,10 @@ Vk_LinearStagingBuffer::alloc(SizeType size)
 	RDS_CORE_ASSERT(_rdDevVk, "not yet create()");
 
 	RDS_TODO("this design is not good, we must tie the allocation and the upload with a lock"
-		"otherwise, when submit to other thread and destroy, the ptr will be danggling"
+		"otherwise, when submit to other thread and destroy, the ptr will be dangling"
 		"or we use a design that will confirm all the Job will be completed before submit if use this design"
 	);
-	auto data = _chunks.scopedULock();
+	auto data = _chunks.scopedLock();
 	auto hnd = data->alloc(size, &_vkAlloc, _rdDevVk);
 	return hnd;
 }
@@ -195,7 +195,7 @@ Vk_LinearStagingBuffer::alloc(SizeType size)
 void 
 Vk_LinearStagingBuffer::reset(i64 frameCount)
 {
-	auto data = _chunks.scopedULock();
+	auto data = _chunks.scopedLock();
 	data->reset();
 	_vkAlloc.resetFrame(frameCount);
 }
@@ -203,14 +203,14 @@ Vk_LinearStagingBuffer::reset(i64 frameCount)
 void 
 Vk_LinearStagingBuffer::clear()
 {
-	auto data = _chunks.scopedULock();
+	auto data = _chunks.scopedLock();
 	data->clear();
 }
 
 Vk_Buffer_T* 
 Vk_LinearStagingBuffer::vkStagingBufHnd(StagingHandle hnd)
 {
-	auto data = _chunks.scopedSLock();
+	auto data = _chunks.scopedLock();
 	auto* bufHnd = data->vkStagingBufHnd(hnd);
 	return bufHnd;
 }

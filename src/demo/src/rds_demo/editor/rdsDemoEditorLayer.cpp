@@ -9,6 +9,7 @@
 
 #include "rds_render_api_layer/shader/rdsShaderCompileRequest.h"
 
+
 #define RDS_IS_TEST_ENGINE 0
 #define RDS_USE_FULL_SCREEEN 0
 #define RDS_USE_RENDER_SINGLE_THREAD_MODE 0

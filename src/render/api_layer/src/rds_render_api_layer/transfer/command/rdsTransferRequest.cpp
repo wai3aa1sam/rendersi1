@@ -18,7 +18,7 @@ TransferRequest::tryPopTransferCommandSafeBuffer(TransferCommandBuffer& dst, Tra
 {
 	{
 		//auto* p = RDS_NEW(TransferCommandBuffer);
-		auto data	= src.scopedULock();
+		auto lock	= src.scopedLock();
 		#if 0
 		for (auto& e : data->commands())
 		{
@@ -29,7 +29,7 @@ TransferRequest::tryPopTransferCommandSafeBuffer(TransferCommandBuffer& dst, Tra
 			}
 		}
 		#endif // 0
-		swap(dst, *data);
+		swap(dst, *lock.data());
 	}
 	return true;
 }
@@ -53,7 +53,7 @@ TransferRequest::reset(TransferContext* tsfCtx)
 	_tsfCtx	= tsfCtx;
 
 	{
-		auto lock = _tsfCmdBuf.scopedULock();
+		auto lock = _tsfCmdBuf.scopedLock();
 		lock->clear();
 	}
 }
@@ -69,7 +69,7 @@ TransferCommand_UploadTexture*
 TransferRequest::uploadTexture(Texture* tex)
 {
 	RDS_TODO("this design is fault, but this part do not multi-thread now, so it seems ok");
-	auto lock = _tsfCmdBuf.scopedULock();
+	auto lock = _tsfCmdBuf.scopedLock();
 	auto* cmd = lock->newCommand<TransferCommand_UploadTexture>();
 
 	cmd->dst = tex;
@@ -93,7 +93,7 @@ TransferRequest::uploadBuffer(RenderGpuBuffer* rdBuf, ByteSpan data, SizeType of
 	}
 	#endif // 0
 	//auto& cmdBuf = transferCommandBuffer();
-	auto lock = _tsfCmdBuf.scopedULock();
+	auto lock = _tsfCmdBuf.scopedLock();
 	auto* cmd = lock->newCommand<TransferCommand_UploadBuffer>();
 	RDS_TODO("this design is fault, but this part do not multi-thread now, so it seems ok");
 	cmd->dst	= rdBuf;
@@ -115,7 +115,7 @@ TransferRequest::setSwapchainSize(RenderContext* rdCtx, const Tuple2f& size)
 	RDS_CORE_ASSERT(rdCtx);
 
 	//auto& cmdBuf	= transferCommandBuffer();
-	auto lock = _tsfCmdBuf.scopedULock();
+	auto lock = _tsfCmdBuf.scopedLock();
 	auto* cmd = lock->newCommand<TransferCommand_SetSwapchainSize>();
 
 	cmd->renderContext	= rdCtx;

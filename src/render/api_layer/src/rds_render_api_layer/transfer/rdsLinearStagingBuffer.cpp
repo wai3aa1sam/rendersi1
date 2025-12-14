@@ -12,7 +12,7 @@ namespace rds
 void 
 LinearStagingBuffer::clear()
 {
-	auto data = _alloc.scopedULock();
+	auto data = _alloc.scopedLock();
 	data->clear();
 }
 
@@ -20,7 +20,7 @@ void
 LinearStagingBuffer::reset()
 {
 	RDS_TODO("LinearAllocator have a reset, no need to free those chunks");
-	auto data = _alloc.scopedULock();
+	auto data = _alloc.scopedLock();
 	data->clear();
 }
 
@@ -36,7 +36,7 @@ LinearStagingBuffer::alloc(StagingHandle& oHnd, SizeType n)
 	SizeType offset		= StagingHandle::s_kInvalid;
 	void*	 buf		= nullptr;
 	{
-		auto data = _alloc.scopedULock();
+		auto data = _alloc.scopedLock();
 		buf = data->alloc(&chunkId, &offset, n);
 	}
 	
@@ -55,7 +55,7 @@ LinearStagingBuffer::uploadToBuffer(StagingHandle& oHnd, ByteSpan data)
 void
 LinearStagingBuffer::uploadToDst(u8* dst, StagingHandle hnd, SizeType n)
 {
-	auto data = _alloc.scopedULock();
+	auto data = _alloc.scopedLock();
 	memory_copy(dst, data->chunks()[hnd.chunkId]->data() + hnd.offset, n);
 }
 

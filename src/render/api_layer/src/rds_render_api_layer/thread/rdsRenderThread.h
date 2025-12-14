@@ -2,17 +2,12 @@
 
 #include "rds_render_api_layer/common/rds_render_api_layer_common.h"
 
-#include "nmsp_job_system/thread/nmspTypeThread.h"
-#include "EASTL/slist.h"
-
 namespace rds
 {
 
 class RenderJob;
 class RenderDevice;
 
-using TypeThread_CreateDesc = ::nmsp::TypeThread_CreateDesc;
-using TypeThread			= ::nmsp::TypeThread_T;
 
 struct RenderThread_CreateDesc : public ::nmsp::TypeThread_CreateDesc
 {
@@ -30,37 +25,6 @@ struct RenderThread_CreateDesc : public ::nmsp::TypeThread_CreateDesc
 //---
 RDS_ENUM_CLASS(RenderThreadState, u8);
 
-#if 1
-
-
-template<class T> 
-class CondQueue : public AtmQueue<T>
-{
-public:
-	using Base		= AtmQueue<T>;
-	using SizeType	= typename Base::SizeType;
-
-public:
-	CondQueue() = default;
-	~CondQueue() = default;
-
-public:
-	void push(const T& data)	{ _size++;  Base::push(data); RDS_TODO("real impl for CondQueue, CondVarProtected"); }
-	void push(		T&& data)	{ _size++;  Base::push(rds::move(data)); }
-
-	bool try_pop(T& o) { bool isSuccess = Base::try_pop(o); if (isSuccess) { _size--; }  return isSuccess; }
-
-	void clear() { T o; while(try_pop(o)) {}; }
-
-public:
-	SizeType	size()		const { return _size; }
-	bool		isEmpty()	const { return _size == 0; }
-
-private:
-	Atm<u32>	_size = 0;
-};
-
-#endif // 1
 
 
 #if 0
@@ -118,9 +82,9 @@ private:
 		bool isStarted	= false;
 		bool isQuit		= false;
 	};
-	MutexProtected<State>		_state;		// TODO: CondMutexProtected
-	CondQueue<UPtr<RenderJob> >	_pendingRdJobs;
-	CondQueue<UPtr<RenderJob> >	_processingRdJobs;// this is for check the gpu side is completed or not
+	MutexProtected<State>	_state;		// TODO: CondMutexProtected
+	CondQueue<RenderJob>	_pendingRdJobs;
+	CondQueue<RenderJob>	_processingRdJobs;// this is for check the gpu side is completed or not
 
 	//RenderThreadQueue			_rdThreadQueue;		// if, use other name, maybe like Dx12 called Engine as an interface for RenderThread
 };

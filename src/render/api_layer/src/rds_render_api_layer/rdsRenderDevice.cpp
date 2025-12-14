@@ -150,11 +150,10 @@ RenderDevice::newRenderJob(RenderContext* rdCtx, i64 frameCount)
 	UPtr<RenderJob> o;
 	for (;;)
 	{
-		_freeRdJobs.try_pop(o);
+		o = _freeRdJobs.timedWaitHead(0);
 		if (o)
 			break;
 		_rdThread._checkUploadCompletedJob();
-		OsUtil::sleep_ms(0); RDS_TODO("pass a param here");
 	}
 	//o->_renderGraph = _rdGraph;
 	o->reset(this, rdCtx, frameCount);
@@ -165,7 +164,7 @@ void
 RenderDevice::_internal_freeRenderJob(UPtr<RenderJob> rdJob)
 {
 	//transferContext()._internal_freeTransferFrame(rds::move(rdJob->transferFrame));
-	_freeRdJobs.push(rds::move(rdJob));
+	_freeRdJobs.append(rds::move(rdJob));
 }
 
 void 
@@ -182,7 +181,7 @@ RenderDevice::_createRenderJobs()
 		RenderJob_CreateDesc rdJob_cDesc = {};
 		rdJob_cDesc.renderDevice = this;
 		auto o = createRenderJob(RDS_DebugLabel("rdJob-{}", i), rdJob_cDesc);
-		_freeRdJobs.push(rds::move(o));
+		_freeRdJobs.append(rds::move(o));
 	}
 }
 

@@ -186,10 +186,9 @@ TextureStock::Textures::add(Texture* v)
 {
 	RDS_CORE_ASSERT(v, "invalid texture");
 	auto& table = _table;
-	auto lock	= table.scopedULock();
-	auto& data	= *lock;
+	auto lock	= table.scopedLock();
 	auto rscIdx = v->bindlessHandle().getResourceIndex();
-	data[rscIdx] = v;
+	(*lock.data())[rscIdx] = v;
 	return v;
 }
 
@@ -201,29 +200,26 @@ TextureStock::Textures::remove(Texture* v)
 
 	RDS_CORE_ASSERT(v, "invalid texture");
 	auto& table = _table;
-	auto lock	= table.scopedULock();
-	auto& data	= *lock;
+	auto data	= table.scopedLock();
 	auto rscIdx = v->bindlessHandle().getResourceIndex();
-	data.erase(rscIdx);
+	data->erase(rscIdx);
 }
 
 void 
 TextureStock::Textures::clear()
 {
 	auto& table = _table;
-	auto lock	= table.scopedULock();
-	auto& data	= *lock;
-	data.clear();
+	auto data	= table.scopedLock();
+	data->clear();
 }
 
 Texture* 
 TextureStock::Textures::find(u32 rscIdx)
 {
 	auto& table = _table;
-	auto lock	= table.scopedULock();
-	auto& data	= *lock;
-	auto it = data.find(rscIdx);
-	if (it == data.end())
+	auto data	= table.scopedLock();
+	auto it = data->find(rscIdx);
+	if (it == data->end())
 	{
 		return nullptr;
 	}

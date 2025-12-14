@@ -13,6 +13,38 @@ class RenderContext;
 class TransferFrame;
 class RenderGraph;
 
+
+#if 1
+
+template<class T> 
+class CondQueue_Temp : public AtmQueue<T>
+{
+public:
+	using Base		= AtmQueue<T>;
+	using SizeType	= typename Base::SizeType;
+
+public:
+	CondQueue_Temp() = default;
+	~CondQueue_Temp() = default;
+
+public:
+	void push(const T& data)	{ _size++;  Base::push(data); RDS_TODO("real impl for CondQueue, CondVarProtected"); }
+	void push(		T&& data)	{ _size++;  Base::push(rds::move(data)); }
+
+	bool try_pop(T& o) { bool isSuccess = Base::try_pop(o); if (isSuccess) { _size--; }  return isSuccess; }
+
+	void clear() { T o; while(try_pop(o)) {}; }
+
+public:
+	SizeType	size()		const { return _size; }
+	bool		isEmpty()	const { return _size == 0; }
+
+private:
+	Atm<u32>	_size = 0;
+};
+
+#endif // 1
+
 #if 0
 #pragma mark --- rdsRenderThreadQueue-Decl ---
 #endif // 0

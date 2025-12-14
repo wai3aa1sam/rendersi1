@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rds_core_base/common/rds_core_base_common.h"
-#include <nmsp_os/atomic/extra/nmspMutexProtected.h>
+#include <nmsp_os/atomic/nmspMutexProtected.h>
 #include <nmsp_os/common/nmspOsUtil.h>
 #include <nmsp_os/atomic/extra/nmspSynchronize.h>
 
@@ -57,10 +57,10 @@ template<class T> using ULock = ::nmsp::ULock_T<T>;
 template<class T> using SLock = ::nmsp::SLock_T<T>;
 
 using CondVar	= ::nmsp::CondVar_T;
-using CondVarA	= ::nmsp::CondVarA_T;
+//using CondVarA	= ::nmsp::CondVarA_T;
 
 template<class T> using MutexProtected	= ::nmsp::MutexProtected_T<T>;
-template<class T> using SMutexProtected	= ::nmsp::SMutexProtected_T<T>;
+template<class T> using SMutexProtected	= ::nmsp::SharedMutexProtected_T<T>;
 
 using CallOnce = ::nmsp::CallOnce_T;
 
@@ -72,6 +72,8 @@ template<class T, size_t N = 256, class ALLOC = DefaultAllocator, class TRAITS =
 template<class T, class QUEUE = AtmQueue<T> >																using AtmStealQueue		= ::nmsp::AtmStealQueue_T<T>;
 template<class T, size_t N_PRIORITY, class PRIORITY, class QUEUE = AtmStealQueue<T> >						using AtmPriorityQueue	= ::nmsp::AtmPriorityQueue_T<T, N_PRIORITY, PRIORITY, QUEUE>;
 
+template<class T, bool IsBroadcast = false, class T_Deleter = DefaultDeleter<T>, class T_Allocator = DefaultAllocator>
+using CondQueue = nmsp::CondQueue_T<T, IsBroadcast, T_Deleter, T_Allocator>;
 
 #if 0
 #pragma mark --- rds_os_sync-Impl ---
