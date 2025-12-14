@@ -17,6 +17,7 @@
 namespace rds
 {
 
+
 #if 0
 #pragma mark --- rdsDemoEditorLayer-Impl ---
 #endif // 0
@@ -24,6 +25,12 @@ namespace rds
 
 DemoEditorLayer::DemoEditorLayer()
 {
+	{
+		ObjectPool<int> v;
+		auto* p = v.newObject();
+		v.deleteObject(p);
+	}
+
 	_todoList();
 	
 	auto rdrCDesc = Renderer::makeCDesc();

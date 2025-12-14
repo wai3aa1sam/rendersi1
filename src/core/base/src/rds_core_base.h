@@ -11,6 +11,8 @@
 #include "rds_core_base/file_io/rds_file_io.h"
 #include "rds_core_base/job_system/rds_job_system.h"
 
+#include "rds_core_base/utility/rdsDebugLabel.h"
+
 namespace rds
 {
 

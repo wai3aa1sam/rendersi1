@@ -34,7 +34,6 @@ class RdgDrawer;
 class RenderGraph;
 class RenderContext;
 
-
 #if 0
 #pragma mark --- rdsRenderGraph-Decl ---
 #endif // 0
@@ -347,46 +346,7 @@ protected:
 	//RenderGraphFrames _rdgFrames;
 
 protected:
-	struct RdgHndPool
-	{
-	public:
-		using T = RdgResource_WeakBlock;
-	public:
-		~RdgHndPool()
-		{
-			_alloc.destructAndClear<T>(_alloc.s_kDefaultAlign);
-		}
-
-		//void			reset();
-		//template<class... TArgs>
-		//T*				newObject(TArgs&&... args)
-		T*				newObject()
-		{
-			if (!_freedObjs.is_empty())
-			{
-				auto obj = _freedObjs.moveBack();
-				return obj;
-			}
-			else
-			{
-				auto* buf		= _alloc.alloc(sizeof(T));;
-				auto* newObj	= new(buf) T();
-				//_objs.emplace_back(newObj);
-				return newObj;
-			}
-		}
-		void deleteObject(T* obj)
-		{
-			_freedObjs.emplace_back(obj);
-		}
-
-	public:
-		LinearAllocator _alloc;
-		//Vector<T*> _objs;
-		Vector<T*> _freedObjs;
-		//Vector<T*, 16> _objs;
-	};
-	RdgHndPool _rdgHndPool;
+	ObjectPool<RdgResource_WeakBlock> _rdgHndPool;
 };
 
 template<class T> inline

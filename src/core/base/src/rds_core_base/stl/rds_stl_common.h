@@ -163,6 +163,8 @@ template<class... ARGS> using Tuple = ::nmsp::Tuple_T<ARGS...>;
 //template<class T> using TypeBitMixture		= ::nmsp::TypeBitMixture_T<T, TypeBitMixture_Impl<T> >;
 //template<class T> using TBM					= ::nmsp::TBM<T>;
 
+template<class T> using ObjectPool = nmsp::ObjectPool_T<T>;
+
 #endif
 
 
