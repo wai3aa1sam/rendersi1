@@ -57,6 +57,7 @@ public:
 
 public:
 	bool isQuit();
+	bool isStarted();
 
 	void waitIdle();
 	void waitCpuIdle();
@@ -82,7 +83,8 @@ private:
 		bool isStarted	= false;
 		bool isQuit		= false;
 	};
-	MutexProtected<State>	_state;		// TODO: CondMutexProtected
+	using ProctectedState = CondMutexProtected<State, true>;
+	ProctectedState			_state;		// TODO: CondMutexProtected
 	CondQueue<RenderJob>	_pendingRdJobs;
 	CondQueue<RenderJob>	_processingRdJobs;// this is for check the gpu side is completed or not
 

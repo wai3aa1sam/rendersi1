@@ -59,8 +59,9 @@ template<class T> using SLock = ::nmsp::SLock_T<T>;
 using CondVar	= ::nmsp::CondVar_T;
 //using CondVarA	= ::nmsp::CondVarA_T;
 
-template<class T> using MutexProtected	= ::nmsp::MutexProtected_T<T>;
-template<class T> using SMutexProtected	= ::nmsp::SharedMutexProtected_T<T>;
+template<class T>					using MutexProtected		= ::nmsp::MutexProtected_T<T>;
+template<class T>					using SMutexProtected		= ::nmsp::SharedMutexProtected_T<T>;
+template<class T, bool IsBroadcast> using CondMutexProtected	= ::nmsp::CondMutexProtected_T<T, IsBroadcast>;
 
 using CallOnce = ::nmsp::CallOnce_T;
 

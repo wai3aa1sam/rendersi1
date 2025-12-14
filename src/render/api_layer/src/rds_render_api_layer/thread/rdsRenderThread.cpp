@@ -239,6 +239,15 @@ RenderThread::isQuit()
 	}
 }
 
+bool 
+RenderThread::isStarted()
+{
+	{
+		auto data = _state.scopedLock();
+		return data->isStarted;
+	}
+}
+
 void
 RenderThread::waitIdle()
 {
@@ -249,11 +258,9 @@ RenderThread::waitIdle()
 void
 RenderThread::waitCpuIdle()
 {
-	{
-		auto data = _state.scopedLock();
-		if (data->isQuit)
-			return;
-	}
+	if (isQuit())
+		return;
+
 	if (_rdDev)
 		_rdDev->waitCpuIdle();
 }
@@ -297,98 +304,6 @@ u64		RenderThread::lastFinishedFrameCount()		const	{ return _lastFinishedFrameCo
 #endif // 0
 
 #endif
-
-#if 0
-
-
-static void s()
-{
-	eastl::slist<int> q;
-	q.pop_front();
-
-	q.pop();
-	q.push()
-}
-
-class SList : public eastl::slist<int>
-{
-public:
-	using T = int;
-public:
-	void insert(T* v) { push_front(v); }
-};
-
-template<class T>
-class CondQueue : public NonCopyable
-{
-public:
-	struct MData 
-	{
-		u32				maxSize = NumLimit<u32>::max();
-		eastl::queue<T> queue; // cannot use DList, because DListNode::removeFromList() may cause race condition
-	};
-
-public:
-	void	clear() {
-		auto md = _mdata.scopedLock();
-		md->list.clear();
-	}
-
-	void	insert	(T* p)	{
-		auto md = _mdata.scopedLock();
-		while (md->list.size() >= md->maxSize) {
-			md.wait();
-		}
-		md->list.insert(p); 
-	}
-
-	void	append	(T* p)	{
-		auto md = _mdata.scopedLock();
-		while (md->list.size() >= md->maxSize) {
-			md.wait();
-		}
-		md->list.append(p);
-	}
-
-	void	insert	(UPtr<T> p)	{ insert(p.ptr()); p.detach(); }
-	void	append	(UPtr<T> p)	{ append(p.ptr()); p.detach(); }
-
-	void	setMaxSize(u32 n) { _mdata.scopedLock()->maxSize = n; }
-
-	UPtr<T>	popHead	()	{ return _mdata.scopedLock()->list.pop_front(); }
-	UPtr<T>	popTail	()	{ return _mdata.scopedLock()->list.popTail(); }
-
-	UPtr<T>	waitHead() {
-		auto md = _mdata.scopedLock();
-		for(;;) {
-			auto p = md->list.popHead();
-			if (p) return p;
-			//md.wait();
-		}
-	}
-
-	UPtr<T>	timedWaitHead(int milliseconds) {
-		auto md = _mdata.scopedLock();
-		for(;;) {
-			auto p = md->list.popHead();
-			if (p) return p;
-			/*if (!md.timedWait(milliseconds))
-			return nullptr;*/
-		}
-	}
-
-	u32 size() {
-		auto md = _mdata.scopedLock();
-		return md->list.size();
-	}
-
-private:
-	MutexProtected<MData> _mdata;
-};
-
-
-#endif // 0
-
 
 }
 
