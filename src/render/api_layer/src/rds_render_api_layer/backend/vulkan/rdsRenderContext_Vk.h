@@ -105,6 +105,8 @@ protected:
 	Vk_Queue _vkPresentQueue;
 	Vk_Queue _vkTransferQueue;
 
+	Vector<Vk_Semaphore, s_kFrameAheadCount> _renderCompletedVkSmps;	// for fix vk1.4 validation error
+
 	//Vk_RenderFrames		_vkRdFrames;
 	//Vk_CommandBuffer*	_curGraphicsVkCmdBuf = nullptr;
 

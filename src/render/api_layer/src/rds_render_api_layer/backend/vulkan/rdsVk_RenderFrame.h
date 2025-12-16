@@ -60,7 +60,7 @@ public:
 	Set<Vk_DescriptorSet*>& nonBindlessUpdatedDescriptorSets();
 
 	Vk_Semaphore*	imageAvaliableSmp();
-	Vk_Semaphore*	renderCompletedSmp();
+	//Vk_Semaphore*	renderCompletedSmp();
 	Vk_Fence*		inFlightFence();
 
 	RenderDevice_Vk*	renderDeviceVk();
@@ -81,7 +81,7 @@ protected:
 
 	// maybe put back on RenderContext_Vk
 	Vk_Semaphore	_imageAvailableVkSmp;
-	Vk_Semaphore	_renderCompletedVkSmp;
+	//Vk_Semaphore	_renderCompletedVkSmps;		// fix vk1.4 validation error, moved to RenderContext_Vk, Vector<Vk_Semaphore, 2> not work
 	Vk_Fence		_inFlightVkFence;
 
 	Vk_DescriptorAllocator	_descriptorAlloc;
@@ -126,7 +126,7 @@ inline Vk_DescriptorAllocator& Vk_RenderFrame::descriptorAllocator()				{ return
 inline Set<Vk_DescriptorSet*>& Vk_RenderFrame::nonBindlessUpdatedDescriptorSets()	{ return _nonBindlessUpdatedDescrSets; }
 
 inline Vk_Semaphore*			Vk_RenderFrame::imageAvaliableSmp()		{ return &_imageAvailableVkSmp; }
-inline Vk_Semaphore*			Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmp; }
+//inline Vk_Semaphore*			Vk_RenderFrame::renderCompletedSmp()	{ return &_renderCompletedVkSmps[_i_smp]; }
 inline Vk_Fence*				Vk_RenderFrame::inFlightFence()			{ return &_inFlightVkFence; }
 
 #endif

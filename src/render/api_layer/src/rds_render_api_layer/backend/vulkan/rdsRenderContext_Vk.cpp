@@ -62,6 +62,12 @@ RenderContext_Vk::onTransferCommand_Create(CmdCreate* cmd)
 	vkSwapchainCDesc.create(cDesc, this, &_backbuffers);
 	_vkSwapchain.create(vkSwapchainCDesc);
 
+	_renderCompletedVkSmps.resize(_renderCompletedVkSmps.s_kLocalSize);
+	for (size_t i = 0; i < _renderCompletedVkSmps.s_kLocalSize; i++)
+	{
+		_renderCompletedVkSmps[i].create(rdDevVk);
+	}
+
 	#if RDS_DEVELOPMENT
 
 	{
@@ -86,6 +92,12 @@ RenderContext_Vk::onTransferCommand_Destroy()
 
 	//_vkFramebufPool.destroy();
 	_vkRdPassPool.destroy();
+
+	for (size_t i = 0; i < _renderCompletedVkSmps.s_kLocalSize; i++)
+	{
+		_renderCompletedVkSmps[i].destroy(renderDeviceVk());
+	}
+	_renderCompletedVkSmps.clear();
 }
 
 Vk_CommandBuffer* 
@@ -160,6 +172,8 @@ RenderContext_Vk::onEndRender()
 	//rdDevVk->bindlessResourceVk().commit();
 	_gpuProfilerCtx.commit();
 
+	auto& renderCompletedVkSmp = _renderCompletedVkSmps[_vkSwapchain.curImageIdx()];
+
 	// submit
 	{
 		if (rdJobVk.pendingGfxVkCmdbufHnds().is_empty())
@@ -184,7 +198,7 @@ RenderContext_Vk::onEndRender()
 			if (_vkSwapchain.isValid())
 			{
 				waitSmps.emplace_back(	Vk_SmpSubmitInfo{vkRdFrame.imageAvaliableSmp()->hnd(),  VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
-				signalSmps.emplace_back(Vk_SmpSubmitInfo{vkRdFrame.renderCompletedSmp()->hnd(), VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
+				signalSmps.emplace_back(Vk_SmpSubmitInfo{renderCompletedVkSmp.hnd(),			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR});
 			}
 
 			auto debugLabel = RenderDebugLabel { "RenderContext_Vk::onEndRender()"};
@@ -193,7 +207,7 @@ RenderContext_Vk::onEndRender()
 	}
 
 	// present if needed
-	auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, vkRdFrame.renderCompletedSmp()); RDS_UNUSED(ret);
+	auto ret = _vkSwapchain.swapBuffers(&_vkPresentQueue, &renderCompletedVkSmp); RDS_UNUSED(ret);
 
 	if (_shdSwapBuffers)
 	{
@@ -1202,9 +1216,14 @@ RenderContext_Vk::onRenderResouce_SetDebugLabel(TransferCommand_SetDebugLabel* c
 	
 	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkSwapchain,		cmd->DebugLabel_get(), renderDeviceVk());
 	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkGraphicsQueue,	cmd->DebugLabel_get(), renderDeviceVk());
-	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkComputeQueue,		cmd->DebugLabel_get(), renderDeviceVk());
-	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkPresentQueue,		cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkComputeQueue,	cmd->DebugLabel_get(), renderDeviceVk());
+	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkPresentQueue,	cmd->DebugLabel_get(), renderDeviceVk());
 	RDS_RENDER_VK_SET_DEBUG_LABEL(_vkTransferQueue,	cmd->DebugLabel_get(), renderDeviceVk());
+
+	for (size_t i = 0; i < _renderCompletedVkSmps.s_kLocalSize; i++)
+	{
+		RDS_RENDER_VK_SET_DEBUG_LABEL(_renderCompletedVkSmps[i], cmd->DebugLabel_get(), renderDeviceVk());
+	}
 }
 
 #endif
