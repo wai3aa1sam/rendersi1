@@ -15,7 +15,7 @@ set(project_namespace_marco RDS)
 
 project(${project_name})
 
-set(vulkan_minVer 1.3)
+set(vulkan_minVer 1.4)
 
 set(Project_enableSanitizer 0)
 

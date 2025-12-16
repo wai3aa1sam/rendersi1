@@ -174,20 +174,19 @@ RenderContext::onUiKeyboardEvent(UiKeyboardEvent& ev)
 void
 RenderContext::setSwapchainSize(const Vec2f& newSize)
 {
-	if (_swapchainSize == newSize)
+	if (swapchainSize() == newSize)
 		return;
 
 	RDS_PROFILE_SCOPED();
 
-	_swapchainSize = newSize;
+	_mdata.scopedLock()->_swapchainSize = newSize;
 	transferRequest().setSwapchainSize(this, newSize);
 }
 
 void
 RenderContext::onCreate(const CreateDesc& cDesc)
 {
-	_swapchainSize.x = cDesc.window->clientRect().w;
-	_swapchainSize.y = cDesc.window->clientRect().h;
+	_mdata.scopedLock()->_swapchainSize = cDesc.window->clientRect().size;
 
 	_nativeUIWindow = cDesc.window;
 	
@@ -239,10 +238,11 @@ RenderContext::addGpuProfileSection(const SrcLocData& srcLocData)
 }
 
 float 
-RenderContext::aspectRatio() const
+RenderContext::aspectRatio()
 {
-	auto y = swapchainSize().y != 0 ? swapchainSize().y : 1;
-	return swapchainSize().x / y;
+	auto size = swapchainSize();
+	auto y = size.y != 0 ? size.y : 1;
+	return size.x / y;
 }
 
 void 

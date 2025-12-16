@@ -120,15 +120,39 @@ Vk_Swapchain::acquireNextImage(u32& outImageIdx, Vk_Semaphore* signalSmp)
 	// since the width or height is 0, no swapchain is created
 	if (!hnd())		return VkResult::VK_ERROR_OUT_OF_DATE_KHR;
 	if (!isValid()) return VkResult::VK_SUCCESS;
-		
 
 	auto* rdDevVk	= renderDeviceVk();
 	auto* vkDev		= rdDevVk->vkDevice();
 
 	//RDS_TODO("vkAcquireNextImageKHR timeout should be 0, but need handle");
 
-	u32 imageIdx = 0;
+	/*
+	* try fix bug
+		type = VK_OBJECT_TYPE_SWAPCHAIN_KHR; | MessageID = 0xad0e15f6 | vkAcquireNextImageKHR():  
+		Application has already previously acquired 1 image from swapchain. 
+		Only 1 is available to be acquired using a timeout of UINT64_MAX (given the swapchain has 2, 
+		and VkSurfaceCapabilitiesKHR::minImageCount is 2). The Vulkan spec states: 
+		If forward progress cannot be guaranteed for the surface used to create the swapchain member of pAcquireInfo, 
+		the timeout member of pAcquireInfo must not be UINT64_MAX 
+		(https://vulkan.lunarg.com/doc/view/1.3.283.0/windows/1.3-extensions/vkspec.html#VUID-vkAcquireNextImageKHR-surface-07783)
+	*/
+
+	u32 imageIdx = NumLimit<u32>::max();
+	
+	#if 0
 	auto ret = vkAcquireNextImageKHR(vkDev, hnd(), NumLimit<u64>::max(), signalSmp->hnd(), VK_NULL_HANDLE, &imageIdx);
+	#else
+	VkResult ret = VkResult::VK_TIMEOUT;
+	while (imageIdx == NumLimit<u32>::max())
+	{
+		ret = vkAcquireNextImageKHR(vkDev, hnd(), 0, signalSmp->hnd(), VK_NULL_HANDLE, &imageIdx);
+		if (ret != VkResult::VK_SUCCESS)
+		{
+			return ret;
+		}
+	}
+	#endif // 0
+
 	//_curImageIdx = Util::isSuccess(ret) ? imageIdx : _curImageIdx;
 
 	_curImageIdx	= imageIdx;

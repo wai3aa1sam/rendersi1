@@ -117,6 +117,8 @@ RenderContext_Vk::onDestroy()
 void
 RenderContext_Vk::onBeginRender()
 {
+	Base::onBeginRender();
+
 	RDS_PROFILE_SCOPED();
 
 	auto*		rdDevVk		= renderDeviceVk();
@@ -136,8 +138,10 @@ RenderContext_Vk::onBeginRender()
 		ret = _vkSwapchain.acquireNextImage(curImageIdx, vkRdFrame.imageAvaliableSmp()); RDS_UNUSED(ret);
 		if (!Util::isSuccess(ret))
 		{
-			//invalidateSwapchain(ret, framebufferSize());
-			////return;
+			// other impl maybe bypass this frame, but still submit, also need to have a fake wait for that submmit
+			invalidateSwapchain(ret, this->swapchainSize());
+			ret = _vkSwapchain.acquireNextImage(curImageIdx, vkRdFrame.imageAvaliableSmp()); RDS_UNUSED(ret);
+			Util::throwIfError(ret);
 		}
 	}
 

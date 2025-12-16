@@ -25,12 +25,6 @@ namespace rds
 
 DemoEditorLayer::DemoEditorLayer()
 {
-	{
-		ObjectPool<int> v;
-		auto* p = v.newObject();
-		v.deleteObject(p);
-	}
-
 	_todoList();
 	
 	auto rdrCDesc = Renderer::makeCDesc();

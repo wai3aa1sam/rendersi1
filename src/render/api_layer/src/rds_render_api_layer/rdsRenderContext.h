@@ -107,9 +107,9 @@ public:
 	const SrcLocData* addGpuProfileSection(const SrcLocData& srcLocData);
 
 public:
-	bool			isValidFramebufferSize() const;
-	const Vec2f&	swapchainSize() const;
-	float			aspectRatio() const;
+	bool			isValidFramebufferSize();
+	Vec2f			swapchainSize();
+	float			aspectRatio();
 
 	NativeUIWindow*		nativeUIWindow();
 	RenderUiContext&	renderdUiContex();
@@ -135,7 +135,13 @@ protected:
 
 private:
 	NativeUIWindow*		_nativeUIWindow = nullptr;
-	Vec2f				_swapchainSize {0,0};
+
+	struct MData
+	{
+		Vec2f				_swapchainSize {0,0};
+	};
+	SMutexProtected<MData> _mdata;
+	//Vec2f				_swapchainSize {0,0};
 	RenderUiContext		_rdUiCtx;
 
 	#if 0
@@ -152,13 +158,13 @@ private:
 
 };
 
-inline const Vec2f&		RenderContext::swapchainSize() const	{ return _swapchainSize; }
+inline Vec2f			RenderContext::swapchainSize()			{ auto o = _mdata.scopedReadLock()->_swapchainSize; return o; }
 inline NativeUIWindow*	RenderContext::nativeUIWindow()			{ return _nativeUIWindow; }
 inline RenderUiContext&	RenderContext::renderdUiContex()		{ return _rdUiCtx; }
 
 //inline Texture2D*		RenderContext::backBuffer()				{ return _backbuffers.backbuffer(); }
 
-inline bool				RenderContext::isValidFramebufferSize() const { return swapchainSize().x > 0.0f && swapchainSize().y > 0.0f; }
+inline bool				RenderContext::isValidFramebufferSize() { auto size = swapchainSize();  return size.x > 0.0f && size.y > 0.0f; }
 
 template<class CTX> inline
 void 
